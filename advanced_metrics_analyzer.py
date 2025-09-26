@@ -171,13 +171,12 @@ class AdvancedMetricsAnalyzer:
 
     def _is_stoppage_event(self, event_type: str) -> bool:
         et = (event_type or '').lower()
-        # Treat faceoff as a break since it follows a stoppage
-        if et == 'faceoff':
-            return True
+        # Only treat certain faceoffs as stoppages (not neutral zone faceoffs)
+        # Neutral zone faceoffs can be part of rush sequences
         return et in {
             'stoppage', 'goal', 'period-end', 'offside', 'icing', 'puck-frozen',
             'puck-out-of-play', 'high-sticking-the-puck', 'hand-pass', 'helmet-off',
-            'net-off', 'too-many-men', 'injury', 'timeout'
+            'net-off', 'too-many-men', 'injury', 'timeout', 'penalty'
         }
 
     def _is_rush_shot_by_index(self, shot_index: int) -> bool:
@@ -198,7 +197,7 @@ class AdvancedMetricsAnalyzer:
         if not shooting_team_id:
             return False
 
-        RUSH_WINDOW_S = 4.0
+        RUSH_WINDOW_S = 6.0
         shot_t = self._to_abs_seconds(shot)
 
         # Walk backwards until window exceeded or a stoppage occurs
@@ -217,10 +216,38 @@ class AdvancedMetricsAnalyzer:
                 return False
 
             p_details = p.get('details', {})
-            if p_details.get('eventOwnerTeamId') == shooting_team_id:
-                zone = p_details.get('zoneCode')
-                if zone in {'N', 'D'}:
-                    return True
+            prior_team = p_details.get('eventOwnerTeamId')
+            zone = p_details.get('zoneCode')
+
+            # If zone missing, attempt rough inference from x coordinate
+            if not zone:
+                x_coord = p_details.get('xCoord')
+                if x_coord is None:
+                    coords = p_details.get('coordinates', {})
+                    x_coord = coords.get('x')
+                try:
+                    x = float(x_coord) if x_coord is not None else 0.0
+                except Exception:
+                    x = 0.0
+                # Map to coarse zones relative to rink: neutral if |x| <= 25
+                if abs(x) <= 25:
+                    zone = 'N'
+                else:
+                    # Without team context, treat negative as defensive for home rink orientation; will flip below
+                    zone = 'O' if x > 25 else 'D'
+
+            # Convert zone to shooting-team perspective
+            zone_rel = zone
+            if prior_team and prior_team != shooting_team_id:
+                if zone == 'O':
+                    zone_rel = 'D'
+                elif zone == 'D':
+                    zone_rel = 'O'
+                else:
+                    zone_rel = zone  # 'N' stays 'N'
+
+            if zone_rel in {'N', 'D'}:
+                return True
 
             i -= 1
 

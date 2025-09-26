@@ -167,7 +167,7 @@ class PostGameReportGenerator:
                         'CAR': 'car', 'WSH': 'wsh', 'PIT': 'pit', 'NYR': 'nyr',
                         'NYI': 'nyi', 'NJD': 'nj', 'PHI': 'phi', 'CBJ': 'cbj',
                         'STL': 'stl', 'MIN': 'min', 'WPG': 'wpg', 'ARI': 'ari',
-                        'VGK': 'vgk', 'SJS': 'sj', 'LAK': 'lak', 'ANA': 'ana',
+                        'VGK': 'vgk', 'SJS': 'sj', 'LAK': 'la', 'ANA': 'ana',
                         'CGY': 'cgy', 'VAN': 'van', 'SEA': 'sea', 'CHI': 'chi'
                     }
                     
@@ -217,9 +217,9 @@ class PostGameReportGenerator:
                 
                 # Draw NHL logo under the team logos if available
                 if nhl_logo:
-                    # Position NHL logo centered under the team logos (moved up by 1cm = 28pt)
-                    nhl_logo_x = header_img.width - 601  # Centered between the two team logos (moved 8cm/241px total inward)
-                    nhl_logo_y = team_y + 92  # Below the team logos with proper spacing (moved up 28pt)
+                    # Move NHL logo 0.5 cm to the right (≈ 14 px at 72 dpi)
+                    nhl_logo_x = header_img.width - (601 + 14 + 11 + 28 - 14)
+                    nhl_logo_y = team_y + 92
                     header_img.paste(nhl_logo, (nhl_logo_x, nhl_logo_y), nhl_logo)
                 
                 # Draw team name white text with black outline for better visibility
@@ -840,7 +840,7 @@ class PostGameReportGenerator:
                     'CAR': 'car', 'WSH': 'wsh', 'PIT': 'pit', 'NYR': 'nyr',
                     'NYI': 'nyi', 'NJD': 'nj', 'PHI': 'phi', 'CBJ': 'cbj',
                     'STL': 'stl', 'MIN': 'min', 'WPG': 'wpg', 'ARI': 'ari',
-                    'VGK': 'vgk', 'SJS': 'sj', 'LAK': 'lak', 'ANA': 'ana',
+                    'VGK': 'vgk', 'SJS': 'sj', 'LAK': 'la', 'ANA': 'ana',
                     'CGY': 'cgy', 'VAN': 'van', 'SEA': 'sea', 'CHI': 'chi'
                 }
                 
@@ -1398,24 +1398,25 @@ class PostGameReportGenerator:
             play_by_play = game_data.get('play_by_play')
             if not play_by_play or 'plays' not in play_by_play:
                 return {
-                    'nz_turnovers': [0, 0, 0],
-                    'nz_turnovers_to_shots': [0, 0, 0],
-                    'oz_originating_shots': [0, 0, 0],
-                    'nz_originating_shots': [0, 0, 0],
-                    'dz_originating_shots': [0, 0, 0],
-                    'fc_cycle_sog': [0, 0, 0],
-                    'rush_sog': [0, 0, 0]
+                    # Arrays indexed [P1, P2, P3, OT]
+                    'nz_turnovers': [0, 0, 0, 0],
+                    'nz_turnovers_to_shots': [0, 0, 0, 0],
+                    'oz_originating_shots': [0, 0, 0, 0],
+                    'nz_originating_shots': [0, 0, 0, 0],
+                    'dz_originating_shots': [0, 0, 0, 0],
+                    'fc_cycle_sog': [0, 0, 0, 0],
+                    'rush_sog': [0, 0, 0, 0]
                 }
             
-            # Initialize period arrays (3 periods)
+            # Initialize period arrays (3 periods + OT bucket)
             metrics = {
-                'nz_turnovers': [0, 0, 0],
-                'nz_turnovers_to_shots': [0, 0, 0],
-                'oz_originating_shots': [0, 0, 0],
-                'nz_originating_shots': [0, 0, 0],
-                'dz_originating_shots': [0, 0, 0],
-                'fc_cycle_sog': [0, 0, 0],
-                'rush_sog': [0, 0, 0]
+                'nz_turnovers': [0, 0, 0, 0],
+                'nz_turnovers_to_shots': [0, 0, 0, 0],
+                'oz_originating_shots': [0, 0, 0, 0],
+                'nz_originating_shots': [0, 0, 0, 0],
+                'dz_originating_shots': [0, 0, 0, 0],
+                'fc_cycle_sog': [0, 0, 0, 0],
+                'rush_sog': [0, 0, 0, 0]
             }
             
             # Track turnovers for shot-against analysis
@@ -1427,11 +1428,8 @@ class PostGameReportGenerator:
                 event_team = details.get('eventOwnerTeamId')
                 period = play.get('periodDescriptor', {}).get('number', 1)
                 
-                # Skip if period is beyond 3 (overtime, etc.)
-                if period > 3:
-                    continue
-                
-                period_index = period - 1
+                # Map periods >3 to OT bucket index 3
+                period_index = (period - 1) if period <= 3 else 3
                 event_type = play.get('typeDescKey', '')
                 x_coord = details.get('xCoord', 0)
                 y_coord = details.get('yCoord', 0)
@@ -1455,7 +1453,7 @@ class PostGameReportGenerator:
                             metrics['nz_turnovers'][period_index] += 1
                     
                     # Track shots by originating zone
-                    elif event_type in ['shot-on-goal', 'goal']:
+                    elif event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
                         if zone == 'offensive':
                             metrics['oz_originating_shots'][period_index] += 1
                         elif zone == 'neutral':
@@ -1471,7 +1469,7 @@ class PostGameReportGenerator:
                             metrics['fc_cycle_sog'][period_index] += 1
                 
                 # Process opponent shots after turnovers
-                elif event_team != team_id and event_type in ['shot-on-goal', 'goal']:
+                elif event_team != team_id and event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
                     # Check if this shot came after a team turnover
                     for turnover in team_turnovers:
                         if (turnover['period'] == period_index and 
@@ -1485,13 +1483,13 @@ class PostGameReportGenerator:
         except Exception as e:
             print(f"Error calculating zone metrics: {e}")
             return {
-                'nz_turnovers': [0, 0, 0],
-                'nz_turnovers_to_shots': [0, 0, 0],
-                'oz_originating_shots': [0, 0, 0],
-                'nz_originating_shots': [0, 0, 0],
-                'dz_originating_shots': [0, 0, 0],
-                'fc_cycle_sog': [0, 0, 0],
-                'rush_sog': [0, 0, 0]
+                'nz_turnovers': [0, 0, 0, 0],
+                'nz_turnovers_to_shots': [0, 0, 0, 0],
+                'oz_originating_shots': [0, 0, 0, 0],
+                'nz_originating_shots': [0, 0, 0, 0],
+                'dz_originating_shots': [0, 0, 0, 0],
+                'fc_cycle_sog': [0, 0, 0, 0],
+                'rush_sog': [0, 0, 0, 0]
             }
     
     def _calculate_real_period_stats(self, game_data, team_id, team_side):
@@ -1660,73 +1658,88 @@ class PostGameReportGenerator:
         else:
             return 'neutral'
     
+    def _to_abs_seconds(self, play):
+        """Convert a play's period time to absolute game seconds."""
+        try:
+            period_number = play.get('periodDescriptor', {}).get('number', 1) or 1
+            time_in_period = play.get('timeInPeriod', '00:00') or '00:00'
+            minutes, seconds = str(time_in_period).split(':')
+            t = int(minutes) * 60 + int(seconds)
+        except Exception:
+            period_number, t = 1, 0
+        return (int(period_number) - 1) * 1200 + t
+
+    def _is_stoppage_event(self, event_type):
+        et = (event_type or '').lower()
+        # Only treat certain faceoffs as stoppages (not neutral zone faceoffs)
+        # Neutral zone faceoffs can be part of rush sequences
+        return et in {
+            'stoppage', 'goal', 'penalty', 'period-end', 'offside', 'icing', 'puck-frozen',
+            'puck-out-of-play', 'high-sticking-the-puck', 'hand-pass', 'helmet-off',
+            'net-off', 'too-many-men', 'injury', 'timeout', 'coach-challenge',
+            'tv-timeout', 'shootout-end', 'shootout-complete'
+        }
+    
     def _is_rush_shot(self, current_play, all_plays):
-        """Determine if a shot is from a rush using proper hockey logic"""
+        """Rush = any shot attempt within 6s of any event in N/D zone with no stoppage in between."""
         try:
             play_index = all_plays.index(current_play)
-            current_team = current_play.get('details', {}).get('eventOwnerTeamId')
-            current_period = current_play.get('periodDescriptor', {}).get('number', 1)
-            
-            # Look back through recent plays to find rush indicators
-            rush_indicators = 0
-            zone_entry_found = False
-            quick_transition = False
-            
-            # Check last 5 plays for rush indicators
-            for i in range(max(0, play_index - 5), play_index):
-                prev_play = all_plays[i]
-                prev_team = prev_play.get('details', {}).get('eventOwnerTeamId')
-                prev_type = prev_play.get('typeDescKey', '')
-                prev_period = prev_play.get('periodDescriptor', {}).get('number', 1)
-                
-                # Only consider plays from the same team and period
-                if prev_team != current_team or prev_period != current_period:
-                    continue
-                
-                # Rush indicators:
-                # 1. Takeaway (steal) - indicates quick transition
-                if prev_type == 'takeaway':
-                    rush_indicators += 2
-                    quick_transition = True
-                
-                # 2. Giveaway by opponent - indicates quick transition
-                elif prev_type == 'giveaway':
-                    rush_indicators += 1
-                
-                # 3. Shot block by opponent - indicates quick transition
-                elif prev_type == 'blocked-shot':
-                    rush_indicators += 1
-                
-                # 4. Faceoff win in neutral/offensive zone
-                elif prev_type == 'faceoff':
-                    # Check if it's in neutral or offensive zone
-                    coords = prev_play.get('details', {}).get('coordinates', {})
-                    x_coord = coords.get('x', 0)
-                    if x_coord > 25:  # Offensive zone faceoff
-                        rush_indicators += 1
-                        zone_entry_found = True
-                    elif abs(x_coord) <= 25:  # Neutral zone faceoff
-                        rush_indicators += 0.5
-                
-                # 5. Pass in neutral zone - indicates controlled entry
-                elif prev_type == 'pass' and abs(x_coord) <= 25:
-                    rush_indicators += 0.5
-                
-                # 6. Shot from previous play - indicates sustained pressure
-                elif prev_type in ['shot-on-goal', 'missed-shot', 'blocked-shot']:
-                    rush_indicators += 0.3
-            
-            # Rush shot criteria:
-            # - Quick transition (takeaway/giveaway) + zone entry
-            # - OR high rush indicator score (3+)
-            # - OR faceoff win in offensive zone + quick transition
-            if (quick_transition and zone_entry_found) or rush_indicators >= 3 or (zone_entry_found and rush_indicators >= 2):
+        except ValueError:
+            return False
+
+        details = current_play.get('details', {})
+        event_type = current_play.get('typeDescKey', '')
+        if (event_type or '').lower() not in {'shot-on-goal', 'missed-shot', 'blocked-shot', 'goal'}:
+            return False
+
+        shooting_team = details.get('eventOwnerTeamId')
+        if not shooting_team:
+            return False
+
+        RUSH_WINDOW_S = 6.0
+        shot_t = self._to_abs_seconds(current_play)
+
+        # Walk backwards through prior plays up to 6 seconds
+        i = play_index - 1
+        while i >= 0:
+            p = all_plays[i]
+            et = p.get('typeDescKey', '')
+            pt = self._to_abs_seconds(p)
+
+            # Outside window
+            if shot_t - pt > RUSH_WINDOW_S:
+                break
+
+            # Any stoppage (incl. faceoff) breaks rush chain
+            if self._is_stoppage_event(et):
+                return False
+
+            pd = p.get('details', {})
+            prior_team = pd.get('eventOwnerTeamId')
+
+            # Prefer zoneCode; otherwise infer from x
+            zone = pd.get('zoneCode')
+            if not zone:
+                coords = pd.get('coordinates', {})
+                x = coords.get('x', 0)
+                inferred = self._determine_zone(x, 0)
+                zone = {'neutral': 'N', 'defensive': 'D', 'offensive': 'O'}.get(inferred)
+
+            # Convert zone to shooting-team perspective if prior event was by opponent
+            zone_rel = zone
+            if prior_team and prior_team != shooting_team:
+                if zone == 'O':
+                    zone_rel = 'D'
+                elif zone == 'D':
+                    zone_rel = 'O'
+                else:
+                    zone_rel = zone
+
+            if zone_rel in {'N', 'D'}:
                 return True
             
-            return False
+            i -= 1
             
-        except Exception as e:
-            print(f"Error in rush shot detection: {e}")
             return False
     
     def _is_forecheck_cycle_shot(self, current_play, all_plays):
