@@ -102,9 +102,9 @@ def main():
             report_filename = pdf_generator.generate_report(game_data, output_filename, game_id)
             
             if report_filename:
-                # Move the generated file to the Desktop folder
-                source_path = os.path.join(os.getcwd(), report_filename)
-                destination_path = os.path.join(output_folder, report_filename)
+                # The report_filename is now the full path to the temp file
+                source_path = report_filename
+                destination_path = os.path.join(output_folder, os.path.basename(report_filename))
                 
                 try:
                     shutil.move(source_path, destination_path)
@@ -113,7 +113,7 @@ def main():
                     successful_reports += 1
                 except Exception as move_error:
                     print(f"  ⚠️  Report generated but failed to move: {move_error}")
-                    print(f"  📁 Report saved in current directory: {source_path}")
+                    print(f"  📁 Report saved in temp directory: {source_path}")
                     generated_files.append(source_path)
                     successful_reports += 1
             else:

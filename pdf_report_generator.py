@@ -2694,3 +2694,4 @@ class PostGameReportGenerator:
             print(f"Warning: could not clean up temp plot files: {e}")
         
         print(f"Post-game report generated successfully: {output_filename}")
+        return output_filename
