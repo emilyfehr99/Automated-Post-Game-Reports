@@ -2633,6 +2633,15 @@ class PostGameReportGenerator:
     
     def generate_report(self, game_data, output_filename, game_id=None):
         """Generate the complete post-game report PDF"""
+        # If caller passed a bare filename (no path), write to the system temp dir instead of project root
+        try:
+            import os, tempfile
+            output_dir = os.path.dirname(output_filename)
+            if not output_dir:
+                output_filename = os.path.join(tempfile.gettempdir(), output_filename)
+        except Exception:
+            pass
+        
         # Set margins to allow header to extend to edges
         doc = SimpleDocTemplate(output_filename, pagesize=letter, rightMargin=72, leftMargin=72, 
                               topMargin=0, bottomMargin=18)
