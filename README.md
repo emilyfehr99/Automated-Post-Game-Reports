@@ -155,6 +155,72 @@ The PDF reports feature:
 2. **API errors**: Check internet connection and NHL API status
 3. **Chart generation errors**: Ensure matplotlib and seaborn are properly installed
 
+## 🧰 Batch generation and JPEG export
+
+### Generate all reports for a specific date
+
+Use the included API client and generator to build all game reports for a given date (YYYY-MM-DD):
+
+```bash
+python3 - <<'PY'
+from datetime import datetime
+from nhl_api_client import NHLAPIClient
+from pdf_report_generator import PostGameReportGenerator
+
+TARGET_DATE = '2025-09-25'  # change as needed
+client = NHLAPIClient()
+schedule = client.get_game_schedule(TARGET_DATE)
+
+games = []
+for day in (schedule or {}).get('gameWeek', []):
+    if day.get('date') == TARGET_DATE:
+        games.extend(day.get('games', []))
+
+gen = PostGameReportGenerator()
+date_tag = datetime.fromisoformat(TARGET_DATE).strftime('%Y%m%d')
+for g in games:
+    gid = str(g['id'])
+    away = g['awayTeam']['abbrev']
+    home = g['homeTeam']['abbrev']
+    data = client.get_comprehensive_game_data(gid)
+    if not data:
+        continue
+    ts = datetime.now().strftime('%Y%m%d_%H%M%S')
+    out = f"nhl_postgame_report_{away}_vs_{home}_{date_tag}_{ts}.pdf"
+    gen.generate_report(data, out, gid)
+    print('Saved', out)
+PY
+```
+
+### Export first page to Desktop as JPEG (one per game)
+
+Requires `pdftoppm` (install via `brew install poppler` on macOS).
+
+```bash
+OUTDIR="$HOME/Desktop/NHL Reports - 2025-09-25 ONE PER GAME"
+mkdir -p "$OUTDIR"
+tmp=$(mktemp)
+ls -t nhl_postgame_report_*_20250925_*.pdf > "$tmp"
+seen=$(mktemp); : > "$seen"
+while read -r f; do
+  bn="${f##*/}"
+  matchup=$(echo "$bn" | sed -E 's/^nhl_postgame_report_([^_]+_vs_[^_]+)_.*/\1/')
+  if ! grep -q "^$matchup$" "$seen"; then
+    echo "$matchup" >> "$seen"
+    base="${bn%.pdf}"
+    pdftoppm -jpeg -r 220 -f 1 -l 1 -singlefile "$f" "$OUTDIR/$base"
+  fi
+done < "$tmp"
+rm -f "$tmp" "$seen"
+echo "Images saved to: $OUTDIR"
+```
+
+### Notes
+
+- The rink background image `F300E016-E2BD-450A-B624-5BADF3853AC0.jpeg` is required and included in the repo.
+- Combined shot plots are written to temporary files and cleaned up after PDF generation.
+- Advanced metrics include rush-shot detection (attempts within 4 seconds of any N/D-zone event, no stoppage in between).
+
 ### Fallback Mode
 
 If the NHL API is unavailable, the application will:
