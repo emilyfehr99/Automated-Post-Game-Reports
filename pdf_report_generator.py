@@ -2402,17 +2402,13 @@ class PostGameReportGenerator:
             tmpdir = tempfile.gettempdir()
             tmp_name = f'combined_shot_plot_{away_team["abbrev"]}_vs_{home_team["abbrev"]}_{timestamp}.png'
             abs_plot_filename = os.path.join(tmpdir, tmp_name)
-            print(f"Saving combined plot to: {abs_plot_filename}")
             fig.savefig(abs_plot_filename, dpi=300, bbox_inches='tight', facecolor='white')
             plt.close(fig)
             
             # Verify file was created
             if os.path.exists(abs_plot_filename):
-                print(f"Combined plot saved successfully: {abs_plot_filename}")
-                print(f"File size: {os.path.getsize(abs_plot_filename)} bytes")
                 return abs_plot_filename
             else:
-                print(f"Failed to create combined plot: {abs_plot_filename}")
                 return None
             
         except Exception as e:
@@ -2597,7 +2593,6 @@ class PostGameReportGenerator:
                 time.sleep(0.5)
                 
                 if combined_plot and os.path.exists(combined_plot):
-                    print(f"Adding combined plot from file: {combined_plot}")
                     try:
                         combined_image = Image(combined_plot, width=2.4*inch, height=1.65*inch)
                         combined_image.hAlign = 'CENTER'
@@ -2613,7 +2608,6 @@ class PostGameReportGenerator:
                             ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
                         ]))
                         story.append(plot_wrapper)
-                        print("Successfully added combined plot to PDF")
                                         
                         # Store the file path for cleanup later
                         if not hasattr(self, 'temp_plot_files'):
@@ -2677,7 +2671,6 @@ class PostGameReportGenerator:
         if header_image and hasattr(header_image, 'temp_path'):
             try:
                 os.remove(header_image.temp_path)
-                print(f"Cleaned up temporary header file: {header_image.temp_path}")
             except:
                 pass
         
