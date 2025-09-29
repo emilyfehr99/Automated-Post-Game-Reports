@@ -142,8 +142,8 @@ class PostGameReportGenerator:
                 team_text_width = team_bbox[2] - team_bbox[0]
                 team_text_height = team_bbox[3] - team_bbox[1]
                 
-                team_x = 20 + 233  # Left-aligned with 20px margin + 6.2cm (233px) to the right (moved 0.2cm more inward)
-                team_y = (header_img.height - team_text_height) // 2 - 20  # Move up slightly to make room for subtitle
+                team_x = int(20 + 233)  # Left-aligned with 20px margin + 6.2cm (233px) to the right (moved 0.2cm more inward)
+                team_y = int((header_img.height - team_text_height) // 2 - 20)  # Move up slightly to make room for subtitle
                 
                 # Load team logos
                 away_logo = None
@@ -205,21 +205,21 @@ class PostGameReportGenerator:
                 # Draw team logos if available (positioned on the right side)
                 if away_logo:
                     # Position away logo on the right side
-                    away_logo_x = header_img.width - 769  # Right side with margin (moved 9.5cm/269px total inward)
-                    away_logo_y = team_y - 81  # Moved down 0.8cm total (25px) from -106 to -81
+                    away_logo_x = int(header_img.width - 769)  # Right side with margin (moved 9.5cm/269px total inward)
+                    away_logo_y = int(team_y - 81)  # Moved down 0.8cm total (25px) from -106 to -81
                     header_img.paste(away_logo, (away_logo_x, away_logo_y), away_logo)
                 
                 if home_logo:
                     # Position home logo to the right of away logo
-                    home_logo_x = header_img.width - 519  # Further right (moved 9.5cm/269px total inward)
-                    home_logo_y = team_y - 81  # Moved down 0.8cm total (25px) from -106 to -81
+                    home_logo_x = int(header_img.width - 519)  # Further right (moved 9.5cm/269px total inward)
+                    home_logo_y = int(team_y - 81)  # Moved down 0.8cm total (25px) from -106 to -81
                     header_img.paste(home_logo, (home_logo_x, home_logo_y), home_logo)
                 
                 # Draw NHL logo under the team logos if available
                 if nhl_logo:
-                    # Move NHL logo 0.5 cm to the right (≈ 14 px at 72 dpi)
-                    nhl_logo_x = header_img.width - (601 + 14 + 11 + 28 - 14)
-                    nhl_logo_y = team_y + 92
+                    # Position NHL logo centered under the team logos (moved up by 1cm = 28pt)
+                    nhl_logo_x = int(header_img.width - 601 - 8.5)  # Centered between the two team logos (moved 8cm/241px total inward, then left 0.3cm/8.5pt)
+                    nhl_logo_y = int(team_y + 92 + 5.7)  # Below the team logos with proper spacing (moved up 28pt, then down 0.2cm/5.7pt)
                     header_img.paste(nhl_logo, (nhl_logo_x, nhl_logo_y), nhl_logo)
                 
                 # Draw team name white text with black outline for better visibility
@@ -823,9 +823,24 @@ class PostGameReportGenerator:
             away_period_stats = self._calculate_real_period_stats(game_data, away_team['id'], 'away')
             home_period_stats = self._calculate_real_period_stats(game_data, home_team['id'], 'home')
             
-            # Get real period scores; if boxscore missing or incomplete, derive from play-by-play
-            away_period_scores = boxscore.get('awayTeam', {}).get('scoreByPeriod') or self._calculate_period_goals(game_data, away_team['id'])
-            home_period_scores = boxscore.get('homeTeam', {}).get('scoreByPeriod') or self._calculate_period_goals(game_data, home_team['id'])
+            # Calculate period scores from play-by-play data (same logic as in final score section)
+            away_period_scores = [0, 0, 0, 0]  # 1st, 2nd, 3rd, OT
+            home_period_scores = [0, 0, 0, 0]  # 1st, 2nd, 3rd, OT
+            
+            play_by_play = game_data.get('play_by_play')
+            if play_by_play and 'plays' in play_by_play:
+                for play in play_by_play['plays']:
+                    if play.get('typeDescKey') == 'goal':
+                        period = play.get('periodNumber', 1)
+                        event_team = play.get('details', {}).get('eventOwnerTeamId')
+                        
+                        # Adjust period index (period 1 = index 0, etc.)
+                        period_index = min(period - 1, 3)  # Cap at OT (index 3)
+                        
+                        if event_team == away_team['id']:
+                            away_period_scores[period_index] += 1
+                        elif event_team == home_team['id']:
+                            home_period_scores[period_index] += 1
             
             # Create mini team logos for the table
             away_logo_img = None
@@ -869,7 +884,7 @@ class PostGameReportGenerator:
             # Create period-by-period data table with all advanced metrics
             stats_data = [
                 # Header row with shortened text to prevent wrapping
-                ['Period', 'G', 'S', 'CF%', 'PP', 'PIM', 'Hits', 'FO%', 'BLK', 'GV', 'TK', 'GS', 'xG', 'EW', 'NS', 'BN', 'NZT', 'NZTS', 'OZ', 'NZ', 'DZ', 'FC', 'Rush'],
+                ['Period', 'Goals', 'Shots', 'Corsi%', 'PP', 'PIM', 'Hits', 'FO%', 'BLK', 'GV', 'TK', 'GS', 'xG', 'EW', 'NS', 'BN', 'NZT', 'NZTS', 'OZ', 'NZ', 'DZ', 'FC', 'Rush'],
                 
                 # Away team data with logo
                 [away_team['abbrev'], away_logo_img if away_logo_img else '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
@@ -1003,9 +1018,9 @@ class PostGameReportGenerator:
                 # Return default values if no play-by-play data
                 return [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]
             
-            # Initialize period arrays (3 periods + OT bucket)
-            game_scores = [0.0, 0.0, 0.0, 0.0]
-            xg_values = [0.0, 0.0, 0.0, 0.0]
+            # Initialize period arrays (3 periods)
+            game_scores = [0.0, 0.0, 0.0]
+            xg_values = [0.0, 0.0, 0.0]
             
             # Get team players
             boxscore = game_data['boxscore']
@@ -1017,9 +1032,6 @@ class PostGameReportGenerator:
             for player in team_players:
                 player_map[player['id']] = player['name']
             
-            # Initialize analyzer to ensure xG model matches Shot Quality table
-            analyzer = AdvancedMetricsAnalyzer(play_by_play)
-            
             # Process each play
             for play in play_by_play['plays']:
                 details = play.get('details', {})
@@ -1030,53 +1042,38 @@ class PostGameReportGenerator:
                 if event_team != team_id:
                     continue
                 
-                # Map period to index (1->0, 2->1, 3->2, >3 -> OT index 3)
-                period_index = (period - 1) if period <= 3 else 3
+                # Skip if period is beyond 3 (overtime, etc.)
+                if period > 3:
+                    continue
+                
+                period_index = period - 1
                 event_type = play.get('typeDescKey', '')
                 
                 # Calculate Game Score components for this play
                 if event_type == 'goal':
                     # Goals: 0.75 points
                     game_scores[period_index] += 0.75
-                    # Do NOT add xG for goals to align with AdvancedMetricsAnalyzer expected_goals
+                    
+                    # Calculate xG for this goal
+                    xg = self._calculate_shot_xg(details)
+                    xg_values[period_index] += xg
                     
                 elif event_type == 'shot-on-goal':
                     # Shots on goal: 0.075 points
                     game_scores[period_index] += 0.075
                     
-                    # Calculate xG using the same model as AdvancedMetricsAnalyzer
-                    xg = analyzer._calculate_single_shot_xG(
-                        details.get('xCoord', 0),
-                        details.get('yCoord', 0),
-                        details.get('zoneCode', ''),
-                        details.get('shotType', 'unknown'),
-                        event_type
-                    )
+                    # Calculate xG for this shot
+                    xg = self._calculate_shot_xg(details)
                     xg_values[period_index] += xg
                     
                 elif event_type == 'missed-shot':
                     # Missed shots don't count for Game Score but count for xG
-                    xg = analyzer._calculate_single_shot_xG(
-                        details.get('xCoord', 0),
-                        details.get('yCoord', 0),
-                        details.get('zoneCode', ''),
-                        details.get('shotType', 'unknown'),
-                        event_type
-                    )
+                    xg = self._calculate_shot_xg(details)
                     xg_values[period_index] += xg
                     
                 elif event_type == 'blocked-shot':
                     # Blocked shots: 0.05 points
                     game_scores[period_index] += 0.05
-                    # Blocked shots still contribute to xG in our analyzer model
-                    xg = analyzer._calculate_single_shot_xG(
-                        details.get('xCoord', 0),
-                        details.get('yCoord', 0),
-                        details.get('zoneCode', ''),
-                        details.get('shotType', 'unknown'),
-                        event_type
-                    )
-                    xg_values[period_index] += xg
                     
                 elif event_type == 'penalty':
                     # Penalties taken: -0.15 points
@@ -1103,25 +1100,7 @@ class PostGameReportGenerator:
             
         except Exception as e:
             print(f"Error calculating period metrics: {e}")
-            return [0.0, 0.0, 0.0, 0.0], [0.0, 0.0, 0.0, 0.0]
-
-    def _calculate_period_goals(self, game_data, team_id):
-        """Fallback: derive goals per period (3+OT) from play-by-play if boxscore missing."""
-        try:
-            periods = [0, 0, 0, 0]
-            pbp = game_data.get('play_by_play', {})
-            for play in pbp.get('plays', []):
-                if play.get('typeDescKey') != 'goal':
-                    continue
-                details = play.get('details', {})
-                if details.get('eventOwnerTeamId') != team_id:
-                    continue
-                pnum = play.get('periodDescriptor', {}).get('number', 1)
-                idx = (pnum - 1) if pnum <= 3 else 3
-                periods[idx] += 1
-            return periods
-        except Exception:
-            return [0, 0, 0, 0]
+            return [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]
     
     def _calculate_shot_xg(self, shot_details):
         """Calculate expected goals for a single shot using our advanced model"""
@@ -1398,25 +1377,24 @@ class PostGameReportGenerator:
             play_by_play = game_data.get('play_by_play')
             if not play_by_play or 'plays' not in play_by_play:
                 return {
-                    # Arrays indexed [P1, P2, P3, OT]
-                    'nz_turnovers': [0, 0, 0, 0],
-                    'nz_turnovers_to_shots': [0, 0, 0, 0],
-                    'oz_originating_shots': [0, 0, 0, 0],
-                    'nz_originating_shots': [0, 0, 0, 0],
-                    'dz_originating_shots': [0, 0, 0, 0],
-                    'fc_cycle_sog': [0, 0, 0, 0],
-                    'rush_sog': [0, 0, 0, 0]
+                    'nz_turnovers': [0, 0, 0],
+                    'nz_turnovers_to_shots': [0, 0, 0],
+                    'oz_originating_shots': [0, 0, 0],
+                    'nz_originating_shots': [0, 0, 0],
+                    'dz_originating_shots': [0, 0, 0],
+                    'fc_cycle_sog': [0, 0, 0],
+                    'rush_sog': [0, 0, 0]
                 }
             
-            # Initialize period arrays (3 periods + OT bucket)
+            # Initialize period arrays (3 periods)
             metrics = {
-                'nz_turnovers': [0, 0, 0, 0],
-                'nz_turnovers_to_shots': [0, 0, 0, 0],
-                'oz_originating_shots': [0, 0, 0, 0],
-                'nz_originating_shots': [0, 0, 0, 0],
-                'dz_originating_shots': [0, 0, 0, 0],
-                'fc_cycle_sog': [0, 0, 0, 0],
-                'rush_sog': [0, 0, 0, 0]
+                'nz_turnovers': [0, 0, 0],
+                'nz_turnovers_to_shots': [0, 0, 0],
+                'oz_originating_shots': [0, 0, 0],
+                'nz_originating_shots': [0, 0, 0],
+                'dz_originating_shots': [0, 0, 0],
+                'fc_cycle_sog': [0, 0, 0],
+                'rush_sog': [0, 0, 0]
             }
             
             # Track turnovers for shot-against analysis
@@ -1428,8 +1406,11 @@ class PostGameReportGenerator:
                 event_team = details.get('eventOwnerTeamId')
                 period = play.get('periodDescriptor', {}).get('number', 1)
                 
-                # Map periods >3 to OT bucket index 3
-                period_index = (period - 1) if period <= 3 else 3
+                # Skip if period is beyond 3 (overtime, etc.)
+                if period > 3:
+                    continue
+                
+                period_index = period - 1
                 event_type = play.get('typeDescKey', '')
                 x_coord = details.get('xCoord', 0)
                 y_coord = details.get('yCoord', 0)
@@ -1453,7 +1434,7 @@ class PostGameReportGenerator:
                             metrics['nz_turnovers'][period_index] += 1
                     
                     # Track shots by originating zone
-                    elif event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
+                    elif event_type in ['shot-on-goal', 'goal']:
                         if zone == 'offensive':
                             metrics['oz_originating_shots'][period_index] += 1
                         elif zone == 'neutral':
@@ -1469,7 +1450,7 @@ class PostGameReportGenerator:
                             metrics['fc_cycle_sog'][period_index] += 1
                 
                 # Process opponent shots after turnovers
-                elif event_team != team_id and event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
+                elif event_team != team_id and event_type in ['shot-on-goal', 'goal']:
                     # Check if this shot came after a team turnover
                     for turnover in team_turnovers:
                         if (turnover['period'] == period_index and 
@@ -1483,13 +1464,13 @@ class PostGameReportGenerator:
         except Exception as e:
             print(f"Error calculating zone metrics: {e}")
             return {
-                'nz_turnovers': [0, 0, 0, 0],
-                'nz_turnovers_to_shots': [0, 0, 0, 0],
-                'oz_originating_shots': [0, 0, 0, 0],
-                'nz_originating_shots': [0, 0, 0, 0],
-                'dz_originating_shots': [0, 0, 0, 0],
-                'fc_cycle_sog': [0, 0, 0, 0],
-                'rush_sog': [0, 0, 0, 0]
+                'nz_turnovers': [0, 0, 0],
+                'nz_turnovers_to_shots': [0, 0, 0],
+                'oz_originating_shots': [0, 0, 0],
+                'nz_originating_shots': [0, 0, 0],
+                'dz_originating_shots': [0, 0, 0],
+                'fc_cycle_sog': [0, 0, 0],
+                'rush_sog': [0, 0, 0]
             }
     
     def _calculate_real_period_stats(self, game_data, team_id, team_side):
@@ -1658,88 +1639,73 @@ class PostGameReportGenerator:
         else:
             return 'neutral'
     
-    def _to_abs_seconds(self, play):
-        """Convert a play's period time to absolute game seconds."""
-        try:
-            period_number = play.get('periodDescriptor', {}).get('number', 1) or 1
-            time_in_period = play.get('timeInPeriod', '00:00') or '00:00'
-            minutes, seconds = str(time_in_period).split(':')
-            t = int(minutes) * 60 + int(seconds)
-        except Exception:
-            period_number, t = 1, 0
-        return (int(period_number) - 1) * 1200 + t
-
-    def _is_stoppage_event(self, event_type):
-        et = (event_type or '').lower()
-        # Only treat certain faceoffs as stoppages (not neutral zone faceoffs)
-        # Neutral zone faceoffs can be part of rush sequences
-        return et in {
-            'stoppage', 'goal', 'penalty', 'period-end', 'offside', 'icing', 'puck-frozen',
-            'puck-out-of-play', 'high-sticking-the-puck', 'hand-pass', 'helmet-off',
-            'net-off', 'too-many-men', 'injury', 'timeout', 'coach-challenge',
-            'tv-timeout', 'shootout-end', 'shootout-complete'
-        }
-    
     def _is_rush_shot(self, current_play, all_plays):
-        """Rush = any shot attempt within 6s of any event in N/D zone with no stoppage in between."""
+        """Determine if a shot is from a rush using proper hockey logic"""
         try:
             play_index = all_plays.index(current_play)
-        except ValueError:
-            return False
-
-        details = current_play.get('details', {})
-        event_type = current_play.get('typeDescKey', '')
-        if (event_type or '').lower() not in {'shot-on-goal', 'missed-shot', 'blocked-shot', 'goal'}:
-            return False
-
-        shooting_team = details.get('eventOwnerTeamId')
-        if not shooting_team:
-            return False
-
-        RUSH_WINDOW_S = 6.0
-        shot_t = self._to_abs_seconds(current_play)
-
-        # Walk backwards through prior plays up to 6 seconds
-        i = play_index - 1
-        while i >= 0:
-            p = all_plays[i]
-            et = p.get('typeDescKey', '')
-            pt = self._to_abs_seconds(p)
-
-            # Outside window
-            if shot_t - pt > RUSH_WINDOW_S:
-                break
-
-            # Any stoppage (incl. faceoff) breaks rush chain
-            if self._is_stoppage_event(et):
-                return False
-
-            pd = p.get('details', {})
-            prior_team = pd.get('eventOwnerTeamId')
-
-            # Prefer zoneCode; otherwise infer from x
-            zone = pd.get('zoneCode')
-            if not zone:
-                coords = pd.get('coordinates', {})
-                x = coords.get('x', 0)
-                inferred = self._determine_zone(x, 0)
-                zone = {'neutral': 'N', 'defensive': 'D', 'offensive': 'O'}.get(inferred)
-
-            # Convert zone to shooting-team perspective if prior event was by opponent
-            zone_rel = zone
-            if prior_team and prior_team != shooting_team:
-                if zone == 'O':
-                    zone_rel = 'D'
-                elif zone == 'D':
-                    zone_rel = 'O'
-                else:
-                    zone_rel = zone
-
-            if zone_rel in {'N', 'D'}:
+            current_team = current_play.get('details', {}).get('eventOwnerTeamId')
+            current_period = current_play.get('periodDescriptor', {}).get('number', 1)
+            
+            # Look back through recent plays to find rush indicators
+            rush_indicators = 0
+            zone_entry_found = False
+            quick_transition = False
+            
+            # Check last 5 plays for rush indicators
+            for i in range(max(0, play_index - 5), play_index):
+                prev_play = all_plays[i]
+                prev_team = prev_play.get('details', {}).get('eventOwnerTeamId')
+                prev_type = prev_play.get('typeDescKey', '')
+                prev_period = prev_play.get('periodDescriptor', {}).get('number', 1)
+                
+                # Only consider plays from the same team and period
+                if prev_team != current_team or prev_period != current_period:
+                    continue
+                
+                # Rush indicators:
+                # 1. Takeaway (steal) - indicates quick transition
+                if prev_type == 'takeaway':
+                    rush_indicators += 2
+                    quick_transition = True
+                
+                # 2. Giveaway by opponent - indicates quick transition
+                elif prev_type == 'giveaway':
+                    rush_indicators += 1
+                
+                # 3. Shot block by opponent - indicates quick transition
+                elif prev_type == 'blocked-shot':
+                    rush_indicators += 1
+                
+                # 4. Faceoff win in neutral/offensive zone
+                elif prev_type == 'faceoff':
+                    # Check if it's in neutral or offensive zone
+                    coords = prev_play.get('details', {}).get('coordinates', {})
+                    x_coord = coords.get('x', 0)
+                    if x_coord > 25:  # Offensive zone faceoff
+                        rush_indicators += 1
+                        zone_entry_found = True
+                    elif abs(x_coord) <= 25:  # Neutral zone faceoff
+                        rush_indicators += 0.5
+                
+                # 5. Pass in neutral zone - indicates controlled entry
+                elif prev_type == 'pass' and abs(x_coord) <= 25:
+                    rush_indicators += 0.5
+                
+                # 6. Shot from previous play - indicates sustained pressure
+                elif prev_type in ['shot-on-goal', 'missed-shot', 'blocked-shot']:
+                    rush_indicators += 0.3
+            
+            # Rush shot criteria:
+            # - Quick transition (takeaway/giveaway) + zone entry
+            # - OR high rush indicator score (3+)
+            # - OR faceoff win in offensive zone + quick transition
+            if (quick_transition and zone_entry_found) or rush_indicators >= 3 or (zone_entry_found and rush_indicators >= 2):
                 return True
             
-            i -= 1
+            return False
             
+        except Exception as e:
+            print(f"Error in rush shot detection: {e}")
             return False
     
     def _is_forecheck_cycle_shot(self, current_play, all_plays):
@@ -1970,7 +1936,7 @@ class PostGameReportGenerator:
             story.append(Spacer(1, 10))
             story.append(Paragraph("<i>Top players ranked by Game Score (GS) - a comprehensive metric combining goals, assists, shots, hits, and other key performance indicators.</i>", self.normal_style))
         
-        story.append(Spacer(1, 5))
+        story.append(Spacer(1, 20))
         return story
     
     def create_side_by_side_tables(self, game_data):
@@ -1995,7 +1961,7 @@ class PostGameReportGenerator:
             'ARI': colors.Color(140/255, 38/255, 51/255),  # Arizona Coyotes Red
             'DAL': colors.Color(0/255, 99/255, 65/255),  # Dallas Stars Green
             'MIN': colors.Color(0/255, 99/255, 65/255),  # Minnesota Wild Green
-            'WPG': colors.Color(0/255, 99/255, 65/255),  # Winnipeg Jets Green
+            'WPG': colors.Color(4/255, 30/255, 66/255),  # Winnipeg Jets Navy Blue
             'CHI': colors.Color(207/255, 10/255, 44/255),  # Chicago Blackhawks Red
             'STL': colors.Color(0/255, 47/255, 108/255),  # St. Louis Blues Blue
             'DET': colors.Color(206/255, 17/255, 38/255),  # Detroit Red Wings Red
@@ -2164,7 +2130,7 @@ class PostGameReportGenerator:
                 story.append(right_table)
                 break
         
-        story.append(Spacer(1, 5))
+        story.append(Spacer(1, 20))
         return story
     
     
@@ -2194,7 +2160,7 @@ class PostGameReportGenerator:
             margin = home_score - away_score
         
         
-        story.append(Spacer(1, 5))
+        story.append(Spacer(1, 20))
         return story
     
     def create_combined_shot_location_plot(self, game_data):
@@ -2229,7 +2195,7 @@ class PostGameReportGenerator:
                 x_coord = details.get('xCoord', 0)
                 y_coord = details.get('yCoord', 0)
                 
-                if x_coord is not None and y_coord is not None:
+                if x_coord is not None and y_coord is not None and (x_coord != 0 or y_coord != 0):
                     # Force each team to always appear on their designated side
                     # Away team: Always left side (negative X)
                     # Home team: Always right side (positive X)
@@ -2275,8 +2241,24 @@ class PostGameReportGenerator:
                         home_goals.append((flipped_x, flipped_y))
             
             if not (away_shots or away_goals or home_shots or home_goals):
-                print("No shots or goals found for either team")
-                return None
+                print("No shots or goals found for either team with valid coordinates")
+                # Create a simple message plot instead of returning None
+                plt.ioff()
+                fig, ax = plt.subplots(figsize=(8, 6))
+                ax.text(0.5, 0.5, 'Shot location data not available\nfor this game', 
+                       ha='center', va='center', fontsize=16, 
+                       transform=ax.transAxes)
+                ax.set_xlim(0, 1)
+                ax.set_ylim(0, 1)
+                ax.axis('off')
+                
+                # Save the plot
+                import tempfile
+                temp_file = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
+                plt.savefig(temp_file.name, dpi=300, bbox_inches='tight', 
+                           facecolor='white', edgecolor='none')
+                plt.close(fig)
+                return temp_file.name
                 
             print(f"Found {len(away_shots)} shots and {len(away_goals)} goals for {away_team['abbrev']}")
             print(f"Found {len(home_shots)} shots and {len(home_goals)} goals for {home_team['abbrev']}")
@@ -2369,7 +2351,17 @@ class PostGameReportGenerator:
                 from PIL import Image as PILImage
                 
                 # Get home team logo
-                home_team_abbrev = home_team['abbrev'].lower()
+                logo_abbrev_map = {
+                    'TBL': 'tb', 'NSH': 'nsh', 'EDM': 'edm', 'FLA': 'fla',
+                    'COL': 'col', 'DAL': 'dal', 'BOS': 'bos', 'TOR': 'tor',
+                    'MTL': 'mtl', 'OTT': 'ott', 'BUF': 'buf', 'DET': 'det',
+                    'CAR': 'car', 'WSH': 'wsh', 'PIT': 'pit', 'NYR': 'nyr',
+                    'NYI': 'nyi', 'NJD': 'nj', 'PHI': 'phi', 'CBJ': 'cbj',
+                    'STL': 'stl', 'MIN': 'min', 'WPG': 'wpg', 'ARI': 'ari',
+                    'VGK': 'vgk', 'SJS': 'sj', 'LAK': 'la', 'ANA': 'ana',
+                    'CGY': 'cgy', 'VAN': 'van', 'SEA': 'sea', 'CHI': 'chi'
+                }
+                home_team_abbrev = logo_abbrev_map.get(home_team['abbrev'], home_team['abbrev'].lower())
                 home_logo_url = f"https://a.espncdn.com/i/teamlogos/nhl/500/{home_team_abbrev}.png"
                 
                 # Download home team logo
@@ -2396,19 +2388,22 @@ class PostGameReportGenerator:
                 # Fallback: add text at center ice
                 # Removed center ice team abbreviation as requested
             
-            # Save to a temporary file and return its absolute path
-            import tempfile, time
+            # Save to file with a unique name to avoid conflicts
+            import time
             timestamp = int(time.time() * 1000)  # milliseconds
-            tmpdir = tempfile.gettempdir()
-            tmp_name = f'combined_shot_plot_{away_team["abbrev"]}_vs_{home_team["abbrev"]}_{timestamp}.png'
-            abs_plot_filename = os.path.join(tmpdir, tmp_name)
+            plot_filename = f'combined_shot_plot_{away_team["abbrev"]}_vs_{home_team["abbrev"]}_{timestamp}.png'
+            abs_plot_filename = os.path.abspath(plot_filename)
+            print(f"Saving combined plot to: {abs_plot_filename}")
             fig.savefig(abs_plot_filename, dpi=300, bbox_inches='tight', facecolor='white')
             plt.close(fig)
             
             # Verify file was created
             if os.path.exists(abs_plot_filename):
+                print(f"Combined plot saved successfully: {abs_plot_filename}")
+                print(f"File size: {os.path.getsize(abs_plot_filename)} bytes")
                 return abs_plot_filename
             else:
+                print(f"Failed to create combined plot: {abs_plot_filename}")
                 return None
             
         except Exception as e:
@@ -2563,7 +2558,7 @@ class PostGameReportGenerator:
             
             # Add the table directly (positioning will be handled by side-by-side layout)
             story.append(combined_table)
-            story.append(Spacer(1, 5))
+            story.append(Spacer(1, 20))
             
         except Exception as e:
             print(f"Error creating advanced metrics: {e}")
@@ -2593,6 +2588,7 @@ class PostGameReportGenerator:
                 time.sleep(0.5)
                 
                 if combined_plot and os.path.exists(combined_plot):
+                    print(f"Adding combined plot from file: {combined_plot}")
                     try:
                         combined_image = Image(combined_plot, width=2.4*inch, height=1.65*inch)
                         combined_image.hAlign = 'CENTER'
@@ -2608,6 +2604,7 @@ class PostGameReportGenerator:
                             ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
                         ]))
                         story.append(plot_wrapper)
+                        print("Successfully added combined plot to PDF")
                                         
                         # Store the file path for cleanup later
                         if not hasattr(self, 'temp_plot_files'):
@@ -2633,15 +2630,6 @@ class PostGameReportGenerator:
     
     def generate_report(self, game_data, output_filename, game_id=None):
         """Generate the complete post-game report PDF"""
-        # If caller passed a bare filename (no path), write to the system temp dir instead of project root
-        try:
-            import os, tempfile
-            output_dir = os.path.dirname(output_filename)
-            if not output_dir:
-                output_filename = os.path.join(tempfile.gettempdir(), output_filename)
-        except Exception:
-            pass
-        
         # Set margins to allow header to extend to edges
         doc = SimpleDocTemplate(output_filename, pagesize=letter, rightMargin=72, leftMargin=72, 
                               topMargin=0, bottomMargin=18)
@@ -2660,6 +2648,7 @@ class PostGameReportGenerator:
             story.append(Spacer(1, 20))  # Minimal space after header
         else:
             print("Warning: Header image failed to load")
+        
         
         # Add left margin for content (since header uses negative margin)
         
@@ -2680,18 +2669,9 @@ class PostGameReportGenerator:
         if header_image and hasattr(header_image, 'temp_path'):
             try:
                 os.remove(header_image.temp_path)
+                print(f"Cleaned up temporary header file: {header_image.temp_path}")
             except:
                 pass
-        
-        # Clean up any temporary plot files we created
-        try:
-            if hasattr(self, 'temp_plot_files'):
-                for p in self.temp_plot_files:
-                    if p and os.path.exists(p):
-                        os.remove(p)
-                self.temp_plot_files = []
-        except Exception as e:
-            print(f"Warning: could not clean up temp plot files: {e}")
         
         print(f"Post-game report generated successfully: {output_filename}")
         return output_filename

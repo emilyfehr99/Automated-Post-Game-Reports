@@ -2,14 +2,80 @@
 """
 NHL Post-Game Report Batch Generator
 Generates reports for all games from a specific date
+Automatically converts PDFs to images and cleans up PDFs
 """
 
 import sys
 import os
 import shutil
 from datetime import datetime, timedelta
+from pathlib import Path
+from pdf2image import convert_from_path
 from nhl_api_client import NHLAPIClient
 from pdf_report_generator import PostGameReportGenerator
+
+def convert_pdfs_to_images(pdf_folder, image_folder, dpi=300):
+    """
+    Convert all PDF files in a folder to images and return list of generated images
+    
+    Args:
+        pdf_folder (str): Path to folder containing PDF files
+        image_folder (str): Path to folder where images will be saved
+        dpi (int): DPI for the output images
+    
+    Returns:
+        list: List of generated image file paths
+    """
+    pdf_folder = Path(pdf_folder)
+    image_folder = Path(image_folder)
+    
+    if not pdf_folder.exists():
+        print(f"❌ PDF folder not found: {pdf_folder}")
+        return []
+    
+    # Create image folder if it doesn't exist
+    image_folder.mkdir(parents=True, exist_ok=True)
+    
+    # Find all PDF files
+    pdf_files = list(pdf_folder.glob("*.pdf"))
+    
+    if not pdf_files:
+        print(f"❌ No PDF files found in: {pdf_folder}")
+        return []
+    
+    print(f"🔄 Converting {len(pdf_files)} PDFs to images...")
+    print(f"📁 PDF folder: {pdf_folder}")
+    print(f"📁 Image folder: {image_folder}")
+    print(f"📐 DPI: {dpi}")
+    
+    generated_images = []
+    
+    for pdf_file in pdf_files:
+        try:
+            print(f"  🔄 Converting: {pdf_file.name}")
+            
+            # Convert PDF to images (only first page)
+            images = convert_from_path(pdf_file, dpi=dpi, first_page=1, last_page=1)
+            
+            if images:
+                # Only process the first page
+                image = images[0]
+                base_name = pdf_file.stem
+                output_filename = f"{base_name}.png"
+                output_path = image_folder / output_filename
+                
+                # Save image
+                image.save(output_path, format='PNG')
+                generated_images.append(str(output_path))
+                
+                print(f"    ✅ Page 1: {output_filename}")
+                
+        except Exception as e:
+            print(f"    ❌ Error converting {pdf_file.name}: {str(e)}")
+            continue
+    
+    print(f"✅ PDF to image conversion complete: {len(generated_images)} images generated")
+    return generated_images
 
 def main():
     print("🏒 NHL Post-Game Report Batch Generator 🏒")
@@ -20,7 +86,8 @@ def main():
     nhl_client = NHLAPIClient()
     
     # Target date for daily automation: previous day's games (script runs at 5 AM)
-    target_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    # Can be overridden with TARGET_DATE environment variable
+    target_date = os.environ.get('TARGET_DATE', (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d"))
     print(f"Fetching games for: {target_date}")
     
     # Get schedule for the date
@@ -57,16 +124,19 @@ def main():
     
     print(f"\n🚀 Starting batch report generation...")
     
-    # Create output folder on Desktop
+    # Create output folders on Desktop
     desktop_path = os.path.expanduser("~/Desktop")
-    output_folder = os.path.join(desktop_path, "Recent Games")
+    pdf_folder = os.path.join(desktop_path, f"NHL_Reports_{target_date.replace('-', '_')}")
+    image_folder = os.path.join(desktop_path, f"NHL_Images_{target_date.replace('-', '_')}")
     
-    # Create the folder if it doesn't exist
-    if not os.path.exists(output_folder):
-        os.makedirs(output_folder)
-        print(f"📁 Created output folder: {output_folder}")
+    # Create the PDF folder if it doesn't exist
+    if not os.path.exists(pdf_folder):
+        os.makedirs(pdf_folder)
+        print(f"📁 Created PDF folder: {pdf_folder}")
     else:
-        print(f"📁 Using existing output folder: {output_folder}")
+        print(f"📁 Using existing PDF folder: {pdf_folder}")
+    
+    print(f"📁 Images will be saved to: {image_folder}")
     
     # Initialize PDF generator
     pdf_generator = PostGameReportGenerator()
@@ -104,7 +174,7 @@ def main():
             if report_filename:
                 # The report_filename is now the full path to the temp file
                 source_path = report_filename
-                destination_path = os.path.join(output_folder, os.path.basename(report_filename))
+                destination_path = os.path.join(pdf_folder, os.path.basename(report_filename))
                 
                 try:
                     shutil.move(source_path, destination_path)
@@ -126,19 +196,41 @@ def main():
             continue
     
     # Summary
-    print(f"\n🎯 BATCH GENERATION COMPLETE")
+    print(f"\n🎯 PDF GENERATION COMPLETE")
     print(f"=" * 30)
     print(f"📊 Total games processed: {len(games)}")
     print(f"✅ Successful reports: {successful_reports}")
     print(f"❌ Failed reports: {failed_reports}")
     
     if successful_reports > 0:
-        print(f"\n📁 Reports saved in: {output_folder}")
+        print(f"\n📁 PDFs saved in: {pdf_folder}")
         print(f"📅 Date processed: {target_date}")
-        print(f"📋 Generated files:")
+        print(f"📋 Generated PDF files:")
         for i, file_path in enumerate(generated_files, 1):
             filename = os.path.basename(file_path)
             print(f"  {i:2d}. {filename}")
+        
+        # Convert PDFs to images
+        print(f"\n🔄 Converting PDFs to images...")
+        generated_images = convert_pdfs_to_images(pdf_folder, image_folder, dpi=300)
+        
+        if generated_images:
+            print(f"\n📁 Images saved in: {image_folder}")
+            print(f"📋 Generated image files:")
+            for i, image_path in enumerate(generated_images, 1):
+                filename = os.path.basename(image_path)
+                print(f"  {i:2d}. {filename}")
+            
+            # Clean up PDF folder
+            print(f"\n🗑️  Cleaning up PDF folder...")
+            try:
+                shutil.rmtree(pdf_folder)
+                print(f"✅ PDF folder deleted: {pdf_folder}")
+            except Exception as e:
+                print(f"⚠️  Could not delete PDF folder: {e}")
+                print(f"📁 PDF folder still exists: {pdf_folder}")
+        else:
+            print(f"❌ No images were generated, keeping PDF folder")
     
     return successful_reports, failed_reports
 

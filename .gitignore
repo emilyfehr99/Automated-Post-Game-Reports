@@ -3,8 +3,6 @@
 *.png
 *.jpeg
 *.jpg
-# Allow the required rink background image
-!F300E016-E2BD-450A-B624-5BADF3853AC0.jpeg
 temp_header_*.png
 combined_shot_plot_*.png
 nhl_postgame_report_*.pdf
@@ -34,4 +32,3 @@ ENV/
 # OS files
 .DS_Store
 Thumbs.db
-

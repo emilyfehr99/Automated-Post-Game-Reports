@@ -14,12 +14,6 @@ class AdvancedMetricsAnalyzer:
     def __init__(self, play_by_play_data: dict):
         self.plays = play_by_play_data.get('plays', [])
         self.roster_map = self._create_roster_map(play_by_play_data)
-        # Annotate plays with rush-shot flags based on 4-second N/D rule without stoppages
-        try:
-            self._annotate_rush_shots()
-        except Exception:
-            # Be resilient to schema variations; if annotation fails, proceed without rush flags
-            pass
         
     def _create_roster_map(self, play_by_play_data: dict) -> dict:
         """Create a mapping of player IDs to player info"""
@@ -84,8 +78,6 @@ class AdvancedMetricsAnalyzer:
             'goals': 0,
             'missed_shots': 0,
             'blocked_shots': 0,
-            'rush_shots': 0,
-            'rush_goals': 0,
             'shot_types': defaultdict(int),
             'shot_locations': defaultdict(int),
             'high_danger_shots': 0,
@@ -110,18 +102,10 @@ class AdvancedMetricsAnalyzer:
                     shot_quality['missed_shots'] += 1
                 elif event_type == 'blocked-shot':
                     shot_quality['blocked_shots'] += 1
-
-                # Rush attempt count (any shot attempt within rush definition)
-                if details.get('rush'):
-                    shot_quality['rush_shots'] += 1
                     
             # Track goals
             if event_type == 'goal':
                 shot_quality['goals'] += 1
-
-                # Rush goal count
-                if details.get('rush'):
-                    shot_quality['rush_goals'] += 1
                 
                 # Shot type analysis
                 shot_type = details.get('shotType', 'unknown')
@@ -132,10 +116,8 @@ class AdvancedMetricsAnalyzer:
                 y_coord = details.get('yCoord', 0)
                 zone = details.get('zoneCode', '')
                 
-                # High danger area calculation based on NHL definition:
-                # Within 29 feet of goal center, bounded by lines from faceoff dots to 2 feet outside goalposts
-                # NHL rink: 200ft x 85ft, goal at x=89ft, faceoff dots at y=±22ft
-                if self._is_high_danger_shot(x_coord, y_coord, zone, details):
+                # High danger area (close to net, in front)
+                if zone == 'O' and x_coord > 50 and abs(y_coord) < 20:
                     shot_quality['high_danger_shots'] += 1
                 
                 # Zone analysis
@@ -149,120 +131,6 @@ class AdvancedMetricsAnalyzer:
         shot_quality['expected_goals'] = self._calculate_expected_goals(team_id)
         
         return shot_quality
-
-    # -------------------------
-    # Rush shot detection logic
-    # -------------------------
-    def _to_abs_seconds(self, play: dict) -> int:
-        """Convert a play's period time to absolute game seconds."""
-        period_number = play.get('periodNumber', 1) or 1
-        time_in_period = play.get('timeInPeriod', '00:00') or '00:00'
-        try:
-            minutes, seconds = str(time_in_period).split(':')
-            t = int(minutes) * 60 + int(seconds)
-        except Exception:
-            t = 0
-        # NHL regulation period length is 1200 seconds
-        return (int(period_number) - 1) * 1200 + t
-
-    def _is_shot_attempt_type(self, event_type: str) -> bool:
-        event_type_lc = (event_type or '').lower()
-        return event_type_lc in {'shot-on-goal', 'missed-shot', 'blocked-shot', 'goal'}
-
-    def _is_stoppage_event(self, event_type: str) -> bool:
-        et = (event_type or '').lower()
-        # Only treat certain faceoffs as stoppages (not neutral zone faceoffs)
-        # Neutral zone faceoffs can be part of rush sequences
-        return et in {
-            'stoppage', 'goal', 'period-end', 'offside', 'icing', 'puck-frozen',
-            'puck-out-of-play', 'high-sticking-the-puck', 'hand-pass', 'helmet-off',
-            'net-off', 'too-many-men', 'injury', 'timeout', 'penalty'
-        }
-
-    def _is_rush_shot_by_index(self, shot_index: int) -> bool:
-        """Determine if the shot at plays[shot_index] is a rush shot.
-        A rush shot is any shot attempt within 4 seconds of any prior event in the
-        neutral or defensive zone for the shooting team, with no stoppage in between.
-        """
-        if shot_index <= 0 or shot_index >= len(self.plays):
-            return False
-
-        shot = self.plays[shot_index]
-        details = shot.get('details', {})
-        event_type = shot.get('typeDescKey', '')
-        if not self._is_shot_attempt_type(event_type):
-            return False
-
-        shooting_team_id = details.get('eventOwnerTeamId')
-        if not shooting_team_id:
-            return False
-
-        RUSH_WINDOW_S = 6.0
-        shot_t = self._to_abs_seconds(shot)
-
-        # Walk backwards until window exceeded or a stoppage occurs
-        i = shot_index - 1
-        while i >= 0:
-            p = self.plays[i]
-            et = p.get('typeDescKey', '')
-            pt = self._to_abs_seconds(p)
-
-            # Outside time window
-            if shot_t - pt > RUSH_WINDOW_S:
-                break
-
-            # Any stoppage (or faceoff) breaks the rush chain
-            if self._is_stoppage_event(et):
-                return False
-
-            p_details = p.get('details', {})
-            prior_team = p_details.get('eventOwnerTeamId')
-            zone = p_details.get('zoneCode')
-
-            # If zone missing, attempt rough inference from x coordinate
-            if not zone:
-                x_coord = p_details.get('xCoord')
-                if x_coord is None:
-                    coords = p_details.get('coordinates', {})
-                    x_coord = coords.get('x')
-                try:
-                    x = float(x_coord) if x_coord is not None else 0.0
-                except Exception:
-                    x = 0.0
-                # Map to coarse zones relative to rink: neutral if |x| <= 25
-                if abs(x) <= 25:
-                    zone = 'N'
-                else:
-                    # Without team context, treat negative as defensive for home rink orientation; will flip below
-                    zone = 'O' if x > 25 else 'D'
-
-            # Convert zone to shooting-team perspective
-            zone_rel = zone
-            if prior_team and prior_team != shooting_team_id:
-                if zone == 'O':
-                    zone_rel = 'D'
-                elif zone == 'D':
-                    zone_rel = 'O'
-                else:
-                    zone_rel = zone  # 'N' stays 'N'
-
-            if zone_rel in {'N', 'D'}:
-                return True
-
-            i -= 1
-
-        return False
-
-    def _annotate_rush_shots(self) -> None:
-        """Annotate each shot attempt play with details['rush'] boolean flag."""
-        for idx, play in enumerate(self.plays):
-            event_type = play.get('typeDescKey', '')
-            if not self._is_shot_attempt_type(event_type):
-                continue
-            # Ensure details dict exists
-            if 'details' not in play or not isinstance(play['details'], dict):
-                play['details'] = {}
-            play['details']['rush'] = bool(self._is_rush_shot_by_index(idx))
     
     def _calculate_expected_goals(self, team_id: int) -> float:
         """Calculate expected goals using distance, angle, shot type, and zone-based model"""
@@ -338,75 +206,6 @@ class AdvancedMetricsAnalyzer:
         # Cap at reasonable maximum
         return min(final_xG, 0.95)
     
-    def _is_high_danger_shot(self, x_coord: float, y_coord: float, zone: str, details: dict) -> bool:
-        """
-        Determine if a shot is high danger based on NHL definition:
-        - Within 29 feet of goal center
-        - Bounded by lines from faceoff dots (±22ft) to 2 feet outside goalposts (±11ft)
-        - Consider shot type and context
-        """
-        # Must be in offensive zone
-        if zone != 'O':
-            return False
-        
-        # NHL rink dimensions: 200ft x 85ft
-        # Goal is at x=89ft (from defensive end)
-        # Faceoff dots are at y=±22ft
-        # Goalposts are at y=±11ft (goal is 6ft wide, so ±3ft from center, but we use ±11ft for the area)
-        
-        # The NHL API uses negative x coordinates for shots from the offensive zone
-        # Goal is at x=89, so shots from offensive zone are negative x values
-        goal_x = 89.0  # Goal line position
-        goal_y = 0.0   # Center of goal
-        
-        # Calculate distance from goal center (29 feet = 29 units in NHL coordinate system)
-        # Use absolute value for x coordinate since shots come from negative side
-        distance_from_goal = ((abs(x_coord) - goal_x) ** 2 + (y_coord - goal_y) ** 2) ** 0.5
-        
-        # Must be within 29 feet of goal center
-        if distance_from_goal > 29:
-            return False
-        
-        # Check lateral boundaries: from faceoff dots (±22ft) to 2 feet outside goalposts (±11ft)
-        # The high danger area is bounded by lines from faceoff dots to 2 feet outside goalposts
-        faceoff_dot_y = 22.0
-        goalpost_extended_y = 11.0  # 2 feet outside goalpost (3ft + 2ft = 5ft, but using 11ft for the area)
-        
-        # If shot is between faceoff dots and extended goalpost area
-        if abs(y_coord) <= faceoff_dot_y:
-            # Check if it's in the high danger triangle/area
-            # The area narrows from faceoff dots to goalposts
-            max_y_at_goal = goalpost_extended_y
-            max_y_at_faceoff = faceoff_dot_y
-            
-            # Linear interpolation of boundary based on distance from goal
-            # Closer to goal = narrower boundary
-            distance_factor = min(distance_from_goal / 29.0, 1.0)  # 0 at goal, 1 at 29ft
-            max_allowed_y = max_y_at_goal + (max_y_at_faceoff - max_y_at_goal) * distance_factor
-            
-            if abs(y_coord) <= max_allowed_y:
-                # Additional factors that increase danger
-                shot_type = details.get('shotType', '').lower()
-                is_rush = details.get('rush', False)
-                is_rebound = details.get('rebound', False)
-                
-                # High danger shot types
-                high_danger_types = ['wrist', 'snap', 'backhand', 'tip-in', 'deflected']
-                
-                # Boost for high danger shot types, rush shots, or rebounds
-                if (shot_type in high_danger_types or is_rush or is_rebound):
-                    return True
-                
-                # Still high danger if in the core slot area (very close to net)
-                if distance_from_goal <= 15 and abs(y_coord) <= 8:
-                    return True
-                
-                # High danger if in the main slot area
-                if distance_from_goal <= 20 and abs(y_coord) <= 12:
-                    return True
-        
-        return False
-    
     def _calculate_shot_angle(self, x_coord: float, y_coord: float) -> float:
         """Calculate the angle of the shot relative to the goal"""
         import math
@@ -438,8 +237,8 @@ class AdvancedMetricsAnalyzer:
     def _get_zone_multiplier(self, zone: str, x_coord: float, y_coord: float) -> float:
         """Get zone-based expected goal multiplier"""
         
-        # High danger area using improved calculation
-        if self._is_high_danger_shot(x_coord, y_coord, zone, {}):
+        # High danger area (slot, crease area)
+        if zone == 'O' and x_coord > 75 and abs(y_coord) < 15:
             return 1.5
         
         # Medium danger area (offensive zone, good position)
