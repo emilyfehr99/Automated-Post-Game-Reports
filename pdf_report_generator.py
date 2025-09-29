@@ -1032,6 +1032,10 @@ class PostGameReportGenerator:
             for player in team_players:
                 player_map[player['id']] = player['name']
             
+            # Use AdvancedMetricsAnalyzer for consistent xG calculation
+            from advanced_metrics_analyzer import AdvancedMetricsAnalyzer
+            analyzer = AdvancedMetricsAnalyzer(play_by_play)
+            
             # Process each play
             for play in play_by_play['plays']:
                 details = play.get('details', {})
@@ -1054,26 +1058,54 @@ class PostGameReportGenerator:
                     # Goals: 0.75 points
                     game_scores[period_index] += 0.75
                     
-                    # Calculate xG for this goal
-                    xg = self._calculate_shot_xg(details)
+                    # Calculate xG for this goal using consistent method
+                    xg = analyzer._calculate_single_shot_xG(
+                        details.get('xCoord', 0), 
+                        details.get('yCoord', 0), 
+                        details.get('zoneCode', ''), 
+                        details.get('shotType', 'unknown'), 
+                        event_type
+                    )
                     xg_values[period_index] += xg
                     
                 elif event_type == 'shot-on-goal':
                     # Shots on goal: 0.075 points
                     game_scores[period_index] += 0.075
                     
-                    # Calculate xG for this shot
-                    xg = self._calculate_shot_xg(details)
+                    # Calculate xG for this shot using consistent method
+                    xg = analyzer._calculate_single_shot_xG(
+                        details.get('xCoord', 0), 
+                        details.get('yCoord', 0), 
+                        details.get('zoneCode', ''), 
+                        details.get('shotType', 'unknown'), 
+                        event_type
+                    )
                     xg_values[period_index] += xg
                     
                 elif event_type == 'missed-shot':
                     # Missed shots don't count for Game Score but count for xG
-                    xg = self._calculate_shot_xg(details)
+                    xg = analyzer._calculate_single_shot_xG(
+                        details.get('xCoord', 0), 
+                        details.get('yCoord', 0), 
+                        details.get('zoneCode', ''), 
+                        details.get('shotType', 'unknown'), 
+                        event_type
+                    )
                     xg_values[period_index] += xg
                     
                 elif event_type == 'blocked-shot':
                     # Blocked shots: 0.05 points
                     game_scores[period_index] += 0.05
+                    
+                    # Calculate xG for blocked shots using consistent method
+                    xg = analyzer._calculate_single_shot_xG(
+                        details.get('xCoord', 0), 
+                        details.get('yCoord', 0), 
+                        details.get('zoneCode', ''), 
+                        details.get('shotType', 'unknown'), 
+                        event_type
+                    )
+                    xg_values[period_index] += xg
                     
                 elif event_type == 'penalty':
                     # Penalties taken: -0.15 points

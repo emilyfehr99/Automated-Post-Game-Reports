@@ -144,7 +144,7 @@ class AdvancedMetricsAnalyzer:
             if event_team != team_id:
                 continue
                 
-            if event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot']:
+            if event_type in ['goal', 'shot-on-goal', 'missed-shot', 'blocked-shot']:
                 x_coord = details.get('xCoord', 0)
                 y_coord = details.get('yCoord', 0)
                 zone = details.get('zoneCode', '')
