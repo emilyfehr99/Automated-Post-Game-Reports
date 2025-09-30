@@ -129,12 +129,14 @@ def main():
     pdf_folder = os.path.join(desktop_path, f"NHL_Reports_{target_date.replace('-', '_')}")
     image_folder = os.path.join(desktop_path, f"NHL_Images_{target_date.replace('-', '_')}")
     
-    # Create the PDF folder if it doesn't exist
-    if not os.path.exists(pdf_folder):
-        os.makedirs(pdf_folder)
-        print(f"📁 Created PDF folder: {pdf_folder}")
-    else:
-        print(f"📁 Using existing PDF folder: {pdf_folder}")
+    # Recreate the PDF folder to ensure only current run's reports are present
+    if os.path.exists(pdf_folder):
+        try:
+            shutil.rmtree(pdf_folder)
+        except Exception as e:
+            print(f"⚠️  Could not remove existing PDF folder, attempting to continue: {e}")
+    os.makedirs(pdf_folder, exist_ok=True)
+    print(f"📁 Prepared fresh PDF folder: {pdf_folder}")
     
     print(f"📁 Images will be saved to: {image_folder}")
     
