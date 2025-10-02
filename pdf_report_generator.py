@@ -777,7 +777,8 @@ class PostGameReportGenerator:
             'CGY': colors.Color(200/255, 16/255, 46/255),  # Calgary Flames Red
             'VAN': colors.Color(0/255, 32/255, 91/255),  # Vancouver Canucks Blue
             'SEA': colors.Color(0/255, 22/255, 40/255),  # Seattle Kraken Navy
-            'CHI': colors.Color(207/255, 10/255, 44/255)  # Chicago Blackhawks Red
+            'CHI': colors.Color(207/255, 10/255, 44/255),  # Chicago Blackhawks Red
+            'UTA': colors.Color(0/255, 99/255, 65/255)  # Utah Hockey Club Green
         }
         
         home_team_color = team_colors.get(home_team['abbrev'], colors.white)
@@ -856,7 +857,8 @@ class PostGameReportGenerator:
                     'NYI': 'nyi', 'NJD': 'nj', 'PHI': 'phi', 'CBJ': 'cbj',
                     'STL': 'stl', 'MIN': 'min', 'WPG': 'wpg', 'ARI': 'ari',
                     'VGK': 'vgk', 'SJS': 'sj', 'LAK': 'la', 'ANA': 'ana',
-                    'CGY': 'cgy', 'VAN': 'van', 'SEA': 'sea', 'CHI': 'chi'
+                    'CGY': 'cgy', 'VAN': 'van', 'SEA': 'sea', 'CHI': 'chi',
+                    'UTA': 'uta'
                 }
                 
                 away_logo_abbrev = logo_abbrev_map.get(away_team['abbrev'], away_team['abbrev'].lower())
@@ -2227,7 +2229,7 @@ class PostGameReportGenerator:
                 x_coord = details.get('xCoord', 0)
                 y_coord = details.get('yCoord', 0)
                 
-                if x_coord is not None and y_coord is not None and (x_coord != 0 or y_coord != 0):
+                if x_coord is not None and y_coord is not None and (x_coord != 0 and y_coord != 0):
                     # Force each team to always appear on their designated side
                     # Away team: Always left side (negative X)
                     # Home team: Always right side (positive X)
@@ -2391,7 +2393,8 @@ class PostGameReportGenerator:
                     'NYI': 'nyi', 'NJD': 'nj', 'PHI': 'phi', 'CBJ': 'cbj',
                     'STL': 'stl', 'MIN': 'min', 'WPG': 'wpg', 'ARI': 'ari',
                     'VGK': 'vgk', 'SJS': 'sj', 'LAK': 'la', 'ANA': 'ana',
-                    'CGY': 'cgy', 'VAN': 'van', 'SEA': 'sea', 'CHI': 'chi'
+                    'CGY': 'cgy', 'VAN': 'van', 'SEA': 'sea', 'CHI': 'chi',
+                    'UTA': 'uta'
                 }
                 home_team_abbrev = logo_abbrev_map.get(home_team['abbrev'], home_team['abbrev'].lower())
                 home_logo_url = f"https://a.espncdn.com/i/teamlogos/nhl/500/{home_team_abbrev}.png"
