@@ -167,6 +167,28 @@ def main():
             
             print(f"  ✅ Game data fetched successfully")
             
+            # Check if game has shot coordinate data
+            print(f"  🎯 Checking shot coordinate data...")
+            has_shot_coords = False
+            if 'play_by_play' in game_data and 'plays' in game_data['play_by_play']:
+                plays = game_data['play_by_play']['plays']
+                shot_plays = [p for p in plays if p.get('typeDescKey') in ['goal', 'shot-on-goal', 'missed-shot', 'blocked-shot']]
+                
+                # Check if any shots have valid coordinates
+                for play in shot_plays:
+                    details = play.get('details', {})
+                    x_coord = details.get('xCoord')
+                    y_coord = details.get('yCoord')
+                    if x_coord is not None and y_coord is not None and (x_coord != 0 and y_coord != 0):
+                        has_shot_coords = True
+                        break
+            
+            if not has_shot_coords:
+                print(f"  ⏭️  Skipping game - no shot coordinate data available")
+                continue
+            
+            print(f"  ✅ Shot coordinate data found - proceeding with report generation")
+            
             # Generate PDF report
             print(f"  📄 Generating PDF report...")
             timestamp = datetime.now().strftime("%Y%m%d_%H%M%S")
