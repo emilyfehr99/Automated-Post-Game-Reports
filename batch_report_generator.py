@@ -129,14 +129,12 @@ def main():
     pdf_folder = os.path.join(desktop_path, f"NHL_Reports_{target_date.replace('-', '_')}")
     image_folder = os.path.join(desktop_path, f"NHL_Images_{target_date.replace('-', '_')}")
     
-    # Recreate the PDF folder to ensure only current run's reports are present
-    if os.path.exists(pdf_folder):
-        try:
-            shutil.rmtree(pdf_folder)
-        except Exception as e:
-            print(f"⚠️  Could not remove existing PDF folder, attempting to continue: {e}")
-    os.makedirs(pdf_folder, exist_ok=True)
-    print(f"📁 Prepared fresh PDF folder: {pdf_folder}")
+    # Create the PDF folder if it doesn't exist
+    if not os.path.exists(pdf_folder):
+        os.makedirs(pdf_folder)
+        print(f"📁 Created PDF folder: {pdf_folder}")
+    else:
+        print(f"📁 Using existing PDF folder: {pdf_folder}")
     
     print(f"📁 Images will be saved to: {image_folder}")
     
@@ -166,28 +164,6 @@ def main():
                 continue
             
             print(f"  ✅ Game data fetched successfully")
-            
-            # Check if game has shot coordinate data
-            print(f"  🎯 Checking shot coordinate data...")
-            has_shot_coords = False
-            if 'play_by_play' in game_data and 'plays' in game_data['play_by_play']:
-                plays = game_data['play_by_play']['plays']
-                shot_plays = [p for p in plays if p.get('typeDescKey') in ['goal', 'shot-on-goal', 'missed-shot', 'blocked-shot']]
-                
-                # Check if any shots have valid coordinates
-                for play in shot_plays:
-                    details = play.get('details', {})
-                    x_coord = details.get('xCoord')
-                    y_coord = details.get('yCoord')
-                    if x_coord is not None and y_coord is not None and (x_coord != 0 and y_coord != 0):
-                        has_shot_coords = True
-                        break
-            
-            if not has_shot_coords:
-                print(f"  ⏭️  Skipping game - no shot coordinate data available")
-                continue
-            
-            print(f"  ✅ Shot coordinate data found - proceeding with report generation")
             
             # Generate PDF report
             print(f"  📄 Generating PDF report...")

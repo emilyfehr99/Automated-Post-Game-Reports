@@ -41,40 +41,73 @@ The application will:
 
 Each generated report includes:
 
-### Game Summary
-- Final score with period-by-period breakdown
-- Game date, venue, and type
-- Team information
+### Header Section
+- **Team Logos**: Away and home team logos with NHL logo
+- **Title**: Team matchup (e.g., "MTL vs TOR")
+- **Subtitle**: "Post Game Report" with date, score, and winner
+- **Grey Accent Line**: Visual separator (0.5 cm thick, matches subtitle width)
+- **OT/SO Indicator**: Shows "(OT)" or "(SO)" in subtitle when applicable
 
-### Team Statistics
-- Goals, shots, power play conversion
-- Penalty minutes, hits, faceoffs
-- Blocked shots, giveaways, takeaways
+### Period-by-Period Statistics Table
+Complete breakdown by period including:
+- **GF**: Goals For (goals scored per period, including OT/SO when applicable)
+- **S**: Total shots on goal
+- **H**: Physical plays (hits)
+- **BLK**: Blocked shots
+- **FO%**: Faceoff win percentage
+- **PP**: Power play opportunities and goals
+- **GA**: Giveaways (turnovers)
+- **TA**: Takeaways
+- **xG**: Expected Goals (advanced metric for scoring chances)
+- **CF%**: Corsi For Percentage (shot attempt differential)
+- **OZS**: Offensive zone originating shots
+- **NZS**: Neutral zone originating shots
+- **DZS**: Defensive zone originating shots
 
-### Scoring Summary
-- Complete play-by-play scoring
-- Goal scorers and assists
-- Period and time information
+### Advanced Metrics Table
+Four key categories with team comparisons (team logos in headers):
 
-### Player Performance
-- Top goal scorers
-- Leading assist providers
-- Individual player statistics
+**SHOT QUALITY**
+- Expected Goals (xG): Probability-based scoring chances
+- Rush Shots: Shots from rush opportunities
+- Pressure %: Shots taken under defensive pressure
 
-### Goalie Analysis
-- Shots against and saves
-- Save percentage
-- Time on ice
+**DEFENSIVE ZONE**
+- Exits: Successful zone exits
+- Retrievals: Puck recoveries
+- DZ Time: Time spent in defensive zone
 
-### Game Analysis
-- Game flow analysis
-- Key moments breakdown
-- Special teams performance
+**PRE-SHOT MOVEMENT** *(New metrics)*
 
-### Visualizations
-- Shots on goal comparison
-- Scoring by period charts
-- Team performance graphs
+- **Royal Road Proxy**: Shots taken after the puck crosses the "Royal Road" (the center vertical line of the ice) within 4 seconds. These cross-seam passes create high-quality scoring chances by forcing the goalie to move laterally across the crease.
+
+- **OZ Retrieval to Shot**: Shots generated within 5 seconds of winning the puck back in the offensive zone through a hit or takeaway. Measures a team's ability to quickly capitalize on puck recoveries and maintain offensive pressure.
+
+- **Lateral Movement (E-W)**: Pre-shot east-west (side-to-side) puck movement within 4 seconds before a shot. Categories: Minor side-to-side (0-10 ft), Cross-ice movement (10-20 ft), Wide cross-ice (20+ ft). Greater lateral movement typically creates better shooting angles.
+
+- **Longitudinal Movement (N-S)**: Pre-shot north-south (toward/away from goal) puck movement within 4 seconds before a shot. Categories: Point-blank range (0-10 ft), Close-range shot (10-20 ft), Zone entry shots (20-40 ft), Long-range rush (40+ ft). Measures shot generation from different ice depths.
+
+**PRESSURE & TRANSITION**
+
+- **Sustained Pressure Sequences**: Extended offensive possessions where a team generates multiple shot attempts in succession without the opponent clearing the zone. Indicates cycle game effectiveness and ability to maintain offensive zone time.
+
+- **Quick Strike Opportunities**: Rapid transition chances where a team generates a shot attempt within seconds of gaining possession. Measures effectiveness of rush attacks and fast-break opportunities before the defense can set up.
+
+### Shot Location Visualization
+- **Shot Plot**: Visual representation of all shots on ice surface
+- **Home Team Logo**: Displayed at center ice on shot plot
+- Color-coded by team
+
+### Top Players Table
+- **Top 3 Performers**: Based on points (goals + assists)
+- Player names and point totals
+- Team color-coded backgrounds
+
+### Report Styling
+- **Team Colors**: Dynamic colors based on teams playing
+- **Professional Layout**: Clean typography with consistent spacing
+- **Single Page Format**: All content fits on one page (even with OT/SO rows)
+- **PNG Export**: Automatically converted to image format
 
 ## 🔧 Configuration
 

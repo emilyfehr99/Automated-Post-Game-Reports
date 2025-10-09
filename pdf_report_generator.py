@@ -137,13 +137,17 @@ class PostGameReportGenerator:
                     game_type = "Regular Season"
                 
                 # Calculate team name text position (left-aligned, moved 3cm right)
+                # For regular season, omit the 'Regular Season:' prefix
+                if game_type == "Regular Season":
+                    team_text = f"{away_team} vs {home_team}"
+                else:
                 team_text = f"{game_type}: {away_team} vs {home_team}"
                 team_bbox = draw.textbbox((0, 0), team_text, font=font)
                 team_text_width = team_bbox[2] - team_bbox[0]
                 team_text_height = team_bbox[3] - team_bbox[1]
                 
-                team_x = int(20 + 233)  # Left-aligned with 20px margin + 6.2cm (233px) to the right (moved 0.2cm more inward)
-                team_y = int((header_img.height - team_text_height) // 2 - 20)  # Move up slightly to make room for subtitle
+                team_x = 20 + 233 + 28 + 56  # Left-aligned with 20px margin + 6.2cm (233px) + 1cm (28px) + 2cm (56px) to the right
+                team_y = (header_img.height - team_text_height) // 2 - 20  # Move up slightly to make room for subtitle
                 
                 # Load team logos
                 away_logo = None
@@ -205,21 +209,21 @@ class PostGameReportGenerator:
                 # Draw team logos if available (positioned on the right side)
                 if away_logo:
                     # Position away logo on the right side
-                    away_logo_x = int(header_img.width - 769)  # Right side with margin (moved 9.5cm/269px total inward)
-                    away_logo_y = int(team_y - 81)  # Moved down 0.8cm total (25px) from -106 to -81
+                    away_logo_x = header_img.width - 769  # Right side with margin (moved 9.5cm/269px total inward)
+                    away_logo_y = team_y - 81  # Moved down 0.8cm total (25px) from -106 to -81
                     header_img.paste(away_logo, (away_logo_x, away_logo_y), away_logo)
                 
                 if home_logo:
                     # Position home logo to the right of away logo
-                    home_logo_x = int(header_img.width - 519)  # Further right (moved 9.5cm/269px total inward)
-                    home_logo_y = int(team_y - 81)  # Moved down 0.8cm total (25px) from -106 to -81
+                    home_logo_x = header_img.width - 519  # Further right (moved 9.5cm/269px total inward)
+                    home_logo_y = team_y - 81  # Moved down 0.8cm total (25px) from -106 to -81
                     header_img.paste(home_logo, (home_logo_x, home_logo_y), home_logo)
                 
                 # Draw NHL logo under the team logos if available
                 if nhl_logo:
                     # Position NHL logo centered under the team logos (moved up by 1cm = 28pt)
-                    nhl_logo_x = int(header_img.width - 601 - 8.5)  # Centered between the two team logos (moved 8cm/241px total inward, then left 0.3cm/8.5pt)
-                    nhl_logo_y = int(team_y + 92 + 5.7)  # Below the team logos with proper spacing (moved up 28pt, then down 0.2cm/5.7pt)
+                    nhl_logo_x = header_img.width - 601  # Centered between the two team logos (moved 8cm/241px total inward)
+                    nhl_logo_y = team_y + 92  # Below the team logos with proper spacing (moved up 28pt)
                     header_img.paste(nhl_logo, (nhl_logo_x, nhl_logo_y), nhl_logo)
                 
                 # Draw team name white text with black outline for better visibility
@@ -258,6 +262,8 @@ class PostGameReportGenerator:
                     boxscore = game_data['boxscore']
                     away_score = boxscore['awayTeam']['score']
                     home_score = boxscore['homeTeam']['score']
+                    away_team_id = boxscore['awayTeam']['id']
+                    home_team_id = boxscore['homeTeam']['id']
                     
                     # Determine winning team
                     if away_score > home_score:
@@ -266,6 +272,24 @@ class PostGameReportGenerator:
                         winner = home_team
                     else:
                         winner = "TIE"
+                    
+                    # Determine game ending type (OT/SO only, blank for regulation)
+                    game_ending = ""
+                    try:
+                        # Check for OT/SO from play-by-play data
+                        play_by_play_data = game_data.get('play_by_play', {})
+                        if play_by_play_data and 'plays' in play_by_play_data:
+                            for play in play_by_play_data['plays']:
+                                if play.get('typeDescKey') == 'goal':
+                                    period_type = play.get('periodDescriptor', {}).get('periodType', 'REG')
+                                    if period_type == 'SO':
+                                        game_ending = "SO"
+                                        break
+                                    elif period_type == 'OT':
+                                        game_ending = "OT"
+                                        # Don't break - keep checking for SO
+                    except:
+                        game_ending = ""
                         
                 except (KeyError, TypeError):
                     # If we can't get real data, use sample data
@@ -273,18 +297,36 @@ class PostGameReportGenerator:
                     away_score = 3
                     home_score = 2
                     winner = away_team
+                    game_ending = ""
                 
                 # Calculate subtitle text position (left-aligned below team names, moved up 2cm)
+                # Only add game ending indicator if it's OT or SO
+                if game_ending:
+                    subtitle_text = f"Post Game Report: {game_date} | {away_score}-{home_score} {winner} WINS ({game_ending})"
+                else:
                 subtitle_text = f"Post Game Report: {game_date} | {away_score}-{home_score} {winner} WINS"
                 subtitle_bbox = draw.textbbox((0, 0), subtitle_text, font=subtitle_font)
                 subtitle_text_width = subtitle_bbox[2] - subtitle_bbox[0]
                 subtitle_text_height = subtitle_bbox[3] - subtitle_bbox[1]
                 
-                subtitle_x = 20 + 233  # Left-aligned with same margin as title (moved 6.2cm right total)
+                subtitle_x = 20 + 233 + 28 + 56  # Left-aligned with same margin as title (moved 6.2cm + 1cm + 2cm right total)
                 subtitle_y = team_y + team_text_height + 29  # Position 1cm (29 points) below team names (moved up 2cm)
                 
                 # Draw subtitle in #7F7F7F color
                 draw.text((subtitle_x, subtitle_y), subtitle_text, font=subtitle_font, fill=(127, 127, 127))  # #7F7F7F
+                
+                # Draw grey line 1.5 cm below subtitle
+                # 0.5 cm thick = ~14 pixels, width matches subtitle text width
+                line_y = subtitle_y + subtitle_text_height + 42  # 1.5 cm = ~42 points (moved down 1cm from previous 14)
+                line_start_x = subtitle_x  # Start at same x position as subtitle
+                line_width = subtitle_text_width  # Match the width of the subtitle text
+                line_thickness = 14  # 0.5 cm = ~14 pixels
+                
+                # Draw the grey line
+                draw.rectangle(
+                    [(line_start_x, line_y), (line_start_x + line_width, line_y + line_thickness)],
+                    fill=(200, 200, 200)  # Light grey color
+                )
                 
                 # Save the modified header
                 modified_header_path = "temp_header_with_teams.png"
@@ -777,8 +819,7 @@ class PostGameReportGenerator:
             'CGY': colors.Color(200/255, 16/255, 46/255),  # Calgary Flames Red
             'VAN': colors.Color(0/255, 32/255, 91/255),  # Vancouver Canucks Blue
             'SEA': colors.Color(0/255, 22/255, 40/255),  # Seattle Kraken Navy
-            'CHI': colors.Color(207/255, 10/255, 44/255),  # Chicago Blackhawks Red
-            'UTA': colors.Color(0/255, 99/255, 65/255)  # Utah Hockey Club Green
+            'CHI': colors.Color(207/255, 10/255, 44/255)  # Chicago Blackhawks Red
         }
         
         home_team_color = team_colors.get(home_team['abbrev'], colors.white)
@@ -824,24 +865,13 @@ class PostGameReportGenerator:
             away_period_stats = self._calculate_real_period_stats(game_data, away_team['id'], 'away')
             home_period_stats = self._calculate_real_period_stats(game_data, home_team['id'], 'home')
             
-            # Calculate period scores from play-by-play data (same logic as in final score section)
-            away_period_scores = [0, 0, 0, 0]  # 1st, 2nd, 3rd, OT
-            home_period_scores = [0, 0, 0, 0]  # 1st, 2nd, 3rd, OT
+            # Calculate real period scores from play-by-play data (including OT/SO)
+            away_period_scores, away_ot_goals, away_so_goals = self._calculate_goals_by_period(game_data, away_team['id'])
+            home_period_scores, home_ot_goals, home_so_goals = self._calculate_goals_by_period(game_data, home_team['id'])
             
-            play_by_play = game_data.get('play_by_play')
-            if play_by_play and 'plays' in play_by_play:
-                for play in play_by_play['plays']:
-                    if play.get('typeDescKey') == 'goal':
-                        period = play.get('periodNumber', 1)
-                        event_team = play.get('details', {}).get('eventOwnerTeamId')
-                        
-                        # Adjust period index (period 1 = index 0, etc.)
-                        period_index = min(period - 1, 3)  # Cap at OT (index 3)
-                        
-                        if event_team == away_team['id']:
-                            away_period_scores[period_index] += 1
-                        elif event_team == home_team['id']:
-                            home_period_scores[period_index] += 1
+            # Determine if game went to OT or SO
+            has_ot = away_ot_goals > 0 or home_ot_goals > 0
+            has_so = away_so_goals > 0 or home_so_goals > 0
             
             # Create mini team logos for the table
             away_logo_img = None
@@ -857,8 +887,7 @@ class PostGameReportGenerator:
                     'NYI': 'nyi', 'NJD': 'nj', 'PHI': 'phi', 'CBJ': 'cbj',
                     'STL': 'stl', 'MIN': 'min', 'WPG': 'wpg', 'ARI': 'ari',
                     'VGK': 'vgk', 'SJS': 'sj', 'LAK': 'la', 'ANA': 'ana',
-                    'CGY': 'cgy', 'VAN': 'van', 'SEA': 'sea', 'CHI': 'chi',
-                    'UTA': 'uta'
+                    'CGY': 'cgy', 'VAN': 'van', 'SEA': 'sea', 'CHI': 'chi'
                 }
                 
                 away_logo_abbrev = logo_abbrev_map.get(away_team['abbrev'], away_team['abbrev'].lower())
@@ -883,125 +912,150 @@ class PostGameReportGenerator:
             except Exception as e:
                 print(f"Could not load mini logos: {e}")
             
-            # Create period-by-period data table with all advanced metrics
+            # Create period-by-period data table with all advanced metrics (dynamically handle OT/SO)
             stats_data = [
-                # Header row with shortened text to prevent wrapping
-                ['Period', 'Goals', 'Shots', 'Corsi%', 'PP', 'PIM', 'Hits', 'FO%', 'BLK', 'GV', 'TK', 'GS', 'xG', 'EW', 'NS', 'BN', 'NZT', 'NZTS', 'OZ', 'NZ', 'DZ', 'FC', 'Rush'],
-                
-                # Away team data with logo
-                [away_team['abbrev'], away_logo_img if away_logo_img else '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-                ['1', str(away_period_scores[0]), str(away_period_stats['shots'][0]), f"{away_period_stats['corsi_pct'][0]:.1f}%", 
-                 f"{away_period_stats['pp_goals'][0]}/{away_period_stats['pp_attempts'][0]}", str(away_period_stats['pim'][0]), 
-                 str(away_period_stats['hits'][0]), f"{away_period_stats['fo_pct'][0]:.1f}%", str(away_period_stats['bs'][0]), 
-                 str(away_period_stats['gv'][0]), str(away_period_stats['tk'][0]), f'{away_gs_periods[0]:.1f}', f'{away_xg_periods[0]:.2f}', 
-                 f'{away_ew_passes[0]}', f'{away_ns_passes[0]}', f'{away_behind_net[0]}', f'{away_zone_metrics["nz_turnovers"][0]}', f'{away_zone_metrics["nz_turnovers_to_shots"][0]}',
-                 f'{away_zone_metrics["oz_originating_shots"][0]}', f'{away_zone_metrics["nz_originating_shots"][0]}', f'{away_zone_metrics["dz_originating_shots"][0]}',
-                 f'{away_zone_metrics["fc_cycle_sog"][0]}', f'{away_zone_metrics["rush_sog"][0]}'],
-                ['2', str(away_period_scores[1]), str(away_period_stats['shots'][1]), f"{away_period_stats['corsi_pct'][1]:.1f}%",
-                 f"{away_period_stats['pp_goals'][1]}/{away_period_stats['pp_attempts'][1]}", str(away_period_stats['pim'][1]), 
-                 str(away_period_stats['hits'][1]), f"{away_period_stats['fo_pct'][1]:.1f}%", str(away_period_stats['bs'][1]), 
-                 str(away_period_stats['gv'][1]), str(away_period_stats['tk'][1]), f'{away_gs_periods[1]:.1f}', f'{away_xg_periods[1]:.2f}',
-                 f'{away_ew_passes[1]}', f'{away_ns_passes[1]}', f'{away_behind_net[1]}', f'{away_zone_metrics["nz_turnovers"][1]}', f'{away_zone_metrics["nz_turnovers_to_shots"][1]}',
-                 f'{away_zone_metrics["oz_originating_shots"][1]}', f'{away_zone_metrics["nz_originating_shots"][1]}', f'{away_zone_metrics["dz_originating_shots"][1]}',
-                 f'{away_zone_metrics["fc_cycle_sog"][1]}', f'{away_zone_metrics["rush_sog"][1]}'],
-                ['3', str(away_period_scores[2]), str(away_period_stats['shots'][2]), f"{away_period_stats['corsi_pct'][2]:.1f}%",
-                 f"{away_period_stats['pp_goals'][2]}/{away_period_stats['pp_attempts'][2]}", str(away_period_stats['pim'][2]), 
-                 str(away_period_stats['hits'][2]), f"{away_period_stats['fo_pct'][2]:.1f}%", str(away_period_stats['bs'][2]), 
-                 str(away_period_stats['gv'][2]), str(away_period_stats['tk'][2]), f'{away_gs_periods[2]:.1f}', f'{away_xg_periods[2]:.2f}',
-                 f'{away_ew_passes[2]}', f'{away_ns_passes[2]}', f'{away_behind_net[2]}', f'{away_zone_metrics["nz_turnovers"][2]}', f'{away_zone_metrics["nz_turnovers_to_shots"][2]}',
-                 f'{away_zone_metrics["oz_originating_shots"][2]}', f'{away_zone_metrics["nz_originating_shots"][2]}', f'{away_zone_metrics["dz_originating_shots"][2]}',
-                 f'{away_zone_metrics["fc_cycle_sog"][2]}', f'{away_zone_metrics["rush_sog"][2]}'],
-                ['Final', str(sum(away_period_scores)), str(sum(away_period_stats['shots'])), f"{sum(away_period_stats['corsi_pct'])/3:.1f}%",
-                 f"{sum(away_period_stats['pp_goals'])}/{sum(away_period_stats['pp_attempts'])}", str(sum(away_period_stats['pim'])), 
-                 str(sum(away_period_stats['hits'])), f"{sum(away_period_stats['fo_pct'])/3:.1f}%", str(sum(away_period_stats['bs'])), 
-                 str(sum(away_period_stats['gv'])), str(sum(away_period_stats['tk'])), f'{sum(away_gs_periods):.1f}', f'{sum(away_xg_periods):.2f}',
-                 f'{sum(away_ew_passes)}', f'{sum(away_ns_passes)}', f'{sum(away_behind_net)}', f'{sum(away_zone_metrics["nz_turnovers"])}', f'{sum(away_zone_metrics["nz_turnovers_to_shots"])}',
-                 f'{sum(away_zone_metrics["oz_originating_shots"])}', f'{sum(away_zone_metrics["nz_originating_shots"])}', f'{sum(away_zone_metrics["dz_originating_shots"])}',
-                 f'{sum(away_zone_metrics["fc_cycle_sog"])}', f'{sum(away_zone_metrics["rush_sog"])}'],
-                
-                # Home team data with logo
-                [home_team['abbrev'], home_logo_img if home_logo_img else '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-                ['1', str(home_period_scores[0]), str(home_period_stats['shots'][0]), f"{home_period_stats['corsi_pct'][0]:.1f}%",
-                 f"{home_period_stats['pp_goals'][0]}/{home_period_stats['pp_attempts'][0]}", str(home_period_stats['pim'][0]), 
-                 str(home_period_stats['hits'][0]), f"{home_period_stats['fo_pct'][0]:.1f}%", str(home_period_stats['bs'][0]), 
-                 str(home_period_stats['gv'][0]), str(home_period_stats['tk'][0]), f'{home_gs_periods[0]:.1f}', f'{home_xg_periods[0]:.2f}',
-                 f'{home_ew_passes[0]}', f'{home_ns_passes[0]}', f'{home_behind_net[0]}', f'{home_zone_metrics["nz_turnovers"][0]}', f'{home_zone_metrics["nz_turnovers_to_shots"][0]}',
-                 f'{home_zone_metrics["oz_originating_shots"][0]}', f'{home_zone_metrics["nz_originating_shots"][0]}', f'{home_zone_metrics["dz_originating_shots"][0]}',
-                 f'{home_zone_metrics["fc_cycle_sog"][0]}', f'{home_zone_metrics["rush_sog"][0]}'],
-                ['2', str(home_period_scores[1]), str(home_period_stats['shots'][1]), f"{home_period_stats['corsi_pct'][1]:.1f}%",
-                 f"{home_period_stats['pp_goals'][1]}/{home_period_stats['pp_attempts'][1]}", str(home_period_stats['pim'][1]), 
-                 str(home_period_stats['hits'][1]), f"{home_period_stats['fo_pct'][1]:.1f}%", str(home_period_stats['bs'][1]), 
-                 str(home_period_stats['gv'][1]), str(home_period_stats['tk'][1]), f'{home_gs_periods[1]:.1f}', f'{home_xg_periods[1]:.2f}',
-                 f'{home_ew_passes[1]}', f'{home_ns_passes[1]}', f'{home_behind_net[1]}', f'{home_zone_metrics["nz_turnovers"][1]}', f'{home_zone_metrics["nz_turnovers_to_shots"][1]}',
-                 f'{home_zone_metrics["oz_originating_shots"][1]}', f'{home_zone_metrics["nz_originating_shots"][1]}', f'{home_zone_metrics["dz_originating_shots"][1]}',
-                 f'{home_zone_metrics["fc_cycle_sog"][1]}', f'{home_zone_metrics["rush_sog"][1]}'],
-                ['3', str(home_period_scores[2]), str(home_period_stats['shots'][2]), f"{home_period_stats['corsi_pct'][2]:.1f}%",
-                 f"{home_period_stats['pp_goals'][2]}/{home_period_stats['pp_attempts'][2]}", str(home_period_stats['pim'][2]), 
-                 str(home_period_stats['hits'][2]), f"{home_period_stats['fo_pct'][2]:.1f}%", str(home_period_stats['bs'][2]), 
-                 str(home_period_stats['gv'][2]), str(home_period_stats['tk'][2]), f'{home_gs_periods[2]:.1f}', f'{home_xg_periods[2]:.2f}',
-                 f'{home_ew_passes[2]}', f'{home_ns_passes[2]}', f'{home_behind_net[2]}', f'{home_zone_metrics["nz_turnovers"][2]}', f'{home_zone_metrics["nz_turnovers_to_shots"][2]}',
-                 f'{home_zone_metrics["oz_originating_shots"][2]}', f'{home_zone_metrics["nz_originating_shots"][2]}', f'{home_zone_metrics["dz_originating_shots"][2]}',
-                 f'{home_zone_metrics["fc_cycle_sog"][2]}', f'{home_zone_metrics["rush_sog"][2]}'],
-                ['Final', str(sum(home_period_scores)), str(sum(home_period_stats['shots'])), f"{sum(home_period_stats['corsi_pct'])/3:.1f}%",
-                 f"{sum(home_period_stats['pp_goals'])}/{sum(home_period_stats['pp_attempts'])}", str(sum(home_period_stats['pim'])), 
-                 str(sum(home_period_stats['hits'])), f"{sum(home_period_stats['fo_pct'])/3:.1f}%", str(sum(home_period_stats['bs'])), 
-                 str(sum(home_period_stats['gv'])), str(sum(home_period_stats['tk'])), f'{sum(home_gs_periods):.1f}', f'{sum(home_xg_periods):.2f}',
-                 f'{sum(home_ew_passes)}', f'{sum(home_ns_passes)}', f'{sum(home_behind_net)}', f'{sum(home_zone_metrics["nz_turnovers"])}', f'{sum(home_zone_metrics["nz_turnovers_to_shots"])}',
-                 f'{sum(home_zone_metrics["oz_originating_shots"])}', f'{sum(home_zone_metrics["nz_originating_shots"])}', f'{sum(home_zone_metrics["dz_originating_shots"])}',
-                 f'{sum(home_zone_metrics["fc_cycle_sog"])}', f'{sum(home_zone_metrics["rush_sog"])}']
+                # Header row
+                ['Period', 'GF', 'S', 'CF%', 'PP', 'PIM', 'Hits', 'FO%', 'BLK', 'GV', 'TK', 'GS', 'xG', 'NZT', 'NZTS', 'OZS', 'NZS', 'DZS', 'FC', 'Rush'],
+                # Away team logo row
+                [away_team['abbrev'], away_logo_img if away_logo_img else '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
             ]
+            
+            # Add regulation periods for away team
+            for i in range(3):
+                stats_data.append([str(i+1), str(away_period_scores[i]), str(away_period_stats['shots'][i]), f"{away_period_stats['corsi_pct'][i]:.1f}%", 
+                    f"{away_period_stats['pp_goals'][i]}/{away_period_stats['pp_attempts'][i]}", str(away_period_stats['pim'][i]), 
+                    str(away_period_stats['hits'][i]), f"{away_period_stats['fo_pct'][i]:.1f}%", str(away_period_stats['bs'][i]), 
+                    str(away_period_stats['gv'][i]), str(away_period_stats['tk'][i]), f'{away_gs_periods[i]:.1f}', f'{away_xg_periods[i]:.2f}', 
+                    f'{away_zone_metrics["nz_turnovers"][i]}', f'{away_zone_metrics["nz_turnovers_to_shots"][i]}',
+                    f'{away_zone_metrics["oz_originating_shots"][i]}', f'{away_zone_metrics["nz_originating_shots"][i]}', f'{away_zone_metrics["dz_originating_shots"][i]}',
+                    f'{away_zone_metrics["fc_cycle_sog"][i]}', f'{away_zone_metrics["rush_sog"][i]}'])
+            
+            # Add OT row if applicable
+            if has_ot:
+                stats_data.append(['OT', str(away_ot_goals), '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'])
+            
+            # Add SO row if applicable  
+            if has_so:
+                stats_data.append(['SO', str(away_so_goals), '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'])
+            
+            # Add Final row for away team
+            away_total_goals = sum(away_period_scores) + away_ot_goals + away_so_goals
+            stats_data.append(['Final', str(away_total_goals), str(sum(away_period_stats['shots'])), f"{sum(away_period_stats['corsi_pct'])/3:.1f}%",
+                f"{sum(away_period_stats['pp_goals'])}/{sum(away_period_stats['pp_attempts'])}", str(sum(away_period_stats['pim'])), 
+                str(sum(away_period_stats['hits'])), f"{sum(away_period_stats['fo_pct'])/3:.1f}%", str(sum(away_period_stats['bs'])), 
+                str(sum(away_period_stats['gv'])), str(sum(away_period_stats['tk'])), f'{sum(away_gs_periods):.1f}', f'{sum(away_xg_periods):.2f}',
+                f'{sum(away_zone_metrics["nz_turnovers"])}', f'{sum(away_zone_metrics["nz_turnovers_to_shots"])}',
+                 f'{sum(away_zone_metrics["oz_originating_shots"])}', f'{sum(away_zone_metrics["nz_originating_shots"])}', f'{sum(away_zone_metrics["dz_originating_shots"])}',
+                f'{sum(away_zone_metrics["fc_cycle_sog"])}', f'{sum(away_zone_metrics["rush_sog"])}'])
+            
+            # Home team logo row
+            stats_data.append([home_team['abbrev'], home_logo_img if home_logo_img else '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''])
+            
+            # Add regulation periods for home team
+            for i in range(3):
+                stats_data.append([str(i+1), str(home_period_scores[i]), str(home_period_stats['shots'][i]), f"{home_period_stats['corsi_pct'][i]:.1f}%",
+                    f"{home_period_stats['pp_goals'][i]}/{home_period_stats['pp_attempts'][i]}", str(home_period_stats['pim'][i]), 
+                    str(home_period_stats['hits'][i]), f"{home_period_stats['fo_pct'][i]:.1f}%", str(home_period_stats['bs'][i]), 
+                    str(home_period_stats['gv'][i]), str(home_period_stats['tk'][i]), f'{home_gs_periods[i]:.1f}', f'{home_xg_periods[i]:.2f}',
+                    f'{home_zone_metrics["nz_turnovers"][i]}', f'{home_zone_metrics["nz_turnovers_to_shots"][i]}',
+                    f'{home_zone_metrics["oz_originating_shots"][i]}', f'{home_zone_metrics["nz_originating_shots"][i]}', f'{home_zone_metrics["dz_originating_shots"][i]}',
+                    f'{home_zone_metrics["fc_cycle_sog"][i]}', f'{home_zone_metrics["rush_sog"][i]}'])
+            
+            # Add OT row if applicable
+            if has_ot:
+                stats_data.append(['OT', str(home_ot_goals), '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'])
+            
+            # Add SO row if applicable
+            if has_so:
+                stats_data.append(['SO', str(home_so_goals), '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'])
+            
+            # Add Final row for home team
+            home_total_goals = sum(home_period_scores) + home_ot_goals + home_so_goals
+            stats_data.append(['Final', str(home_total_goals), str(sum(home_period_stats['shots'])), f"{sum(home_period_stats['corsi_pct'])/3:.1f}%",
+                f"{sum(home_period_stats['pp_goals'])}/{sum(home_period_stats['pp_attempts'])}", str(sum(home_period_stats['pim'])), 
+                str(sum(home_period_stats['hits'])), f"{sum(home_period_stats['fo_pct'])/3:.1f}%", str(sum(home_period_stats['bs'])), 
+                str(sum(home_period_stats['gv'])), str(sum(home_period_stats['tk'])), f'{sum(home_gs_periods):.1f}', f'{sum(home_xg_periods):.2f}',
+                f'{sum(home_zone_metrics["nz_turnovers"])}', f'{sum(home_zone_metrics["nz_turnovers_to_shots"])}',
+                 f'{sum(home_zone_metrics["oz_originating_shots"])}', f'{sum(home_zone_metrics["nz_originating_shots"])}', f'{sum(home_zone_metrics["dz_originating_shots"])}',
+                f'{sum(home_zone_metrics["fc_cycle_sog"])}', f'{sum(home_zone_metrics["rush_sog"])}'])
             
             # Get team colors (using the same team_colors dictionary defined earlier)
             away_team_color = team_colors.get(away_team['abbrev'], colors.white)
             home_team_color = team_colors.get(home_team['abbrev'], colors.white)
             
-            stats_table = Table(stats_data, colWidths=[0.4*inch, 0.35*inch, 0.35*inch, 0.4*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.4*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch])
-            stats_table.setStyle(TableStyle([
+            # Calculate dynamic row positions based on OT/SO
+            away_logo_row = 1
+            away_data_start = 2
+            away_data_end = away_data_start + 3 + (1 if has_ot else 0) + (1 if has_so else 0)  # P1,P2,P3 + OT? + SO?
+            away_final_row = away_data_end
+            
+            home_logo_row = away_final_row + 1
+            home_data_start = home_logo_row + 1
+            home_data_end = home_data_start + 3 + (1 if has_ot else 0) + (1 if has_so else 0)
+            home_final_row = home_data_end
+            
+            # Reduce font sizes and padding to fit OT/SO rows on one page
+            base_font_size = 5.5 if (has_ot or has_so) else 6
+            header_font_size = 4.5 if (has_ot or has_so) else 5
+            
+            stats_table = Table(stats_data, colWidths=[0.4*inch, 0.35*inch, 0.35*inch, 0.4*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.4*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch])
+            
+            # Build dynamic table style
+            table_style = [
                 # Header row with home team primary color
                 ('BACKGROUND', (0, 0), (-1, 0), home_team_color),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('FONTNAME', (0, 0), (-1, 0), 'RussoOne-Regular'),
-                ('FONTSIZE', (0, 0), (-1, 0), 5),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 4),
+                ('FONTSIZE', (0, 0), (-1, 0), header_font_size),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 3),
+                ('TOPPADDING', (0, 0), (-1, 0), 3),
                 
-                # Team name rows with team primary colors (no column dividers)
-                ('BACKGROUND', (0, 1), (-1, 1), away_team_color),  # Away team row
-                ('BACKGROUND', (0, 6), (-1, 6), home_team_color),  # Home team row
-                ('TEXTCOLOR', (0, 1), (-1, 1), colors.white),  # Away team text (white for visibility)
-                ('TEXTCOLOR', (0, 6), (-1, 6), colors.white),  # Home team text (white for visibility)
-                ('FONTNAME', (0, 1), (-1, 6), 'RussoOne-Regular'),
-                ('FONTSIZE', (0, 1), (-1, 6), 6),
-                ('FONTWEIGHT', (0, 1), (-1, 6), 'BOLD'),
-                # Logo cell styling (column 1 for both team rows)
-                ('ALIGN', (1, 1), (1, 1), 'LEFT'),  # Away team logo alignment
-                ('ALIGN', (1, 6), (1, 6), 'LEFT'),  # Home team logo alignment
-                ('VALIGN', (1, 1), (1, 1), 'MIDDLE'),  # Away team logo vertical alignment
-                ('VALIGN', (1, 6), (1, 6), 'MIDDLE'),  # Home team logo vertical alignment
-                # Remove all grid lines for team abbreviation rows
-                ('LINEBELOW', (0, 1), (-1, 1), 0, colors.transparent),  # Remove line below away team row
-                ('LINEBELOW', (0, 6), (-1, 6), 0, colors.transparent),  # Remove line below home team row
-                ('LINEABOVE', (0, 1), (-1, 1), 0, colors.transparent),  # Remove line above away team row
-                ('LINEABOVE', (0, 6), (-1, 6), 0, colors.transparent),  # Remove line above home team row
-                ('INNERGRID', (0, 1), (-1, 1), 0, colors.transparent),  # Remove inner grid for away team row
-                ('INNERGRID', (0, 6), (-1, 6), 0, colors.transparent),  # Remove inner grid for home team row
+                # Away team logo row
+                ('BACKGROUND', (0, away_logo_row), (-1, away_logo_row), away_team_color),
+                ('TEXTCOLOR', (0, away_logo_row), (-1, away_logo_row), colors.white),
+                ('FONTNAME', (0, away_logo_row), (-1, away_logo_row), 'RussoOne-Regular'),
+                ('FONTSIZE', (0, away_logo_row), (-1, away_logo_row), base_font_size),
+                ('FONTWEIGHT', (0, away_logo_row), (-1, away_logo_row), 'BOLD'),
+                ('ALIGN', (1, away_logo_row), (1, away_logo_row), 'LEFT'),
+                ('VALIGN', (1, away_logo_row), (1, away_logo_row), 'MIDDLE'),
+                ('LINEBELOW', (0, away_logo_row), (-1, away_logo_row), 0, colors.transparent),
+                ('LINEABOVE', (0, away_logo_row), (-1, away_logo_row), 0, colors.transparent),
+                ('INNERGRID', (0, away_logo_row), (-1, away_logo_row), 0, colors.transparent),
                 
-                # Data rows
-                ('BACKGROUND', (0, 2), (-1, 5), colors.white),  # STL data
-                ('BACKGROUND', (0, 7), (-1, 10), colors.white),  # WPG data
-                ('FONTNAME', (0, 2), (-1, 10), 'RussoOne-Regular'),
-                ('FONTSIZE', (0, 2), (-1, 10), 6),
-                # Custom grid that excludes team abbreviation rows (1 and 6)
+                # Home team logo row
+                ('BACKGROUND', (0, home_logo_row), (-1, home_logo_row), home_team_color),
+                ('TEXTCOLOR', (0, home_logo_row), (-1, home_logo_row), colors.white),
+                ('FONTNAME', (0, home_logo_row), (-1, home_logo_row), 'RussoOne-Regular'),
+                ('FONTSIZE', (0, home_logo_row), (-1, home_logo_row), base_font_size),
+                ('FONTWEIGHT', (0, home_logo_row), (-1, home_logo_row), 'BOLD'),
+                ('ALIGN', (1, home_logo_row), (1, home_logo_row), 'LEFT'),
+                ('VALIGN', (1, home_logo_row), (1, home_logo_row), 'MIDDLE'),
+                ('LINEBELOW', (0, home_logo_row), (-1, home_logo_row), 0, colors.transparent),
+                ('LINEABOVE', (0, home_logo_row), (-1, home_logo_row), 0, colors.transparent),
+                ('INNERGRID', (0, home_logo_row), (-1, home_logo_row), 0, colors.transparent),
+                
+                # Data rows styling
+                ('BACKGROUND', (0, away_data_start), (-1, away_final_row-1), colors.white),
+                ('BACKGROUND', (0, home_data_start), (-1, home_final_row-1), colors.white),
+                ('FONTNAME', (0, away_data_start), (-1, home_final_row), 'RussoOne-Regular'),
+                ('FONTSIZE', (0, away_data_start), (-1, home_final_row), base_font_size),
+                ('TOPPADDING', (0, away_data_start), (-1, home_final_row), 2),
+                ('BOTTOMPADDING', (0, away_data_start), (-1, home_final_row), 2),
+                
+                # Grid lines
                 ('GRID', (0, 0), (-1, 0), 1, colors.black),  # Header row
-                ('GRID', (0, 2), (-1, 5), 1, colors.black),  # Away team data rows
-                ('GRID', (0, 7), (-1, 10), 1, colors.black),  # Home team data rows
+                ('GRID', (0, away_data_start), (-1, away_final_row), 1, colors.black),  # Away team data
+                ('GRID', (0, home_data_start), (-1, home_final_row), 1, colors.black),  # Home team data
                 
                 # Final row highlighting
-                ('BACKGROUND', (0, 5), (-1, 5), colors.lightgrey),  # STL Final
-                ('BACKGROUND', (0, 10), (-1, 10), colors.lightgrey),  # WPG Final
-                ('FONTWEIGHT', (0, 5), (-1, 5), 'BOLD'),  # STL Final
-                ('FONTWEIGHT', (0, 10), (-1, 10), 'BOLD'),  # WPG Final
-        ]))
+                ('BACKGROUND', (0, away_final_row), (-1, away_final_row), colors.lightgrey),
+                ('BACKGROUND', (0, home_final_row), (-1, home_final_row), colors.lightgrey),
+                ('FONTWEIGHT', (0, away_final_row), (-1, away_final_row), 'BOLD'),
+                ('FONTWEIGHT', (0, home_final_row), (-1, home_final_row), 'BOLD'),
+            ]
+            
+            stats_table.setStyle(TableStyle(table_style))
         
             story.append(stats_table)
             story.append(Spacer(1, 10))  # Reduced spacing to move table closer to header
@@ -1011,6 +1065,36 @@ class PostGameReportGenerator:
             story.append(Paragraph("Team statistics comparison could not be generated.", self.normal_style))
         
         return story
+    
+    def _calculate_goals_by_period(self, game_data, team_id):
+        """Calculate goals scored by a team in each period from play-by-play data (including OT/SO)"""
+        try:
+            play_by_play = game_data.get('play_by_play')
+            if not play_by_play or 'plays' not in play_by_play:
+                return [0, 0, 0], 0, 0  # P1, P2, P3, OT, SO
+            
+            goals_by_period = [0, 0, 0]
+            ot_goals = 0
+            so_goals = 0
+            
+            for play in play_by_play['plays']:
+                if play.get('typeDescKey') == 'goal':
+                    period = play.get('periodDescriptor', {}).get('number', 1)
+                    period_type = play.get('periodDescriptor', {}).get('periodType', 'REG')
+                    event_team_id = play.get('details', {}).get('eventOwnerTeamId')
+                    
+                    if event_team_id == team_id:
+                        if period <= 3:  # Regulation periods
+                            goals_by_period[period - 1] += 1
+                        elif period_type == 'OT':  # Overtime
+                            ot_goals += 1
+                        elif period_type == 'SO':  # Shootout
+                            so_goals += 1
+            
+            return goals_by_period, ot_goals, so_goals
+        except Exception as e:
+            print(f"Error calculating goals by period: {e}")
+            return [0, 0, 0], 0, 0
     
     def _calculate_period_metrics(self, game_data, team_id, team_side):
         """Calculate Game Score and xG by period for a team"""
@@ -1034,10 +1118,6 @@ class PostGameReportGenerator:
             for player in team_players:
                 player_map[player['id']] = player['name']
             
-            # Use AdvancedMetricsAnalyzer for consistent xG calculation
-            from advanced_metrics_analyzer import AdvancedMetricsAnalyzer
-            analyzer = AdvancedMetricsAnalyzer(play_by_play)
-            
             # Process each play
             for play in play_by_play['plays']:
                 details = play.get('details', {})
@@ -1060,54 +1140,26 @@ class PostGameReportGenerator:
                     # Goals: 0.75 points
                     game_scores[period_index] += 0.75
                     
-                    # Calculate xG for this goal using consistent method
-                    xg = analyzer._calculate_single_shot_xG(
-                        details.get('xCoord', 0), 
-                        details.get('yCoord', 0), 
-                        details.get('zoneCode', ''), 
-                        details.get('shotType', 'unknown'), 
-                        event_type
-                    )
+                    # Calculate xG for this goal
+                    xg = self._calculate_shot_xg(details)
                     xg_values[period_index] += xg
                     
                 elif event_type == 'shot-on-goal':
                     # Shots on goal: 0.075 points
                     game_scores[period_index] += 0.075
                     
-                    # Calculate xG for this shot using consistent method
-                    xg = analyzer._calculate_single_shot_xG(
-                        details.get('xCoord', 0), 
-                        details.get('yCoord', 0), 
-                        details.get('zoneCode', ''), 
-                        details.get('shotType', 'unknown'), 
-                        event_type
-                    )
+                    # Calculate xG for this shot
+                    xg = self._calculate_shot_xg(details)
                     xg_values[period_index] += xg
                     
                 elif event_type == 'missed-shot':
                     # Missed shots don't count for Game Score but count for xG
-                    xg = analyzer._calculate_single_shot_xG(
-                        details.get('xCoord', 0), 
-                        details.get('yCoord', 0), 
-                        details.get('zoneCode', ''), 
-                        details.get('shotType', 'unknown'), 
-                        event_type
-                    )
+                    xg = self._calculate_shot_xg(details)
                     xg_values[period_index] += xg
                     
                 elif event_type == 'blocked-shot':
                     # Blocked shots: 0.05 points
                     game_scores[period_index] += 0.05
-                    
-                    # Calculate xG for blocked shots using consistent method
-                    xg = analyzer._calculate_single_shot_xG(
-                        details.get('xCoord', 0), 
-                        details.get('yCoord', 0), 
-                        details.get('zoneCode', ''), 
-                        details.get('shotType', 'unknown'), 
-                        event_type
-                    )
-                    xg_values[period_index] += xg
                     
                 elif event_type == 'penalty':
                     # Penalties taken: -0.15 points
@@ -1977,9 +2029,17 @@ class PostGameReportGenerator:
         """Create separate layout for advanced metrics and top players tables"""
         story = []
         
-        # Get home team color for the title bar
+        # Check if game went to OT/SO to adjust positioning
         boxscore = game_data['boxscore']
+        away_team = boxscore['awayTeam']
         home_team = boxscore['homeTeam']
+        
+        # Calculate if game has OT/SO
+        away_period_scores, away_ot_goals, away_so_goals = self._calculate_goals_by_period(game_data, away_team['id'])
+        home_period_scores, home_ot_goals, home_so_goals = self._calculate_goals_by_period(game_data, home_team['id'])
+        has_ot_or_so = (away_ot_goals > 0 or home_ot_goals > 0 or away_so_goals > 0 or home_so_goals > 0)
+        
+        # Get home team color for the title bar
         team_colors = {
             'TBL': colors.Color(0/255, 40/255, 104/255),  # Tampa Bay Lightning Blue
             'NSH': colors.Color(255/255, 184/255, 28/255),  # Nashville Predators Gold
@@ -2088,7 +2148,7 @@ class PostGameReportGenerator:
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
             ('LEFTPADDING', (0, 0), (-1, -1), 4.8*inch),  # Move 0.8 cm more to the right (4.5 + 0.8*0.3937 = 4.5 + 0.315 = 4.815, rounded to 4.8)
             ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-            ('TOPPADDING', (0, 0), (-1, -1), -4.4*inch),  # Move up 0.5 cm (-4.2 - 0.5*0.3937 = -4.2 - 0.197 = -4.397, rounded to -4.4)
+            ('TOPPADDING', (0, 0), (-1, -1), -4.0*inch),  # Move down 1 cm (-4.4 + 1*0.3937 = -4.4 + 0.394 = -4.006, rounded to -4.0)
             ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
         ]))
         story.append(shot_locations_wrapper)
@@ -2111,13 +2171,14 @@ class PostGameReportGenerator:
         ]))
         
         # Position the TOP PLAYERS title bar under the shot location map, moved 3 cm to the left
+        # Move up an additional 0.2 cm (0.079 inches) for tighter spacing
         top_players_title_wrapper = Table([[top_players_title_table]], colWidths=[2.3*inch])
         top_players_title_wrapper.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
             ('LEFTPADDING', (0, 0), (-1, -1), 2.38*inch),  # Move 0.3 cm more to the left (2.5 - 0.3*0.3937 = 2.5 - 0.118 = 2.382, rounded to 2.38)
             ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-            ('TOPPADDING', (0, 0), (-1, -1), -2.2*inch),  # Move up significantly to fit on page 1
+            ('TOPPADDING', (0, 0), (-1, -1), -2.0*inch),  # Move up 0.3 cm + 0.2 cm = 0.5 cm total (-1.8 - 0.5*0.3937 = -1.8 - 0.197 = -1.997, rounded to -2.0)
             ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
         ]))
         story.append(top_players_title_wrapper)
@@ -2137,7 +2198,7 @@ class PostGameReportGenerator:
                     ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                     ('LEFTPADDING', (0, 0), (-1, -1), 2.44*inch),  # Move 0.1 cm to the right (2.4 + 0.1*0.3937 = 2.4 + 0.039 = 2.439, rounded to 2.44)
                     ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-                    ('TOPPADDING', (0, 0), (-1, -1), -4.0*inch),  # Move up 0.5 cm (-3.8 - 0.5*0.3937 = -3.8 - 0.197 = -3.997, rounded to -4.0)
+                    ('TOPPADDING', (0, 0), (-1, -1), -3.6*inch),  # Move down 1 cm (-4.0 + 1*0.3937 = -4.0 + 0.394 = -3.606, rounded to -3.6)
                     ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
                 ]))
                 story.append(item)
@@ -2152,13 +2213,16 @@ class PostGameReportGenerator:
                 # Create a wrapper to position the top players table to the right
                 # Position it to the right of the advanced metrics table (which starts at -1.6 inches from left)
                 # Advanced metrics table is 4.4 inches wide, so Top Players should start around 2.8 inches from left
+                # Move up an additional 0.5 cm (0.197 inches) if game has OT/SO
+                top_padding = -1.4*inch - (0.197*inch if has_ot_or_so else 0)
+                
                 right_table = Table([[item]], colWidths=[2.3*inch])
                 right_table.setStyle(TableStyle([
                     ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
                     ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                     ('LEFTPADDING', (0, 0), (-1, -1), 2.4*inch),  # Move 1 cm to the left (2.8 - 0.4 = 2.4)
                     ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-                    ('TOPPADDING', (0, 0), (-1, -1), -1.6*inch),  # Move up 2 cm more (0.8 + 2*0.3937 = 0.8 + 0.787 = 1.587, rounded to 1.6)
+                    ('TOPPADDING', (0, 0), (-1, -1), top_padding),  # Move up extra 0.5 cm if OT/SO
                     ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
                 ]))
                 story.append(right_table)
@@ -2229,7 +2293,7 @@ class PostGameReportGenerator:
                 x_coord = details.get('xCoord', 0)
                 y_coord = details.get('yCoord', 0)
                 
-                if x_coord is not None and y_coord is not None and (x_coord != 0 and y_coord != 0):
+                if x_coord is not None and y_coord is not None:
                     # Force each team to always appear on their designated side
                     # Away team: Always left side (negative X)
                     # Home team: Always right side (positive X)
@@ -2275,24 +2339,8 @@ class PostGameReportGenerator:
                         home_goals.append((flipped_x, flipped_y))
             
             if not (away_shots or away_goals or home_shots or home_goals):
-                print("No shots or goals found for either team with valid coordinates")
-                # Create a simple message plot instead of returning None
-                plt.ioff()
-                fig, ax = plt.subplots(figsize=(8, 6))
-                ax.text(0.5, 0.5, 'Shot location data not available\nfor this game', 
-                       ha='center', va='center', fontsize=16, 
-                       transform=ax.transAxes)
-                ax.set_xlim(0, 1)
-                ax.set_ylim(0, 1)
-                ax.axis('off')
-                
-                # Save the plot
-                import tempfile
-                temp_file = tempfile.NamedTemporaryFile(suffix='.png', delete=False)
-                plt.savefig(temp_file.name, dpi=300, bbox_inches='tight', 
-                           facecolor='white', edgecolor='none')
-                plt.close(fig)
-                return temp_file.name
+                print("No shots or goals found for either team")
+                return None
                 
             print(f"Found {len(away_shots)} shots and {len(away_goals)} goals for {away_team['abbrev']}")
             print(f"Found {len(home_shots)} shots and {len(home_goals)} goals for {home_team['abbrev']}")
@@ -2393,8 +2441,7 @@ class PostGameReportGenerator:
                     'NYI': 'nyi', 'NJD': 'nj', 'PHI': 'phi', 'CBJ': 'cbj',
                     'STL': 'stl', 'MIN': 'min', 'WPG': 'wpg', 'ARI': 'ari',
                     'VGK': 'vgk', 'SJS': 'sj', 'LAK': 'la', 'ANA': 'ana',
-                    'CGY': 'cgy', 'VAN': 'van', 'SEA': 'sea', 'CHI': 'chi',
-                    'UTA': 'uta'
+                    'CGY': 'cgy', 'VAN': 'van', 'SEA': 'sea', 'CHI': 'chi'
                 }
                 home_team_abbrev = logo_abbrev_map.get(home_team['abbrev'], home_team['abbrev'].lower())
                 home_logo_url = f"https://a.espncdn.com/i/teamlogos/nhl/500/{home_team_abbrev}.png"
@@ -2444,6 +2491,32 @@ class PostGameReportGenerator:
         except Exception as e:
             print(f"Error creating combined shot location plot: {e}")
             return None
+    
+    def _classify_lateral_movement(self, avg_feet):
+        """Classify lateral (E-W) pre-shot movement into descriptive categories"""
+        if avg_feet == 0:
+            return "Stationary"
+        elif avg_feet < 10:
+            return "Minor side-to-side"
+        elif avg_feet < 20:
+            return "Cross-ice movement"
+        elif avg_feet < 35:
+            return "Wide-lane movement"
+        else:
+            return "Full-width movement"
+    
+    def _classify_longitudinal_movement(self, avg_feet):
+        """Classify longitudinal (N-S) pre-shot movement into descriptive categories"""
+        if avg_feet == 0:
+            return "Stationary"
+        elif avg_feet < 15:
+            return "Close-range setup"
+        elif avg_feet < 30:
+            return "Mid-range buildup"
+        elif avg_feet < 50:
+            return "Extended buildup"
+        else:
+            return "Long-range rush"
     
     def create_advanced_metrics_section(self, game_data):
         """Create advanced metrics section with specific data"""
@@ -2513,9 +2586,62 @@ class PostGameReportGenerator:
             home_defense = metrics['home_team']['defense']
             away_cross_ice = metrics['away_team']['cross_ice_passes']
             home_cross_ice = metrics['home_team']['cross_ice_passes']
+            away_pre_shot = metrics['away_team']['pre_shot_movement']
+            home_pre_shot = metrics['home_team']['pre_shot_movement']
+            
+            # Load team logos for header - use PNG format from ESPN instead of SVG
+            away_logo_img = None
+            home_logo_img = None
+            try:
+                logo_abbrev_map = {
+                    'TBL': 'tb', 'NSH': 'nsh', 'EDM': 'edm', 'FLA': 'fla',
+                    'COL': 'col', 'DAL': 'dal', 'BOS': 'bos', 'TOR': 'tor',
+                    'MTL': 'mtl', 'OTT': 'ott', 'BUF': 'buf', 'DET': 'det',
+                    'CAR': 'car', 'WSH': 'wsh', 'PIT': 'pit', 'NYR': 'nyr',
+                    'NYI': 'nyi', 'NJD': 'nj', 'PHI': 'phi', 'CBJ': 'cbj',
+                    'STL': 'stl', 'MIN': 'min', 'WPG': 'wpg', 'ARI': 'ari',
+                    'VGK': 'vgk', 'SJS': 'sj', 'LAK': 'la', 'ANA': 'ana',
+                    'CGY': 'cgy', 'VAN': 'van', 'SEA': 'sea', 'CHI': 'chi',
+                    'UTA': 'utah'
+                }
+                
+                import requests
+                import tempfile
+                from PIL import Image as PILImage
+                
+                away_logo_abbrev = logo_abbrev_map.get(away_team_abbrev, away_team_abbrev.lower())
+                home_logo_abbrev = logo_abbrev_map.get(home_team_abbrev, home_team_abbrev.lower())
+                
+                # Try ESPN PNG logos first
+                away_logo_url = f"https://a.espncdn.com/i/teamlogos/nhl/500/{away_logo_abbrev}.png"
+                home_logo_url = f"https://a.espncdn.com/i/teamlogos/nhl/500/{home_logo_abbrev}.png"
+                
+                # Download and save away logo
+                away_response = requests.get(away_logo_url, timeout=5)
+                if away_response.status_code == 200:
+                    away_png_path = tempfile.mktemp(suffix='.png')
+                    with open(away_png_path, 'wb') as f:
+                        f.write(away_response.content)
+                    away_logo_img = Image(away_png_path, width=20, height=20)
+                    # Keep file for now, will be cleaned up by OS
+                
+                # Download and save home logo
+                home_response = requests.get(home_logo_url, timeout=5)
+                if home_response.status_code == 200:
+                    home_png_path = tempfile.mktemp(suffix='.png')
+                    with open(home_png_path, 'wb') as f:
+                        f.write(home_response.content)
+                    home_logo_img = Image(home_png_path, width=20, height=20)
+                    # Keep file for now, will be cleaned up by OS
+                
+                print(f"Logos loaded: Away={away_logo_img is not None}, Home={home_logo_img is not None}")
+            except Exception as e:
+                print(f"Could not load logos for advanced metrics header: {e}")
+                import traceback
+                traceback.print_exc()
             
             combined_data = [
-                ['Category', 'Metric', away_team_abbrev, home_team_abbrev],
+                ['Category', 'Metric', away_logo_img if away_logo_img else away_team_abbrev, home_logo_img if home_logo_img else home_team_abbrev],
                 
                 # Shot Quality Analysis
                 ['SHOT QUALITY', 'Expected Goals (xG)', f"{away_shot_quality['expected_goals']:.2f}", f"{home_shot_quality['expected_goals']:.2f}"],
@@ -2538,13 +2664,22 @@ class PostGameReportGenerator:
                 ['', 'Shot Attempts Against', str(away_defense['shot_attempts_against']), str(home_defense['shot_attempts_against'])],
                 ['', 'High Danger Chances Against', str(away_defense['high_danger_chances_against']), str(home_defense['high_danger_chances_against'])],
                 
-                # Cross-Ice Pass Analysis
-                ['CROSS-ICE PASSES', 'Total Attempts', str(away_cross_ice['total_cross_ice_attempts']), str(home_cross_ice['total_cross_ice_attempts'])],
-                ['', 'Successful Passes', str(away_cross_ice['successful_cross_ice_passes']), str(home_cross_ice['successful_cross_ice_passes'])],
-                ['', 'Success Rate', f"{away_cross_ice['cross_ice_success_rate']:.1%}", f"{home_cross_ice['cross_ice_success_rate']:.1%}"]
+                # Pre-Shot Movement Analysis
+                ['PRE-SHOT MOVEMENT', 'Royal Road Proxy', 
+                 f"{away_pre_shot['royal_road_proxy']['attempts']} shots", 
+                 f"{home_pre_shot['royal_road_proxy']['attempts']} shots"],
+                ['', 'OZ Retrieval to Shot', 
+                 f"{away_pre_shot['oz_retrieval_to_shot']['attempts']} shots", 
+                 f"{home_pre_shot['oz_retrieval_to_shot']['attempts']} shots"],
+                ['', 'Lateral Movement (E-W)', 
+                 self._classify_lateral_movement(away_pre_shot['lateral_movement']['avg_delta_y']), 
+                 self._classify_lateral_movement(home_pre_shot['lateral_movement']['avg_delta_y'])],
+                ['', 'Longitudinal Movement (N-S)', 
+                 self._classify_longitudinal_movement(away_pre_shot['longitudinal_movement']['avg_delta_x']), 
+                 self._classify_longitudinal_movement(home_pre_shot['longitudinal_movement']['avg_delta_x'])]
             ]
             
-            combined_table = Table(combined_data, colWidths=[1.2*inch, 1.6*inch, 0.8*inch, 0.8*inch])
+            combined_table = Table(combined_data, colWidths=[1.0*inch, 1.4*inch, 0.9*inch, 0.9*inch])
             combined_table.setStyle(TableStyle([
                 # Header row with home team primary color background
                 ('BACKGROUND', (0, 0), (-1, 0), home_team_color),  # Home team primary color
@@ -2566,26 +2701,28 @@ class PostGameReportGenerator:
                 ('BACKGROUND', (0, 9), (0, 13), colors.Color(211/255, 211/255, 211/255)),  # Light gray
                 ('TEXTCOLOR', (0, 9), (0, 13), colors.black),
                 
-                # CROSS-ICE PASSES category header and all metric rows - light yellow/cream background with black text (Category column only)
-                ('BACKGROUND', (0, 14), (0, 16), colors.Color(255/255, 253/255, 208/255)),  # Light yellow/cream
-                ('TEXTCOLOR', (0, 14), (0, 16), colors.black),
+                # PRE-SHOT MOVEMENT category header and all metric rows - light yellow/cream background with black text (Category column only)
+                ('BACKGROUND', (0, 14), (0, 17), colors.Color(255/255, 253/255, 208/255)),  # Light yellow/cream
+                ('TEXTCOLOR', (0, 14), (0, 17), colors.black),
                 
                 # Alternating grey background for Metric and team columns (every second row)
-                ('BACKGROUND', (1, 2), (-1, 2), colors.lightgrey),  # Row 2 (Expected Goals)
-                ('BACKGROUND', (1, 4), (-1, 4), colors.lightgrey),  # Row 4 (Total Shots)
-                ('BACKGROUND', (1, 6), (-1, 6), colors.lightgrey),  # Row 6 (Quick Strike Opportunities)
-                ('BACKGROUND', (1, 8), (-1, 8), colors.lightgrey),  # Row 8 (Takeaways)
-                ('BACKGROUND', (1, 10), (-1, 10), colors.lightgrey),  # Row 10 (Hits)
-                ('BACKGROUND', (1, 12), (-1, 12), colors.lightgrey),  # Row 12 (High Danger Chances Against)
-                ('BACKGROUND', (1, 14), (-1, 14), colors.lightgrey),  # Row 14 (Successful Passes)
-                ('BACKGROUND', (1, 16), (-1, 16), colors.lightgrey),  # Row 16 (Success Rate)
+                ('BACKGROUND', (1, 2), (-1, 2), colors.lightgrey),  # Row 2 (High Danger Shots)
+                ('BACKGROUND', (1, 4), (-1, 4), colors.lightgrey),  # Row 4 (Shots on Goal)
+                ('BACKGROUND', (1, 6), (-1, 6), colors.lightgrey),  # Row 6 (Sustained Pressure)
+                ('BACKGROUND', (1, 8), (-1, 8), colors.lightgrey),  # Row 8 (Avg Shots per Sequence)
+                ('BACKGROUND', (1, 10), (-1, 10), colors.lightgrey),  # Row 10 (Takeaways)
+                ('BACKGROUND', (1, 12), (-1, 12), colors.lightgrey),  # Row 12 (Shot Attempts Against)
+                ('BACKGROUND', (1, 15), (-1, 15), colors.lightgrey),  # Row 15 (OZ Retrieval to Shot)
+                ('BACKGROUND', (1, 17), (-1, 17), colors.lightgrey),  # Row 17 (Longitudinal Movement)
                 
                 # Font styling
                 ('FONTNAME', (0, 1), (0, -1), 'RussoOne-Regular'),
-                ('FONTSIZE', (0, 1), (0, -1), 7),
+                ('FONTSIZE', (0, 1), (0, -1), 5.5),
                 ('FONTWEIGHT', (0, 1), (0, -1), 'BOLD'),
                 ('FONTNAME', (1, 1), (-1, -1), 'RussoOne-Regular'),
-                ('FONTSIZE', (1, 1), (-1, -1), 7),
+                ('FONTSIZE', (1, 1), (-1, -1), 5.5),
+                ('TOPPADDING', (0, 1), (-1, -1), 2),
+                ('BOTTOMPADDING', (0, 1), (-1, -1), 2),
                 
                 # Grid borders
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
@@ -2593,7 +2730,7 @@ class PostGameReportGenerator:
             
             # Add the table directly (positioning will be handled by side-by-side layout)
             story.append(combined_table)
-            story.append(Spacer(1, 20))
+            story.append(Spacer(1, 12))
             
         except Exception as e:
             print(f"Error creating advanced metrics: {e}")
@@ -2605,7 +2742,7 @@ class PostGameReportGenerator:
         """Create shot location visualizations"""
         story = []
                         
-        story.append(Spacer(1, 15))
+        story.append(Spacer(1, 10))
         
         try:
             import os
@@ -2707,6 +2844,17 @@ class PostGameReportGenerator:
                 print(f"Cleaned up temporary header file: {header_image.temp_path}")
             except:
                 pass
+        
+        # Clean up temporary plot files if they exist
+        if hasattr(self, 'temp_plot_files'):
+            for plot_file in self.temp_plot_files:
+                try:
+                    if os.path.exists(plot_file):
+                        os.remove(plot_file)
+                        print(f"Cleaned up temporary plot file: {plot_file}")
+                except Exception as e:
+                    print(f"Warning: Could not clean up plot file {plot_file}: {e}")
+            self.temp_plot_files = []
         
         print(f"Post-game report generated successfully: {output_filename}")
         return output_filename

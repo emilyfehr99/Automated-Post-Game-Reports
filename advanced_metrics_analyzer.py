@@ -144,7 +144,7 @@ class AdvancedMetricsAnalyzer:
             if event_team != team_id:
                 continue
                 
-            if event_type in ['goal', 'shot-on-goal', 'missed-shot', 'blocked-shot']:
+            if event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot']:
                 x_coord = details.get('xCoord', 0)
                 y_coord = details.get('yCoord', 0)
                 zone = details.get('zoneCode', '')
@@ -516,6 +516,154 @@ class AdvancedMetricsAnalyzer:
         
         # If we can't determine, assume unsuccessful
         return False
+    
+    def calculate_pre_shot_movement_metrics(self, team_id: int) -> dict:
+        """Calculate pre-shot movement metrics"""
+        metrics = {
+            'royal_road_proxy': {'attempts': 0, 'goals': 0},
+            'oz_retrieval_to_shot': {'attempts': 0, 'goals': 0},
+            'lateral_movement': {'attempts': 0, 'goals': 0, 'total_delta_y': 0, 'avg_delta_y': 0},
+            'longitudinal_movement': {'attempts': 0, 'goals': 0, 'total_delta_x': 0, 'avg_delta_x': 0}
+        }
+        
+        for i, play in enumerate(self.plays):
+            details = play.get('details', {})
+            event_type = play.get('typeDescKey', '')
+            event_team = details.get('eventOwnerTeamId')
+            
+            # Only analyze shots/goals for this team
+            if event_team != team_id:
+                continue
+            
+            if event_type not in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
+                continue
+            
+            x_coord = details.get('xCoord')
+            y_coord = details.get('yCoord')
+            time_in_period = play.get('timeInPeriod', '')
+            
+            if x_coord is None or y_coord is None:
+                continue
+            
+            is_goal = (event_type == 'goal')
+            
+            # Convert time to seconds
+            current_time = self._time_to_seconds(time_in_period)
+            
+            # Look back 4 seconds for Royal Road Proxy and lateral/longitudinal movement
+            royal_road_detected = False
+            lateral_delta_y = 0
+            longitudinal_delta_x = 0
+            prev_y = None
+            prev_x = None
+            
+            for j in range(i - 1, max(-1, i - 20), -1):  # Look back up to 20 plays
+                prev_play = self.plays[j]
+                prev_details = prev_play.get('details', {})
+                prev_team = prev_details.get('eventOwnerTeamId')
+                prev_time_str = prev_play.get('timeInPeriod', '')
+                prev_time = self._time_to_seconds(prev_time_str)
+                
+                # Only look at events from the same team within time window
+                if prev_team != team_id:
+                    continue
+                
+                time_diff = current_time - prev_time
+                if time_diff > 4:  # Beyond 4 second window
+                    break
+                
+                prev_x_coord = prev_details.get('xCoord')
+                prev_y_coord = prev_details.get('yCoord')
+                
+                if prev_x_coord is None or prev_y_coord is None:
+                    continue
+                
+                # Check for Royal Road Proxy (sign change in y)
+                if not royal_road_detected and prev_y is not None:
+                    if (prev_y * y_coord < 0) or (prev_y_coord * y_coord < 0):  # Sign change
+                        royal_road_detected = True
+                
+                # Track lateral movement (y-axis changes)
+                if prev_y_coord is not None:
+                    lateral_delta_y = max(lateral_delta_y, abs(y_coord - prev_y_coord))
+                
+                # Track longitudinal movement (x-axis changes)
+                if prev_x_coord is not None:
+                    longitudinal_delta_x = max(longitudinal_delta_x, abs(x_coord - prev_x_coord))
+                
+                prev_y = prev_y_coord
+                prev_x = prev_x_coord
+            
+            # Update Royal Road Proxy
+            if royal_road_detected:
+                metrics['royal_road_proxy']['attempts'] += 1
+                if is_goal:
+                    metrics['royal_road_proxy']['goals'] += 1
+            
+            # Update lateral movement
+            if lateral_delta_y > 0:
+                metrics['lateral_movement']['attempts'] += 1
+                metrics['lateral_movement']['total_delta_y'] += lateral_delta_y
+                if is_goal:
+                    metrics['lateral_movement']['goals'] += 1
+            
+            # Update longitudinal movement
+            if longitudinal_delta_x > 0:
+                metrics['longitudinal_movement']['attempts'] += 1
+                metrics['longitudinal_movement']['total_delta_x'] += longitudinal_delta_x
+                if is_goal:
+                    metrics['longitudinal_movement']['goals'] += 1
+            
+            # Check for OZ Retrieval to Shot (5 second window)
+            oz_retrieval_detected = False
+            for j in range(i - 1, max(-1, i - 25), -1):  # Look back up to 25 plays
+                prev_play = self.plays[j]
+                prev_details = prev_play.get('details', {})
+                prev_team = prev_details.get('eventOwnerTeamId')
+                prev_type = prev_play.get('typeDescKey', '')
+                prev_zone = prev_details.get('zoneCode', '')
+                prev_time_str = prev_play.get('timeInPeriod', '')
+                prev_time = self._time_to_seconds(prev_time_str)
+                
+                if prev_team != team_id:
+                    continue
+                
+                time_diff = current_time - prev_time
+                if time_diff > 5:  # Beyond 5 second window
+                    break
+                
+                # Check for OZ hit or takeaway
+                if prev_zone == 'O' and prev_type in ['hit', 'takeaway']:
+                    oz_retrieval_detected = True
+                    break
+            
+            if oz_retrieval_detected:
+                metrics['oz_retrieval_to_shot']['attempts'] += 1
+                if is_goal:
+                    metrics['oz_retrieval_to_shot']['goals'] += 1
+        
+        # Calculate averages
+        if metrics['lateral_movement']['attempts'] > 0:
+            metrics['lateral_movement']['avg_delta_y'] = (
+                metrics['lateral_movement']['total_delta_y'] / metrics['lateral_movement']['attempts']
+            )
+        
+        if metrics['longitudinal_movement']['attempts'] > 0:
+            metrics['longitudinal_movement']['avg_delta_x'] = (
+                metrics['longitudinal_movement']['total_delta_x'] / metrics['longitudinal_movement']['attempts']
+            )
+        
+        return metrics
+    
+    def _time_to_seconds(self, time_str: str) -> float:
+        """Convert MM:SS time string to seconds"""
+        try:
+            if ':' in time_str:
+                parts = time_str.split(':')
+                return int(parts[0]) * 60 + int(parts[1])
+            return 0
+        except (ValueError, IndexError):
+            return 0
 
     def calculate_defensive_metrics(self, team_id: int) -> dict:
         """Calculate defensive metrics"""
@@ -594,14 +742,16 @@ class AdvancedMetricsAnalyzer:
                 'shot_quality': self.calculate_shot_quality_metrics(away_team_id),
                 'pressure': self.calculate_pressure_metrics(away_team_id),
                 'defense': self.calculate_defensive_metrics(away_team_id),
-                'cross_ice_passes': self.calculate_cross_ice_pass_metrics(away_team_id)
+                'cross_ice_passes': self.calculate_cross_ice_pass_metrics(away_team_id),
+                'pre_shot_movement': self.calculate_pre_shot_movement_metrics(away_team_id)
             },
             'home_team': {
                 'team_id': home_team_id,
                 'shot_quality': self.calculate_shot_quality_metrics(home_team_id),
                 'pressure': self.calculate_pressure_metrics(home_team_id),
                 'defense': self.calculate_defensive_metrics(home_team_id),
-                'cross_ice_passes': self.calculate_cross_ice_pass_metrics(home_team_id)
+                'cross_ice_passes': self.calculate_cross_ice_pass_metrics(home_team_id),
+                'pre_shot_movement': self.calculate_pre_shot_movement_metrics(home_team_id)
             },
             'available_metrics': self.get_available_metrics()
         }
