@@ -5,11 +5,12 @@ A comprehensive Python application that generates beautiful, detailed PDF post-g
 ## ✨ Features
 
 - **Real-time NHL Data**: Fetches live game data from the official NHL API
-- **Comprehensive Reports**: Includes scores, player stats, team comparisons, and more
-- **Beautiful Visualizations**: Charts and graphs for shots, scoring by period, and team performance
-- **Professional PDF Output**: Clean, organized reports using ReportLab
-- **Stanley Cup Finals Focus**: Specifically designed for high-stakes playoff games
-- **Fallback Support**: Includes sample data for demonstration purposes
+- **Advanced Hockey Metrics**: Pre-shot movement analysis, pressure sequences, zone-originating shots
+- **Beautiful Visualizations**: Shot location plots with team logos and color-coded data
+- **Professional PDF Output**: Single-page reports with dynamic team colors and logos
+- **Batch Processing**: Generate reports for all games on any date
+- **Automatic Image Conversion**: PDFs automatically converted to PNG format
+- **OT/SO Support**: Dynamic table rows and indicators for overtime and shootout games
 
 ## 📋 Requirements
 
@@ -25,17 +26,21 @@ A comprehensive Python application that generates beautiful, detailed PDF post-g
 pip install -r requirements.txt
 ```
 
-### 2. Run the Generator
+### 2. Generate Reports for a Specific Date
 
 ```bash
-python main.py
+# Generate reports for all games on a specific date
+TARGET_DATE="2025-10-08" python3 batch_report_generator.py
+
+# Or use yesterday's games by default
+python3 batch_report_generator.py
 ```
 
-The application will:
-1. Search for recent Florida Panthers vs Edmonton Oilers games
-2. Fetch comprehensive game data from the NHL API
-3. Generate a detailed PDF report
-4. Save the report with a timestamp
+The batch generator will:
+1. Fetch all NHL games for the specified date
+2. Generate comprehensive reports for each game
+3. Convert PDFs to PNG images automatically
+4. Save all files to a date-stamped folder on your Desktop
 
 ## 📊 Report Contents
 
@@ -129,79 +134,110 @@ You can modify the report generation by editing:
 
 ```
 nhl_postgame_reports/
-├── main.py                    # Main execution script
-├── nhl_api_client.py         # NHL API client
-├── pdf_report_generator.py   # PDF report generator
-├── requirements.txt          # Python dependencies
-├── README.md                # This file
-└── outputs/                 # Generated PDF reports
+├── batch_report_generator.py    # Batch report generation for all games
+├── pdf_report_generator.py      # PDF report generator
+├── advanced_metrics_analyzer.py # Advanced hockey metrics calculator
+├── nhl_api_client.py            # NHL API client
+├── pdf_to_image_converter.py    # PDF to PNG converter
+├── requirements.txt             # Python dependencies
+├── README.md                    # This file
+└── RussoOne-Regular.ttf         # Custom font for headers
 ```
 
 ## 🎯 Example Usage
 
-### Generate Report for Specific Teams
+### Generate Reports for All Games on a Date
+
+```bash
+# Generate for specific date
+TARGET_DATE="2025-10-08" python3 batch_report_generator.py
+
+# Generate for yesterday's games
+python3 batch_report_generator.py
+```
+
+### Generate Single Game Report
 
 ```python
 from nhl_api_client import NHLAPIClient
 from pdf_report_generator import PostGameReportGenerator
 
-# Initialize clients
-nhl_client = NHLAPIClient()
+# Initialize
+api = NHLAPIClient()
 generator = PostGameReportGenerator()
 
-# Find recent game
-game_id = nhl_client.find_recent_game('FLA', 'EDM', days_back=30)
+# Get specific game
+game_data = api.get_game_data(2025020001)  # Game ID
+boxscore = api.get_boxscore(2025020001)
 
-if game_id:
-    # Get game data
-    game_data = nhl_client.get_comprehensive_game_data(game_id)
-    
-    # Generate report
-    generator.generate_report(game_data, 'panthers_oilers_report.pdf')
+# Generate report
+generator.generate_report(game_data, boxscore, 'game_report.pdf')
 ```
 
-### Custom Team Search
+### Access Advanced Metrics
 
 ```python
-# Search for any team matchup
-game_id = nhl_client.find_recent_game('BOS', 'TOR', days_back=60)
+from advanced_metrics_analyzer import AdvancedMetricsAnalyzer
 
-# Get team information
-team_info = nhl_client.get_team_info(13)  # Florida Panthers
-roster = nhl_client.get_team_roster(13)
+# Analyze game
+analyzer = AdvancedMetricsAnalyzer(game_data)
+
+# Get pre-shot movement metrics
+pre_shot = analyzer.calculate_pre_shot_movement_metrics(team_id)
+# Returns: royal_road_proxy, oz_retrieval_to_shot, lateral_movement, longitudinal_movement
+
+# Get pressure metrics
+pressure = analyzer.calculate_pressure_metrics(team_id)
+# Returns: sustained_pressure_sequences, quick_strike_opportunities
 ```
 
 ## 🎨 Report Styling
 
 The PDF reports feature:
-- Professional color scheme (NHL team colors)
-- Clean typography with Helvetica fonts
-- Organized tables with alternating row colors
-- Consistent spacing and layout
-- High-quality charts and graphs
+- **Dynamic Team Colors**: Automatically uses official NHL team colors
+- **Team Logos**: ESPN logos in advanced metrics headers, team logos on shot plots
+- **Custom Typography**: Russo One font for headers, Helvetica for body text
+- **Grey Accent Line**: Professional separator below subtitle
+- **Single-Page Layout**: All content compressed to fit on one page
+- **Automatic PNG Export**: Reports converted to images for easy sharing
 
 ## 🔍 Troubleshooting
 
 ### Common Issues
 
-1. **No games found**: The NHL API may not have recent data for specific matchups
-2. **API errors**: Check internet connection and NHL API status
-3. **Chart generation errors**: Ensure matplotlib and seaborn are properly installed
+1. **No games found**: Check the date format (YYYY-MM-DD) and ensure games were played
+2. **API errors**: NHL API occasionally has delays; try again in a few minutes
+3. **Logo loading failures**: Team logos are fetched from ESPN CDN; requires internet connection
+4. **Font missing**: Ensure `RussoOne-Regular.ttf` is in the project directory
 
-### Fallback Mode
+### Output Location
 
-If the NHL API is unavailable, the application will:
-1. Generate a sample report with realistic mock data
-2. Demonstrate all report features
-3. Provide a template for future customization
+Reports are saved to:
+- **Desktop folder**: `NHL_Reports_YYYY_MM_DD/`
+- **PNG files**: `nhl_postgame_report_TEAM_vs_TEAM_timestamp.png`
+- **Original PDFs**: Automatically deleted after PNG conversion
 
-## 📈 Future Enhancements
+## 📈 Implemented Features
 
-- **Historical Reports**: Generate reports for past games
-- **Player Comparison**: Side-by-side player statistics
-- **Advanced Analytics**: Expected goals, possession metrics
-- **Custom Templates**: User-defined report layouts
-- **Batch Processing**: Generate multiple reports at once
+✅ **Advanced Pre-Shot Movement Metrics**
+- Royal Road Proxy (cross-seam passes)
+- OZ Retrieval to Shot (puck recovery conversions)
+- Lateral Movement (E-W) with descriptive categories
+- Longitudinal Movement (N-S) with descriptive categories
+
+✅ **Pressure & Transition Analytics**
+- Sustained Pressure Sequences
+- Quick Strike Opportunities
+
+✅ **Dynamic Game Support**
+- OT/SO automatic detection and row insertion
+- Accurate goals-by-period calculation from play-by-play
+- Indicator in subtitle for OT/SO games
+
+✅ **Professional Presentation**
+- Team logos in table headers
+- Zone-originating shot metrics (OZS, NZS, DZS)
+- Renamed columns for clarity (GF, BLK, CF%, S)
 
 ## 🤝 Contributing
 
