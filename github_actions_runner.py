@@ -41,8 +41,17 @@ class GitHubActionsRunner:
             print(f"⚠️  Could not save processed games: {e}")
     
     def get_todays_games(self):
-        """Get all games for today"""
-        today = datetime.now().strftime('%Y-%m-%d')
+        """Get all games for today (based on Central Time)"""
+        from datetime import timezone, timedelta
+        
+        # Use Central Time (UTC-5 for CDT, UTC-6 for CST)
+        # For simplicity, use UTC-6 (covers most of NHL season)
+        central_tz = timezone(timedelta(hours=-6))
+        central_now = datetime.now(central_tz)
+        today = central_now.strftime('%Y-%m-%d')
+        
+        print(f"🕐 Current time (CT): {central_now.strftime('%Y-%m-%d %I:%M:%S %p')}")
+        
         try:
             schedule = self.client.get_game_schedule(today)
             if schedule and 'gameWeek' in schedule:
