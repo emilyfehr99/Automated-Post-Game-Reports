@@ -10,6 +10,8 @@ on:
 jobs:
   check-and-post:
     runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Allow workflow to commit and push
     
     steps:
     - name: Checkout repository

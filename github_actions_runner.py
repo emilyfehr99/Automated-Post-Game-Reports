@@ -44,7 +44,7 @@ class GitHubActionsRunner:
         """Get all games for today"""
         today = datetime.now().strftime('%Y-%m-%d')
         try:
-            schedule = self.client.get_schedule(today, today)
+            schedule = self.client.get_game_schedule(today)
             if schedule and 'gameWeek' in schedule:
                 games = []
                 for day in schedule['gameWeek']:
@@ -53,6 +53,8 @@ class GitHubActionsRunner:
                 return games
         except Exception as e:
             print(f"❌ Error fetching schedule: {e}")
+            import traceback
+            traceback.print_exc()
         return []
     
     def generate_and_post_game(self, game_id, away_team, home_team):
