@@ -11,7 +11,8 @@ A comprehensive Python application that generates beautiful, detailed PDF post-g
 - **Batch Processing**: Generate reports for all games on any date
 - **Automatic Image Conversion**: PDFs automatically converted to PNG format
 - **OT/SO Support**: Dynamic table rows and indicators for overtime and shootout games
-- **🐦 Twitter Automation**: Automatically post reports to Twitter with team hashtags and threading
+- **🐦 Twitter Automation**: Automatically post reports to Twitter with team hashtags
+- **🤖 Fully Automatic Monitoring**: Real-time game monitoring with automatic posting
 
 ## 📋 Requirements
 
@@ -43,7 +44,26 @@ The batch generator will:
 3. Convert PDFs to PNG images automatically
 4. Save all files to a date-stamped folder on your Desktop
 
-### 3. Post Reports to Twitter (Optional)
+### 3. Automatic Monitoring (Fully Automatic) 🤖
+
+**The easiest way - Just run once and forget!**
+
+```bash
+# Start the automatic monitor
+./start_monitor.sh
+
+# That's it! The system will:
+# - Monitor games in real-time (checks every 60 seconds)
+# - Generate reports when games finish
+# - Post to Twitter automatically
+# - Keep running until you press Ctrl+C
+```
+
+See [AUTOMATIC_MONITORING.md](AUTOMATIC_MONITORING.md) for complete automatic monitoring documentation.
+
+### 4. Manual Twitter Posting (Optional)
+
+If you prefer manual control:
 
 ```bash
 # Post today's completed game reports to Twitter
