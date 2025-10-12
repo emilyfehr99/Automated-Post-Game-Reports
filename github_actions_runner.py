@@ -76,11 +76,21 @@ class GitHubActionsRunner:
         # Generate the report
         print(f"\n📊 Generating report for {away_team} @ {home_team}...")
         try:
-            # Import and run the PDF generator directly
+            # Fetch comprehensive game data
+            game_data = self.client.get_comprehensive_game_data(game_id)
+            
+            if not game_data:
+                print(f"❌ Failed to fetch game data")
+                return False
+            
+            # Create output filename
+            output_filename = f"/tmp/nhl_postgame_report_{away_team}_vs_{home_team}_{game_id}.pdf"
+            
+            # Import and run the PDF generator
             from pdf_report_generator import PostGameReportGenerator
             
             generator = PostGameReportGenerator()
-            pdf_path = generator.generate_report(game_id)
+            pdf_path = generator.generate_report(game_data, output_filename, game_id)
             
             if not pdf_path or not Path(pdf_path).exists():
                 print(f"❌ Report generation failed")
