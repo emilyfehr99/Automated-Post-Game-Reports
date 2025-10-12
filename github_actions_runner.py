@@ -77,9 +77,9 @@ class GitHubActionsRunner:
         print(f"\n📊 Generating report for {away_team} @ {home_team}...")
         try:
             # Import and run the PDF generator directly
-            from pdf_report_generator import NHLReportGenerator
+            from pdf_report_generator import PostGameReportGenerator
             
-            generator = NHLReportGenerator()
+            generator = PostGameReportGenerator()
             pdf_path = generator.generate_report(game_id)
             
             if not pdf_path or not Path(pdf_path).exists():
