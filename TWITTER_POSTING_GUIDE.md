@@ -1,13 +1,13 @@
 # 🐦 Automated Twitter Posting Guide
 
 ## Overview
-Automatically post NHL Post-Game Reports to Twitter with proper team hashtags and threading.
+Automatically post NHL Post-Game Reports to Twitter with proper team hashtags as **individual posts** for maximum reach and engagement.
 
 ## Features
-- ✅ Automatic thread creation ("Week X Day Y - NHL Post-Game Reports 🏒")
-- ✅ Posts each game report as a reply in the thread
+- ✅ Posts each game as an individual tweet (no threading)
 - ✅ Uses official team hashtags for each matchup
-- ✅ Automatically calculates week/day based on NHL season schedule
+- ✅ Maximizes reach across Hockey Twitter and team hashtag searches
+- ✅ Each game gets independent engagement and visibility
 - ✅ Handles multiple games per day
 
 ## Quick Start
@@ -29,18 +29,15 @@ python3 twitter_poster.py --date 2025-10-11 --image-folder /path/to/images
 
 ## How It Works
 
-### Thread Structure
-1. **Parent Tweet**: "Week 1 Day 3 - NHL Post-Game Reports 🏒"
-2. **Reply Tweets**: Each game report posted as a reply with team hashtags
+### Individual Post Strategy
+Each game is posted as a **standalone tweet** for maximum visibility and engagement.
 
-Example:
+Example Timeline:
 ```
-Week 1 Day 3 - NHL Post-Game Reports 🏒
-October 11, 2025
-  ↳ #GoKingsGo vs #GoJetsGo [image]
-  ↳ #STLBlues vs #Flames [image]
-  ↳ #SabreHood vs #NHLBruins [image]
-  ... (all games from that day)
+Tweet 1: #GoKingsGo vs #GoJetsGo #NHLJets [image]
+Tweet 2: #STLBlues vs #Flames [image]
+Tweet 3: #SabreHood vs #NHLBruins [image]
+... (each game as separate post)
 ```
 
 ### Tweet Format
@@ -50,7 +47,14 @@ Each game tweet contains:
 - Home team hashtag
 - Report image attached
 
-Example: `#GoKingsGo vs #GoJetsGo`
+Example: `#GoKingsGo vs #GoJetsGo #NHLJets`
+
+### Why Individual Posts?
+- ✅ **Higher reach**: Each post appears in main feeds, not buried in replies
+- ✅ **Hashtag visibility**: Games show up in both teams' hashtag searches
+- ✅ **Algorithm boost**: Each post gets independent algorithmic distribution
+- ✅ **Better engagement**: Fans of each team can find and interact with their game
+- ✅ **Growth potential**: Appear in 2 team communities per post
 
 ## Team Hashtags
 
@@ -138,8 +142,15 @@ python3 twitter_poster.py --date 2025-10-11
 - Check that the batch generator completed successfully
 
 ### Rate Limits
-- Twitter Free tier: 1,500 tweets/month
+- Twitter Free tier: 1,500 tweets/month (~50 tweets/day)
+- With 12-16 games/day, you'll use ~360-480 tweets/month
 - If you hit rate limits, wait 15 minutes or upgrade your API plan
+
+### Timeline Management
+- Individual posts will appear on your timeline (not replies)
+- On big game days (12+ games), this will be 12+ consecutive posts
+- Followers will see all posts in their feeds
+- This is normal and accepted in Hockey Twitter culture
 
 ## Security Note
 

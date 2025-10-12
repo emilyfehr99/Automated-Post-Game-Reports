@@ -106,9 +106,9 @@ class TwitterPoster:
             print(f"❌ Failed to upload media: {e}")
             return None
     
-    def post_thread(self, image_folder, date_str):
+    def post_individual_games(self, image_folder, date_str):
         """
-        Post a thread of game reports for a specific date
+        Post individual game reports (no threading) for maximum reach
         Args:
             image_folder: Path to folder containing generated images
             date_str: Date in format 'YYYY-MM-DD'
@@ -128,63 +128,52 @@ class TwitterPoster:
         
         print(f"\n🏒 Found {len(image_files)} reports to post")
         
-        # Calculate week and day
-        week, day = self.calculate_week_and_day(date_str)
-        formatted_date = datetime.strptime(date_str, '%Y-%m-%d').strftime('%B %d, %Y')
+        posted_count = 0
+        failed_count = 0
         
-        # Create thread parent tweet
-        parent_text = f"Week {week} Day {day} - NHL Post-Game Reports 🏒\n{formatted_date}"
+        # Post each game individually
+        for i, image_file in enumerate(image_files, 1):
+            # Extract teams from filename
+            away_team, home_team = self.extract_teams_from_filename(image_file.name)
+            
+            if not away_team or not home_team:
+                print(f"⚠️  Could not extract teams from: {image_file.name}")
+                failed_count += 1
+                continue
+            
+            # Get team hashtags
+            tweet_text = self.get_team_hashtags(away_team, home_team)
+            
+            # Upload image
+            print(f"\n📤 Uploading image {i}/{len(image_files)}: {away_team} vs {home_team}")
+            media_id = self.upload_media(image_file)
+            
+            if not media_id:
+                print(f"⚠️  Skipping {image_file.name} - media upload failed")
+                failed_count += 1
+                continue
+            
+            # Post individual tweet with image
+            try:
+                tweet = self.client.create_tweet(
+                    text=tweet_text,
+                    media_ids=[media_id]
+                )
+                tweet_id = tweet.data['id']
+                print(f"✅ Posted: {tweet_text}")
+                print(f"   🔗 https://twitter.com/user/status/{tweet_id}")
+                posted_count += 1
+                
+            except Exception as e:
+                print(f"❌ Failed to post tweet for {away_team} vs {home_team}: {e}")
+                failed_count += 1
+                continue
         
-        print(f"\n📱 Creating thread: \"{parent_text}\"")
-        
-        try:
-            # Post parent tweet
-            parent_tweet = self.client.create_tweet(text=parent_text)
-            parent_id = parent_tweet.data['id']
-            print(f"✅ Thread created (ID: {parent_id})")
-            
-            # Post each game report as a reply
-            current_reply_id = parent_id
-            
-            for i, image_file in enumerate(image_files, 1):
-                # Extract teams from filename
-                away_team, home_team = self.extract_teams_from_filename(image_file.name)
-                
-                if not away_team or not home_team:
-                    print(f"⚠️  Could not extract teams from: {image_file.name}")
-                    continue
-                
-                # Get team hashtags
-                tweet_text = self.get_team_hashtags(away_team, home_team)
-                
-                # Upload image
-                print(f"\n📤 Uploading image {i}/{len(image_files)}: {away_team} vs {home_team}")
-                media_id = self.upload_media(image_file)
-                
-                if not media_id:
-                    print(f"⚠️  Skipping {image_file.name} - media upload failed")
-                    continue
-                
-                # Post reply tweet with image
-                try:
-                    reply_tweet = self.client.create_tweet(
-                        text=tweet_text,
-                        media_ids=[media_id],
-                        in_reply_to_tweet_id=current_reply_id
-                    )
-                    current_reply_id = reply_tweet.data['id']
-                    print(f"✅ Posted: {tweet_text}")
-                    
-                except Exception as e:
-                    print(f"❌ Failed to post tweet for {away_team} vs {home_team}: {e}")
-                    continue
-            
-            print(f"\n🎉 Thread complete! Posted {len(image_files)} reports")
-            print(f"🔗 View thread: https://twitter.com/user/status/{parent_id}")
-            
-        except Exception as e:
-            print(f"❌ Failed to create thread: {e}")
-            return
+        print(f"\n🎉 Posting complete!")
+        print(f"✅ Successfully posted: {posted_count} games")
+        if failed_count > 0:
+            print(f"❌ Failed: {failed_count} games")
+        print(f"📅 Date: {date_str}")
 
 
 def main():
@@ -221,11 +210,12 @@ def main():
     print("=" * 60)
     print(f"📅 Date: {args.date}")
     print(f"📁 Image folder: {image_folder}")
+    print(f"📱 Mode: Individual posts (max reach)")
     print("=" * 60)
     
-    # Initialize poster and post thread
+    # Initialize poster and post individual games
     poster = TwitterPoster()
-    poster.post_thread(image_folder, args.date)
+    poster.post_individual_games(image_folder, args.date)
 
 
 if __name__ == '__main__':

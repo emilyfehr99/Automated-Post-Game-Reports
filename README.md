@@ -54,9 +54,12 @@ python3 twitter_poster.py --date 2025-10-11
 ```
 
 The Twitter poster will:
-1. Create a threaded post with "Week X Day Y - NHL Post-Game Reports 🏒"
-2. Post each game report as a reply with proper team hashtags
-3. Automatically handle all games from that date
+1. Post each game as an individual tweet (no threading)
+2. Use proper team hashtags for maximum reach
+3. Maximize visibility across Hockey Twitter and team hashtag searches
+4. Automatically handle all games from that date
+
+**Why individual posts?** Higher algorithmic reach, better hashtag visibility, and independent engagement per game.
 
 See [TWITTER_POSTING_GUIDE.md](TWITTER_POSTING_GUIDE.md) for detailed Twitter automation setup.
 
