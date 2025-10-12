@@ -145,8 +145,16 @@ class GitHubActionsRunner:
         try:
             # Debug: Check if environment variables are set
             import os
-            print(f"Debug - API Key from env: {os.getenv('TWITTER_API_KEY', 'NOT SET')[:10]}...")
-            print(f"Debug - Using config API Key: {TWITTER_API_KEY[:10]}...")
+            api_key = os.getenv('TWITTER_API_KEY', '')
+            api_secret = os.getenv('TWITTER_API_SECRET', '')
+            access_token = os.getenv('TWITTER_ACCESS_TOKEN', '')
+            access_secret = os.getenv('TWITTER_ACCESS_TOKEN_SECRET', '')
+            
+            print(f"Debug - Credential lengths:")
+            print(f"  API Key: {len(api_key)} chars (expected 25)")
+            print(f"  API Secret: {len(api_secret)} chars (expected 50)")
+            print(f"  Access Token: {len(access_token)} chars (expected 50)")
+            print(f"  Access Secret: {len(access_secret)} chars (expected 45)")
             
             poster = TwitterPoster()
             
