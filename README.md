@@ -11,6 +11,7 @@ A comprehensive Python application that generates beautiful, detailed PDF post-g
 - **Batch Processing**: Generate reports for all games on any date
 - **Automatic Image Conversion**: PDFs automatically converted to PNG format
 - **OT/SO Support**: Dynamic table rows and indicators for overtime and shootout games
+- **🐦 Twitter Automation**: Automatically post reports to Twitter with team hashtags and threading
 
 ## 📋 Requirements
 
@@ -41,6 +42,23 @@ The batch generator will:
 2. Generate comprehensive reports for each game
 3. Convert PDFs to PNG images automatically
 4. Save all files to a date-stamped folder on your Desktop
+
+### 3. Post Reports to Twitter (Optional)
+
+```bash
+# Post today's completed game reports to Twitter
+python3 twitter_poster.py
+
+# Or post reports from a specific date
+python3 twitter_poster.py --date 2025-10-11
+```
+
+The Twitter poster will:
+1. Create a threaded post with "Week X Day Y - NHL Post-Game Reports 🏒"
+2. Post each game report as a reply with proper team hashtags
+3. Automatically handle all games from that date
+
+See [TWITTER_POSTING_GUIDE.md](TWITTER_POSTING_GUIDE.md) for detailed Twitter automation setup.
 
 ## 📊 Report Contents
 
