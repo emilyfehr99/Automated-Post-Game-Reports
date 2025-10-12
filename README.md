@@ -44,24 +44,48 @@ The batch generator will:
 3. Convert PDFs to PNG images automatically
 4. Save all files to a date-stamped folder on your Desktop
 
-### 3. Automatic Monitoring (Fully Automatic) 🤖
+### 3. Fully Automatic (Cloud) - RECOMMENDED ☁️🤖
 
-**The easiest way - Just run once and forget!**
+**Set it up once, never touch it again! Runs 24/7 even when your laptop is off.**
+
+```bash
+# One-time setup (5 minutes):
+# 1. Add Twitter API secrets to GitHub repo settings
+# 2. Push the code (already done!)
+# 3. Done! It runs automatically in the cloud forever
+
+# See GITHUB_ACTIONS_SETUP.md for step-by-step instructions
+```
+
+**Features:**
+- ✅ Runs in GitHub's cloud (no laptop needed!)
+- ✅ Checks every 15 minutes for completed games
+- ✅ Completely FREE forever
+- ✅ Generates and posts automatically
+- ✅ Works even when you're offline
+
+See [GITHUB_ACTIONS_SETUP.md](GITHUB_ACTIONS_SETUP.md) for setup instructions.
+
+### 4. Automatic Monitoring (Local) 🤖
+
+**Alternative: Run on your laptop when it's on**
 
 ```bash
 # Start the automatic monitor
 ./start_monitor.sh
 
-# That's it! The system will:
+# The system will:
 # - Monitor games in real-time (checks every 60 seconds)
 # - Generate reports when games finish
 # - Post to Twitter automatically
 # - Keep running until you press Ctrl+C
 ```
 
-See [AUTOMATIC_MONITORING.md](AUTOMATIC_MONITORING.md) for complete automatic monitoring documentation.
+**Note:** Laptop must stay on. For 24/7 automation without your laptop, use GitHub Actions (Option 3) instead.
 
-### 4. Manual Twitter Posting (Optional)
+See [AUTOMATIC_MONITORING.md](AUTOMATIC_MONITORING.md) for complete local monitoring documentation.
+
+### 5. Manual Twitter Posting (Optional)
 
 If you prefer manual control:
 
