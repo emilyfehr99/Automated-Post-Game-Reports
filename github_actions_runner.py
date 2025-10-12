@@ -48,7 +48,8 @@ class GitHubActionsRunner:
             if schedule and 'gameWeek' in schedule:
                 games = []
                 for day in schedule['gameWeek']:
-                    if 'games' in day:
+                    # Only include games from today's date
+                    if day.get('date') == today and 'games' in day:
                         games.extend(day['games'])
                 return games
         except Exception as e:
