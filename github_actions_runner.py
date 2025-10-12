@@ -109,9 +109,21 @@ class GitHubActionsRunner:
             
             if not image_path or not Path(image_path).exists():
                 print(f"❌ Image conversion failed")
+                # Clean up PDF
+                try:
+                    Path(pdf_path).unlink()
+                except:
+                    pass
                 return False
             
             print(f"✅ Image converted: {image_path}")
+            
+            # Clean up PDF file (no longer needed)
+            try:
+                Path(pdf_path).unlink()
+                print(f"🗑️  Cleaned up PDF: {pdf_path}")
+            except Exception as e:
+                print(f"⚠️  Could not delete PDF: {e}")
             
         except Exception as e:
             print(f"❌ Error generating report: {e}")
@@ -145,6 +157,13 @@ class GitHubActionsRunner:
             tweet_id = tweet.data['id']
             print(f"✅ Posted to Twitter: {tweet_text}")
             print(f"   🔗 https://twitter.com/user/status/{tweet_id}")
+            
+            # Clean up image file after successful post
+            try:
+                Path(image_path).unlink()
+                print(f"🗑️  Cleaned up image: {image_path}")
+            except Exception as e:
+                print(f"⚠️  Could not delete image: {e}")
             
             return True
             
