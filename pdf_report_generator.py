@@ -51,12 +51,19 @@ class PostGameReportGenerator:
     def register_fonts(self):
         """Register custom fonts with ReportLab"""
         try:
-            # Register Russo One font
-            pdfmetrics.registerFont(TTFont('RussoOne-Regular', '/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf'))
+            # Use path relative to script location
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            font_path = os.path.join(script_dir, 'RussoOne-Regular.ttf')
+            
+            if os.path.exists(font_path):
+                pdfmetrics.registerFont(TTFont('RussoOne-Regular', font_path))
+            else:
+                # Try user's Library folder as fallback
+                pdfmetrics.registerFont(TTFont('RussoOne-Regular', '/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf'))
         except:
             try:
-                # Fallback to system font
-                pdfmetrics.registerFont(TTFont('RussoOne-Regular', '/System/Library/Fonts/Arial Bold.ttf'))
+                # Fallback to Helvetica-Bold which is always available
+                pdfmetrics.registerFont(TTFont('RussoOne-Regular', 'Helvetica-Bold'))
             except:
                 # Use default font if all else fails
                 pass
@@ -65,7 +72,9 @@ class PostGameReportGenerator:
         """Create the modern header image for the report using the user's header with team names"""
         try:
             # Use the user's header image from project directory
-            header_path = "/Users/emilyfehr8/CascadeProjects/nhl_postgame_reports/Header.jpg"
+            # Use path relative to script location
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            header_path = os.path.join(script_dir, "Header.jpg")
             
             if os.path.exists(header_path):
                 # Create a custom header with team names overlaid
@@ -89,7 +98,13 @@ class PostGameReportGenerator:
                 # Try to load Russo One font first (better text rendering), fallback to others (reduced by 1cm = 28pt from 140pt)
                 try:
                     # Try to load Russo One font first (better for text rendering)
-                    font = ImageFont.truetype("/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf", 110)
+                    # Try to load font from script directory first
+                    script_dir = os.path.dirname(os.path.abspath(__file__))
+                    font_path = os.path.join(script_dir, 'RussoOne-Regular.ttf')
+                    if os.path.exists(font_path):
+                        font = ImageFont.truetype(font_path, 110)
+                    else:
+                        font = ImageFont.truetype("/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf", 110)
                 except:
                     try:
                         # Fallback to DaggerSquare font
@@ -235,7 +250,13 @@ class PostGameReportGenerator:
                 
                 # Create subtitle font (45pt) - Russo One first for better text rendering
                 try:
-                    subtitle_font = ImageFont.truetype("/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf", 43)
+                    # Try to load font from script directory first
+                    script_dir = os.path.dirname(os.path.abspath(__file__))
+                    font_path = os.path.join(script_dir, 'RussoOne-Regular.ttf')
+                    if os.path.exists(font_path):
+                        subtitle_font = ImageFont.truetype(font_path, 43)
+                    else:
+                        subtitle_font = ImageFont.truetype("/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf", 43)
                 except:
                     try:
                         subtitle_font = ImageFont.truetype("/Users/emilyfehr8/Library/Fonts/DAGGERSQUARE.otf", 43)
@@ -2350,7 +2371,9 @@ class PostGameReportGenerator:
             fig, ax = plt.subplots(figsize=(8, 5.5))
             
             # Load and display the rink image
-            rink_path = '/Users/emilyfehr8/CascadeProjects/nhl_postgame_reports/F300E016-E2BD-450A-B624-5BADF3853AC0.jpeg'
+            # Use path relative to script location
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            rink_path = os.path.join(script_dir, 'F300E016-E2BD-450A-B624-5BADF3853AC0.jpeg')
             try:
                 if os.path.exists(rink_path):
                     from matplotlib.image import imread
