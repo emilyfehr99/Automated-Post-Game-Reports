@@ -98,14 +98,23 @@ class GitHubActionsRunner:
             
             print(f"✅ Report generated: {pdf_path}")
             
-            # Convert PDF to PNG
-            from pdf_to_image_converter import PDFToImageConverter
-            converter = PDFToImageConverter()
+            # Convert PDF to PNG using pdf2image
+            from pdf2image import convert_from_path
             
             output_dir = Path("/tmp/nhl_images")
             output_dir.mkdir(exist_ok=True)
             
-            image_path = converter.convert_single_pdf(pdf_path, output_dir)
+            # Convert PDF to PNG
+            pages = convert_from_path(pdf_path, dpi=300)
+            
+            if not pages:
+                print(f"❌ PDF conversion failed - no pages")
+                return False
+            
+            # Save first page as PNG
+            image_filename = f"nhl_postgame_report_{away_team}_vs_{home_team}_{game_id}.png"
+            image_path = output_dir / image_filename
+            pages[0].save(image_path, 'PNG')
             
             if not image_path or not Path(image_path).exists():
                 print(f"❌ Image conversion failed")
