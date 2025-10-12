@@ -9,7 +9,7 @@ from datetime import datetime
 from pathlib import Path
 from nhl_api_client import NHLAPIClient
 from twitter_poster import TwitterPoster
-from twitter_config import TEAM_HASHTAGS
+from twitter_config import TEAM_HASHTAGS, TWITTER_API_KEY
 import json
 import subprocess
 
@@ -143,6 +143,11 @@ class GitHubActionsRunner:
         # Post to Twitter
         print(f"\n🐦 Posting {away_team} @ {home_team} to Twitter...")
         try:
+            # Debug: Check if environment variables are set
+            import os
+            print(f"Debug - API Key from env: {os.getenv('TWITTER_API_KEY', 'NOT SET')[:10]}...")
+            print(f"Debug - Using config API Key: {TWITTER_API_KEY[:10]}...")
+            
             poster = TwitterPoster()
             
             # Get team hashtags
