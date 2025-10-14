@@ -823,7 +823,7 @@ class PostGameReportGenerator:
             'DET': colors.Color(206/255, 17/255, 38/255),  # Detroit Red Wings Red
             'CAR': colors.Color(226/255, 24/255, 54/255),  # Carolina Hurricanes Red
             'WSH': colors.Color(4/255, 30/255, 66/255),  # Washington Capitals Blue
-            'PIT': colors.Color(0/255, 0/255, 0/255),  # Pittsburgh Penguins Black
+            'PIT': colors.Color(255/255, 184/255, 28/255),  # Pittsburgh Penguins Gold
             'NYR': colors.Color(0/255, 56/255, 168/255),  # New York Rangers Blue
             'NYI': colors.Color(0/255, 83/255, 155/255),  # New York Islanders Blue
             'NJD': colors.Color(206/255, 17/255, 38/255),  # New Jersey Devils Red
@@ -1380,7 +1380,7 @@ class PostGameReportGenerator:
             'NYI': '#F57D31',  # New York Islanders - Orange
             'NYR': '#0038A8',  # New York Rangers - Blue
             'PHI': '#F74902',  # Philadelphia Flyers - Orange
-            'PIT': '#000000',  # Pittsburgh Penguins - Black
+            'PIT': '#FFB81C',  # Pittsburgh Penguins - Gold
             'WSH': '#C8102E',  # Washington Capitals - Red
             
             # Central Division
@@ -1997,7 +1997,7 @@ class PostGameReportGenerator:
                 'DET': colors.Color(206/255, 17/255, 38/255),  # Detroit Red Wings Red
                 'CAR': colors.Color(226/255, 24/255, 54/255),  # Carolina Hurricanes Red
                 'WSH': colors.Color(4/255, 30/255, 66/255),  # Washington Capitals Blue
-                'PIT': colors.Color(0/255, 0/255, 0/255),  # Pittsburgh Penguins Black
+                'PIT': colors.Color(255/255, 184/255, 28/255),  # Pittsburgh Penguins Gold
                 'NYR': colors.Color(0/255, 56/255, 168/255),  # New York Rangers Blue
                 'NYI': colors.Color(0/255, 83/255, 155/255),  # New York Islanders Blue
                 'NJD': colors.Color(206/255, 17/255, 38/255),  # New Jersey Devils Red
@@ -2084,7 +2084,7 @@ class PostGameReportGenerator:
             'STL': colors.Color(0/255, 47/255, 108/255),  # St. Louis Blues Blue
             'DET': colors.Color(206/255, 17/255, 38/255),  # Detroit Red Wings Red
             'CBJ': colors.Color(0/255, 38/255, 84/255),  # Columbus Blue Jackets Blue
-            'PIT': colors.Color(0/255, 0/255, 0/255),  # Pittsburgh Penguins Black
+            'PIT': colors.Color(255/255, 184/255, 28/255),  # Pittsburgh Penguins Gold
             'PHI': colors.Color(247/255, 30/255, 57/255),  # Philadelphia Flyers Orange
             'WSH': colors.Color(4/255, 30/255, 66/255),  # Washington Capitals Red
             'CAR': colors.Color(226/255, 24/255, 54/255),  # Carolina Hurricanes Red
@@ -2575,7 +2575,7 @@ class PostGameReportGenerator:
                 'DET': colors.Color(206/255, 17/255, 38/255),  # Detroit Red Wings Red
                 'CAR': colors.Color(226/255, 24/255, 54/255),  # Carolina Hurricanes Red
                 'WSH': colors.Color(4/255, 30/255, 66/255),  # Washington Capitals Blue
-                'PIT': colors.Color(0/255, 0/255, 0/255),  # Pittsburgh Penguins Black
+                'PIT': colors.Color(255/255, 184/255, 28/255),  # Pittsburgh Penguins Gold
                 'NYR': colors.Color(0/255, 56/255, 168/255),  # New York Rangers Blue
                 'NYI': colors.Color(0/255, 83/255, 155/255),  # New York Islanders Blue
                 'NJD': colors.Color(206/255, 17/255, 38/255),  # New Jersey Devils Red
