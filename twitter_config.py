@@ -43,7 +43,7 @@ TEAM_HASHTAGS = {
     'VAN': '#Canucks',
     'VGK': '#VegasBorn',
     'WSH': '#ALLCAPS',
-    'WPG': '#GoJetsGo #NHLJets'
+    'WPG': '#NHLJets'
 }
 
 # NHL Season Start Date (for calculating week/day)
