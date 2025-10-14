@@ -59,7 +59,7 @@ class PostGameReportGenerator:
                 pdfmetrics.registerFont(TTFont('RussoOne-Regular', font_path))
             else:
                 # Try user's Library folder as fallback
-                pdfmetrics.registerFont(TTFont('RussoOne-Regular', '/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf'))
+            pdfmetrics.registerFont(TTFont('RussoOne-Regular', '/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf'))
         except:
             try:
                 # Fallback to Helvetica-Bold which is always available
@@ -156,7 +156,7 @@ class PostGameReportGenerator:
                 if game_type == "Regular Season":
                     team_text = f"{away_team} vs {home_team}"
                 else:
-                    team_text = f"{game_type}: {away_team} vs {home_team}"
+                team_text = f"{game_type}: {away_team} vs {home_team}"
                 team_bbox = draw.textbbox((0, 0), team_text, font=font)
                 team_text_width = team_bbox[2] - team_bbox[0]
                 team_text_height = team_bbox[3] - team_bbox[1]
@@ -325,7 +325,7 @@ class PostGameReportGenerator:
                 if game_ending:
                     subtitle_text = f"Post Game Report: {game_date} | {away_score}-{home_score} {winner} WINS ({game_ending})"
                 else:
-                    subtitle_text = f"Post Game Report: {game_date} | {away_score}-{home_score} {winner} WINS"
+                subtitle_text = f"Post Game Report: {game_date} | {away_score}-{home_score} {winner} WINS"
                 subtitle_bbox = draw.textbbox((0, 0), subtitle_text, font=subtitle_font)
                 subtitle_text_width = subtitle_bbox[2] - subtitle_bbox[0]
                 subtitle_text_height = subtitle_bbox[3] - subtitle_bbox[1]
@@ -840,6 +840,7 @@ class PostGameReportGenerator:
             'CGY': colors.Color(200/255, 16/255, 46/255),  # Calgary Flames Red
             'VAN': colors.Color(0/255, 32/255, 91/255),  # Vancouver Canucks Blue
             'SEA': colors.Color(0/255, 22/255, 40/255),  # Seattle Kraken Navy
+            'UTA': colors.Color(105/255, 179/255, 231/255),  # Utah Hockey Club - Mountain Blue
             'CHI': colors.Color(207/255, 10/255, 44/255)  # Chicago Blackhawks Red
         }
         
@@ -1399,6 +1400,7 @@ class PostGameReportGenerator:
             'LAK': '#111111',  # Los Angeles Kings - Black
             'SJS': '#006D75',  # San Jose Sharks - Teal
             'SEA': '#001628',  # Seattle Kraken - Navy Blue
+            'UTA': '#69B3E7',  # Utah Hockey Club - Mountain Blue
             'VAN': '#001F5C',  # Vancouver Canucks - Blue
             'VGK': '#B4975A'   # Vegas Golden Knights - Gold
         }
@@ -2012,6 +2014,7 @@ class PostGameReportGenerator:
                 'CGY': colors.Color(200/255, 16/255, 46/255),  # Calgary Flames Red
                 'VAN': colors.Color(0/255, 32/255, 91/255),  # Vancouver Canucks Blue
                 'SEA': colors.Color(0/255, 22/255, 40/255),  # Seattle Kraken Navy
+                'UTA': colors.Color(105/255, 179/255, 231/255),  # Utah Hockey Club - Mountain Blue
                 'CHI': colors.Color(207/255, 10/255, 44/255)  # Chicago Blackhawks Red
             }
             
@@ -2094,6 +2097,7 @@ class PostGameReportGenerator:
             'OTT': colors.Color(200/255, 16/255, 46/255),  # Ottawa Senators Red
             'MTL': colors.Color(175/255, 30/255, 45/255),  # Montreal Canadiens Red
             'SEA': colors.Color(0/255, 22/255, 40/255),  # Seattle Kraken Navy
+            'UTA': colors.Color(105/255, 179/255, 231/255),  # Utah Hockey Club - Mountain Blue
         }
         home_team_color = team_colors.get(home_team['abbrev'], colors.white)
         
@@ -2588,6 +2592,7 @@ class PostGameReportGenerator:
                 'CGY': colors.Color(200/255, 16/255, 46/255),  # Calgary Flames Red
                 'VAN': colors.Color(0/255, 32/255, 91/255),  # Vancouver Canucks Blue
                 'SEA': colors.Color(0/255, 22/255, 40/255),  # Seattle Kraken Navy
+                'UTA': colors.Color(105/255, 179/255, 231/255),  # Utah Hockey Club - Mountain Blue
                 'CHI': colors.Color(207/255, 10/255, 44/255)  # Chicago Blackhawks Red
             }
             
