@@ -98,6 +98,25 @@ class AdvancedMetricsAnalyzer:
                 
                 if event_type == 'shot-on-goal':
                     shot_quality['shots_on_goal'] += 1
+                    
+                    # Calculate xG for this shot to determine if it's high danger
+                    x_coord = details.get('xCoord', 0)
+                    y_coord = details.get('yCoord', 0)
+                    zone = details.get('zoneCode', '')
+                    shot_type = details.get('shotType', 'unknown')
+                    
+                    xG = self._calculate_single_shot_xG(x_coord, y_coord, zone, shot_type, event_type)
+                    
+                    # High danger shot: xG >= 0.15 (15% or better chance of scoring)
+                    if xG >= 0.15:
+                        shot_quality['high_danger_shots'] += 1
+                    
+                    # Shot type analysis
+                    shot_quality['shot_types'][shot_type] += 1
+                    
+                    # Zone analysis
+                    shot_quality['shot_locations'][zone] += 1
+                    
                 elif event_type == 'missed-shot':
                     shot_quality['missed_shots'] += 1
                 elif event_type == 'blocked-shot':
@@ -106,21 +125,15 @@ class AdvancedMetricsAnalyzer:
             # Track goals
             if event_type == 'goal':
                 shot_quality['goals'] += 1
+                shot_quality['shots_on_goal'] += 1  # Goals count as shots on goal
+                shot_quality['high_danger_shots'] += 1  # Goals are always high danger
                 
                 # Shot type analysis
                 shot_type = details.get('shotType', 'unknown')
                 shot_quality['shot_types'][shot_type] += 1
                 
                 # Location analysis
-                x_coord = details.get('xCoord', 0)
-                y_coord = details.get('yCoord', 0)
                 zone = details.get('zoneCode', '')
-                
-                # High danger area (close to net, in front)
-                if zone == 'O' and x_coord > 50 and abs(y_coord) < 20:
-                    shot_quality['high_danger_shots'] += 1
-                
-                # Zone analysis
                 shot_quality['shot_locations'][zone] += 1
         
         # Calculate shooting percentage (goals / shots on goal)
@@ -723,13 +736,20 @@ class AdvancedMetricsAnalyzer:
                 elif event_type == 'giveaway' and zone == 'D':
                     defense['defensive_zone_clears'] += 1
             
-            # Track shots against
-            elif event_type in ['shot-on-goal', 'missed-shot']:
+            # Track shots against (opponent shots)
+            elif event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
                 defense['shot_attempts_against'] += 1
                 
-                # High danger chances
+                # Calculate xG for opponent's shot to determine if it's high danger
                 x_coord = details.get('xCoord', 0)
-                if zone == 'O' and x_coord > 50 and abs(details.get('yCoord', 0)) < 20:
+                y_coord = details.get('yCoord', 0)
+                shot_type = details.get('shotType', 'unknown')
+                
+                # For high danger chances against, we use all shot attempts (not just shots on goal)
+                xG = self._calculate_single_shot_xG(x_coord, y_coord, zone, shot_type, event_type)
+                
+                # High danger chance against: xG >= 0.15 (15% or better chance of scoring)
+                if xG >= 0.15:
                     defense['high_danger_chances_against'] += 1
         
         return defense

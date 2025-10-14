@@ -138,14 +138,18 @@ Complete breakdown by period including:
 Four key categories with team comparisons (team logos in headers):
 
 **SHOT QUALITY**
-- Expected Goals (xG): Probability-based scoring chances
-- Rush Shots: Shots from rush opportunities
-- Pressure %: Shots taken under defensive pressure
+- **Expected Goals (xG)**: Probability-based scoring metric using distance, angle, shot type, and zone to predict likelihood of scoring
+- **High Danger Shots**: Shots on goal with xG ≥ 0.15 (15%+ scoring probability). Considers distance from goal, shot angle, shot type (wrist, slap, tip-in, etc.), and zone. All goals automatically count as high danger shots.
+- **Total Shots**: All shot attempts (includes shots on goal, missed shots, and blocked shots)
+- **Shots on Goal**: Shots that reached the goalie or resulted in a goal
+- **Shooting %**: Goals divided by shots on goal
 
-**DEFENSIVE ZONE**
-- Exits: Successful zone exits
-- Retrievals: Puck recoveries
-- DZ Time: Time spent in defensive zone
+**DEFENSIVE**
+- **Blocked Shots**: Shots blocked by defending team before reaching the goalie
+- **Takeaways**: Successful puck takeaways from opponent
+- **Hits**: Physical hits delivered
+- **Shot Attempts Against**: Total shots faced (includes shots on goal, missed shots, blocked shots, and goals)
+- **High Danger Chances Against**: Opponent shot attempts with xG ≥ 0.15 (15%+ scoring probability). Uses the same xG model as High Danger Shots but includes ALL shot types (not just shots on goal) - measures total dangerous pressure faced, including shots that were blocked or missed the net.
 
 **PRE-SHOT MOVEMENT** *(New metrics)*
 
