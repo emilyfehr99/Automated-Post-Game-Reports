@@ -41,7 +41,7 @@ class GitHubActionsRunner:
             print(f"⚠️  Could not save processed games: {e}")
     
     def get_todays_games(self):
-        """Get all games for today (based on Central Time)"""
+        """Get all games from today and yesterday (based on Central Time)"""
         from datetime import timezone, timedelta
         
         # Use Central Time (UTC-5 for CDT, UTC-6 for CST)
@@ -49,23 +49,28 @@ class GitHubActionsRunner:
         central_tz = timezone(timedelta(hours=-6))
         central_now = datetime.now(central_tz)
         today = central_now.strftime('%Y-%m-%d')
+        yesterday = (central_now - timedelta(days=1)).strftime('%Y-%m-%d')
         
         print(f"🕐 Current time (CT): {central_now.strftime('%Y-%m-%d %I:%M:%S %p')}")
+        print(f"📅 Checking games from: {yesterday} and {today}")
         
-        try:
-            schedule = self.client.get_game_schedule(today)
-            if schedule and 'gameWeek' in schedule:
-                games = []
-                for day in schedule['gameWeek']:
-                    # Only include games from today's date
-                    if day.get('date') == today and 'games' in day:
-                        games.extend(day['games'])
-                return games
-        except Exception as e:
-            print(f"❌ Error fetching schedule: {e}")
-            import traceback
-            traceback.print_exc()
-        return []
+        all_games = []
+        
+        # Check both yesterday and today
+        for date in [yesterday, today]:
+            try:
+                schedule = self.client.get_game_schedule(date)
+                if schedule and 'gameWeek' in schedule:
+                    for day in schedule['gameWeek']:
+                        # Include games from the target date
+                        if day.get('date') == date and 'games' in day:
+                            all_games.extend(day['games'])
+            except Exception as e:
+                print(f"❌ Error fetching schedule for {date}: {e}")
+                import traceback
+                traceback.print_exc()
+        
+        return all_games
     
     def generate_and_post_game(self, game_id, away_team, home_team):
         """Generate report and post to Twitter for a single game"""
