@@ -2,9 +2,8 @@ name: Auto Post NHL Reports
 
 on:
   schedule:
-    # Run every 15 minutes during typical game times (12 PM - 3 AM ET)
-    - cron: '*/15 12-23 * * *'  # Noon to 11:45 PM
-    - cron: '*/15 0-3 * * *'    # Midnight to 3 AM
+    # Run every 10 minutes, 24/7 to catch completed games quickly
+    - cron: '*/10 * * * *'
   workflow_dispatch:  # Allow manual triggering
 
 jobs:
