@@ -238,19 +238,26 @@ class GitHubActionsRunner:
         success_count = 0
         for game_info in newly_completed:
             try:
-                if self.generate_and_post_game(
+                success = self.generate_and_post_game(
                     game_info['id'],
                     game_info['away'],
                     game_info['home']
-                ):
+                )
+                
+                if success:
+                    # Only mark as processed if successfully posted
                     self.processed_games.add(game_info['id'])
+                    self.save_processed_games()  # Save after each success
                     success_count += 1
                     print(f"✅ COMPLETED: {game_info['away']} @ {game_info['home']}")
                 else:
-                    print(f"⚠️  FAILED: {game_info['away']} @ {game_info['home']}")
+                    print(f"⚠️  FAILED: {game_info['away']} @ {game_info['home']} - will retry next run")
                     
             except Exception as e:
                 print(f"❌ Error processing game: {e}")
+                import traceback
+                traceback.print_exc()
+                print(f"⚠️  Game {game_info['id']} not marked as processed - will retry next run")
                 continue
         
         # Save processed games
