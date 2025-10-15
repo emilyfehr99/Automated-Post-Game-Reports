@@ -59,7 +59,7 @@ class PostGameReportGenerator:
                 pdfmetrics.registerFont(TTFont('RussoOne-Regular', font_path))
             else:
                 # Try user's Library folder as fallback
-            pdfmetrics.registerFont(TTFont('RussoOne-Regular', '/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf'))
+                pdfmetrics.registerFont(TTFont('RussoOne-Regular', '/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf'))
         except:
             try:
                 # Fallback to Helvetica-Bold which is always available
