@@ -150,6 +150,12 @@ def main():
         game_id = game.get("id")
         away_team = game.get("awayTeam", {}).get("abbrev", "UNK")
         home_team = game.get("homeTeam", {}).get("abbrev", "UNK")
+        game_state = game.get("gameState", "UNKNOWN")
+        
+        # Skip games that are not completed (only process FINAL or OFF games)
+        if game_state not in ["FINAL", "OFF"]:
+            print(f"\n⏭️  Skipping game {i}/{len(games)}: {away_team} @ {home_team} - Game status: {game_state} (not completed)")
+            continue
         
         print(f"\n📊 Processing game {i}/{len(games)}: {away_team} @ {home_team} (ID: {game_id})")
         
