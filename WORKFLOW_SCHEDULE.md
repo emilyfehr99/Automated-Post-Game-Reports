@@ -7,9 +7,9 @@ The workflow checks for completed games **every 10 minutes**, but intelligently 
 ### ✅ **ACTIVE HOURS** (Workflow Runs)
 
 #### Weekdays (Monday-Friday)
-- **3:00 PM - 4:59 AM Central** (next day)
+- **3:00 PM - 1:59 AM Central** (next day)
 - Checks every 10 minutes during this window
-- **Why:** Most NHL games are 6:00-9:00 PM starts, finishing by midnight
+- **Why:** Most NHL games are 6:00-9:00 PM starts, finishing by 1am even with OT
 
 #### Weekends (Saturday-Sunday)
 - **24/7** (all day, every day)
@@ -21,7 +21,7 @@ The workflow checks for completed games **every 10 minutes**, but intelligently 
 ### ⏸️ **SKIP HOURS** (Workflow Pauses)
 
 #### Weekdays Only (Monday-Friday)
-- **5:00 AM - 2:59 PM Central**
+- **2:00 AM - 2:59 PM Central**
 - Workflow runs but immediately exits to save resources
 - **Why:** NHL games virtually never happen during these hours on weekdays
 
@@ -32,11 +32,11 @@ The workflow checks for completed games **every 10 minutes**, but intelligently 
 ```
 Central Time:
 12am ████████████████████ ACTIVE (late games finishing)
-1am  ████████████████████ ACTIVE
-2am  ████████████████████ ACTIVE
-3am  ████████████████████ ACTIVE
-4am  ████████████████████ ACTIVE
-5am  ░░░░░░░░░░░░░░░░░░░░ SKIPPED (no games)
+1am  ████████████████████ ACTIVE (OT games wrapping up)
+2am  ░░░░░░░░░░░░░░░░░░░░ SKIPPED (no games)
+3am  ░░░░░░░░░░░░░░░░░░░░ SKIPPED
+4am  ░░░░░░░░░░░░░░░░░░░░ SKIPPED
+5am  ░░░░░░░░░░░░░░░░░░░░ SKIPPED
 6am  ░░░░░░░░░░░░░░░░░░░░ SKIPPED
 7am  ░░░░░░░░░░░░░░░░░░░░ SKIPPED
 8am  ░░░░░░░░░░░░░░░░░░░░ SKIPPED
@@ -77,11 +77,11 @@ Central Time:
 - **1,008 runs/week**
 
 ### After (smart scheduling):
-- **Weekdays:** ~96 runs/day (14 active hours)
+- **Weekdays:** ~66 runs/day (11 active hours: 3pm-2am)
 - **Weekends:** 144 runs/day (24 hours)
-- **Weekly total:** ~768 runs/week
+- **Weekly total:** ~618 runs/week
 
-**Savings: ~240 workflow runs per week (~24% reduction)**
+**Savings: ~390 workflow runs per week (~39% reduction)**
 
 ---
 
@@ -89,7 +89,7 @@ Central Time:
 
 1. **Every 10 minutes**, GitHub Actions triggers the workflow
 2. **First step** checks current Central Time and day of week
-3. **If weekday 5am-3pm:** Workflow exits immediately (takes ~2 seconds)
+3. **If weekday 2am-3pm:** Workflow exits immediately (takes ~2 seconds)
 4. **Otherwise:** Full workflow runs (generates reports, posts to Twitter)
 
 ---
@@ -101,8 +101,8 @@ Central Time:
 CENTRAL_HOUR=$(TZ='America/Chicago' date +%H)
 CENTRAL_DAY=$(TZ='America/Chicago' date +%u)  # 1=Mon, 7=Sun
 
-# Skip if: (Mon-Fri) AND (5am-2:59pm)
-if [ $CENTRAL_DAY -le 5 ] && [ $CENTRAL_HOUR -ge 5 ] && [ $CENTRAL_HOUR -lt 15 ]; then
+# Skip if: (Mon-Fri) AND (2am-2:59pm)
+if [ $CENTRAL_DAY -le 5 ] && [ $CENTRAL_HOUR -ge 2 ] && [ $CENTRAL_HOUR -lt 15 ]; then
   SKIP
 else
   RUN
@@ -124,7 +124,7 @@ fi
 
 - **All times in Central Time** (America/Chicago timezone)
 - **Manual triggers** (`workflow_dispatch`) always run regardless of time
-- **Late-night games** are covered (workflow runs until 5am)
+- **Late-night games** are covered (workflow runs until 2am, even OT games finish by then)
 - **Matinee games** on weekends are covered (24/7 on Sat/Sun)
 - **Playoff games** with unusual times are covered on weekends
 

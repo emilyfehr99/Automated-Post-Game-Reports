@@ -2,7 +2,7 @@ name: Auto Post NHL Reports
 
 on:
   schedule:
-    # Run every 10 minutes, but skip weekdays 5am-3pm Central (no games during those hours)
+    # Run every 10 minutes, but skip weekdays 2am-3pm Central (no games during those hours)
     - cron: '*/10 * * * *'
   workflow_dispatch:  # Allow manual triggering
 
@@ -16,7 +16,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
     
-    - name: Check if we should run (skip weekdays 5am-3pm Central)
+    - name: Check if we should run (skip weekdays 2am-3pm Central)
       id: time_check
       run: |
         # Get current time in Central Time (UTC-6)
@@ -26,9 +26,9 @@ jobs:
         echo "Current Central Time: $(TZ='America/Chicago' date '+%Y-%m-%d %H:%M:%S %A')"
         echo "Hour: $CENTRAL_HOUR, Day: $CENTRAL_DAY"
         
-        # Skip if weekday (1-5) and between 5am (05) and 3pm (15)
-        if [ $CENTRAL_DAY -le 5 ] && [ $CENTRAL_HOUR -ge 5 ] && [ $CENTRAL_HOUR -lt 15 ]; then
-          echo "⏸️  SKIPPING: Weekday off-hours (5am-3pm Central)"
+        # Skip if weekday (1-5) and between 2am (02) and 3pm (15)
+        if [ $CENTRAL_DAY -le 5 ] && [ $CENTRAL_HOUR -ge 2 ] && [ $CENTRAL_HOUR -lt 15 ]; then
+          echo "⏸️  SKIPPING: Weekday off-hours (2am-3pm Central)"
           echo "should_run=false" >> $GITHUB_OUTPUT
         else
           echo "✅ RUNNING: Game time!"
