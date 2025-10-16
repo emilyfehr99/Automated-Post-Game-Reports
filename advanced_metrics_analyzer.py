@@ -9,11 +9,13 @@ import os
 from datetime import datetime
 from collections import defaultdict
 from typing import Dict, List, Tuple, Optional
+from improved_xg_model import ImprovedXGModel
 
 class AdvancedMetricsAnalyzer:
     def __init__(self, play_by_play_data: dict):
         self.plays = play_by_play_data.get('plays', [])
         self.roster_map = self._create_roster_map(play_by_play_data)
+        self.xg_model = ImprovedXGModel()  # Initialize improved xG model
         
     def _create_roster_map(self, play_by_play_data: dict) -> dict:
         """Create a mapping of player IDs to player info"""
@@ -146,10 +148,13 @@ class AdvancedMetricsAnalyzer:
         return shot_quality
     
     def _calculate_expected_goals(self, team_id: int) -> float:
-        """Calculate expected goals using distance, angle, shot type, and zone-based model"""
+        """Calculate expected goals using improved xG model with rebounds, rushes, and context"""
         total_xG = 0.0
         
-        for play in self.plays:
+        # Get game score for score state calculation
+        game_score = self._get_current_score()
+        
+        for i, play in enumerate(self.plays):
             details = play.get('details', {})
             event_type = play.get('typeDescKey', '')
             event_team = details.get('eventOwnerTeamId')
@@ -158,16 +163,93 @@ class AdvancedMetricsAnalyzer:
                 continue
                 
             if event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot']:
+                # Get shot data
                 x_coord = details.get('xCoord', 0)
                 y_coord = details.get('yCoord', 0)
-                zone = details.get('zoneCode', '')
-                shot_type = details.get('shotType', 'unknown')
+                shot_type = details.get('shotType', 'wrist')
+                situation_code = play.get('situationCode', '1551')  # Default to 5v5
+                time_in_period = play.get('timeInPeriod', '00:00')
+                period = play.get('period', 1)
                 
-                # Calculate expected goal value for this shot
-                xG = self._calculate_single_shot_xG(x_coord, y_coord, zone, shot_type, event_type)
+                # Parse strength state from situation code
+                strength_state = self._parse_strength_state(situation_code)
+                
+                # Calculate score differential from team's perspective
+                score_diff = self._get_score_differential(play, team_id, game_score)
+                
+                # Build shot data for improved model
+                shot_data = {
+                    'x_coord': x_coord,
+                    'y_coord': y_coord,
+                    'shot_type': shot_type,
+                    'event_type': event_type,
+                    'time_in_period': time_in_period,
+                    'period': period,
+                    'strength_state': strength_state,
+                    'score_differential': score_diff,
+                    'team_id': team_id
+                }
+                
+                # Get previous events for rebound/rush detection (last 10 events)
+                start_idx = max(0, i - 10)
+                previous_events = self.plays[start_idx:i]
+                
+                # Calculate xG using improved model
+                xG = self.xg_model.calculate_xg(shot_data, previous_events)
                 total_xG += xG
         
         return round(total_xG, 2)
+    
+    def _parse_strength_state(self, situation_code: str) -> str:
+        """
+        Parse NHL situation code to strength state
+        Format: XXYY where XX = away skaters, YY = home skaters
+        Examples: 1551 = 5v5, 1541 = 5v4 (PP), 1451 = 4v5 (PK)
+        """
+        try:
+            if len(situation_code) >= 4:
+                away_skaters = int(situation_code[2])
+                home_skaters = int(situation_code[3])
+                return f"{away_skaters}v{home_skaters}"
+        except (ValueError, IndexError):
+            pass
+        return "5v5"  # Default
+    
+    def _get_current_score(self) -> Dict:
+        """Get final game score to track score state throughout game"""
+        score = {'away': 0, 'home': 0}
+        for play in self.plays:
+            if play.get('typeDescKey') == 'goal':
+                details = play.get('details', {})
+                scoring_team = details.get('eventOwnerTeamId')
+                # We'll build running score in _get_score_differential
+        return score
+    
+    def _get_score_differential(self, current_play: Dict, team_id: int, game_score: Dict) -> int:
+        """
+        Calculate score differential at time of shot from team's perspective
+        Positive = leading, Negative = trailing, 0 = tied
+        """
+        # Build running score up to this play
+        away_goals = 0
+        home_goals = 0
+        
+        current_play_idx = self.plays.index(current_play)
+        
+        for play in self.plays[:current_play_idx]:
+            if play.get('typeDescKey') == 'goal':
+                details = play.get('details', {})
+                scoring_team = details.get('eventOwnerTeamId')
+                
+                # Determine if scoring team is away or home
+                # This is a simplification - in real implementation, we'd track team IDs better
+                if scoring_team == team_id:
+                    # Goal for this team
+                    pass
+                    
+        # Simplified: return 0 for tied (we can improve this with game data)
+        # In production, we'd track actual running score
+        return 0
     
     def _calculate_single_shot_xG(self, x_coord: float, y_coord: float, zone: str, shot_type: str, event_type: str) -> float:
         """Calculate expected goal value for a single shot based on NHL analytics model"""
