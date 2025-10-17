@@ -11,6 +11,7 @@ from reportlab.graphics.charts.linecharts import HorizontalLineChart
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
 from advanced_metrics_analyzer import AdvancedMetricsAnalyzer
+from improved_xg_model import ImprovedXGModel
 from reportlab.graphics.charts.barcharts import VerticalBarChart
 from reportlab.graphics.charts.piecharts import Pie
 from reportlab.graphics.charts.legends import Legend
@@ -47,6 +48,7 @@ class PostGameReportGenerator:
         self.styles = getSampleStyleSheet()
         self.register_fonts()
         self.setup_custom_styles()
+        self.xg_model = ImprovedXGModel()  # Initialize improved xG model for period-by-period calculations
     
     def register_fonts(self):
         """Register custom fonts with ReportLab"""
@@ -59,7 +61,7 @@ class PostGameReportGenerator:
                 pdfmetrics.registerFont(TTFont('RussoOne-Regular', font_path))
             else:
                 # Try user's Library folder as fallback
-                pdfmetrics.registerFont(TTFont('RussoOne-Regular', '/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf'))
+            pdfmetrics.registerFont(TTFont('RussoOne-Regular', '/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf'))
         except:
             try:
                 # Fallback to Helvetica-Bold which is always available
@@ -156,7 +158,7 @@ class PostGameReportGenerator:
                 if game_type == "Regular Season":
                     team_text = f"{away_team} vs {home_team}"
                 else:
-                    team_text = f"{game_type}: {away_team} vs {home_team}"
+                team_text = f"{game_type}: {away_team} vs {home_team}"
                 team_bbox = draw.textbbox((0, 0), team_text, font=font)
                 team_text_width = team_bbox[2] - team_bbox[0]
                 team_text_height = team_bbox[3] - team_bbox[1]
@@ -325,7 +327,7 @@ class PostGameReportGenerator:
                 if game_ending:
                     subtitle_text = f"Post Game Report: {game_date} | {away_score}-{home_score} {winner} WINS ({game_ending})"
                 else:
-                    subtitle_text = f"Post Game Report: {game_date} | {away_score}-{home_score} {winner} WINS"
+                subtitle_text = f"Post Game Report: {game_date} | {away_score}-{home_score} {winner} WINS"
                 subtitle_bbox = draw.textbbox((0, 0), subtitle_text, font=subtitle_font)
                 subtitle_text_width = subtitle_bbox[2] - subtitle_bbox[0]
                 subtitle_text_height = subtitle_bbox[3] - subtitle_bbox[1]
@@ -1140,8 +1142,11 @@ class PostGameReportGenerator:
             for player in team_players:
                 player_map[player['id']] = player['name']
             
+            # Get all plays for previous_events context
+            all_plays = play_by_play['plays']
+            
             # Process each play
-            for play in play_by_play['plays']:
+            for play_index, play in enumerate(all_plays):
                 details = play.get('details', {})
                 event_team = details.get('eventOwnerTeamId')
                 period = play.get('periodDescriptor', {}).get('number', 1)
@@ -1157,31 +1162,37 @@ class PostGameReportGenerator:
                 period_index = period - 1
                 event_type = play.get('typeDescKey', '')
                 
+                # Get previous events for context (last 10 events)
+                previous_events = all_plays[max(0, play_index-10):play_index]
+                
                 # Calculate Game Score components for this play
                 if event_type == 'goal':
                     # Goals: 0.75 points
                     game_scores[period_index] += 0.75
                     
-                    # Calculate xG for this goal
-                    xg = self._calculate_shot_xg(details)
+                    # Calculate xG for this goal using ImprovedXGModel
+                    xg = self._calculate_shot_xg(details, 'goal', play, previous_events)
                     xg_values[period_index] += xg
                     
                 elif event_type == 'shot-on-goal':
                     # Shots on goal: 0.075 points
                     game_scores[period_index] += 0.075
                     
-                    # Calculate xG for this shot
-                    xg = self._calculate_shot_xg(details)
+                    # Calculate xG for this shot using ImprovedXGModel
+                    xg = self._calculate_shot_xg(details, 'shot-on-goal', play, previous_events)
                     xg_values[period_index] += xg
                     
                 elif event_type == 'missed-shot':
                     # Missed shots don't count for Game Score but count for xG
-                    xg = self._calculate_shot_xg(details)
+                    xg = self._calculate_shot_xg(details, 'missed-shot', play, previous_events)
                     xg_values[period_index] += xg
                     
                 elif event_type == 'blocked-shot':
                     # Blocked shots: 0.05 points
                     game_scores[period_index] += 0.05
+                    # Blocked shots also count for xG
+                    xg = self._calculate_shot_xg(details, 'blocked-shot', play, previous_events)
+                    xg_values[period_index] += xg
                     
                 elif event_type == 'penalty':
                     # Penalties taken: -0.15 points
@@ -1208,22 +1219,63 @@ class PostGameReportGenerator:
             
         except Exception as e:
             print(f"Error calculating period metrics: {e}")
+            import traceback
+            traceback.print_exc()
             return [0.0, 0.0, 0.0], [0.0, 0.0, 0.0]
     
-    def _calculate_shot_xg(self, shot_details):
-        """Calculate expected goals for a single shot using our advanced model"""
+    def _calculate_shot_xg(self, shot_details, event_type, play_data, previous_events):
+        """Calculate expected goals for a single shot using our ImprovedXGModel"""
         try:
             x_coord = shot_details.get('xCoord', 0)
             y_coord = shot_details.get('yCoord', 0)
-            zone = shot_details.get('zoneCode', '')
-            shot_type = shot_details.get('shotType', 'unknown')
+            shot_type = shot_details.get('shotType', 'wrist').lower()
             
-            # Use our advanced xG model
-            return self._calculate_single_shot_xG_advanced(x_coord, y_coord, zone, shot_type, 'shot-on-goal')
+            # Get additional context from play_data
+            time_in_period = play_data.get('timeInPeriod', '00:00')
+            period = play_data.get('periodDescriptor', {}).get('number', 1)
+            team_id = shot_details.get('eventOwnerTeamId', 0)
+            
+            # Parse strength state from situation code
+            situation_code = play_data.get('situationCode', '1551')
+            strength_state = self._parse_strength_state(situation_code)
+            
+            # Get score differential (simplified - would need full game state)
+            score_differential = 0  # Default to tied
+            
+            # Build shot_data dictionary for ImprovedXGModel
+            shot_data = {
+                'x_coord': x_coord,
+                'y_coord': y_coord,
+                'shot_type': shot_type,
+                'event_type': event_type,
+                'time_in_period': time_in_period,
+                'period': period,
+                'strength_state': strength_state,
+                'score_differential': score_differential,
+                'team_id': team_id
+            }
+            
+            # Use ImprovedXGModel to calculate xG
+            xg = self.xg_model.calculate_xg(shot_data, previous_events)
+            return xg
             
         except Exception as e:
             print(f"Error calculating shot xG: {e}")
+            import traceback
+            traceback.print_exc()
             return 0.0
+    
+    def _parse_strength_state(self, situation_code):
+        """Parse situation code to get strength state (e.g., '5v5', '5v4')"""
+        try:
+            # Situation code format: XXYY where XX = away skaters, YY = home skaters
+            if len(situation_code) >= 4:
+                away_skaters = int(situation_code[0:2]) % 10  # Get last digit
+                home_skaters = int(situation_code[2:4]) % 10  # Get last digit
+                return f"{away_skaters}v{home_skaters}"
+            return '5v5'
+        except:
+            return '5v5'
     
     def _calculate_single_shot_xG_advanced(self, x_coord: float, y_coord: float, zone: str, shot_type: str, event_type: str) -> float:
         """Calculate expected goal value for a single shot based on NHL analytics model"""
