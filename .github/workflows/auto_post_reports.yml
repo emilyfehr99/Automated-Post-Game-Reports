@@ -61,6 +61,7 @@ jobs:
         TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
         TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
       run: |
+        cd nhl_postgame_reports
         python3 github_actions_runner.py
     
     - name: Update Self-Learning Model
