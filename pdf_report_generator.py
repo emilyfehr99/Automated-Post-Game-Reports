@@ -158,7 +158,7 @@ class PostGameReportGenerator:
                 if game_type == "Regular Season":
                     team_text = f"{away_team} vs {home_team}"
                 else:
-                team_text = f"{game_type}: {away_team} vs {home_team}"
+                    team_text = f"{game_type}: {away_team} vs {home_team}"
                 team_bbox = draw.textbbox((0, 0), team_text, font=font)
                 team_text_width = team_bbox[2] - team_bbox[0]
                 team_text_height = team_bbox[3] - team_bbox[1]
@@ -327,7 +327,7 @@ class PostGameReportGenerator:
                 if game_ending:
                     subtitle_text = f"Post Game Report: {game_date} | {away_score}-{home_score} {winner} WINS ({game_ending})"
                 else:
-                subtitle_text = f"Post Game Report: {game_date} | {away_score}-{home_score} {winner} WINS"
+                    subtitle_text = f"Post Game Report: {game_date} | {away_score}-{home_score} {winner} WINS"
                 subtitle_bbox = draw.textbbox((0, 0), subtitle_text, font=subtitle_font)
                 subtitle_text_width = subtitle_bbox[2] - subtitle_bbox[0]
                 subtitle_text_height = subtitle_bbox[3] - subtitle_bbox[1]
