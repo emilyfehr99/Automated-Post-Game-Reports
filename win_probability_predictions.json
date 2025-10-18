@@ -2105,8 +2105,8 @@
     "xg_weight": 0.4,
     "hdc_weight": 0.3,
     "shot_attempts_weight": 0.2,
-    "faceoff_weight": 0.05,
-    "other_metrics_weight": 0.05
+    "game_score_weight": 0.1,
+    "other_metrics_weight": 0.0
   },
   "last_updated": "2025-10-18T14:49:38.330800"
 }

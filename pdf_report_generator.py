@@ -1172,13 +1172,14 @@ class PostGameReportGenerator:
             # Calculate Game Score from play-by-play data
             away_gs, home_gs = self._calculate_game_scores(game_data)
             
-            # Model weights from the sophisticated win probability model (updated to use GS instead of FO%)
+            # Use fixed weights for post-game win probability analysis (NOT the learning model)
+            # This is purely based on the actual game data, not predictions
             weights = {
                 'xg_weight': 0.4,           # Expected Goals - 40% weight
                 'hdc_weight': 0.3,          # High Danger Chances - 30% weight  
                 'shot_attempts_weight': 0.2, # Shot Attempts - 20% weight
-                'game_score_weight': 0.05,  # Game Score - 5% weight (replaces FO%)
-                'other_metrics_weight': 0.05 # Other metrics - 5% weight
+                'game_score_weight': 0.1,   # Game Score - 10% weight (no faceoff %)
+                'other_metrics_weight': 0.0  # Other metrics - 0% weight
             }
             
             # Calculate weighted scores

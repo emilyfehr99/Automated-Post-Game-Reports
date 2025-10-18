@@ -10,6 +10,7 @@ from pathlib import Path
 from nhl_api_client import NHLAPIClient
 from twitter_poster import TwitterPoster
 from twitter_config import TEAM_HASHTAGS, TWITTER_API_KEY
+from self_learning_model import SelfLearningModel
 import json
 import subprocess
 
@@ -20,6 +21,7 @@ class GitHubActionsRunner:
         self.client = NHLAPIClient()
         self.processed_games_file = Path('processed_games.json')
         self.processed_games = self.load_processed_games()
+        self.learning_model = SelfLearningModel()
         
     def load_processed_games(self):
         """Load previously processed game IDs"""
@@ -99,6 +101,9 @@ class GitHubActionsRunner:
                 return False
             
             print(f"✅ Report generated: {pdf_path}")
+            
+            # Learn from this game's data
+            self.learn_from_game(game_data, game_id, away_team, home_team)
             
             # Convert PDF to PNG using pdf2image
             from pdf2image import convert_from_path
@@ -197,6 +202,75 @@ class GitHubActionsRunner:
             traceback.print_exc()
             return False
     
+    def learn_from_game(self, game_data, game_id, away_team, home_team):
+        """Learn from completed game data to improve predictions"""
+        try:
+            # Get win probability prediction from the report generator
+            from pdf_report_generator import PostGameReportGenerator
+            generator = PostGameReportGenerator()
+            
+            # Calculate win probability using current model
+            win_prob = generator.calculate_win_probability(game_data)
+            
+            # Determine actual winner
+            away_goals = game_data['boxscore']['awayTeam'].get('score', 0)
+            home_goals = game_data['boxscore']['homeTeam'].get('score', 0)
+            
+            actual_winner = None
+            if away_goals > home_goals:
+                actual_winner = "away"
+            elif home_goals > away_goals:
+                actual_winner = "home"
+            # If tied, we don't learn from it (shootout/OT games)
+            
+            if actual_winner:
+                # Extract metrics used in prediction
+                metrics_used = {
+                    "away_xg": 0.0,
+                    "home_xg": 0.0,
+                    "away_hdc": 0,
+                    "home_hdc": 0,
+                    "away_shots": game_data['boxscore']['awayTeam'].get('sog', 0),
+                    "home_shots": game_data['boxscore']['homeTeam'].get('sog', 0),
+                    "away_gs": 0.0,
+                    "home_gs": 0.0
+                }
+                
+                # Try to get more detailed metrics if available
+                try:
+                    away_xg, home_xg = generator._calculate_xg_from_plays(game_data)
+                    away_hdc, home_hdc = generator._calculate_hdc_from_plays(game_data)
+                    away_gs, home_gs = generator._calculate_game_scores(game_data)
+                    
+                    metrics_used.update({
+                        "away_xg": away_xg,
+                        "home_xg": home_xg,
+                        "away_hdc": away_hdc,
+                        "home_hdc": home_hdc,
+                        "away_gs": away_gs,
+                        "home_gs": home_gs
+                    })
+                except Exception as e:
+                    print(f"⚠️  Could not extract detailed metrics: {e}")
+                
+                # Add prediction to learning model
+                self.learning_model.add_prediction(
+                    game_id=game_id,
+                    date=datetime.now().strftime('%Y-%m-%d'),
+                    away_team=away_team,
+                    home_team=home_team,
+                    predicted_away_prob=win_prob['away_probability'],
+                    predicted_home_prob=win_prob['home_probability'],
+                    metrics_used=metrics_used,
+                    actual_winner=actual_winner
+                )
+                
+                print(f"🧠 Learned from {away_team} @ {home_team}: {actual_winner} won")
+                print(f"   Prediction: {win_prob['away_probability']:.1f}% vs {win_prob['home_probability']:.1f}%")
+                
+        except Exception as e:
+            print(f"⚠️  Error learning from game: {e}")
+    
     def run(self):
         """Main execution for GitHub Actions"""
         print("="*60)
@@ -264,6 +338,17 @@ class GitHubActionsRunner:
         
         # Save processed games
         self.save_processed_games()
+        
+        # Run daily model update
+        print(f"\n{'='*60}")
+        print("🧠 UPDATING MODEL...")
+        print("="*60)
+        try:
+            model_perf = self.learning_model.run_daily_update()
+            print(f"📊 Model Performance: {model_perf['accuracy']:.3f} accuracy ({model_perf['correct_predictions']}/{model_perf['total_games']} games)")
+            print(f"📈 Recent Accuracy: {model_perf['recent_accuracy']:.3f}")
+        except Exception as e:
+            print(f"⚠️  Error updating model: {e}")
         
         print(f"\n{'='*60}")
         print(f"🎉 Run Complete!")
