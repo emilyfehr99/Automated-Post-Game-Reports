@@ -57,7 +57,6 @@ class PostGameReportGenerator:
             'RussoOne-Regular.ttf',  # Current directory
             'nhl_postgame_reports/RussoOne-Regular.ttf',  # Subdirectory
             '/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf',  # Local Mac path
-            '/System/Library/Fonts/Arial Bold.ttf'  # System fallback
         ]
         
         font_registered = False
@@ -66,13 +65,23 @@ class PostGameReportGenerator:
                 if os.path.exists(font_path):
                     pdfmetrics.registerFont(TTFont('RussoOne-Regular', font_path))
                     font_registered = True
+                    print(f"Successfully registered font from: {font_path}")
                     break
-            except:
+            except Exception as e:
+                print(f"Failed to register font from {font_path}: {e}")
                 continue
         
         if not font_registered:
-            # Use default font if all else fails
-            pass
+            # Register a system font as fallback
+            try:
+                pdfmetrics.registerFont(TTFont('RussoOne-Regular', 'Helvetica'))
+                print("Using Helvetica as fallback font")
+            except:
+                try:
+                    pdfmetrics.registerFont(TTFont('RussoOne-Regular', 'Arial'))
+                    print("Using Arial as fallback font")
+                except:
+                    print("Warning: Could not register any font, using default")
     
     def create_header_image(self, game_data, game_id=None):
         """Create the modern header image for the report using the user's header with team names"""
