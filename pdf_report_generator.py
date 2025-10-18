@@ -877,6 +877,9 @@ class PostGameReportGenerator:
             away_gs_periods, away_xg_periods = self._calculate_period_metrics(game_data, away_team['id'], 'away')
             home_gs_periods, home_xg_periods = self._calculate_period_metrics(game_data, home_team['id'], 'home')
             
+            # Use the same xG calculation as Advanced Metrics table for consistency
+            away_xg_total, home_xg_total = self._calculate_xg_from_plays(game_data)
+            
             # Calculate pass metrics for both teams
             away_ew_passes, away_ns_passes, away_behind_net = self._calculate_pass_metrics(game_data, away_team['id'], 'away')
             home_ew_passes, home_ns_passes, home_behind_net = self._calculate_pass_metrics(game_data, home_team['id'], 'home')
@@ -893,8 +896,8 @@ class PostGameReportGenerator:
             away_period_scores, away_ot_goals, away_so_goals = self._calculate_goals_by_period(game_data, away_team['id'])
             home_period_scores, home_ot_goals, home_so_goals = self._calculate_goals_by_period(game_data, home_team['id'])
             
-            # Determine if game went to OT or SO
-            has_ot = away_ot_goals > 0 or home_ot_goals > 0
+            # Determine if game went to OT or SO (check for period types, not just goals)
+            has_ot = self._check_for_ot_period(game_data)
             has_so = away_so_goals > 0 or home_so_goals > 0
             
             # Create mini team logos for the table
@@ -942,7 +945,7 @@ class PostGameReportGenerator:
             # Create period-by-period data table with all advanced metrics (dynamically handle OT/SO)
             stats_data = [
                 # Header row
-                ['Period', 'GF', 'S', 'CF%', 'PP', 'PIM', 'Hits', 'FO%', 'BLK', 'GV', 'TK', 'GS', 'xG', 'NZT', 'NZTS', 'OZS', 'NZS', 'DZS', 'FC', 'Rush'],
+                ['Period', 'GF', 'S', 'CF%', 'PP', 'PIM', 'Hits', 'FO%', 'BLK', 'GV', 'TK', 'GS', 'xG', 'NZT', 'NZTSA', 'OZS', 'NZS', 'DZS', 'FC', 'Rush'],
                 # Away team logo row with win probability centered in the row
                 [away_team['abbrev'], away_logo_img if away_logo_img else '', '', '', '', '', '', '', '', f"{win_prob['away_probability']}% likelihood of winning", '', '', '', '', '', '', '', '', ''],
             ]
@@ -957,20 +960,46 @@ class PostGameReportGenerator:
                     f'{away_zone_metrics["oz_originating_shots"][i]}', f'{away_zone_metrics["nz_originating_shots"][i]}', f'{away_zone_metrics["dz_originating_shots"][i]}',
                     f'{away_zone_metrics["fc_cycle_sog"][i]}', f'{away_zone_metrics["rush_sog"][i]}'])
             
-            # Add OT row if applicable
-            if has_ot:
-                stats_data.append(['OT', str(away_ot_goals), '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'])
-            
-            # Add SO row if applicable  
-            if has_so:
-                stats_data.append(['SO', str(away_so_goals), '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'])
+            # Add OT/SO row(s) - combine if both occur
+            if has_ot and has_so:
+                # Combined OT/SO row with all metrics
+                combined_ot_so_goals = away_ot_goals + away_so_goals
+                # Calculate combined metrics for OT/SO periods
+                ot_so_stats = self._calculate_ot_so_stats(game_data, away_team['id'], 'away')
+                stats_data.append(['OT/SO', str(combined_ot_so_goals), str(ot_so_stats['shots']), f"{ot_so_stats['corsi_pct']:.1f}%", 
+                    f"{ot_so_stats['pp_goals']}/{ot_so_stats['pp_attempts']}", str(ot_so_stats['pim']), 
+                    str(ot_so_stats['hits']), f"{ot_so_stats['fo_pct']:.1f}%", str(ot_so_stats['bs']), 
+                    str(ot_so_stats['gv']), str(ot_so_stats['tk']), f'{ot_so_stats["gs"]:.1f}', f'{ot_so_stats["xg"]:.2f}', 
+                    f'{ot_so_stats["nz_turnovers"]}', f'{ot_so_stats["nz_turnovers_to_shots"]}',
+                    f'{ot_so_stats["oz_originating_shots"]}', f'{ot_so_stats["nz_originating_shots"]}', f'{ot_so_stats["dz_originating_shots"]}',
+                    f'{ot_so_stats["fc_cycle_sog"]}', f'{ot_so_stats["rush_sog"]}'])
+            elif has_ot:
+                # OT only row with all metrics
+                ot_stats = self._calculate_ot_so_stats(game_data, away_team['id'], 'away', 'OT')
+                stats_data.append(['OT', str(away_ot_goals), str(ot_stats['shots']), f"{ot_stats['corsi_pct']:.1f}%", 
+                    f"{ot_stats['pp_goals']}/{ot_stats['pp_attempts']}", str(ot_stats['pim']), 
+                    str(ot_stats['hits']), f"{ot_stats['fo_pct']:.1f}%", str(ot_stats['bs']), 
+                    str(ot_stats['gv']), str(ot_stats['tk']), f'{ot_stats["gs"]:.1f}', f'{ot_stats["xg"]:.2f}', 
+                    f'{ot_stats["nz_turnovers"]}', f'{ot_stats["nz_turnovers_to_shots"]}',
+                    f'{ot_stats["oz_originating_shots"]}', f'{ot_stats["nz_originating_shots"]}', f'{ot_stats["dz_originating_shots"]}',
+                    f'{ot_stats["fc_cycle_sog"]}', f'{ot_stats["rush_sog"]}'])
+            elif has_so:
+                # SO only row with all metrics
+                so_stats = self._calculate_ot_so_stats(game_data, away_team['id'], 'away', 'SO')
+                stats_data.append(['SO', str(away_so_goals), str(so_stats['shots']), f"{so_stats['corsi_pct']:.1f}%", 
+                    f"{so_stats['pp_goals']}/{so_stats['pp_attempts']}", str(so_stats['pim']), 
+                    str(so_stats['hits']), f"{so_stats['fo_pct']:.1f}%", str(so_stats['bs']), 
+                    str(so_stats['gv']), str(so_stats['tk']), f'{so_stats["gs"]:.1f}', f'{so_stats["xg"]:.2f}', 
+                    f'{so_stats["nz_turnovers"]}', f'{so_stats["nz_turnovers_to_shots"]}',
+                    f'{so_stats["oz_originating_shots"]}', f'{so_stats["nz_originating_shots"]}', f'{so_stats["dz_originating_shots"]}',
+                    f'{so_stats["fc_cycle_sog"]}', f'{so_stats["rush_sog"]}'])
             
             # Add Final row for away team
             away_total_goals = sum(away_period_scores) + away_ot_goals + away_so_goals
             stats_data.append(['Final', str(away_total_goals), str(sum(away_period_stats['shots'])), f"{sum(away_period_stats['corsi_pct'])/3:.1f}%",
                 f"{sum(away_period_stats['pp_goals'])}/{sum(away_period_stats['pp_attempts'])}", str(sum(away_period_stats['pim'])), 
                 str(sum(away_period_stats['hits'])), f"{sum(away_period_stats['fo_pct'])/3:.1f}%", str(sum(away_period_stats['bs'])), 
-                str(sum(away_period_stats['gv'])), str(sum(away_period_stats['tk'])), f'{sum(away_gs_periods):.1f}', f'{sum(away_xg_periods):.2f}',
+                str(sum(away_period_stats['gv'])), str(sum(away_period_stats['tk'])), f'{sum(away_gs_periods):.1f}', f'{away_xg_total:.2f}',
                 f'{sum(away_zone_metrics["nz_turnovers"])}', f'{sum(away_zone_metrics["nz_turnovers_to_shots"])}',
                  f'{sum(away_zone_metrics["oz_originating_shots"])}', f'{sum(away_zone_metrics["nz_originating_shots"])}', f'{sum(away_zone_metrics["dz_originating_shots"])}',
                 f'{sum(away_zone_metrics["fc_cycle_sog"])}', f'{sum(away_zone_metrics["rush_sog"])}'])
@@ -988,20 +1017,46 @@ class PostGameReportGenerator:
                     f'{home_zone_metrics["oz_originating_shots"][i]}', f'{home_zone_metrics["nz_originating_shots"][i]}', f'{home_zone_metrics["dz_originating_shots"][i]}',
                     f'{home_zone_metrics["fc_cycle_sog"][i]}', f'{home_zone_metrics["rush_sog"][i]}'])
             
-            # Add OT row if applicable
-            if has_ot:
-                stats_data.append(['OT', str(home_ot_goals), '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'])
-            
-            # Add SO row if applicable
-            if has_so:
-                stats_data.append(['SO', str(home_so_goals), '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-', '-'])
+            # Add OT/SO row(s) - combine if both occur
+            if has_ot and has_so:
+                # Combined OT/SO row with all metrics
+                combined_ot_so_goals = home_ot_goals + home_so_goals
+                # Calculate combined metrics for OT/SO periods
+                ot_so_stats = self._calculate_ot_so_stats(game_data, home_team['id'], 'home')
+                stats_data.append(['OT/SO', str(combined_ot_so_goals), str(ot_so_stats['shots']), f"{ot_so_stats['corsi_pct']:.1f}%", 
+                    f"{ot_so_stats['pp_goals']}/{ot_so_stats['pp_attempts']}", str(ot_so_stats['pim']), 
+                    str(ot_so_stats['hits']), f"{ot_so_stats['fo_pct']:.1f}%", str(ot_so_stats['bs']), 
+                    str(ot_so_stats['gv']), str(ot_so_stats['tk']), f'{ot_so_stats["gs"]:.1f}', f'{ot_so_stats["xg"]:.2f}', 
+                    f'{ot_so_stats["nz_turnovers"]}', f'{ot_so_stats["nz_turnovers_to_shots"]}',
+                    f'{ot_so_stats["oz_originating_shots"]}', f'{ot_so_stats["nz_originating_shots"]}', f'{ot_so_stats["dz_originating_shots"]}',
+                    f'{ot_so_stats["fc_cycle_sog"]}', f'{ot_so_stats["rush_sog"]}'])
+            elif has_ot:
+                # OT only row with all metrics
+                ot_stats = self._calculate_ot_so_stats(game_data, home_team['id'], 'home', 'OT')
+                stats_data.append(['OT', str(home_ot_goals), str(ot_stats['shots']), f"{ot_stats['corsi_pct']:.1f}%", 
+                    f"{ot_stats['pp_goals']}/{ot_stats['pp_attempts']}", str(ot_stats['pim']), 
+                    str(ot_stats['hits']), f"{ot_stats['fo_pct']:.1f}%", str(ot_stats['bs']), 
+                    str(ot_stats['gv']), str(ot_stats['tk']), f'{ot_stats["gs"]:.1f}', f'{ot_stats["xg"]:.2f}', 
+                    f'{ot_stats["nz_turnovers"]}', f'{ot_stats["nz_turnovers_to_shots"]}',
+                    f'{ot_stats["oz_originating_shots"]}', f'{ot_stats["nz_originating_shots"]}', f'{ot_stats["dz_originating_shots"]}',
+                    f'{ot_stats["fc_cycle_sog"]}', f'{ot_stats["rush_sog"]}'])
+            elif has_so:
+                # SO only row with all metrics
+                so_stats = self._calculate_ot_so_stats(game_data, home_team['id'], 'home', 'SO')
+                stats_data.append(['SO', str(home_so_goals), str(so_stats['shots']), f"{so_stats['corsi_pct']:.1f}%", 
+                    f"{so_stats['pp_goals']}/{so_stats['pp_attempts']}", str(so_stats['pim']), 
+                    str(so_stats['hits']), f"{so_stats['fo_pct']:.1f}%", str(so_stats['bs']), 
+                    str(so_stats['gv']), str(so_stats['tk']), f'{so_stats["gs"]:.1f}', f'{so_stats["xg"]:.2f}', 
+                    f'{so_stats["nz_turnovers"]}', f'{so_stats["nz_turnovers_to_shots"]}',
+                    f'{so_stats["oz_originating_shots"]}', f'{so_stats["nz_originating_shots"]}', f'{so_stats["dz_originating_shots"]}',
+                    f'{so_stats["fc_cycle_sog"]}', f'{so_stats["rush_sog"]}'])
             
             # Add Final row for home team
             home_total_goals = sum(home_period_scores) + home_ot_goals + home_so_goals
             stats_data.append(['Final', str(home_total_goals), str(sum(home_period_stats['shots'])), f"{sum(home_period_stats['corsi_pct'])/3:.1f}%",
                 f"{sum(home_period_stats['pp_goals'])}/{sum(home_period_stats['pp_attempts'])}", str(sum(home_period_stats['pim'])), 
                 str(sum(home_period_stats['hits'])), f"{sum(home_period_stats['fo_pct'])/3:.1f}%", str(sum(home_period_stats['bs'])), 
-                str(sum(home_period_stats['gv'])), str(sum(home_period_stats['tk'])), f'{sum(home_gs_periods):.1f}', f'{sum(home_xg_periods):.2f}',
+                str(sum(home_period_stats['gv'])), str(sum(home_period_stats['tk'])), f'{sum(home_gs_periods):.1f}', f'{home_xg_total:.2f}',
                 f'{sum(home_zone_metrics["nz_turnovers"])}', f'{sum(home_zone_metrics["nz_turnovers_to_shots"])}',
                  f'{sum(home_zone_metrics["oz_originating_shots"])}', f'{sum(home_zone_metrics["nz_originating_shots"])}', f'{sum(home_zone_metrics["dz_originating_shots"])}',
                 f'{sum(home_zone_metrics["fc_cycle_sog"])}', f'{sum(home_zone_metrics["rush_sog"])}'])
@@ -1010,15 +1065,17 @@ class PostGameReportGenerator:
             away_team_color = team_colors.get(away_team['abbrev'], colors.white)
             home_team_color = team_colors.get(home_team['abbrev'], colors.white)
             
-            # Calculate dynamic row positions based on OT/SO
+            # Calculate dynamic row positions based on OT/SO (combine if both occur)
             away_logo_row = 1
             away_data_start = 2
-            away_data_end = away_data_start + 3 + (1 if has_ot else 0) + (1 if has_so else 0)  # P1,P2,P3 + OT? + SO?
+            # If both OT and SO occur, count as 1 row; otherwise count each separately
+            ot_so_rows = 1 if (has_ot and has_so) else (1 if has_ot else 0) + (1 if has_so else 0)
+            away_data_end = away_data_start + 3 + ot_so_rows  # P1,P2,P3 + OT/SO rows
             away_final_row = away_data_end
             
             home_logo_row = away_final_row + 1
             home_data_start = home_logo_row + 1
-            home_data_end = home_data_start + 3 + (1 if has_ot else 0) + (1 if has_so else 0)
+            home_data_end = home_data_start + 3 + ot_so_rows
             home_final_row = home_data_end
             
             # Reduce font sizes and padding to fit OT/SO rows on one page
@@ -1112,15 +1169,15 @@ class PostGameReportGenerator:
             # Calculate high danger chances from play-by-play
             away_hdc, home_hdc = self._calculate_hdc_from_plays(game_data)
             
-            # Calculate faceoff percentages from play-by-play
-            away_fo_pct, home_fo_pct = self._calculate_faceoff_percentages(game_data)
+            # Calculate Game Score from play-by-play data
+            away_gs, home_gs = self._calculate_game_scores(game_data)
             
-            # Model weights from the sophisticated win probability model
+            # Model weights from the sophisticated win probability model (updated to use GS instead of FO%)
             weights = {
                 'xg_weight': 0.4,           # Expected Goals - 40% weight
                 'hdc_weight': 0.3,          # High Danger Chances - 30% weight  
                 'shot_attempts_weight': 0.2, # Shot Attempts - 20% weight
-                'faceoff_weight': 0.05,     # Faceoff Win % - 5% weight
+                'game_score_weight': 0.05,  # Game Score - 5% weight (replaces FO%)
                 'other_metrics_weight': 0.05 # Other metrics - 5% weight
             }
             
@@ -1129,15 +1186,16 @@ class PostGameReportGenerator:
                 away_xg * weights['xg_weight'] +
                 away_hdc * weights['hdc_weight'] +
                 away_sog * weights['shot_attempts_weight'] +
-                away_fo_pct * weights['faceoff_weight']
+                away_gs * weights['game_score_weight']
             )
             
             home_score = (
                 home_xg * weights['xg_weight'] +
                 home_hdc * weights['hdc_weight'] +
                 home_sog * weights['shot_attempts_weight'] +
-                home_fo_pct * weights['faceoff_weight']
+                home_gs * weights['game_score_weight']
             )
+            
             
             # Calculate probabilities using softmax
             total_score = away_score + home_score
@@ -1149,8 +1207,8 @@ class PostGameReportGenerator:
                 home_prob = 50.0
             
             print(f"Win probability calculation: Away {away_team['abbrev']} {away_prob:.1f}% vs Home {home_team['abbrev']} {home_prob:.1f}%")
-            print(f"  Away: xG={away_xg:.2f}, HDC={away_hdc}, SOG={away_sog}, FO%={away_fo_pct:.1f}")
-            print(f"  Home: xG={home_xg:.2f}, HDC={home_hdc}, SOG={home_sog}, FO%={home_fo_pct:.1f}")
+            print(f"  Away: xG={away_xg:.2f}, HDC={away_hdc}, SOG={away_sog}, GS={away_gs:.1f}")
+            print(f"  Home: xG={home_xg:.2f}, HDC={home_hdc}, SOG={home_sog}, GS={home_gs:.1f}")
             
             return {
                 'away_probability': round(away_prob, 1),
@@ -1169,7 +1227,7 @@ class PostGameReportGenerator:
             }
     
     def _calculate_xg_from_plays(self, game_data):
-        """Calculate expected goals from play-by-play data"""
+        """Calculate expected goals from play-by-play data using the working ImprovedXGModel"""
         try:
             away_team_id = game_data['boxscore']['awayTeam']['id']
             home_team_id = game_data['boxscore']['homeTeam']['id']
@@ -1178,12 +1236,16 @@ class PostGameReportGenerator:
             home_xg = 0.0
             
             if 'play_by_play' in game_data and 'plays' in game_data['play_by_play']:
-                for play in game_data['play_by_play']['plays']:
-                    if play.get('typeDescKey') in ['shot-on-goal', 'goal']:
+                plays = game_data['play_by_play']['plays']
+                for play_index, play in enumerate(plays):
+                    if play.get('typeDescKey') in ['shot-on-goal', 'goal', 'missed-shot', 'blocked-shot']:
                         team_id = play.get('details', {}).get('eventOwnerTeamId')
                         if team_id == away_team_id or team_id == home_team_id:
-                            # Calculate xG for this shot
-                            xg = self._calculate_shot_xg(play)
+                            # Get previous events for context (last 10 events)
+                            previous_events = plays[max(0, play_index-10):play_index]
+                            
+                            # Calculate xG using the working ImprovedXGModel
+                            xg = self._calculate_shot_xg(play.get('details', {}), play.get('typeDescKey', ''), play, previous_events)
                             if team_id == away_team_id:
                                 away_xg += xg
                             else:
@@ -1195,28 +1257,246 @@ class PostGameReportGenerator:
             print(f"Error calculating xG from plays: {e}")
             return 0.0, 0.0
     
-    def _calculate_shot_xg(self, play):
-        """Calculate expected goals for a single shot"""
+    def _calculate_shot_xg_simple(self, play):
+        """Calculate expected goals for a single shot using improved model (simple version)"""
         try:
             details = play.get('details', {})
             x_coord = details.get('xCoord', 0)
             y_coord = details.get('yCoord', 0)
             shot_type = details.get('shotType', 'wrist')
             
-            # Simple distance-based xG calculation
-            distance = (x_coord**2 + y_coord**2)**0.5
-            if distance < 20:
-                return 0.15
-            elif distance < 35:
-                return 0.08
-            elif distance < 50:
-                return 0.04
-            else:
-                return 0.02
+            # Use improved xG model with research-backed multipliers
+            return self._calculate_improved_xg(x_coord, y_coord, shot_type)
                     
         except Exception as e:
             print(f"Error calculating shot xG: {e}")
             return 0.05  # Default xG value
+    
+    def _calculate_improved_xg(self, x_coord, y_coord, shot_type):
+        """Calculate xG using research-backed improved model"""
+        try:
+            # Shot type multipliers from Hockey-Statistics research (5v5)
+            shot_type_multipliers = {
+                'snap': 1.137,
+                'snap-shot': 1.137,
+                'slap': 1.168,
+                'slap-shot': 1.168,
+                'slapshot': 1.168,
+                'wrist': 0.865,
+                'wrist-shot': 0.865,
+                'tip-in': 0.697,
+                'tip': 0.697,
+                'deflected': 0.683,
+                'deflection': 0.683,
+                'backhand': 0.657,
+                'wrap-around': 0.356,
+                'wrap': 0.356,
+            }
+            
+            # Calculate baseline xG from distance and angle
+            distance = (x_coord**2 + y_coord**2)**0.5
+            angle = abs(y_coord) / max(abs(x_coord), 1)  # Avoid division by zero
+            
+            # Baseline xG based on distance (research-backed)
+            if distance < 20:
+                base_xg = 0.15
+            elif distance < 35:
+                base_xg = 0.08
+            elif distance < 50:
+                base_xg = 0.04
+            else:
+                base_xg = 0.02
+            
+            # Apply shot type multiplier
+            shot_multiplier = shot_type_multipliers.get(shot_type.lower(), 0.865)  # Default to wrist shot
+            
+            # Apply angle adjustment (shots from better angles have higher xG)
+            if angle < 0.3:  # Very close to center
+                angle_multiplier = 1.2
+            elif angle < 0.6:  # Good angle
+                angle_multiplier = 1.0
+            else:  # Wide angle
+                angle_multiplier = 0.8
+            
+            final_xg = base_xg * shot_multiplier * angle_multiplier
+            
+            # Cap at 95% (no shot is 100% certain)
+            return min(final_xg, 0.95)
+            
+        except Exception as e:
+            print(f"Error in improved xG calculation: {e}")
+            return 0.05
+    
+    def _calculate_game_scores(self, game_data):
+        """Calculate total Game Score for both teams"""
+        try:
+            away_team_id = game_data['boxscore']['awayTeam']['id']
+            home_team_id = game_data['boxscore']['homeTeam']['id']
+            
+            away_gs = 0.0
+            home_gs = 0.0
+            
+            if 'play_by_play' in game_data and 'plays' in game_data['play_by_play']:
+                for play in game_data['play_by_play']['plays']:
+                    team_id = play.get('details', {}).get('eventOwnerTeamId')
+                    if team_id == away_team_id or team_id == home_team_id:
+                        gs_contribution = self._calculate_play_game_score(play)
+                        if team_id == away_team_id:
+                            away_gs += gs_contribution
+                        else:
+                            home_gs += gs_contribution
+            
+            return away_gs, home_gs
+            
+        except Exception as e:
+            print(f"Error calculating Game Scores: {e}")
+            return 0.0, 0.0
+    
+    def _calculate_play_game_score(self, play):
+        """Calculate Game Score contribution for a single play"""
+        try:
+            event_type = play.get('typeDescKey', '')
+            details = play.get('details', {})
+            
+            # Game Score formula: 0.75×G + 0.7×A1 + 0.55×A2 + 0.075×SOG + 0.05×BLK + 0.15×PD - 0.15×PT
+            if event_type == 'goal':
+                return 0.75  # Goals
+            elif event_type == 'shot-on-goal':
+                return 0.075  # Shots on goal
+            elif event_type == 'blocked-shot':
+                return 0.05  # Blocked shots
+            elif event_type == 'penalty':
+                return -0.15  # Penalties taken
+            elif event_type == 'penalty-drawn':
+                return 0.15  # Penalties drawn
+            else:
+                return 0.0
+                
+        except Exception as e:
+            print(f"Error calculating play Game Score: {e}")
+            return 0.0
+    
+    def _calculate_ot_so_stats(self, game_data, team_id, team_side, period_type=None):
+        """Calculate comprehensive stats for OT/SO periods"""
+        try:
+            play_by_play = game_data.get('play_by_play')
+            if not play_by_play or 'plays' not in play_by_play:
+                return self._get_default_ot_so_stats()
+            
+            # Initialize stats
+            stats = {
+                'shots': 0, 'corsi_for': 0, 'corsi_against': 0, 'corsi_pct': 50.0,
+                'pp_goals': 0, 'pp_attempts': 0, 'pim': 0, 'hits': 0, 'fo_wins': 0, 'fo_total': 0, 'fo_pct': 50.0,
+                'bs': 0, 'gv': 0, 'tk': 0, 'gs': 0.0, 'xg': 0.0,
+                'nz_turnovers': 0, 'nz_turnovers_to_shots': 0,
+                'oz_originating_shots': 0, 'nz_originating_shots': 0, 'dz_originating_shots': 0,
+                'fc_cycle_sog': 0, 'rush_sog': 0
+            }
+            
+            for play in play_by_play['plays']:
+                period = play.get('periodDescriptor', {}).get('number', 1)
+                period_type_play = play.get('periodDescriptor', {}).get('periodType', 'REG')
+                event_type = play.get('typeDescKey', '')
+                details = play.get('details', {})
+                event_team_id = details.get('eventOwnerTeamId')
+                
+                # Filter for OT/SO periods
+                if period_type_play not in ['OT', 'SO']:
+                    continue
+                
+                # If specific period type requested, filter further
+                if period_type and period_type_play != period_type:
+                    continue
+                
+                # Only count events for this team
+                if event_team_id != team_id:
+                    # Count corsi against
+                    if event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
+                        stats['corsi_against'] += 1
+                    continue
+                
+                # Count shots and corsi for
+                if event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
+                    stats['corsi_for'] += 1
+                    if event_type in ['shot-on-goal', 'goal']:
+                        stats['shots'] += 1
+                
+                # Count other stats
+                if event_type == 'goal':
+                    stats['gs'] += 0.75
+                    # Check if it's a power play goal
+                    if details.get('situationCode', '1551') != '1551':  # Not 5v5
+                        stats['pp_goals'] += 1
+                elif event_type == 'shot-on-goal':
+                    stats['gs'] += 0.075
+                elif event_type == 'blocked-shot':
+                    stats['bs'] += 1
+                    stats['gs'] += 0.05
+                elif event_type == 'penalty':
+                    stats['pim'] += 2  # Assume 2-minute penalty
+                    stats['gs'] -= 0.15
+                elif event_type == 'penalty-drawn':
+                    stats['gs'] += 0.15
+                elif event_type == 'hit':
+                    stats['hits'] += 1
+                    stats['gs'] += 0.15
+                elif event_type == 'giveaway':
+                    stats['gv'] += 1
+                    stats['gs'] -= 0.15
+                elif event_type == 'takeaway':
+                    stats['tk'] += 1
+                    stats['gs'] += 0.15
+                elif event_type == 'faceoff':
+                    stats['fo_total'] += 1
+                    # Assume 50% win rate for simplicity
+                    stats['fo_wins'] += 0.5
+                
+                # Calculate xG for shots
+                if event_type in ['shot-on-goal', 'goal', 'missed-shot', 'blocked-shot']:
+                    xg = self._calculate_shot_xg(details, event_type, play, [])
+                    stats['xg'] += xg
+            
+            # Calculate percentages
+            total_corsi = stats['corsi_for'] + stats['corsi_against']
+            if total_corsi > 0:
+                stats['corsi_pct'] = (stats['corsi_for'] / total_corsi) * 100
+            
+            if stats['fo_total'] > 0:
+                stats['fo_pct'] = (stats['fo_wins'] / stats['fo_total']) * 100
+            
+            return stats
+            
+        except Exception as e:
+            print(f"Error calculating OT/SO stats: {e}")
+            return self._get_default_ot_so_stats()
+    
+    def _get_default_ot_so_stats(self):
+        """Return default stats for OT/SO periods when calculation fails"""
+        return {
+            'shots': 0, 'corsi_pct': 50.0, 'pp_goals': 0, 'pp_attempts': 0, 'pim': 0, 'hits': 0, 'fo_pct': 50.0,
+            'bs': 0, 'gv': 0, 'tk': 0, 'gs': 0.0, 'xg': 0.0,
+            'nz_turnovers': 0, 'nz_turnovers_to_shots': 0,
+            'oz_originating_shots': 0, 'nz_originating_shots': 0, 'dz_originating_shots': 0,
+            'fc_cycle_sog': 0, 'rush_sog': 0
+        }
+    
+    def _check_for_ot_period(self, game_data):
+        """Check if the game had an overtime period (regardless of goals scored)"""
+        try:
+            play_by_play = game_data.get('play_by_play')
+            if not play_by_play or 'plays' not in play_by_play:
+                return False
+            
+            for play in play_by_play['plays']:
+                period_type = play.get('periodDescriptor', {}).get('periodType', 'REG')
+                if period_type == 'OT':
+                    return True
+            
+            return False
+            
+        except Exception as e:
+            print(f"Error checking for OT period: {e}")
+            return False
     
     def _calculate_hdc_from_plays(self, game_data):
         """Calculate high danger chances from play-by-play data"""
@@ -1797,7 +2077,7 @@ class PostGameReportGenerator:
                             metrics['dz_originating_shots'][period_index] += 1
                         
                         # Determine shot type using proper hockey logic
-                        if self._is_rush_shot(play, play_by_play['plays']):
+                        if self._is_rush_shot(play, play_by_play['plays'], team_id):
                             metrics['rush_sog'][period_index] += 1
                         else:
                             # All non-rush shots are considered forecheck/cycle shots
@@ -1993,74 +2273,64 @@ class PostGameReportGenerator:
         else:
             return 'neutral'
     
-    def _is_rush_shot(self, current_play, all_plays):
-        """Determine if a shot is from a rush using proper hockey logic"""
+    def _is_rush_shot(self, current_play, all_plays, team_id):
+        """Determine if a shot is from a rush: DZ event followed by shot within 8 seconds"""
         try:
-            play_index = all_plays.index(current_play)
             current_team = current_play.get('details', {}).get('eventOwnerTeamId')
             current_period = current_play.get('periodDescriptor', {}).get('number', 1)
+            current_time_str = current_play.get('timeInPeriod', '00:00')
             
-            # Look back through recent plays to find rush indicators
-            rush_indicators = 0
-            zone_entry_found = False
-            quick_transition = False
+            # Check if current shot is in offensive zone
+            current_coords = current_play.get('details', {}).get('coordinates', {})
+            current_x = current_coords.get('x', 0)
+            if current_x <= 25:  # Not in offensive zone
+                return False
             
-            # Check last 5 plays for rush indicators
-            for i in range(max(0, play_index - 5), play_index):
-                prev_play = all_plays[i]
+            # Convert current time to seconds
+            current_time_seconds = self._parse_time_to_seconds(current_time_str)
+            
+            # Look for DZ events within 8 seconds
+            for prev_play in all_plays:
                 prev_team = prev_play.get('details', {}).get('eventOwnerTeamId')
                 prev_type = prev_play.get('typeDescKey', '')
                 prev_period = prev_play.get('periodDescriptor', {}).get('number', 1)
+                prev_time_str = prev_play.get('timeInPeriod', '00:00')
                 
                 # Only consider plays from the same team and period
                 if prev_team != current_team or prev_period != current_period:
                     continue
                 
-                # Rush indicators:
-                # 1. Takeaway (steal) - indicates quick transition
-                if prev_type == 'takeaway':
-                    rush_indicators += 2
-                    quick_transition = True
+                # Convert previous time to seconds
+                prev_time_seconds = self._parse_time_to_seconds(prev_time_str)
                 
-                # 2. Giveaway by opponent - indicates quick transition
-                elif prev_type == 'giveaway':
-                    rush_indicators += 1
+                # Check if within 8 seconds
+                time_diff = current_time_seconds - prev_time_seconds
+                if time_diff < 0 or time_diff > 8:  # Skip if negative (future) or > 8 seconds
+                    continue
                 
-                # 3. Shot block by opponent - indicates quick transition
-                elif prev_type == 'blocked-shot':
-                    rush_indicators += 1
+                # Check if previous event was in defensive zone
+                prev_coords = prev_play.get('details', {}).get('coordinates', {})
+                prev_x = prev_coords.get('x', 0)
                 
-                # 4. Faceoff win in neutral/offensive zone
-                elif prev_type == 'faceoff':
-                    # Check if it's in neutral or offensive zone
-                    coords = prev_play.get('details', {}).get('coordinates', {})
-                    x_coord = coords.get('x', 0)
-                    if x_coord > 25:  # Offensive zone faceoff
-                        rush_indicators += 1
-                        zone_entry_found = True
-                    elif abs(x_coord) <= 25:  # Neutral zone faceoff
-                        rush_indicators += 0.5
-                
-                # 5. Pass in neutral zone - indicates controlled entry
-                elif prev_type == 'pass' and abs(x_coord) <= 25:
-                    rush_indicators += 0.5
-                
-                # 6. Shot from previous play - indicates sustained pressure
-                elif prev_type in ['shot-on-goal', 'missed-shot', 'blocked-shot']:
-                    rush_indicators += 0.3
-            
-            # Rush shot criteria:
-            # - Quick transition (takeaway/giveaway) + zone entry
-            # - OR high rush indicator score (3+)
-            # - OR faceoff win in offensive zone + quick transition
-            if (quick_transition and zone_entry_found) or rush_indicators >= 3 or (zone_entry_found and rush_indicators >= 2):
-                return True
+                # Any DZ event (x < -25) followed by OZ shot within 8 seconds = Rush shot
+                if prev_x < -25 and prev_type in ['faceoff', 'takeaway', 'giveaway', 'blocked-shot']:
+                    return True
             
             return False
             
         except Exception as e:
             print(f"Error in rush shot detection: {e}")
             return False
+    
+    def _parse_time_to_seconds(self, time_str):
+        """Convert MM:SS time string to seconds"""
+        try:
+            if ':' in time_str:
+                minutes, seconds = map(int, time_str.split(':'))
+                return minutes * 60 + seconds
+            return 0
+        except:
+            return 0
     
     def _is_forecheck_cycle_shot(self, current_play, all_plays):
         """Determine if a shot is from forecheck/cycle using proper hockey logic"""
@@ -2674,12 +2944,12 @@ class PostGameReportGenerator:
             if home_shots:
                 shot_x, shot_y = zip(*home_shots)
                 ax.scatter(shot_x, shot_y, c=home_color, alpha=0.95, s=60, 
-                          marker='o', edgecolors='white', linewidth=1.5, zorder=50)
+                          marker='o', edgecolors='black', linewidth=1.5, zorder=50)
 
             if home_goals:
                 goal_x, goal_y = zip(*home_goals)
                 ax.scatter(goal_x, goal_y, c=home_color, alpha=1.0, s=90, 
-                          marker='o', edgecolors='white', linewidth=2.0, zorder=51)
+                          marker='o', edgecolors='black', linewidth=2.0, zorder=51)
 
             # Set plot properties
             ax.set_xlim(-100, 100)
@@ -2853,6 +3123,9 @@ class PostGameReportGenerator:
             # Extract real metrics
             away_shot_quality = metrics['away_team']['shot_quality']
             home_shot_quality = metrics['home_team']['shot_quality']
+            
+            # Use the same xG calculation as Period by Period table for consistency
+            away_xg_total, home_xg_total = self._calculate_xg_from_plays(game_data)
             away_pressure = metrics['away_team']['pressure']
             home_pressure = metrics['home_team']['pressure']
             away_defense = metrics['away_team']['defense']
@@ -2917,7 +3190,7 @@ class PostGameReportGenerator:
                 ['Category', 'Metric', away_logo_img if away_logo_img else away_team_abbrev, home_logo_img if home_logo_img else home_team_abbrev],
                 
                 # Shot Quality Analysis
-                ['SHOT QUALITY', 'Expected Goals (xG)', f"{away_shot_quality['expected_goals']:.2f}", f"{home_shot_quality['expected_goals']:.2f}"],
+                ['SHOT QUALITY', 'Expected Goals (xG)', f"{away_xg_total:.2f}", f"{home_xg_total:.2f}"],
                 ['', 'High Danger Shots', str(away_shot_quality['high_danger_shots']), str(home_shot_quality['high_danger_shots'])],
                 ['', 'Total Shots', str(away_shot_quality['total_shots']), str(home_shot_quality['total_shots'])],
                 ['', 'Shots on Goal', str(away_shot_quality['shots_on_goal']), str(home_shot_quality['shots_on_goal'])],

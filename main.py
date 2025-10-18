@@ -20,8 +20,8 @@ def main():
     nhl_client = NHLAPIClient()
     
     try:
-        # Use the requested game ID: 2025010028
-        game_id = "2025010028"
+        # Use the requested game ID: 2025020073
+        game_id = "2025020073"
         print(f"Using game ID: {game_id}")
         
         # Get game data for the specific game
