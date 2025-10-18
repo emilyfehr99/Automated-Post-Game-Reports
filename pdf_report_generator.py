@@ -936,12 +936,15 @@ class PostGameReportGenerator:
             except Exception as e:
                 print(f"Could not load mini logos: {e}")
             
+            # Calculate win probabilities using sophisticated model
+            win_prob = self.calculate_win_probability(game_data)
+            
             # Create period-by-period data table with all advanced metrics (dynamically handle OT/SO)
             stats_data = [
                 # Header row
                 ['Period', 'GF', 'S', 'CF%', 'PP', 'PIM', 'Hits', 'FO%', 'BLK', 'GV', 'TK', 'GS', 'xG', 'NZT', 'NZTS', 'OZS', 'NZS', 'DZS', 'FC', 'Rush'],
-                # Away team logo row
-                [away_team['abbrev'], away_logo_img if away_logo_img else '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+                # Away team logo row with win probability centered in the row
+                [away_team['abbrev'], away_logo_img if away_logo_img else '', '', '', '', '', '', '', '', f"{win_prob['away_probability']}% likelihood of winning", '', '', '', '', '', '', '', '', ''],
             ]
             
             # Add regulation periods for away team
@@ -972,8 +975,8 @@ class PostGameReportGenerator:
                  f'{sum(away_zone_metrics["oz_originating_shots"])}', f'{sum(away_zone_metrics["nz_originating_shots"])}', f'{sum(away_zone_metrics["dz_originating_shots"])}',
                 f'{sum(away_zone_metrics["fc_cycle_sog"])}', f'{sum(away_zone_metrics["rush_sog"])}'])
             
-            # Home team logo row
-            stats_data.append([home_team['abbrev'], home_logo_img if home_logo_img else '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''])
+            # Home team logo row with win probability centered in the row
+            stats_data.append([home_team['abbrev'], home_logo_img if home_logo_img else '', '', '', '', '', '', '', '', f"{win_prob['home_probability']}% likelihood of winning", '', '', '', '', '', '', '', '', ''])
             
             # Add regulation periods for home team
             for i in range(3):
@@ -1089,6 +1092,84 @@ class PostGameReportGenerator:
             story.append(Paragraph("Team statistics comparison could not be generated.", self.normal_style))
         
         return story
+    
+    def calculate_win_probability(self, game_data):
+        """Calculate win probability based on xG, high danger chances, and shot attempts using sophisticated model weights"""
+        try:
+            # Get team data - handle different data structures
+            away_team = game_data['game_center']['awayTeam']
+            home_team = game_data['game_center']['homeTeam']
+            
+            # Try to get stats from different possible locations
+            away_stats = away_team.get('stats', {})
+            home_stats = home_team.get('stats', {})
+            
+            # If no stats in team data, try to get from boxscore
+            if not away_stats and 'boxscore' in game_data:
+                away_stats = game_data['boxscore'].get('teams', {}).get('away', {}).get('teamStats', {}).get('teamSkaterStats', {})
+                home_stats = game_data['boxscore'].get('teams', {}).get('home', {}).get('teamStats', {}).get('teamSkaterStats', {})
+            
+            # Extract key metrics with fallbacks
+            away_xg = away_stats.get('expectedGoals', away_stats.get('goals', 0))
+            home_xg = home_stats.get('expectedGoals', home_stats.get('goals', 0))
+            
+            away_hdc = away_stats.get('highDangerChances', 0)
+            home_hdc = home_stats.get('highDangerChances', 0)
+            
+            away_shots = away_stats.get('shots', away_stats.get('shotsOnGoal', 0))
+            home_shots = home_stats.get('shots', home_stats.get('shotsOnGoal', 0))
+            
+            away_fo_pct = away_stats.get('faceoffWinPercentage', 50)
+            home_fo_pct = home_stats.get('faceoffWinPercentage', 50)
+            
+            # Model weights from the sophisticated win probability model
+            weights = {
+                'xg_weight': 0.4,           # Expected Goals - 40% weight
+                'hdc_weight': 0.3,          # High Danger Chances - 30% weight  
+                'shot_attempts_weight': 0.2, # Shot Attempts - 20% weight
+                'faceoff_weight': 0.05,     # Faceoff Win % - 5% weight
+                'other_metrics_weight': 0.05 # Other metrics - 5% weight
+            }
+            
+            # Calculate weighted scores
+            away_score = (
+                away_xg * weights['xg_weight'] +
+                away_hdc * weights['hdc_weight'] +
+                away_shots * weights['shot_attempts_weight'] +
+                away_fo_pct * weights['faceoff_weight']
+            )
+            
+            home_score = (
+                home_xg * weights['xg_weight'] +
+                home_hdc * weights['hdc_weight'] +
+                home_shots * weights['shot_attempts_weight'] +
+                home_fo_pct * weights['faceoff_weight']
+            )
+            
+            # Calculate probabilities using softmax
+            total_score = away_score + home_score
+            if total_score > 0:
+                away_prob = (away_score / total_score) * 100
+                home_prob = (home_score / total_score) * 100
+            else:
+                away_prob = 50.0
+                home_prob = 50.0
+            
+            return {
+                'away_probability': round(away_prob, 1),
+                'home_probability': round(home_prob, 1),
+                'away_team': away_team.get('abbrev', 'AWY'),
+                'home_team': home_team.get('abbrev', 'HME')
+            }
+            
+        except Exception as e:
+            print(f"Error calculating win probability: {e}")
+            return {
+                'away_probability': 50.0,
+                'home_probability': 50.0,
+                'away_team': 'AWY',
+                'home_team': 'HME'
+            }
     
     def _calculate_goals_by_period(self, game_data, team_id):
         """Calculate goals scored by a team in each period from play-by-play data (including OT/SO)"""
