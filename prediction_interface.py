@@ -38,11 +38,11 @@ class PredictionInterface:
             if isinstance(day_data, dict) and 'games' in day_data:
                 games.extend(day_data['games'])
         
-        # Filter for today's games only (including OFF for testing)
+        # Filter for today's games only (including OFF and LIVE for testing)
         today_games = []
         for game in games:
             game_time = game.get('startTimeUTC', '')
-            if today in game_time and game.get('gameState') in ['PRE', 'FUT', 'OFF']:
+            if today in game_time and game.get('gameState') in ['PRE', 'FUT', 'OFF', 'LIVE']:
                 today_games.append(game)
         
         print(f'🔍 Found {len(today_games)} games today')
