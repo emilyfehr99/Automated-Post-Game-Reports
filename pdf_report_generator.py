@@ -2457,6 +2457,23 @@ class PostGameReportGenerator:
                 story.append(right_table)
                 break
         
+        # Add win probability section 1 cm below TOP PLAYERS, centered on page
+        win_prob_story = self.create_win_probability_section(game_data)
+        if win_prob_story:
+            # Wrap in table for centering
+            for item in win_prob_story:
+                if hasattr(item, '_cellvalues'):  # This is the probability table
+                    centered_wrapper = Table([[item]])
+                    centered_wrapper.setStyle(TableStyle([
+                        ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                        ('VALIGN', (0, 0), (-1, -1), 'TOP'),
+                        ('LEFTPADDING', (0, 0), (-1, -1), 0),
+                        ('RIGHTPADDING', (0, 0), (-1, -1), 0),
+                        ('TOPPADDING', (0, 0), (-1, -1), 0.4*inch),  # 1 cm spacing (0.3937 inches ≈ 0.4)
+                        ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
+                    ]))
+                    story.append(centered_wrapper)
+        
         story.append(Spacer(1, 20))
         return story
     
@@ -3063,11 +3080,8 @@ class PostGameReportGenerator:
         # Add all sections
         story.extend(self.create_team_stats_comparison(game_data))
         
-        # Create side-by-side layout for advanced metrics and top players
+        # Create side-by-side layout for advanced metrics and top players (includes win probability)
         story.extend(self.create_side_by_side_tables(game_data))
-        
-        # Add win probability section at the bottom
-        story.extend(self.create_win_probability_section(game_data))
         
         # Build the PDF
         doc.build(story)
