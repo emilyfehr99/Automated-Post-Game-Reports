@@ -1096,31 +1096,24 @@ class PostGameReportGenerator:
     def calculate_win_probability(self, game_data):
         """Calculate win probability based on xG, high danger chances, and shot attempts using sophisticated model weights"""
         try:
-            # Get team data - handle different data structures
-            away_team = game_data['game_center']['awayTeam']
-            home_team = game_data['game_center']['homeTeam']
+            # Get team data from boxscore (the actual data structure)
+            away_team = game_data['boxscore']['awayTeam']
+            home_team = game_data['boxscore']['homeTeam']
             
-            # Try to get stats from different possible locations
-            away_stats = away_team.get('stats', {})
-            home_stats = home_team.get('stats', {})
+            # Get basic stats from boxscore
+            away_goals = away_team.get('score', 0)
+            home_goals = home_team.get('score', 0)
+            away_sog = away_team.get('sog', 0)
+            home_sog = home_team.get('sog', 0)
             
-            # If no stats in team data, try to get from boxscore
-            if not away_stats and 'boxscore' in game_data:
-                away_stats = game_data['boxscore'].get('teams', {}).get('away', {}).get('teamStats', {}).get('teamSkaterStats', {})
-                home_stats = game_data['boxscore'].get('teams', {}).get('home', {}).get('teamStats', {}).get('teamSkaterStats', {})
+            # Calculate xG from play-by-play data
+            away_xg, home_xg = self._calculate_xg_from_plays(game_data)
             
-            # Extract key metrics with fallbacks
-            away_xg = away_stats.get('expectedGoals', away_stats.get('goals', 0))
-            home_xg = home_stats.get('expectedGoals', home_stats.get('goals', 0))
+            # Calculate high danger chances from play-by-play
+            away_hdc, home_hdc = self._calculate_hdc_from_plays(game_data)
             
-            away_hdc = away_stats.get('highDangerChances', 0)
-            home_hdc = home_stats.get('highDangerChances', 0)
-            
-            away_shots = away_stats.get('shots', away_stats.get('shotsOnGoal', 0))
-            home_shots = home_stats.get('shots', home_stats.get('shotsOnGoal', 0))
-            
-            away_fo_pct = away_stats.get('faceoffWinPercentage', 50)
-            home_fo_pct = home_stats.get('faceoffWinPercentage', 50)
+            # Calculate faceoff percentages from play-by-play
+            away_fo_pct, home_fo_pct = self._calculate_faceoff_percentages(game_data)
             
             # Model weights from the sophisticated win probability model
             weights = {
@@ -1135,14 +1128,14 @@ class PostGameReportGenerator:
             away_score = (
                 away_xg * weights['xg_weight'] +
                 away_hdc * weights['hdc_weight'] +
-                away_shots * weights['shot_attempts_weight'] +
+                away_sog * weights['shot_attempts_weight'] +
                 away_fo_pct * weights['faceoff_weight']
             )
             
             home_score = (
                 home_xg * weights['xg_weight'] +
                 home_hdc * weights['hdc_weight'] +
-                home_shots * weights['shot_attempts_weight'] +
+                home_sog * weights['shot_attempts_weight'] +
                 home_fo_pct * weights['faceoff_weight']
             )
             
@@ -1154,6 +1147,10 @@ class PostGameReportGenerator:
             else:
                 away_prob = 50.0
                 home_prob = 50.0
+            
+            print(f"Win probability calculation: Away {away_team['abbrev']} {away_prob:.1f}% vs Home {home_team['abbrev']} {home_prob:.1f}%")
+            print(f"  Away: xG={away_xg:.2f}, HDC={away_hdc}, SOG={away_sog}, FO%={away_fo_pct:.1f}")
+            print(f"  Home: xG={home_xg:.2f}, HDC={home_hdc}, SOG={home_sog}, FO%={home_fo_pct:.1f}")
             
             return {
                 'away_probability': round(away_prob, 1),
@@ -1170,6 +1167,121 @@ class PostGameReportGenerator:
                 'away_team': 'AWY',
                 'home_team': 'HME'
             }
+    
+    def _calculate_xg_from_plays(self, game_data):
+        """Calculate expected goals from play-by-play data"""
+        try:
+            away_team_id = game_data['boxscore']['awayTeam']['id']
+            home_team_id = game_data['boxscore']['homeTeam']['id']
+            
+            away_xg = 0.0
+            home_xg = 0.0
+            
+            if 'play_by_play' in game_data and 'plays' in game_data['play_by_play']:
+                for play in game_data['play_by_play']['plays']:
+                    if play.get('typeDescKey') in ['shot-on-goal', 'goal']:
+                        team_id = play.get('details', {}).get('eventOwnerTeamId')
+                        if team_id == away_team_id or team_id == home_team_id:
+                            # Calculate xG for this shot
+                            xg = self._calculate_shot_xg(play)
+                            if team_id == away_team_id:
+                                away_xg += xg
+                            else:
+                                home_xg += xg
+            
+            return away_xg, home_xg
+            
+        except Exception as e:
+            print(f"Error calculating xG from plays: {e}")
+            return 0.0, 0.0
+    
+    def _calculate_shot_xg(self, play):
+        """Calculate expected goals for a single shot"""
+        try:
+            details = play.get('details', {})
+            x_coord = details.get('xCoord', 0)
+            y_coord = details.get('yCoord', 0)
+            shot_type = details.get('shotType', 'wrist')
+            
+            # Simple distance-based xG calculation
+            distance = (x_coord**2 + y_coord**2)**0.5
+            if distance < 20:
+                return 0.15
+            elif distance < 35:
+                return 0.08
+            elif distance < 50:
+                return 0.04
+            else:
+                return 0.02
+                    
+        except Exception as e:
+            print(f"Error calculating shot xG: {e}")
+            return 0.05  # Default xG value
+    
+    def _calculate_hdc_from_plays(self, game_data):
+        """Calculate high danger chances from play-by-play data"""
+        try:
+            away_team_id = game_data['boxscore']['awayTeam']['id']
+            home_team_id = game_data['boxscore']['homeTeam']['id']
+            
+            away_hdc = 0
+            home_hdc = 0
+            
+            if 'play_by_play' in game_data and 'plays' in game_data['play_by_play']:
+                for play in game_data['play_by_play']['plays']:
+                    if play.get('typeDescKey') in ['shot-on-goal', 'goal']:
+                        team_id = play.get('details', {}).get('eventOwnerTeamId')
+                        if team_id == away_team_id or team_id == home_team_id:
+                            # Check if it's a high danger chance (close to net)
+                            details = play.get('details', {})
+                            x_coord = details.get('xCoord', 0)
+                            y_coord = details.get('yCoord', 0)
+                            
+                            # High danger area: close to net and in front
+                            if x_coord > 50 and abs(y_coord) < 20:  # In front of net, close
+                                if team_id == away_team_id:
+                                    away_hdc += 1
+                                else:
+                                    home_hdc += 1
+            
+            return away_hdc, home_hdc
+            
+        except Exception as e:
+            print(f"Error calculating HDC from plays: {e}")
+            return 0, 0
+    
+    def _calculate_faceoff_percentages(self, game_data):
+        """Calculate faceoff win percentages from play-by-play data"""
+        try:
+            away_team_id = game_data['boxscore']['awayTeam']['id']
+            home_team_id = game_data['boxscore']['homeTeam']['id']
+            
+            away_fo_wins = 0
+            home_fo_wins = 0
+            total_faceoffs = 0
+            
+            if 'play_by_play' in game_data and 'plays' in game_data['play_by_play']:
+                for play in game_data['play_by_play']['plays']:
+                    if play.get('typeDescKey') == 'faceoff':
+                        total_faceoffs += 1
+                        team_id = play.get('details', {}).get('eventOwnerTeamId')
+                        if team_id == away_team_id:
+                            away_fo_wins += 1
+                        elif team_id == home_team_id:
+                            home_fo_wins += 1
+            
+            if total_faceoffs > 0:
+                away_fo_pct = (away_fo_wins / total_faceoffs) * 100
+                home_fo_pct = (home_fo_wins / total_faceoffs) * 100
+            else:
+                away_fo_pct = 50.0
+                home_fo_pct = 50.0
+            
+            return away_fo_pct, home_fo_pct
+            
+        except Exception as e:
+            print(f"Error calculating faceoff percentages: {e}")
+            return 50.0, 50.0
     
     def _calculate_goals_by_period(self, game_data, team_id):
         """Calculate goals scored by a team in each period from play-by-play data (including OT/SO)"""
