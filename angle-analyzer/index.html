@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angle Analyzer v2.0</title>
+    <link rel="stylesheet" href="styles.css">
+</head>
+<body>
+    <div class="container">
+        <h2>Angle Analyzer v2.0</h2>
+        
+        <!-- Tab Navigation -->
+        <div class="tab-navigation">
+            <button class="tab-button active" data-tab="image-analysis">Image Analysis</button>
+            <button class="tab-button" data-tab="video-analysis">Video Analysis</button>
+        </div>
+
+        <!-- Image Analysis Tab -->
+        <div id="image-analysis" class="tab-content active">
+            <div class="upload-section">
+                <input type="file" id="imageUpload" accept="image/*">
+                <label for="imageUpload" class="upload-label">Choose Image</label>
+            </div>
+            <div class="canvas-container">
+                <canvas id="imageCanvas" width="800" height="600"></canvas>
+            </div>
+            <div class="controls">
+                <div id="imageResult">Angle: Not measured yet</div>
+                <button id="imageReset">Reset</button>
+            </div>
+            <div class="instructions">
+                <h3>Image Analysis Instructions:</h3>
+                <ol>
+                    <li>Upload an image using the "Choose Image" button</li>
+                    <li>Click two points on the image to measure the angle of the line</li>
+                    <li>The angle will be calculated relative to horizontal (0°)</li>
+                    <li>Use "Reset" to clear the current measurement</li>
+                </ol>
+            </div>
+        </div>
+
+        <!-- Video Analysis Tab -->
+        <div id="video-analysis" class="tab-content">
+            <div class="upload-section">
+                <input type="file" id="videoUpload" accept="video/*">
+                <label for="videoUpload" class="upload-label">Choose Video</label>
+            </div>
+            
+            <div class="video-container">
+                <div class="video-wrapper" id="videoWrapper" style="display: none;">
+                    <video id="videoPlayer">
+                        Your browser does not support the video tag.
+                    </video>
+                    <canvas id="videoCanvas" style="background: transparent;"></canvas>
+                </div>
+                <div id="videoPlaceholder" class="video-placeholder">
+                    <div class="placeholder-content">
+                        <div class="placeholder-icon">🎬</div>
+                        <div class="placeholder-text">Upload a video to begin analysis</div>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="video-controls" id="videoControls" style="display: none;">
+                <button id="playPauseBtn" class="control-btn">▶️ Play</button>
+                <button id="stepBackBtn" class="control-btn">⏮️ Step Back</button>
+                <button id="stepForwardBtn" class="control-btn">⏭️ Step Forward</button>
+                <div class="progress-control">
+                    <input type="range" id="progressSlider" min="0" max="100" value="0" class="progress-slider">
+                </div>
+                <div class="speed-control">
+                    <label for="speedSlider">Speed:</label>
+                    <input type="range" id="speedSlider" min="0.1" max="3" step="0.1" value="1">
+                    <span id="speedValue">1.0x</span>
+                </div>
+                <button id="clearDrawingsBtn" class="control-btn">🗑️ Clear Drawings</button>
+            </div>
+            
+            <div class="drawing-tools" id="drawingTools" style="display: none;">
+                <div class="tools-left">
+                    <h4>Drawing Tools:</h4>
+                    <button id="lineTool" class="tool-btn active">📏 Line</button>
+                    <button id="angleTool" class="tool-btn">📐 Angle</button>
+                    <button id="freehandTool" class="tool-btn">✏️ Freehand</button>
+                    <button id="eraserTool" class="tool-btn">🧹 Eraser</button>
+                    <div class="color-picker">
+                        <label for="colorInput">Color:</label>
+                        <input type="color" id="colorInput" value="#ff4444">
+                    </div>
+                </div>
+                <div class="angle-display">
+                    <div id="angleMeasurement">Angle: --°</div>
+                </div>
+            </div>
+            
+            <div class="video-info">
+                <div id="videoResult">Video: Not loaded</div>
+                <div id="frameInfo">Frame: 0 / 0</div>
+            </div>
+            
+            <div class="instructions">
+                <h3>Video Analysis Instructions:</h3>
+                <ol>
+                    <li>Upload a video using the "Choose Video" button</li>
+                    <li>Use playback controls to navigate through the video</li>
+                    <li>Select a drawing tool and draw on the video frame</li>
+                    <li>Use speed controls to slow down or speed up playback</li>
+                    <li>Step through frames for precise analysis</li>
+                </ol>
+            </div>
+        </div>
+    </div>
+
+    <script src="script.js"></script>
+</body>
+</html>

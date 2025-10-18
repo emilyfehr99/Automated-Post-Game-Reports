@@ -1,0 +1,900 @@
+
+> hockey-practice-planner@1.0.0 dev
+> next dev --hostname 0.0.0.0
+
+  ▲ Next.js 14.2.32
+  - Local:        http://localhost:3000
+  - Network:      http://0.0.0.0:3000
+
+ ✓ Starting...
+ ✓ Ready in 1320ms
+ ○ Compiling / ...
+ ✓ Compiled / in 2.6s (1124 modules)
+ GET / 200 in 2730ms
+ ✓ Compiled in 150ms (566 modules)
+ GET / 200 in 46ms
+ ⚠ Cross origin request detected from 192.168.4.44 to /_next/* resource. In a future major version of Next.js, you will need to explicitly configure "allowedDevOrigins" in next.config to allow this.
+Read more: https://nextjs.org/docs/app/api-reference/config/next-config-js/allowedDevOrigins
+ ✓ Compiled in 459ms (1115 modules)
+ GET / 200 in 77ms
+ ✓ Compiled in 286ms (1115 modules)
+ GET / 200 in 71ms
+ GET / 200 in 17ms
+ ✓ Compiled in 279ms (566 modules)
+ ✓ Compiled in 84ms (566 modules)
+ ✓ Compiled in 270ms (1115 modules)
+ ✓ Compiled in 297ms (1115 modules)
+ ✓ Compiled in 167ms (1115 modules)
+ ✓ Compiled in 180ms (1115 modules)
+ ✓ Compiled in 576ms (1215 modules)
+ GET / 200 in 92ms
+ ✓ Compiled in 289ms (1215 modules)
+ ✓ Compiled in 410ms (1215 modules)
+ ✓ Compiled in 236ms (1215 modules)
+ ✓ Compiled in 252ms (1215 modules)
+ ✓ Compiled in 188ms (1215 modules)
+ ✓ Compiled in 179ms (1215 modules)
+ GET / 200 in 99ms
+ ✓ Compiled in 278ms (1215 modules)
+ GET / 200 in 120ms
+ ✓ Compiled in 482ms (1215 modules)
+ ✓ Compiled in 154ms (1215 modules)
+ ✓ Compiled in 162ms (1215 modules)
+ GET / 200 in 74ms
+ ✓ Compiled in 164ms (1215 modules)
+ GET / 200 in 59ms
+ ✓ Compiled in 281ms (1215 modules)
+ ✓ Compiled in 234ms (1215 modules)
+ ✓ Compiled in 212ms (1215 modules)
+ GET / 200 in 72ms
+ ✓ Compiled in 274ms (1215 modules)
+ GET / 200 in 125ms
+ ✓ Compiled in 364ms (1215 modules)
+ ✓ Compiled in 167ms (1215 modules)
+ ✓ Compiled in 348ms (1215 modules)
+ ✓ Compiled in 265ms (1215 modules)
+ ✓ Compiled in 162ms (1215 modules)
+ ✓ Compiled in 179ms (1215 modules)
+ ✓ Compiled in 165ms (1215 modules)
+ ✓ Compiled in 257ms (1215 modules)
+ ✓ Compiled in 347ms (1215 modules)
+ GET / 200 in 93ms
+ ✓ Compiled in 425ms (1215 modules)
+ GET / 200 in 88ms
+ ✓ Compiled in 514ms (1215 modules)
+ ✓ Compiled in 224ms (1215 modules)
+ ✓ Compiled in 294ms (1215 modules)
+ ✓ Compiled in 231ms (1215 modules)
+ ✓ Compiled in 176ms (1215 modules)
+ ✓ Compiled in 152ms (1215 modules)
+ ✓ Compiled in 138ms (1215 modules)
+ ✓ Compiled in 157ms (1215 modules)
+ ✓ Compiled in 123ms (1215 modules)
+ ✓ Compiled in 139ms (1215 modules)
+ ✓ Compiled in 185ms (1215 modules)
+ ✓ Compiled in 272ms (1215 modules)
+ ✓ Compiled in 144ms (1215 modules)
+ ✓ Compiled in 183ms (1215 modules)
+ GET / 200 in 104ms
+ ✓ Compiled in 409ms (1215 modules)
+ GET / 200 in 112ms
+ GET / 200 in 51ms
+ ✓ Compiled in 2s (1215 modules)
+ GET / 200 in 95ms
+ GET / 200 in 48ms
+ GET / 200 in 74ms
+ GET / 200 in 111ms
+ GET / 200 in 66ms
+ GET / 200 in 42ms
+ ✓ Compiled in 3.1s (1215 modules)
+ ✓ Compiled in 568ms (1215 modules)
+ ✓ Compiled in 328ms (1215 modules)
+ ✓ Compiled in 235ms (1215 modules)
+ ✓ Compiled in 221ms (1215 modules)
+ ✓ Compiled in 402ms (1215 modules)
+ ✓ Compiled in 330ms (1215 modules)
+ ✓ Compiled in 210ms (1215 modules)
+ ✓ Compiled in 210ms (1215 modules)
+ ✓ Compiled in 291ms (1215 modules)
+ ✓ Compiled in 171ms (1215 modules)
+ ✓ Compiled in 158ms (1215 modules)
+ GET / 200 in 196ms
+ ✓ Compiled in 563ms (1215 modules)
+ GET / 200 in 226ms
+ ✓ Compiled in 479ms (1215 modules)
+ ✓ Compiled in 1099ms (1373 modules)
+ ✓ Compiled in 331ms (1373 modules)
+ ✓ Compiled in 356ms (1373 modules)
+ ✓ Compiled in 253ms (1373 modules)
+ ✓ Compiled in 223ms (1359 modules)
+ ⚠ Fast Refresh had to perform a full reload. Read more: https://nextjs.org/docs/messages/fast-refresh-reload
+WARNING: You are using the Auth Emulator, which is intended for local testing only.  Do not use with production credentials.
+ GET / 200 in 251ms
+ ⚠ ./lib/firebaseData.ts
+Attempted import error: 'db' is not exported from './firebase' (imported as 'db').
+
+Import trace for requested module:
+./lib/firebaseData.ts
+./app/page.tsx
+
+./lib/firebaseData.ts
+Attempted import error: 'db' is not exported from './firebase' (imported as 'db').
+
+Import trace for requested module:
+./lib/firebaseData.ts
+./app/page.tsx
+
+./lib/firebaseData.ts
+Attempted import error: 'db' is not exported from './firebase' (imported as 'db').
+
+Import trace for requested module:
+./lib/firebaseData.ts
+./app/page.tsx
+
+./lib/firebaseData.ts
+Attempted import error: 'db' is not exported from './firebase' (imported as 'db').
+
+Import trace for requested module:
+./lib/firebaseData.ts
+./app/page.tsx
+
+./lib/firebaseData.ts
+Attempted import error: 'db' is not exported from './firebase' (imported as 'db').
+
+Import trace for requested module:
+./lib/firebaseData.ts
+./app/page.tsx
+
+./lib/firebaseData.ts
+Attempted import error: 'db' is not exported from './firebase' (imported as 'db').
+
+Import trace for requested module:
+./lib/firebaseData.ts
+./app/page.tsx
+
+./lib/firebaseData.ts
+Attempted import error: 'db' is not exported from './firebase' (imported as 'db').
+
+Import trace for requested module:
+./lib/firebaseData.ts
+./app/page.tsx
+
+./lib/firebaseData.ts
+Attempted import error: 'db' is not exported from './firebase' (imported as 'db').
+
+Import trace for requested module:
+./lib/firebaseData.ts
+./app/page.tsx
+
+./lib/firebaseData.ts
+Attempted import error: 'db' is not exported from './firebase' (imported as 'db').
+
+Import trace for requested module:
+./lib/firebaseData.ts
+./app/page.tsx
+
+./lib/firebaseData.ts
+Attempted import error: 'db' is not exported from './firebase' (imported as 'db').
+
+Import trace for requested module:
+./lib/firebaseData.ts
+./app/page.tsx
+
+./lib/firebaseData.ts
+Attempted import error: 'db' is not exported from './firebase' (imported as 'db').
+
+Import trace for requested module:
+./lib/firebaseData.ts
+./app/page.tsx
+
+./lib/firebaseData.ts
+Attempted import error: 'db' is not exported from './firebase' (imported as 'db').
+
+Import trace for requested module:
+./lib/firebaseData.ts
+./app/page.tsx
+
+./lib/firebaseData.ts
+Attempted import error: 'db' is not exported from './firebase' (imported as 'db').
+
+Import trace for requested module:
+./lib/firebaseData.ts
+./app/page.tsx
+
+./lib/firebaseData.ts
+Attempted import error: 'db' is not exported from './firebase' (imported as 'db').
+
+Import trace for requested module:
+./lib/firebaseData.ts
+./app/page.tsx
+
+./lib/firebaseData.ts
+Attempted import error: 'db' is not exported from './firebase' (imported as 'db').
+
+Import trace for requested module:
+./lib/firebaseData.ts
+./app/page.tsx
+
+./lib/firebaseData.ts
+Attempted import error: 'db' is not exported from './firebase' (imported as 'db').
+
+Import trace for requested module:
+./lib/firebaseData.ts
+./app/page.tsx
+
+./lib/firebaseData.ts
+Attempted import error: 'db' is not exported from './firebase' (imported as 'db').
+
+Import trace for requested module:
+./lib/firebaseData.ts
+./app/page.tsx
+
+./lib/firebaseData.ts
+Attempted import error: 'db' is not exported from './firebase' (imported as 'db').
+
+Import trace for requested module:
+./lib/firebaseData.ts
+./app/page.tsx
+
+./lib/firebaseData.ts
+Attempted import error: 'db' is not exported from './firebase' (imported as 'db').
+
+Import trace for requested module:
+./lib/firebaseData.ts
+./app/page.tsx
+
+./lib/firebaseData.ts
+Attempted import error: 'db' is not exported from './firebase' (imported as 'db').
+
+Import trace for requested module:
+./lib/firebaseData.ts
+./app/page.tsx
+ ✓ Compiled in 179ms (1203 modules)
+ ✓ Compiled in 276ms (1217 modules)
+ ✓ Compiled in 319ms (1217 modules)
+ ✓ Compiled in 324ms (1217 modules)
+ GET / 200 in 193ms
+ ✓ Compiled in 308ms (1217 modules)
+ ✓ Compiled in 223ms (1217 modules)
+ ✓ Compiled in 114ms (1203 modules)
+ ✓ Compiled in 100ms (1203 modules)
+ ✓ Compiled in 110ms (1203 modules)
+ ✓ Compiled in 335ms (1217 modules)
+ ○ Compiling /_not-found ...
+ ✓ Compiled /_not-found in 620ms (1206 modules)
+ GET /_next/static/css/app/layout.css 404 in 892ms
+ ✓ Compiled in 1479ms (1217 modules)
+ ✓ Compiled in 458ms (1217 modules)
+ ✓ Compiled in 263ms (1217 modules)
+ ✓ Compiled in 556ms (1217 modules)
+ ✓ Compiled in 511ms (1217 modules)
+ ✓ Compiled in 239ms (1217 modules)
+ ✓ Compiled in 206ms (1217 modules)
+ ✓ Compiled in 358ms (1217 modules)
+ ✓ Compiled in 306ms (1217 modules)
+ ✓ Compiled in 498ms (1217 modules)
+ ⨯ TypeError: e[o] is not a function
+    at Object.t [as require] (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:1:127)
+digest: "3123666778"
+TypeError: e[o] is not a function
+    at Object.t [as require] (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:1:127)
+    at require (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:16:18839)
+    at I (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:94364)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:96670
+    at F._fromJSON (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:97108)
+    at JSON.parse (<anonymous>)
+    at O (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:94085)
+    at t (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:100584)
+ ⨯ TypeError: e[o] is not a function
+    at Object.t [as require] (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:1:127)
+    at require (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:16:18839)
+    at I (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:94364)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:96670
+    at F._fromJSON (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:97108)
+    at JSON.parse (<anonymous>)
+    at O (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:94085)
+    at t (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:100584) {
+  page: '/'
+}
+ ○ Compiling /_error ...
+ ✓ Compiled /_error in 1156ms (1430 modules)
+ GET / 500 in 1469ms
+ ✓ Compiled /_not-found in 192ms (1433 modules)
+ GET /_next/static/chunks/app-pages-internals.js 404 in 265ms
+ GET /_next/static/chunks/app/page.js 404 in 265ms
+ GET / 200 in 203ms
+ GET /_next/static/chunks/app-pages-internals.js 404 in 48ms
+ GET /_next/static/chunks/main-app.js?v=1758208188751 404 in 51ms
+ GET /_next/static/css/app/layout.css?v=1758208188751 404 in 55ms
+ GET /_next/static/chunks/app/page.js 404 in 56ms
+ GET / 200 in 101ms
+ GET /_next/static/css/app/layout.css?v=1758209879994 404 in 68ms
+ GET /_next/static/chunks/app-pages-internals.js 404 in 37ms
+ GET /_next/static/chunks/main-app.js?v=1758209879994 404 in 38ms
+ GET /_next/static/chunks/app/page.js 404 in 54ms
+ ✓ Compiled in 992ms (1444 modules)
+ ✓ Compiled in 291ms (1444 modules)
+ ✓ Compiled in 342ms (1444 modules)
+ ✓ Compiled in 559ms (1444 modules)
+ ✓ Compiled in 1420ms (1444 modules)
+ ✓ Compiled in 413ms (1444 modules)
+ ✓ Compiled in 1446ms (1446 modules)
+ ✓ Compiled in 318ms (1444 modules)
+ ✓ Compiled in 323ms (1444 modules)
+ ✓ Compiled in 623ms (1444 modules)
+ ✓ Compiled in 1444ms (1446 modules)
+ ✓ Compiled in 335ms (1444 modules)
+ ✓ Compiled in 267ms (1444 modules)
+ ✓ Compiled in 241ms (1444 modules)
+ ✓ Compiled in 500ms (1444 modules)
+ ⚠ ./app/page.tsx
+Attempted import error: 'forceSync' is not exported from '../lib/firebaseSharedDB' (imported as 'forceSync').
+
+Import trace for requested module:
+./app/page.tsx
+
+./app/page.tsx
+Attempted import error: 'forceSync' is not exported from '../lib/firebaseSharedDB' (imported as 'forceSync').
+
+Import trace for requested module:
+./app/page.tsx
+ ⚠ ./app/page.tsx
+Attempted import error: 'forceSync' is not exported from '../lib/firebaseSharedDB' (imported as 'forceSync').
+
+Import trace for requested module:
+./app/page.tsx
+
+./app/page.tsx
+Attempted import error: 'forceSync' is not exported from '../lib/firebaseSharedDB' (imported as 'forceSync').
+
+Import trace for requested module:
+./app/page.tsx
+ ⚠ ./app/page.tsx
+Attempted import error: 'forceSync' is not exported from '../lib/firebaseSharedDB' (imported as 'forceSync').
+
+Import trace for requested module:
+./app/page.tsx
+
+./app/page.tsx
+Attempted import error: 'forceSync' is not exported from '../lib/firebaseSharedDB' (imported as 'forceSync').
+
+Import trace for requested module:
+./app/page.tsx
+ ⚠ ./app/page.tsx
+Attempted import error: 'forceSync' is not exported from '../lib/firebaseSharedDB' (imported as 'forceSync').
+
+Import trace for requested module:
+./app/page.tsx
+
+./app/page.tsx
+Attempted import error: 'forceSync' is not exported from '../lib/firebaseSharedDB' (imported as 'forceSync').
+
+Import trace for requested module:
+./app/page.tsx
+ ✓ Compiled in 649ms (1591 modules)
+ ✓ Compiled in 368ms (1591 modules)
+ ⨯ ./app/page.tsx
+Module parse failed: Cannot use keyword 'await' outside an async function (2327:60)
+|                                         try {
+|                                             const data = JSON.parse(dataString);
+>                                             const success = await importAllData(data);
+|                                             if (success) {
+|                                                 alert("✅ Data imported successfully! Refreshing...");
+
+Import trace for requested module:
+./app/page.tsx
+ ✓ Compiled in 661ms (1591 modules)
+ ✓ Compiled in 849ms (1591 modules)
+ ✓ Compiled in 622ms (1577 modules)
+ ✓ Compiled in 458ms (1577 modules)
+ ⨯ TypeError: Cannot read properties of undefined (reading 'call')
+    at Object.t [as require] (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:1:128)
+digest: "206047573"
+TypeError: Cannot read properties of undefined (reading 'call')
+    at Object.t [as require] (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:1:128)
+    at require (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:16:18839)
+    at I (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:94364)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:96670
+    at F._fromJSON (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:97108)
+    at JSON.parse (<anonymous>)
+    at O (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:94085)
+    at t (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:100584)
+ ⨯ TypeError: Cannot read properties of undefined (reading 'call')
+    at Object.t [as require] (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:1:128)
+    at require (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:16:18839)
+    at I (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:94364)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:96670
+    at F._fromJSON (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:97108)
+    at JSON.parse (<anonymous>)
+    at O (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:94085)
+    at t (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/compiled/next-server/app-page.runtime.prod.js:12:100584) {
+  page: '/'
+}
+ GET / 500 in 148ms
+ ✓ Compiled /_not-found in 235ms (1580 modules)
+ ⨯ Error: Cannot find module './682.js'
+Require stack:
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/app/_not-found/page.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/load-components.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/build/utils.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/dev/hot-middleware.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/dev/hot-reloader-webpack.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/router-server.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/start-server.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1401:15)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1057:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1062:22)
+    at Function._load (node:internal/modules/cjs/loader:1211:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1487:12)
+    at mod.require (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at __webpack_require__.f.require (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:198:28)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:111:40
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:162:22)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/pages/_document.js:1:335
+    at Object.<anonymous> (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/pages/_document.js:1:376)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1487:12)
+    at mod.require (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at requirePage (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require.js:109:84)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/load-components.js:72:65
+    at async Promise.all (index 0)
+    at async loadComponentsImpl (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/load-components.js:71:33)
+    at async DevServer.findPageComponentsImpl (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/next-server.js:714:36) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/app/_not-found/page.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/load-components.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/build/utils.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/dev/hot-middleware.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/router-server.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/start-server.js'
+  ]
+}
+ ⨯ Error: Cannot find module './682.js'
+Require stack:
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/app/_not-found/page.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/load-components.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/build/utils.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/dev/hot-middleware.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/dev/hot-reloader-webpack.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/router-server.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/start-server.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1401:15)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1057:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1062:22)
+    at Function._load (node:internal/modules/cjs/loader:1211:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1487:12)
+    at mod.require (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at __webpack_require__.f.require (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:198:28)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:111:40
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:162:22)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/pages/_document.js:1:335
+    at Object.<anonymous> (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/pages/_document.js:1:376)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1487:12)
+    at mod.require (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at requirePage (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require.js:109:84)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/load-components.js:72:65
+    at async Promise.all (index 0)
+    at async loadComponentsImpl (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/load-components.js:71:33)
+    at async DevServer.findPageComponentsImpl (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/next-server.js:714:36) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/app/_not-found/page.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/load-components.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/build/utils.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/dev/hot-middleware.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/router-server.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/start-server.js'
+  ]
+}
+ ⨯ Error: Cannot find module './682.js'
+Require stack:
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/app/_not-found/page.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/load-components.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/build/utils.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/dev/hot-middleware.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/dev/hot-reloader-webpack.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/router-server.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/start-server.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1401:15)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1057:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1062:22)
+    at Function._load (node:internal/modules/cjs/loader:1211:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1487:12)
+    at mod.require (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at __webpack_require__.f.require (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:198:28)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:111:40
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:162:22)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/pages/_document.js:1:335
+    at Object.<anonymous> (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/pages/_document.js:1:376)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1487:12)
+    at mod.require (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at requirePage (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require.js:109:84)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/load-components.js:72:65
+    at async Promise.all (index 0)
+    at async loadComponentsImpl (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/load-components.js:71:33)
+    at async DevServer.findPageComponentsImpl (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/next-server.js:714:36) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/app/_not-found/page.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/load-components.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/build/utils.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/dev/hot-middleware.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/router-server.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/start-server.js'
+  ]
+}
+ ⨯ Error: Cannot find module './682.js'
+Require stack:
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/app/_not-found/page.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/load-components.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/build/utils.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/dev/hot-middleware.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/dev/hot-reloader-webpack.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/router-server.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/start-server.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1401:15)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1057:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1062:22)
+    at Function._load (node:internal/modules/cjs/loader:1211:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1487:12)
+    at mod.require (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at __webpack_require__.f.require (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:198:28)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:111:40
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:162:22)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/pages/_document.js:1:335
+    at Object.<anonymous> (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/pages/_document.js:1:376)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1487:12)
+    at mod.require (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at requirePage (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require.js:109:84)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/load-components.js:72:65
+    at async Promise.all (index 0)
+    at async loadComponentsImpl (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/load-components.js:71:33)
+    at async DevServer.findPageComponentsImpl (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/next-server.js:714:36) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/app/_not-found/page.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/load-components.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/build/utils.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/dev/hot-middleware.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/router-server.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/start-server.js'
+  ]
+}
+ ⨯ Error: Cannot find module './682.js'
+Require stack:
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/app/_not-found/page.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/load-components.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/build/utils.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/dev/hot-middleware.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/dev/hot-reloader-webpack.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/router-server.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/start-server.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1401:15)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1057:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1062:22)
+    at Function._load (node:internal/modules/cjs/loader:1211:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1487:12)
+    at mod.require (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at __webpack_require__.f.require (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:198:28)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:111:40
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:162:22)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/pages/_document.js:1:335
+    at Object.<anonymous> (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/pages/_document.js:1:376)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1487:12)
+    at mod.require (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at requirePage (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require.js:109:84)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/load-components.js:72:65
+    at async Promise.all (index 0)
+    at async loadComponentsImpl (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/load-components.js:71:33)
+    at async DevServer.findPageComponentsImpl (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/next-server.js:714:36) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/app/_not-found/page.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/load-components.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/build/utils.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/dev/hot-middleware.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/router-server.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/start-server.js'
+  ]
+}
+ GET /_next/static/chunks/react-refresh.js?ts=1758216588972 500 in 2615ms
+ GET /_next/static/chunks/webpack.js?ts=1758216588972 500 in 2636ms
+ GET /_next/static/chunks/pages/_error.js?ts=1758216588972 500 in 2616ms
+ GET /_next/static/chunks/main.js?ts=1758216588972 500 in 2636ms
+ GET /_next/static/chunks/pages/_app.js?ts=1758216588972 500 in 2621ms
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/cache/webpack/client-development-fallback/0.pack.gz_' -> '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/cache/webpack/client-development-fallback/0.pack.gz'
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/cache/webpack/client-development-fallback/0.pack.gz_' -> '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/cache/webpack/client-development-fallback/0.pack.gz'
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/cache/webpack/client-development-fallback/0.pack.gz_' -> '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/cache/webpack/client-development-fallback/0.pack.gz'
+<w> [webpack.cache.PackFileCacheStrategy] Caching failed for pack: Error: ENOENT: no such file or directory, rename '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/cache/webpack/client-development-fallback/0.pack.gz_' -> '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/cache/webpack/client-development-fallback/0.pack.gz'
+ ✓ Compiled in 1915ms (1577 modules)
+ ✓ Compiled in 357ms (1577 modules)
+ ✓ Compiled in 2.4s (1593 modules)
+ ✓ Compiled in 630ms (1593 modules)
+ ✓ Compiled in 654ms (1593 modules)
+ ✓ Compiled in 1793ms (1591 modules)
+ ⨯ ./lib/simpleFirebase.ts
+Error: 
+  [31mx[0m Expected ',', got ':'
+     ,-[[36;1;4m/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/lib/simpleFirebase.ts[0m:318:1]
+ [2m318[0m |   subscribeToDrills, 
+ [2m319[0m |   subscribeToPracticePlans, 
+ [2m320[0m |   subscribeToSettings,
+ [2m321[0m |   saveDrill: saveDrills,
+     : [31;1m           ^[0m
+ [2m322[0m |   savePracticePlan: savePracticePlans,
+ [2m323[0m |   saveSettings,
+ [2m324[0m |   getDrills,
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./lib/simpleFirebase.ts
+./app/page.tsx
+ ⨯ ./lib/simpleFirebase.ts
+Error: 
+  [31mx[0m Expected ',', got ':'
+     ,-[[36;1;4m/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/lib/simpleFirebase.ts[0m:318:1]
+ [2m318[0m |   subscribeToDrills, 
+ [2m319[0m |   subscribeToPracticePlans, 
+ [2m320[0m |   subscribeToSettings,
+ [2m321[0m |   saveDrill: saveDrills,
+     : [31;1m           ^[0m
+ [2m322[0m |   savePracticePlan: savePracticePlans,
+ [2m323[0m |   saveSettings,
+ [2m324[0m |   getDrills,
+     `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./lib/simpleFirebase.ts
+./app/page.tsx
+ ✓ Compiled in 519ms (1577 modules)
+ ✓ Compiled in 460ms (1591 modules)
+ ✓ Compiled in 539ms (1591 modules)
+ ✓ Compiled in 392ms (1577 modules)
+ ✓ Compiled in 150ms (1577 modules)
+ ✓ Compiled in 192ms (1577 modules)
+ ✓ Compiled in 332ms (1577 modules)
+ ✓ Compiled in 484ms (1593 modules)
+ ✓ Compiled in 399ms (1593 modules)
+ ✓ Compiled in 344ms (801 modules)
+ ✓ Compiled in 122ms (801 modules)
+ ✓ Compiled in 299ms (1593 modules)
+ ✓ Compiled in 182ms (1593 modules)
+ ✓ Compiled in 358ms (1593 modules)
+ ✓ Compiled in 255ms (1601 modules)
+ ✓ Compiled in 392ms (1601 modules)
+ ✓ Compiled in 242ms (1601 modules)
+ ✓ Compiled in 237ms (1601 modules)
+ ✓ Compiled in 255ms (1601 modules)
+ ✓ Compiled in 293ms (1601 modules)
+ ✓ Compiled in 328ms (1601 modules)
+ ✓ Compiled in 241ms (1601 modules)
+ ⨯ ./components/DraggableDrillList.tsx
+Error: 
+  [31mx[0m Unexpected token `div`. Expected jsx identifier
+    ,-[[36;1;4m/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/components/DraggableDrillList.tsx[0m:93:1]
+ [2m93[0m |   }
+ [2m94[0m | 
+ [2m95[0m |   return (
+ [2m96[0m |     <div className="space-y-3">
+    : [31;1m     ^^^[0m
+ [2m97[0m |       {drills.map((drill, index) => (
+ [2m98[0m |         <div
+ [2m99[0m |           key={drill.id}
+    `----
+
+Caused by:
+    Syntax Error
+
+Import trace for requested module:
+./components/DraggableDrillList.tsx
+./components/PracticePlanBuilder.tsx
+./app/page.tsx
+ ✓ Compiled in 290ms (1601 modules)
+ ✓ Compiled in 358ms (1601 modules)
+ ✓ Compiled in 671ms (1601 modules)
+ ✓ Compiled in 318ms (805 modules)
+ ✓ Compiled in 132ms (805 modules)
+ ✓ Compiled in 400ms (1601 modules)
+ ✓ Compiled in 313ms (1601 modules)
+ ✓ Compiled in 431ms (1603 modules)
+ ✓ Compiled in 668ms (1613 modules)
+ ✓ Compiled in 434ms (1613 modules)
+ ✓ Compiled in 664ms (1613 modules)
+ ✓ Compiled in 575ms (1613 modules)
+ ✓ Compiled in 702ms (1613 modules)
+ ✓ Compiled in 273ms (1613 modules)
+ ✓ Compiled in 335ms (1613 modules)
+ ✓ Compiled in 356ms (1613 modules)
+ ✓ Compiled in 370ms (1613 modules)
+ ✓ Compiled in 508ms (1613 modules)
+ ✓ Compiled in 1296ms (1613 modules)
+ ✓ Compiled in 567ms (1613 modules)
+ ✓ Compiled in 820ms (1613 modules)
+ ✓ Compiled in 659ms (1613 modules)
+ ✓ Compiled in 436ms (1613 modules)
+ ✓ Compiled in 619ms (1613 modules)
+ ✓ Compiled in 488ms (1613 modules)
+ ✓ Compiled in 513ms (1613 modules)
+ ✓ Compiled in 917ms (1613 modules)
+ ✓ Compiled in 536ms (1613 modules)
+ ✓ Compiled in 382ms (1613 modules)
+ ✓ Compiled in 667ms (1613 modules)
+ ✓ Compiled in 493ms (1613 modules)
+ ✓ Compiled in 701ms (1613 modules)
+ ✓ Compiled in 477ms (1599 modules)
+ ✓ Compiled in 540ms (1613 modules)
+ ✓ Compiled in 249ms (1599 modules)
+ ✓ Compiled in 652ms (1613 modules)
+ ✓ Compiled in 669ms (1613 modules)
+ ✓ Compiled in 481ms (1613 modules)
+ ✓ Compiled /_not-found in 377ms (1602 modules)
+ ⨯ Error: Cannot find module './682.js'
+Require stack:
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/app/_not-found/page.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/load-components.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/build/utils.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/dev/hot-middleware.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/dev/hot-reloader-webpack.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/router-server.js
+- /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/start-server.js
+    at Function.<anonymous> (node:internal/modules/cjs/loader:1401:15)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require-hook.js:55:36
+    at defaultResolveImpl (node:internal/modules/cjs/loader:1057:19)
+    at resolveForCJSWithHooks (node:internal/modules/cjs/loader:1062:22)
+    at Function._load (node:internal/modules/cjs/loader:1211:37)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1487:12)
+    at mod.require (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at __webpack_require__.f.require (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:198:28)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:111:40
+    at Array.reduce (<anonymous>)
+    at __webpack_require__.e (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:110:67)
+    at Array.map (<anonymous>)
+    at __webpack_require__.X (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js:162:22)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/pages/_document.js:1:335
+    at Object.<anonymous> (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/pages/_document.js:1:376)
+    at Module._compile (node:internal/modules/cjs/loader:1730:14)
+    at Object..js (node:internal/modules/cjs/loader:1895:10)
+    at Module.load (node:internal/modules/cjs/loader:1465:32)
+    at Function._load (node:internal/modules/cjs/loader:1282:12)
+    at TracingChannel.traceSync (node:diagnostics_channel:322:14)
+    at wrapModuleLoad (node:internal/modules/cjs/loader:235:24)
+    at Module.<anonymous> (node:internal/modules/cjs/loader:1487:12)
+    at mod.require (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require-hook.js:65:28)
+    at require (node:internal/modules/helpers:135:16)
+    at requirePage (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require.js:109:84)
+    at /Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/load-components.js:72:65
+    at async Promise.all (index 0)
+    at async loadComponentsImpl (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/load-components.js:71:33)
+    at async DevServer.findPageComponentsImpl (/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/next-server.js:714:36) {
+  code: 'MODULE_NOT_FOUND',
+  requireStack: [
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/webpack-runtime.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/.next/server/app/_not-found/page.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/require.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/load-components.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/build/utils.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/dev/hot-middleware.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/dev/hot-reloader-webpack.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/router-utils/setup-dev-bundler.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/router-server.js',
+    '/Users/emilyfehr8/CascadeProjects/hockey-practice-planner/node_modules/next/dist/server/lib/start-server.js'
+  ]
+}
+ GET / 500 in 533ms

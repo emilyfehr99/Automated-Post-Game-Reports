@@ -1,0 +1,284 @@
+============================================================
+MEETING TRANSCRIPTION
+============================================================
+Generated: 2025-10-08 11:43:36
+Model: Whisper base
+
+FULL TRANSCRIPT:
+----------------------------------------
+ Well listen there Goose tamers will you make a of the Police Department by the tweet saying so WE Branly at rpr t RE Stefan I'm going to share my screen. I think we should have access for your IP as well. I was just talking to Joe and I guess he hasn't reached out to Madagascar yet. One of the things that Madagascar does for us is they build up these CVAT jobs that are then created by the taters. Thus far we've needed a lot of jobs but I guess one sort of area where we haven't done and not the annotating is for when players are actually like making actions. If they're passing the puck or shooting the puck you'll see the stick kind of speed up and the model is kind of struggling with that a little bit when it like on shots and passes and things. So the next jobs are going to try and capture more actions and we don't have that much of jobs yet. These are jobs that have already been completed somewhat in the process of auditing them. But the end up with... So each job typically has roughly like 23 or so and the model spits out what it thinks is the posessation of each player on the ice. So when you first get it it's interesting like the model will sometimes think that like a player is a person in the crowd is player or the referee's player. It's part of the job is to like clean up the data in that sense. And then Chio has like a pretty defined position for where he wants all of these key points. And we can again like there'll be plenty of feedback throughout the process. So this is where we do want the key points to be. The model does a pretty good job. So this has already been like edited except under our annotator, either here or that a gas stove. So it's like much better little tighter to where we want it. But I think you would get this batch that the model spits out. And you would go through first you clean up and get rid of some like false positives. And then I've found the best way is you kind of hide all the properties. And then you just like select one player and go through all the frames for each player. So you're kind of like moving the elbow here and here. One big thing is I think I mentioned on the color earlier is just like making sure that the player's face is looking the right direction. So you have their nose and their ears. You have it here and that sort of vector is like pointing towards the puck. I think Joe thinks that that will help the model be the track where the puck is because the player's going to get the puck. It's pretty wild. It does like a really good job out of the box. And then once it gets touched by our annotators, it's pretty cool. So you can sort of go through a frame and it literally just looks like a 3D model of the player's skating. Like the hope is once these frames are annotated, you'll be able to generate actions and positions on the nice. And both jersey numbers all sorts of different cool things. It's like very helpful. Yeah, I've done some work with like just in Python with like a yellow model doing this similar thing, but it's just so hard to do it from a hockey broadcast just because so far out of the view and stuff like that. Yeah, this is much more accurate, which is cool. So what's this yellow program? I just found it online. I kind of did like many projects on it. I post a lot of projects on LinkedIn and stuff. Right. And so I did kind of big dive into an off-season report on a player. And I ended up being able to overlay this skeleton onto the player. But it didn't give me the option to like this program where you could like manually move the points. It just kind of shot out an ankle estimation, knee estimation kind of thing. But it was a rough draft. Yeah, yeah, it was a rough draft, but it was cool to do anyways. Nice. Yeah, that's how they get happy right now. Is it like 10 or your post-alcoholic content? Yeah, I think how she found me was I did like, she posted for the four nations, Canada, USA's data on Twitter. And so I took that data and just did a quick project. And I think that's where she found my stuff. Oh, very cool. Yeah. Yeah, it was really fortunate. It was my 10th year of the company last year. And Neil took everybody that was with the company for 10 years to four nations with them. Oh, wow. So we had awesome seeds. I was like right in front of my dating school. That's all crazy. That's lucky. Seems like I went to the lifetime opportunity. It was. I feel like I never get to go to those like. Yeah, it's a good example of how well staffed these trees are. It was nice to like put us up in a hotel, Tusser, St. Motel, but like that and all the players are staying at. I was literally grabbing coffee in the morning and that was trying to figure out this for a selfish. It's funny. Anyway, so yeah, that sounds like you have experience with this kind of stuff. Yeah. You will be in that trouble. There's all sorts of like sort of tricks like I think this one. So see these two players here. Yeah. It's two Seattle players have the end of like kind of crossing over each other. I think the model actually drops one of the players. Oh, yeah. I know it's actually one of the people that tell me. So this player here doesn't have a model for it. So that would be part of the process would be to sort of clean up, make sure each player has. So this is where the patient. You're a each frame. So in this example, would it be like where we are then adding the model onto shorts? I think so. Yeah. So there's a way that you can like. So here in the left, are you going to see if you do that stuff? Yeah. So over here in the left, you can do, you can draw a new skeleton, a shape. Which lets you kind of just put in a new object. So. A little creepy little insect. And then, or you can do a track. So a track, if I build a track here, it just stays throughout all the frames. Whereas if I build a shape, it only stays for this particular frame. And I should just come up the other day. So you can see there's all these tracks over here that are tracked the player throughout. It doesn't matter. It, on a particular frame, like this track drops out and you build a shape for somebody. It's not like considering frame to frame. The model is really just looking at each frame as a human sort of thing. So making sure that they're all in the same crack. Like I was trying to mess around with like, merging tracks. Like making sure the object that was consistent throughout each frame, but it's not necessary. Which makes it a lot easier, actually. So this shorts one, you could literally just build a shape. If you was only missing on this frame, you could just build the shape. You'd kind of like, see if I'm in here. And, hey, get as best you could for that particular frame. And you can create a track for that. I think shorts might be missing for a couple frames. You might just like build it when you finally see that he's a new posestation. And then keep adjusting throughout. I've found that's what takes a long time is when you're like not snapped to what the model thinks takes like a little more time to sort of make more adjustments. Yeah. So we would have proper, like a batch of like six or seven of these per annotator. I'm honestly not entirely sure what the workflow is going to look like again. Like I kind of just started this role with Joe maybe just under two weeks ago. So I'm trying to start offload some of the work for him so you can focus on other things. So I'm learning this process as well as we go. But it's pretty neat though. So as you guys is like you obviously have a puck tracking model as well, right? I'm so sorry. I'm going to switch these here but keep dropping it. Okay. I think I'm going to. Oh, I'm just curious. You guys obviously have a puck tracking model as separate from this kind of thing, right? It's close. I actually think it is. I think that one is done in Q. Let me see if I can pull that up too. It's just like a different computer ratio. I don't think I have any. I have an account on Keeley but I don't think I'll be pressured to sign. I know one more. I think it's going to be a little bit more. I think it's going to be a little bit more. I think the puck model is done in Q. Yeah, I know. I was just curious. That one's interesting too. That's another thing I'm working on right now is we're going through the puck model and seeing where it fails. It's crazy how many images we're using for some models. Like 20,000, 30,000 images that I'm kind of scrolling through and finding failures and pulling them out of the model. I was talking to John. I guess he's pretty adamant that like our puck model is really, really strong right now. So it's like any more data that we feed to it really has to be good data. And I guess he was like, make the point that basically like one bad image is worth like 100 or 200 good images. When you have those images that kind of mess with your model, they can like really set it back. So it's like a really important part of the machine learning process is just making sure that the data that you're feeding is good. Which is where like our annotators and my audits come in because we need to just make sure that it's as clean as possible to make sure we pull this out. It's going to make sense. Yeah, I'm not sure as far as doing more puck model tracking. I'm not sure where around that. I know he does want to do more, but I think right now I'm kind of an evaluation stapler going through and looking at images that have already been annotated. By some other people on our team and then it's where we have like so many different computer vision models and the works and they're like at various stages of like the point. So it seems like this post-institutional. That and are like getting an update about tracking models next time. So are you primarily like working on just this modeling side of things? Do you have anything to do with the actual hotkey specific side of things for what you kind of provide to the clients? I guess I'm trying to say. Yeah, I know for sure. Yeah. So the past five or six years I've been working as a shift manager, sort of overseeing or eventing. So I'd be working nights and handling this staff that sort of eventing games for our various clients. And it honestly just didn't really work with my schedule. And I felt like I had done a great job with it, but I was kind of looking for something new. And this was like an exciting part of the topic that seemed to all the person. Interesting personal growth options for being so I was excited to start to take on the new world. And then I'm also during the day, like working days now. Working nights would have been a challenge with my wife's schedule with a new born on the way. She's like on call. So if I was working until like two in the morning, handling the West Coast game, and she gets called out, we'd always kind of have to have like a contingency plan for the evening at like crazy hours. So it's really going to be hard to make that work. So the schedule on the change kind of works well for me as well. It's cool. But yeah, pretty much everybody with the company has gone through all stages like I've done. Pretty much everything. I've been to the shift tracks. Like I said, the kind of things. It's management. I was doing a lot of HR stuff several years ago. So I'm sort of transitioning to this role. So yeah, been bouncing around. So yeah, like I said, Joe, Joe was working on getting some of these jobs ready. I want to talk to him to just how much training and oversight. I feel like I could almost just throw even to a couple of jobs. And with the expectation that early on, you'll be like a little bit more feedback as far as like being a stickware for a few more points or being put in. And then we can kind of find like a good flow to get the hang of it. I truly think that especially with your experience, investing with this pose estimation of the past that you pick up locally. Yeah, yeah. I think my only main challenge first will be getting introduced to see that and everything like that. But I'm sure after a day or two, I'll have a good understanding. Yeah. Now there's a few weird things like I said, like merging the shapes and stuff. There's a few like the little like key points. But like I'd always be available to you like if you want to home in a collar, just like shooting a slack message through questions. And if you have to help you out. You said you would clock by my back so say. Yeah, yeah. I kind of think of presenting like other on-bowings step like add inside the meeting to cover. Like feel free to throw in some like an hour or so. I'm not sure how long ago I'm going to stay with feel free to throw in some time for our meeting today. Okay. If you pull it up, do you know if you have access to like meetings and stuff, and then different accounts and different access to like what you can add for time? I'm sure you can talk to me right? Yeah, yeah. Everything looks like it's good to go. Yeah, okay. Yeah, yeah. It's cool. Do you have any other questions for me here? No, I don't think so. I guess obviously once we get going, everything will kind of fall into place. I guess my only question would kind of be like this kind of saying on my main first day of starting working with the program and everything like that. So I just go in and there'll be a certain amount of frames for me to go through. And then that just mean my main task for the day kind of or how just kind of how this hour is. I know you said that for a certain amount of hours or something. Yeah, so I think we are a lot of 20 hours for you. Yeah, so I think it will probably look something like this. I think I'm on Joe's accounts. I have access to all the jobs. So you would have your own personal account on the CVAT app. And I assume that it would just have like each of these jobs is like 20 frames or so. And you hop in there and you get a lot of sort of like the public estimations. So you would work through that. And when you get the job, it's been high touch. So it's just a lot of spit out and then you would update it and you kind of save as you go. I think I'm going to be tracking it in Excel or at least that's how Joe and his team were doing it in the past. I'm sure there's probably a way to sort of clean that up and make it a little more optimized. But yeah, it sounds good. Yeah, so once you will make sure you have a log in to see that. And you can log in and I'm pretty sure it'll just have a list of the jobs that you can work towards. Yeah, I'm thinking like probably trying to get you some feedback. At least we need to start. I said probably a little bit more frequent just until we get rolling and I'm sure you'll have a good thing. Yeah, yeah, I know once we get going definitely feel free to throw projects at me like I'm open to any amount of hours. Awesome. Yeah, I haven't even seen what a new batch of projects look like so it's kind of new to use one. I know Joe said he's going to make it a priority to get this new batch of frames that are going to account for actions a bit better. And he needs to get that to Madagascar. They're going to build the project for us and then I think they sent it to us and then I can probably just assign it to whoever. So with you on 20 hours of your second sign you'd add some kind of projects and... Okay, sounds good. I will let you know though because I think it might take a day or two for them to turn around the project and I know he still hasn't sent it yet. So it might be like... But we're staying once there. If there's day and when we get the projects that we can work on. Okay. So until then I think we'll just kind of hang tight. We'll try and get some documentation too for you just to sort of have like a reference point maybe. Yeah. I think that can be helpful. You have like a little document just kind of showing different post-essimation definitions and where they should be. Yeah, absolutely. Okay, I'll try. Yeah, I'll get that too this week for sure. Okay. Cool, thanks for taking an improv too, Colin. No, thanks for the call. Okay, enjoy the rest of your day. You too. See ya. Bye. Bye.
+
+TRANSCRIPT WITH TIMESTAMPS:
+----------------------------------------
+[00:34 - 00:57] Well listen there Goose tamers will you make a
+[00:57 - 00:57] 
+[00:58 - 00:58] of the Police Department
+[00:58 - 00:58] by the tweet saying so
+[00:58 - 00:59] WE Branly at rpr t
+[00:59 - 00:59] RE Stefan
+[01:06 - 01:18] I'm going to share my screen.
+[01:22 - 01:25] I think we should have access for your IP as well.
+[01:26 - 01:33] I was just talking to Joe and I guess he hasn't reached out to Madagascar yet.
+[01:33 - 01:41] One of the things that Madagascar does for us is they build up these CVAT jobs that are then created by the taters.
+[01:45 - 01:55] Thus far we've needed a lot of jobs but I guess one sort of area where we haven't done and not the annotating is for when players are actually like making actions.
+[01:55 - 02:06] If they're passing the puck or shooting the puck you'll see the stick kind of speed up and the model is kind of struggling with that a little bit when it like on shots and passes and things.
+[02:07 - 02:13] So the next jobs are going to try and capture more actions and we don't have that much of jobs yet.
+[02:13 - 02:21] These are jobs that have already been completed somewhat in the process of auditing them.
+[02:21 - 02:29] But the end up with...
+[02:33 - 02:42] So each job typically has roughly like 23 or so and the model spits out what it thinks is the posessation of each player on the ice.
+[02:42 - 02:54] So when you first get it it's interesting like the model will sometimes think that like a player is a person in the crowd is player or the referee's player.
+[02:54 - 02:57] It's part of the job is to like clean up the data in that sense.
+[02:58 - 03:09] And then Chio has like a pretty defined position for where he wants all of these key points.
+[03:11 - 03:15] And we can again like there'll be plenty of feedback throughout the process.
+[03:17 - 03:20] So this is where we do want the key points to be.
+[03:23 - 03:25] The model does a pretty good job.
+[03:26 - 03:33] So this has already been like edited except under our annotator, either here or that a gas stove.
+[03:33 - 03:37] So it's like much better little tighter to where we want it.
+[03:39 - 03:44] But I think you would get this batch that the model spits out.
+[03:46 - 03:51] And you would go through first you clean up and get rid of some like false positives.
+[03:53 - 04:00] And then I've found the best way is you kind of hide all the properties.
+[04:00 - 04:06] And then you just like select one player and go through all the frames for each player.
+[04:07 - 04:10] So you're kind of like moving the elbow here and here.
+[04:11 - 04:19] One big thing is I think I mentioned on the color earlier is just like making sure that the player's face is looking the right direction.
+[04:19 - 04:22] So you have their nose and their ears.
+[04:22 - 04:27] You have it here and that sort of vector is like pointing towards the puck.
+[04:28 - 04:33] I think Joe thinks that that will help the model be the track where the puck is because the player's going to get the puck.
+[04:35 - 04:36] It's pretty wild.
+[04:36 - 04:40] It does like a really good job out of the box.
+[04:40 - 04:45] And then once it gets touched by our annotators, it's pretty cool.
+[04:45 - 04:51] So you can sort of go through a frame and it literally just looks like a 3D model of the player's skating.
+[04:52 - 05:05] Like the hope is once these frames are annotated, you'll be able to generate actions and positions on the nice.
+[05:05 - 05:09] And both jersey numbers all sorts of different cool things.
+[05:09 - 05:13] It's like very helpful.
+[05:14 - 05:29] Yeah, I've done some work with like just in Python with like a yellow model doing this similar thing, but it's just so hard to do it from a hockey broadcast just because so far out of the view and stuff like that.
+[05:29 - 05:31] Yeah, this is much more accurate, which is cool.
+[05:32 - 05:34] So what's this yellow program?
+[05:34 - 05:36] I just found it online.
+[05:38 - 05:43] I kind of did like many projects on it. I post a lot of projects on LinkedIn and stuff.
+[05:44 - 05:45] Right.
+[05:45 - 05:50] And so I did kind of big dive into an off-season report on a player.
+[05:51 - 05:55] And I ended up being able to overlay this skeleton onto the player.
+[05:55 - 06:00] But it didn't give me the option to like this program where you could like manually move the points.
+[06:00 - 06:06] It just kind of shot out an ankle estimation, knee estimation kind of thing.
+[06:07 - 06:07] But it was a rough draft.
+[06:08 - 06:12] Yeah, yeah, it was a rough draft, but it was cool to do anyways.
+[06:13 - 06:16] Nice. Yeah, that's how they get happy right now.
+[06:17 - 06:19] Is it like 10 or your post-alcoholic content?
+[06:20 - 06:28] Yeah, I think how she found me was I did like, she posted for the four nations, Canada, USA's data on Twitter.
+[06:28 - 06:33] And so I took that data and just did a quick project. And I think that's where she found my stuff.
+[06:34 - 06:35] Oh, very cool.
+[06:35 - 06:35] Yeah.
+[06:37 - 06:38] Yeah, it was really fortunate.
+[06:38 - 06:42] It was my 10th year of the company last year.
+[06:42 - 06:46] And Neil took everybody that was with the company for 10 years to four nations with them.
+[06:46 - 06:47] Oh, wow.
+[06:50 - 06:51] So we had awesome seeds.
+[06:51 - 06:53] I was like right in front of my dating school.
+[06:53 - 06:54] That's all crazy.
+[06:54 - 06:57] That's lucky. Seems like I went to the lifetime opportunity.
+[06:58 - 07:01] It was. I feel like I never get to go to those like.
+[07:03 - 07:12] Yeah, it's a good example of how well staffed these trees are.
+[07:12 - 07:20] It was nice to like put us up in a hotel, Tusser, St. Motel, but like that and all the players are staying at.
+[07:20 - 07:24] I was literally grabbing coffee in the morning and that was trying to figure out this for a selfish.
+[07:26 - 07:27] It's funny.
+[07:31 - 07:35] Anyway, so yeah, that sounds like you have experience with this kind of stuff.
+[07:35 - 07:35] Yeah.
+[07:35 - 07:37] You will be in that trouble.
+[07:40 - 07:45] There's all sorts of like sort of tricks like I think this one.
+[07:47 - 07:49] So see these two players here.
+[07:49 - 07:49] Yeah.
+[07:50 - 07:53] It's two Seattle players have the end of like kind of crossing over each other.
+[07:53 - 07:57] I think the model actually drops one of the players.
+[07:58 - 07:58] Oh, yeah.
+[07:59 - 08:01] I know it's actually one of the people that tell me.
+[08:02 - 08:06] So this player here doesn't have a model for it.
+[08:07 - 08:14] So that would be part of the process would be to sort of clean up, make sure each player has.
+[08:14 - 08:15] So this is where the patient.
+[08:17 - 08:18] You're a each frame.
+[08:19 - 08:25] So in this example, would it be like where we are then adding the model onto shorts?
+[08:26 - 08:29] I think so. Yeah. So there's a way that you can like.
+[08:30 - 08:32] So here in the left, are you going to see if you do that stuff?
+[08:32 - 08:39] Yeah. So over here in the left, you can do, you can draw a new skeleton, a shape.
+[08:40 - 08:42] Which lets you kind of just put in a new object.
+[08:42 - 08:43] So.
+[08:43 - 08:45] A little creepy little insect.
+[08:47 - 08:50] And then, or you can do a track.
+[08:50 - 08:55] So a track, if I build a track here, it just stays throughout all the frames.
+[08:57 - 09:03] Whereas if I build a shape, it only stays for this particular frame.
+[09:06 - 09:08] And I should just come up the other day.
+[09:09 - 09:12] So you can see there's all these tracks over here that are tracked the player throughout.
+[09:13 - 09:14] It doesn't matter.
+[09:14 - 09:19] It, on a particular frame, like this track drops out and you build a shape for somebody.
+[09:20 - 09:23] It's not like considering frame to frame.
+[09:24 - 09:29] The model is really just looking at each frame as a human sort of thing.
+[09:29 - 09:32] So making sure that they're all in the same crack.
+[09:32 - 09:34] Like I was trying to mess around with like, merging tracks.
+[09:34 - 09:39] Like making sure the object that was consistent throughout each frame, but it's not necessary.
+[09:39 - 09:40] Which makes it a lot easier, actually.
+[09:41 - 09:45] So this shorts one, you could literally just build a shape.
+[09:45 - 09:47] If you was only missing on this frame, you could just build the shape.
+[09:48 - 09:50] You'd kind of like, see if I'm in here.
+[09:50 - 09:54] And, hey, get as best you could for that particular frame.
+[09:54 - 09:57] And you can create a track for that.
+[09:57 - 09:59] I think shorts might be missing for a couple frames.
+[09:59 - 10:05] You might just like build it when you finally see that he's a new posestation.
+[10:05 - 10:08] And then keep adjusting throughout.
+[10:08 - 10:17] I've found that's what takes a long time is when you're like not snapped to what the model thinks takes like a little more time to sort of make more adjustments.
+[10:20 - 10:21] Yeah.
+[10:23 - 10:30] So we would have proper, like a batch of like six or seven of these per annotator.
+[10:31 - 10:34] I'm honestly not entirely sure what the workflow is going to look like again.
+[10:34 - 10:41] Like I kind of just started this role with Joe maybe just under two weeks ago.
+[10:41 - 10:46] So I'm trying to start offload some of the work for him so you can focus on other things.
+[10:46 - 10:49] So I'm learning this process as well as we go.
+[10:49 - 10:53] But it's pretty neat though.
+[10:55 - 11:01] So as you guys is like you obviously have a puck tracking model as well, right?
+[11:02 - 11:03] I'm so sorry.
+[11:03 - 11:05] I'm going to switch these here but keep dropping it.
+[11:22 - 11:23] Okay.
+[11:24 - 11:26] I think I'm going to.
+[11:27 - 11:29] Oh, I'm just curious.
+[11:29 - 11:35] You guys obviously have a puck tracking model as separate from this kind of thing, right?
+[11:36 - 11:38] It's close.
+[11:41 - 11:42] I actually think it is.
+[11:45 - 11:47] I think that one is done in Q.
+[11:47 - 11:49] Let me see if I can pull that up too.
+[11:54 - 11:56] It's just like a different computer ratio.
+[12:04 - 12:07] I don't think I have any.
+[12:07 - 12:11] I have an account on Keeley but I don't think I'll be pressured to sign.
+[12:37 - 12:39] I know one more.
+[12:57 - 13:04] I think it's going to be a little bit more.
+[13:04 - 13:09] I think it's going to be a little bit more.
+[13:09 - 13:09] 
+[13:18 - 13:21] I think the puck model is done in Q.
+[13:22 - 13:22] Yeah, I know.
+[13:22 - 13:23] I was just curious.
+[13:25 - 13:27] That one's interesting too.
+[13:28 - 13:34] That's another thing I'm working on right now is we're going through the puck model and seeing where it fails.
+[13:34 - 13:38] It's crazy how many images we're using for some models.
+[13:38 - 13:45] Like 20,000, 30,000 images that I'm kind of scrolling through and finding failures and pulling them out of the model.
+[13:46 - 13:47] I was talking to John.
+[13:47 - 13:52] I guess he's pretty adamant that like our puck model is really, really strong right now.
+[13:52 - 13:55] So it's like any more data that we feed to it really has to be good data.
+[13:55 - 14:05] And I guess he was like, make the point that basically like one bad image is worth like 100 or 200 good images.
+[14:06 - 14:11] When you have those images that kind of mess with your model, they can like really set it back.
+[14:13 - 14:21] So it's like a really important part of the machine learning process is just making sure that the data that you're feeding is good.
+[14:21 - 14:31] Which is where like our annotators and my audits come in because we need to just make sure that it's as clean as possible to make sure we pull this out.
+[14:31 - 14:32] It's going to make sense.
+[14:36 - 14:40] Yeah, I'm not sure as far as doing more puck model tracking.
+[14:41 - 14:42] I'm not sure where around that.
+[14:42 - 14:51] I know he does want to do more, but I think right now I'm kind of an evaluation stapler going through and looking at images that have already been annotated.
+[14:51 - 15:02] By some other people on our team and then it's where we have like so many different computer vision models and the works and they're like at various stages of like the point.
+[15:03 - 15:05] So it seems like this post-institutional.
+[15:06 - 15:13] That and are like getting an update about tracking models next time.
+[15:14 - 15:20] So are you primarily like working on just this modeling side of things?
+[15:21 - 15:27] Do you have anything to do with the actual hotkey specific side of things for what you kind of provide to the clients?
+[15:28 - 15:28] I guess I'm trying to say.
+[15:29 - 15:30] Yeah, I know for sure.
+[15:30 - 15:30] Yeah.
+[15:31 - 15:39] So the past five or six years I've been working as a shift manager, sort of overseeing or eventing.
+[15:40 - 15:49] So I'd be working nights and handling this staff that sort of eventing games for our various clients.
+[15:51 - 15:55] And it honestly just didn't really work with my schedule.
+[15:55 - 16:01] And I felt like I had done a great job with it, but I was kind of looking for something new.
+[16:01 - 16:04] And this was like an exciting part of the topic that seemed to all the person.
+[16:06 - 16:12] Interesting personal growth options for being so I was excited to start to take on the new world.
+[16:12 - 16:16] And then I'm also during the day, like working days now.
+[16:17 - 16:23] Working nights would have been a challenge with my wife's schedule with a new born on the way.
+[16:23 - 16:24] She's like on call.
+[16:25 - 16:28] So if I was working until like two in the morning, handling the West Coast game,
+[16:28 - 16:36] and she gets called out, we'd always kind of have to have like a contingency plan for the evening at like crazy hours.
+[16:36 - 16:40] So it's really going to be hard to make that work.
+[16:40 - 16:43] So the schedule on the change kind of works well for me as well.
+[16:43 - 16:44] It's cool.
+[16:44 - 16:52] But yeah, pretty much everybody with the company has gone through all stages like I've done.
+[16:52 - 16:54] Pretty much everything.
+[16:54 - 16:56] I've been to the shift tracks.
+[16:57 - 16:58] Like I said, the kind of things.
+[16:58 - 16:59] It's management.
+[16:59 - 17:01] I was doing a lot of HR stuff several years ago.
+[17:01 - 17:04] So I'm sort of transitioning to this role.
+[17:04 - 17:08] So yeah, been bouncing around.
+[17:11 - 17:18] So yeah, like I said, Joe, Joe was working on getting some of these jobs ready.
+[17:18 - 17:24] I want to talk to him to just how much training and oversight.
+[17:24 - 17:29] I feel like I could almost just throw even to a couple of jobs.
+[17:29 - 17:34] And with the expectation that early on, you'll be like a little bit more feedback as far as like
+[17:35 - 17:38] being a stickware for a few more points or being put in.
+[17:38 - 17:43] And then we can kind of find like a good flow to get the hang of it.
+[17:43 - 17:45] I truly think that especially with your experience,
+[17:46 - 17:50] investing with this pose estimation of the past that you pick up locally.
+[17:51 - 17:51] Yeah, yeah.
+[17:52 - 17:58] I think my only main challenge first will be getting introduced to see that and everything like that.
+[17:58 - 18:02] But I'm sure after a day or two, I'll have a good understanding.
+[18:03 - 18:03] Yeah.
+[18:03 - 18:07] Now there's a few weird things like I said, like merging the shapes and stuff.
+[18:07 - 18:09] There's a few like the little like key points.
+[18:09 - 18:14] But like I'd always be available to you like if you want to home in a collar,
+[18:15 - 18:16] just like shooting a slack message through questions.
+[18:17 - 18:19] And if you have to help you out.
+[18:20 - 18:22] You said you would clock by my back so say.
+[18:22 - 18:23] Yeah, yeah.
+[18:23 - 18:28] I kind of think of presenting like other on-bowings step like add inside the meeting to cover.
+[18:28 - 18:32] Like feel free to throw in some like an hour or so.
+[18:32 - 18:37] I'm not sure how long ago I'm going to stay with feel free to throw in some time for our meeting today.
+[18:37 - 18:38] Okay.
+[18:39 - 18:45] If you pull it up, do you know if you have access to like meetings and stuff,
+[18:45 - 18:50] and then different accounts and different access to like what you can add for time?
+[18:51 - 18:53] I'm sure you can talk to me right?
+[18:56 - 18:57] Yeah, yeah.
+[18:57 - 18:59] Everything looks like it's good to go.
+[19:00 - 19:01] Yeah, okay.
+[19:02 - 19:02] Yeah, yeah.
+[19:03 - 19:04] It's cool.
+[19:05 - 19:07] Do you have any other questions for me here?
+[19:08 - 19:09] No, I don't think so.
+[19:10 - 19:15] I guess obviously once we get going, everything will kind of fall into place.
+[19:17 - 19:30] I guess my only question would kind of be like this kind of saying on my main first day of starting working with the program and everything like that.
+[19:30 - 19:36] So I just go in and there'll be a certain amount of frames for me to go through.
+[19:37 - 19:43] And then that just mean my main task for the day kind of or how just kind of how this hour is.
+[19:43 - 19:47] I know you said that for a certain amount of hours or something.
+[19:47 - 19:52] Yeah, so I think we are a lot of 20 hours for you.
+[19:56 - 19:59] Yeah, so I think it will probably look something like this.
+[19:59 - 20:01] I think I'm on Joe's accounts.
+[20:01 - 20:02] I have access to all the jobs.
+[20:03 - 20:06] So you would have your own personal account on the CVAT app.
+[20:07 - 20:12] And I assume that it would just have like each of these jobs is like 20 frames or so.
+[20:12 - 20:17] And you hop in there and you get a lot of sort of like the public estimations.
+[20:17 - 20:18] So you would work through that.
+[20:19 - 20:22] And when you get the job, it's been high touch.
+[20:22 - 20:28] So it's just a lot of spit out and then you would update it and you kind of save as you go.
+[20:30 - 20:38] I think I'm going to be tracking it in Excel or at least that's how Joe and his team were doing it in the past.
+[20:39 - 20:44] I'm sure there's probably a way to sort of clean that up and make it a little more optimized.
+[20:44 - 20:51] But yeah, it sounds good.
+[20:52 - 20:56] Yeah, so once you will make sure you have a log in to see that.
+[20:56 - 21:01] And you can log in and I'm pretty sure it'll just have a list of the jobs that you can work towards.
+[21:03 - 21:08] Yeah, I'm thinking like probably trying to get you some feedback.
+[21:08 - 21:10] At least we need to start.
+[21:10 - 21:17] I said probably a little bit more frequent just until we get rolling and I'm sure you'll have a good thing.
+[21:18 - 21:26] Yeah, yeah, I know once we get going definitely feel free to throw projects at me like I'm open to any amount of hours.
+[21:27 - 21:27] Awesome.
+[21:30 - 21:35] Yeah, I haven't even seen what a new batch of projects look like so it's kind of new to use one.
+[21:36 - 21:44] I know Joe said he's going to make it a priority to get this new batch of frames that are going to account for actions a bit better.
+[21:44 - 21:46] And he needs to get that to Madagascar.
+[21:46 - 21:51] They're going to build the project for us and then I think they sent it to us and then I can probably just assign it to whoever.
+[21:53 - 21:58] So with you on 20 hours of your second sign you'd add some kind of projects and...
+[21:59 - 22:00] Okay, sounds good.
+[22:01 - 22:07] I will let you know though because I think it might take a day or two for them to turn around the project and I know he still hasn't sent it yet.
+[22:08 - 22:09] So it might be like...
+[22:10 - 22:13] But we're staying once there.
+[22:13 - 22:16] If there's day and when we get the projects that we can work on.
+[22:16 - 22:16] Okay.
+[22:17 - 22:20] So until then I think we'll just kind of hang tight.
+[22:22 - 22:27] We'll try and get some documentation too for you just to sort of have like a reference point maybe.
+[22:27 - 22:27] Yeah.
+[22:27 - 22:28] I think that can be helpful.
+[22:28 - 22:36] You have like a little document just kind of showing different post-essimation definitions and where they should be.
+[22:36 - 22:37] Yeah, absolutely.
+[22:38 - 22:39] Okay, I'll try.
+[22:39 - 22:41] Yeah, I'll get that too this week for sure.
+[22:41 - 22:41] Okay.
+[22:42 - 22:44] Cool, thanks for taking an improv too, Colin.
+[22:45 - 22:46] No, thanks for the call.
+[22:47 - 22:48] Okay, enjoy the rest of your day.
+[22:48 - 22:49] You too.
+[22:49 - 22:50] See ya.
+[22:50 - 22:50] Bye.
+[23:07 - 23:08] Bye.

@@ -1,0 +1,452 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Angle Analyzer v1.0</title>
+    <style>
+        /* Angle Analyzer v1.0 - Styles */
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            background: linear-gradient(135deg, #1a1a1a 0%, #2c2c2c 100%);
+            color: #00ffcc;
+            font-family: 'Courier New', monospace;
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 1000px;
+            margin: 0 auto;
+            text-align: center;
+            padding: 30px;
+            border: 2px solid #00ffcc;
+            border-radius: 15px;
+            background: rgba(44, 44, 44, 0.8);
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.3);
+        }
+
+        h2 {
+            color: #00ffcc;
+            text-transform: uppercase;
+            letter-spacing: 3px;
+            margin-bottom: 30px;
+            font-size: 2.5em;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+        }
+
+        .upload-section {
+            margin-bottom: 20px;
+        }
+
+        #upload {
+            display: none;
+        }
+
+        .upload-label {
+            display: inline-block;
+            padding: 12px 24px;
+            background: linear-gradient(45deg, #00ffcc, #00b386);
+            color: #1a1a1a;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        .upload-label:hover {
+            background: linear-gradient(45deg, #00b386, #00ffcc);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0, 255, 204, 0.4);
+        }
+
+        .canvas-container {
+            margin: 20px 0;
+            display: flex;
+            justify-content: center;
+        }
+
+        #canvas {
+            border: 3px solid #00ffcc;
+            cursor: crosshair;
+            background-color: #333;
+            border-radius: 10px;
+            box-shadow: 0 0 20px rgba(0, 255, 204, 0.2);
+            transition: all 0.3s ease;
+        }
+
+        #canvas:hover {
+            box-shadow: 0 0 30px rgba(0, 255, 204, 0.4);
+        }
+
+        .controls {
+            margin: 20px 0;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 15px;
+        }
+
+        #result {
+            font-size: 24px;
+            font-weight: bold;
+            color: #00ffcc;
+            text-shadow: 0 0 10px rgba(0, 255, 204, 0.5);
+            padding: 10px 20px;
+            background: rgba(0, 255, 204, 0.1);
+            border-radius: 8px;
+            border: 1px solid #00ffcc;
+        }
+
+        #reset {
+            padding: 12px 24px;
+            background: linear-gradient(45deg, #ff4444, #cc0000);
+            color: #fff;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-weight: bold;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        #reset:hover {
+            background: linear-gradient(45deg, #cc0000, #ff4444);
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(255, 68, 68, 0.4);
+        }
+
+        .instructions {
+            margin-top: 30px;
+            text-align: left;
+            background: rgba(0, 255, 204, 0.05);
+            padding: 20px;
+            border-radius: 10px;
+            border: 1px solid rgba(0, 255, 204, 0.3);
+        }
+
+        .instructions h3 {
+            color: #00ffcc;
+            margin-bottom: 15px;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+        }
+
+        .instructions ol {
+            color: #ccc;
+            line-height: 1.6;
+            padding-left: 20px;
+        }
+
+        .instructions li {
+            margin-bottom: 8px;
+        }
+
+        /* Responsive design */
+        @media (max-width: 768px) {
+            .container {
+                padding: 20px;
+                margin: 10px;
+            }
+            
+            h2 {
+                font-size: 2em;
+            }
+            
+            #canvas {
+                width: 100%;
+                height: auto;
+                max-width: 100%;
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+        }
+
+        /* Animation for points */
+        @keyframes pointPulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
+        }
+
+        .point-animation {
+            animation: pointPulse 0.3s ease-in-out;
+        }
+
+        /* Loading animation */
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid rgba(0, 255, 204, 0.3);
+            border-radius: 50%;
+            border-top-color: #00ffcc;
+            animation: spin 1s ease-in-out infinite;
+        }
+
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h2>Angle Analyzer v1.0</h2>
+        <div class="upload-section">
+            <input type="file" id="upload" accept="image/*">
+            <label for="upload" class="upload-label">Choose Image</label>
+        </div>
+        <div class="canvas-container">
+            <canvas id="canvas" width="800" height="600"></canvas>
+        </div>
+        <div class="controls">
+            <div id="result">Angle: Not measured yet</div>
+            <button id="reset">Reset</button>
+        </div>
+        <div class="instructions">
+            <h3>Instructions:</h3>
+            <ol>
+                <li>Upload an image using the "Choose Image" button</li>
+                <li>Click two points on the image to measure the angle of the line</li>
+                <li>The angle will be calculated relative to horizontal (0°)</li>
+                <li>Use "Reset" to clear the current measurement</li>
+            </ol>
+        </div>
+    </div>
+
+    <script>
+        // Angle Analyzer v1.0 - JavaScript functionality
+
+        class AngleAnalyzer {
+            constructor() {
+                this.canvas = document.getElementById('canvas');
+                this.ctx = this.canvas.getContext('2d');
+                this.resultDiv = document.getElementById('result');
+                this.uploadInput = document.getElementById('upload');
+                this.resetButton = document.getElementById('reset');
+                this.points = [];
+                this.img = new Image();
+                this.originalCanvasSize = { width: 800, height: 600 };
+                
+                this.initializeEventListeners();
+                this.setupCanvas();
+            }
+
+            initializeEventListeners() {
+                this.uploadInput.addEventListener('change', (event) => this.handleFileUpload(event));
+                this.canvas.addEventListener('click', (event) => this.handleCanvasClick(event));
+                this.resetButton.addEventListener('click', () => this.reset());
+                
+                // Keyboard shortcuts
+                document.addEventListener('keydown', (event) => this.handleKeyboard(event));
+            }
+
+            setupCanvas() {
+                this.canvas.width = this.originalCanvasSize.width;
+                this.canvas.height = this.originalCanvasSize.height;
+                this.ctx.fillStyle = '#333';
+                this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+                this.drawInstructions();
+            }
+
+            drawInstructions() {
+                this.ctx.fillStyle = '#00ffcc';
+                this.ctx.font = '20px Courier New';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText('Upload an image to begin angle measurement', 
+                                 this.canvas.width / 2, this.canvas.height / 2 - 20);
+                this.ctx.font = '16px Courier New';
+                this.ctx.fillText('Click two points to measure the angle of the line', 
+                                 this.canvas.width / 2, this.canvas.height / 2 + 20);
+            }
+
+            handleFileUpload(event) {
+                const file = event.target.files[0];
+                if (file) {
+                    this.showLoading();
+                    const reader = new FileReader();
+                    reader.onload = (e) => {
+                        this.img.src = e.target.result;
+                    };
+                    reader.readAsDataURL(file);
+                }
+            }
+
+            showLoading() {
+                this.resultDiv.innerHTML = '<div class="loading"></div> Loading image...';
+            }
+
+            handleImageLoad() {
+                this.hideLoading();
+                this.clearCanvas();
+                this.drawImage();
+                this.points = [];
+                this.updateResult('Angle: Not measured yet');
+            }
+
+            hideLoading() {
+                this.resultDiv.textContent = 'Angle: Not measured yet';
+            }
+
+            clearCanvas() {
+                this.ctx.clearRect(0, 0, this.canvas.width, this.canvas.height);
+            }
+
+            drawImage() {
+                const aspectRatio = this.img.width / this.img.height;
+                let newWidth = this.originalCanvasSize.width;
+                let newHeight = newWidth / aspectRatio;
+                
+                if (newHeight > this.originalCanvasSize.height) {
+                    newHeight = this.originalCanvasSize.height;
+                    newWidth = newHeight * aspectRatio;
+                }
+                
+                this.canvas.width = newWidth;
+                this.canvas.height = newHeight;
+                this.ctx.drawImage(this.img, 0, 0, newWidth, newHeight);
+            }
+
+            handleCanvasClick(event) {
+                if (!this.img.src) return;
+                
+                const rect = this.canvas.getBoundingClientRect();
+                const x = event.clientX - rect.left;
+                const y = event.clientY - rect.top;
+
+                this.points.push({ x, y });
+                this.drawPoint(x, y);
+                
+                if (this.points.length === 2) {
+                    const angle = this.calculateAngle(this.points[0], this.points[1]);
+                    this.updateResult(`Angle: ${angle.toFixed(2)}°`);
+                    this.drawLines(this.points);
+                    this.points = []; // Reset for next measurement
+                } else {
+                    this.updateResult(`Points: ${this.points.length}/2`);
+                }
+            }
+
+            drawPoint(x, y) {
+                this.ctx.beginPath();
+                this.ctx.arc(x, y, 6, 0, Math.PI * 2);
+                this.ctx.fillStyle = '#ff4444';
+                this.ctx.fill();
+                this.ctx.strokeStyle = '#fff';
+                this.ctx.lineWidth = 2;
+                this.ctx.stroke();
+                this.ctx.closePath();
+                
+                // Add point number
+                this.ctx.fillStyle = '#fff';
+                this.ctx.font = 'bold 14px Arial';
+                this.ctx.textAlign = 'center';
+                this.ctx.fillText(this.points.length.toString(), x, y + 5);
+            }
+
+            calculateAngle(p1, p2) {
+                // Calculate the angle of the line from p1 to p2 relative to horizontal (0°)
+                const dx = p2.x - p1.x;
+                const dy = p2.y - p1.y;
+                
+                // Calculate angle in radians, then convert to degrees
+                let angle = Math.atan2(dy, dx) * (180 / Math.PI);
+                
+                // Normalize to 0-360 degrees
+                if (angle < 0) {
+                    angle += 360;
+                }
+                
+                return angle;
+            }
+
+            drawLines(points) {
+                this.ctx.beginPath();
+                this.ctx.moveTo(points[0].x, points[0].y);
+                this.ctx.lineTo(points[1].x, points[1].y);
+                this.ctx.strokeStyle = '#ff4444';
+                this.ctx.lineWidth = 3;
+                this.ctx.stroke();
+                this.ctx.closePath();
+                
+                // Draw angle arc
+                this.drawAngleArc(points[0], points[1]);
+            }
+
+            drawAngleArc(p1, p2) {
+                // Draw arc showing angle from horizontal (0°) to the line
+                const dx = p2.x - p1.x;
+                const dy = p2.y - p1.y;
+                const lineAngle = Math.atan2(dy, dx);
+                
+                const radius = 30;
+                const startAngle = 0; // Horizontal reference
+                const endAngle = lineAngle;
+                
+                this.ctx.beginPath();
+                this.ctx.arc(p1.x, p1.y, radius, startAngle, endAngle);
+                this.ctx.strokeStyle = '#00ffcc';
+                this.ctx.lineWidth = 2;
+                this.ctx.stroke();
+                
+                // Draw horizontal reference line
+                this.ctx.beginPath();
+                this.ctx.moveTo(p1.x - radius, p1.y);
+                this.ctx.lineTo(p1.x + radius, p1.y);
+                this.ctx.strokeStyle = '#00ffcc';
+                this.ctx.lineWidth = 1;
+                this.ctx.setLineDash([5, 5]);
+                this.ctx.stroke();
+                this.ctx.setLineDash([]);
+            }
+
+            updateResult(text) {
+                this.resultDiv.textContent = text;
+            }
+
+            reset() {
+                this.clearCanvas();
+                if (this.img.src) {
+                    this.drawImage();
+                } else {
+                    this.drawInstructions();
+                }
+                this.points = [];
+                this.updateResult('Angle: Not measured yet');
+            }
+
+            handleKeyboard(event) {
+                switch(event.key) {
+                    case 'r':
+                    case 'R':
+                        this.reset();
+                        break;
+                    case 'Escape':
+                        this.reset();
+                        break;
+                }
+            }
+        }
+
+        // Initialize the application when the DOM is loaded
+        document.addEventListener('DOMContentLoaded', () => {
+            const analyzer = new AngleAnalyzer();
+            analyzer.img.onload = () => analyzer.handleImageLoad();
+        });
+    </script>
+</body>
+</html>

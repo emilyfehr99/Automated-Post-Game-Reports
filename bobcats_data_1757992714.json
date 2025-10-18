@@ -1,0 +1,56 @@
+{
+  "team_info": {
+    "team_id": "21479",
+    "team_name": "Lloydminster Bobcats",
+    "league": "Hockey",
+    "season": "2024-25",
+    "last_updated": "2025-09-15 22:18:34"
+  },
+  "roster": {
+    "team_id": "21479",
+    "team_name": "Lloydminster Bobcats",
+    "players": [
+      {
+        "name": "Player 1",
+        "position": "Forward",
+        "number": "1",
+        "hudl_id": "21479_001"
+      },
+      {
+        "name": "Player 2",
+        "position": "Defense",
+        "number": "2",
+        "hudl_id": "21479_002"
+      },
+      {
+        "name": "Player 3",
+        "position": "Goalie",
+        "number": "3",
+        "hudl_id": "21479_003"
+      }
+    ],
+    "total_players": 3,
+    "last_updated": "2025-09-15 22:18:34"
+  },
+  "games": {
+    "team_id": "21479",
+    "team_name": "Lloydminster Bobcats",
+    "games": [
+      {
+        "date": "2024-09-15",
+        "opponent": "Opponent 1",
+        "score": "3-2",
+        "hudl_id": "21479_game_001"
+      },
+      {
+        "date": "2024-09-20",
+        "opponent": "Opponent 2",
+        "score": "1-4",
+        "hudl_id": "21479_game_002"
+      }
+    ],
+    "total_games": 2,
+    "last_updated": "2025-09-15 22:18:34"
+  },
+  "export_timestamp": "2025-09-15 22:18:34"
+}

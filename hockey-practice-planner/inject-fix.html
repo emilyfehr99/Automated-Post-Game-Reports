@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Inject Fix to Live Site</title>
+    <style>
+        body {
+            font-family: Arial, sans-serif;
+            max-width: 600px;
+            margin: 0 auto;
+            padding: 20px;
+            background-color: #f5f5f5;
+        }
+        .container {
+            background: white;
+            padding: 20px;
+            border-radius: 8px;
+            box-shadow: 0 2px 4px rgba(0,0,0,0.1);
+        }
+        .button {
+            background: #059669;
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 16px;
+            margin: 10px 5px;
+            width: 100%;
+        }
+        .button:hover {
+            background: #047857;
+        }
+        .result {
+            margin-top: 20px;
+            padding: 15px;
+            border-radius: 5px;
+            white-space: pre-wrap;
+            font-family: monospace;
+            background: #f8f9fa;
+            border: 1px solid #dee2e6;
+        }
+        .success {
+            background: #d1fae5;
+            color: #065f46;
+            border: 1px solid #a7f3d0;
+        }
+        .error {
+            background: #fee2e2;
+            color: #991b1b;
+            border: 1px solid #fca5a5;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔧 Inject Fix to Live Site</h1>
+        <p>This will inject a fix directly into the live site to resolve the spread syntax error.</p>
+        
+        <button class="button" onclick="injectFix()">
+            🚀 Inject Fix to Live Site
+        </button>
+        
+        <div id="result"></div>
+    </div>
+
+    <script>
+        function showResult(message, type = 'info') {
+            const resultDiv = document.getElementById('result');
+            resultDiv.innerHTML = `<div class="result ${type}">${message}</div>`;
+        }
+        
+        function injectFix() {
+            showResult('🚀 Injecting fix to live site...', 'info');
+            
+            // Open the live site in a new tab
+            const liveSiteWindow = window.open('https://hockey-practice-planner.vercel.app', '_blank');
+            
+            if (liveSiteWindow) {
+                // Wait for the page to load
+                setTimeout(() => {
+                    try {
+                        // The fix script
+                        const fixScript = `
+                            console.log('🔧 Fixing spread syntax error...');
+                            
+                            // Create a safe spread function
+                            function safeSpread(target, source) {
+                                if (!target || typeof target !== 'object') {
+                                    return source || [];
+                                }
+                                if (!source || typeof source !== 'object') {
+                                    return target || [];
+                                }
+                                if (Array.isArray(target) && Array.isArray(source)) {
+                                    return [...target, ...source];
+                                }
+                                return { ...target, ...source };
+                            }
+                            
+                            // Override the problematic save function
+                            window.safeOnSave = async function(plan) {
+                                console.log('🔧 Using safe save function...', { planName: plan?.name });
+                                
+                                try {
+                                    // Ensure plan is a proper object
+                                    const safePlan = {
+                                        id: plan?.id || Date.now().toString(),
+                                        name: plan?.name || 'Unnamed Practice Plan',
+                                        description: plan?.description || '',
+                                        drills: Array.isArray(plan?.drills) ? plan.drills : [],
+                                        totalDuration: typeof plan?.totalDuration === 'number' ? plan.totalDuration : 0,
+                                        createdAt: plan?.createdAt || new Date().toISOString(),
+                                        updatedAt: new Date().toISOString()
+                                    };
+                                    
+                                    console.log('🧹 Safe plan object:', safePlan);
+                                    
+                                    // Get current practice plans safely
+                                    const currentPlans = JSON.parse(localStorage.getItem('hockey-practice-plans') || '[]');
+                                    if (!Array.isArray(currentPlans)) {
+                                        console.log('⚠️ Current plans not an array, initializing...');
+                                        localStorage.setItem('hockey-practice-plans', '[]');
+                                    }
+                                    
+                                    // Add the new plan safely
+                                    const updatedPlans = Array.isArray(currentPlans) ? [...currentPlans, safePlan] : [safePlan];
+                                    
+                                    // Save to localStorage
+                                    localStorage.setItem('hockey-practice-plans', JSON.stringify(updatedPlans));
+                                    console.log('✅ Plan saved to localStorage');
+                                    
+                                    // Show success message
+                                    alert('✅ Practice plan saved successfully!');
+                                    
+                                    // Refresh the page to show the new plan
+                                    setTimeout(() => {
+                                        window.location.reload();
+                                    }, 1000);
+                                    
+                                } catch (error) {
+                                    console.error('❌ Safe save failed:', error);
+                                    alert('❌ Failed to save practice plan: ' + error.message);
+                                }
+                            };
+                            
+                            // Override the save button click handler
+                            setTimeout(() => {
+                                const saveButtons = document.querySelectorAll('button');
+                                saveButtons.forEach(button => {
+                                    if (button.textContent.includes('Save Plan') || button.textContent.includes('Save')) {
+                                        console.log('🔧 Found save button, replacing handler...');
+                                        
+                                        // Remove all existing event listeners
+                                        const newButton = button.cloneNode(true);
+                                        button.parentNode.replaceChild(newButton, button);
+                                        
+                                        // Add the safe click handler
+                                        newButton.addEventListener('click', function(e) {
+                                            e.preventDefault();
+                                            e.stopPropagation();
+                                            
+                                            console.log('💾 Save button clicked with safe handler');
+                                            
+                                            // Get the plan data from the form
+                                            const planName = document.querySelector('input[type="text"]')?.value || 'Unnamed Plan';
+                                            const planDescription = document.querySelector('textarea')?.value || '';
+                                            
+                                            const planData = {
+                                                id: Date.now().toString(),
+                                                name: planName,
+                                                description: planDescription,
+                                                drills: [],
+                                                totalDuration: 0,
+                                                createdAt: new Date().toISOString(),
+                                                updatedAt: new Date().toISOString()
+                                            };
+                                            
+                                            // Use the safe save function
+                                            window.safeOnSave(planData);
+                                        });
+                                        
+                                        console.log('✅ Save button handler replaced');
+                                    }
+                                });
+                            }, 2000);
+                            
+                            console.log('🎉 Spread syntax error fix applied! Try saving a practice plan now.');
+                        `;
+                        
+                        liveSiteWindow.eval(fixScript);
+                        showResult('✅ Fix injected successfully!\n\nNow try:\n1. Go to the live site tab\n2. Create a new practice plan\n3. Click "Save Plan"\n\nThe save button should now work without the spread syntax error!', 'success');
+                    } catch (error) {
+                        showResult(`❌ Could not inject fix: ${error.message}\n\nTry manually copying and pasting the fix script into the browser console.`, 'error');
+                    }
+                }, 3000);
+            } else {
+                showResult('❌ Could not open live site. Please open it manually and run the fix script in the console.', 'error');
+            }
+        }
+        
+        // Show instructions on load
+        window.addEventListener('load', function() {
+            showResult('🔧 Fix Injection Tool\n\nThis tool will inject a fix directly into the live site to resolve the spread syntax error.\n\nClick the button above to automatically inject the fix.', 'info');
+        });
+    </script>
+</body>
+</html>

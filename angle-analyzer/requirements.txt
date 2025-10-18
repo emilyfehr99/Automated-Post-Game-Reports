@@ -1,0 +1,14 @@
+# Angle Analyzer v1.0 - Requirements
+# This is a pure frontend web application, no Python dependencies required
+
+# Optional: If you want to serve the app with a simple HTTP server
+# You can use Python's built-in server or any other web server
+
+# For Python HTTP server (optional):
+# python -m http.server 8000
+
+# For Node.js (optional):
+# npx http-server
+
+# For PHP (optional):
+# php -S localhost:8000

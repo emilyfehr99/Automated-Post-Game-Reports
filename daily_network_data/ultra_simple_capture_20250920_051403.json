@@ -1,0 +1,106 @@
+{
+  "timestamp": "2025-09-20T05:14:03.908004",
+  "team_id": "21479",
+  "captured_urls": {
+    "https://app.hudl.com/": {
+      "status_code": 200,
+      "content_length": 117745,
+      "content": "<!doctype html>\n<html class=\"no-js\" lang=\"en-US\">\n<head>\n<meta charset=\"utf-8\">\n\n<meta name=\"Copyright\" content=\"Hudl\">\n<meta name=\"viewport\" content=\"width=device-width, initial-scale=1\">\n<meta property=\"fb:pages\" content=\"112477931222\">\n\n<link rel=\"home\" href=\"https://www.hudl.com/\">\n\n<link rel=\"dns-prefetch\" href=\"https://static.hudl.com\">\n<link rel=\"dns-prefetch\" href=\"https://sc.hudl.com\">\n<link rel=\"preconnect\" href=\"https://fonts.googleapis.com\">\n<link rel=\"preconnect\" href=\"https://fonts.gstatic.com\" crossorigin>\n\n<link rel=\"icon\" href=\"https://sc.hudl.com/favicon.ico\" sizes=\"any\">\n<link rel=\"icon\" href=\"https://sc.hudl.com/favicon.svg\" type=\"image/svg+xml\">\n<link rel=\"apple-touch-icon\" href=\"https://sc.hudl.com/apple-touch-icon.png\">\n<link rel=\"mask-icon\" href=\"https://sc.hudl.com/safari-pinned-tab.svg\" color=\"#ff6300\">\n<meta name=\"theme-color\" content=\"#ffffff\">\n<title>Hudl \u2022 The leader in sports technology, video analysis &amp; data</title>\n<meta name=\"description\" content=\"...",
+      "headers": {
+        "Date": "Sat, 20 Sep 2025 10:14:02 GMT",
+        "Content-Type": "text/html; charset=UTF-8",
+        "Transfer-Encoding": "chunked",
+        "Connection": "keep-alive",
+        "Server": "nginx",
+        "Vary": "Accept-Encoding, Origin",
+        "Content-Language": "en-US",
+        "Strict-Transport-Security": "max-age=86400;",
+        "Access-Control-Allow-Origin": "https://www.hudl.com",
+        "Access-Control-Allow-Credentials": "true",
+        "Access-Control-Allow-Headers": "X-Hudl-WebStack-CorsEnabled,X-Hudl-WebStack-DebugOrigin,X-Hudl-WebStack-Access-Control-Allow-Origin,hudl-authtoken,X-Auth-Token,X-Hudl-ApiToken,authorization,Sec-Ch-Ua,Sec-Ch-Ua-Mobile,Sec-Ch-Ua-Platform,DNT,X-Hudl-Usehotchocolate,X-Mx-ReqToken,Keep-Alive,User-Agent,X-Requested-With,If-Modified-Since,Cache-Control,Content-Type,X-Hudl-AJAX-Retry-Request-Count,X-Hudl-AJAX-Original-Request-ID,X-Hudl-AJAX-Retry-ClientVersion",
+        "Access-Control-Allow-Methods": "GET, POST, PUT, DELETE, PATCH, OPTIONS",
+        "Access-Control-Allow-Private-Network": "true",
+        "Content-Encoding": "gzip"
+      }
+    },
+    "https://app.hudl.com/login": {
+      "status_code": 200,
+      "content_length": 1526,
+      "content": "<!doctype html>\n<html lang=\"en\">\n  <head data-sentry-release=\"$SENTRY_RELEASE\">\n    <meta charset=\"utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <meta name=\"theme-color\" content=\"#000000\" />\n    <title>404 Not Found</title>\n    <link\n      rel=\"stylesheet\"\n      href=\"https://sc-ui.hudl.com/uniform-ui-components/all/4/uniform-ui-components_bundled.css.gz\"\n    />\n    <link\n      href=\"https://sc-ui.hudl.com/hudl-ui-plugins/generic/1.7.0/hudl-ui-plugins-generic_bundled.css.gz\"\n      rel=\"stylesheet\"\n      type=\"text/css\"\n    />\n    <script\n      defer\n      src=\"https://sc-ui.hudl.com/hudl-ui-plugins/generic/1.7.0/hudl-ui-plugins-generic_vendor.js.gz\"\n      type=\"text/javascript\"\n    ></script>\n    <script\n      defer\n      src=\"https://sc-ui.hudl.com/hudl-ui-plugins/generic/1.7.0/hudl-ui-plugins-generic.js.gz\"\n      type=\"text/javascript\"\n    ></script>\n    <link rel=\"preconnect\" href=\"https://static.hudl.com\" />\n    <link rel=\"stylesheet\" href...",
+      "headers": {
+        "Content-Type": "text/html",
+        "Transfer-Encoding": "chunked",
+        "Connection": "keep-alive",
+        "Date": "Sat, 20 Sep 2025 10:14:03 GMT",
+        "Last-Modified": "Fri, 19 Sep 2025 19:40:55 GMT",
+        "x-amz-server-side-encryption": "AES256",
+        "Cache-Control": "max-age=300, s-maxage=300",
+        "Server": "AmazonS3",
+        "Content-Encoding": "gzip",
+        "ETag": "W/\"18189785ca898a05267a2c1d4e09eda1\"",
+        "Vary": "Accept-Encoding",
+        "X-Cache": "Miss from cloudfront",
+        "Via": "1.1 d8948670713ce16af308b0f411bb9fe8.cloudfront.net (CloudFront)",
+        "X-Amz-Cf-Pop": "ORD56-P2",
+        "Alt-Svc": "h3=\":443\"; ma=86400",
+        "X-Amz-Cf-Id": "poP1O3cQrsPgpGDq3ZOKD12D7z3mBByRgBy6gpIMPhJi55UBhLHEJg==",
+        "X-XSS-Protection": "1; mode=block",
+        "X-Frame-Options": "SAMEORIGIN",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "X-Content-Type-Options": "nosniff",
+        "Strict-Transport-Security": "max-age=31536000",
+        "Server-Timing": "cdn-upstream-layer;desc=\"REC\",cdn-upstream-dns;dur=0,cdn-upstream-connect;dur=35,cdn-upstream-fbl;dur=70,cdn-cache-miss,cdn-pop;desc=\"ORD56-P2\",cdn-rid;desc=\"poP1O3cQrsPgpGDq3ZOKD12D7z3mBByRgBy6gpIMPhJi55UBhLHEJg==\",cdn-downstream-fbl;dur=115"
+      }
+    },
+    "https://app.hudl.com/metropole/shim/api-hockey.instatscout.com/data": {
+      "status_code": 200,
+      "content_length": 1526,
+      "content": "<!doctype html>\n<html lang=\"en\">\n  <head data-sentry-release=\"$SENTRY_RELEASE\">\n    <meta charset=\"utf-8\" />\n    <meta name=\"viewport\" content=\"width=device-width, initial-scale=1\" />\n    <meta name=\"theme-color\" content=\"#000000\" />\n    <title>404 Not Found</title>\n    <link\n      rel=\"stylesheet\"\n      href=\"https://sc-ui.hudl.com/uniform-ui-components/all/4/uniform-ui-components_bundled.css.gz\"\n    />\n    <link\n      href=\"https://sc-ui.hudl.com/hudl-ui-plugins/generic/1.7.0/hudl-ui-plugins-generic_bundled.css.gz\"\n      rel=\"stylesheet\"\n      type=\"text/css\"\n    />\n    <script\n      defer\n      src=\"https://sc-ui.hudl.com/hudl-ui-plugins/generic/1.7.0/hudl-ui-plugins-generic_vendor.js.gz\"\n      type=\"text/javascript\"\n    ></script>\n    <script\n      defer\n      src=\"https://sc-ui.hudl.com/hudl-ui-plugins/generic/1.7.0/hudl-ui-plugins-generic.js.gz\"\n      type=\"text/javascript\"\n    ></script>\n    <link rel=\"preconnect\" href=\"https://static.hudl.com\" />\n    <link rel=\"stylesheet\" href...",
+      "headers": {
+        "Content-Type": "text/html",
+        "Transfer-Encoding": "chunked",
+        "Connection": "keep-alive",
+        "Date": "Sat, 20 Sep 2025 10:14:03 GMT",
+        "Last-Modified": "Fri, 19 Sep 2025 19:40:55 GMT",
+        "x-amz-server-side-encryption": "AES256",
+        "Cache-Control": "max-age=300, s-maxage=300",
+        "Server": "AmazonS3",
+        "Content-Encoding": "gzip",
+        "ETag": "W/\"18189785ca898a05267a2c1d4e09eda1\"",
+        "Vary": "Accept-Encoding",
+        "X-Cache": "Hit from cloudfront",
+        "Via": "1.1 ff70d2ed51497e957e0d0413c2211f6a.cloudfront.net (CloudFront)",
+        "X-Amz-Cf-Pop": "ORD56-P2",
+        "Alt-Svc": "h3=\":443\"; ma=86400",
+        "X-Amz-Cf-Id": "zljb-b-Qu744IfyUkL1ehuSn_WKwXdasatSAMtBV3CzgGHCF7M4d0A==",
+        "X-XSS-Protection": "1; mode=block",
+        "X-Frame-Options": "SAMEORIGIN",
+        "Referrer-Policy": "strict-origin-when-cross-origin",
+        "X-Content-Type-Options": "nosniff",
+        "Strict-Transport-Security": "max-age=31536000",
+        "Server-Timing": "cdn-cache-hit,cdn-pop;desc=\"ORD56-P2\",cdn-rid;desc=\"zljb-b-Qu744IfyUkL1ehuSn_WKwXdasatSAMtBV3CzgGHCF7M4d0A==\",cdn-hit-layer;desc=\"REC\",cdn-downstream-fbl;dur=12"
+      }
+    },
+    "https://new.instatscout.com/data": {
+      "status_code": 200,
+      "content_length": 20724,
+      "content": "<!DOCTYPE html>\n<html>\n  <head>\n    <link href=\"https://fonts.googleapis.com/css?family=PT+Sans:400,700&amp;amp;subset=cyrillic,latin\" rel=\"stylesheet\" type=\"text/css\" />\n    <meta content=\"width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no\" name=\"viewport\" />\n\n    <style>\n\n    body{\n      margin: 0;\n      padding: 0;\n      font: normal 15px \"PT Sans\", \"Arial\";\n    }\n    hr{\n      border: none;\n      height: 1px;\n      width: 100%;\n      background: #dddddd;\n      margin: 30px 0;\n    }\n    .error-hero {\n      text-align: center;\n      position: absolute;\n      left: 0;\n      top: 0;\n      bottom: 0;\n      right: 0;\n      background-size: 100% 100%;\n    }\n    .error-hero__inside {\n      width: 635px;\n      height: auto;\n      background: #f2f2f2;\n      border: 1px solid white;\n      border-radius: 10px;\n      position: absolute;\n      left: 50%;\n      top: 50%;\n      box-shadow: 0 0 5px rgba(0,0,0,0.2);\n      -webkit-transform: translate3d(-50%, -50%, 0);\n      -...",
+      "headers": {
+        "Date": "Sat, 20 Sep 2025 10:14:03 GMT",
+        "Content-Type": "text/html; charset=utf-8",
+        "Transfer-Encoding": "chunked",
+        "Connection": "keep-alive",
+        "Server": "nginx",
+        "Vary": "Accept-Encoding",
+        "X-Frame-Options": "SAMEORIGIN",
+        "X-XSS-Protection": "1; mode=block",
+        "X-Content-Type-Options": "nosniff",
+        "X-Request-Id": "e8eed225-85ae-4c38-979a-17c532aeb823",
+        "X-Runtime": "0.004141",
+        "Content-Encoding": "gzip"
+      }
+    }
+  },
+  "total_urls_tried": 4,
+  "successful_captures": 4
+}

@@ -1,0 +1,30 @@
+# Enhanced NHL Report Generator - 2025 Edition
+# Requirements for all advanced features
+
+# Core dependencies
+requests>=2.31.0
+pandas>=2.0.0
+numpy>=1.24.0
+
+# Visualization and analytics
+matplotlib>=3.7.0
+seaborn>=0.12.0
+plotly>=5.15.0
+
+# PDF generation
+reportlab>=4.0.0
+
+# Data processing
+python-dateutil>=2.8.0
+
+# Optional: For enhanced data analysis
+scipy>=1.10.0
+scikit-learn>=1.3.0
+
+# Optional: For interactive features
+jupyter>=1.0.0
+ipywidgets>=8.0.0
+
+# Development and testing
+pytest>=7.0.0
+pytest-cov>=4.0.0

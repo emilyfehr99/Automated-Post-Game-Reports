@@ -1,0 +1,187 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Check Firebase Data</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        button { padding: 10px 15px; margin: 5px; background: #003366; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #004488; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 3px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; max-height: 300px; }
+    </style>
+</head>
+<body>
+    <h1>🔥 Firebase Data Checker</h1>
+    <p>This will check what data is currently in your Firebase database.</p>
+    
+    <div class="section">
+        <h2>Check Firebase Data</h2>
+        <button onclick="checkFirebaseData()">Check Firebase Database</button>
+        <div id="firebaseStatus"></div>
+    </div>
+    
+    <div class="section">
+        <h2>Restore from Backup</h2>
+        <button onclick="restoreFromBackup()">Restore September 18th Backup</button>
+        <div id="restoreStatus"></div>
+    </div>
+
+    <script type="module">
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCm2m3lSlh_IBgHSOLcmeCO9lZYHaxgrFw",
+            authDomain: "hockey-practice-planner.firebaseapp.com",
+            projectId: "hockey-practice-planner",
+            storageBucket: "hockey-practice-planner.firebasestorage.app",
+            messagingSenderId: "557366268618",
+            appId: "1:557366268618:web:d6f5cf9e80045d966fda33",
+            measurementId: "G-BSH8MT49BZ"
+        };
+
+        // Import Firebase
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, getDocs, doc, setDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        let app, db;
+
+        function showStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        window.checkFirebaseData = async function() {
+            try {
+                showStatus('firebaseStatus', '🔄 Connecting to Firebase...', 'info');
+                
+                // Initialize Firebase
+                app = initializeApp(firebaseConfig);
+                db = getFirestore(app);
+                
+                // Check drills
+                const drillsSnapshot = await getDocs(collection(db, 'drills'));
+                const drills = drillsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                // Check practice plans
+                const plansSnapshot = await getDocs(collection(db, 'practicePlans'));
+                const plans = plansSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                // Check settings
+                const settingsDoc = await getDocs(collection(db, 'settings'));
+                const settings = settingsDoc.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                
+                let html = '<h3>🔥 Firebase Database Contents:</h3>';
+                html += `<p><strong>Drills:</strong> ${drills.length}</p>`;
+                html += `<p><strong>Practice Plans:</strong> ${plans.length}</p>`;
+                html += `<p><strong>Settings:</strong> ${settings.length}</p>`;
+                
+                if (plans.length > 0) {
+                    html += '<h4>Practice Plans in Firebase:</h4><ul>';
+                    plans.forEach(plan => {
+                        html += `<li>${plan.name || 'Unnamed Plan'}</li>`;
+                        if (plan.createdAt) html += `   <small>Created: ${new Date(plan.createdAt).toLocaleString()}</small>`;
+                        if (plan.updatedAt) html += `   <small>Updated: ${new Date(plan.updatedAt).toLocaleString()}</small>`;
+                    });
+                    html += '</ul>';
+                }
+                
+                if (drills.length > 0) {
+                    html += '<h4>Recent Drills (last 5):</h4><ul>';
+                    drills.slice(-5).forEach(drill => {
+                        html += `<li>${drill.name || 'Unnamed Drill'}</li>`;
+                    });
+                    html += '</ul>';
+                }
+                
+                showStatus('firebaseStatus', html, 'success');
+                
+            } catch (error) {
+                showStatus('firebaseStatus', `❌ Error: ${error.message}`, 'error');
+            }
+        };
+
+        window.restoreFromBackup = async function() {
+            try {
+                showStatus('restoreStatus', '🔄 Restoring from backup...', 'info');
+                
+                // The backup data (from the file we found)
+                const backupData = {
+                    drills: [
+                        {
+                            "id": "1758138071815",
+                            "name": "Gambler",
+                            "description": "•Set up a 4 v 2 Rondo around one face-off dot in the zone, 4 offensive players around the exterior of the circle, with 2 defenders i n the middle). •Extra players and coaches are on the blue line. •Part 1 : O n the whistle, the 4 v 2 Rondo starts. The offensive team i s awarded points i f they are able t o split the defenders. The defending team gets a point if they block a pass and recover the puck. •Part 2: O n the second whistle, coach dumps a puck into the 4 corner which starts the 4 v 2 Quick Attack. The goal i s for the offensive team t o get the puck quickly, support each other, and quickly get a shot o n net. The offensive team i s awarded as points for a goal and the defending team is awarded 2 points if they can get the puck and skate i t out o f the zone. •Rotate players s o they get chances a t offense and defense.",
+                            "category": "Skills",
+                            "type": "custom",
+                            "images": ["data:image/jpeg;base64,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"],
+                            "setup": ["Pucks i n all 4 corners. •Forwards in opposite corners and a t the red line. •Defenders a t the blue line across from the forwards. •On the whistle, both sides o f the ice start. The F1 forwards pass the puck t o the defender at the point, who walks the blue line and fires a shot o n net. •The forward that passed the puck times the shot a t the point and aims t o get a moving screen / tip / deflection. •They continue to the corner to pick u p a puck, skate u p the boards and pass t o the F2 forward a t the red line, who gives it back t o them. •At that point, F2 can decide to jump into either site o f the ice. This can create 1v1, 2v1, o r 3v1 situations depending o n where the two F2's jump into. •The defender that shot the puck, gaps u p t o the center ice line to take o n the 1v1, 2v1, o r 3v1."],
+                            "variations": [],
+                            "coachingPoints": ["he F2 forwards should be scanning the ice to help them decide what side of the ice they would like to jump into. •If you are a forward that i s on a 2v1 o r 3v1, move the puck quickly t o create large amounts o f space between the forwards and defender. •Defenders need to scan the ice after they shoot the puck to be aware i f they will be defending a 1v1, 2v1, or 3v1. Keep your stick o n the ice to block passing lanes and angle."],
+                            "createdAt": "2025-09-17T14:41:57.867Z"
+                        }
+                        // ... more drills would be here
+                    ],
+                    practicePlans: [
+                        {
+                            "id": "practice-plan-1",
+                            "name": "Practice 1",
+                            "description": "A comprehensive practice plan",
+                            "drills": [
+                                {
+                                    "id": "drill-1",
+                                    "name": "Gambler",
+                                    "duration": 10,
+                                    "category": "Skills",
+                                    "images": []
+                                }
+                                // ... more drills in the plan
+                            ],
+                            "totalDuration": 59,
+                            "createdAt": "2025-09-18T03:24:27.421Z",
+                            "updatedAt": "2025-09-18T03:24:27.421Z"
+                        }
+                    ],
+                    settings: {
+                        "teamName": "Your Team",
+                        "coachName": "Coach",
+                        "season": "2024-25",
+                        "level": "Competitive"
+                    },
+                    customCategories: []
+                };
+                
+                // Initialize Firebase if not already done
+                if (!app) {
+                    app = initializeApp(firebaseConfig);
+                    db = getFirestore(app);
+                }
+                
+                // Save to Firebase
+                for (const drill of backupData.drills) {
+                    await setDoc(doc(db, 'drills', drill.id), drill);
+                }
+                
+                for (const plan of backupData.practicePlans) {
+                    await setDoc(doc(db, 'practicePlans', plan.id), plan);
+                }
+                
+                await setDoc(doc(db, 'settings', 'main'), backupData.settings);
+                
+                // Also save to localStorage
+                localStorage.setItem('hockey-drills', JSON.stringify(backupData.drills));
+                localStorage.setItem('hockey-practice-plans', JSON.stringify(backupData.practicePlans));
+                localStorage.setItem('hockey-settings', JSON.stringify(backupData.settings));
+                localStorage.setItem('hockey-custom-categories', JSON.stringify(backupData.customCategories));
+                
+                showStatus('restoreStatus', '✅ Backup data restored to both Firebase and localStorage!', 'success');
+                
+            } catch (error) {
+                showStatus('restoreStatus', `❌ Error: ${error.message}`, 'error');
+            }
+        };
+    </script>
+</body>
+</html>

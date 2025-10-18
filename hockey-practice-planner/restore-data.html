@@ -1,0 +1,185 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Restore Hockey Data</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; }
+        .section { margin: 20px 0; padding: 15px; border: 1px solid #ccc; border-radius: 5px; }
+        button { padding: 10px 15px; margin: 5px; background: #003366; color: white; border: none; border-radius: 3px; cursor: pointer; }
+        button:hover { background: #004488; }
+        .status { margin: 10px 0; padding: 10px; border-radius: 3px; }
+        .success { background: #d4edda; color: #155724; border: 1px solid #c3e6cb; }
+        .error { background: #f8d7da; color: #721c24; border: 1px solid #f5c6cb; }
+        .info { background: #d1ecf1; color: #0c5460; border: 1px solid #bee5eb; }
+        pre { background: #f8f9fa; padding: 10px; border-radius: 3px; overflow-x: auto; }
+    </style>
+</head>
+<body>
+    <h1>🏒 Hockey Practice Planner - Data Restore</h1>
+    
+    <div class="section">
+        <h2>Current Data Status</h2>
+        <button onclick="checkCurrentData()">Check Current Data</button>
+        <div id="currentData"></div>
+    </div>
+    
+    <div class="section">
+        <h2>Restore Test Data</h2>
+        <button onclick="restoreTestData()">Restore Test Practice Plans</button>
+        <div id="restoreStatus"></div>
+    </div>
+    
+    <div class="section">
+        <h2>Import Data</h2>
+        <input type="file" id="fileInput" accept=".json" onchange="importData()">
+        <div id="importStatus"></div>
+    </div>
+    
+    <div class="section">
+        <h2>Export Current Data</h2>
+        <button onclick="exportData()">Export All Data</button>
+        <div id="exportStatus"></div>
+    </div>
+
+    <script>
+        const testPracticePlans = [
+            {
+                id: 'test-plan-1',
+                name: 'Test Practice Plan 1',
+                description: 'A test practice plan to verify the system is working',
+                drills: [
+                    {
+                        id: 'drill-1',
+                        name: 'Test Drill 1',
+                        duration: 10,
+                        category: 'Skills',
+                        images: []
+                    }
+                ],
+                totalDuration: 10,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            },
+            {
+                id: 'test-plan-2', 
+                name: 'Test Practice Plan 2',
+                description: 'Another test practice plan',
+                drills: [
+                    {
+                        id: 'drill-2',
+                        name: 'Test Drill 2', 
+                        duration: 15,
+                        category: 'Systems',
+                        images: []
+                    }
+                ],
+                totalDuration: 15,
+                createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
+            }
+        ];
+
+        function showStatus(elementId, message, type = 'info') {
+            const element = document.getElementById(elementId);
+            element.innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        function checkCurrentData() {
+            const drills = localStorage.getItem('hockey-drills');
+            const plans = localStorage.getItem('hockey-practice-plans');
+            const settings = localStorage.getItem('hockey-settings');
+            const categories = localStorage.getItem('hockey-custom-categories');
+            
+            let html = '<h3>Current localStorage Data:</h3>';
+            
+            html += `<p><strong>Drills:</strong> ${drills ? JSON.parse(drills).length : 0} items</p>`;
+            html += `<p><strong>Practice Plans:</strong> ${plans ? JSON.parse(plans).length : 0} items</p>`;
+            html += `<p><strong>Settings:</strong> ${settings ? 'Present' : 'None'}</p>`;
+            html += `<p><strong>Categories:</strong> ${categories ? JSON.parse(categories).length : 0} items</p>`;
+            
+            if (plans) {
+                const plansData = JSON.parse(plans);
+                html += '<h4>Practice Plans:</h4><ul>';
+                plansData.forEach(plan => {
+                    html += `<li>${plan.name} (${plan.drills ? plan.drills.length : 0} drills)</li>`;
+                });
+                html += '</ul>';
+            }
+            
+            document.getElementById('currentData').innerHTML = html;
+        }
+
+        function restoreTestData() {
+            try {
+                // Save test practice plans to localStorage
+                localStorage.setItem('hockey-practice-plans', JSON.stringify(testPracticePlans));
+                
+                // Also save to Firebase if available
+                if (typeof savePracticePlan === 'function') {
+                    savePracticePlan(testPracticePlans);
+                }
+                
+                showStatus('restoreStatus', '✅ Test practice plans restored successfully! Refresh the main app to see them.', 'success');
+            } catch (error) {
+                showStatus('restoreStatus', `❌ Error restoring data: ${error.message}`, 'error');
+            }
+        }
+
+        function importData() {
+            const fileInput = document.getElementById('fileInput');
+            const file = fileInput.files[0];
+            
+            if (!file) return;
+            
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                try {
+                    const data = JSON.parse(e.target.result);
+                    
+                    if (data.practicePlans) {
+                        localStorage.setItem('hockey-practice-plans', JSON.stringify(data.practicePlans));
+                        showStatus('importStatus', `✅ Imported ${data.practicePlans.length} practice plans!`, 'success');
+                    } else if (Array.isArray(data)) {
+                        localStorage.setItem('hockey-practice-plans', JSON.stringify(data));
+                        showStatus('importStatus', `✅ Imported ${data.length} practice plans!`, 'success');
+                    } else {
+                        showStatus('importStatus', '❌ Invalid data format. Expected practice plans array.', 'error');
+                    }
+                } catch (error) {
+                    showStatus('importStatus', `❌ Error parsing file: ${error.message}`, 'error');
+                }
+            };
+            reader.readAsText(file);
+        }
+
+        function exportData() {
+            try {
+                const data = {
+                    drills: JSON.parse(localStorage.getItem('hockey-drills') || '[]'),
+                    practicePlans: JSON.parse(localStorage.getItem('hockey-practice-plans') || '[]'),
+                    settings: JSON.parse(localStorage.getItem('hockey-settings') || '{}'),
+                    customCategories: JSON.parse(localStorage.getItem('hockey-custom-categories') || '[]'),
+                    exportTime: new Date().toISOString()
+                };
+                
+                const blob = new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
+                const url = URL.createObjectURL(blob);
+                const a = document.createElement('a');
+                a.href = url;
+                a.download = `hockey-data-${new Date().toISOString().split('T')[0]}.json`;
+                document.body.appendChild(a);
+                a.click();
+                document.body.removeChild(a);
+                URL.revokeObjectURL(url);
+                
+                showStatus('exportStatus', '✅ Data exported successfully!', 'success');
+            } catch (error) {
+                showStatus('exportStatus', `❌ Error exporting data: ${error.message}`, 'error');
+            }
+        }
+
+        // Check current data on page load
+        window.onload = checkCurrentData;
+    </script>
+</body>
+</html>

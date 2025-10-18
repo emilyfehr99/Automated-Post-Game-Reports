@@ -1,0 +1,229 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Practice Plans Debug</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f5f5f5; }
+        .container { max-width: 800px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 2px 10px rgba(0,0,0,0.1); }
+        .status { padding: 15px; margin: 10px 0; border-radius: 8px; border-left: 4px solid; }
+        .success { background: #d4edda; color: #155724; border-left-color: #28a745; }
+        .error { background: #f8d7da; color: #721c24; border-left-color: #dc3545; }
+        .warning { background: #fff3cd; color: #856404; border-left-color: #ffc107; }
+        .info { background: #d1ecf1; color: #0c5460; border-left-color: #17a2b8; }
+        button { padding: 12px 24px; margin: 8px; background: #007bff; color: white; border: none; border-radius: 6px; cursor: pointer; font-size: 14px; }
+        button:hover { background: #0056b3; }
+        button:disabled { background: #6c757d; cursor: not-allowed; }
+        .button-group { text-align: center; margin: 20px 0; }
+        #details { margin-top: 20px; min-height: 200px; }
+        .data-display { background: #f8f9fa; padding: 15px; border-radius: 6px; margin: 10px 0; font-family: monospace; white-space: pre-wrap; max-height: 300px; overflow-y: auto; }
+        h1 { color: #2c3e50; text-align: center; }
+        h2 { color: #34495e; border-bottom: 2px solid #3498db; padding-bottom: 5px; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Practice Plans Debug Tool</h1>
+        <p style="text-align: center; color: #666;">Diagnosing your missing practice plans...</p>
+        
+        <div class="button-group">
+            <button onclick="testFirebase()">🔥 Test Firebase</button>
+            <button onclick="checkLocalStorage()">💾 Check Local Storage</button>
+            <button onclick="forceLoadData()">🔄 Force Load Data</button>
+            <button onclick="clearAllData()">🗑️ Clear All Data</button>
+            <button onclick="showFullDebug()">📊 Full Debug Report</button>
+        </div>
+        
+        <div id="details"></div>
+    </div>
+
+    <!-- Firebase SDK -->
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-app-compat.js"></script>
+    <script src="https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore-compat.js"></script>
+
+    <script>
+        // Firebase configuration
+        const firebaseConfig = {
+            apiKey: "AIzaSyCm2m3lSlh_IBgHSOLcmeCO9lZYHaxgrFw",
+            authDomain: "hockey-practice-planner.firebaseapp.com",
+            projectId: "hockey-practice-planner",
+            storageBucket: "hockey-practice-planner.firebasestorage.app",
+            messagingSenderId: "557366268618",
+            appId: "1:557366268618:web:d6f5cf9e80045d966fda33",
+            measurementId: "G-BSH8MT49BZ"
+        };
+
+        let app, db;
+        let debugResults = {};
+
+        function addStatus(message, type = 'info') {
+            const detailsDiv = document.getElementById('details');
+            const timestamp = new Date().toLocaleTimeString();
+            detailsDiv.innerHTML += `<div class="status ${type}"><strong>[${timestamp}]</strong> ${message}</div>`;
+        }
+
+        window.testFirebase = async function() {
+            addStatus('🔥 Starting Firebase connection test...', 'info');
+            
+            try {
+                // Initialize Firebase
+                app = firebase.initializeApp(firebaseConfig);
+                db = firebase.firestore();
+                addStatus('✅ Firebase initialized successfully', 'success');
+                
+                // Test Firestore connection
+                const practicePlansRef = db.collection('practicePlans');
+                const practicePlansSnapshot = await practicePlansRef.get();
+                
+                const drillsRef = db.collection('drills');
+                const drillsSnapshot = await drillsRef.get();
+                
+                debugResults.firebase = {
+                    connected: true,
+                    practicePlans: practicePlansSnapshot.docs.length,
+                    drills: drillsSnapshot.docs.length,
+                    practicePlansData: practicePlansSnapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    })),
+                    drillsData: drillsSnapshot.docs.map(doc => ({
+                        id: doc.id,
+                        ...doc.data()
+                    }))
+                };
+                
+                addStatus(`✅ Found ${practicePlansSnapshot.docs.length} practice plans in Firebase`, 'success');
+                addStatus(`✅ Found ${drillsSnapshot.docs.length} drills in Firebase`, 'success');
+                
+                if (practicePlansSnapshot.docs.length > 0) {
+                    practicePlansSnapshot.docs.forEach((doc, index) => {
+                        const data = doc.data();
+                        addStatus(`📋 Practice Plan ${index + 1}: "${data.name}" (${data.drills?.length || 0} drills, ${data.totalDuration || 0} min)`, 'success');
+                    });
+                } else {
+                    addStatus('⚠️ NO PRACTICE PLANS FOUND IN FIREBASE!', 'error');
+                }
+                
+            } catch (error) {
+                addStatus(`❌ Firebase error: ${error.message}`, 'error');
+                debugResults.firebase = { connected: false, error: error.message };
+            }
+        };
+
+        window.checkLocalStorage = function() {
+            addStatus('💾 Checking local storage...', 'info');
+            
+            const drills = localStorage.getItem('hockey-drills');
+            const plans = localStorage.getItem('hockey-practice-plans');
+            const settings = localStorage.getItem('hockey-settings');
+            const deviceId = localStorage.getItem('hockey-device-id');
+            
+            debugResults.localStorage = {
+                drills: drills ? JSON.parse(drills).length : 0,
+                plans: plans ? JSON.parse(plans).length : 0,
+                hasSettings: !!settings,
+                hasDeviceId: !!deviceId,
+                drillsData: drills ? JSON.parse(drills) : [],
+                plansData: plans ? JSON.parse(plans) : []
+            };
+            
+            addStatus(`📊 Local Storage Summary:`, 'info');
+            addStatus(`• Drills: ${debugResults.localStorage.drills} items`, debugResults.localStorage.drills > 0 ? 'success' : 'warning');
+            addStatus(`• Practice Plans: ${debugResults.localStorage.plans} items`, debugResults.localStorage.plans > 0 ? 'success' : 'error');
+            addStatus(`• Settings: ${debugResults.localStorage.hasSettings ? 'Present' : 'Missing'}`, debugResults.localStorage.hasSettings ? 'success' : 'warning');
+            addStatus(`• Device ID: ${debugResults.localStorage.hasDeviceId ? 'Present' : 'Missing'}`, debugResults.localStorage.hasDeviceId ? 'success' : 'warning');
+            
+            if (debugResults.localStorage.plans > 0) {
+                debugResults.localStorage.plansData.forEach((plan, index) => {
+                    addStatus(`📋 Local Plan ${index + 1}: "${plan.name}" (${plan.drills?.length || 0} drills)`, 'success');
+                });
+            }
+        };
+
+        window.forceLoadData = async function() {
+            if (!db) {
+                addStatus('❌ Firebase not connected. Run Firebase test first.', 'error');
+                return;
+            }
+            
+            addStatus('🔄 Force loading data from Firebase...', 'info');
+            
+            try {
+                // Load practice plans
+                const practicePlansRef = db.collection('practicePlans');
+                const practicePlansSnapshot = await practicePlansRef.get();
+                const practicePlans = practicePlansSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                // Load drills
+                const drillsRef = db.collection('drills');
+                const drillsSnapshot = await drillsRef.get();
+                const drills = drillsSnapshot.docs.map(doc => ({
+                    id: doc.id,
+                    ...doc.data()
+                }));
+                
+                // Save to localStorage
+                localStorage.setItem('hockey-practice-plans', JSON.stringify(practicePlans));
+                localStorage.setItem('hockey-drills', JSON.stringify(drills));
+                localStorage.setItem('hockey-device-id', 'device_' + Date.now() + '_debug');
+                
+                addStatus(`✅ Force loaded ${practicePlans.length} practice plans to localStorage`, 'success');
+                addStatus(`✅ Force loaded ${drills.length} drills to localStorage`, 'success');
+                
+                if (practicePlans.length > 0) {
+                    practicePlans.forEach((plan, index) => {
+                        addStatus(`📋 Loaded: "${plan.name}" (${plan.drills?.length || 0} drills)`, 'success');
+                    });
+                }
+                
+                addStatus('🔄 Data loaded! Now refresh the main app.', 'info');
+                
+            } catch (error) {
+                addStatus(`❌ Force load error: ${error.message}`, 'error');
+            }
+        };
+
+        window.clearAllData = function() {
+            localStorage.removeItem('hockey-drills');
+            localStorage.removeItem('hockey-practice-plans');
+            localStorage.removeItem('hockey-settings');
+            localStorage.removeItem('hockey-device-id');
+            
+            addStatus('🗑️ All local data cleared. Reloading page...', 'warning');
+            
+            setTimeout(() => {
+                window.location.reload();
+            }, 1500);
+        };
+
+        window.showFullDebug = function() {
+            addStatus('📊 FULL DEBUG REPORT:', 'info');
+            
+            const report = {
+                timestamp: new Date().toISOString(),
+                userAgent: navigator.userAgent,
+                url: window.location.href,
+                debugResults: debugResults,
+                localStorageKeys: Object.keys(localStorage),
+                firebaseConfig: firebaseConfig
+            };
+            
+            const reportDiv = document.createElement('div');
+            reportDiv.className = 'data-display';
+            reportDiv.textContent = JSON.stringify(report, null, 2);
+            document.getElementById('details').appendChild(reportDiv);
+            
+            addStatus('📋 Copy the debug report above and share it if needed', 'info');
+        };
+
+        // Auto-run initial tests
+        setTimeout(() => {
+            addStatus('🚀 Starting automatic diagnostic...', 'info');
+            testFirebase();
+            checkLocalStorage();
+        }, 1000);
+    </script>
+</body>
+</html>

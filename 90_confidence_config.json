@@ -1,0 +1,217 @@
+{
+  "enhanced_polymarket_ai_80_confidence": {
+    "confidence_settings": {
+      "minimum_confidence_threshold": 0.80,
+      "confidence_calculation_method": "weighted_ensemble",
+      "data_quality_weight": 0.20,
+      "model_accuracy_weight": 0.30,
+      "market_efficiency_weight": 0.15,
+      "news_sentiment_weight": 0.15,
+      "technical_analysis_weight": 0.20
+    },
+    
+    "comprehensive_data_sources": {
+      "polymarket_api": {
+        "enabled": true,
+        "rate_limit_delay": 1.0,
+        "max_retries": 3,
+        "timeout": 30
+      },
+      "news_sentiment": {
+        "enabled": true,
+        "sources": [
+          "https://feeds.finance.yahoo.com/rss/2.0/headline",
+          "https://rss.cnn.com/rss/money_latest.rss",
+          "https://feeds.bloomberg.com/markets/news.rss"
+        ],
+        "min_news_count": 5,
+        "sentiment_threshold": 0.3
+      },
+      "technical_indicators": {
+        "enabled": true,
+        "indicators": ["RSI", "MACD", "Bollinger_Bands", "Momentum", "Volume_Trend"],
+        "lookback_period": 30,
+        "rsi_period": 14,
+        "macd_fast": 12,
+        "macd_slow": 26,
+        "bollinger_period": 20,
+        "bollinger_std": 2
+      },
+      "market_research": {
+        "enabled": true,
+        "historical_accuracy_weight": 0.25,
+        "category_performance_weight": 0.25,
+        "similar_markets_weight": 0.25,
+        "market_efficiency_weight": 0.25
+      },
+      "date_analysis": {
+        "enabled": true,
+        "time_decay_analysis": true,
+        "seasonal_patterns": true,
+        "volatility_trends": true,
+        "volume_patterns": true,
+        "price_momentum": true
+      },
+      "external_markets": {
+        "enabled": true,
+        "related_assets_analysis": true,
+        "economic_indicators": true,
+        "correlation_analysis": true,
+        "max_correlation_distance": 0.7
+      }
+    },
+    
+    "advanced_ml_models": {
+      "ensemble_method": "voting_classifier",
+      "models": [
+        {
+          "name": "random_forest",
+          "enabled": true,
+          "n_estimators": 200,
+          "max_depth": 15,
+          "min_samples_split": 5,
+          "min_samples_leaf": 2
+        },
+        {
+          "name": "gradient_boosting",
+          "enabled": true,
+          "n_estimators": 200,
+          "learning_rate": 0.1,
+          "max_depth": 8
+        },
+        {
+          "name": "xgboost",
+          "enabled": true,
+          "n_estimators": 200,
+          "learning_rate": 0.1,
+          "max_depth": 6
+        },
+        {
+          "name": "lightgbm",
+          "enabled": true,
+          "n_estimators": 200,
+          "learning_rate": 0.1,
+          "max_depth": 6
+        },
+        {
+          "name": "logistic_regression",
+          "enabled": true,
+          "max_iter": 2000,
+          "C": 0.1
+        },
+        {
+          "name": "svm",
+          "enabled": true,
+          "C": 1.0,
+          "gamma": "scale"
+        }
+      ],
+      "cross_validation": {
+        "folds": 10,
+        "scoring": "accuracy",
+        "shuffle": true
+      },
+      "feature_engineering": {
+        "feature_count": 22,
+        "feature_selection": true,
+        "feature_importance_threshold": 0.01,
+        "correlation_threshold": 0.95
+      }
+    },
+    
+    "conservative_risk_management": {
+      "position_sizing": {
+        "max_position_size": 0.05,
+        "kelly_criterion_enabled": true,
+        "kelly_scaling_factor": 0.5,
+        "confidence_scaling": true
+      },
+      "risk_controls": {
+        "max_portfolio_risk": 0.10,
+        "stop_loss_threshold": 0.15,
+        "take_profit_threshold": 0.30,
+        "max_daily_trades": 5,
+        "max_weekly_trades": 15,
+        "correlation_limit": 0.6
+      },
+      "data_quality_requirements": {
+        "min_liquidity": 5000,
+        "min_volume": 1000,
+        "min_news_count": 3,
+        "min_historical_data_days": 7,
+        "max_sentiment_volatility": 0.4
+      }
+    },
+    
+    "comprehensive_validation": {
+      "backtesting": {
+        "enabled": true,
+        "lookback_period_days": 365,
+        "min_trades_for_validation": 50,
+        "target_accuracy": 0.85
+      },
+      "real_time_monitoring": {
+        "enabled": true,
+        "confidence_drift_threshold": 0.05,
+        "model_performance_tracking": true,
+        "auto_retrain_threshold": 0.10
+      },
+      "quality_checks": {
+        "data_freshness_hours": 24,
+        "api_health_checks": true,
+        "model_consistency_checks": true,
+        "prediction_plausibility_checks": true
+      }
+    },
+    
+    "manitoba_specific_settings": {
+      "jurisdiction": "Manitoba",
+      "currency": "CAD",
+      "timezone": "America/Winnipeg",
+      "regulatory_compliance": {
+        "record_keeping": true,
+        "tax_reporting": true,
+        "position_limits": true,
+        "risk_disclosures": true
+      },
+      "conservative_parameters": {
+        "confidence_boost": 0.02,
+        "position_size_reduction": 0.8,
+        "additional_validation": true
+      }
+    },
+    
+      "performance_targets": {
+        "accuracy": {
+          "minimum": 0.80,
+          "target": 0.85,
+          "stretch": 0.90
+        },
+      "precision": {
+        "minimum": 0.85,
+        "target": 0.90,
+        "stretch": 0.95
+      },
+      "recall": {
+        "minimum": 0.80,
+        "target": 0.85,
+        "stretch": 0.90
+      },
+      "f1_score": {
+        "minimum": 0.82,
+        "target": 0.87,
+        "stretch": 0.92
+      }
+    },
+    
+    "logging_and_monitoring": {
+      "log_level": "INFO",
+      "log_file": "enhanced_polymarket_ai_90.log",
+      "max_log_size_mb": 50,
+      "backup_count": 10,
+      "performance_metrics": true,
+      "prediction_tracking": true,
+      "confidence_monitoring": true
+    }
+  }
+}

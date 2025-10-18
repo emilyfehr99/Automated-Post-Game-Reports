@@ -1,0 +1,49 @@
+@import url('https://fonts.googleapis.com/css2?family=Russo+One&display=swap');
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+@layer base {
+  html {
+    font-family: 'Courier New', monospace;
+  }
+  
+  h1, h2, h3, h4, h5, h6 {
+    font-family: 'Russo One', sans-serif;
+  }
+}
+
+@layer components {
+  .hockey-button {
+    @apply bg-hockey-blue text-white px-6 py-3 rounded-lg font-russo hover:bg-blue-800 transition-colors duration-200 shadow-lg;
+  }
+  
+  .hockey-button-secondary {
+    @apply bg-hockey-red text-white px-6 py-3 rounded-lg font-russo hover:bg-red-800 transition-colors duration-200 shadow-lg;
+  }
+  
+  .hockey-card {
+    @apply bg-white rounded-xl shadow-lg border border-gray-200 p-6;
+  }
+  
+  .rink-canvas {
+    @apply border-2 border-hockey-blue rounded-lg bg-ice-blue;
+  }
+  
+  /* Mobile-friendly scrollbar hiding */
+  .scrollbar-hide {
+    -ms-overflow-style: none;
+    scrollbar-width: none;
+  }
+  
+  .scrollbar-hide::-webkit-scrollbar {
+    display: none;
+  }
+  
+  /* Extra small breakpoint for very small screens */
+  @media (min-width: 475px) {
+    .xs\:inline {
+      display: inline;
+    }
+  }
+}

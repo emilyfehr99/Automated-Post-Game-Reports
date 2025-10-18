@@ -1,0 +1,581 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Audio to Text Converter</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            padding: 40px;
+            text-align: center;
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            font-weight: 300;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .upload-section {
+            border: 3px dashed #ddd;
+            border-radius: 15px;
+            padding: 40px;
+            text-align: center;
+            margin-bottom: 30px;
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+
+        .upload-section:hover {
+            border-color: #4facfe;
+            background-color: #f8f9ff;
+        }
+
+        .upload-section.dragover {
+            border-color: #4facfe;
+            background-color: #e8f4ff;
+            transform: scale(1.02);
+        }
+
+        .upload-icon {
+            font-size: 4em;
+            color: #4facfe;
+            margin-bottom: 20px;
+        }
+
+        .upload-text {
+            font-size: 1.2em;
+            color: #666;
+            margin-bottom: 20px;
+        }
+
+        .file-input {
+            display: none;
+        }
+
+        .upload-btn {
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+        }
+
+        .upload-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(79, 172, 254, 0.3);
+        }
+
+        .options-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+        }
+
+        .option-group {
+            display: flex;
+            flex-direction: column;
+        }
+
+        .option-group label {
+            font-weight: 600;
+            margin-bottom: 8px;
+            color: #333;
+        }
+
+        .option-group select {
+            padding: 12px;
+            border: 2px solid #ddd;
+            border-radius: 8px;
+            font-size: 1em;
+            transition: border-color 0.3s ease;
+        }
+
+        .option-group select:focus {
+            outline: none;
+            border-color: #4facfe;
+        }
+
+        .checkbox-group {
+            display: flex;
+            align-items: center;
+            margin: 10px 0;
+        }
+
+        .checkbox-group input[type="checkbox"] {
+            margin-right: 10px;
+            transform: scale(1.2);
+        }
+
+        .progress-section {
+            display: none;
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+        }
+
+        .progress-bar {
+            width: 100%;
+            height: 20px;
+            background: #e9ecef;
+            border-radius: 10px;
+            overflow: hidden;
+            margin: 20px 0;
+        }
+
+        .progress-fill {
+            height: 100%;
+            background: linear-gradient(135deg, #4facfe 0%, #00f2fe 100%);
+            width: 0%;
+            transition: width 0.3s ease;
+        }
+
+        .status-text {
+            text-align: center;
+            font-size: 1.1em;
+            color: #666;
+            margin: 10px 0;
+        }
+
+        .download-section {
+            display: none;
+            background: #d4edda;
+            border: 2px solid #c3e6cb;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+        }
+
+        .download-btn {
+            background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 25px;
+            font-size: 1.1em;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            margin: 10px;
+            text-decoration: none;
+            display: inline-block;
+        }
+
+        .download-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(40, 167, 69, 0.3);
+        }
+
+        .error-section {
+            display: none;
+            background: #f8d7da;
+            border: 2px solid #f5c6cb;
+            border-radius: 15px;
+            padding: 30px;
+            text-align: center;
+            color: #721c24;
+        }
+
+        .supported-formats {
+            background: #e3f2fd;
+            border-radius: 15px;
+            padding: 20px;
+            margin-top: 20px;
+        }
+
+        .supported-formats h3 {
+            color: #1976d2;
+            margin-bottom: 10px;
+        }
+
+        .format-tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+
+        .format-tag {
+            background: #1976d2;
+            color: white;
+            padding: 5px 12px;
+            border-radius: 15px;
+            font-size: 0.9em;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .header {
+                padding: 30px 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .options-grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎤 Audio to Text Converter</h1>
+            <p>Upload your MP4/MPV files and get accurate transcriptions instantly</p>
+        </div>
+
+        <div class="content">
+            <div class="upload-section" id="uploadSection">
+                <div class="upload-icon">📁</div>
+                <div class="upload-text">Drag & drop your audio/video file here or click to browse</div>
+                <input type="file" id="fileInput" class="file-input" accept=".mp4,.mpv,.avi,.mov,.mkv,.wmv,.flv,.wav,.mp3,.m4a,.flac,.ogg">
+                <button class="upload-btn" onclick="document.getElementById('fileInput').click()">
+                    Choose File
+                </button>
+            </div>
+
+            <div class="options-section">
+                <h3 style="margin-bottom: 20px; color: #333;">Processing Settings</h3>
+                <div style="background: #e8f5e8; padding: 15px; border-radius: 8px; margin-bottom: 15px;">
+                <p style="margin: 0; color: #2d5a2d; font-weight: 500;">
+                    ✅ Using Base model for fast processing<br>
+                    ✅ English language detection<br>
+                    ✅ Timestamps included
+                </p>
+                </div>
+                <div class="checkbox-group">
+                    <input type="checkbox" id="speakers">
+                    <label for="speakers">Include speaker identification (experimental)</label>
+                </div>
+            </div>
+
+            <div class="progress-section" id="progressSection">
+                <h3 style="margin-bottom: 20px; color: #333;">Processing...</h3>
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <div class="status-text" id="statusText">Initializing...</div>
+            </div>
+
+            <div class="download-section" id="downloadSection">
+                <h3 style="margin-bottom: 20px; color: #155724;">✅ Transcription Complete!</h3>
+                <p style="margin-bottom: 20px; color: #155724;">Your file has been processed successfully. Download your transcription:</p>
+                
+                <!-- Speaker Naming Section -->
+                <div id="speakerNamingSection" style="display: none; margin-bottom: 20px; padding: 15px; background: #f8f9fa; border-radius: 8px; border: 1px solid #dee2e6;">
+                    <h4 style="margin-bottom: 15px; color: #333;">🎤 Name Your Speakers</h4>
+                    <p style="margin-bottom: 15px; color: #666; font-size: 14px;">Assign names to the speakers in your meeting for better readability.</p>
+                    <div id="speakerInputs"></div>
+                    <button onclick="updateSpeakerNames()" class="download-btn" style="background: #28a745; margin-top: 10px; border: none; color: white;">
+                        💾 Save Speaker Names
+                    </button>
+                </div>
+                
+                <a href="#" class="download-btn" id="downloadTxt">📄 Download TXT</a>
+                <a href="#" class="download-btn" id="downloadPdf">📋 Download PDF</a>
+            </div>
+
+            <div class="error-section" id="errorSection">
+                <h3 style="margin-bottom: 20px;">❌ Processing Failed</h3>
+                <p id="errorMessage">An error occurred during processing.</p>
+            </div>
+
+            <div class="supported-formats">
+                <h3>Supported File Formats</h3>
+                <div class="format-tags">
+                    <span class="format-tag">MP4</span>
+                    <span class="format-tag">MPV</span>
+                    <span class="format-tag">AVI</span>
+                    <span class="format-tag">MOV</span>
+                    <span class="format-tag">MKV</span>
+                    <span class="format-tag">WMV</span>
+                    <span class="format-tag">FLV</span>
+                    <span class="format-tag">WAV</span>
+                    <span class="format-tag">MP3</span>
+                    <span class="format-tag">M4A</span>
+                    <span class="format-tag">FLAC</span>
+                    <span class="format-tag">OGG</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        let currentJobId = null;
+        let statusInterval = null;
+
+        // File upload handling
+        const uploadSection = document.getElementById('uploadSection');
+        const fileInput = document.getElementById('fileInput');
+        const progressSection = document.getElementById('progressSection');
+        const downloadSection = document.getElementById('downloadSection');
+        const errorSection = document.getElementById('errorSection');
+
+        // Drag and drop functionality
+        uploadSection.addEventListener('dragover', (e) => {
+            e.preventDefault();
+            uploadSection.classList.add('dragover');
+        });
+
+        uploadSection.addEventListener('dragleave', () => {
+            uploadSection.classList.remove('dragover');
+        });
+
+        uploadSection.addEventListener('drop', (e) => {
+            e.preventDefault();
+            uploadSection.classList.remove('dragover');
+            const files = e.dataTransfer.files;
+            if (files.length > 0) {
+                handleFile(files[0]);
+            }
+        });
+
+        fileInput.addEventListener('change', (e) => {
+            if (e.target.files.length > 0) {
+                handleFile(e.target.files[0]);
+            }
+        });
+
+        function handleFile(file) {
+            // Validate file
+            const allowedTypes = ['video/mp4', 'video/avi', 'video/mov', 'video/quicktime', 'audio/mpeg', 'audio/wav', 'audio/mp4'];
+            const allowedExtensions = ['.mp4', '.mpv', '.avi', '.mov', '.mkv', '.wmv', '.flv', '.wav', '.mp3', '.m4a', '.flac', '.ogg'];
+            
+            const fileExtension = '.' + file.name.split('.').pop().toLowerCase();
+            if (!allowedExtensions.includes(fileExtension)) {
+                alert('File type not supported. Please select a supported audio or video file.');
+                return;
+            }
+
+            if (file.size > 500 * 1024 * 1024) { // 500MB limit
+                alert('File too large. Please select a file smaller than 500MB.');
+                return;
+            }
+
+            uploadFile(file);
+        }
+
+        function uploadFile(file) {
+            const formData = new FormData();
+            formData.append('file', file);
+            formData.append('model', 'large');  // Always use large model for maximum accuracy
+            formData.append('language', 'en');  // Always use English
+            formData.append('timestamps', true);  // Always include timestamps
+            formData.append('speakers', document.getElementById('speakers').checked);
+
+            // Show progress section
+            progressSection.style.display = 'block';
+            downloadSection.style.display = 'none';
+            errorSection.style.display = 'none';
+            uploadSection.style.display = 'none';
+
+            fetch('/upload', {
+                method: 'POST',
+                body: formData
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.error) {
+                    showError(data.error);
+                } else {
+                    currentJobId = data.job_id;
+                    startStatusPolling();
+                }
+            })
+            .catch(error => {
+                showError('Upload failed: ' + error.message);
+            });
+        }
+
+        function startStatusPolling() {
+            statusInterval = setInterval(() => {
+                fetch(`/status/${currentJobId}`)
+                .then(response => response.json())
+                .then(data => {
+                    updateProgress(data);
+                    
+                    if (data.status === 'completed') {
+                        clearInterval(statusInterval);
+                        showDownload(data);
+                    } else if (data.status === 'failed') {
+                        clearInterval(statusInterval);
+                        showError(data.error || 'Processing failed');
+                    }
+                })
+                .catch(error => {
+                    clearInterval(statusInterval);
+                    showError('Status check failed: ' + error.message);
+                });
+            }, 2000);
+        }
+
+        function updateProgress(data) {
+            const progressFill = document.getElementById('progressFill');
+            const statusText = document.getElementById('statusText');
+            
+            progressFill.style.width = data.progress + '%';
+            
+            const statusMessages = {
+                'processing': 'Processing...',
+                'loading_model': 'Loading AI model...',
+                'extracting_audio': 'Extracting audio from video...',
+                'transcribing': 'Converting speech to text...',
+                'formatting': 'Formatting results...'
+            };
+            
+            statusText.textContent = statusMessages[data.status] || 'Processing...';
+        }
+
+        function showDownload(data) {
+            progressSection.style.display = 'none';
+            downloadSection.style.display = 'block';
+            
+            document.getElementById('downloadTxt').href = `/download/${currentJobId}`;
+            document.getElementById('downloadPdf').href = `/download_pdf/${currentJobId}`;
+            
+            // Show speaker naming if speakers were detected
+            if (data.speakers && data.speakers.length > 0) {
+                showSpeakerNaming(data.speakers);
+            }
+        }
+        
+        function showSpeakerNaming(speakers) {
+            const speakerSection = document.getElementById('speakerNamingSection');
+            const speakerInputs = document.getElementById('speakerInputs');
+            
+            speakerInputs.innerHTML = '';
+            
+            speakers.forEach(speaker => {
+                const inputGroup = document.createElement('div');
+                inputGroup.style.marginBottom = '10px';
+                inputGroup.innerHTML = `
+                    <label style="display: inline-block; width: 80px; font-weight: 500;">Speaker ${speaker}:</label>
+                    <input type="text" id="speaker_${speaker}" placeholder="Enter name..." 
+                           style="padding: 5px; border: 1px solid #ddd; border-radius: 4px; width: 200px;">
+                `;
+                speakerInputs.appendChild(inputGroup);
+            });
+            
+            speakerSection.style.display = 'block';
+        }
+        
+        function updateSpeakerNames() {
+            const speakers = {};
+            const inputs = document.querySelectorAll('#speakerInputs input[type="text"]');
+            
+            inputs.forEach(input => {
+                const speakerNum = input.id.replace('speaker_', '');
+                const speakerName = input.value.trim();
+                if (speakerName) {
+                    speakers[speakerNum] = speakerName;
+                }
+            });
+            
+            if (Object.keys(speakers).length === 0) {
+                alert('Please enter at least one speaker name.');
+                return;
+            }
+            
+            fetch(`/update_speakers/${currentJobId}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                },
+                body: JSON.stringify({ speakers: speakers })
+            })
+            .then(response => response.json())
+            .then(data => {
+                if (data.success) {
+                    alert('Speaker names updated successfully!');
+                    // Hide the speaker naming section
+                    document.getElementById('speakerNamingSection').style.display = 'none';
+                } else {
+                    alert('Error updating speaker names: ' + (data.error || 'Unknown error'));
+                }
+            })
+            .catch(error => {
+                console.error('Error:', error);
+                alert('Error updating speaker names. Please try again.');
+            });
+        }
+
+        function showError(message) {
+            progressSection.style.display = 'none';
+            errorSection.style.display = 'block';
+            document.getElementById('errorMessage').textContent = message;
+        }
+
+        function resetForm() {
+            uploadSection.style.display = 'block';
+            progressSection.style.display = 'none';
+            downloadSection.style.display = 'none';
+            errorSection.style.display = 'none';
+            fileInput.value = '';
+            currentJobId = null;
+            if (statusInterval) {
+                clearInterval(statusInterval);
+            }
+        }
+
+        // Add reset button functionality
+        document.addEventListener('click', (e) => {
+            if (e.target.textContent === 'Upload Another File') {
+                resetForm();
+            }
+        });
+    </script>
+</body>
+</html>

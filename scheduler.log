@@ -1,0 +1,148 @@
+2025-09-17 08:03:18,241 - INFO - ✅ Credentials database initialized
+2025-09-18 04:04:06,533 - INFO - 🚀 Starting daily 3 AM network data capture...
+2025-09-18 04:04:06,568 - INFO - 🔧 Setting up Chrome driver...
+2025-09-18 04:04:06,585 - INFO - ====== WebDriver manager ======
+2025-09-18 04:11:58,316 - INFO - Get LATEST chromedriver version for google-chrome
+2025-09-18 04:11:58,494 - INFO - Get LATEST chromedriver version for google-chrome
+2025-09-18 04:11:58,554 - INFO - There is no [mac64] chromedriver "140.0.7339.185" for browser google-chrome "140.0.7339" in cache
+2025-09-18 04:11:58,570 - INFO - Get LATEST chromedriver version for google-chrome
+2025-09-18 04:11:59,043 - INFO - WebDriver version 140.0.7339.185 selected
+2025-09-18 04:11:59,047 - INFO - Modern chrome version https://storage.googleapis.com/chrome-for-testing-public/140.0.7339.185/mac-arm64/chromedriver-mac-arm64.zip
+2025-09-18 04:11:59,047 - INFO - About to download new driver from https://storage.googleapis.com/chrome-for-testing-public/140.0.7339.185/mac-arm64/chromedriver-mac-arm64.zip
+2025-09-18 04:11:59,184 - INFO - Driver downloading response is 200
+2025-09-18 04:11:59,703 - INFO - Get LATEST chromedriver version for google-chrome
+2025-09-18 04:11:59,882 - INFO - Driver has been saved in cache [/Users/emilyfehr8/.wdm/drivers/chromedriver/mac64/140.0.7339.185]
+2025-09-18 04:12:01,980 - INFO - ✅ Chrome driver setup complete
+2025-09-18 04:12:01,980 - INFO - 🔐 Logging in and navigating to team data...
+2025-09-18 04:12:16,046 - ERROR - ❌ Login/navigation error: Message: 
+Stacktrace:
+0   chromedriver                        0x0000000101377418 cxxbridge1$str$ptr + 2882044
+1   chromedriver                        0x000000010136f3b4 cxxbridge1$str$ptr + 2849176
+2   chromedriver                        0x0000000100e99050 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 73436
+3   chromedriver                        0x0000000100ee0410 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 365212
+4   chromedriver                        0x0000000100f21604 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 631952
+5   chromedriver                        0x0000000100ed40d0 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 315228
+6   chromedriver                        0x000000010133bb08 cxxbridge1$str$ptr + 2638060
+7   chromedriver                        0x000000010133ed20 cxxbridge1$str$ptr + 2650884
+8   chromedriver                        0x000000010131ce58 cxxbridge1$str$ptr + 2511932
+9   chromedriver                        0x000000010133f5cc cxxbridge1$str$ptr + 2653104
+10  chromedriver                        0x000000010130e59c cxxbridge1$str$ptr + 2452352
+11  chromedriver                        0x000000010135e9f0 cxxbridge1$str$ptr + 2781140
+12  chromedriver                        0x000000010135eb70 cxxbridge1$str$ptr + 2781524
+13  chromedriver                        0x000000010136f000 cxxbridge1$str$ptr + 2848228
+14  libsystem_pthread.dylib             0x000000019358cc08 _pthread_start + 136
+15  libsystem_pthread.dylib             0x0000000193587ba8 thread_start + 8
+
+2025-09-19 04:03:24,844 - INFO - 🚀 Starting daily 3 AM network data capture...
+2025-09-19 04:03:24,866 - INFO - 🔧 Setting up Chrome driver...
+2025-09-19 04:03:24,875 - INFO - ====== WebDriver manager ======
+2025-09-19 04:21:08,694 - INFO - Get LATEST chromedriver version for google-chrome
+2025-09-19 04:21:08,875 - INFO - Get LATEST chromedriver version for google-chrome
+2025-09-19 04:21:08,951 - INFO - Get LATEST chromedriver version for google-chrome
+2025-09-19 04:21:09,150 - INFO - WebDriver version 140.0.7339.185 selected
+2025-09-19 04:21:09,152 - INFO - Modern chrome version https://storage.googleapis.com/chrome-for-testing-public/140.0.7339.185/mac-arm64/chromedriver-mac-arm64.zip
+2025-09-19 04:21:09,152 - INFO - About to download new driver from https://storage.googleapis.com/chrome-for-testing-public/140.0.7339.185/mac-arm64/chromedriver-mac-arm64.zip
+2025-09-19 04:21:09,326 - INFO - Driver downloading response is 200
+2025-09-19 04:36:07,974 - ERROR - ❌ Error setting up driver: ('Connection broken: IncompleteRead(2473984 bytes read, 6305951 more expected)', IncompleteRead(2473984 bytes read, 6305951 more expected))
+2025-09-19 04:36:07,979 - WARNING - Retrying (Retry(total=2, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x106e64860>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/a005a033573b3cf7ec2f179679f649c3
+2025-09-19 04:36:07,981 - WARNING - Retrying (Retry(total=1, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x106e64980>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/a005a033573b3cf7ec2f179679f649c3
+2025-09-19 04:36:07,982 - WARNING - Retrying (Retry(total=0, connect=None, read=None, redirect=None, status=None)) after connection broken by 'NewConnectionError('<urllib3.connection.HTTPConnection object at 0x106e64800>: Failed to establish a new connection: [Errno 61] Connection refused')': /session/a005a033573b3cf7ec2f179679f649c3
+2025-09-20 05:46:24,536 - INFO - 🚀 Starting daily 3 AM network data capture...
+2025-09-20 05:46:24,546 - INFO - 🔧 Setting up Chrome driver...
+2025-09-20 05:46:24,554 - INFO - ====== WebDriver manager ======
+2025-09-20 05:46:36,686 - INFO - Get LATEST chromedriver version for google-chrome
+2025-09-20 05:46:37,012 - INFO - Get LATEST chromedriver version for google-chrome
+2025-09-20 05:46:37,086 - INFO - Get LATEST chromedriver version for google-chrome
+2025-09-20 05:46:37,410 - INFO - WebDriver version 140.0.7339.185 selected
+2025-09-20 05:46:37,413 - INFO - Modern chrome version https://storage.googleapis.com/chrome-for-testing-public/140.0.7339.185/mac-arm64/chromedriver-mac-arm64.zip
+2025-09-20 05:46:37,413 - INFO - About to download new driver from https://storage.googleapis.com/chrome-for-testing-public/140.0.7339.185/mac-arm64/chromedriver-mac-arm64.zip
+2025-09-20 05:46:37,595 - INFO - Driver downloading response is 200
+2025-09-20 05:46:38,164 - INFO - Get LATEST chromedriver version for google-chrome
+2025-09-20 05:46:38,324 - INFO - Driver has been saved in cache [/Users/emilyfehr8/.wdm/drivers/chromedriver/mac64/140.0.7339.185]
+2025-09-20 05:46:40,963 - INFO - ✅ Chrome driver setup complete
+2025-09-20 05:46:40,963 - INFO - 🔐 Logging in and navigating to team data...
+2025-09-20 06:02:49,897 - ERROR - ❌ Login/navigation error: Message: 
+Stacktrace:
+0   chromedriver                        0x0000000102f17418 cxxbridge1$str$ptr + 2882044
+1   chromedriver                        0x0000000102f0f3b4 cxxbridge1$str$ptr + 2849176
+2   chromedriver                        0x0000000102a39050 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 73436
+3   chromedriver                        0x0000000102a80410 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 365212
+4   chromedriver                        0x0000000102ac1604 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 631952
+5   chromedriver                        0x0000000102a740d0 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 315228
+6   chromedriver                        0x0000000102edbb08 cxxbridge1$str$ptr + 2638060
+7   chromedriver                        0x0000000102eded20 cxxbridge1$str$ptr + 2650884
+8   chromedriver                        0x0000000102ebce58 cxxbridge1$str$ptr + 2511932
+9   chromedriver                        0x0000000102edf5cc cxxbridge1$str$ptr + 2653104
+10  chromedriver                        0x0000000102eae59c cxxbridge1$str$ptr + 2452352
+11  chromedriver                        0x0000000102efe9f0 cxxbridge1$str$ptr + 2781140
+12  chromedriver                        0x0000000102efeb70 cxxbridge1$str$ptr + 2781524
+13  chromedriver                        0x0000000102f0f000 cxxbridge1$str$ptr + 2848228
+14  libsystem_pthread.dylib             0x000000019358cc08 _pthread_start + 136
+15  libsystem_pthread.dylib             0x0000000193587ba8 thread_start + 8
+
+2025-09-21 05:49:24,439 - INFO - 🚀 Starting daily 3 AM network data capture...
+2025-09-21 05:49:24,449 - INFO - 🔧 Setting up Chrome driver...
+2025-09-21 05:49:24,452 - INFO - ====== WebDriver manager ======
+2025-09-21 05:49:25,618 - INFO - Get LATEST chromedriver version for google-chrome
+2025-09-21 05:55:20,193 - INFO - Get LATEST chromedriver version for google-chrome
+2025-09-21 05:55:20,260 - INFO - Get LATEST chromedriver version for google-chrome
+2025-09-21 05:55:20,497 - INFO - WebDriver version 140.0.7339.185 selected
+2025-09-21 05:55:20,499 - INFO - Modern chrome version https://storage.googleapis.com/chrome-for-testing-public/140.0.7339.185/mac-arm64/chromedriver-mac-arm64.zip
+2025-09-21 05:55:20,499 - INFO - About to download new driver from https://storage.googleapis.com/chrome-for-testing-public/140.0.7339.185/mac-arm64/chromedriver-mac-arm64.zip
+2025-09-21 05:55:20,680 - INFO - Driver downloading response is 200
+2025-09-21 05:55:21,219 - INFO - Get LATEST chromedriver version for google-chrome
+2025-09-21 05:55:21,381 - INFO - Driver has been saved in cache [/Users/emilyfehr8/.wdm/drivers/chromedriver/mac64/140.0.7339.185]
+2025-09-21 06:11:04,846 - INFO - ✅ Chrome driver setup complete
+2025-09-21 06:11:04,846 - INFO - 🔐 Logging in and navigating to team data...
+2025-09-21 06:44:07,845 - ERROR - ❌ Login/navigation error: Message: 
+Stacktrace:
+0   chromedriver                        0x000000010281b418 cxxbridge1$str$ptr + 2882044
+1   chromedriver                        0x00000001028133b4 cxxbridge1$str$ptr + 2849176
+2   chromedriver                        0x000000010233d050 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 73436
+3   chromedriver                        0x0000000102384410 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 365212
+4   chromedriver                        0x00000001023c5604 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 631952
+5   chromedriver                        0x00000001023780d0 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 315228
+6   chromedriver                        0x00000001027dfb08 cxxbridge1$str$ptr + 2638060
+7   chromedriver                        0x00000001027e2d20 cxxbridge1$str$ptr + 2650884
+8   chromedriver                        0x00000001027c0e58 cxxbridge1$str$ptr + 2511932
+9   chromedriver                        0x00000001027e35cc cxxbridge1$str$ptr + 2653104
+10  chromedriver                        0x00000001027b259c cxxbridge1$str$ptr + 2452352
+11  chromedriver                        0x00000001028029f0 cxxbridge1$str$ptr + 2781140
+12  chromedriver                        0x0000000102802b70 cxxbridge1$str$ptr + 2781524
+13  chromedriver                        0x0000000102813000 cxxbridge1$str$ptr + 2848228
+14  libsystem_pthread.dylib             0x000000019358cc08 _pthread_start + 136
+15  libsystem_pthread.dylib             0x0000000193587ba8 thread_start + 8
+
+2025-09-22 04:30:03,998 - INFO - 🚀 Starting daily 3 AM network data capture...
+2025-09-22 04:30:04,002 - INFO - 🔧 Setting up Chrome driver...
+2025-09-22 04:30:04,003 - INFO - ====== WebDriver manager ======
+2025-09-22 04:47:18,724 - INFO - Get LATEST chromedriver version for google-chrome
+2025-09-22 04:47:18,814 - INFO - Get LATEST chromedriver version for google-chrome
+2025-09-22 04:47:18,874 - INFO - Get LATEST chromedriver version for google-chrome
+2025-09-22 04:47:19,052 - INFO - WebDriver version 140.0.7339.185 selected
+2025-09-22 04:47:19,053 - INFO - Modern chrome version https://storage.googleapis.com/chrome-for-testing-public/140.0.7339.185/mac-arm64/chromedriver-mac-arm64.zip
+2025-09-22 04:47:19,053 - INFO - About to download new driver from https://storage.googleapis.com/chrome-for-testing-public/140.0.7339.185/mac-arm64/chromedriver-mac-arm64.zip
+2025-09-22 04:47:19,185 - INFO - Driver downloading response is 200
+2025-09-22 04:47:19,770 - INFO - Get LATEST chromedriver version for google-chrome
+2025-09-22 04:47:19,897 - INFO - Driver has been saved in cache [/Users/emilyfehr8/.wdm/drivers/chromedriver/mac64/140.0.7339.185]
+2025-09-22 05:03:15,905 - INFO - ✅ Chrome driver setup complete
+2025-09-22 05:03:15,905 - INFO - 🔐 Logging in and navigating to team data...
+2025-09-22 05:35:09,362 - ERROR - ❌ Login/navigation error: Message: 
+Stacktrace:
+0   chromedriver                        0x0000000100dc3418 cxxbridge1$str$ptr + 2882044
+1   chromedriver                        0x0000000100dbb3b4 cxxbridge1$str$ptr + 2849176
+2   chromedriver                        0x00000001008e5050 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 73436
+3   chromedriver                        0x000000010092c410 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 365212
+4   chromedriver                        0x000000010096d604 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 631952
+5   chromedriver                        0x00000001009200d0 _RNvCslE4myv9Sbr3_7___rustc35___rust_no_alloc_shim_is_unstable_v2 + 315228
+6   chromedriver                        0x0000000100d87b08 cxxbridge1$str$ptr + 2638060
+7   chromedriver                        0x0000000100d8ad20 cxxbridge1$str$ptr + 2650884
+8   chromedriver                        0x0000000100d68e58 cxxbridge1$str$ptr + 2511932
+9   chromedriver                        0x0000000100d8b5cc cxxbridge1$str$ptr + 2653104
+10  chromedriver                        0x0000000100d5a59c cxxbridge1$str$ptr + 2452352
+11  chromedriver                        0x0000000100daa9f0 cxxbridge1$str$ptr + 2781140
+12  chromedriver                        0x0000000100daab70 cxxbridge1$str$ptr + 2781524
+13  chromedriver                        0x0000000100dbb000 cxxbridge1$str$ptr + 2848228
+14  libsystem_pthread.dylib             0x000000019358cc08 _pthread_start + 136
+15  libsystem_pthread.dylib             0x0000000193587ba8 thread_start + 8
+

@@ -1,0 +1,115 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Restore Your Real Data</title>
+    <style>
+        body { font-family: Arial, sans-serif; margin: 20px; background: #f0f8ff; }
+        .container { max-width: 600px; margin: 0 auto; background: white; padding: 20px; border-radius: 10px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        button { padding: 15px 30px; margin: 10px; background: #003366; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        button:hover { background: #0056b3; }
+        .status { padding: 15px; margin: 10px 0; border-radius: 5px; }
+        .success { background: #d4edda; color: #155724; }
+        .error { background: #f8d7da; color: #721c24; }
+        .info { background: #d1ecf1; color: #0c5460; }
+        h1 { color: #2c3e50; text-align: center; }
+        .highlight { background: #fff3cd; padding: 10px; border-radius: 5px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🏒 Restore Your Practice 2 Data</h1>
+        
+        <div class="highlight">
+            <strong>Your Practice 2 was updated today at 4:52 PM!</strong><br>
+            This means all the drills you added today are safely stored in Firebase.
+        </div>
+        
+        <div style="text-align: center;">
+            <button onclick="restoreFromFirebase()">🔥 Restore All Data from Firebase</button>
+        </div>
+        
+        <div id="status"></div>
+    </div>
+
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getFirestore, collection, getDocs } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+
+        const firebaseConfig = {
+            apiKey: "AIzaSyCm2m3lSlh_IBgHSOLcmeCO9lZYHaxgrFw",
+            authDomain: "hockey-practice-planner.firebaseapp.com",
+            projectId: "hockey-practice-planner",
+            storageBucket: "hockey-practice-planner.firebasestorage.app",
+            messagingSenderId: "557366268618",
+            appId: "1:557366268618:web:d6f5cf9e80045d966fda33",
+            measurementId: "G-BSH8MT49BZ"
+        };
+
+        function showStatus(message, type = 'info') {
+            document.getElementById('status').innerHTML = `<div class="status ${type}">${message}</div>`;
+        }
+
+        window.restoreFromFirebase = async function() {
+            try {
+                showStatus('🔄 Connecting to Firebase and downloading your data...', 'info');
+                
+                const app = initializeApp(firebaseConfig);
+                const db = getFirestore(app);
+                
+                // Get all data from Firebase
+                const [drillsSnapshot, plansSnapshot, settingsSnapshot] = await Promise.all([
+                    getDocs(collection(db, 'drills')),
+                    getDocs(collection(db, 'practicePlans')),
+                    getDocs(collection(db, 'settings'))
+                ]);
+                
+                const drills = drillsSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const plans = plansSnapshot.docs.map(doc => ({ id: doc.id, ...doc.data() }));
+                const settings = settingsSnapshot.docs.length > 0 ? settingsSnapshot.docs[0].data() : {};
+                
+                // Save to localStorage
+                localStorage.setItem('hockey-drills', JSON.stringify(drills));
+                localStorage.setItem('hockey-practice-plans', JSON.stringify(plans));
+                localStorage.setItem('hockey-settings', JSON.stringify(settings));
+                localStorage.setItem('hockey-custom-categories', JSON.stringify([]));
+                
+                let html = '<h3>✅ SUCCESS! Your data has been restored!</h3>';
+                html += `<p><strong>Drills:</strong> ${drills.length}</p>`;
+                html += `<p><strong>Practice Plans:</strong> ${plans.length}</p>`;
+                
+                // Show Practice 2 details
+                const practice2 = plans.find(p => p.name === 'Practice 2');
+                if (practice2) {
+                    html += '<div class="highlight">';
+                    html += '<h4>🎯 Practice 2 (Updated Today!)</h4>';
+                    html += `<p><strong>Created:</strong> ${new Date(practice2.createdAt).toLocaleString()}</p>`;
+                    html += `<p><strong>Last Updated:</strong> ${new Date(practice2.updatedAt).toLocaleString()}</p>`;
+                    if (practice2.drills) {
+                        html += `<p><strong>Drills in Practice 2:</strong> ${practice2.drills.length}</p>`;
+                    }
+                    html += '</div>';
+                }
+                
+                html += '<h4>All Your Practice Plans:</h4><ul>';
+                plans.forEach(plan => {
+                    const updated = new Date(plan.updatedAt).toLocaleString();
+                    html += `<li><strong>${plan.name}</strong> - Updated: ${updated}</li>`;
+                });
+                html += '</ul>';
+                
+                html += '<p><strong>Redirecting to your app in 3 seconds...</strong></p>';
+                
+                showStatus(html, 'success');
+                
+                // Redirect to main app
+                setTimeout(() => {
+                    window.location.href = 'http://localhost:3000';
+                }, 3000);
+                
+            } catch (error) {
+                showStatus(`❌ Error: ${error.message}`, 'error');
+            }
+        };
+    </script>
+</body>
+</html>
