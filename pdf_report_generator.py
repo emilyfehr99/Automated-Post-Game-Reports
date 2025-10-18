@@ -429,6 +429,153 @@ class PostGameReportGenerator:
             fontName='RussoOne-Regular'
         )
     
+    def calculate_win_probability(self, away_metrics, home_metrics):
+        """
+        Calculate win probability based on game performance metrics.
+        Returns (away_win_prob, home_win_prob) as percentages.
+        
+        Uses a weighted model:
+        - Expected Goals (xG): 60% weight
+        - High Danger Chances: 25% weight  
+        - Shot Attempts: 15% weight
+        """
+        import math
+        
+        def sigmoid(x):
+            """Sigmoid function for probability calculation"""
+            return 1 / (1 + math.exp(-x))
+        
+        # Extract metrics
+        away_xg = away_metrics.get('shot_quality', {}).get('expected_goals', 0)
+        home_xg = home_metrics.get('shot_quality', {}).get('expected_goals', 0)
+        
+        away_hdc = away_metrics.get('shot_quality', {}).get('high_danger_shots', 0)
+        home_hdc = home_metrics.get('shot_quality', {}).get('high_danger_shots', 0)
+        
+        away_shots = away_metrics.get('shot_quality', {}).get('shot_attempts', 0)
+        home_shots = home_metrics.get('shot_quality', {}).get('shot_attempts', 0)
+        
+        # Calculate differentials
+        xg_diff = away_xg - home_xg
+        hdc_diff = away_hdc - home_hdc
+        shots_diff = away_shots - home_shots
+        
+        # Apply sigmoid functions with calibrated coefficients
+        xg_factor = sigmoid(0.8 * xg_diff)  # xG is very predictive
+        hdc_factor = sigmoid(0.15 * hdc_diff)  # HDC adds context
+        shots_factor = sigmoid(0.04 * shots_diff)  # Volume matters less
+        
+        # Weighted combination (60% xG, 25% HDC, 15% shots)
+        away_win_prob = (0.60 * xg_factor + 0.25 * hdc_factor + 0.15 * shots_factor)
+        home_win_prob = 1.0 - away_win_prob
+        
+        # Convert to percentages
+        away_pct = round(away_win_prob * 100)
+        home_pct = round(home_win_prob * 100)
+        
+        # Ensure they sum to 100%
+        if away_pct + home_pct != 100:
+            if away_pct > home_pct:
+                away_pct = 100 - home_pct
+            else:
+                home_pct = 100 - away_pct
+        
+        return (away_pct, home_pct)
+    
+    def create_win_probability_section(self, game_data):
+        """Create a compact win probability bar with home team color background"""
+        story = []
+        
+        # Get team info
+        boxscore = game_data['boxscore']
+        away_team = boxscore['awayTeam']['abbrev']
+        home_team = boxscore['homeTeam']['abbrev']
+        
+        # Get home team color
+        home_team_abbrev = boxscore['homeTeam']['abbrev']
+        team_colors = {
+            'NJD': colors.Color(206/255, 17/255, 38/255),
+            'NYI': colors.Color(0/255, 83/255, 155/255),
+            'NYR': colors.Color(0/255, 56/255, 168/255),
+            'PHI': colors.Color(247/255, 73/255, 2/255),
+            'PIT': colors.Color(255/255, 184/255, 28/255),
+            'BOS': colors.Color(255/255, 184/255, 28/255),
+            'BUF': colors.Color(0/255, 48/255, 135/255),
+            'MTL': colors.Color(175/255, 30/255, 45/255),
+            'OTT': colors.Color(197/255, 32/255, 50/255),
+            'TOR': colors.Color(0/255, 32/255, 91/255),
+            'CAR': colors.Color(204/255, 0/255, 0/255),
+            'FLA': colors.Color(4/255, 30/255, 66/255),
+            'TBL': colors.Color(0/255, 40/255, 104/255),
+            'WSH': colors.Color(200/255, 16/255, 46/255),
+            'CHI': colors.Color(207/255, 10/255, 44/255),
+            'DET': colors.Color(206/255, 17/255, 38/255),
+            'NSH': colors.Color(255/255, 184/255, 28/255),
+            'STL': colors.Color(0/255, 47/255, 135/255),
+            'CGY': colors.Color(200/255, 16/255, 46/255),
+            'COL': colors.Color(111/255, 38/255, 61/255),
+            'EDM': colors.Color(4/255, 30/255, 66/255),
+            'VAN': colors.Color(0/255, 32/255, 91/255),
+            'ANA': colors.Color(252/255, 76/255, 2/255),
+            'DAL': colors.Color(0/255, 104/255, 71/255),
+            'LAK': colors.Color(17/255, 17/255, 17/255),
+            'SJS': colors.Color(0/255, 109/255, 117/255),
+            'CBJ': colors.Color(0/255, 38/255, 84/255),
+            'MIN': colors.Color(21/255, 71/255, 52/255),
+            'WPG': colors.Color(4/255, 30/255, 66/255),
+            'ARI': colors.Color(140/255, 38/255, 51/255),
+            'VGK': colors.Color(185/255, 151/255, 91/255),
+            'SEA': colors.Color(0/255, 22/255, 40/255),
+            'UTA': colors.Color(105/255, 179/255, 231/255),
+        }
+        home_team_color = team_colors.get(home_team_abbrev, colors.Color(0/255, 32/255, 91/255))
+        
+        # Get advanced metrics for both teams
+        try:
+            pbp_data = game_data['play_by_play']
+            away_team_id = boxscore['awayTeam']['id']
+            home_team_id = boxscore['homeTeam']['id']
+            
+            analyzer = AdvancedMetricsAnalyzer(pbp_data)
+            away_metrics = {
+                'shot_quality': analyzer.calculate_shot_quality_metrics(away_team_id),
+                'pressure': analyzer.calculate_pressure_metrics(away_team_id)
+            }
+            home_metrics = {
+                'shot_quality': analyzer.calculate_shot_quality_metrics(home_team_id),
+                'pressure': analyzer.calculate_pressure_metrics(home_team_id)
+            }
+            
+            # Calculate win probabilities
+            away_prob, home_prob = self.calculate_win_probability(away_metrics, home_metrics)
+            
+            # Create compact probability bar with auto width
+            prob_text = f"{away_team}: {away_prob}% chance of deserved win  |  {home_team}: {home_prob}% chance of deserved win"
+            prob_data = [[prob_text]]
+            prob_table = Table(prob_data)  # No fixed width - auto-size to content
+            prob_table.setStyle(TableStyle([
+                ('BACKGROUND', (0, 0), (-1, -1), home_team_color),
+                ('TEXTCOLOR', (0, 0), (-1, -1), colors.white),
+                ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
+                ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
+                ('FONTNAME', (0, 0), (-1, -1), 'RussoOne-Regular'),
+                ('FONTSIZE', (0, 0), (-1, -1), 6),
+                ('TOPPADDING', (0, 0), (-1, -1), 4),
+                ('BOTTOMPADDING', (0, 0), (-1, -1), 4),
+                ('LEFTPADDING', (0, 0), (-1, -1), 8),
+                ('RIGHTPADDING', (0, 0), (-1, -1), 8),
+            ]))
+            
+            story.append(Spacer(1, 6))  # Small spacing before win probability
+            story.append(prob_table)
+            
+        except Exception as e:
+            print(f"Warning: Could not calculate win probability: {e}")
+            import traceback
+            traceback.print_exc()
+        
+        return story
+    
     def create_score_summary(self, game_data):
         """Create the score summary section"""
         story = []
@@ -2913,6 +3060,9 @@ class PostGameReportGenerator:
         
         # Create side-by-side layout for advanced metrics and top players
         story.extend(self.create_side_by_side_tables(game_data))
+        
+        # Add win probability section at the bottom
+        story.extend(self.create_win_probability_section(game_data))
         
         # Build the PDF
         doc.build(story)
