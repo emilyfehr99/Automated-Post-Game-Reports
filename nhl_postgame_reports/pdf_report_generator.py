@@ -50,24 +50,50 @@ class PostGameReportGenerator:
     
     def register_fonts(self):
         """Register custom fonts with ReportLab"""
-        try:
-            # Register Russo One font
-            pdfmetrics.registerFont(TTFont('RussoOne-Regular', '/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf'))
-        except:
+        import os
+        
+        # Try multiple possible font locations
+        font_paths = [
+            'RussoOne-Regular.ttf',  # Current directory
+            'nhl_postgame_reports/RussoOne-Regular.ttf',  # Subdirectory
+            '/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf',  # Local Mac path
+            '/System/Library/Fonts/Arial Bold.ttf'  # System fallback
+        ]
+        
+        font_registered = False
+        for font_path in font_paths:
             try:
-                # Fallback to system font
-                pdfmetrics.registerFont(TTFont('RussoOne-Regular', '/System/Library/Fonts/Arial Bold.ttf'))
+                if os.path.exists(font_path):
+                    pdfmetrics.registerFont(TTFont('RussoOne-Regular', font_path))
+                    font_registered = True
+                    break
             except:
-                # Use default font if all else fails
-                pass
+                continue
+        
+        if not font_registered:
+            # Use default font if all else fails
+            pass
     
     def create_header_image(self, game_data, game_id=None):
         """Create the modern header image for the report using the user's header with team names"""
         try:
             # Use the user's header image from project directory
-            header_path = "/Users/emilyfehr8/CascadeProjects/nhl_postgame_reports/Header.jpg"
+            import os
             
-            if os.path.exists(header_path):
+            # Try multiple possible header image locations
+            header_paths = [
+                'Header.jpg',  # Current directory
+                'nhl_postgame_reports/Header.jpg',  # Subdirectory
+                '/Users/emilyfehr8/CascadeProjects/nhl_postgame_reports/Header.jpg'  # Local Mac path
+            ]
+            
+            header_path = None
+            for path in header_paths:
+                if os.path.exists(path):
+                    header_path = path
+                    break
+            
+            if header_path and os.path.exists(header_path):
                 # Create a custom header with team names overlaid
                 from PIL import Image as PILImage, ImageDraw, ImageFont
                 
@@ -89,7 +115,23 @@ class PostGameReportGenerator:
                 # Try to load Russo One font first (better text rendering), fallback to others (reduced by 1cm = 28pt from 140pt)
                 try:
                     # Try to load Russo One font first (better for text rendering)
-                    font = ImageFont.truetype("/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf", 110)
+                    font_paths = [
+                        'RussoOne-Regular.ttf',
+                        'nhl_postgame_reports/RussoOne-Regular.ttf',
+                        '/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf'
+                    ]
+                    
+                    font = None
+                    for font_path in font_paths:
+                        try:
+                            if os.path.exists(font_path):
+                                font = ImageFont.truetype(font_path, 110)
+                                break
+                        except:
+                            continue
+                    
+                    if not font:
+                        raise Exception("No font found")
                 except:
                     try:
                         # Fallback to DaggerSquare font
@@ -231,7 +273,23 @@ class PostGameReportGenerator:
                 
                 # Create subtitle font (45pt) - Russo One first for better text rendering
                 try:
-                    subtitle_font = ImageFont.truetype("/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf", 43)
+                    subtitle_font_paths = [
+                        'RussoOne-Regular.ttf',
+                        'nhl_postgame_reports/RussoOne-Regular.ttf',
+                        '/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf'
+                    ]
+                    
+                    subtitle_font = None
+                    for font_path in subtitle_font_paths:
+                        try:
+                            if os.path.exists(font_path):
+                                subtitle_font = ImageFont.truetype(font_path, 43)
+                                break
+                        except:
+                            continue
+                    
+                    if not subtitle_font:
+                        raise Exception("No subtitle font found")
                 except:
                     try:
                         subtitle_font = ImageFont.truetype("/Users/emilyfehr8/Library/Fonts/DAGGERSQUARE.otf", 43)
