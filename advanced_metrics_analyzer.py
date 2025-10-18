@@ -162,7 +162,7 @@ class AdvancedMetricsAnalyzer:
             if event_team != team_id:
                 continue
                 
-            if event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot']:
+            if event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
                 # Get shot data
                 x_coord = details.get('xCoord', 0)
                 y_coord = details.get('yCoord', 0)
@@ -199,6 +199,65 @@ class AdvancedMetricsAnalyzer:
                 total_xG += xG
         
         return round(total_xG, 2)
+    
+    def calculate_expected_goals_by_period(self, team_id: int) -> list:
+        """Calculate expected goals by period (returns list of [P1, P2, P3])"""
+        period_xG = [0.0, 0.0, 0.0]
+        
+        # Get game score for score state calculation
+        game_score = self._get_current_score()
+        
+        for i, play in enumerate(self.plays):
+            details = play.get('details', {})
+            event_type = play.get('typeDescKey', '')
+            event_team = details.get('eventOwnerTeamId')
+            
+            if event_team != team_id:
+                continue
+                
+            if event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
+                # Get period
+                period = play.get('periodDescriptor', {}).get('number', 1)
+                
+                # Skip OT/SO (periods > 3)
+                if period > 3:
+                    continue
+                
+                # Get shot data
+                x_coord = details.get('xCoord', 0)
+                y_coord = details.get('yCoord', 0)
+                shot_type = details.get('shotType', 'wrist')
+                situation_code = play.get('situationCode', '1551')
+                time_in_period = play.get('timeInPeriod', '00:00')
+                
+                # Parse strength state
+                strength_state = self._parse_strength_state(situation_code)
+                
+                # Calculate score differential
+                score_diff = self._get_score_differential(play, team_id, game_score)
+                
+                # Build shot data
+                shot_data = {
+                    'x_coord': x_coord,
+                    'y_coord': y_coord,
+                    'shot_type': shot_type,
+                    'event_type': event_type,
+                    'time_in_period': time_in_period,
+                    'period': period,
+                    'strength_state': strength_state,
+                    'score_differential': score_diff,
+                    'team_id': team_id
+                }
+                
+                # Get previous events for context
+                start_idx = max(0, i - 10)
+                previous_events = self.plays[start_idx:i]
+                
+                # Calculate xG
+                xG = self.xg_model.calculate_xg(shot_data, previous_events)
+                period_xG[period - 1] += xG
+        
+        return [round(xg, 2) for xg in period_xG]
     
     def _parse_strength_state(self, situation_code: str) -> str:
         """

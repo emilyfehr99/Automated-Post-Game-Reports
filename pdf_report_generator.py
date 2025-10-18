@@ -1020,9 +1020,14 @@ class PostGameReportGenerator:
             away_team = boxscore['awayTeam']
             home_team = boxscore['homeTeam']
             
-            # Calculate Game Score and xG by period for both teams
-            away_gs_periods, away_xg_periods = self._calculate_period_metrics(game_data, away_team['id'], 'away')
-            home_gs_periods, home_xg_periods = self._calculate_period_metrics(game_data, home_team['id'], 'home')
+            # Calculate Game Score by period for both teams  
+            away_gs_periods, _ = self._calculate_period_metrics(game_data, away_team['id'], 'away')
+            home_gs_periods, _ = self._calculate_period_metrics(game_data, home_team['id'], 'home')
+            
+            # Get xG by period from AdvancedMetricsAnalyzer (same source as advanced metrics table)
+            analyzer = AdvancedMetricsAnalyzer(game_data.get('play_by_play', {}))
+            away_xg_periods = analyzer.calculate_expected_goals_by_period(away_team['id'])
+            home_xg_periods = analyzer.calculate_expected_goals_by_period(home_team['id'])
             
             # Calculate pass metrics for both teams
             away_ew_passes, away_ns_passes, away_behind_net = self._calculate_pass_metrics(game_data, away_team['id'], 'away')
