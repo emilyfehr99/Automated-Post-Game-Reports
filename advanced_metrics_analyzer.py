@@ -75,7 +75,6 @@ class AdvancedMetricsAnalyzer:
         shot_quality = {
             'total_shots': 0,
             'shots_on_goal': 0,
-            'goals': 0,
             'missed_shots': 0,
             'blocked_shots': 0,
             'shot_types': defaultdict(int),
@@ -102,10 +101,6 @@ class AdvancedMetricsAnalyzer:
                     shot_quality['missed_shots'] += 1
                 elif event_type == 'blocked-shot':
                     shot_quality['blocked_shots'] += 1
-                    
-            # Track goals
-            if event_type == 'goal':
-                shot_quality['goals'] += 1
                 
                 # Shot type analysis
                 shot_type = details.get('shotType', 'unknown')
@@ -123,9 +118,9 @@ class AdvancedMetricsAnalyzer:
                 # Zone analysis
                 shot_quality['shot_locations'][zone] += 1
         
-        # Calculate shooting percentage (goals / shots on goal)
-        if shot_quality['shots_on_goal'] > 0:
-            shot_quality['shooting_percentage'] = shot_quality['goals'] / shot_quality['shots_on_goal']
+        # Calculate shooting percentage
+        if shot_quality['total_shots'] > 0:
+            shot_quality['shooting_percentage'] = shot_quality['shots_on_goal'] / shot_quality['total_shots']
         
         # Calculate expected goals using advanced model
         shot_quality['expected_goals'] = self._calculate_expected_goals(team_id)

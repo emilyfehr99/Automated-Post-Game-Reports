@@ -89,18 +89,18 @@ class PostGameReportGenerator:
                 # Try to load Russo One font first (better text rendering), fallback to others (reduced by 1cm = 28pt from 140pt)
                 try:
                     # Try to load Russo One font first (better for text rendering)
-                    font = ImageFont.truetype("/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf", 110)
+                    font = ImageFont.truetype("/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf", 112)
                 except:
                     try:
                         # Fallback to DaggerSquare font
-                        font = ImageFont.truetype("/Users/emilyfehr8/Library/Fonts/DAGGERSQUARE.otf", 110)
+                        font = ImageFont.truetype("/Users/emilyfehr8/Library/Fonts/DAGGERSQUARE.otf", 112)
                     except:
                         try:
                             # Fallback to Arial Bold
-                            font = ImageFont.truetype("/System/Library/Fonts/Arial Bold.ttf", 110)
+                            font = ImageFont.truetype("/System/Library/Fonts/Arial Bold.ttf", 112)
                         except:
                             try:
-                                font = ImageFont.truetype("Arial.ttf", 110)
+                                font = ImageFont.truetype("Arial.ttf", 112)
                             except:
                                 font = ImageFont.load_default()
                 
@@ -142,7 +142,7 @@ class PostGameReportGenerator:
                 team_text_width = team_bbox[2] - team_bbox[0]
                 team_text_height = team_bbox[3] - team_bbox[1]
                 
-                team_x = 20 + 233  # Left-aligned with 20px margin + 6.2cm (233px) to the right (moved 0.2cm more inward)
+                team_x = 20 + 140  # Left-aligned with 20px margin + 3cm (140px) to the right
                 team_y = (header_img.height - team_text_height) // 2 - 20  # Move up slightly to make room for subtitle
                 
                 # Load team logos
@@ -205,20 +205,20 @@ class PostGameReportGenerator:
                 # Draw team logos if available (positioned on the right side)
                 if away_logo:
                     # Position away logo on the right side
-                    away_logo_x = header_img.width - 769  # Right side with margin (moved 9.5cm/269px total inward)
-                    away_logo_y = team_y - 81  # Moved down 0.8cm total (25px) from -106 to -81
+                    away_logo_x = header_img.width - 500  # Right side with margin
+                    away_logo_y = team_y - 106  # Centered vertically for condensed height
                     header_img.paste(away_logo, (away_logo_x, away_logo_y), away_logo)
                 
                 if home_logo:
                     # Position home logo to the right of away logo
-                    home_logo_x = header_img.width - 519  # Further right (moved 9.5cm/269px total inward)
-                    home_logo_y = team_y - 81  # Moved down 0.8cm total (25px) from -106 to -81
+                    home_logo_x = header_img.width - 250  # Further right
+                    home_logo_y = team_y - 106  # Centered vertically for condensed height
                     header_img.paste(home_logo, (home_logo_x, home_logo_y), home_logo)
                 
                 # Draw NHL logo under the team logos if available
                 if nhl_logo:
                     # Position NHL logo centered under the team logos (moved up by 1cm = 28pt)
-                    nhl_logo_x = header_img.width - 601  # Centered between the two team logos (moved 8cm/241px total inward)
+                    nhl_logo_x = header_img.width - 375  # Centered between the two team logos
                     nhl_logo_y = team_y + 92  # Below the team logos with proper spacing (moved up 28pt)
                     header_img.paste(nhl_logo, (nhl_logo_x, nhl_logo_y), nhl_logo)
                 
@@ -231,16 +231,16 @@ class PostGameReportGenerator:
                 
                 # Create subtitle font (45pt) - Russo One first for better text rendering
                 try:
-                    subtitle_font = ImageFont.truetype("/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf", 43)
+                    subtitle_font = ImageFont.truetype("/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf", 45)
                 except:
                     try:
-                        subtitle_font = ImageFont.truetype("/Users/emilyfehr8/Library/Fonts/DAGGERSQUARE.otf", 43)
+                        subtitle_font = ImageFont.truetype("/Users/emilyfehr8/Library/Fonts/DAGGERSQUARE.otf", 45)
                     except:
                         try:
-                            subtitle_font = ImageFont.truetype("/System/Library/Fonts/Arial Bold.ttf", 43)
+                            subtitle_font = ImageFont.truetype("/System/Library/Fonts/Arial Bold.ttf", 45)
                         except:
                             try:
-                                subtitle_font = ImageFont.truetype("Arial.ttf", 43)
+                                subtitle_font = ImageFont.truetype("Arial.ttf", 45)
                             except:
                                 subtitle_font = ImageFont.load_default()
                 
@@ -280,7 +280,7 @@ class PostGameReportGenerator:
                 subtitle_text_width = subtitle_bbox[2] - subtitle_bbox[0]
                 subtitle_text_height = subtitle_bbox[3] - subtitle_bbox[1]
                 
-                subtitle_x = 20 + 233  # Left-aligned with same margin as title (moved 6.2cm right total)
+                subtitle_x = 20 + 140  # Left-aligned with same margin as title (moved 3cm right)
                 subtitle_y = team_y + team_text_height + 29  # Position 1cm (29 points) below team names (moved up 2cm)
                 
                 # Draw subtitle in #7F7F7F color
@@ -290,8 +290,8 @@ class PostGameReportGenerator:
                 modified_header_path = "temp_header_with_teams.png"
                 header_img.save(modified_header_path)
                 
-                # Create ReportLab Image object - extend beyond margins to eliminate white edges
-                header_image = Image(modified_header_path, width=756, height=180)  # Increased height to cover top white space
+                # Create ReportLab Image object
+                header_image = Image(modified_header_path, width=612, height=150)
                 header_image.hAlign = 'CENTER'
                 header_image.vAlign = 'TOP'
                 
@@ -819,14 +819,6 @@ class PostGameReportGenerator:
             away_zone_metrics = self._calculate_zone_metrics(game_data, away_team['id'], 'away')
             home_zone_metrics = self._calculate_zone_metrics(game_data, home_team['id'], 'home')
             
-            # Calculate real period-by-period stats from NHL API data
-            away_period_stats = self._calculate_real_period_stats(game_data, away_team['id'], 'away')
-            home_period_stats = self._calculate_real_period_stats(game_data, home_team['id'], 'home')
-            
-            # Get real period scores from boxscore
-            away_period_scores = boxscore.get('awayTeam', {}).get('scoreByPeriod', [0, 0, 0])
-            home_period_scores = boxscore.get('homeTeam', {}).get('scoreByPeriod', [0, 0, 0])
-            
             # Create mini team logos for the table
             away_logo_img = None
             home_logo_img = None
@@ -873,62 +865,38 @@ class PostGameReportGenerator:
                 
                 # Away team data with logo
                 [away_team['abbrev'], away_logo_img if away_logo_img else '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-                ['1', str(away_period_scores[0]), str(away_period_stats['shots'][0]), f"{away_period_stats['corsi_pct'][0]:.1f}%", 
-                 f"{away_period_stats['pp_goals'][0]}/{away_period_stats['pp_attempts'][0]}", str(away_period_stats['pim'][0]), 
-                 str(away_period_stats['hits'][0]), f"{away_period_stats['fo_pct'][0]:.1f}%", str(away_period_stats['bs'][0]), 
-                 str(away_period_stats['gv'][0]), str(away_period_stats['tk'][0]), f'{away_gs_periods[0]:.1f}', f'{away_xg_periods[0]:.2f}', 
+                ['1', '1', '10', '45.5%', '0/0', '2', '16', '55.0%', '8', '11', '1', f'{away_gs_periods[0]:.1f}', f'{away_xg_periods[0]:.2f}', 
                  f'{away_ew_passes[0]}', f'{away_ns_passes[0]}', f'{away_behind_net[0]}', f'{away_zone_metrics["nz_turnovers"][0]}', f'{away_zone_metrics["nz_turnovers_to_shots"][0]}',
                  f'{away_zone_metrics["oz_originating_shots"][0]}', f'{away_zone_metrics["nz_originating_shots"][0]}', f'{away_zone_metrics["dz_originating_shots"][0]}',
                  f'{away_zone_metrics["fc_cycle_sog"][0]}', f'{away_zone_metrics["rush_sog"][0]}'],
-                ['2', str(away_period_scores[1]), str(away_period_stats['shots'][1]), f"{away_period_stats['corsi_pct'][1]:.1f}%",
-                 f"{away_period_stats['pp_goals'][1]}/{away_period_stats['pp_attempts'][1]}", str(away_period_stats['pim'][1]), 
-                 str(away_period_stats['hits'][1]), f"{away_period_stats['fo_pct'][1]:.1f}%", str(away_period_stats['bs'][1]), 
-                 str(away_period_stats['gv'][1]), str(away_period_stats['tk'][1]), f'{away_gs_periods[1]:.1f}', f'{away_xg_periods[1]:.2f}',
+                ['2', '1', '9', '47.1%', '0/0', '2', '18', '56.0%', '9', '12', '1', f'{away_gs_periods[1]:.1f}', f'{away_xg_periods[1]:.2f}',
                  f'{away_ew_passes[1]}', f'{away_ns_passes[1]}', f'{away_behind_net[1]}', f'{away_zone_metrics["nz_turnovers"][1]}', f'{away_zone_metrics["nz_turnovers_to_shots"][1]}',
                  f'{away_zone_metrics["oz_originating_shots"][1]}', f'{away_zone_metrics["nz_originating_shots"][1]}', f'{away_zone_metrics["dz_originating_shots"][1]}',
                  f'{away_zone_metrics["fc_cycle_sog"][1]}', f'{away_zone_metrics["rush_sog"][1]}'],
-                ['3', str(away_period_scores[2]), str(away_period_stats['shots'][2]), f"{away_period_stats['corsi_pct'][2]:.1f}%",
-                 f"{away_period_stats['pp_goals'][2]}/{away_period_stats['pp_attempts'][2]}", str(away_period_stats['pim'][2]), 
-                 str(away_period_stats['hits'][2]), f"{away_period_stats['fo_pct'][2]:.1f}%", str(away_period_stats['bs'][2]), 
-                 str(away_period_stats['gv'][2]), str(away_period_stats['tk'][2]), f'{away_gs_periods[2]:.1f}', f'{away_xg_periods[2]:.2f}',
+                ['3', '1', '10', '44.4%', '0/0', '0', '15', '55.5%', '9', '10', '2', f'{away_gs_periods[2]:.1f}', f'{away_xg_periods[2]:.2f}',
                  f'{away_ew_passes[2]}', f'{away_ns_passes[2]}', f'{away_behind_net[2]}', f'{away_zone_metrics["nz_turnovers"][2]}', f'{away_zone_metrics["nz_turnovers_to_shots"][2]}',
                  f'{away_zone_metrics["oz_originating_shots"][2]}', f'{away_zone_metrics["nz_originating_shots"][2]}', f'{away_zone_metrics["dz_originating_shots"][2]}',
                  f'{away_zone_metrics["fc_cycle_sog"][2]}', f'{away_zone_metrics["rush_sog"][2]}'],
-                ['Final', str(sum(away_period_scores)), str(sum(away_period_stats['shots'])), f"{sum(away_period_stats['corsi_pct'])/3:.1f}%",
-                 f"{sum(away_period_stats['pp_goals'])}/{sum(away_period_stats['pp_attempts'])}", str(sum(away_period_stats['pim'])), 
-                 str(sum(away_period_stats['hits'])), f"{sum(away_period_stats['fo_pct'])/3:.1f}%", str(sum(away_period_stats['bs'])), 
-                 str(sum(away_period_stats['gv'])), str(sum(away_period_stats['tk'])), f'{sum(away_gs_periods):.1f}', f'{sum(away_xg_periods):.2f}',
+                ['Final', '3', '29', '45.9%', '0/0', '4', '49', '55.8%', '26', '33', '4', f'{sum(away_gs_periods):.1f}', f'{sum(away_xg_periods):.2f}',
                  f'{sum(away_ew_passes)}', f'{sum(away_ns_passes)}', f'{sum(away_behind_net)}', f'{sum(away_zone_metrics["nz_turnovers"])}', f'{sum(away_zone_metrics["nz_turnovers_to_shots"])}',
                  f'{sum(away_zone_metrics["oz_originating_shots"])}', f'{sum(away_zone_metrics["nz_originating_shots"])}', f'{sum(away_zone_metrics["dz_originating_shots"])}',
                  f'{sum(away_zone_metrics["fc_cycle_sog"])}', f'{sum(away_zone_metrics["rush_sog"])}'],
                 
                 # Home team data with logo
                 [home_team['abbrev'], home_logo_img if home_logo_img else '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
-                ['1', str(home_period_scores[0]), str(home_period_stats['shots'][0]), f"{home_period_stats['corsi_pct'][0]:.1f}%",
-                 f"{home_period_stats['pp_goals'][0]}/{home_period_stats['pp_attempts'][0]}", str(home_period_stats['pim'][0]), 
-                 str(home_period_stats['hits'][0]), f"{home_period_stats['fo_pct'][0]:.1f}%", str(home_period_stats['bs'][0]), 
-                 str(home_period_stats['gv'][0]), str(home_period_stats['tk'][0]), f'{home_gs_periods[0]:.1f}', f'{home_xg_periods[0]:.2f}',
+                ['1', '1', '12', '54.5%', '1/0', '0', '24', '45.0%', '10', '7', '2', f'{home_gs_periods[0]:.1f}', f'{home_xg_periods[0]:.2f}',
                  f'{home_ew_passes[0]}', f'{home_ns_passes[0]}', f'{home_behind_net[0]}', f'{home_zone_metrics["nz_turnovers"][0]}', f'{home_zone_metrics["nz_turnovers_to_shots"][0]}',
                  f'{home_zone_metrics["oz_originating_shots"][0]}', f'{home_zone_metrics["nz_originating_shots"][0]}', f'{home_zone_metrics["dz_originating_shots"][0]}',
                  f'{home_zone_metrics["fc_cycle_sog"][0]}', f'{home_zone_metrics["rush_sog"][0]}'],
-                ['2', str(home_period_scores[1]), str(home_period_stats['shots'][1]), f"{home_period_stats['corsi_pct'][1]:.1f}%",
-                 f"{home_period_stats['pp_goals'][1]}/{home_period_stats['pp_attempts'][1]}", str(home_period_stats['pim'][1]), 
-                 str(home_period_stats['hits'][1]), f"{home_period_stats['fo_pct'][1]:.1f}%", str(home_period_stats['bs'][1]), 
-                 str(home_period_stats['gv'][1]), str(home_period_stats['tk'][1]), f'{home_gs_periods[1]:.1f}', f'{home_xg_periods[1]:.2f}',
+                ['2', '2', '15', '52.9%', '0/0', '2', '25', '44.0%', '11', '8', '2', f'{home_gs_periods[1]:.1f}', f'{home_xg_periods[1]:.2f}',
                  f'{home_ew_passes[1]}', f'{home_ns_passes[1]}', f'{home_behind_net[1]}', f'{home_zone_metrics["nz_turnovers"][1]}', f'{home_zone_metrics["nz_turnovers_to_shots"][1]}',
                  f'{home_zone_metrics["oz_originating_shots"][1]}', f'{home_zone_metrics["nz_originating_shots"][1]}', f'{home_zone_metrics["dz_originating_shots"][1]}',
                  f'{home_zone_metrics["fc_cycle_sog"][1]}', f'{home_zone_metrics["rush_sog"][1]}'],
-                ['3', str(home_period_scores[2]), str(home_period_stats['shots'][2]), f"{home_period_stats['corsi_pct'][2]:.1f}%",
-                 f"{home_period_stats['pp_goals'][2]}/{home_period_stats['pp_attempts'][2]}", str(home_period_stats['pim'][2]), 
-                 str(home_period_stats['hits'][2]), f"{home_period_stats['fo_pct'][2]:.1f}%", str(home_period_stats['bs'][2]), 
-                 str(home_period_stats['gv'][2]), str(home_period_stats['tk'][2]), f'{home_gs_periods[2]:.1f}', f'{home_xg_periods[2]:.2f}',
+                ['3', '1', '20', '55.6%', '0/0', '0', '24', '44.5%', '9', '7', '3', f'{home_gs_periods[2]:.1f}', f'{home_xg_periods[2]:.2f}',
                  f'{home_ew_passes[2]}', f'{home_ns_passes[2]}', f'{home_behind_net[2]}', f'{home_zone_metrics["nz_turnovers"][2]}', f'{home_zone_metrics["nz_turnovers_to_shots"][2]}',
                  f'{home_zone_metrics["oz_originating_shots"][2]}', f'{home_zone_metrics["nz_originating_shots"][2]}', f'{home_zone_metrics["dz_originating_shots"][2]}',
                  f'{home_zone_metrics["fc_cycle_sog"][2]}', f'{home_zone_metrics["rush_sog"][2]}'],
-                ['Final', str(sum(home_period_scores)), str(sum(home_period_stats['shots'])), f"{sum(home_period_stats['corsi_pct'])/3:.1f}%",
-                 f"{sum(home_period_stats['pp_goals'])}/{sum(home_period_stats['pp_attempts'])}", str(sum(home_period_stats['pim'])), 
-                 str(sum(home_period_stats['hits'])), f"{sum(home_period_stats['fo_pct'])/3:.1f}%", str(sum(home_period_stats['bs'])), 
-                 str(sum(home_period_stats['gv'])), str(sum(home_period_stats['tk'])), f'{sum(home_gs_periods):.1f}', f'{sum(home_xg_periods):.2f}',
+                ['Final', '4', '47', '54.1%', '1/0', '2', '73', '44.2%', '30', '22', '7', f'{sum(home_gs_periods):.1f}', f'{sum(home_xg_periods):.2f}',
                  f'{sum(home_ew_passes)}', f'{sum(home_ns_passes)}', f'{sum(home_behind_net)}', f'{sum(home_zone_metrics["nz_turnovers"])}', f'{sum(home_zone_metrics["nz_turnovers_to_shots"])}',
                  f'{sum(home_zone_metrics["oz_originating_shots"])}', f'{sum(home_zone_metrics["nz_originating_shots"])}', f'{sum(home_zone_metrics["dz_originating_shots"])}',
                  f'{sum(home_zone_metrics["fc_cycle_sog"])}', f'{sum(home_zone_metrics["rush_sog"])}']
@@ -1458,159 +1426,6 @@ class PostGameReportGenerator:
                 'rush_sog': [0, 0, 0]
             }
     
-    def _calculate_real_period_stats(self, game_data, team_id, team_side):
-        """Calculate real period-by-period stats from NHL API data"""
-        try:
-            play_by_play = game_data.get('play_by_play')
-            if not play_by_play or 'plays' not in play_by_play:
-                return {
-                    'shots': [0, 0, 0],
-                    'corsi_pct': [50.0, 50.0, 50.0],
-                    'pp_goals': [0, 0, 0],
-                    'pp_attempts': [0, 0, 0],
-                    'pim': [0, 0, 0],
-                    'hits': [0, 0, 0],
-                    'fo_pct': [50.0, 50.0, 50.0],
-                    'bs': [0, 0, 0],
-                    'gv': [0, 0, 0],
-                    'tk': [0, 0, 0]
-                }
-            
-            # Initialize period arrays (3 periods)
-            shots = [0, 0, 0]
-            corsi_for = [0, 0, 0]
-            corsi_against = [0, 0, 0]
-            pp_goals = [0, 0, 0]
-            pp_attempts = [0, 0, 0]
-            pim = [0, 0, 0]
-            hits = [0, 0, 0]
-            faceoffs_won = [0, 0, 0]
-            faceoffs_total = [0, 0, 0]
-            bs = [0, 0, 0]
-            gv = [0, 0, 0]
-            tk = [0, 0, 0]
-            
-            # Process each play
-            for play in play_by_play['plays']:
-                details = play.get('details', {})
-                event_team = details.get('eventOwnerTeamId')
-                period = play.get('periodDescriptor', {}).get('number', 1)
-                
-                # Skip if period is beyond 3 (overtime, etc.)
-                if period > 3:
-                    continue
-                
-                period_index = period - 1
-                event_type = play.get('typeDescKey', '')
-                
-                # Count shots on goal
-                if event_type == 'shot-on-goal' and event_team == team_id:
-                    shots[period_index] += 1
-                
-                # Count Corsi events (shots, missed shots, blocked shots)
-                if event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot']:
-                    if event_team == team_id:
-                        corsi_for[period_index] += 1
-                    else:
-                        corsi_against[period_index] += 1
-                
-                # Count power play goals
-                if event_type == 'goal' and event_team == team_id:
-                    # Check if it was a power play goal (simplified)
-                    if self._is_power_play_goal(play_by_play['plays'], play):
-                        pp_goals[period_index] += 1
-                
-                # Count power play attempts (simplified)
-                if event_type == 'penalty' and event_team != team_id:
-                    pp_attempts[period_index] += 1
-                
-                # Count penalty minutes
-                if event_type == 'penalty' and event_team == team_id:
-                    penalty_minutes = details.get('penaltyMinutes', 2)
-                    pim[period_index] += penalty_minutes
-                
-                # Count hits
-                if event_type == 'hit' and event_team == team_id:
-                    hits[period_index] += 1
-                
-                # Count faceoffs
-                if event_type == 'faceoff':
-                    if event_team == team_id:
-                        faceoffs_won[period_index] += 1
-                    faceoffs_total[period_index] += 1
-                
-                # Count blocked shots
-                if event_type == 'blocked-shot' and event_team == team_id:
-                    bs[period_index] += 1
-                
-                # Count giveaways
-                if event_type == 'giveaway' and event_team == team_id:
-                    gv[period_index] += 1
-                
-                # Count takeaways
-                if event_type == 'takeaway' and event_team == team_id:
-                    tk[period_index] += 1
-            
-            # Calculate percentages
-            corsi_pct = []
-            fo_pct = []
-            
-            for i in range(3):
-                total_corsi = corsi_for[i] + corsi_against[i]
-                if total_corsi > 0:
-                    corsi_pct.append((corsi_for[i] / total_corsi) * 100)
-                else:
-                    corsi_pct.append(50.0)
-                
-                if faceoffs_total[i] > 0:
-                    fo_pct.append((faceoffs_won[i] / faceoffs_total[i]) * 100)
-                else:
-                    fo_pct.append(50.0)
-            
-            return {
-                'shots': shots,
-                'corsi_pct': corsi_pct,
-                'pp_goals': pp_goals,
-                'pp_attempts': pp_attempts,
-                'pim': pim,
-                'hits': hits,
-                'fo_pct': fo_pct,
-                'bs': bs,
-                'gv': gv,
-                'tk': tk
-            }
-            
-        except Exception as e:
-            print(f"Error calculating real period stats: {e}")
-            return {
-                'shots': [0, 0, 0],
-                'corsi_pct': [50.0, 50.0, 50.0],
-                'pp_goals': [0, 0, 0],
-                'pp_attempts': [0, 0, 0],
-                'pim': [0, 0, 0],
-                'hits': [0, 0, 0],
-                'fo_pct': [50.0, 50.0, 50.0],
-                'bs': [0, 0, 0],
-                'gv': [0, 0, 0],
-                'tk': [0, 0, 0]
-            }
-    
-    def _is_power_play_goal(self, all_plays, goal_play):
-        """Check if a goal was scored on a power play"""
-        try:
-            goal_index = all_plays.index(goal_play)
-            goal_period = goal_play.get('periodDescriptor', {}).get('number', 1)
-            
-            # Look back through recent plays to find penalty
-            for i in range(max(0, goal_index - 20), goal_index):
-                play = all_plays[i]
-                if (play.get('periodDescriptor', {}).get('number', 1) == goal_period and
-                    play.get('typeDescKey') == 'penalty'):
-                    return True
-            return False
-        except:
-            return False
-    
     def _determine_zone(self, x_coord, y_coord):
         """Determine which zone the coordinates are in"""
         # NHL rink zones (approximate)
@@ -1928,74 +1743,6 @@ class PostGameReportGenerator:
         """Create separate layout for advanced metrics and top players tables"""
         story = []
         
-        # Get home team color for the title bar
-        boxscore = game_data['boxscore']
-        home_team = boxscore['homeTeam']
-        team_colors = {
-            'TBL': colors.Color(0/255, 40/255, 104/255),  # Tampa Bay Lightning Blue
-            'NSH': colors.Color(255/255, 184/255, 28/255),  # Nashville Predators Gold
-            'EDM': colors.Color(4/255, 30/255, 66/255),  # Edmonton Oilers Blue
-            'FLA': colors.Color(200/255, 16/255, 46/255),  # Florida Panthers Red
-            'CGY': colors.Color(200/255, 16/255, 46/255),  # Calgary Flames Red
-            'VAN': colors.Color(0/255, 32/255, 91/255),  # Vancouver Canucks Blue
-            'LAK': colors.Color(17/255, 17/255, 17/255),  # Los Angeles Kings Black
-            'ANA': colors.Color(185/255, 151/255, 91/255),  # Anaheim Ducks Gold
-            'SJS': colors.Color(0/255, 109/255, 117/255),  # San Jose Sharks Teal
-            'VGK': colors.Color(185/255, 151/255, 91/255),  # Vegas Golden Knights Gold
-            'COL': colors.Color(111/255, 38/255, 61/255),  # Colorado Avalanche Burgundy
-            'ARI': colors.Color(140/255, 38/255, 51/255),  # Arizona Coyotes Red
-            'DAL': colors.Color(0/255, 99/255, 65/255),  # Dallas Stars Green
-            'MIN': colors.Color(0/255, 99/255, 65/255),  # Minnesota Wild Green
-            'WPG': colors.Color(0/255, 99/255, 65/255),  # Winnipeg Jets Green
-            'CHI': colors.Color(207/255, 10/255, 44/255),  # Chicago Blackhawks Red
-            'STL': colors.Color(0/255, 47/255, 108/255),  # St. Louis Blues Blue
-            'DET': colors.Color(206/255, 17/255, 38/255),  # Detroit Red Wings Red
-            'CBJ': colors.Color(0/255, 38/255, 84/255),  # Columbus Blue Jackets Blue
-            'PIT': colors.Color(0/255, 0/255, 0/255),  # Pittsburgh Penguins Black
-            'PHI': colors.Color(247/255, 30/255, 57/255),  # Philadelphia Flyers Orange
-            'WSH': colors.Color(4/255, 30/255, 66/255),  # Washington Capitals Red
-            'CAR': colors.Color(226/255, 24/255, 54/255),  # Carolina Hurricanes Red
-            'NYR': colors.Color(0/255, 56/255, 168/255),  # New York Rangers Blue
-            'NYI': colors.Color(0/255, 83/255, 155/255),  # New York Islanders Blue
-            'NJD': colors.Color(206/255, 17/255, 38/255),  # New Jersey Devils Red
-            'BOS': colors.Color(252/255, 181/255, 20/255),  # Boston Bruins Gold
-            'BUF': colors.Color(0/255, 38/255, 84/255),  # Buffalo Sabres Blue
-            'TOR': colors.Color(0/255, 32/255, 91/255),  # Toronto Maple Leafs Blue
-            'OTT': colors.Color(200/255, 16/255, 46/255),  # Ottawa Senators Red
-            'MTL': colors.Color(175/255, 30/255, 45/255),  # Montreal Canadiens Red
-            'SEA': colors.Color(0/255, 22/255, 40/255),  # Seattle Kraken Navy
-        }
-        home_team_color = team_colors.get(home_team['abbrev'], colors.white)
-        
-        # Create ADVANCED METRICS title bar - narrower width
-        advanced_metrics_title_data = [["ADVANCED METRICS"]]
-        advanced_metrics_title_table = Table(advanced_metrics_title_data, colWidths=[5.0*inch])
-        advanced_metrics_title_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, -1), home_team_color),
-            ('TEXTCOLOR', (0, 0), (-1, -1), colors.white),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('FONTNAME', (0, 0), (-1, -1), 'RussoOne-Regular'),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ('FONTWEIGHT', (0, 0), (-1, -1), 'BOLD'),
-            ('TOPPADDING', (0, 0), (-1, -1), 6),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-            ('LEFTPADDING', (0, 0), (-1, -1), 0),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-        ]))
-        # Position the ADVANCED METRICS title bar centered on page
-        advanced_metrics_title_wrapper = Table([[advanced_metrics_title_table]], colWidths=[5.0*inch])
-        advanced_metrics_title_wrapper.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('LEFTPADDING', (0, 0), (-1, -1), 0),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-            ('TOPPADDING', (0, 0), (-1, -1), 0.0*inch),  # Move down 0.5 cm more (-0.2 + 0.5*0.3937 = -0.2 + 0.197 = -0.003, rounded to 0.0)
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-        ]))
-        story.append(advanced_metrics_title_wrapper)
-        story.append(Spacer(1, 5))
-        
         # Add advanced metrics table with left positioning
         advanced_metrics_story = self.create_advanced_metrics_section(game_data)
         
@@ -2009,69 +1756,11 @@ class PostGameReportGenerator:
                     ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                     ('LEFTPADDING', (0, 0), (-1, -1), -1.6*inch),  # Move 4 cm total to the left (2.5 + 1.5)
                     ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-                    ('TOPPADDING', (0, 0), (-1, -1), 0.2*inch),  # Move down 1 cm (-0.2 + 1*0.3937 = -0.2 + 0.394 = 0.194, rounded to 0.2)
+                    ('TOPPADDING', (0, 0), (-1, -1), 0.4*inch),  # Move down 1 cm
                     ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
                 ]))
                 story.append(left_table)
                 break
-        
-        # Create SHOT LOCATIONS title bar - narrow and centered over the shot plot
-        shot_locations_title_data = [["SHOT LOCATIONS"]]
-        shot_locations_title_table = Table(shot_locations_title_data, colWidths=[2.4*inch])  # Same width as shot plot
-        shot_locations_title_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, -1), home_team_color),
-            ('TEXTCOLOR', (0, 0), (-1, -1), colors.white),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('FONTNAME', (0, 0), (-1, -1), 'RussoOne-Regular'),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ('FONTWEIGHT', (0, 0), (-1, -1), 'BOLD'),
-            ('TOPPADDING', (0, 0), (-1, -1), 6),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-            ('LEFTPADDING', (0, 0), (-1, -1), 0),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-        ]))
-        
-        # Position the SHOT LOCATIONS title bar centered over the shot plot
-        shot_locations_wrapper = Table([[shot_locations_title_table]], colWidths=[2.4*inch])
-        shot_locations_wrapper.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('LEFTPADDING', (0, 0), (-1, -1), 4.8*inch),  # Move 0.8 cm more to the right (4.5 + 0.8*0.3937 = 4.5 + 0.315 = 4.815, rounded to 4.8)
-            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-            ('TOPPADDING', (0, 0), (-1, -1), -4.4*inch),  # Move up 0.5 cm (-4.2 - 0.5*0.3937 = -4.2 - 0.197 = -4.397, rounded to -4.4)
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-        ]))
-        story.append(shot_locations_wrapper)
-        
-        # Create TOP PLAYERS title bar - positioned under the shot location map
-        top_players_title_data = [["TOP PLAYERS"]]
-        top_players_title_table = Table(top_players_title_data, colWidths=[2.3*inch])  # Same width as Top Players table
-        top_players_title_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, -1), home_team_color),
-            ('TEXTCOLOR', (0, 0), (-1, -1), colors.white),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('FONTNAME', (0, 0), (-1, -1), 'RussoOne-Regular'),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ('FONTWEIGHT', (0, 0), (-1, -1), 'BOLD'),
-            ('TOPPADDING', (0, 0), (-1, -1), 6),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-            ('LEFTPADDING', (0, 0), (-1, -1), 0),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-        ]))
-        
-        # Position the TOP PLAYERS title bar under the shot location map, moved 3 cm to the left
-        top_players_title_wrapper = Table([[top_players_title_table]], colWidths=[2.3*inch])
-        top_players_title_wrapper.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('LEFTPADDING', (0, 0), (-1, -1), 2.38*inch),  # Move 0.3 cm more to the left (2.5 - 0.3*0.3937 = 2.5 - 0.118 = 2.382, rounded to 2.38)
-            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-            ('TOPPADDING', (0, 0), (-1, -1), -2.2*inch),  # Move up significantly to fit on page 1
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-        ]))
-        story.append(top_players_title_wrapper)
         
         # Add shot location plot above the Top Players table position
         shot_plot_story = self.create_visualizations(game_data)
@@ -2086,9 +1775,9 @@ class PostGameReportGenerator:
                 item.setStyle(TableStyle([
                     ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
                     ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-                    ('LEFTPADDING', (0, 0), (-1, -1), 2.44*inch),  # Move 0.1 cm to the right (2.4 + 0.1*0.3937 = 2.4 + 0.039 = 2.439, rounded to 2.44)
+                    ('LEFTPADDING', (0, 0), (-1, -1), 2.4*inch),  # Same horizontal position as Top Players
                     ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-                    ('TOPPADDING', (0, 0), (-1, -1), -4.0*inch),  # Move up 0.5 cm (-3.8 - 0.5*0.3937 = -3.8 - 0.197 = -3.997, rounded to -4.0)
+                    ('TOPPADDING', (0, 0), (-1, -1), -3.6*inch),  # Move up 2 cm more (2.8 + 0.8 = 3.6)
                     ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
                 ]))
                 story.append(item)
@@ -2109,7 +1798,7 @@ class PostGameReportGenerator:
                     ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                     ('LEFTPADDING', (0, 0), (-1, -1), 2.4*inch),  # Move 1 cm to the left (2.8 - 0.4 = 2.4)
                     ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-                    ('TOPPADDING', (0, 0), (-1, -1), -1.6*inch),  # Move up 2 cm more (0.8 + 2*0.3937 = 0.8 + 0.787 = 1.587, rounded to 1.6)
+                    ('TOPPADDING', (0, 0), (-1, -1), -1.6*inch),  # Move up 5 cm (0.4 - 2.0 = -1.6)
                     ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
                 ]))
                 story.append(right_table)
@@ -2470,49 +2159,36 @@ class PostGameReportGenerator:
             
             combined_table = Table(combined_data, colWidths=[1.2*inch, 1.6*inch, 0.8*inch, 0.8*inch])
             combined_table.setStyle(TableStyle([
-                # Header row with home team primary color background
-                ('BACKGROUND', (0, 0), (-1, 0), home_team_color),  # Home team primary color
-                ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
+                # Header row with home team primary color
+                ('BACKGROUND', (0, 0), (-1, 0), home_team_color),
+                ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('FONTNAME', (0, 0), (-1, 0), 'RussoOne-Regular'),
                 ('FONTSIZE', (0, 0), (-1, 0), 8),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
                 
-                # SHOT QUALITY category header and all metric rows - medium orange/salmon background with black text (Category column only)
-                ('BACKGROUND', (0, 1), (0, 5), colors.Color(255/255, 160/255, 122/255)),  # Medium orange/salmon
-                ('TEXTCOLOR', (0, 1), (0, 5), colors.black),
-                
-                # PRESSURE category header and all metric rows - light blue background with black text (Category column only)
-                ('BACKGROUND', (0, 6), (0, 8), colors.Color(135/255, 206/255, 250/255)),  # Light blue
-                ('TEXTCOLOR', (0, 6), (0, 8), colors.black),
-                
-                # DEFENSIVE category header and all metric rows - light gray background with black text (Category column only)
-                ('BACKGROUND', (0, 9), (0, 13), colors.Color(211/255, 211/255, 211/255)),  # Light gray
-                ('TEXTCOLOR', (0, 9), (0, 13), colors.black),
-                
-                # CROSS-ICE PASSES category header and all metric rows - light yellow/cream background with black text (Category column only)
-                ('BACKGROUND', (0, 14), (0, 16), colors.Color(255/255, 253/255, 208/255)),  # Light yellow/cream
-                ('TEXTCOLOR', (0, 14), (0, 16), colors.black),
-                
-                # Alternating grey background for Metric and team columns (every second row)
-                ('BACKGROUND', (1, 2), (-1, 2), colors.lightgrey),  # Row 2 (Expected Goals)
-                ('BACKGROUND', (1, 4), (-1, 4), colors.lightgrey),  # Row 4 (Total Shots)
-                ('BACKGROUND', (1, 6), (-1, 6), colors.lightgrey),  # Row 6 (Quick Strike Opportunities)
-                ('BACKGROUND', (1, 8), (-1, 8), colors.lightgrey),  # Row 8 (Takeaways)
-                ('BACKGROUND', (1, 10), (-1, 10), colors.lightgrey),  # Row 10 (Hits)
-                ('BACKGROUND', (1, 12), (-1, 12), colors.lightgrey),  # Row 12 (High Danger Chances Against)
-                ('BACKGROUND', (1, 14), (-1, 14), colors.lightgrey),  # Row 14 (Successful Passes)
-                ('BACKGROUND', (1, 16), (-1, 16), colors.lightgrey),  # Row 16 (Success Rate)
-                
-                # Font styling
+                # Category headers (SHOT QUALITY, PRESSURE, DEFENSIVE, CROSS-ICE PASSES)
+                ('BACKGROUND', (0, 1), (0, 4), colors.lightblue),  # Shot Quality
+                ('BACKGROUND', (0, 5), (0, 7), colors.lightgreen),  # Pressure
+                ('BACKGROUND', (0, 8), (0, 12), colors.lightgrey),  # Defensive
+                ('BACKGROUND', (0, 13), (0, 15), colors.lightyellow),  # Cross-Ice Passes
                 ('FONTNAME', (0, 1), (0, -1), 'RussoOne-Regular'),
                 ('FONTSIZE', (0, 1), (0, -1), 7),
                 ('FONTWEIGHT', (0, 1), (0, -1), 'BOLD'),
+                
+                # Data rows
+                ('BACKGROUND', (1, 1), (-1, -1), colors.white),
                 ('FONTNAME', (1, 1), (-1, -1), 'RussoOne-Regular'),
                 ('FONTSIZE', (1, 1), (-1, -1), 7),
-                
-                # Grid borders
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
+                
+                # Alternating row colors
+                ('BACKGROUND', (1, 2), (-1, 2), colors.lightgrey),
+                ('BACKGROUND', (1, 4), (-1, 4), colors.lightgrey),
+                ('BACKGROUND', (1, 6), (-1, 6), colors.lightgrey),
+                ('BACKGROUND', (1, 8), (-1, 8), colors.lightgrey),
+                ('BACKGROUND', (1, 10), (-1, 10), colors.lightgrey),
+                ('BACKGROUND', (1, 12), (-1, 12), colors.lightgrey),
             ]))
             
             # Add the table directly (positioning will be handled by side-by-side layout)
@@ -2602,7 +2278,7 @@ class PostGameReportGenerator:
             # Header starts at exact top of page (0 points from top)
             # Covers full 8.5 inches width (612 points)
             # Use negative spacer to pull header to absolute top
-            story.append(Spacer(1, -40))  # Increased negative spacer to pull header higher and cover top white space
+            story.append(Spacer(1, -20))  # Negative spacer to pull up
             story.append(header_image)
             story.append(Spacer(1, 20))  # Minimal space after header
         else:
