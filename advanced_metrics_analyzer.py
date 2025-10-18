@@ -169,7 +169,7 @@ class AdvancedMetricsAnalyzer:
                 shot_type = details.get('shotType', 'wrist')
                 situation_code = play.get('situationCode', '1551')  # Default to 5v5
                 time_in_period = play.get('timeInPeriod', '00:00')
-                period = play.get('period', 1)
+                period = play.get('periodDescriptor', {}).get('number', 1)
                 
                 # Parse strength state from situation code
                 strength_state = self._parse_strength_state(situation_code)
