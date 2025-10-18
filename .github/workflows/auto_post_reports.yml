@@ -19,12 +19,13 @@ jobs:
     - name: Check if we should run (skip weekdays 2am-3pm Central)
       id: time_check
       run: |
-        # Get current time in Central Time (UTC-6)
+        # Get current time in Central Time (handles DST automatically)
         CENTRAL_HOUR=$(TZ='America/Chicago' date +%H)
         CENTRAL_DAY=$(TZ='America/Chicago' date +%u)  # 1=Monday, 7=Sunday
+        CENTRAL_DATE=$(TZ='America/Chicago' date '+%Y-%m-%d')
         
         echo "Current Central Time: $(TZ='America/Chicago' date '+%Y-%m-%d %H:%M:%S %A')"
-        echo "Hour: $CENTRAL_HOUR, Day: $CENTRAL_DAY"
+        echo "Hour: $CENTRAL_HOUR, Day: $CENTRAL_DAY, Date: $CENTRAL_DATE"
         
         # Skip if weekday (1-5) and between 2am (02) and 3pm (15)
         if [ $CENTRAL_DAY -le 5 ] && [ $CENTRAL_HOUR -ge 2 ] && [ $CENTRAL_HOUR -lt 15 ]; then

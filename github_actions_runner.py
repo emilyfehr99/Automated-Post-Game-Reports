@@ -44,11 +44,10 @@ class GitHubActionsRunner:
     
     def get_todays_games(self):
         """Get all games from today (based on Central Time)"""
-        from datetime import timezone, timedelta
+        import pytz
         
-        # Use Central Time (UTC-5 for CDT, UTC-6 for CST)
-        # For simplicity, use UTC-6 (covers most of NHL season)
-        central_tz = timezone(timedelta(hours=-6))
+        # Use proper Central Time (handles DST automatically)
+        central_tz = pytz.timezone('US/Central')
         central_now = datetime.now(central_tz)
         today = central_now.strftime('%Y-%m-%d')
         
