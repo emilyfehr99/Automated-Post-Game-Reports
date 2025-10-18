@@ -2,8 +2,8 @@ name: Daily NHL Predictions (Discord)
 
 on:
   schedule:
-    # Run every day at 8:00 AM Central Time (2:00 PM UTC)
-    - cron: '0 14 * * *'
+    # Run every day at 7:00 AM Central Time (1:00 PM UTC)
+    - cron: '0 13 * * *'
   workflow_dispatch: # Allow manual triggering
 
 jobs:
