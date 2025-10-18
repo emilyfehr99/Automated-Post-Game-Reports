@@ -61,13 +61,8 @@ jobs:
         TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
         TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
       run: |
-        cd nhl_postgame_reports
         python3 github_actions_runner.py
     
-    - name: Update Self-Learning Model
-      if: steps.time_check.outputs.should_run == 'true'
-      run: |
-        python3 nhl_postgame_reports/self_learning_integration.py
     
     - name: Commit processed games log and model data
       if: steps.time_check.outputs.should_run == 'true'
