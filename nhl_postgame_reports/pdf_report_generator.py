@@ -72,16 +72,10 @@ class PostGameReportGenerator:
                 continue
         
         if not font_registered:
-            # Register a system font as fallback
-            try:
-                pdfmetrics.registerFont(TTFont('RussoOne-Regular', 'Helvetica'))
-                print("Using Helvetica as fallback font")
-            except:
-                try:
-                    pdfmetrics.registerFont(TTFont('RussoOne-Regular', 'Arial'))
-                    print("Using Arial as fallback font")
-                except:
-                    print("Warning: Could not register any font, using default")
+            # Use default fonts - don't try to register custom names
+            print("Using default system fonts")
+            # Set a flag to use default fonts
+            self.use_default_fonts = True
     
     def create_header_image(self, game_data, game_id=None):
         """Create the modern header image for the report using the user's header with team names"""
@@ -376,6 +370,9 @@ class PostGameReportGenerator:
     
     def setup_custom_styles(self):
         """Setup custom paragraph styles for the report"""
+        # Choose font based on availability
+        font_name = 'Helvetica' if getattr(self, 'use_default_fonts', False) else 'RussoOne-Regular'
+        
         # Title style
         self.title_style = ParagraphStyle(
             'CustomTitle',
@@ -384,7 +381,7 @@ class PostGameReportGenerator:
             textColor=colors.darkblue,
             alignment=TA_CENTER,
             spaceAfter=20,
-            fontName='RussoOne-Regular'
+            fontName=font_name
         )
         
         # Subtitle style
@@ -395,7 +392,7 @@ class PostGameReportGenerator:
             textColor=colors.darkblue,
             alignment=TA_CENTER,
             spaceAfter=15,
-            fontName='RussoOne-Regular'
+            fontName=font_name
         )
         
         # Section header style
@@ -406,7 +403,7 @@ class PostGameReportGenerator:
             textColor=colors.darkred,
             alignment=TA_CENTER,
             spaceAfter=10,
-            fontName='RussoOne-Regular'
+            fontName=font_name
         )
         
         # Normal text style
@@ -417,7 +414,7 @@ class PostGameReportGenerator:
             textColor=colors.black,
             alignment=TA_CENTER,
             spaceAfter=6,
-            fontName='RussoOne-Regular'
+            fontName=font_name
         )
         
         # Stat text style
@@ -428,7 +425,7 @@ class PostGameReportGenerator:
             textColor=colors.darkgreen,
             alignment=TA_CENTER,
             spaceAfter=4,
-            fontName='RussoOne-Regular'
+            fontName=font_name
         )
     
     def create_score_summary(self, game_data):
@@ -489,13 +486,13 @@ class PostGameReportGenerator:
             ('BACKGROUND', (0, 0), (-1, 0), colors.darkblue),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('FONTNAME', (0, 0), (-1, 0), 'RussoOne-Regular'),
+            ('FONTNAME', (0, 0), (-1, 0), font_name),
             ('FONTSIZE', (0, 0), (-1, 0), 12),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 12),
             ('BACKGROUND', (0, 1), (-1, -1), colors.beige),
             ('GRID', (0, 0), (-1, -1), 1, colors.black),
             ('FONTSIZE', (0, 1), (-1, -1), 10),
-            ('FONTNAME', (0, 1), (-1, -1), 'RussoOne-Regular'),
+            ('FONTNAME', (0, 1), (-1, -1), font_name),
         ]))
         
         story.append(score_table)
@@ -857,7 +854,7 @@ class PostGameReportGenerator:
             ('TEXTCOLOR', (0, 0), (-1, -1), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('FONTNAME', (0, 0), (-1, -1), 'RussoOne-Regular'),
+            ('FONTNAME', (0, 0), (-1, -1), font_name),
             ('FONTSIZE', (0, 0), (-1, -1), 10),
             ('FONTWEIGHT', (0, 0), (-1, -1), 'BOLD'),
             ('TOPPADDING', (0, 0), (-1, -1), 6),
@@ -1011,7 +1008,7 @@ class PostGameReportGenerator:
                 ('BACKGROUND', (0, 0), (-1, 0), home_team_color),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'RussoOne-Regular'),
+                ('FONTNAME', (0, 0), (-1, 0), font_name),
                 ('FONTSIZE', (0, 0), (-1, 0), 5),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 4),
                 
@@ -1020,7 +1017,7 @@ class PostGameReportGenerator:
                 ('BACKGROUND', (0, 6), (-1, 6), home_team_color),  # Home team row
                 ('TEXTCOLOR', (0, 1), (-1, 1), colors.white),  # Away team text (white for visibility)
                 ('TEXTCOLOR', (0, 6), (-1, 6), colors.white),  # Home team text (white for visibility)
-                ('FONTNAME', (0, 1), (-1, 6), 'RussoOne-Regular'),
+                ('FONTNAME', (0, 1), (-1, 6), font_name),
                 ('FONTSIZE', (0, 1), (-1, 6), 6),
                 ('FONTWEIGHT', (0, 1), (-1, 6), 'BOLD'),
                 # Logo cell styling (column 1 for both team rows)
@@ -1039,7 +1036,7 @@ class PostGameReportGenerator:
                 # Data rows
                 ('BACKGROUND', (0, 2), (-1, 5), colors.white),  # STL data
                 ('BACKGROUND', (0, 7), (-1, 10), colors.white),  # WPG data
-                ('FONTNAME', (0, 2), (-1, 10), 'RussoOne-Regular'),
+                ('FONTNAME', (0, 2), (-1, 10), font_name),
                 ('FONTSIZE', (0, 2), (-1, 10), 6),
                 # Custom grid that excludes team abbreviation rows (1 and 6)
                 ('GRID', (0, 0), (-1, 0), 1, colors.black),  # Header row
@@ -1968,13 +1965,13 @@ class PostGameReportGenerator:
                 ('BACKGROUND', (0, 0), (-1, 0), home_team_color),
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'RussoOne-Regular'),
+                ('FONTNAME', (0, 0), (-1, 0), font_name),
                 ('FONTSIZE', (0, 0), (-1, 0), 8),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
                 ('BACKGROUND', (0, 1), (-1, -1), colors.lightgrey),
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
                 ('FONTSIZE', (0, 1), (-1, -1), 7),
-                ('FONTNAME', (0, 1), (-1, -1), 'RussoOne-Regular'),
+                ('FONTNAME', (0, 1), (-1, -1), font_name),
                 # Highlight the top player
                 ('BACKGROUND', (0, 1), (-1, 1), colors.yellow),
                 ('FONTNAME', (0, 1), (-1, 1), 'RussoOne-Regular'),
@@ -2042,7 +2039,7 @@ class PostGameReportGenerator:
             ('TEXTCOLOR', (0, 0), (-1, -1), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('FONTNAME', (0, 0), (-1, -1), 'RussoOne-Regular'),
+            ('FONTNAME', (0, 0), (-1, -1), font_name),
             ('FONTSIZE', (0, 0), (-1, -1), 10),
             ('FONTWEIGHT', (0, 0), (-1, -1), 'BOLD'),
             ('TOPPADDING', (0, 0), (-1, -1), 6),
@@ -2090,7 +2087,7 @@ class PostGameReportGenerator:
             ('TEXTCOLOR', (0, 0), (-1, -1), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('FONTNAME', (0, 0), (-1, -1), 'RussoOne-Regular'),
+            ('FONTNAME', (0, 0), (-1, -1), font_name),
             ('FONTSIZE', (0, 0), (-1, -1), 10),
             ('FONTWEIGHT', (0, 0), (-1, -1), 'BOLD'),
             ('TOPPADDING', (0, 0), (-1, -1), 6),
@@ -2119,7 +2116,7 @@ class PostGameReportGenerator:
             ('TEXTCOLOR', (0, 0), (-1, -1), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('FONTNAME', (0, 0), (-1, -1), 'RussoOne-Regular'),
+            ('FONTNAME', (0, 0), (-1, -1), font_name),
             ('FONTSIZE', (0, 0), (-1, -1), 10),
             ('FONTWEIGHT', (0, 0), (-1, -1), 'BOLD'),
             ('TOPPADDING', (0, 0), (-1, -1), 6),
@@ -2541,7 +2538,7 @@ class PostGameReportGenerator:
                 ('BACKGROUND', (0, 0), (-1, 0), home_team_color),  # Home team primary color
                 ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-                ('FONTNAME', (0, 0), (-1, 0), 'RussoOne-Regular'),
+                ('FONTNAME', (0, 0), (-1, 0), font_name),
                 ('FONTSIZE', (0, 0), (-1, 0), 8),
                 ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
                 
@@ -2572,10 +2569,10 @@ class PostGameReportGenerator:
                 ('BACKGROUND', (1, 16), (-1, 16), colors.lightgrey),  # Row 16 (Success Rate)
                 
                 # Font styling
-                ('FONTNAME', (0, 1), (0, -1), 'RussoOne-Regular'),
+                ('FONTNAME', (0, 1), (0, -1), font_name),
                 ('FONTSIZE', (0, 1), (0, -1), 7),
                 ('FONTWEIGHT', (0, 1), (0, -1), 'BOLD'),
-                ('FONTNAME', (1, 1), (-1, -1), 'RussoOne-Regular'),
+                ('FONTNAME', (1, 1), (-1, -1), font_name),
                 ('FONTSIZE', (1, 1), (-1, -1), 7),
                 
                 # Grid borders
