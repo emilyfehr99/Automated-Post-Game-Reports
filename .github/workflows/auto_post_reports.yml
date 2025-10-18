@@ -63,32 +63,12 @@ jobs:
       run: |
         python3 github_actions_runner.py
     
-    
-    - name: Commit processed games log and model data
+    - name: Commit processed games log
       if: steps.time_check.outputs.should_run == 'true'
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "GitHub Actions Bot"
-        git add processed_games.json win_probability_predictions.json || true
-        git diff --quiet && git diff --staged --quiet || git commit -m "Update processed games and model data [skip ci]"
+        git add processed_games.json || true
+        git diff --quiet && git diff --staged --quiet || git commit -m "Update processed games [skip ci]"
         git push || true
-    
-    - name: Create notification issue for posted reports
-      if: steps.time_check.outputs.should_run == 'true'
-      run: |
-        # Check if any reports were posted by looking at the last commit
-        if git log -1 --pretty=%B | grep -q "Update processed games"; then
-          # Create a notification issue
-          echo "📊 NHL Report posted to X!" > notification.txt
-          echo "🕐 Time: $(date)" >> notification.txt
-          echo "✅ Check your X feed for the latest post-game report!" >> notification.txt
-          
-          # This will create a commit that triggers notifications
-          git add notification.txt || true
-          git commit -m "📊 NHL Report Posted - $(date)" || true
-          git push || true
-          
-          # Clean up
-          rm -f notification.txt
-        fi
 

@@ -9,11 +9,13 @@ import os
 from datetime import datetime
 from collections import defaultdict
 from typing import Dict, List, Tuple, Optional
+from improved_xg_model import ImprovedXGModel
 
 class AdvancedMetricsAnalyzer:
     def __init__(self, play_by_play_data: dict):
         self.plays = play_by_play_data.get('plays', [])
         self.roster_map = self._create_roster_map(play_by_play_data)
+        self.xg_model = ImprovedXGModel()  # Initialize improved xG model
         
     def _create_roster_map(self, play_by_play_data: dict) -> dict:
         """Create a mapping of player IDs to player info"""
@@ -75,6 +77,7 @@ class AdvancedMetricsAnalyzer:
         shot_quality = {
             'total_shots': 0,
             'shots_on_goal': 0,
+            'goals': 0,
             'missed_shots': 0,
             'blocked_shots': 0,
             'shot_types': defaultdict(int),
@@ -97,30 +100,47 @@ class AdvancedMetricsAnalyzer:
                 
                 if event_type == 'shot-on-goal':
                     shot_quality['shots_on_goal'] += 1
+                    
+                    # Calculate xG for this shot to determine if it's high danger
+                    x_coord = details.get('xCoord', 0)
+                    y_coord = details.get('yCoord', 0)
+                    zone = details.get('zoneCode', '')
+                    shot_type = details.get('shotType', 'unknown')
+                    
+                    xG = self._calculate_single_shot_xG(x_coord, y_coord, zone, shot_type, event_type)
+                    
+                    # High danger shot: xG >= 0.15 (15% or better chance of scoring)
+                    if xG >= 0.15:
+                        shot_quality['high_danger_shots'] += 1
+                    
+                    # Shot type analysis
+                    shot_quality['shot_types'][shot_type] += 1
+                    
+                    # Zone analysis
+                    shot_quality['shot_locations'][zone] += 1
+                    
                 elif event_type == 'missed-shot':
                     shot_quality['missed_shots'] += 1
                 elif event_type == 'blocked-shot':
                     shot_quality['blocked_shots'] += 1
+                    
+            # Track goals
+            if event_type == 'goal':
+                shot_quality['goals'] += 1
+                shot_quality['shots_on_goal'] += 1  # Goals count as shots on goal
+                shot_quality['high_danger_shots'] += 1  # Goals are always high danger
                 
                 # Shot type analysis
                 shot_type = details.get('shotType', 'unknown')
                 shot_quality['shot_types'][shot_type] += 1
                 
                 # Location analysis
-                x_coord = details.get('xCoord', 0)
-                y_coord = details.get('yCoord', 0)
                 zone = details.get('zoneCode', '')
-                
-                # High danger area (close to net, in front)
-                if zone == 'O' and x_coord > 50 and abs(y_coord) < 20:
-                    shot_quality['high_danger_shots'] += 1
-                
-                # Zone analysis
                 shot_quality['shot_locations'][zone] += 1
         
-        # Calculate shooting percentage
-        if shot_quality['total_shots'] > 0:
-            shot_quality['shooting_percentage'] = shot_quality['shots_on_goal'] / shot_quality['total_shots']
+        # Calculate shooting percentage (goals / shots on goal)
+        if shot_quality['shots_on_goal'] > 0:
+            shot_quality['shooting_percentage'] = shot_quality['goals'] / shot_quality['shots_on_goal']
         
         # Calculate expected goals using advanced model
         shot_quality['expected_goals'] = self._calculate_expected_goals(team_id)
@@ -128,10 +148,13 @@ class AdvancedMetricsAnalyzer:
         return shot_quality
     
     def _calculate_expected_goals(self, team_id: int) -> float:
-        """Calculate expected goals using distance, angle, shot type, and zone-based model"""
+        """Calculate expected goals using improved xG model with rebounds, rushes, and context"""
         total_xG = 0.0
         
-        for play in self.plays:
+        # Get game score for score state calculation
+        game_score = self._get_current_score()
+        
+        for i, play in enumerate(self.plays):
             details = play.get('details', {})
             event_type = play.get('typeDescKey', '')
             event_team = details.get('eventOwnerTeamId')
@@ -140,16 +163,93 @@ class AdvancedMetricsAnalyzer:
                 continue
                 
             if event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot']:
+                # Get shot data
                 x_coord = details.get('xCoord', 0)
                 y_coord = details.get('yCoord', 0)
-                zone = details.get('zoneCode', '')
-                shot_type = details.get('shotType', 'unknown')
+                shot_type = details.get('shotType', 'wrist')
+                situation_code = play.get('situationCode', '1551')  # Default to 5v5
+                time_in_period = play.get('timeInPeriod', '00:00')
+                period = play.get('period', 1)
                 
-                # Calculate expected goal value for this shot
-                xG = self._calculate_single_shot_xG(x_coord, y_coord, zone, shot_type, event_type)
+                # Parse strength state from situation code
+                strength_state = self._parse_strength_state(situation_code)
+                
+                # Calculate score differential from team's perspective
+                score_diff = self._get_score_differential(play, team_id, game_score)
+                
+                # Build shot data for improved model
+                shot_data = {
+                    'x_coord': x_coord,
+                    'y_coord': y_coord,
+                    'shot_type': shot_type,
+                    'event_type': event_type,
+                    'time_in_period': time_in_period,
+                    'period': period,
+                    'strength_state': strength_state,
+                    'score_differential': score_diff,
+                    'team_id': team_id
+                }
+                
+                # Get previous events for rebound/rush detection (last 10 events)
+                start_idx = max(0, i - 10)
+                previous_events = self.plays[start_idx:i]
+                
+                # Calculate xG using improved model
+                xG = self.xg_model.calculate_xg(shot_data, previous_events)
                 total_xG += xG
         
         return round(total_xG, 2)
+    
+    def _parse_strength_state(self, situation_code: str) -> str:
+        """
+        Parse NHL situation code to strength state
+        Format: XXYY where XX = away skaters, YY = home skaters
+        Examples: 1551 = 5v5, 1541 = 5v4 (PP), 1451 = 4v5 (PK)
+        """
+        try:
+            if len(situation_code) >= 4:
+                away_skaters = int(situation_code[2])
+                home_skaters = int(situation_code[3])
+                return f"{away_skaters}v{home_skaters}"
+        except (ValueError, IndexError):
+            pass
+        return "5v5"  # Default
+    
+    def _get_current_score(self) -> Dict:
+        """Get final game score to track score state throughout game"""
+        score = {'away': 0, 'home': 0}
+        for play in self.plays:
+            if play.get('typeDescKey') == 'goal':
+                details = play.get('details', {})
+                scoring_team = details.get('eventOwnerTeamId')
+                # We'll build running score in _get_score_differential
+        return score
+    
+    def _get_score_differential(self, current_play: Dict, team_id: int, game_score: Dict) -> int:
+        """
+        Calculate score differential at time of shot from team's perspective
+        Positive = leading, Negative = trailing, 0 = tied
+        """
+        # Build running score up to this play
+        away_goals = 0
+        home_goals = 0
+        
+        current_play_idx = self.plays.index(current_play)
+        
+        for play in self.plays[:current_play_idx]:
+            if play.get('typeDescKey') == 'goal':
+                details = play.get('details', {})
+                scoring_team = details.get('eventOwnerTeamId')
+                
+                # Determine if scoring team is away or home
+                # This is a simplification - in real implementation, we'd track team IDs better
+                if scoring_team == team_id:
+                    # Goal for this team
+                    pass
+                    
+        # Simplified: return 0 for tied (we can improve this with game data)
+        # In production, we'd track actual running score
+        return 0
     
     def _calculate_single_shot_xG(self, x_coord: float, y_coord: float, zone: str, shot_type: str, event_type: str) -> float:
         """Calculate expected goal value for a single shot based on NHL analytics model"""
@@ -511,6 +611,154 @@ class AdvancedMetricsAnalyzer:
         
         # If we can't determine, assume unsuccessful
         return False
+    
+    def calculate_pre_shot_movement_metrics(self, team_id: int) -> dict:
+        """Calculate pre-shot movement metrics"""
+        metrics = {
+            'royal_road_proxy': {'attempts': 0, 'goals': 0},
+            'oz_retrieval_to_shot': {'attempts': 0, 'goals': 0},
+            'lateral_movement': {'attempts': 0, 'goals': 0, 'total_delta_y': 0, 'avg_delta_y': 0},
+            'longitudinal_movement': {'attempts': 0, 'goals': 0, 'total_delta_x': 0, 'avg_delta_x': 0}
+        }
+        
+        for i, play in enumerate(self.plays):
+            details = play.get('details', {})
+            event_type = play.get('typeDescKey', '')
+            event_team = details.get('eventOwnerTeamId')
+            
+            # Only analyze shots/goals for this team
+            if event_team != team_id:
+                continue
+            
+            if event_type not in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
+                continue
+            
+            x_coord = details.get('xCoord')
+            y_coord = details.get('yCoord')
+            time_in_period = play.get('timeInPeriod', '')
+            
+            if x_coord is None or y_coord is None:
+                continue
+            
+            is_goal = (event_type == 'goal')
+            
+            # Convert time to seconds
+            current_time = self._time_to_seconds(time_in_period)
+            
+            # Look back 4 seconds for Royal Road Proxy and lateral/longitudinal movement
+            royal_road_detected = False
+            lateral_delta_y = 0
+            longitudinal_delta_x = 0
+            prev_y = None
+            prev_x = None
+            
+            for j in range(i - 1, max(-1, i - 20), -1):  # Look back up to 20 plays
+                prev_play = self.plays[j]
+                prev_details = prev_play.get('details', {})
+                prev_team = prev_details.get('eventOwnerTeamId')
+                prev_time_str = prev_play.get('timeInPeriod', '')
+                prev_time = self._time_to_seconds(prev_time_str)
+                
+                # Only look at events from the same team within time window
+                if prev_team != team_id:
+                    continue
+                
+                time_diff = current_time - prev_time
+                if time_diff > 4:  # Beyond 4 second window
+                    break
+                
+                prev_x_coord = prev_details.get('xCoord')
+                prev_y_coord = prev_details.get('yCoord')
+                
+                if prev_x_coord is None or prev_y_coord is None:
+                    continue
+                
+                # Check for Royal Road Proxy (sign change in y)
+                if not royal_road_detected and prev_y is not None:
+                    if (prev_y * y_coord < 0) or (prev_y_coord * y_coord < 0):  # Sign change
+                        royal_road_detected = True
+                
+                # Track lateral movement (y-axis changes)
+                if prev_y_coord is not None:
+                    lateral_delta_y = max(lateral_delta_y, abs(y_coord - prev_y_coord))
+                
+                # Track longitudinal movement (x-axis changes)
+                if prev_x_coord is not None:
+                    longitudinal_delta_x = max(longitudinal_delta_x, abs(x_coord - prev_x_coord))
+                
+                prev_y = prev_y_coord
+                prev_x = prev_x_coord
+            
+            # Update Royal Road Proxy
+            if royal_road_detected:
+                metrics['royal_road_proxy']['attempts'] += 1
+                if is_goal:
+                    metrics['royal_road_proxy']['goals'] += 1
+            
+            # Update lateral movement
+            if lateral_delta_y > 0:
+                metrics['lateral_movement']['attempts'] += 1
+                metrics['lateral_movement']['total_delta_y'] += lateral_delta_y
+                if is_goal:
+                    metrics['lateral_movement']['goals'] += 1
+            
+            # Update longitudinal movement
+            if longitudinal_delta_x > 0:
+                metrics['longitudinal_movement']['attempts'] += 1
+                metrics['longitudinal_movement']['total_delta_x'] += longitudinal_delta_x
+                if is_goal:
+                    metrics['longitudinal_movement']['goals'] += 1
+            
+            # Check for OZ Retrieval to Shot (5 second window)
+            oz_retrieval_detected = False
+            for j in range(i - 1, max(-1, i - 25), -1):  # Look back up to 25 plays
+                prev_play = self.plays[j]
+                prev_details = prev_play.get('details', {})
+                prev_team = prev_details.get('eventOwnerTeamId')
+                prev_type = prev_play.get('typeDescKey', '')
+                prev_zone = prev_details.get('zoneCode', '')
+                prev_time_str = prev_play.get('timeInPeriod', '')
+                prev_time = self._time_to_seconds(prev_time_str)
+                
+                if prev_team != team_id:
+                    continue
+                
+                time_diff = current_time - prev_time
+                if time_diff > 5:  # Beyond 5 second window
+                    break
+                
+                # Check for OZ hit or takeaway
+                if prev_zone == 'O' and prev_type in ['hit', 'takeaway']:
+                    oz_retrieval_detected = True
+                    break
+            
+            if oz_retrieval_detected:
+                metrics['oz_retrieval_to_shot']['attempts'] += 1
+                if is_goal:
+                    metrics['oz_retrieval_to_shot']['goals'] += 1
+        
+        # Calculate averages
+        if metrics['lateral_movement']['attempts'] > 0:
+            metrics['lateral_movement']['avg_delta_y'] = (
+                metrics['lateral_movement']['total_delta_y'] / metrics['lateral_movement']['attempts']
+            )
+        
+        if metrics['longitudinal_movement']['attempts'] > 0:
+            metrics['longitudinal_movement']['avg_delta_x'] = (
+                metrics['longitudinal_movement']['total_delta_x'] / metrics['longitudinal_movement']['attempts']
+            )
+        
+        return metrics
+    
+    def _time_to_seconds(self, time_str: str) -> float:
+        """Convert MM:SS time string to seconds"""
+        try:
+            if ':' in time_str:
+                parts = time_str.split(':')
+                return int(parts[0]) * 60 + int(parts[1])
+            return 0
+        except (ValueError, IndexError):
+            return 0
 
     def calculate_defensive_metrics(self, team_id: int) -> dict:
         """Calculate defensive metrics"""
@@ -570,13 +818,20 @@ class AdvancedMetricsAnalyzer:
                 elif event_type == 'giveaway' and zone == 'D':
                     defense['defensive_zone_clears'] += 1
             
-            # Track shots against
-            elif event_type in ['shot-on-goal', 'missed-shot']:
+            # Track shots against (opponent shots)
+            elif event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
                 defense['shot_attempts_against'] += 1
                 
-                # High danger chances
+                # Calculate xG for opponent's shot to determine if it's high danger
                 x_coord = details.get('xCoord', 0)
-                if zone == 'O' and x_coord > 50 and abs(details.get('yCoord', 0)) < 20:
+                y_coord = details.get('yCoord', 0)
+                shot_type = details.get('shotType', 'unknown')
+                
+                # For high danger chances against, we use all shot attempts (not just shots on goal)
+                xG = self._calculate_single_shot_xG(x_coord, y_coord, zone, shot_type, event_type)
+                
+                # High danger chance against: xG >= 0.15 (15% or better chance of scoring)
+                if xG >= 0.15:
                     defense['high_danger_chances_against'] += 1
         
         return defense
@@ -589,14 +844,16 @@ class AdvancedMetricsAnalyzer:
                 'shot_quality': self.calculate_shot_quality_metrics(away_team_id),
                 'pressure': self.calculate_pressure_metrics(away_team_id),
                 'defense': self.calculate_defensive_metrics(away_team_id),
-                'cross_ice_passes': self.calculate_cross_ice_pass_metrics(away_team_id)
+                'cross_ice_passes': self.calculate_cross_ice_pass_metrics(away_team_id),
+                'pre_shot_movement': self.calculate_pre_shot_movement_metrics(away_team_id)
             },
             'home_team': {
                 'team_id': home_team_id,
                 'shot_quality': self.calculate_shot_quality_metrics(home_team_id),
                 'pressure': self.calculate_pressure_metrics(home_team_id),
                 'defense': self.calculate_defensive_metrics(home_team_id),
-                'cross_ice_passes': self.calculate_cross_ice_pass_metrics(home_team_id)
+                'cross_ice_passes': self.calculate_cross_ice_pass_metrics(home_team_id),
+                'pre_shot_movement': self.calculate_pre_shot_movement_metrics(home_team_id)
             },
             'available_metrics': self.get_available_metrics()
         }

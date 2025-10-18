@@ -54,26 +54,21 @@ def convert_pdfs_to_images(pdf_folder, image_folder, dpi=300):
         try:
             print(f"  🔄 Converting: {pdf_file.name}")
             
-            # Convert PDF to images
-            images = convert_from_path(pdf_file, dpi=dpi)
+            # Convert PDF to images (only first page)
+            images = convert_from_path(pdf_file, dpi=dpi, first_page=1, last_page=1)
             
-            for i, image in enumerate(images):
-                # Create output filename
+            if images:
+                # Only process the first page
+                image = images[0]
                 base_name = pdf_file.stem
-                if len(images) == 1:
-                    # Single page - no page number
-                    output_filename = f"{base_name}.png"
-                else:
-                    # Multiple pages - add page number
-                    output_filename = f"{base_name}_page_{i+1:02d}.png"
-                
+                output_filename = f"{base_name}.png"
                 output_path = image_folder / output_filename
                 
                 # Save image
                 image.save(output_path, format='PNG')
                 generated_images.append(str(output_path))
                 
-                print(f"    ✅ Page {i+1}: {output_filename}")
+                print(f"    ✅ Page 1: {output_filename}")
                 
         except Exception as e:
             print(f"    ❌ Error converting {pdf_file.name}: {str(e)}")
@@ -91,7 +86,8 @@ def main():
     nhl_client = NHLAPIClient()
     
     # Target date for daily automation: previous day's games (script runs at 5 AM)
-    target_date = (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d")
+    # Can be overridden with TARGET_DATE environment variable
+    target_date = os.environ.get('TARGET_DATE', (datetime.now() - timedelta(days=1)).strftime("%Y-%m-%d"))
     print(f"Fetching games for: {target_date}")
     
     # Get schedule for the date
@@ -154,6 +150,12 @@ def main():
         game_id = game.get("id")
         away_team = game.get("awayTeam", {}).get("abbrev", "UNK")
         home_team = game.get("homeTeam", {}).get("abbrev", "UNK")
+        game_state = game.get("gameState", "UNKNOWN")
+        
+        # Skip games that are not completed (only process FINAL or OFF games)
+        if game_state not in ["FINAL", "OFF"]:
+            print(f"\n⏭️  Skipping game {i}/{len(games)}: {away_team} @ {home_team} - Game status: {game_state} (not completed)")
+            continue
         
         print(f"\n📊 Processing game {i}/{len(games)}: {away_team} @ {home_team} (ID: {game_id})")
         
