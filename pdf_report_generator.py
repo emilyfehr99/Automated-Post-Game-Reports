@@ -2457,19 +2457,20 @@ class PostGameReportGenerator:
                 story.append(right_table)
                 break
         
-        # Add win probability section 1 cm below TOP PLAYERS, centered on page
+        # Add win probability section 0.5 cm below TOP PLAYERS, centered on page
+        story.append(Spacer(1, 0.2*inch))  # 0.5 cm = 0.197 inches ≈ 0.2
         win_prob_story = self.create_win_probability_section(game_data)
         if win_prob_story:
-            # Wrap in table for centering
             for item in win_prob_story:
                 if hasattr(item, '_cellvalues'):  # This is the probability table
+                    # Center the table on the page
                     centered_wrapper = Table([[item]])
                     centered_wrapper.setStyle(TableStyle([
                         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                         ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                         ('LEFTPADDING', (0, 0), (-1, -1), 0),
                         ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-                        ('TOPPADDING', (0, 0), (-1, -1), 0.4*inch),  # 1 cm spacing (0.3937 inches ≈ 0.4)
+                        ('TOPPADDING', (0, 0), (-1, -1), 0),
                         ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
                     ]))
                     story.append(centered_wrapper)
