@@ -1,5 +1,5 @@
 from reportlab.lib.pagesizes import letter, A4
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, PageTemplate, BaseDocTemplate
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib import colors
@@ -10,6 +10,7 @@ from reportlab.graphics.shapes import Drawing, String
 from reportlab.graphics.charts.linecharts import HorizontalLineChart
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.pdfgen import canvas
 from advanced_metrics_analyzer import AdvancedMetricsAnalyzer
 from improved_xg_model import ImprovedXGModel
 from reportlab.graphics.charts.barcharts import VerticalBarChart
@@ -42,6 +43,53 @@ class HeaderFlowable(Flowable):
             img = ImageReader(self.image_path)
             # Draw image at absolute top-left corner (0, 0)
             self.canv.drawImage(img, 0, 0, width=self.width, height=self.height)
+
+class BackgroundPageTemplate(PageTemplate):
+    """Custom page template that draws background on every page"""
+    def __init__(self, id, frames, background_path, onPage=None, onPageEnd=None):
+        self.background_path = background_path
+        # Provide a default onPageEnd function if none provided
+        if onPageEnd is None:
+            onPageEnd = lambda canvas, doc: None
+        super().__init__(id, frames, onPage=self._onPage, onPageEnd=onPageEnd)
+        
+    def _onPage(self, canvas, doc):
+        """Draw background on each page"""
+        if os.path.exists(self.background_path):
+            try:
+                from PIL import Image as PILImage
+                
+                # Get page dimensions
+                page_width = canvas._pagesize[0]
+                page_height = canvas._pagesize[1]
+                print(f"DEBUG: Drawing background on page with size {page_width}x{page_height}")
+                
+                # Convert PNG to JPEG to handle transparency
+                pil_img = PILImage.open(self.background_path)
+                if pil_img.mode == 'RGBA':
+                    # Create a white background
+                    background = PILImage.new('RGB', pil_img.size, (255, 255, 255))
+                    background.paste(pil_img, mask=pil_img.split()[-1])
+                    pil_img = background
+                
+                # Save as temporary JPEG
+                temp_path = "/tmp/background_template.jpg"
+                pil_img.save(temp_path, "JPEG", quality=95)
+                
+                # Draw the background image FIRST (at the bottom layer)
+                canvas.drawImage(temp_path, 0, 0, width=page_width, height=page_height)
+                print(f"DEBUG: Background drawn successfully on page")
+                
+                # Clean up temp file
+                if os.path.exists(temp_path):
+                    os.remove(temp_path)
+                    
+            except Exception as e:
+                print(f"DEBUG: Error drawing background: {e}")
+        
+        # Call the original onPage function if provided
+        if hasattr(self, '_original_onPage') and self._original_onPage:
+            self._original_onPage(canvas, doc)
 
 class PostGameReportGenerator:
     def __init__(self):
@@ -3405,8 +3453,31 @@ class PostGameReportGenerator:
         # Create side-by-side layout for advanced metrics and top players
         story.extend(self.create_side_by_side_tables(game_data))
         
-        # Build the PDF
-        doc.build(story)
+        # Build the PDF with custom page template for background
+        background_path = "Paper.png"  # Use local project file
+        if os.path.exists(background_path):
+            print(f"Using custom page template with background: {background_path}")
+            # Create a custom document with background template
+            from reportlab.platypus.frames import Frame
+            from reportlab.platypus.doctemplate import PageTemplate
+            
+            # Create frame for content
+            frame = Frame(72, 18, 468, 756, leftPadding=0, bottomPadding=0, rightPadding=0, topPadding=0)
+            
+            # Create page template with background
+            page_template = BackgroundPageTemplate('background', [frame], background_path)
+            
+            # Create custom document
+            custom_doc = BaseDocTemplate(output_filename, pagesize=letter, 
+                                       rightMargin=72, leftMargin=72, 
+                                       topMargin=0, bottomMargin=18)
+            custom_doc.addPageTemplates([page_template])
+            
+            # Build with custom document
+            custom_doc.build(story)
+        else:
+            print(f"Background image not found, building without background: {background_path}")
+            doc.build(story)
         
         # Clean up temporary header file if it exists
         if header_image and hasattr(header_image, 'temp_path'):
