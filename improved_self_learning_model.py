@@ -310,9 +310,9 @@ class ImprovedSelfLearningModel:
         away_score *= (1.0 + away_edge_advantage)
         home_score *= (1.0 + home_edge_advantage)
         
-        # Add home ice advantage (typically 3-5% in NHL)
-        home_advantage = 1.05  # 5% boost for home team
-        home_score *= home_advantage
+        # Add home ice advantage based on actual learned data
+        home_advantage = weights.get('home_advantage_weight', 0.023)  # 2.3% from our actual data
+        home_score *= (1.0 + home_advantage)
         
         # Calculate probabilities
         total_score = away_score + home_score

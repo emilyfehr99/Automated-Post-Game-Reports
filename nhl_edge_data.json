@@ -8666,16 +8666,13 @@
         }
       ],
       "total_distance": 232.24999999999997,
-      "avg_speed": 9.436315789473685,
-      "max_speed": 23.68,
+      "total_speed": 406.32000000000005,
       "total_bursts": 12.659999999999997,
       "player_count": 19,
       "avg_distance": 12.223684210526315,
+      "avg_speed": 21.38526315789474,
       "avg_bursts": 0.6663157894736841,
-      "speed_score": 0.9436315789473685,
-      "distance_score": 0.6111842105263158,
-      "burst_score": 0.33315789473684204,
-      "edge_advantage": 0.7218026315789473
+      "max_speed": 23.68
     },
     "WSH": {
       "players": [
@@ -8941,16 +8938,13 @@
         }
       ],
       "total_distance": 226.29000000000005,
-      "avg_speed": 9.2035,
-      "max_speed": 22.67,
+      "total_speed": 428.89000000000004,
       "total_bursts": 14.270000000000001,
       "player_count": 20,
       "avg_distance": 11.314500000000002,
+      "avg_speed": 21.4445,
       "avg_bursts": 0.7135,
-      "speed_score": 0.92035,
-      "distance_score": 0.5657250000000001,
-      "burst_score": 0.35675,
-      "edge_advantage": 0.7012425000000001
+      "max_speed": 22.67
     },
     "PIT": {
       "players": [
@@ -9242,16 +9236,13 @@
         }
       ],
       "total_distance": 225.95,
-      "avg_speed": 9.24090909090909,
-      "max_speed": 23.39,
+      "total_speed": 473.4700000000001,
       "total_bursts": 10.940000000000003,
       "player_count": 22,
       "avg_distance": 10.270454545454545,
+      "avg_speed": 21.521363636363642,
       "avg_bursts": 0.4972727272727274,
-      "speed_score": 0.9240909090909091,
-      "distance_score": 0.5135227272727272,
-      "burst_score": 0.2486363636363637,
-      "edge_advantage": 0.6658295454545454
+      "max_speed": 23.39
     },
     "LAK": {
       "players": [
@@ -9504,16 +9495,13 @@
         }
       ],
       "total_distance": 227.68000000000004,
-      "avg_speed": 9.257368421052632,
-      "max_speed": 22.58,
+      "total_speed": 399.78000000000003,
       "total_bursts": 9.620000000000001,
       "player_count": 19,
       "avg_distance": 11.983157894736843,
+      "avg_speed": 21.04105263157895,
       "avg_bursts": 0.5063157894736843,
-      "speed_score": 0.9257368421052632,
-      "distance_score": 0.5991578947368421,
-      "burst_score": 0.25315789473684214,
-      "edge_advantage": 0.6932473684210527
+      "max_speed": 22.58
     },
     "SJS": {
       "players": [
@@ -9805,16 +9793,13 @@
         }
       ],
       "total_distance": 179.3,
-      "avg_speed": 9.125454545454545,
-      "max_speed": 22.0,
+      "total_speed": 457.9699999999999,
       "total_bursts": 8.87,
       "player_count": 22,
       "avg_distance": 8.15,
+      "avg_speed": 20.816818181818178,
       "avg_bursts": 0.40318181818181814,
-      "speed_score": 0.9125454545454545,
-      "distance_score": 0.40750000000000003,
-      "burst_score": 0.20159090909090907,
-      "edge_advantage": 0.618840909090909
+      "max_speed": 22.0
     },
     "FLA": {
       "players": [
@@ -10067,16 +10052,13 @@
         }
       ],
       "total_distance": 274.72,
-      "avg_speed": 9.39157894736842,
-      "max_speed": 22.41,
+      "total_speed": 403.71999999999997,
       "total_bursts": 8.450000000000001,
       "player_count": 19,
       "avg_distance": 14.458947368421054,
+      "avg_speed": 21.248421052631578,
       "avg_bursts": 0.4447368421052632,
-      "speed_score": 0.939157894736842,
-      "distance_score": 0.7229473684210527,
-      "burst_score": 0.2223684210526316,
-      "edge_advantage": 0.7309368421052631
+      "max_speed": 22.41
     },
     "CHI": {
       "players": [
@@ -10355,16 +10337,13 @@
         }
       ],
       "total_distance": 271.90999999999997,
-      "avg_speed": 9.275714285714288,
-      "max_speed": 22.69,
+      "total_speed": 441.97,
       "total_bursts": 8.5,
       "player_count": 21,
       "avg_distance": 12.948095238095236,
+      "avg_speed": 21.04619047619048,
       "avg_bursts": 0.40476190476190477,
-      "speed_score": 0.9275714285714288,
-      "distance_score": 0.6474047619047618,
-      "burst_score": 0.20238095238095238,
-      "edge_advantage": 0.6984833333333335
+      "max_speed": 22.69
     },
     "OTT": {
       "players": [
@@ -10669,16 +10648,13 @@
         }
       ],
       "total_distance": 230.82999999999998,
-      "avg_speed": 9.324347826086957,
-      "max_speed": 23.13,
+      "total_speed": 488.03000000000003,
       "total_bursts": 11.59,
       "player_count": 23,
       "avg_distance": 10.03608695652174,
+      "avg_speed": 21.218695652173913,
       "avg_bursts": 0.5039130434782608,
-      "speed_score": 0.9324347826086956,
-      "distance_score": 0.501804347826087,
-      "burst_score": 0.2519565217391304,
-      "edge_advantage": 0.66715
+      "max_speed": 23.13
     },
     "CAR": {
       "players": [
@@ -10944,16 +10920,13 @@
         }
       ],
       "total_distance": 185.14,
-      "avg_speed": 9.376000000000001,
-      "max_speed": 22.46,
+      "total_speed": 428.52999999999986,
       "total_bursts": 12.889999999999999,
       "player_count": 20,
       "avg_distance": 9.257,
+      "avg_speed": 21.426499999999994,
       "avg_bursts": 0.6445,
-      "speed_score": 0.9376000000000001,
-      "distance_score": 0.46285,
-      "burst_score": 0.32225,
-      "edge_advantage": 0.6721050000000001
+      "max_speed": 22.46
     },
     "WPG": {
       "players": [
@@ -11219,16 +11192,13 @@
         }
       ],
       "total_distance": 174.28000000000006,
-      "avg_speed": 9.149,
-      "max_speed": 22.61,
+      "total_speed": 414.44,
       "total_bursts": 10.8,
       "player_count": 20,
       "avg_distance": 8.714000000000002,
+      "avg_speed": 20.722,
       "avg_bursts": 0.54,
-      "speed_score": 0.9148999999999999,
-      "distance_score": 0.4357000000000001,
-      "burst_score": 0.27,
-      "edge_advantage": 0.6421600000000001
+      "max_speed": 22.61
     },
     "ANA": {
       "players": [
@@ -11481,16 +11451,13 @@
         }
       ],
       "total_distance": 185.72,
-      "avg_speed": 9.49578947368421,
-      "max_speed": 22.99,
+      "total_speed": 407.45000000000005,
       "total_bursts": 11.17,
       "player_count": 19,
       "avg_distance": 9.774736842105263,
+      "avg_speed": 21.444736842105264,
       "avg_bursts": 0.5878947368421052,
-      "speed_score": 0.9495789473684211,
-      "distance_score": 0.48873684210526314,
-      "burst_score": 0.2939473684210526,
-      "edge_advantage": 0.6801999999999999
+      "max_speed": 22.99
     },
     "UTA": {
       "players": [
@@ -11769,16 +11736,13 @@
         }
       ],
       "total_distance": 226.08,
-      "avg_speed": 9.348571428571429,
-      "max_speed": 23.02,
+      "total_speed": 448.91,
       "total_bursts": 14.459999999999999,
       "player_count": 21,
       "avg_distance": 10.765714285714287,
+      "avg_speed": 21.37666666666667,
       "avg_bursts": 0.6885714285714285,
-      "speed_score": 0.9348571428571428,
-      "distance_score": 0.5382857142857144,
-      "burst_score": 0.34428571428571425,
-      "edge_advantage": 0.6977714285714286
+      "max_speed": 23.02
     },
     "DET": {
       "players": [
@@ -12057,16 +12021,13 @@
         }
       ],
       "total_distance": 230.67,
-      "avg_speed": 9.368571428571428,
-      "max_speed": 22.12,
+      "total_speed": 442.63000000000005,
       "total_bursts": 11.390000000000002,
       "player_count": 21,
       "avg_distance": 10.984285714285713,
+      "avg_speed": 21.07761904761905,
       "avg_bursts": 0.5423809523809525,
-      "speed_score": 0.9368571428571428,
-      "distance_score": 0.5492142857142857,
-      "burst_score": 0.27119047619047626,
-      "edge_advantage": 0.6874309523809523
+      "max_speed": 22.12
     },
     "NJD": {
       "players": [
@@ -12332,16 +12293,13 @@
         }
       ],
       "total_distance": 179.1,
-      "avg_speed": 9.393000000000002,
-      "max_speed": 23.23,
+      "total_speed": 421.65000000000015,
       "total_bursts": 10.520000000000003,
       "player_count": 20,
       "avg_distance": 8.955,
+      "avg_speed": 21.082500000000007,
       "avg_bursts": 0.5260000000000001,
-      "speed_score": 0.9393000000000002,
-      "distance_score": 0.44775,
-      "burst_score": 0.26300000000000007,
-      "edge_advantage": 0.6565750000000001
+      "max_speed": 23.23
     },
     "CGY": {
       "players": [
@@ -12620,16 +12578,13 @@
         }
       ],
       "total_distance": 231.73,
-      "avg_speed": 9.444761904761904,
-      "max_speed": 22.73,
+      "total_speed": 445.06999999999994,
       "total_bursts": 8.11,
       "player_count": 21,
       "avg_distance": 11.034761904761904,
+      "avg_speed": 21.19380952380952,
       "avg_bursts": 0.38619047619047614,
-      "speed_score": 0.9444761904761905,
-      "distance_score": 0.5517380952380952,
-      "burst_score": 0.19309523809523807,
-      "edge_advantage": 0.6763785714285715
+      "max_speed": 22.73
     },
     "TBL": {
       "players": [
@@ -12895,16 +12850,13 @@
         }
       ],
       "total_distance": 228.01000000000002,
-      "avg_speed": 9.327000000000002,
-      "max_speed": 23.46,
+      "total_speed": 426.90999999999985,
       "total_bursts": 10.879999999999997,
       "player_count": 20,
       "avg_distance": 11.400500000000001,
+      "avg_speed": 21.345499999999994,
       "avg_bursts": 0.5439999999999998,
-      "speed_score": 0.9327000000000002,
-      "distance_score": 0.570025,
-      "burst_score": 0.2719999999999999,
-      "edge_advantage": 0.6917575000000001
+      "max_speed": 23.46
     },
     "NSH": {
       "players": [
@@ -13170,16 +13122,13 @@
         }
       ],
       "total_distance": 229.99000000000007,
-      "avg_speed": 9.4115,
-      "max_speed": 22.88,
+      "total_speed": 424.43,
       "total_bursts": 9.320000000000002,
       "player_count": 20,
       "avg_distance": 11.499500000000003,
+      "avg_speed": 21.2215,
       "avg_bursts": 0.4660000000000001,
-      "speed_score": 0.94115,
-      "distance_score": 0.5749750000000001,
-      "burst_score": 0.23300000000000004,
-      "edge_advantage": 0.6896675
+      "max_speed": 22.88
     },
     "MIN": {
       "players": [
@@ -13445,16 +13394,13 @@
         }
       ],
       "total_distance": 226.63,
-      "avg_speed": 9.1615,
-      "max_speed": 22.72,
+      "total_speed": 423.68999999999994,
       "total_bursts": 9.27,
       "player_count": 20,
       "avg_distance": 11.3315,
+      "avg_speed": 21.184499999999996,
       "avg_bursts": 0.46349999999999997,
-      "speed_score": 0.91615,
-      "distance_score": 0.566575,
-      "burst_score": 0.23174999999999998,
-      "edge_advantage": 0.6743975
+      "max_speed": 22.72
     },
     "VAN": {
       "players": [
@@ -13746,16 +13692,13 @@
         }
       ],
       "total_distance": 225.30999999999995,
-      "avg_speed": 9.289545454545454,
-      "max_speed": 22.6,
+      "total_speed": 462.7199999999999,
       "total_bursts": 9.979999999999999,
       "player_count": 22,
       "avg_distance": 10.241363636363634,
+      "avg_speed": 21.032727272727268,
       "avg_bursts": 0.45363636363636356,
-      "speed_score": 0.9289545454545454,
-      "distance_score": 0.5120681818181817,
-      "burst_score": 0.22681818181818178,
-      "edge_advantage": 0.6634613636363635
+      "max_speed": 22.6
     },
     "SEA": {
       "players": [
@@ -13995,16 +13938,13 @@
         }
       ],
       "total_distance": 192.21999999999997,
-      "avg_speed": 9.51388888888889,
-      "max_speed": 22.35,
+      "total_speed": 378.51,
       "total_bursts": 7.199999999999999,
       "player_count": 18,
       "avg_distance": 10.678888888888887,
+      "avg_speed": 21.028333333333332,
       "avg_bursts": 0.39999999999999997,
-      "speed_score": 0.951388888888889,
-      "distance_score": 0.5339444444444443,
-      "burst_score": 0.19999999999999998,
-      "edge_advantage": 0.6758777777777778
+      "max_speed": 22.35
     },
     "EDM": {
       "players": [
@@ -14270,16 +14210,13 @@
         }
       ],
       "total_distance": 183.01000000000005,
-      "avg_speed": 9.313999999999998,
-      "max_speed": 24.61,
+      "total_speed": 430.60999999999996,
       "total_bursts": 15.41,
       "player_count": 20,
       "avg_distance": 9.150500000000003,
+      "avg_speed": 21.530499999999996,
       "avg_bursts": 0.7705,
-      "speed_score": 0.9313999999999998,
-      "distance_score": 0.4575250000000001,
-      "burst_score": 0.38525,
-      "edge_advantage": 0.6800074999999999
+      "max_speed": 24.61
     },
     "NYI": {
       "players": [
@@ -14545,16 +14482,13 @@
         }
       ],
       "total_distance": 179.55,
-      "avg_speed": 9.226500000000001,
-      "max_speed": 22.7,
+      "total_speed": 427.5499999999999,
       "total_bursts": 12.03,
       "player_count": 20,
       "avg_distance": 8.977500000000001,
+      "avg_speed": 21.377499999999994,
       "avg_bursts": 0.6014999999999999,
-      "speed_score": 0.9226500000000002,
-      "distance_score": 0.448875,
-      "burst_score": 0.30074999999999996,
-      "edge_advantage": 0.6561375000000002
+      "max_speed": 22.7
     },
     "TOR": {
       "players": [
@@ -14807,16 +14741,13 @@
         }
       ],
       "total_distance": 226.33999999999997,
-      "avg_speed": 9.35,
-      "max_speed": 22.69,
+      "total_speed": 398.99999999999994,
       "total_bursts": 8.260000000000002,
       "player_count": 19,
       "avg_distance": 11.912631578947368,
+      "avg_speed": 20.999999999999996,
       "avg_bursts": 0.43473684210526325,
-      "speed_score": 0.9349999999999999,
-      "distance_score": 0.5956315789473684,
-      "burst_score": 0.21736842105263163,
-      "edge_advantage": 0.6896631578947368
+      "max_speed": 22.69
     },
     "DAL": {
       "players": [
@@ -15082,16 +15013,13 @@
         }
       ],
       "total_distance": 177.68,
-      "avg_speed": 9.120999999999999,
-      "max_speed": 23.61,
+      "total_speed": 419.89,
       "total_bursts": 8.77,
       "player_count": 20,
       "avg_distance": 8.884,
+      "avg_speed": 20.9945,
       "avg_bursts": 0.4385,
-      "speed_score": 0.9120999999999999,
-      "distance_score": 0.44420000000000004,
-      "burst_score": 0.21925,
-      "edge_advantage": 0.63316
+      "max_speed": 23.61
     },
     "STL": {
       "players": [
@@ -15344,16 +15272,13 @@
         }
       ],
       "total_distance": 184.12999999999997,
-      "avg_speed": 9.435263157894738,
-      "max_speed": 22.79,
+      "total_speed": 402.24000000000007,
       "total_bursts": 10.070000000000002,
       "player_count": 19,
       "avg_distance": 9.691052631578946,
+      "avg_speed": 21.170526315789477,
       "avg_bursts": 0.5300000000000001,
-      "speed_score": 0.9435263157894738,
-      "distance_score": 0.48455263157894735,
-      "burst_score": 0.26500000000000007,
-      "edge_advantage": 0.6701289473684211
+      "max_speed": 22.79
     },
     "VGK": {
       "players": [
@@ -15619,16 +15544,13 @@
         }
       ],
       "total_distance": 232.53000000000003,
-      "avg_speed": 9.316500000000001,
-      "max_speed": 22.44,
+      "total_speed": 424.34000000000003,
       "total_bursts": 10.840000000000002,
       "player_count": 20,
       "avg_distance": 11.626500000000002,
+      "avg_speed": 21.217000000000002,
       "avg_bursts": 0.542,
-      "speed_score": 0.9316500000000001,
-      "distance_score": 0.5813250000000001,
-      "burst_score": 0.271,
-      "edge_advantage": 0.6944225
+      "max_speed": 22.44
     },
     "PHI": {
       "players": [
@@ -15920,16 +15842,13 @@
         }
       ],
       "total_distance": 186.16000000000003,
-      "avg_speed": 9.50818181818182,
-      "max_speed": 23.3,
+      "total_speed": 457.64,
       "total_bursts": 9.309999999999999,
       "player_count": 22,
       "avg_distance": 8.461818181818183,
+      "avg_speed": 20.80181818181818,
       "avg_bursts": 0.4231818181818181,
-      "speed_score": 0.950818181818182,
-      "distance_score": 0.42309090909090913,
-      "burst_score": 0.21159090909090905,
-      "edge_advantage": 0.6446545454545455
+      "max_speed": 23.3
     },
     "BUF": {
       "players": [
@@ -16221,16 +16140,13 @@
         }
       ],
       "total_distance": 179.22,
-      "avg_speed": 9.265909090909092,
-      "max_speed": 22.61,
+      "total_speed": 455.34000000000003,
       "total_bursts": 9.759999999999998,
       "player_count": 22,
       "avg_distance": 8.146363636363636,
+      "avg_speed": 20.69727272727273,
       "avg_bursts": 0.44363636363636355,
-      "speed_score": 0.9265909090909092,
-      "distance_score": 0.4073181818181818,
-      "burst_score": 0.22181818181818178,
-      "edge_advantage": 0.6298545454545456
+      "max_speed": 22.61
     },
     "CBJ": {
       "players": [
@@ -16483,16 +16399,13 @@
         }
       ],
       "total_distance": 181.28000000000003,
-      "avg_speed": 9.33,
-      "max_speed": 23.32,
+      "total_speed": 405.71,
       "total_bursts": 10.530000000000003,
       "player_count": 19,
       "avg_distance": 9.54105263157895,
+      "avg_speed": 21.353157894736842,
       "avg_bursts": 0.5542105263157896,
-      "speed_score": 0.933,
-      "distance_score": 0.4770526315789475,
-      "burst_score": 0.2771052631578948,
-      "edge_advantage": 0.6650368421052631
+      "max_speed": 23.32
     },
     "NYR": {
       "players": [
@@ -16771,16 +16684,13 @@
         }
       ],
       "total_distance": 269.5,
-      "avg_speed": 9.225714285714284,
-      "max_speed": 22.58,
+      "total_speed": 447.12999999999994,
       "total_bursts": 11.350000000000001,
       "player_count": 21,
       "avg_distance": 12.833333333333334,
+      "avg_speed": 21.29190476190476,
       "avg_bursts": 0.5404761904761906,
-      "speed_score": 0.9225714285714284,
-      "distance_score": 0.6416666666666667,
-      "burst_score": 0.2702380952380953,
-      "edge_advantage": 0.7078333333333332
+      "max_speed": 22.58
     },
     "MTL": {
       "players": [
@@ -17020,16 +16930,13 @@
         }
       ],
       "total_distance": 227.72,
-      "avg_speed": 9.212777777777777,
-      "max_speed": 22.91,
+      "total_speed": 387.44,
       "total_bursts": 11.44,
       "player_count": 18,
       "avg_distance": 12.651111111111112,
+      "avg_speed": 21.524444444444445,
       "avg_bursts": 0.6355555555555555,
-      "speed_score": 0.9212777777777778,
-      "distance_score": 0.6325555555555555,
-      "burst_score": 0.31777777777777777,
-      "edge_advantage": 0.7139611111111112
+      "max_speed": 22.91
     },
     "BOS": {
       "players": [
@@ -17295,16 +17202,13 @@
         }
       ],
       "total_distance": 223.05,
-      "avg_speed": 9.1315,
-      "max_speed": 22.66,
+      "total_speed": 422.41,
       "total_bursts": 7.38,
       "player_count": 20,
       "avg_distance": 11.1525,
+      "avg_speed": 21.1205,
       "avg_bursts": 0.369,
-      "speed_score": 0.9131500000000001,
-      "distance_score": 0.557625,
-      "burst_score": 0.1845,
-      "edge_advantage": 0.6607625000000001
+      "max_speed": 22.66
     }
   }
 }
