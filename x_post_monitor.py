@@ -192,6 +192,23 @@ class XPostMonitor:
                     print(f"⏭️  Skipping already notified post: {post['id']}")
                     continue
                 
+                # Skip posts that were not created today (Central Time)
+                try:
+                    # Post created_at is expected in ISO 8601 UTC from API
+                    created_dt_utc = datetime.fromisoformat(post['created_at'].replace('Z', '+00:00'))
+                    created_dt_central = created_dt_utc.astimezone(self.central_tz)
+                    created_date_central = created_dt_central.strftime('%Y-%m-%d')
+                    if created_date_central != today:
+                        print(f"⏭️  Skipping post from {created_date_central} (today is {today} CT): {post['id']}")
+                        # Still advance last_post_id to avoid re-processing
+                        state['last_post_id'] = max(state.get('last_post_id', post['id']), post['id'])
+                        continue
+                except Exception as e:
+                    print(f"⚠️  Failed to parse created_at for post {post.get('id')}: {e}")
+                    # Be safe: don't notify if we can't confirm it's today
+                    state['last_post_id'] = max(state.get('last_post_id', post.get('id', '0')), post.get('id', '0'))
+                    continue
+
                 game_info = self.extract_game_info(post['text'])
                 state['today_posts'] += 1
                 
