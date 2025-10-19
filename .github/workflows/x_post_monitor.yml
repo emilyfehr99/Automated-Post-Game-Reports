@@ -1,9 +1,10 @@
 name: X Post Monitor & Discord Notifications
 
 on:
-  schedule:
-    # Check for new X posts every 5 minutes during active game hours
-    - cron: '*/5 * * * *'
+  # DISABLED: X Post Monitor notifications
+  # schedule:
+  #   # Check for new X posts every 5 minutes during active game hours
+  #   - cron: '*/5 * * * *'
   workflow_dispatch: # Allow manual triggering
 
 jobs:
