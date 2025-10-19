@@ -352,6 +352,35 @@ class ImprovedSelfLearningModel:
             away_prob = 50.0
             home_prob = 50.0
         
+        # Game state analysis for live games
+        game_state_adjustment = 0
+        if game_id and current_away_score is not None and current_home_score is not None:
+            try:
+                from simple_game_state_analyzer import SimpleGameStateAnalyzer
+                analyzer = SimpleGameStateAnalyzer()
+                # Get current score and period from the game data
+                time_remaining_minutes = 20 if period == 1 else (10 if period == 2 else 5)
+                game_state = analyzer.analyze_current_game_state(
+                    current_away_score, current_home_score, period, time_remaining_minutes
+                )
+                
+                if game_state and game_state['score_diff'] >= 2:
+                    comeback_prob = game_state['comeback_probability']
+                    trailing_team = game_state['trailing_team']
+                    
+                    # Adjust probabilities based on comeback likelihood
+                    if trailing_team == 'away':
+                        # Away team trailing, reduce their probability
+                        game_state_adjustment = -comeback_prob * 2.0  # More significant adjustment
+                    else:
+                        # Home team trailing, reduce their probability  
+                        game_state_adjustment = comeback_prob * 2.0
+                    
+                    print(f"🎯 Game State Analysis: {trailing_team} down {game_state['score_diff']}, comeback prob: {comeback_prob:.1%}")
+                    
+            except Exception as e:
+                print(f"Game state analysis error: {e}")
+
         # Adjust for current live score if provided
         if current_away_score is not None and current_home_score is not None:
             score_diff = current_away_score - current_home_score
@@ -376,6 +405,12 @@ class ImprovedSelfLearningModel:
                 boost = (abs(score_diff) * 25) * (time_left / 40)
                 home_prob += boost
                 away_prob -= boost
+            
+            # Apply game state adjustment
+            if game_state_adjustment != 0:
+                away_prob += game_state_adjustment
+                home_prob -= game_state_adjustment
+                print(f"🎯 Applied game state adjustment: {game_state_adjustment:+.1f}%")
             
             # Ensure probabilities stay within reasonable bounds
             away_prob = max(5, min(95, away_prob))
