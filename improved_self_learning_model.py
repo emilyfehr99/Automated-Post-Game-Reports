@@ -167,6 +167,10 @@ class ImprovedSelfLearningModel:
         if team not in self.team_stats or situation not in self.team_stats[team]:
             # Return default values if no data
             return {
+                'xg': 2.5,
+                'hdc': 1.3,
+                'shots': 25,
+                'goals': 2.8,
                 'xg_avg': 2.5,
                 'hdc_avg': 1.3,
                 'shots_avg': 25,
@@ -179,6 +183,10 @@ class ImprovedSelfLearningModel:
         
         if games_played == 0:
             return {
+                'xg': 2.5,
+                'hdc': 1.3,
+                'shots': 25,
+                'goals': 2.8,
                 'xg_avg': 2.5,
                 'hdc_avg': 1.3,
                 'shots_avg': 25,
@@ -204,6 +212,10 @@ class ImprovedSelfLearningModel:
         goals_avg = sum(goals * w for goals, w in zip(team_data['goals'], weights))
         
         return {
+            'xg': xg_avg,
+            'hdc': hdc_avg,
+            'shots': shots_avg,
+            'goals': goals_avg,
             'xg_avg': xg_avg,
             'hdc_avg': hdc_avg,
             'shots_avg': shots_avg,
@@ -266,11 +278,28 @@ class ImprovedSelfLearningModel:
                 'home_burst': 0.0
             }
     
-    def predict_game(self, away_team: str, home_team: str) -> Dict:
+    def predict_game(self, away_team: str, home_team: str, current_away_score: int = None, current_home_score: int = None, period: int = 1, game_id: str = None) -> Dict:
         """Predict a game using improved team-specific data including Edge metrics"""
         # Get team performance data
         away_perf = self.get_team_performance(away_team, is_home=False)
         home_perf = self.get_team_performance(home_team, is_home=True)
+        
+        # If we have a game_id, try to get live stats to override historical data
+        if game_id:
+            try:
+                from live_stats_extractor import LiveStatsExtractor
+                extractor = LiveStatsExtractor()
+                live_stats = extractor.get_live_stats(game_id)
+                
+                if live_stats and live_stats['away_team'] == away_team and live_stats['home_team'] == home_team:
+                    # Override with live data
+                    away_perf['hdc'] = live_stats['away_hdc']
+                    away_perf['shots'] = live_stats['away_shots']
+                    home_perf['hdc'] = live_stats['home_hdc']
+                    home_perf['shots'] = live_stats['home_shots']
+                    print(f"Using live stats: {away_team} HDC={live_stats['away_hdc']} Shots={live_stats['away_shots']}, {home_team} HDC={live_stats['home_hdc']} Shots={live_stats['home_shots']}")
+            except Exception as e:
+                print(f"Could not get live stats: {e}")
         
         # Get Edge data advantages
         edge_advantages = self.get_edge_advantages(away_team, home_team)
@@ -314,7 +343,7 @@ class ImprovedSelfLearningModel:
         home_advantage = weights.get('home_advantage_weight', 0.023)  # 2.3% from our actual data
         home_score *= (1.0 + home_advantage)
         
-        # Calculate probabilities
+        # Calculate base probabilities
         total_score = away_score + home_score
         if total_score > 0:
             away_prob = (away_score / total_score) * 100
@@ -322,6 +351,40 @@ class ImprovedSelfLearningModel:
         else:
             away_prob = 50.0
             home_prob = 50.0
+        
+        # Adjust for current live score if provided
+        if current_away_score is not None and current_home_score is not None:
+            score_diff = current_away_score - current_home_score
+            
+            # Time remaining in game (rough estimate)
+            if period == 1:
+                time_left = 40  # 2 periods left
+            elif period == 2:
+                time_left = 20  # 1 period left
+            elif period == 3:
+                time_left = 5   # Less than 1 period
+            else:
+                time_left = 1   # Overtime
+                
+            # Adjust probabilities based on score and time
+            if score_diff > 0:  # Away team leading
+                # Leading team gets boost, but less as time runs out
+                boost = (score_diff * 25) * (time_left / 40)  # Max 25% per goal
+                away_prob += boost
+                home_prob -= boost
+            elif score_diff < 0:  # Home team leading
+                boost = (abs(score_diff) * 25) * (time_left / 40)
+                home_prob += boost
+                away_prob -= boost
+            
+            # Ensure probabilities stay within reasonable bounds
+            away_prob = max(5, min(95, away_prob))
+            home_prob = max(5, min(95, home_prob))
+            
+            # Normalize to 100%
+            total = away_prob + home_prob
+            away_prob = (away_prob / total) * 100
+            home_prob = (home_prob / total) * 100
         
         return {
             'away_prob': away_prob,
