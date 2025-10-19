@@ -2,7 +2,7 @@ name: X Post Monitor & Discord Notifications
 
 on:
   schedule:
-    # Check for new X posts every 5 minutes
+    # Check for new X posts every 5 minutes during active game hours
     - cron: '*/5 * * * *'
   workflow_dispatch: # Allow manual triggering
 
@@ -14,17 +14,52 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v4
       
+    - name: Check if we should run (active game hours only)
+      id: time_check
+      run: |
+        # Get current time in Central Time (handles DST automatically)
+        CENTRAL_HOUR=$(TZ='America/Chicago' date +%H)
+        CENTRAL_DAY=$(TZ='America/Chicago' date +%u)  # 1=Monday, 7=Sunday
+        
+        echo "Current Central Time: $(TZ='America/Chicago' date '+%Y-%m-%d %H:%M:%S %A')"
+        echo "Hour: $CENTRAL_HOUR, Day: $CENTRAL_DAY"
+        
+        # Weekends (Saturday=6, Sunday=7): 9am-2am (09-23, 00-01)
+        # Weekdays (Monday=1-Friday=5): 4pm-1am (16-23, 00-00)
+        if [ $CENTRAL_DAY -eq 6 ] || [ $CENTRAL_DAY -eq 7 ]; then
+          # Weekend: 9am-2am CT
+          if [ $CENTRAL_HOUR -ge 9 ] || [ $CENTRAL_HOUR -le 1 ]; then
+            echo "✅ RUNNING: Weekend game hours (9am-2am CT)"
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          else
+            echo "⏸️  SKIPPING: Weekend off-hours (2am-9am CT)"
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          fi
+        else
+          # Weekday: 4pm-1am CT
+          if [ $CENTRAL_HOUR -ge 16 ] || [ $CENTRAL_HOUR -le 0 ]; then
+            echo "✅ RUNNING: Weekday game hours (4pm-1am CT)"
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          else
+            echo "⏸️  SKIPPING: Weekday off-hours (1am-4pm CT)"
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          fi
+        fi
+      
     - name: Set up Python
+      if: steps.time_check.outputs.should_run == 'true'
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
         
     - name: Install dependencies
+      if: steps.time_check.outputs.should_run == 'true'
       run: |
         python -m pip install --upgrade pip
         pip install requests beautifulsoup4 python-dateutil pytz
         
     - name: Monitor X posts and send Discord notifications
+      if: steps.time_check.outputs.should_run == 'true'
       run: |
         python3 x_post_monitor.py
       env:

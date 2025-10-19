@@ -6,7 +6,7 @@ This is separate from the post-game win probability analysis
 
 import json
 from nhl_api_client import NHLAPIClient
-from self_learning_model import SelfLearningModel
+from improved_self_learning_model import ImprovedSelfLearningModel
 from datetime import datetime
 import pytz
 
@@ -14,7 +14,7 @@ class PredictionInterface:
     def __init__(self):
         """Initialize the prediction interface"""
         self.api = NHLAPIClient()
-        self.learning_model = SelfLearningModel()
+        self.learning_model = ImprovedSelfLearningModel()
         
     def get_todays_predictions(self):
         """Get predictions for today's games using the self-learning model"""
@@ -88,46 +88,16 @@ class PredictionInterface:
         return predictions
     
     def predict_game(self, away_team, home_team):
-        """Predict a single game using the self-learning model"""
-        # Get team performance data (this would be updated based on recent games)
-        team_performance = self.get_team_performance_data()
+        """Predict a single game using the improved self-learning model with Edge data"""
+        # Use the improved model's predict_game method
+        result = self.learning_model.predict_game(away_team, home_team)
         
-        # Get current model weights from self-learning model
-        weights = self.learning_model.get_current_weights()
-        
-        # Get team performance data
-        away_perf = team_performance.get(away_team, {'xg_avg': 2.5, 'hdc_avg': 1.3, 'shots_avg': 25, 'gs_avg': 12.0})
-        home_perf = team_performance.get(home_team, {'xg_avg': 2.5, 'hdc_avg': 1.3, 'shots_avg': 25, 'gs_avg': 12.0})
-        
-        # Calculate weighted scores using self-learning model weights
-        away_score = (
-            away_perf['xg_avg'] * weights['xg_weight'] +
-            away_perf['hdc_avg'] * weights['hdc_weight'] +
-            away_perf['shots_avg'] * weights['shot_attempts_weight'] +
-            away_perf['gs_avg'] * weights['game_score_weight']
-        )
-        
-        home_score = (
-            home_perf['xg_avg'] * weights['xg_weight'] +
-            home_perf['hdc_avg'] * weights['hdc_weight'] +
-            home_perf['shots_avg'] * weights['shot_attempts_weight'] +
-            home_perf['gs_avg'] * weights['game_score_weight']
-        )
-        
-        # Calculate probabilities
-        total_score = away_score + home_score
-        if total_score > 0:
-            away_prob = (away_score / total_score) * 100
-            home_prob = (home_score / total_score) * 100
-        else:
-            away_prob = 50.0
-            home_prob = 50.0
-        
+        # Convert to the format expected by the interface
         return {
-            'away_prob': away_prob,
-            'home_prob': home_prob,
-            'away_score': away_score,
-            'home_score': home_score
+            'away_prob': result['away_prob'],
+            'home_prob': result['home_prob'],
+            'away_score': result['away_score'],
+            'home_score': result['home_score']
         }
     
     def get_team_performance_data(self):

@@ -884,9 +884,11 @@ class PostGameReportGenerator:
             away_ew_passes, away_ns_passes, away_behind_net = self._calculate_pass_metrics(game_data, away_team['id'], 'away')
             home_ew_passes, home_ns_passes, home_behind_net = self._calculate_pass_metrics(game_data, home_team['id'], 'home')
             
-        # Calculate zone metrics for both teams
+            # Calculate zone metrics for both teams
             away_zone_metrics = self._calculate_zone_metrics(game_data, away_team['id'], 'away')
             home_zone_metrics = self._calculate_zone_metrics(game_data, home_team['id'], 'home')
+            
+            
             
             # Calculate real period-by-period stats from NHL API data
             away_period_stats = self._calculate_real_period_stats(game_data, away_team['id'], 'away')
@@ -2275,23 +2277,36 @@ class PostGameReportGenerator:
             return 'neutral'
     
     def _is_rush_shot(self, current_play, all_plays, team_id):
-        """Determine if a shot is from a rush: DZ event followed by shot within 8 seconds"""
+        """Determine if a shot is from a rush: N/D zone event followed by OZ shot within 5 seconds"""
         try:
             current_team = current_play.get('details', {}).get('eventOwnerTeamId')
             current_period = current_play.get('periodDescriptor', {}).get('number', 1)
             current_time_str = current_play.get('timeInPeriod', '00:00')
             
-            # Check if current shot is in offensive zone
-            current_coords = current_play.get('details', {}).get('coordinates', {})
-            current_x = current_coords.get('x', 0)
-            if current_x <= 25:  # Not in offensive zone
-                return False
+            # Check if current shot is in offensive zone (use zone code if available, fallback to coordinates)
+            current_zone = current_play.get('details', {}).get('zoneCode', '')
+            current_x = current_play.get('details', {}).get('xCoord', 0)
+            
+            # Use zone code if available, otherwise use coordinates
+            if current_zone:
+                if current_zone != 'O':  # Not in offensive zone
+                    return False
+            else:
+                if current_x <= 0:  # Not in offensive zone (NHL: positive x = offensive zone)
+                    return False
             
             # Convert current time to seconds
             current_time_seconds = self._parse_time_to_seconds(current_time_str)
             
-            # Look for DZ events within 8 seconds
-            for prev_play in all_plays:
+            # Find current play index for more efficient searching
+            try:
+                play_index = all_plays.index(current_play)
+            except ValueError:
+                return False
+            
+            # Look for N/D zone events within 5 seconds (check last 10 events for efficiency)
+            for i in range(max(0, play_index - 10), play_index):
+                prev_play = all_plays[i]
                 prev_team = prev_play.get('details', {}).get('eventOwnerTeamId')
                 prev_type = prev_play.get('typeDescKey', '')
                 prev_period = prev_play.get('periodDescriptor', {}).get('number', 1)
@@ -2304,17 +2319,26 @@ class PostGameReportGenerator:
                 # Convert previous time to seconds
                 prev_time_seconds = self._parse_time_to_seconds(prev_time_str)
                 
-                # Check if within 8 seconds
+                # Check if within 5 seconds
                 time_diff = current_time_seconds - prev_time_seconds
-                if time_diff < 0 or time_diff > 8:  # Skip if negative (future) or > 8 seconds
+                if time_diff < 0 or time_diff > 5:  # Skip if negative (future) or > 5 seconds
                     continue
                 
-                # Check if previous event was in defensive zone
-                prev_coords = prev_play.get('details', {}).get('coordinates', {})
-                prev_x = prev_coords.get('x', 0)
+                # Check if previous event was in neutral or defensive zone
+                prev_zone = prev_play.get('details', {}).get('zoneCode', '')
+                prev_x = prev_play.get('details', {}).get('xCoord', 0)
                 
-                # Any DZ event (x < -25) followed by OZ shot within 8 seconds = Rush shot
-                if prev_x < -25 and prev_type in ['faceoff', 'takeaway', 'giveaway', 'blocked-shot']:
+                # Use zone code if available, otherwise use coordinates
+                is_nd_zone = False
+                if prev_zone:
+                    is_nd_zone = prev_zone in ['N', 'D']  # Neutral or Defensive zone
+                else:
+                    is_nd_zone = prev_x <= 0  # Neutral or Defensive zone (x <= 0)
+                
+                # Check for rush-indicating events
+                rush_events = ['faceoff', 'takeaway', 'giveaway', 'blocked-shot', 'hit']
+                
+                if is_nd_zone and prev_type in rush_events:
                     return True
             
             return False

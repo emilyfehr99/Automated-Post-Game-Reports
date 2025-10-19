@@ -21,7 +21,7 @@ def main():
     
     try:
         # Use the requested game ID: 2025020073
-        game_id = "2025020073"
+        game_id = "2025020083"  # DAL @ STL
         print(f"Using game ID: {game_id}")
         
         # Get game data for the specific game

@@ -30,7 +30,13 @@ class XPostMonitor:
                     return json.load(f)
         except Exception as e:
             print(f"Error loading state: {e}")
-        return {'last_post_id': None, 'last_check': None, 'today_posts': 0}
+        return {
+            'last_post_id': None, 
+            'last_check': None, 
+            'today_posts': 0,
+            'notified_posts': [],  # Track which posts we've already notified about
+            'expected_games': 7    # Expected number of games per day
+        }
     
     def save_state(self, state):
         """Save the current post state"""
@@ -75,12 +81,26 @@ class XPostMonitor:
     
     def extract_game_info(self, post_text):
         """Extract game information from post text"""
-        # Look for team abbreviations in the format "TEAM1 @ TEAM2"
-        game_match = re.search(r'([A-Z]{2,4})\s*@\s*([A-Z]{2,4})', post_text)
+        # Look for team abbreviations in the format "TEAM1 @ TEAM2" or "TEAM1 vs TEAM2"
+        game_match = re.search(r'([A-Z]{2,4})\s*(?:@|vs)\s*([A-Z]{2,4})', post_text)
         if game_match:
             away_team = game_match.group(1)
             home_team = game_match.group(2)
             return f"{away_team} @ {home_team}"
+        
+        # Look for team names in various formats
+        team_patterns = [
+            r'([A-Z][a-z]+)\s*@\s*([A-Z][a-z]+)',  # "Rangers @ Bruins"
+            r'([A-Z][a-z]+)\s*vs\s*([A-Z][a-z]+)',  # "Rangers vs Bruins"
+            r'([A-Z]{2,4})\s*at\s*([A-Z]{2,4})',    # "NYR at BOS"
+        ]
+        
+        for pattern in team_patterns:
+            match = re.search(pattern, post_text)
+            if match:
+                team1 = match.group(1)
+                team2 = match.group(2)
+                return f"{team1} @ {team2}"
         
         # Look for other NHL-related patterns
         if any(keyword in post_text.lower() for keyword in ['nhl', 'hockey', 'post-game', 'report']):
@@ -88,22 +108,26 @@ class XPostMonitor:
         
         return "NHL Post"
     
-    def send_discord_notification(self, post, game_info, today_count):
+    def send_discord_notification(self, post, game_info, today_count, expected_games):
         """Send Discord notification about new X post"""
         if not self.discord_webhook:
             print("❌ Discord webhook URL not configured")
             return False
         
         try:
+            # Create progress indicator
+            progress_bar = "🟩" * today_count + "⬜" * (expected_games - today_count)
+            progress_text = f"{today_count}/{expected_games} games posted today"
+            
             # Create Discord embed
             embed = {
-                "title": "🏒 New NHL Report Posted!",
+                "title": f"🏒 {game_info} Report Posted!",
                 "description": f"**{game_info}**\n\n{post['text'][:500]}{'...' if len(post['text']) > 500 else ''}",
                 "color": 3447003,  # Blue color
                 "fields": [
                     {
                         "name": "📊 Today's Progress",
-                        "value": f"{today_count} report(s) posted today",
+                        "value": f"{progress_text}\n{progress_bar}",
                         "inline": True
                     },
                     {
@@ -121,7 +145,7 @@ class XPostMonitor:
             }
             
             payload = {
-                "content": f"🏒 **New NHL Report Posted!** 🏒",
+                "content": f"🏒 **{game_info} Report Posted!** 🏒",
                 "embeds": [embed]
             }
             
@@ -151,6 +175,7 @@ class XPostMonitor:
         # Reset daily counter if it's a new day
         if state.get('last_check') != today:
             state['today_posts'] = 0
+            state['notified_posts'] = []  # Clear notified posts for new day
             state['last_check'] = today
         
         try:
@@ -162,6 +187,11 @@ class XPostMonitor:
             
             # Process new posts
             for post in new_posts:
+                # Check if we've already notified about this post
+                if post['id'] in state.get('notified_posts', []):
+                    print(f"⏭️  Skipping already notified post: {post['id']}")
+                    continue
+                
                 game_info = self.extract_game_info(post['text'])
                 state['today_posts'] += 1
                 
@@ -169,7 +199,10 @@ class XPostMonitor:
                 print(f"📊 Today's count: {state['today_posts']}")
                 
                 # Send Discord notification
-                self.send_discord_notification(post, game_info, state['today_posts'])
+                self.send_discord_notification(post, game_info, state['today_posts'], state.get('expected_games', 7))
+                
+                # Mark this post as notified
+                state['notified_posts'].append(post['id'])
                 
                 # Update last post ID
                 state['last_post_id'] = post['id']

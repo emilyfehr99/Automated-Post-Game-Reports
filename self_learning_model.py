@@ -93,6 +93,15 @@ class SelfLearningModel:
     
     def update_model_performance(self, prediction: Dict):
         """Update model performance metrics"""
+        # Initialize model_performance if it doesn't exist
+        if "model_performance" not in self.model_data:
+            self.model_data["model_performance"] = {
+                "total_games": 0,
+                "correct_predictions": 0,
+                "accuracy": 0.0,
+                "recent_accuracy": 0.0
+            }
+        
         perf = self.model_data["model_performance"]
         perf["total_games"] += 1
         
