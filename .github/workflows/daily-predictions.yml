@@ -40,11 +40,7 @@ jobs:
                 raise SystemExit(78)
           PY
 
-      - name: Run daily predictions
-        run: |
-          python3 nhl_clean_repo/prediction_interface.py
-
-      - name: Send Discord notification
+      - name: Run daily predictions and send notifications
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
