@@ -566,8 +566,8 @@ class ImprovedSelfLearningModelV2:
             "date": date,
             "away_team": away_team,
             "home_team": home_team,
-            "predicted_away_win_prob": predicted_away_prob / 100.0,  # Store as decimal
-            "predicted_home_win_prob": predicted_home_prob / 100.0,  # Store as decimal
+            "predicted_away_win_prob": predicted_away_prob / 100.0,  # Convert percentage to decimal
+            "predicted_home_win_prob": predicted_home_prob / 100.0,  # Convert percentage to decimal
             "metrics_used": metrics_used,
             "actual_winner": actual_winner,
             "actual_away_score": actual_away_score,
