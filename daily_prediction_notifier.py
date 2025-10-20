@@ -29,8 +29,8 @@ class DailyPredictionNotifier:
         for i, pred in enumerate(predictions, 1):
             away_team = pred['away_team']
             home_team = pred['home_team']
-            away_prob = pred['away_prob']
-            home_prob = pred['home_prob']
+            away_prob = pred['predicted_away_win_prob'] * 100  # Convert to percentage
+            home_prob = pred['predicted_home_win_prob'] * 100  # Convert to percentage
             favorite = pred['favorite']
             spread = pred['spread']
 

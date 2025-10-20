@@ -105,8 +105,8 @@ class PredictionInterface:
                 'game_id': game.get('id'),
                 'away_team': away_team,
                 'home_team': home_team,
-                'away_prob': prediction["away_prob"],
-                'home_prob': prediction["home_prob"],
+                'predicted_away_win_prob': prediction["away_prob"] / 100,  # Convert to decimal
+                'predicted_home_win_prob': prediction["home_prob"] / 100,  # Convert to decimal
                 'favorite': favorite,
                 'spread': spread
             })
