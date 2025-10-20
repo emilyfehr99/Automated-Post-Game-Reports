@@ -2761,7 +2761,7 @@ class PostGameReportGenerator:
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
             ('LEFTPADDING', (0, 0), (-1, -1), 4.8*inch),  # Move 0.8 cm more to the right (4.5 + 0.8*0.3937 = 4.5 + 0.315 = 4.815, rounded to 4.8)
             ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-            ('TOPPADDING', (0, 0), (-1, -1), -4.0*inch),  # Move down 1 cm (-4.4 + 1*0.3937 = -4.4 + 0.394 = -4.006, rounded to -4.0)
+            ('TOPPADDING', (0, 0), (-1, -1), -4.08*inch),  # Move down 0.1 cm (-4.12 + 0.1*0.3937 = -4.12 + 0.039 = -4.081, rounded to -4.08)
             ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
         ]))
         story.append(shot_locations_wrapper)
@@ -2791,7 +2791,7 @@ class PostGameReportGenerator:
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
             ('LEFTPADDING', (0, 0), (-1, -1), 2.38*inch),  # Move 0.3 cm more to the left (2.5 - 0.3*0.3937 = 2.5 - 0.118 = 2.382, rounded to 2.38)
             ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-            ('TOPPADDING', (0, 0), (-1, -1), -2.0*inch),  # Move up 0.3 cm + 0.2 cm = 0.5 cm total (-1.8 - 0.5*0.3937 = -1.8 - 0.197 = -1.997, rounded to -2.0)
+            ('TOPPADDING', (0, 0), (-1, -1), -2.08*inch),  # Move down 0.1 cm (-2.12 + 0.1*0.3937 = -2.12 + 0.039 = -2.081, rounded to -2.08)
             ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
         ]))
         story.append(top_players_title_wrapper)
@@ -2811,7 +2811,7 @@ class PostGameReportGenerator:
                     ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                     ('LEFTPADDING', (0, 0), (-1, -1), 2.44*inch),  # Move 0.1 cm to the right (2.4 + 0.1*0.3937 = 2.4 + 0.039 = 2.439, rounded to 2.44)
                     ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-                    ('TOPPADDING', (0, 0), (-1, -1), -3.6*inch),  # Move down 1 cm (-4.0 + 1*0.3937 = -4.0 + 0.394 = -3.606, rounded to -3.6)
+                    ('TOPPADDING', (0, 0), (-1, -1), -3.76*inch),  # Move down 0.1 cm (-3.8 + 0.1*0.3937 = -3.8 + 0.039 = -3.761, rounded to -3.76)
                     ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
                 ]))
                 story.append(item)
@@ -2827,7 +2827,7 @@ class PostGameReportGenerator:
                 # Position it to the right of the advanced metrics table (which starts at -1.6 inches from left)
                 # Advanced metrics table is 4.4 inches wide, so Top Players should start around 2.8 inches from left
                 # Move up an additional 0.5 cm (0.197 inches) if game has OT/SO
-                top_padding = -1.4*inch - (0.197*inch if has_ot_or_so else 0)
+                top_padding = -1.48*inch - (0.197*inch if has_ot_or_so else 0)  # Move down 0.1 cm (-1.52 + 0.1*0.3937 = -1.52 + 0.039 = -1.481, rounded to -1.48)
                 
                 right_table = Table([[item]], colWidths=[2.3*inch])
                 right_table.setStyle(TableStyle([
@@ -3005,30 +3005,30 @@ class PostGameReportGenerator:
             # Plot away team shots and goals in team color
             if away_shots:
                 shot_x, shot_y = zip(*away_shots)
-                ax.scatter(shot_x, shot_y, c=away_color, alpha=0.95, s=60, 
-                          marker='o', edgecolors='black', linewidth=1.5, zorder=50)
+                ax.scatter(shot_x, shot_y, c=away_color, alpha=0.95, s=25, 
+                          marker='o', edgecolors='black', linewidth=0.8, zorder=50)
 
             if away_goals:
                 goal_x, goal_y = zip(*away_goals)
-                ax.scatter(goal_x, goal_y, c=away_color, alpha=1.0, s=90, 
-                                          marker='o', edgecolors='black', linewidth=2.0, zorder=51)
+                ax.scatter(goal_x, goal_y, c=away_color, alpha=1.0, s=40, 
+                                          marker='o', edgecolors='black', linewidth=1.2, zorder=51)
 
             # Plot home team shots and goals in team color
             if home_shots:
                 shot_x, shot_y = zip(*home_shots)
-                ax.scatter(shot_x, shot_y, c=home_color, alpha=0.95, s=60, 
-                          marker='o', edgecolors='black', linewidth=1.5, zorder=50)
+                ax.scatter(shot_x, shot_y, c=home_color, alpha=0.95, s=25, 
+                          marker='o', edgecolors='black', linewidth=0.8, zorder=50)
 
             if home_goals:
                 goal_x, goal_y = zip(*home_goals)
-                ax.scatter(goal_x, goal_y, c=home_color, alpha=1.0, s=90, 
-                          marker='o', edgecolors='black', linewidth=2.0, zorder=51)
+                ax.scatter(goal_x, goal_y, c=home_color, alpha=1.0, s=40, 
+                          marker='o', edgecolors='black', linewidth=1.2, zorder=51)
 
             # Set plot properties
             ax.set_xlim(-100, 100)
             ax.set_ylim(-42.5, 42.5)
             ax.set_aspect('equal')
-            ax.set_facecolor('white')
+            ax.set_facecolor('none')  # Transparent background
             # No legend needed - team colors are self-explanatory
             ax.grid(False)  # Turn off grid since we have the rink image
             ax.set_xticks([])
@@ -3091,7 +3091,7 @@ class PostGameReportGenerator:
             plot_filename = f'combined_shot_plot_{away_team["abbrev"]}_vs_{home_team["abbrev"]}_{timestamp}.png'
             abs_plot_filename = os.path.abspath(plot_filename)
             print(f"Saving combined plot to: {abs_plot_filename}")
-            fig.savefig(abs_plot_filename, dpi=300, bbox_inches='tight', facecolor='white')
+            fig.savefig(abs_plot_filename, dpi=300, bbox_inches='tight', facecolor='none', transparent=True)
             plt.close(fig)
             
             # Verify file was created
@@ -3361,7 +3361,7 @@ class PostGameReportGenerator:
         """Create shot location visualizations"""
         story = []
                         
-        story.append(Spacer(1, 10))
+        story.append(Spacer(1, 4))  # Reduced to move shot locations up by 0.2cm
         
         try:
             import os
@@ -3436,7 +3436,7 @@ class PostGameReportGenerator:
             # Use negative spacer to pull header to absolute top
             story.append(Spacer(1, -40))  # Increased negative spacer to pull header higher and cover top white space
             story.append(header_image)
-            story.append(Spacer(1, 20))  # Minimal space after header
+            story.append(Spacer(1, 14))  # Reduced space after header to move content up by 0.2cm
         else:
             print("Warning: Header image failed to load")
         
