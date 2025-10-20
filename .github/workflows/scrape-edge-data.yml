@@ -2,6 +2,62 @@ name: scrape-edge-data
 
 on:
   schedule:
+    # 7:15 AM CT daily (12:15 UTC); adjust as needed
+    - cron: "15 12 * * *"
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  scrape:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+
+      - name: Setup Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: "3.10"
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install requests beautifulsoup4 pandas
+
+      - name: Print scrape header (safe)
+        run: |
+          echo "🏒 DAILY NHL EDGE DATA SCRAPING"
+          python3 -c "from datetime import datetime, timezone; print('📅 Date:', datetime.now(timezone.utc).strftime('%Y-%m-%d %H:%M:%S'), 'UTC'); print('='*50)"
+
+      - name: Run Edge scraper
+        working-directory: nhl_clean_repo
+        run: python3 daily_edge_data_scraper.py
+
+      - name: Commit changes (if any)
+        run: |
+          git config user.name "github-actions"
+          git config user.email "github-actions@github.com"
+          git add nhl_clean_repo/nhl_edge_data.json || true
+          git commit -m "chore(edge): update NHL Edge data" || echo "No changes to commit"
+
+      - name: Create PR to main
+        uses: peter-evans/create-pull-request@v6
+        with:
+          commit-message: chore(edge): update NHL Edge data
+          title: "Daily Edge data update"
+          body: "Automated Edge data update from scraper run."
+          branch: chore/edge-data-${{ github.run_id }}
+          base: main
+
+name: scrape-edge-data
+
+on:
+  schedule:
     - cron: '45 12 * * *' # 12:45 UTC daily
   workflow_dispatch: {}
 
