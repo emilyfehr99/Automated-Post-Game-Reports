@@ -120,16 +120,17 @@ class PredictionInterface:
         return predictions
     
     def predict_game(self, away_team, home_team):
-        """Predict a single game using the improved self-learning model with Edge data"""
-        # Use the improved model's predict_game method
-        result = self.learning_model.predict_game(away_team, home_team)
+        """Predict a single game using the ensemble self-learning model"""
+        # Use the ensemble prediction method for improved accuracy
+        result = self.learning_model.ensemble_predict(away_team, home_team)
         
         # Convert to the format expected by the interface
         return {
             'away_prob': result['away_prob'],
             'home_prob': result['home_prob'],
-            'away_score': result['away_score'],
-            'home_score': result['home_score']
+            'prediction_confidence': result['prediction_confidence'],
+            'ensemble_methods': result.get('ensemble_methods', {}),
+            'ensemble_weights': result.get('ensemble_weights', [])
         }
     
     def get_team_performance_data(self):

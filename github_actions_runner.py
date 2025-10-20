@@ -13,6 +13,7 @@ from twitter_config import TEAM_HASHTAGS, TWITTER_API_KEY
 from self_learning_model import SelfLearningModel
 import json
 import subprocess
+import numpy as np
 
 
 class GitHubActionsRunner:
@@ -223,31 +224,54 @@ class GitHubActionsRunner:
             # If tied, we don't learn from it (shootout/OT games)
             
             if actual_winner:
-                # Extract metrics used in prediction
+                # Extract comprehensive metrics used in prediction
                 metrics_used = {
-                    "away_xg": 0.0,
-                    "home_xg": 0.0,
-                    "away_hdc": 0,
-                    "home_hdc": 0,
+                    "away_xg": 0.0, "home_xg": 0.0,
+                    "away_hdc": 0, "home_hdc": 0,
                     "away_shots": game_data['boxscore']['awayTeam'].get('sog', 0),
                     "home_shots": game_data['boxscore']['homeTeam'].get('sog', 0),
-                    "away_gs": 0.0,
-                    "home_gs": 0.0
+                    "away_gs": 0.0, "home_gs": 0.0,
+                    "away_corsi_pct": 50.0, "home_corsi_pct": 50.0,
+                    "away_power_play_pct": 0.0, "home_power_play_pct": 0.0,
+                    "away_faceoff_pct": 50.0, "home_faceoff_pct": 50.0,
+                    "away_hits": 0, "home_hits": 0,
+                    "away_blocked_shots": 0, "home_blocked_shots": 0,
+                    "away_giveaways": 0, "home_giveaways": 0,
+                    "away_takeaways": 0, "home_takeaways": 0,
+                    "away_penalty_minutes": 0, "home_penalty_minutes": 0
                 }
                 
-                # Try to get more detailed metrics if available
+                # Try to get comprehensive metrics if available
                 try:
+                    # Basic metrics
                     away_xg, home_xg = generator._calculate_xg_from_plays(game_data)
                     away_hdc, home_hdc = generator._calculate_hdc_from_plays(game_data)
                     away_gs, home_gs = generator._calculate_game_scores(game_data)
                     
+                    # Advanced metrics from period stats
+                    away_period_stats = generator._calculate_real_period_stats(game_data, game_data['boxscore']['awayTeam']['id'], 'away')
+                    home_period_stats = generator._calculate_real_period_stats(game_data, game_data['boxscore']['homeTeam']['id'], 'home')
+                    
                     metrics_used.update({
-                        "away_xg": away_xg,
-                        "home_xg": home_xg,
-                        "away_hdc": away_hdc,
-                        "home_hdc": home_hdc,
-                        "away_gs": away_gs,
-                        "home_gs": home_gs
+                        "away_xg": away_xg, "home_xg": home_xg,
+                        "away_hdc": away_hdc, "home_hdc": home_hdc,
+                        "away_gs": away_gs, "home_gs": home_gs,
+                        "away_corsi_pct": np.mean(away_period_stats.get('corsi_pct', [50.0])),
+                        "home_corsi_pct": np.mean(home_period_stats.get('corsi_pct', [50.0])),
+                        "away_power_play_pct": np.mean(away_period_stats.get('pp_goals', [0])) / max(1, np.mean(away_period_stats.get('pp_attempts', [1]))) * 100,
+                        "home_power_play_pct": np.mean(home_period_stats.get('pp_goals', [0])) / max(1, np.mean(home_period_stats.get('pp_attempts', [1]))) * 100,
+                        "away_faceoff_pct": np.mean(away_period_stats.get('fo_pct', [50.0])),
+                        "home_faceoff_pct": np.mean(home_period_stats.get('fo_pct', [50.0])),
+                        "away_hits": np.mean(away_period_stats.get('hits', [0])),
+                        "home_hits": np.mean(home_period_stats.get('hits', [0])),
+                        "away_blocked_shots": np.mean(away_period_stats.get('bs', [0])),
+                        "home_blocked_shots": np.mean(home_period_stats.get('bs', [0])),
+                        "away_giveaways": np.mean(away_period_stats.get('gv', [0])),
+                        "home_giveaways": np.mean(home_period_stats.get('gv', [0])),
+                        "away_takeaways": np.mean(away_period_stats.get('tk', [0])),
+                        "home_takeaways": np.mean(home_period_stats.get('tk', [0])),
+                        "away_penalty_minutes": np.mean(away_period_stats.get('pim', [0])),
+                        "home_penalty_minutes": np.mean(home_period_stats.get('pim', [0]))
                     })
                 except Exception as e:
                     print(f"⚠️  Could not extract detailed metrics: {e}")
