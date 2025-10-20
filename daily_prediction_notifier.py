@@ -24,9 +24,8 @@ class DailyPredictionNotifier:
         if not predictions:
             return "No games scheduled for today."
         
-        # Format predictions
+        # Format predictions as bullet points (row 3, row 4, ...)
         summary = "🏒 **NHL GAME PREDICTIONS FOR TODAY** 🏒\n\n"
-        
         for i, pred in enumerate(predictions, 1):
             away_team = pred['away_team']
             home_team = pred['home_team']
@@ -34,10 +33,10 @@ class DailyPredictionNotifier:
             home_prob = pred['home_prob']
             favorite = pred['favorite']
             spread = pred['spread']
-            
-            summary += f"**{i}. {away_team} @ {home_team}**\n"
-            summary += f"   🎯 {away_team} {away_prob:.1f}% | {home_team} {home_prob:.1f}%\n"
-            summary += f"   ⭐ Favorite: {favorite} (+{spread:.1f}%)\n\n"
+
+            summary += f"- **Row {i}**: {away_team} @ {home_team}\n"
+            summary += f"  - 🎯 {away_team} {away_prob:.1f}% | {home_team} {home_prob:.1f}%\n"
+            summary += f"  - ⭐ Favorite: {favorite} (+{spread:.1f}%)\n"
         
         # Add model performance
         perf = self.predictor.learning_model.get_model_performance()

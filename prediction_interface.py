@@ -7,7 +7,7 @@ This is separate from the post-game win probability analysis
 import json
 from nhl_api_client import NHLAPIClient
 from improved_self_learning_model import ImprovedSelfLearningModel
-from datetime import datetime
+from datetime import datetime, timedelta
 import pytz
 
 class PredictionInterface:
@@ -20,29 +20,49 @@ class PredictionInterface:
         """Get predictions for today's games using the self-learning model"""
         print('🏒 NHL GAME PREDICTIONS (Self-Learning Model) 🏒')
         print('=' * 60)
-        print(f'📅 Date: {datetime.now(pytz.timezone("US/Central")).strftime("%Y-%m-%d")}')
+        central_tz = pytz.timezone('US/Central')
+        now_ct = datetime.now(central_tz)
+        print(f'📅 Date (CT): {now_ct.strftime("%Y-%m-%d")}')
         
         # Get current model weights
         weights = self.learning_model.get_current_weights()
         print(f'🎯 Model Weights: xG={weights["xg_weight"]}, HDC={weights["hdc_weight"]}, Shots={weights["shot_attempts_weight"]}, GS={weights["game_score_weight"]}')
         print()
         
-        # Get today's games
-        central_tz = pytz.timezone('US/Central')
-        today = datetime.now(central_tz).strftime('%Y-%m-%d')
-        schedule_data = self.api.get_game_schedule(today)
+        # Define today's window in Central Time and convert to UTC bounds
+        start_of_day_ct = now_ct.replace(hour=0, minute=0, second=0, microsecond=0)
+        end_of_day_ct = start_of_day_ct + timedelta(days=1)
+        start_utc = start_of_day_ct.astimezone(pytz.utc)
+        end_utc = end_of_day_ct.astimezone(pytz.utc)
+
+        # Fetch schedule for the week (API returns a gameWeek)
+        schedule_data = self.api.get_game_schedule(now_ct.strftime('%Y-%m-%d'))
         
-        # Get games from gameWeek
+        # Get ONLY today's games using the day bucket matching Central date
         games = []
+        today_ct_str = now_ct.strftime('%Y-%m-%d')
         for day_data in schedule_data.get('gameWeek', []):
-            if isinstance(day_data, dict) and 'games' in day_data:
+            if not isinstance(day_data, dict):
+                continue
+            if day_data.get('date') == today_ct_str and 'games' in day_data:
                 games.extend(day_data['games'])
         
-        # Filter for today's games only (2025-2026 season games)
+        # Helper to parse ISO8601 UTC timestamps
+        def parse_utc(ts: str):
+            try:
+                # Ensure timezone-aware
+                return datetime.fromisoformat(ts.replace('Z', '+00:00')).astimezone(pytz.utc)
+            except Exception:
+                return None
+
+        # Filter for games starting within today's Central day, using UTC bounds (extra safety)
         today_games = []
         for game in games:
-            game_time = game.get('startTimeUTC', '')
-            if today in game_time and game.get('gameState') in ['PRE', 'FUT']:
+            ts = game.get('startTimeUTC')
+            dt_utc = parse_utc(ts) if isinstance(ts, str) else None
+            if not dt_utc:
+                continue
+            if start_utc <= dt_utc < end_utc and game.get('gameState') in ['PRE', 'FUT']:
                 today_games.append(game)
         
         print(f'🔍 Found {len(today_games)} games today')
@@ -54,9 +74,15 @@ class PredictionInterface:
             away_team = game.get('awayTeam', {}).get('abbrev', 'UNK')
             home_team = game.get('homeTeam', {}).get('abbrev', 'UNK')
             game_time = game.get('startTimeUTC', 'UNK')
+            # Convert to Central for display if possible
+            try:
+                dt_utc = parse_utc(game_time)
+                game_time_ct = dt_utc.astimezone(central_tz).strftime('%Y-%m-%d %I:%M %p CT') if dt_utc else game_time
+            except Exception:
+                game_time_ct = game_time
             
             print(f'{i+1}. {away_team} @ {home_team}')
-            print(f'   🕐 Time: {game_time}')
+            print(f'   🕐 Time: {game_time_ct}')
             
             # Get prediction using self-learning model
             prediction = self.predict_game(away_team, home_team)
@@ -84,7 +110,13 @@ class PredictionInterface:
                 'favorite': favorite,
                 'spread': spread
             })
-        
+
+        # Run daily learning update (only learn from completed games, not future predictions)
+        try:
+            self.learning_model.run_daily_update()
+        except Exception as e:
+            print(f"⚠️  Error updating learning model: {e}")
+
         return predictions
     
     def predict_game(self, away_team, home_team):
