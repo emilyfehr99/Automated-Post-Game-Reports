@@ -6,7 +6,7 @@ This is separate from the post-game win probability analysis
 
 import json
 from nhl_api_client import NHLAPIClient
-from improved_self_learning_model import ImprovedSelfLearningModel
+from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
 from datetime import datetime, timedelta
 import pytz
 
@@ -14,7 +14,7 @@ class PredictionInterface:
     def __init__(self):
         """Initialize the prediction interface"""
         self.api = NHLAPIClient()
-        self.learning_model = ImprovedSelfLearningModel()
+        self.learning_model = ImprovedSelfLearningModelV2()
         
     def get_todays_predictions(self):
         """Get predictions for today's games using the self-learning model"""

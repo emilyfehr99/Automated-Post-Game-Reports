@@ -2414,13 +2414,13 @@
     }
   ],
   "model_weights": {
-    "xg_weight": 0.010013263738922671,
-    "hdc_weight": 0.010013263738922671,
-    "shot_attempts_weight": 0.6322409500142934,
-    "game_score_weight": 0.3161204750071467,
-    "other_metrics_weight": 0.03161204750071466
+    "xg_weight": 0.01000000530563913,
+    "hdc_weight": 0.01000000530563913,
+    "shot_attempts_weight": 0.632258057670143,
+    "game_score_weight": 0.3161290288350715,
+    "other_metrics_weight": 0.03161290288350715
   },
-  "last_updated": "2025-10-20T09:36:56.412757",
+  "last_updated": "2025-10-20T09:37:13.243493",
   "model_performance": {
     "total_games": 84,
     "correct_predictions": 43,
@@ -2428,8 +2428,8 @@
     "recent_accuracy": 0.5119047619047619
   },
   "weight_momentum": {
-    "xg_weight": -0.25246397079000005,
-    "hdc_weight": -0.09789988632000002,
+    "xg_weight": -0.2899958163399001,
+    "hdc_weight": -0.09354890791920004,
     "shot_attempts_weight": 0.0,
     "game_score_weight": 0.0,
     "other_metrics_weight": 0.0
