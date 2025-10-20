@@ -45,20 +45,20 @@ class ImprovedSelfLearningModelV2:
         return {
             "predictions": [],
             "model_weights": {
-                "xg_weight": 0.30,           # Expected goals - most predictive
-                "hdc_weight": 0.25,          # High danger chances - very predictive
-                "shot_attempts_weight": 0.20, # Shot attempts - good predictor
-                "game_score_weight": 0.15,   # Game score - team performance
-                "recent_form_weight": 0.05,  # Recent form (last 5 games)
-                "head_to_head_weight": 0.02, # Head-to-head record
-                "rest_days_weight": 0.02,    # Rest days advantage
-                "goalie_performance_weight": 0.01  # Goalie performance
+                "xg_weight": 0.42,           # Expected goals - STRONGEST predictor (0.2396 correlation)
+                "hdc_weight": 0.28,          # High danger chances - good predictor (0.0898 correlation)
+                "shot_attempts_weight": 0.18, # Shot attempts - weakest predictor (0.0682 correlation)
+                "game_score_weight": 0.12,   # Game score - composite metric
+                "recent_form_weight": 0.00,  # Recent form (disabled for now)
+                "head_to_head_weight": 0.00, # Head-to-head record (disabled for now)
+                "rest_days_weight": 0.00,    # Rest days advantage (disabled for now)
+                "goalie_performance_weight": 0.00  # Goalie performance (disabled for now)
             },
             "weight_momentum": {
+                "game_score_weight": 0.0,
                 "xg_weight": 0.0,
                 "hdc_weight": 0.0,
                 "shot_attempts_weight": 0.0,
-                "game_score_weight": 0.0,
                 "recent_form_weight": 0.0,
                 "head_to_head_weight": 0.0,
                 "rest_days_weight": 0.0,
