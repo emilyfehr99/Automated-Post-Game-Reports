@@ -26,7 +26,7 @@ class PredictionInterface:
         
         # Get current model weights
         weights = self.learning_model.get_current_weights()
-        print(f'🎯 Model Weights: xG={weights["xg_weight"]}, HDC={weights["hdc_weight"]}, Shots={weights["shot_attempts_weight"]}, GS={weights["game_score_weight"]}')
+        print(f'🎯 Model Weights: xG={weights["xg_weight"]}, HDC={weights["hdc_weight"]}, Shots={weights["shots_weight"]}, GS={weights["game_score_weight"]}')
         print()
         
         # Define today's window in Central Time and convert to UTC bounds
