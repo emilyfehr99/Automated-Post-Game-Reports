@@ -44,4 +44,10 @@ jobs:
         run: |
           python3 nhl_clean_repo/prediction_interface.py
 
+      - name: Send Discord notification
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          python3 nhl_clean_repo/daily_prediction_notifier.py
+
 
