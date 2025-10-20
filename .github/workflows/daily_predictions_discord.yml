@@ -37,8 +37,9 @@ jobs:
         echo "🔍 Available prediction files:"
         ls -la daily_predictions_*.txt 2>/dev/null || echo "No prediction files found"
         
-        # Read predictions file
-        PREDICTIONS=$(cat daily_predictions_*.txt 2>/dev/null || echo "No games scheduled for today.")
+        # Read only today's predictions file
+        TODAY_FILE="daily_predictions_$(TZ='America/Chicago' date '+%Y%m%d').txt"
+        PREDICTIONS=$(cat "$TODAY_FILE" 2>/dev/null || echo "No games scheduled for today.")
         
         # Debug: Show what we're sending
         echo "📤 Sending predictions:"
