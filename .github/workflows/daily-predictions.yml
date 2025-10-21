@@ -29,19 +29,19 @@ jobs:
 
       - name: Guard to 6am Central only
         run: |
-          python - <<'PY'
-            import pytz
-            from datetime import datetime
-            ct = pytz.timezone('US/Central')
-            now_ct = datetime.now(ct)
-            print('Now (CT):', now_ct.strftime('%Y-%m-%d %H:%M:%S %Z'))
-            if not (now_ct.hour == 6 and now_ct.minute < 30):
-                print('Not within 6:00-6:29 CT window; exiting.')
-                raise SystemExit(78)
-          PY
+          python3 -c "
+          import pytz
+          from datetime import datetime
+          ct = pytz.timezone('US/Central')
+          now_ct = datetime.now(ct)
+          print('Now (CT):', now_ct.strftime('%Y-%m-%d %H:%M:%S %Z'))
+          if not (now_ct.hour == 6 and now_ct.minute < 30):
+              print('Not within 6:00-6:29 CT window; exiting.')
+              raise SystemExit(78)
+          "
 
       - name: Run daily predictions
         run: |
-          python3 nhl_clean_repo/prediction_interface.py
+          python3 prediction_interface.py
 
 
