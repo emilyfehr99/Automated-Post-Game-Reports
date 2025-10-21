@@ -37,6 +37,12 @@ jobs:
 
       - name: Scrape Edge data
         run: |
+          echo "Current directory: $(pwd)"
+          echo "Contents:"
+          ls -la
+          echo "Looking for scraper:"
+          find . -name "daily_edge_data_scraper.py" -type f
+          echo "Running scraper:"
           python3 nhl_clean_repo/daily_edge_data_scraper.py
 
       - name: Validate output exists
