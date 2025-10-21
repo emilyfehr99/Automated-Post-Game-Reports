@@ -2,8 +2,8 @@ name: Auto Post NHL Reports
 
 on:
   schedule:
-    # Run every 10 minutes, but skip weekdays 2am-3pm Central (no games during those hours)
-    - cron: '*/10 * * * *'
+    # Run every 30 minutes during game hours, skip weekdays 2am-3pm Central
+    - cron: '*/30 * * * *'
   workflow_dispatch:  # Allow manual triggering
 
 jobs:
@@ -30,6 +30,7 @@ jobs:
         if [ $CENTRAL_DAY -le 5 ] && [ $CENTRAL_HOUR -ge 2 ] && [ $CENTRAL_HOUR -lt 15 ]; then
           echo "⏸️  SKIPPING: Weekday off-hours (2am-3pm Central)"
           echo "should_run=false" >> $GITHUB_OUTPUT
+          exit 0
         else
           echo "✅ RUNNING: Game time!"
           echo "should_run=true" >> $GITHUB_OUTPUT
