@@ -43,7 +43,7 @@ jobs:
           echo "Looking for scraper:"
           find . -name "daily_edge_data_scraper.py" -type f
           echo "Running scraper:"
-          python3 nhl_clean_repo/daily_edge_data_scraper.py
+          python3 daily_edge_data_scraper.py
 
       - name: Validate output exists
         run: |
