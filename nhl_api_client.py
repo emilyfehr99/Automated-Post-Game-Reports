@@ -39,11 +39,25 @@ class NHLAPIClient:
         return None
     
     def get_game_center(self, game_id):
-        """Get detailed game information"""
-        url = f"{self.base_url}/gamecenter/{game_id}/feed/live"
-        response = self.session.get(url)
-        if response.status_code == 200:
-            return response.json()
+        """Get detailed game information by combining boxscore and play-by-play"""
+        # Get boxscore data
+        boxscore_url = f"{self.base_url}/gamecenter/{game_id}/boxscore"
+        boxscore_response = self.session.get(boxscore_url)
+        
+        # Get play-by-play data
+        pbp_url = f"{self.base_url}/gamecenter/{game_id}/play-by-play"
+        pbp_response = self.session.get(pbp_url)
+        
+        if boxscore_response.status_code == 200 and pbp_response.status_code == 200:
+            boxscore_data = boxscore_response.json()
+            pbp_data = pbp_response.json()
+            
+            # Combine the data
+            combined_data = {
+                'boxscore': boxscore_data,
+                'play_by_play': pbp_data
+            }
+            return combined_data
         return None
     
     def get_game_boxscore(self, game_id):

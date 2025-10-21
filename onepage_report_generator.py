@@ -67,8 +67,16 @@ class OnePageReportGenerator:
                 
                 # Get team names with error handling
                 try:
-                    away_team = game_data['game_center']['awayTeam']['abbrev']
-                    home_team = game_data['game_center']['homeTeam']['abbrev']
+                    # Handle both old and new data structures
+                    if 'boxscore' in game_data['game_center']:
+                        away_team = game_data['game_center']['boxscore']['awayTeam']['abbrev']
+                    else:
+                        away_team = game_data['game_center']['awayTeam']['abbrev']
+                    # Handle both old and new data structures
+                    if 'boxscore' in game_data['game_center']:
+                        home_team = game_data['game_center']['boxscore']['homeTeam']['abbrev']
+                    else:
+                        home_team = game_data['game_center']['homeTeam']['abbrev']
                 except (KeyError, TypeError):
                     # Fallback to default team names if data is missing
                     away_team = "FLA"
@@ -238,10 +246,17 @@ class OnePageReportGenerator:
             story.append(header_image)
             story.append(Spacer(1, 10))
         
-        # Get team data
+        # Get team data - handle both old and new data structures
         try:
-            away_team = game_data['game_center']['awayTeam']
-            home_team = game_data['game_center']['homeTeam']
+            if 'boxscore' in game_data['game_center']:
+                # New structure: game_center contains boxscore
+                away_team = game_data['game_center']['boxscore']['awayTeam']
+                home_team = game_data['game_center']['boxscore']['homeTeam']
+            else:
+                # Old structure: direct access
+                away_team = game_data['game_center']['awayTeam']
+                home_team = game_data['game_center']['homeTeam']
+            
             away_abbrev = away_team['abbrev']
             home_abbrev = home_team['abbrev']
             away_score = away_team['score']
@@ -280,8 +295,14 @@ class OnePageReportGenerator:
     def create_team_stats_section(self, game_data):
         """Create team statistics section"""
         try:
-            away_team = game_data['game_center']['awayTeam']
-            home_team = game_data['game_center']['homeTeam']
+            # Handle both old and new data structures
+            if 'boxscore' in game_data['game_center']:
+                away_team = game_data['game_center']['boxscore']['awayTeam']
+                home_team = game_data['game_center']['boxscore']['homeTeam']
+            else:
+                away_team = game_data['game_center']['awayTeam']
+                home_team = game_data['game_center']['homeTeam']
+            
             away_abbrev = away_team['abbrev']
             home_abbrev = home_team['abbrev']
         except:
@@ -290,8 +311,13 @@ class OnePageReportGenerator:
         
         # Get team stats
         try:
-            away_stats = game_data['game_center']['awayTeam']['stats']
-            home_stats = game_data['game_center']['homeTeam']['stats']
+            # Handle both old and new data structures
+            if 'boxscore' in game_data['game_center']:
+                away_stats = game_data['game_center']['boxscore']['awayTeam']['stats']
+                home_stats = game_data['game_center']['boxscore']['homeTeam']['stats']
+            else:
+                away_stats = game_data['game_center']['awayTeam']['stats']
+                home_stats = game_data['game_center']['homeTeam']['stats']
         except:
             away_stats = {}
             home_stats = {}
@@ -328,8 +354,13 @@ class OnePageReportGenerator:
         try:
             from advanced_metrics_analyzer import AdvancedMetricsAnalyzer
             analyzer = AdvancedMetricsAnalyzer(game_data.get('play_by_play', {}))
-            away_team_id = game_data['game_center']['awayTeam']['id']
-            home_team_id = game_data['game_center']['homeTeam']['id']
+            # Handle both old and new data structures
+            if 'boxscore' in game_data['game_center']:
+                away_team_id = game_data['game_center']['boxscore']['awayTeam']['id']
+                home_team_id = game_data['game_center']['boxscore']['homeTeam']['id']
+            else:
+                away_team_id = game_data['game_center']['awayTeam']['id']
+                home_team_id = game_data['game_center']['homeTeam']['id']
             metrics = analyzer.generate_comprehensive_report(away_team_id, home_team_id)
         except:
             metrics = {}
@@ -362,16 +393,26 @@ class OnePageReportGenerator:
     def create_player_performance_section(self, game_data):
         """Create player performance section with detailed metrics"""
         try:
-            away_team = game_data['game_center']['awayTeam']['abbrev']
-            home_team = game_data['game_center']['homeTeam']['abbrev']
+            # Handle both old and new data structures
+            if 'boxscore' in game_data['game_center']:
+                away_team = game_data['game_center']['boxscore']['awayTeam']['abbrev']
+                home_team = game_data['game_center']['boxscore']['homeTeam']['abbrev']
+            else:
+                away_team = game_data['game_center']['awayTeam']['abbrev']
+                home_team = game_data['game_center']['homeTeam']['abbrev']
         except:
             away_team = "AWY"
             home_team = "HME"
         
         # Get player data
         try:
-            away_players = game_data['game_center']['awayTeam']['players']
-            home_players = game_data['game_center']['homeTeam']['players']
+            # Handle both old and new data structures
+            if 'boxscore' in game_data['game_center']:
+                away_players = game_data['game_center']['boxscore']['awayTeam']['players']
+                home_players = game_data['game_center']['boxscore']['homeTeam']['players']
+            else:
+                away_players = game_data['game_center']['awayTeam']['players']
+                home_players = game_data['game_center']['homeTeam']['players']
         except:
             away_players = []
             home_players = []
