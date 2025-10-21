@@ -33,11 +33,7 @@ jobs:
       - name: Start log
         run: |
           echo "🏒 DAILY NHL EDGE DATA SCRAPING"
-          python - <<'PY'
-            from datetime import datetime
-            print('📅 Date:', datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'), 'UTC')
-            print('='*50)
-          PY
+          python3 -c "from datetime import datetime; print('📅 Date:', datetime.utcnow().strftime('%Y-%m-%d %H:%M:%S'), 'UTC'); print('='*50)"
 
       - name: Scrape Edge data
         run: |
