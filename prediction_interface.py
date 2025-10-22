@@ -29,10 +29,29 @@ class PredictionInterface:
             # Compute across all available finalized games
             for p in predictions:
                 actual = p.get('actual_winner')
-                predicted = p.get('predicted_winner')
-                if actual and predicted:
+                # Derive predicted winner from probabilities
+                away_prob = p.get('predicted_away_win_prob')
+                home_prob = p.get('predicted_home_win_prob')
+                predicted = None
+                if isinstance(away_prob, (int, float)) and isinstance(home_prob, (int, float)):
+                    predicted = 'away' if away_prob > home_prob else 'home'
+
+                # Normalize actual winner to 'home'/'away' if it's a team abbrev
+                if actual and actual not in ('home', 'away'):
+                    away_team = p.get('away_team')
+                    home_team = p.get('home_team')
+                    if actual == away_team:
+                        actual_side = 'away'
+                    elif actual == home_team:
+                        actual_side = 'home'
+                    else:
+                        actual_side = None
+                else:
+                    actual_side = actual
+
+                if actual_side and predicted:
                     total += 1
-                    if actual == predicted:
+                    if actual_side == predicted:
                         correct += 1
             if total > 0:
                 acc = correct / total
