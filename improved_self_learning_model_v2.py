@@ -28,13 +28,15 @@ class ImprovedSelfLearningModelV2:
         self.min_games_for_update = 3
         self.weight_clip_range = (0.05, 0.50)  # Prevent extreme weights
         
-        # Team performance tracking
-        self.team_stats_file = Path("team_performance_stats_v2.json")
-        # Load team stats from main file first, then fallback to separate file
-        if "team_stats" in self.model_data:
-            self.team_stats = self.model_data["team_stats"]
-        else:
-            self.team_stats = self.load_team_stats()
+        # Team performance tracking - use new season stats format
+        self.team_stats_file = Path("season_2025_2026_team_stats.json")
+        self.historical_stats_file = Path("historical_seasons_team_stats.json")
+        
+        # Load current season stats
+        self.team_stats = self.load_team_stats()
+        
+        # Load historical stats if available
+        self.historical_stats = self.load_historical_stats()
         
     def load_model_data(self) -> Dict:
         """Load existing model data and predictions"""
@@ -96,13 +98,25 @@ class ImprovedSelfLearningModelV2:
         }
     
     def load_team_stats(self) -> Dict:
-        """Load team performance statistics"""
+        """Load current season team performance statistics"""
         if self.team_stats_file.exists():
             try:
                 with open(self.team_stats_file, 'r') as f:
-                    return json.load(f)
+                    data = json.load(f)
+                    return data.get('teams', {})
             except Exception as e:
                 logger.error(f"Error loading team stats: {e}")
+        return {}
+    
+    def load_historical_stats(self) -> Dict:
+        """Load historical seasons team performance statistics"""
+        if self.historical_stats_file.exists():
+            try:
+                with open(self.historical_stats_file, 'r') as f:
+                    data = json.load(f)
+                    return data.get('seasons', {})
+            except Exception as e:
+                logger.error(f"Error loading historical stats: {e}")
         return {}
     
     def save_model_data(self):
@@ -141,85 +155,73 @@ class ImprovedSelfLearningModelV2:
         
         return clipped_weights
     
-    def get_team_performance(self, team: str, is_home: bool = True) -> Dict:
-        """Get comprehensive team performance data"""
+    def get_team_performance(self, team: str, venue: str) -> Dict:
+        """Get comprehensive team performance data from new team stats format"""
         team_key = team.upper()
-        venue = "home" if is_home else "away"
         
-        if team_key not in self.team_stats:
-            return self._get_default_performance()
+        # Try current season first
+        if team_key in self.team_stats:
+            team_data = self.team_stats[team_key]
+            return {
+                'xg': team_data.get('xg_avg', 0.0),
+                'hdc': team_data.get('hdc_avg', 0.0),
+                'shots': 30.0,  # Default shots (not in new format yet)
+                'goals': 2.0,   # Default goals (not in new format yet)
+                'gs': team_data.get('gs_avg', 0.0),
+                'xg_avg': team_data.get('xg_avg', 0.0),
+                'hdc_avg': team_data.get('hdc_avg', 0.0),
+                'shots_avg': 30.0,
+                'goals_avg': 2.0,
+                'gs_avg': team_data.get('gs_avg', 0.0),
+                'corsi_avg': 50.0,  # Default (not in new format yet)
+                'power_play_avg': 0.0,  # Default (not in new format yet)
+                'faceoff_avg': 50.0,  # Default (not in new format yet)
+                'hits_avg': 0.0,  # Default (not in new format yet)
+                'blocked_shots_avg': 0.0,  # Default (not in new format yet)
+                'giveaways_avg': 0.0,  # Default (not in new format yet)
+                'takeaways_avg': 0.0,  # Default (not in new format yet)
+                'penalty_minutes_avg': 0.0,  # Default (not in new format yet)
+                'games_played': team_data.get('games_played', 0),
+                'recent_form': 0.5,  # Default
+                'head_to_head': 0.5,  # Default
+                'rest_days_advantage': 0.0,  # Default
+                'goalie_performance': 0.5,  # Default
+                'confidence': self._calculate_confidence(team_data.get('games_played', 0))
+            }
         
-        team_data = self.team_stats[team_key]
-        if venue not in team_data:
-            return self._get_default_performance()
+        # Try historical data if current season not available
+        for season_name, season_data in self.historical_stats.items():
+            if 'teams' in season_data and team_key in season_data['teams']:
+                team_data = season_data['teams'][team_key]
+                return {
+                    'xg': team_data.get('xg_avg', 0.0),
+                    'hdc': team_data.get('hdc_avg', 0.0),
+                    'shots': 30.0,
+                    'goals': 2.0,
+                    'gs': team_data.get('gs_avg', 0.0),
+                    'xg_avg': team_data.get('xg_avg', 0.0),
+                    'hdc_avg': team_data.get('hdc_avg', 0.0),
+                    'shots_avg': 30.0,
+                    'goals_avg': 2.0,
+                    'gs_avg': team_data.get('gs_avg', 0.0),
+                    'corsi_avg': 50.0,
+                    'power_play_avg': 0.0,
+                    'faceoff_avg': 50.0,
+                    'hits_avg': 0.0,
+                    'blocked_shots_avg': 0.0,
+                    'giveaways_avg': 0.0,
+                    'takeaways_avg': 0.0,
+                    'penalty_minutes_avg': 0.0,
+                    'games_played': team_data.get('games_played', 0),
+                    'recent_form': 0.5,
+                    'head_to_head': 0.5,
+                    'rest_days_advantage': 0.0,
+                    'goalie_performance': 0.5,
+                    'confidence': self._calculate_confidence(team_data.get('games_played', 0))
+                }
         
-        venue_data = team_data[venue]
-        
-        # Calculate averages with proper goal data
-        games = venue_data.get('games', [])
-        if not games:
-            return self._get_default_performance()
-        
-        # Get actual goals from game outcomes
-        goals = venue_data.get('goals', [])
-        xg_data = venue_data.get('xg', [])
-        hdc_data = venue_data.get('hdc', [])
-        shots_data = venue_data.get('shots', [])
-        gs_data = venue_data.get('gs', [])
-        
-        # Filter out zeros and calculate proper averages
-        valid_goals = [g for g in goals if g > 0] if goals else [0]
-        valid_xg = [x for x in xg_data if x > 0] if xg_data else [0]
-        valid_hdc = [h for h in hdc_data if h > 0] if hdc_data else [0]
-        valid_shots = [s for s in shots_data if s > 0] if shots_data else [0]
-        valid_gs = [g for g in gs_data if g > 0] if gs_data else [0]
-        
-        # Get additional metrics from venue data
-        corsi_data = venue_data.get('corsi_pct', [])
-        power_play_data = venue_data.get('power_play_pct', [])
-        faceoff_data = venue_data.get('faceoff_pct', [])
-        hits_data = venue_data.get('hits', [])
-        blocked_shots_data = venue_data.get('blocked_shots', [])
-        giveaways_data = venue_data.get('giveaways', [])
-        takeaways_data = venue_data.get('takeaways', [])
-        penalty_minutes_data = venue_data.get('penalty_minutes', [])
-        
-        # Calculate averages for all metrics
-        valid_corsi = [c for c in corsi_data if c > 0] if corsi_data else [50.0]
-        valid_power_play = [p for p in power_play_data if p > 0] if power_play_data else [0.0]
-        valid_faceoff = [f for f in faceoff_data if f > 0] if faceoff_data else [50.0]
-        valid_hits = [h for h in hits_data if h > 0] if hits_data else [0]
-        valid_blocked_shots = [b for b in blocked_shots_data if b > 0] if blocked_shots_data else [0]
-        valid_giveaways = [g for g in giveaways_data if g > 0] if giveaways_data else [0]
-        valid_takeaways = [t for t in takeaways_data if t > 0] if takeaways_data else [0]
-        valid_penalty_minutes = [p for p in penalty_minutes_data if p > 0] if penalty_minutes_data else [0]
-        
-        return {
-            'xg': np.mean(valid_xg) if valid_xg else 0.0,
-            'hdc': np.mean(valid_hdc) if valid_hdc else 0.0,
-            'shots': np.mean(valid_shots) if valid_shots else 0.0,
-            'goals': np.mean(valid_goals) if valid_goals else 0.0,
-            'gs': np.mean(valid_gs) if valid_gs else 0.0,
-            'xg_avg': np.mean(valid_xg) if valid_xg else 0.0,
-            'hdc_avg': np.mean(valid_hdc) if valid_hdc else 0.0,
-            'shots_avg': np.mean(valid_shots) if valid_shots else 0.0,
-            'goals_avg': np.mean(valid_goals) if valid_goals else 0.0,
-            'gs_avg': np.mean(valid_gs) if valid_gs else 0.0,
-            'corsi_avg': np.mean(valid_corsi) if valid_corsi else 50.0,
-            'power_play_avg': np.mean(valid_power_play) if valid_power_play else 0.0,
-            'faceoff_avg': np.mean(valid_faceoff) if valid_faceoff else 50.0,
-            'hits_avg': np.mean(valid_hits) if valid_hits else 0.0,
-            'blocked_shots_avg': np.mean(valid_blocked_shots) if valid_blocked_shots else 0.0,
-            'giveaways_avg': np.mean(valid_giveaways) if valid_giveaways else 0.0,
-            'takeaways_avg': np.mean(valid_takeaways) if valid_takeaways else 0.0,
-            'penalty_minutes_avg': np.mean(valid_penalty_minutes) if valid_penalty_minutes else 0.0,
-            'games_played': len(games),
-            'recent_form': self._calculate_recent_form(team_key, venue),
-            'head_to_head': self._calculate_head_to_head(team_key, venue),
-            'rest_days_advantage': self._calculate_rest_days_advantage(team_key, venue),
-            'goalie_performance': self._calculate_goalie_performance(team_key, venue),
-            'confidence': self._calculate_confidence(len(games))
-        }
+        # Return defaults if no data found
+        return self._get_default_performance()
     
     def _get_default_performance(self) -> Dict:
         """Get default performance for teams with no data"""
