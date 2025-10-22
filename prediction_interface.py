@@ -164,9 +164,8 @@ class PredictionInterface:
     
     def send_discord_notification(self, predictions):
         """Send Discord notification with today's predictions"""
-        # Discord webhook URL (from GitHub secrets or hardcoded for testing)
-        webhook_url = os.getenv('DISCORD_WEBHOOK_URL', 
-                               'https://discord.com/api/webhooks/1417616260958785667/2QvzAvVoVnU3gY-_xYwTWwMsiBM4osXmI9n46n40wA5ZIVJEUyxGB-FxZ_Zx_DMF1EaT')
+        # Discord webhook URL must come from environment/secret
+        webhook_url = os.getenv('DISCORD_WEBHOOK_URL')
         
         if not webhook_url:
             print("❌ Discord webhook URL not configured")
