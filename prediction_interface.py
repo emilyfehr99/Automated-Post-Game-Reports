@@ -17,6 +17,40 @@ class PredictionInterface:
         """Initialize the prediction interface"""
         self.api = NHLAPIClient()
         self.learning_model = ImprovedSelfLearningModelV2()
+    
+    def _compute_model_performance_fallback(self):
+        """Compute performance from saved predictions if in-memory stats are empty."""
+        try:
+            with open('win_probability_predictions_v2.json', 'r') as f:
+                data = json.load(f)
+            predictions = data.get('predictions', [])
+            total = 0
+            correct = 0
+            # Compute across all available finalized games
+            for p in predictions:
+                actual = p.get('actual_winner')
+                predicted = p.get('predicted_winner')
+                if actual and predicted:
+                    total += 1
+                    if actual == predicted:
+                        correct += 1
+            if total > 0:
+                acc = correct / total
+                return {
+                    'total_games': total,
+                    'correct_predictions': correct,
+                    'accuracy': acc,
+                    'recent_accuracy': acc
+                }
+        except Exception:
+            pass
+        # If nothing found, return zeros (caller may decide what to display)
+        return {
+            'total_games': 0,
+            'correct_predictions': 0,
+            'accuracy': 0.0,
+            'recent_accuracy': 0.0
+        }
         
     def get_todays_predictions(self):
         """Get predictions for today's games using the self-learning model"""
@@ -186,8 +220,10 @@ class PredictionInterface:
             prediction_text += f"🎯 {away_team} {away_prob:.1f}% | {home_team} {home_prob:.1f}%\n"
             prediction_text += f"⭐ Favorite: {favorite} (+{spread:.1f}%)\n\n"
         
-        # Add model performance info
+        # Add model performance info (fallback to file-derived accuracy if needed)
         perf = self.learning_model.get_model_performance()
+        if not perf or perf.get('total_games', 0) == 0:
+            perf = self._compute_model_performance_fallback()
         prediction_text += f"📊 **Model Performance:**\n"
         prediction_text += f"• Total Games: {perf['total_games']}\n"
         prediction_text += f"• Accuracy: {perf['accuracy']:.1%}\n"
