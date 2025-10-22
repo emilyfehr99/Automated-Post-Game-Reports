@@ -282,6 +282,8 @@ class PredictionInterface:
     def show_model_performance(self):
         """Show current model performance"""
         perf = self.learning_model.get_model_performance()
+        if not perf or perf.get('total_games', 0) == 0:
+            perf = self._compute_model_performance_fallback()
         print(f"\n📊 MODEL PERFORMANCE:")
         print(f"  Total Games: {perf['total_games']}")
         print(f"  Accuracy: {perf['accuracy']:.3f}")
