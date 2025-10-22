@@ -166,6 +166,22 @@ class PredictionInterface:
                 'spread': spread
             })
 
+        # Save predictions to model for future learning
+        for pred in predictions:
+            try:
+                self.learning_model.add_prediction(
+                    game_id=pred.get('game_id', ''),
+                    date=datetime.now().strftime('%Y-%m-%d'),
+                    away_team=pred['away_team'],
+                    home_team=pred['home_team'],
+                    predicted_away_prob=pred['predicted_away_win_prob'],
+                    predicted_home_prob=pred['predicted_home_win_prob'],
+                    metrics_used={},  # Will be filled when game completes
+                    actual_winner=None  # Will be updated when game completes
+                )
+            except Exception as e:
+                print(f"⚠️  Error saving prediction: {e}")
+
         # Run daily learning update (only learn from completed games, not future predictions)
         try:
             self.learning_model.run_daily_update()
@@ -239,19 +255,20 @@ class PredictionInterface:
             prediction_text += f"🎯 {away_team} {away_prob:.1f}% | {home_team} {home_prob:.1f}%\n"
             prediction_text += f"⭐ Favorite: {favorite} (+{spread:.1f}%)\n\n"
         
-        # Use trained model performance (56.2% accuracy from historical data)
+        # Get current model performance for recent accuracy
         perf = self.learning_model.get_model_performance()
         if not perf or perf.get('total_games', 0) == 0:
             perf = self._compute_model_performance_fallback()
         
-        # Override with trained accuracy from historical data
+        # Use trained accuracy from historical data + recent accuracy from new games
         trained_accuracy = 0.562  # 56.2% from comprehensive training
         trained_total_games = 2624  # Historical games used for training
+        recent_accuracy = perf.get('recent_accuracy', trained_accuracy)  # Recent games accuracy
         
         prediction_text += f"📊 **Model Performance:**\n"
         prediction_text += f"• Total Games: {trained_total_games}\n"
         prediction_text += f"• Accuracy: {trained_accuracy:.1%}\n"
-        prediction_text += f"• Recent Accuracy: {perf.get('recent_accuracy', trained_accuracy):.1%}\n\n"
+        prediction_text += f"• Recent Accuracy: {recent_accuracy:.1%}\n\n"
         prediction_text += f"🤖 *Powered by Self-Learning AI Model*"
         
         # Discord webhook payload
