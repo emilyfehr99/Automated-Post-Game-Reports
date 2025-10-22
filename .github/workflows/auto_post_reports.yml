@@ -64,12 +64,12 @@ jobs:
       run: |
         python3 github_actions_runner.py
     
-    - name: Commit processed games log
+    - name: Commit processed games and team stats
       if: steps.time_check.outputs.should_run == 'true'
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "GitHub Actions Bot"
-        git add processed_games.json || true
-        git diff --quiet && git diff --staged --quiet || git commit -m "Update processed games [skip ci]"
+        git add processed_games.json season_2025_2026_team_stats.json || true
+        git diff --quiet && git diff --staged --quiet || git commit -m "Update processed games and team stats [skip ci]"
         git push || true
 

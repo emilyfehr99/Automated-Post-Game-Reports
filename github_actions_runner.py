@@ -11,6 +11,7 @@ from nhl_api_client import NHLAPIClient
 from twitter_poster import TwitterPoster
 from twitter_config import TEAM_HASHTAGS, TWITTER_API_KEY
 from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
+from pdf_report_generator import PostGameReportGenerator
 import json
 import subprocess
 import numpy as np
@@ -23,6 +24,8 @@ class GitHubActionsRunner:
         self.processed_games_file = Path('processed_games.json')
         self.processed_games = self.load_processed_games()
         self.learning_model = ImprovedSelfLearningModelV2()
+        self.report_generator = PostGameReportGenerator()
+        self.team_stats_file = Path('season_2025_2026_team_stats.json')
         
     def load_processed_games(self):
         """Load previously processed game IDs"""
@@ -42,6 +45,92 @@ class GitHubActionsRunner:
                 json.dump({'games': list(self.processed_games)}, f, indent=2)
         except Exception as e:
             print(f"⚠️  Could not save processed games: {e}")
+    
+    def load_team_stats(self):
+        """Load current team stats"""
+        if self.team_stats_file.exists():
+            try:
+                with open(self.team_stats_file, 'r') as f:
+                    return json.load(f)
+            except Exception as e:
+                print(f"⚠️  Could not load team stats: {e}")
+        
+        # Initialize empty structure
+        return {
+            'season': '2025-2026',
+            'generated_at': datetime.utcnow().isoformat(),
+            'total_games': 0,
+            'teams': {}
+        }
+    
+    def save_team_stats(self, stats):
+        """Save team stats"""
+        try:
+            with open(self.team_stats_file, 'w') as f:
+                json.dump(stats, f, indent=2)
+        except Exception as e:
+            print(f"⚠️  Could not save team stats: {e}")
+    
+    def update_team_stats_from_game(self, game_data):
+        """Extract metrics from a completed game and update team stats"""
+        try:
+            # Get team info from boxscore
+            boxscore = game_data.get('boxscore', {})
+            away_team = boxscore.get('awayTeam', {})
+            home_team = boxscore.get('homeTeam', {})
+            
+            away_abbrev = away_team.get('abbrev')
+            home_abbrev = home_team.get('abbrev')
+            
+            if not away_abbrev or not home_abbrev:
+                return
+            
+            # Extract metrics using the report generator
+            away_xg, home_xg = self.report_generator._calculate_xg_from_plays(game_data)
+            away_hdc, home_hdc = self.report_generator._calculate_hdc_from_plays(game_data)
+            away_gs, home_gs = self.report_generator._calculate_game_scores(game_data)
+            
+            # Load current stats
+            stats = self.load_team_stats()
+            
+            # Update stats for both teams
+            for team_abbrev, xg, hdc, gs in [
+                (away_abbrev, away_xg, home_xg),
+                (home_abbrev, home_xg, home_hdc)
+            ]:
+                if team_abbrev not in stats['teams']:
+                    stats['teams'][team_abbrev] = {
+                        'games_played': 0,
+                        'xg_sum': 0.0,
+                        'hdc_sum': 0.0,
+                        'gs_sum': 0.0,
+                        'xg_avg': 0.0,
+                        'hdc_avg': 0.0,
+                        'gs_avg': 0.0
+                    }
+                
+                team_data = stats['teams'][team_abbrev]
+                team_data['games_played'] += 1
+                team_data['xg_sum'] += float(xg or 0.0)
+                team_data['hdc_sum'] += float(hdc or 0.0)
+                team_data['gs_sum'] += float(gs or 0.0)
+                
+                # Recalculate averages
+                if team_data['games_played'] > 0:
+                    team_data['xg_avg'] = team_data['xg_sum'] / team_data['games_played']
+                    team_data['hdc_avg'] = team_data['hdc_sum'] / team_data['games_played']
+                    team_data['gs_avg'] = team_data['gs_sum'] / team_data['games_played']
+            
+            # Update metadata
+            stats['generated_at'] = datetime.utcnow().isoformat()
+            stats['total_games'] = sum(team['games_played'] for team in stats['teams'].values())
+            
+            # Save updated stats
+            self.save_team_stats(stats)
+            print(f"✅ Updated team stats for {away_abbrev} vs {home_abbrev}")
+            
+        except Exception as e:
+            print(f"⚠️  Error updating team stats: {e}")
     
     def get_todays_games(self):
         """Get all games from today (based on Central Time)"""
@@ -86,6 +175,10 @@ class GitHubActionsRunner:
             if not game_data:
                 print(f"❌ Failed to fetch game data")
                 return False
+            
+            # Update team stats from this completed game
+            print(f"📈 Updating team stats from completed game...")
+            self.update_team_stats_from_game(game_data)
             
             # Create output filename
             output_filename = f"/tmp/nhl_postgame_report_{away_team}_vs_{home_team}_{game_id}.pdf"
