@@ -775,6 +775,45 @@ class ImprovedSelfLearningModelV2:
             "recent_accuracy": 0.0
         })
     
+    def analyze_model_performance(self) -> Dict:
+        """Analyze model performance by team and other metrics"""
+        predictions = self.model_data.get("predictions", [])
+        
+        # Calculate team accuracy
+        team_accuracy = {}
+        team_games = {}
+        
+        for pred in predictions:
+            if pred.get("actual_winner"):
+                away_team = pred.get("away_team")
+                home_team = pred.get("home_team")
+                predicted_winner = pred.get("predicted_winner")
+                actual_winner = pred.get("actual_winner")
+                
+                # Count games for each team
+                if away_team:
+                    team_games[away_team] = team_games.get(away_team, 0) + 1
+                if home_team:
+                    team_games[home_team] = team_games.get(home_team, 0) + 1
+                
+                # Count correct predictions for each team
+                if predicted_winner == actual_winner:
+                    if actual_winner == away_team and away_team:
+                        team_accuracy[away_team] = team_accuracy.get(away_team, 0) + 1
+                    elif actual_winner == home_team and home_team:
+                        team_accuracy[home_team] = team_accuracy.get(home_team, 0) + 1
+        
+        # Convert to percentages
+        for team in team_accuracy:
+            if team_games.get(team, 0) > 0:
+                team_accuracy[team] = team_accuracy[team] / team_games[team]
+        
+        return {
+            "team_accuracy": team_accuracy,
+            "team_games": team_games,
+            "total_predictions": len(predictions)
+        }
+    
     def clean_duplicate_predictions(self):
         """Remove duplicate game entries from model data"""
         predictions = self.model_data.get('predictions', [])
