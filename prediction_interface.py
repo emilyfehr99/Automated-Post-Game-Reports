@@ -5,6 +5,8 @@ This is separate from the post-game win probability analysis
 """
 
 import json
+import requests
+import os
 from nhl_api_client import NHLAPIClient
 from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
 from datetime import datetime, timedelta
@@ -160,6 +162,88 @@ class PredictionInterface:
             'SJS': {'xg_avg': 2.2, 'hdc_avg': 1.0, 'shots_avg': 22, 'gs_avg': 10.5}
         }
     
+    def send_discord_notification(self, predictions):
+        """Send Discord notification with today's predictions"""
+        # Discord webhook URL (from GitHub secrets or hardcoded for testing)
+        webhook_url = os.getenv('DISCORD_WEBHOOK_URL', 
+                               'https://discord.com/api/webhooks/1417616260958785667/2QvzAvVoVnU3gY-_xYwTWwMsiBM4osXmI9n46n40wA5ZIVJEUyxGB-FxZ_Zx_DMF1EaT')
+        
+        if not webhook_url:
+            print("❌ Discord webhook URL not configured")
+            return False
+        
+        # Format predictions for Discord
+        prediction_text = "🏒 **DAILY NHL PREDICTIONS** 🏒\n\n"
+        
+        for i, pred in enumerate(predictions, 1):
+            away_team = pred['away_team']
+            home_team = pred['home_team']
+            away_prob = pred['predicted_away_win_prob'] * 100
+            home_prob = pred['predicted_home_win_prob'] * 100
+            favorite = pred['favorite']
+            spread = pred['spread']
+            
+            prediction_text += f"**{i}. {away_team} @ {home_team}**\n"
+            prediction_text += f"🎯 {away_team} {away_prob:.1f}% | {home_team} {home_prob:.1f}%\n"
+            prediction_text += f"⭐ Favorite: {favorite} (+{spread:.1f}%)\n\n"
+        
+        # Add model performance info
+        perf = self.learning_model.get_model_performance()
+        prediction_text += f"📊 **Model Performance:**\n"
+        prediction_text += f"• Total Games: {perf['total_games']}\n"
+        prediction_text += f"• Accuracy: {perf['accuracy']:.1%}\n"
+        prediction_text += f"• Recent Accuracy: {perf['recent_accuracy']:.1%}\n\n"
+        prediction_text += f"🤖 *Powered by Self-Learning AI Model*"
+        
+        # Discord webhook payload
+        payload = {
+            "content": prediction_text,
+            "username": "NHL Predictions Bot",
+            "embeds": [
+                {
+                    "title": "🏒 Daily NHL Predictions",
+                    "description": f"Predictions for {len(predictions)} games today",
+                    "color": 3447003,  # Blue color
+                    "fields": [
+                        {
+                            "name": "📅 Date",
+                            "value": datetime.now().strftime('%Y-%m-%d'),
+                            "inline": True
+                        },
+                        {
+                            "name": "🎮 Games",
+                            "value": str(len(predictions)),
+                            "inline": True
+                        },
+                        {
+                            "name": "📊 Model Accuracy",
+                            "value": f"{perf['accuracy']:.1%}",
+                            "inline": True
+                        }
+                    ],
+                    "footer": {
+                        "text": "Self-Learning AI Model • Updated Daily"
+                    }
+                }
+            ]
+        }
+        
+        try:
+            print("📤 Sending Discord notification...")
+            response = requests.post(webhook_url, json=payload)
+            
+            if response.status_code == 204:
+                print("✅ Discord notification sent successfully!")
+                return True
+            else:
+                print(f"❌ Discord notification failed: {response.status_code}")
+                print(f"   Response: {response.text}")
+                return False
+                
+        except Exception as e:
+            print(f"❌ Error sending Discord notification: {e}")
+            return False
+
     def show_model_performance(self):
         """Show current model performance"""
         perf = self.learning_model.get_model_performance()
@@ -186,6 +270,17 @@ def main():
     
     # Show model performance
     predictor.show_model_performance()
+    
+    # Send Discord notification if there are predictions
+    if predictions:
+        print(f"\n📤 Sending Discord notification...")
+        success = predictor.send_discord_notification(predictions)
+        if success:
+            print("✅ Discord notification sent successfully!")
+        else:
+            print("❌ Discord notification failed")
+    else:
+        print("\nℹ️  No games today - skipping Discord notification")
     
     print(f"\n🎯 SUMMARY:")
     print(f"  Total games predicted: {len(predictions)}")
