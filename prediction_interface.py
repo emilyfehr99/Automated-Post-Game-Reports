@@ -293,7 +293,7 @@ class PredictionInterface:
                         },
                         {
                             "name": "📊 Model Accuracy",
-                            "value": f"{perf['accuracy']:.1%}",
+                            "value": f"{trained_accuracy:.1%}",
                             "inline": True
                         }
                     ],
