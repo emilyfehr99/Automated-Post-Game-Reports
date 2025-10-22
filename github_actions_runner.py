@@ -10,7 +10,7 @@ from pathlib import Path
 from nhl_api_client import NHLAPIClient
 from twitter_poster import TwitterPoster
 from twitter_config import TEAM_HASHTAGS, TWITTER_API_KEY
-from self_learning_model import SelfLearningModel
+from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
 import json
 import subprocess
 import numpy as np
@@ -22,7 +22,7 @@ class GitHubActionsRunner:
         self.client = NHLAPIClient()
         self.processed_games_file = Path('processed_games.json')
         self.processed_games = self.load_processed_games()
-        self.learning_model = SelfLearningModel()
+        self.learning_model = ImprovedSelfLearningModelV2()
         
     def load_processed_games(self):
         """Load previously processed game IDs"""
