@@ -142,7 +142,7 @@ class PredictionInterface:
             # Get prediction using self-learning model
             prediction = self.predict_game(away_team, home_team)
             
-            print(f'   🎯 Prediction: {away_team} {prediction["away_prob"]:.1f}% | {home_team} {prediction["home_prob"]:.1f}%')
+            print(f'   🎯 Prediction: {away_team} {prediction["away_prob"]*100:.1f}% | {home_team} {prediction["home_prob"]*100:.1f}%')
             
             # Determine favorite
             if prediction["away_prob"] > prediction["home_prob"]:
@@ -152,8 +152,8 @@ class PredictionInterface:
                 favorite = home_team
                 spread = prediction["home_prob"] - prediction["away_prob"]
             
-            print(f'   ⭐ Favorite: {favorite} (+{spread:.1f}%)')
-            print(f'   📊 Confidence: {max(prediction["away_prob"], prediction["home_prob"]):.1f}%')
+            print(f'   ⭐ Favorite: {favorite} (+{spread*100:.1f}%)')
+            print(f'   📊 Confidence: {max(prediction["away_prob"], prediction["home_prob"])*100:.1f}%')
             print()
             
             predictions.append({
