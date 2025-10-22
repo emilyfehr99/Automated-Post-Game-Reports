@@ -333,8 +333,8 @@ class ImprovedSelfLearningModelV2:
         """Predict a game with improved features and confidence"""
         
         # Get team performance data
-        away_perf = self.get_team_performance(away_team, is_home=False)
-        home_perf = self.get_team_performance(home_team, is_home=True)
+        away_perf = self.get_team_performance(away_team, venue="away")
+        home_perf = self.get_team_performance(home_team, venue="home")
         
         # If we don't have enough data for either team, use simple prediction
         if away_perf['games_played'] < 2 or home_perf['games_played'] < 2:
@@ -480,8 +480,8 @@ class ImprovedSelfLearningModelV2:
     
     def _form_based_predict(self, away_team: str, home_team: str) -> Dict:
         """Predict based primarily on recent form (last 5 games)"""
-        away_perf = self.get_team_performance(away_team, is_home=False)
-        home_perf = self.get_team_performance(home_team, is_home=True)
+        away_perf = self.get_team_performance(away_team, venue="away")
+        home_perf = self.get_team_performance(home_team, venue="home")
         
         # Use recent form but weight it by confidence and games played
         away_form_score = away_perf['recent_form'] * away_perf['confidence'] * 100
@@ -520,8 +520,8 @@ class ImprovedSelfLearningModelV2:
     
     def _momentum_based_predict(self, away_team: str, home_team: str) -> Dict:
         """Predict based on momentum and streaks"""
-        away_perf = self.get_team_performance(away_team, is_home=False)
-        home_perf = self.get_team_performance(home_team, is_home=True)
+        away_perf = self.get_team_performance(away_team, venue="away")
+        home_perf = self.get_team_performance(home_team, venue="home")
         
         # If we don't have enough data, fall back to traditional metrics
         if away_perf['games_played'] < 3 or home_perf['games_played'] < 3:
