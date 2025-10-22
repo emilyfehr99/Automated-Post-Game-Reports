@@ -19,19 +19,20 @@ jobs:
     - name: Check if we should run (active hours: 5pm-1:30am CT on weekdays)
       id: time_check
       run: |
-        # Get current time in Central Time (UTC-6)
-        CENTRAL_HOUR=$(TZ='America/Chicago' date +%H)
-        CENTRAL_MINUTE=$(TZ='America/Chicago' date +%M)
-        CENTRAL_DAY=$(TZ='America/Chicago' date +%u)  # 1=Monday, 7=Sunday
+        # Get current time in Central Time
+        export TZ='America/Chicago'
+        CENTRAL_HOUR=$(date +%H)
+        CENTRAL_MINUTE=$(date +%M)
+        CENTRAL_DAY=$(date +%u)  # 1=Monday, 7=Sunday
         
-        echo "Current Central Time: $(TZ='America/Chicago' date '+%Y-%m-%d %H:%M:%S %A')"
+        echo "Current Central Time: $(date '+%Y-%m-%d %H:%M:%S %A')"
         echo "Hour: $CENTRAL_HOUR, Minute: $CENTRAL_MINUTE, Day: $CENTRAL_DAY"
         
         # Check if we're in active hours (5pm-1:30am CT on weekdays)
-        # Active hours: 17:00-23:59 (5pm-11:59pm) OR 00:00-01:30 (12am-1:30am)
         if [ $CENTRAL_DAY -le 5 ]; then
           # Weekday - check if in active hours
-          if ([ $CENTRAL_HOUR -ge 17 ]) || ([ $CENTRAL_HOUR -eq 0 ] && [ $CENTRAL_MINUTE -le 30 ]) || ([ $CENTRAL_HOUR -eq 1 ] && [ $CENTRAL_MINUTE -le 30 ]); then
+          # Active hours: 17:00-23:59 (5pm-11:59pm) OR 00:00-01:30 (12am-1:30am)
+          if [ $CENTRAL_HOUR -ge 17 ] || ([ $CENTRAL_HOUR -eq 0 ] && [ $CENTRAL_MINUTE -le 30 ]) || ([ $CENTRAL_HOUR -eq 1 ] && [ $CENTRAL_MINUTE -le 30 ]); then
             echo "✅ RUNNING: Active hours (5pm-1:30am CT on weekdays)"
             echo "should_run=true" >> $GITHUB_OUTPUT
           else
