@@ -2,8 +2,8 @@ name: Auto Post NHL Reports
 
 on:
   schedule:
-    # Run every 30 minutes during game hours, skip weekdays 2am-3pm Central
-    - cron: '*/30 * * * *'
+    # Run every 15 minutes during active hours (5pm-1:30am CT on weekdays)
+    - cron: '*/15 * * * *'
   workflow_dispatch:  # Allow manual triggering
 
 jobs:
@@ -16,23 +16,32 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
     
-    - name: Check if we should run (skip weekdays 2am-3pm Central)
+    - name: Check if we should run (active hours: 5pm-1:30am CT on weekdays)
       id: time_check
       run: |
         # Get current time in Central Time (UTC-6)
         CENTRAL_HOUR=$(TZ='America/Chicago' date +%H)
+        CENTRAL_MINUTE=$(TZ='America/Chicago' date +%M)
         CENTRAL_DAY=$(TZ='America/Chicago' date +%u)  # 1=Monday, 7=Sunday
         
         echo "Current Central Time: $(TZ='America/Chicago' date '+%Y-%m-%d %H:%M:%S %A')"
-        echo "Hour: $CENTRAL_HOUR, Day: $CENTRAL_DAY"
+        echo "Hour: $CENTRAL_HOUR, Minute: $CENTRAL_MINUTE, Day: $CENTRAL_DAY"
         
-        # Skip if weekday (1-5) and between 2am (02) and 3pm (15)
-        if [ $CENTRAL_DAY -le 5 ] && [ $CENTRAL_HOUR -ge 2 ] && [ $CENTRAL_HOUR -lt 15 ]; then
-          echo "⏸️  SKIPPING: Weekday off-hours (2am-3pm Central)"
-          echo "should_run=false" >> $GITHUB_OUTPUT
-          exit 0
+        # Check if we're in active hours (5pm-1:30am CT on weekdays)
+        # Active hours: 17:00-23:59 (5pm-11:59pm) OR 00:00-01:30 (12am-1:30am)
+        if [ $CENTRAL_DAY -le 5 ]; then
+          # Weekday - check if in active hours
+          if ([ $CENTRAL_HOUR -ge 17 ]) || ([ $CENTRAL_HOUR -eq 0 ] && [ $CENTRAL_MINUTE -le 30 ]) || ([ $CENTRAL_HOUR -eq 1 ] && [ $CENTRAL_MINUTE -le 30 ]); then
+            echo "✅ RUNNING: Active hours (5pm-1:30am CT on weekdays)"
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          else
+            echo "⏸️  SKIPPING: Weekday off-hours (outside 5pm-1:30am CT)"
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
         else
-          echo "✅ RUNNING: Game time!"
+          # Weekend - always run
+          echo "✅ RUNNING: Weekend - always active"
           echo "should_run=true" >> $GITHUB_OUTPUT
         fi
     
