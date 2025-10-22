@@ -412,8 +412,8 @@ class ImprovedSelfLearningModelV2:
         away_prob = (away_prob / total) * 100
         home_prob = (home_prob / total) * 100
         
-        # Calculate confidence in prediction
-        prediction_confidence = avg_confidence * 100
+        # Calculate confidence in prediction (keep as decimal 0-1)
+        prediction_confidence = avg_confidence
         
         return {
             'away_prob': away_prob,
@@ -454,10 +454,14 @@ class ImprovedSelfLearningModelV2:
             momentum_based['home_prob'] * weights[2]
         )
         
-        # Normalize to 100%
+        # Normalize to 1.0 (decimal probabilities)
         total = away_prob + home_prob
-        away_prob = (away_prob / total) * 100
-        home_prob = (home_prob / total) * 100
+        if total > 0:
+            away_prob = away_prob / total
+            home_prob = home_prob / total
+        else:
+            away_prob = 0.5
+            home_prob = 0.5
         
         # Calculate ensemble confidence
         ensemble_confidence = (
@@ -484,8 +488,8 @@ class ImprovedSelfLearningModelV2:
         home_perf = self.get_team_performance(home_team, venue="home")
         
         # Use recent form but weight it by confidence and games played
-        away_form_score = away_perf['recent_form'] * away_perf['confidence'] * 100
-        home_form_score = home_perf['recent_form'] * home_perf['confidence'] * 100
+        away_form_score = away_perf['recent_form'] * away_perf['confidence']
+        home_form_score = home_perf['recent_form'] * home_perf['confidence']
         
         # Add home advantage
         home_form_score *= 1.05
