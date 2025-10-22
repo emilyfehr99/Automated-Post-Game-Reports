@@ -159,7 +159,38 @@ class ImprovedSelfLearningModelV2:
         """Get comprehensive team performance data from new team stats format"""
         team_key = team.upper()
         
-        # Try current season first
+        # Try historical data first (more comprehensive)
+        for season_name, season_data in self.historical_stats.items():
+            if 'teams' in season_data and team_key in season_data['teams']:
+                team_data = season_data['teams'][team_key]
+                return {
+                    'xg': team_data.get('xg_avg', 0.0),
+                    'hdc': team_data.get('hdc_avg', 0.0),
+                    'shots': 30.0,  # Default shots
+                    'goals': 2.0,   # Default goals
+                    'gs': team_data.get('gs_avg', 0.0),
+                    'xg_avg': team_data.get('xg_avg', 0.0),
+                    'hdc_avg': team_data.get('hdc_avg', 0.0),
+                    'shots_avg': 30.0,
+                    'goals_avg': 2.0,
+                    'gs_avg': team_data.get('gs_avg', 0.0),
+                    'corsi_avg': 50.0,  # Default Corsi
+                    'power_play_avg': 0.0,  # Default PP
+                    'faceoff_avg': 50.0,  # Default faceoffs
+                    'hits_avg': 0.0,  # Default hits
+                    'blocked_shots_avg': 0.0,  # Default blocked shots
+                    'giveaways_avg': 0.0,  # Default giveaways
+                    'takeaways_avg': 0.0,  # Default takeaways
+                    'penalty_minutes_avg': 0.0,  # Default PIM
+                    'games_played': team_data.get('games_played', 0),
+                    'recent_form': 0.5,  # Default recent form
+                    'head_to_head': 0.5,  # Default H2H
+                    'rest_days_advantage': 0.0,  # Default rest days
+                    'goalie_performance': 0.5,  # Default goalie performance
+                    'confidence': self._calculate_confidence(team_data.get('games_played', 0))
+                }
+        
+        # Fallback to current season if no historical data
         if team_key in self.team_stats:
             team_data = self.team_stats[team_key]
             return {
@@ -189,36 +220,6 @@ class ImprovedSelfLearningModelV2:
                 'confidence': self._calculate_confidence(team_data.get('games_played', 0))
             }
         
-        # Try historical data if current season not available
-        for season_name, season_data in self.historical_stats.items():
-            if 'teams' in season_data and team_key in season_data['teams']:
-                team_data = season_data['teams'][team_key]
-                return {
-                    'xg': team_data.get('xg_avg', 0.0),
-                    'hdc': team_data.get('hdc_avg', 0.0),
-                    'shots': 30.0,
-                    'goals': 2.0,
-                    'gs': team_data.get('gs_avg', 0.0),
-                    'xg_avg': team_data.get('xg_avg', 0.0),
-                    'hdc_avg': team_data.get('hdc_avg', 0.0),
-                    'shots_avg': 30.0,
-                    'goals_avg': 2.0,
-                    'gs_avg': team_data.get('gs_avg', 0.0),
-                    'corsi_avg': 50.0,
-                    'power_play_avg': 0.0,
-                    'faceoff_avg': 50.0,
-                    'hits_avg': 0.0,
-                    'blocked_shots_avg': 0.0,
-                    'giveaways_avg': 0.0,
-                    'takeaways_avg': 0.0,
-                    'penalty_minutes_avg': 0.0,
-                    'games_played': team_data.get('games_played', 0),
-                    'recent_form': 0.5,
-                    'head_to_head': 0.5,
-                    'rest_days_advantage': 0.0,
-                    'goalie_performance': 0.5,
-                    'confidence': self._calculate_confidence(team_data.get('games_played', 0))
-                }
         
         # Return defaults if no data found
         return self._get_default_performance()
