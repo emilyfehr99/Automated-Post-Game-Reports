@@ -573,8 +573,8 @@ class ImprovedSelfLearningModelV2:
             "date": date,
             "away_team": away_team,
             "home_team": home_team,
-            "predicted_away_win_prob": predicted_away_prob / 100.0,  # Convert percentage to decimal
-            "predicted_home_win_prob": predicted_home_prob / 100.0,  # Convert percentage to decimal
+            "predicted_away_win_prob": predicted_away_prob,  # Already in decimal format
+            "predicted_home_win_prob": predicted_home_prob,  # Already in decimal format
             "metrics_used": metrics_used,
             "actual_winner": actual_winner,
             "actual_away_score": actual_away_score,
@@ -586,9 +586,9 @@ class ImprovedSelfLearningModelV2:
         # Calculate prediction accuracy if we know the actual winner
         if actual_winner:
             if actual_winner == "away":
-                prediction["prediction_accuracy"] = predicted_away_prob / 100.0
+                prediction["prediction_accuracy"] = predicted_away_prob  # Already in decimal format
             elif actual_winner == "home":
-                prediction["prediction_accuracy"] = predicted_home_prob / 100.0
+                prediction["prediction_accuracy"] = predicted_home_prob  # Already in decimal format
             
             # Update model performance
             self.update_model_performance(prediction)
@@ -598,6 +598,9 @@ class ImprovedSelfLearningModelV2:
         
         self.model_data["predictions"].append(prediction)
         logger.info(f"Added prediction for {away_team} @ {home_team}: {predicted_away_prob:.1f}% vs {predicted_home_prob:.1f}%")
+        
+        # Save the updated model data immediately
+        self.save_model_data()
     
     def update_model_performance(self, prediction: Dict):
         """Update model performance metrics"""
@@ -760,6 +763,9 @@ class ImprovedSelfLearningModelV2:
         # Save updated model
         self.save_model_data()
         self.save_team_stats()
+        
+        # Return model performance for the GitHub workflow
+        return self.get_model_performance()
     
     def _calculate_weight_updates(self, recent_predictions: List[Dict]) -> Dict:
         """Calculate weight updates based on recent prediction performance"""

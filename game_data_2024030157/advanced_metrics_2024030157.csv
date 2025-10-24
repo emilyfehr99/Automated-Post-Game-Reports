@@ -1,0 +1,39 @@
+team,metric_category,metric_name,value
+Away,Shot Quality,total_shots,83
+Away,Shot Quality,shots_on_goal,26
+Away,Shot Quality,missed_shots,31
+Away,Shot Quality,blocked_shots,26
+Away,Shot Quality,high_danger_shots,11
+Away,Shot Quality,shooting_percentage,0.3132530120481928
+Away,Shot Quality,expected_goals,0
+Away,Pressure,sustained_pressure_sequences,28
+Away,Pressure,quick_strike_opportunities,45
+Away,Defense,blocked_shots,26
+Away,Defense,takeaways,4
+Away,Defense,hits,49
+Away,Defense,defensive_zone_clears,16
+Away,Defense,penalty_kill_efficiency,0
+Away,Defense,shot_attempts_against,68
+Away,Defense,high_danger_chances_against,11
+Away,Cross-Ice Passes,total_cross_ice_attempts,24
+Away,Cross-Ice Passes,successful_cross_ice_passes,11
+Away,Cross-Ice Passes,cross_ice_success_rate,0.4583333333333333
+Home,Shot Quality,total_shots,98
+Home,Shot Quality,shots_on_goal,43
+Home,Shot Quality,missed_shots,25
+Home,Shot Quality,blocked_shots,30
+Home,Shot Quality,high_danger_shots,11
+Home,Shot Quality,shooting_percentage,0.4387755102040816
+Home,Shot Quality,expected_goals,0
+Home,Pressure,sustained_pressure_sequences,30
+Home,Pressure,quick_strike_opportunities,36
+Home,Defense,blocked_shots,30
+Home,Defense,takeaways,7
+Home,Defense,hits,73
+Home,Defense,defensive_zone_clears,11
+Home,Defense,penalty_kill_efficiency,0
+Home,Defense,shot_attempts_against,57
+Home,Defense,high_danger_chances_against,11
+Home,Cross-Ice Passes,total_cross_ice_attempts,12
+Home,Cross-Ice Passes,successful_cross_ice_passes,4
+Home,Cross-Ice Passes,cross_ice_success_rate,0.3333333333333333

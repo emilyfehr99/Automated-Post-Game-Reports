@@ -1,0 +1,22 @@
+{
+  "training_results": {
+    "total_historical_games": 2624,
+    "seasons_used": [
+      "2023-2024",
+      "2024-2025"
+    ],
+    "training_timestamp": "2025-10-22T09:48:13.487107"
+  },
+  "evaluation_metrics": {
+    "total_predictions": 116,
+    "accuracy": 0.5625,
+    "accuracy_ci_lower": 0.3932530203122613,
+    "accuracy_ci_upper": 0.7183491403055682,
+    "precision": 0.5625,
+    "recall": 0.5625,
+    "f1_score": 0.5625,
+    "log_loss": 0.6782129105199222,
+    "r_squared": -0.7777777777777777,
+    "chi_square": 0.07256235827664399,
+    "p_value": 0.7876418827849376,
+    "statistical_significance": 

@@ -2,8 +2,8 @@ name: Auto Post NHL Reports
 
 on:
   schedule:
-    # Run every 15 minutes during active hours (5pm-1:30am CT on weekdays)
-    - cron: '*/15 * * * *'
+    # Run every 10 minutes during active hours (5pm-1:30am CT on weekdays)
+    - cron: '*/10 * * * *'
   workflow_dispatch:  # Allow manual triggering
 
 jobs:

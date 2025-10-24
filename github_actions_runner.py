@@ -370,9 +370,17 @@ class GitHubActionsRunner:
                     print(f"⚠️  Could not extract detailed metrics: {e}")
                 
                 # Add prediction to learning model
+                # Use the actual game date, not today's date
+                game_date = game_data.get('gameDate', datetime.now().strftime('%Y-%m-%d'))
+                if isinstance(game_date, str):
+                    # Convert from YYYY-MM-DD format
+                    game_date = game_date.split('T')[0] if 'T' in game_date else game_date
+                else:
+                    game_date = datetime.now().strftime('%Y-%m-%d')
+                
                 self.learning_model.add_prediction(
                     game_id=game_id,
-                    date=datetime.now().strftime('%Y-%m-%d'),
+                    date=game_date,
                     away_team=away_team,
                     home_team=home_team,
                     predicted_away_prob=win_prob['away_probability'],

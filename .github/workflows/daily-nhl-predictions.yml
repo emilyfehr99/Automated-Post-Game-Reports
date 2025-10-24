@@ -1,0 +1,94 @@
+name: Daily NHL Predictions with Edge Data
+
+on:
+  schedule:
+    # 6am Central: 12:00 UTC (CST, UTC-6) and 11:00 UTC (CDT, UTC-5)
+    - cron: '0 12 * * *'
+    - cron: '0 11 * * *'
+    # Also run at 6:15am Central to catch the window
+    - cron: '15 12 * * *'
+    - cron: '15 11 * * *'
+  workflow_dispatch: {}
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          persist-credentials: true
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install pytz requests pandas numpy beautifulsoup4 python-dateutil
+
+      - name: Check time window
+        run: |
+          python3 -c "
+          import pytz
+          from datetime import datetime
+          ct = pytz.timezone('US/Central')
+          now_ct = datetime.now(ct)
+          print('Now (CT):', now_ct.strftime('%Y-%m-%d %H:%M:%S %Z'))
+          print('Running daily predictions workflow...')
+          "
+
+      - name: Scrape Edge data
+        run: |
+          echo "🏒 SCRAPING NHL EDGE DATA"
+          echo "Current directory: $(pwd)"
+          echo "Contents:"
+          ls -la
+          echo "Looking for scraper:"
+          find . -name "daily_edge_data_scraper.py" -type f
+          echo "Running scraper:"
+          python3 daily_edge_data_scraper.py
+
+      - name: Validate edge data exists
+        run: |
+          if [ -f "nhl_edge_data.json" ]; then
+            echo "✅ Edge data file created successfully"
+            ls -l nhl_edge_data.json
+          else
+            echo "❌ Edge data file not found" && exit 1
+          fi
+
+      - name: Run daily predictions
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          python3 prediction_interface.py
+
+      - name: Commit edge data changes
+        run: |
+          git config user.email "action@github.com"
+          git config user.name "github-actions[bot]"
+          git add nhl_edge_data.json
+          git diff --cached --quiet || git commit -m "Update NHL Edge data - $(date -u +'%Y-%m-%d')"
+
+      - name: Create Pull Request for edge data
+        uses: peter-evans/create-pull-request@v6
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          commit-message: "Update NHL Edge data - ${{ github.run_id }}"
+          title: "Update NHL Edge data"
+          body: |
+            Automated daily update of NHL Edge data used by predictions.
+            - Source: Puckalytics Edge report
+            - File: nhl_edge_data.json
+          branch: chore/update-edge-data
+          base: main
+          delete-branch: true

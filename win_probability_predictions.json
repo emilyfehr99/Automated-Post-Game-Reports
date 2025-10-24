@@ -1,0 +1,2437 @@
+{
+  "predictions": [
+    {
+      "game_id": "2025020072",
+      "date": "2025-10-17",
+      "away_team": "TBL",
+      "home_team": "DET",
+      "predicted_away_win_prob": 51.661307609860664,
+      "predicted_home_win_prob": 48.33869239013933,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 3.39,
+        "home_xg": 2.77,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.48338692390139326,
+      "timestamp": "2025-10-18T14:37:33.041968"
+    },
+    {
+      "game_id": "2025020073",
+      "date": "2025-10-17",
+      "away_team": "MIN",
+      "home_team": "WSH",
+      "predicted_away_win_prob": 41.28440366972477,
+      "predicted_home_win_prob": 58.71559633027523,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 1.85,
+        "home_xg": 5.27,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5871559633027523,
+      "timestamp": "2025-10-18T14:37:33.287036"
+    },
+    {
+      "game_id": "2025020074",
+      "date": "2025-10-17",
+      "away_team": "VAN",
+      "home_team": "CHI",
+      "predicted_away_win_prob": 54.79386385426653,
+      "predicted_home_win_prob": 45.20613614573345,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 5.18,
+        "home_xg": 3.18,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5479386385426653,
+      "timestamp": "2025-10-18T14:37:33.524074"
+    },
+    {
+      "game_id": "2025020075",
+      "date": "2025-10-17",
+      "away_team": "SJS",
+      "home_team": "UTA",
+      "predicted_away_win_prob": 45.4646017699115,
+      "predicted_home_win_prob": 54.5353982300885,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 1.97,
+        "home_xg": 3.61,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5453539823008849,
+      "timestamp": "2025-10-18T14:37:33.737651"
+    },
+    {
+      "game_id": "2025020001",
+      "date": "2025-10-07",
+      "away_team": "CHI",
+      "home_team": "FLA",
+      "predicted_away_win_prob": 43.25313807531381,
+      "predicted_home_win_prob": 56.7468619246862,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 2.02,
+        "home_xg": 4.6,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.567468619246862,
+      "timestamp": "2025-10-18T14:49:05.838112"
+    },
+    {
+      "game_id": "2025020002",
+      "date": "2025-10-07",
+      "away_team": "PIT",
+      "home_team": "NYR",
+      "predicted_away_win_prob": 53.87359836901121,
+      "predicted_home_win_prob": 46.12640163098879,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 4.32,
+        "home_xg": 2.8,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5387359836901121,
+      "timestamp": "2025-10-18T14:49:06.279086"
+    },
+    {
+      "game_id": "2025020003",
+      "date": "2025-10-07",
+      "away_team": "COL",
+      "home_team": "LAK",
+      "predicted_away_win_prob": 47.66984839977541,
+      "predicted_home_win_prob": 52.330151600224596,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 2.24,
+        "home_xg": 3.07,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.4766984839977541,
+      "timestamp": "2025-10-18T14:49:06.735800"
+    },
+    {
+      "game_id": "2025020004",
+      "date": "2025-10-08",
+      "away_team": "MTL",
+      "home_team": "TOR",
+      "predicted_away_win_prob": 52.70057682223387,
+      "predicted_home_win_prob": 47.29942317776612,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 3.8,
+        "home_xg": 2.77,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.4729942317776612,
+      "timestamp": "2025-10-18T14:49:07.641760"
+    },
+    {
+      "game_id": "2025020005",
+      "date": "2025-10-08",
+      "away_team": "BOS",
+      "home_team": "WSH",
+      "predicted_away_win_prob": 42.86501377410469,
+      "predicted_home_win_prob": 57.13498622589531,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 1.53,
+        "home_xg": 4.12,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.4286501377410469,
+      "timestamp": "2025-10-18T14:49:08.156129"
+    },
+    {
+      "game_id": "2025020006",
+      "date": "2025-10-08",
+      "away_team": "CGY",
+      "home_team": "EDM",
+      "predicted_away_win_prob": 49.368932038834956,
+      "predicted_home_win_prob": 50.63106796116506,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 3.92,
+        "home_xg": 4.18,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.49368932038834956,
+      "timestamp": "2025-10-18T14:49:08.309975"
+    },
+    {
+      "game_id": "2025020007",
+      "date": "2025-10-08",
+      "away_team": "LAK",
+      "home_team": "VGK",
+      "predicted_away_win_prob": 45.86624539231175,
+      "predicted_home_win_prob": 54.13375460768825,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 2.46,
+        "home_xg": 4.03,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.45866245392311744,
+      "timestamp": "2025-10-18T14:49:08.778772"
+    },
+    {
+      "game_id": "2025020008",
+      "date": "2025-10-09",
+      "away_team": "CHI",
+      "home_team": "BOS",
+      "predicted_away_win_prob": 48.484848484848484,
+      "predicted_home_win_prob": 51.515151515151516,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 2.39,
+        "home_xg": 2.93,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5151515151515151,
+      "timestamp": "2025-10-18T14:49:09.322192"
+    },
+    {
+      "game_id": "2025020009",
+      "date": "2025-10-09",
+      "away_team": "NYR",
+      "home_team": "BUF",
+      "predicted_away_win_prob": 52.887364208118925,
+      "predicted_home_win_prob": 47.112635791881075,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 3.0,
+        "home_xg": 1.99,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5288736420811893,
+      "timestamp": "2025-10-18T14:49:09.897215"
+    },
+    {
+      "game_id": "2025020010",
+      "date": "2025-10-09",
+      "away_team": "MTL",
+      "home_team": "DET",
+      "predicted_away_win_prob": 45.65842438182864,
+      "predicted_home_win_prob": 54.34157561817137,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 1.69,
+        "home_xg": 3.2,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.4565842438182864,
+      "timestamp": "2025-10-18T14:49:10.337358"
+    },
+    {
+      "game_id": "2025020011",
+      "date": "2025-10-09",
+      "away_team": "OTT",
+      "home_team": "TBL",
+      "predicted_away_win_prob": 54.147982062780265,
+      "predicted_home_win_prob": 45.852017937219735,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 3.41,
+        "home_xg": 1.93,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5414798206278026,
+      "timestamp": "2025-10-18T14:49:10.922203"
+    },
+    {
+      "game_id": "2025020012",
+      "date": "2025-10-09",
+      "away_team": "PHI",
+      "home_team": "FLA",
+      "predicted_away_win_prob": 47.30813287514318,
+      "predicted_home_win_prob": 52.69186712485682,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 2.01,
+        "home_xg": 2.95,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5269186712485682,
+      "timestamp": "2025-10-18T14:49:11.429510"
+    },
+    {
+      "game_id": "2025020013",
+      "date": "2025-10-09",
+      "away_team": "NYI",
+      "home_team": "PIT",
+      "predicted_away_win_prob": 48.3729966002914,
+      "predicted_home_win_prob": 51.62700339970859,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 3.71,
+        "home_xg": 4.38,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5162700339970859,
+      "timestamp": "2025-10-18T14:49:11.938236"
+    },
+    {
+      "game_id": "2025020014",
+      "date": "2025-10-09",
+      "away_team": "NJD",
+      "home_team": "CAR",
+      "predicted_away_win_prob": 45.29025191675793,
+      "predicted_home_win_prob": 54.70974808324206,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 2.02,
+        "home_xg": 3.74,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5470974808324206,
+      "timestamp": "2025-10-18T14:49:12.474599"
+    },
+    {
+      "game_id": "2025020015",
+      "date": "2025-10-09",
+      "away_team": "MIN",
+      "home_team": "STL",
+      "predicted_away_win_prob": 48.68571428571428,
+      "predicted_home_win_prob": 51.31428571428571,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 2.27,
+        "home_xg": 2.73,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.4868571428571428,
+      "timestamp": "2025-10-18T14:49:12.950690"
+    },
+    {
+      "game_id": "2025020016",
+      "date": "2025-10-09",
+      "away_team": "CBJ",
+      "home_team": "NSH",
+      "predicted_away_win_prob": 50.72463768115942,
+      "predicted_home_win_prob": 49.275362318840585,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 3.2,
+        "home_xg": 2.93,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.4927536231884059,
+      "timestamp": "2025-10-18T14:49:13.390036"
+    },
+    {
+      "game_id": "2025020017",
+      "date": "2025-10-09",
+      "away_team": "DAL",
+      "home_team": "WPG",
+      "predicted_away_win_prob": 51.0482180293501,
+      "predicted_home_win_prob": 48.9517819706499,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 3.49,
+        "home_xg": 3.09,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.510482180293501,
+      "timestamp": "2025-10-18T14:49:13.810828"
+    },
+    {
+      "game_id": "2025020018",
+      "date": "2025-10-09",
+      "away_team": "UTA",
+      "home_team": "COL",
+      "predicted_away_win_prob": 47.509578544061306,
+      "predicted_home_win_prob": 52.49042145593871,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 2.43,
+        "home_xg": 3.34,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5249042145593871,
+      "timestamp": "2025-10-18T14:49:14.303706"
+    },
+    {
+      "game_id": "2025020019",
+      "date": "2025-10-09",
+      "away_team": "CGY",
+      "home_team": "VAN",
+      "predicted_away_win_prob": 52.57548845470693,
+      "predicted_home_win_prob": 47.42451154529307,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 2.63,
+        "home_xg": 1.76,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.47424511545293074,
+      "timestamp": "2025-10-18T14:49:14.737965"
+    },
+    {
+      "game_id": "2025020020",
+      "date": "2025-10-09",
+      "away_team": "VGK",
+      "home_team": "SJS",
+      "predicted_away_win_prob": 47.91894852135815,
+      "predicted_home_win_prob": 52.08105147864184,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 2.5,
+        "home_xg": 3.26,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.4791894852135815,
+      "timestamp": "2025-10-18T14:49:15.220731"
+    },
+    {
+      "game_id": "2025020021",
+      "date": "2025-10-09",
+      "away_team": "ANA",
+      "home_team": "SEA",
+      "predicted_away_win_prob": 55.01340482573727,
+      "predicted_home_win_prob": 44.98659517426273,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 4.01,
+        "home_xg": 2.14,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.44986595174262733,
+      "timestamp": "2025-10-18T14:49:15.771521"
+    },
+    {
+      "game_id": "2025020022",
+      "date": "2025-10-11",
+      "away_team": "LAK",
+      "home_team": "WPG",
+      "predicted_away_win_prob": 52.401960784313715,
+      "predicted_home_win_prob": 47.59803921568628,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 4.44,
+        "home_xg": 3.46,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.4759803921568628,
+      "timestamp": "2025-10-18T14:49:16.809423"
+    },
+    {
+      "game_id": "2025020023",
+      "date": "2025-10-11",
+      "away_team": "STL",
+      "home_team": "CGY",
+      "predicted_away_win_prob": 50.495049504950494,
+      "predicted_home_win_prob": 49.5049504950495,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 3.44,
+        "home_xg": 3.25,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.504950495049505,
+      "timestamp": "2025-10-18T14:49:17.250265"
+    },
+    {
+      "game_id": "2025020024",
+      "date": "2025-10-11",
+      "away_team": "BUF",
+      "home_team": "BOS",
+      "predicted_away_win_prob": 44.9642267473858,
+      "predicted_home_win_prob": 55.035773252614206,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 1.92,
+        "home_xg": 3.75,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5503577325261421,
+      "timestamp": "2025-10-18T14:49:17.780392"
+    },
+    {
+      "game_id": "2025020025",
+      "date": "2025-10-11",
+      "away_team": "TOR",
+      "home_team": "DET",
+      "predicted_away_win_prob": 46.725860155382904,
+      "predicted_home_win_prob": 53.27413984461708,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 2.17,
+        "home_xg": 3.35,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5327413984461709,
+      "timestamp": "2025-10-18T14:49:18.291501"
+    },
+    {
+      "game_id": "2025020026",
+      "date": "2025-10-11",
+      "away_team": "NJD",
+      "home_team": "TBL",
+      "predicted_away_win_prob": 52.797016515716564,
+      "predicted_home_win_prob": 47.20298348428343,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 3.66,
+        "home_xg": 2.61,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5279701651571657,
+      "timestamp": "2025-10-18T14:49:18.906650"
+    },
+    {
+      "game_id": "2025020027",
+      "date": "2025-10-11",
+      "away_team": "OTT",
+      "home_team": "FLA",
+      "predicted_away_win_prob": 46.28844114528102,
+      "predicted_home_win_prob": 53.71155885471898,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 2.48,
+        "home_xg": 3.88,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5371155885471898,
+      "timestamp": "2025-10-18T14:49:19.520499"
+    },
+    {
+      "game_id": "2025020028",
+      "date": "2025-10-11",
+      "away_team": "WSH",
+      "home_team": "NYI",
+      "predicted_away_win_prob": 52.399608227228214,
+      "predicted_home_win_prob": 47.60039177277179,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 4.45,
+        "home_xg": 3.47,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5239960822722821,
+      "timestamp": "2025-10-18T14:49:19.986212"
+    },
+    {
+      "game_id": "2025020029",
+      "date": "2025-10-11",
+      "away_team": "NYR",
+      "home_team": "PIT",
+      "predicted_away_win_prob": 50.74706510138741,
+      "predicted_home_win_prob": 49.252934898612594,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 3.26,
+        "home_xg": 2.98,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5074706510138741,
+      "timestamp": "2025-10-18T14:49:20.550115"
+    },
+    {
+      "game_id": "2025020030",
+      "date": "2025-10-11",
+      "away_team": "PHI",
+      "home_team": "CAR",
+      "predicted_away_win_prob": 45.52884615384615,
+      "predicted_home_win_prob": 54.47115384615384,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 3.22,
+        "home_xg": 5.08,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5447115384615384,
+      "timestamp": "2025-10-18T14:49:21.161692"
+    },
+    {
+      "game_id": "2025020031",
+      "date": "2025-10-11",
+      "away_team": "MTL",
+      "home_team": "CHI",
+      "predicted_away_win_prob": 55.642225689027555,
+      "predicted_home_win_prob": 44.35777431097244,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 4.45,
+        "home_xg": 2.28,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5564222568902756,
+      "timestamp": "2025-10-18T14:49:21.773481"
+    },
+    {
+      "game_id": "2025020032",
+      "date": "2025-10-11",
+      "away_team": "UTA",
+      "home_team": "NSH",
+      "predicted_away_win_prob": 47.45945945945946,
+      "predicted_home_win_prob": 52.54054054054053,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 2.53,
+        "home_xg": 3.47,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.4745945945945946,
+      "timestamp": "2025-10-18T14:49:22.388626"
+    },
+    {
+      "game_id": "2025020033",
+      "date": "2025-10-11",
+      "away_team": "CBJ",
+      "home_team": "MIN",
+      "predicted_away_win_prob": 47.91773778920309,
+      "predicted_home_win_prob": 52.08226221079691,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 3.07,
+        "home_xg": 3.88,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.47917737789203085,
+      "timestamp": "2025-10-18T14:49:22.876215"
+    },
+    {
+      "game_id": "2025020034",
+      "date": "2025-10-11",
+      "away_team": "DAL",
+      "home_team": "COL",
+      "predicted_away_win_prob": 46.2015503875969,
+      "predicted_home_win_prob": 53.7984496124031,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 2.69,
+        "home_xg": 4.16,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.462015503875969,
+      "timestamp": "2025-10-18T14:49:23.412860"
+    },
+    {
+      "game_id": "2025020035",
+      "date": "2025-10-11",
+      "away_team": "VAN",
+      "home_team": "EDM",
+      "predicted_away_win_prob": 42.639094042343665,
+      "predicted_home_win_prob": 57.36090595765633,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 2.41,
+        "home_xg": 5.4,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5736090595765633,
+      "timestamp": "2025-10-18T14:49:23.896561"
+    },
+    {
+      "game_id": "2025020036",
+      "date": "2025-10-11",
+      "away_team": "ANA",
+      "home_team": "SJS",
+      "predicted_away_win_prob": 57.17884130982368,
+      "predicted_home_win_prob": 42.821158690176325,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 5.1,
+        "home_xg": 2.25,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5717884130982368,
+      "timestamp": "2025-10-18T14:49:24.362566"
+    },
+    {
+      "game_id": "2025020037",
+      "date": "2025-10-11",
+      "away_team": "VGK",
+      "home_team": "SEA",
+      "predicted_away_win_prob": 48.38001098297639,
+      "predicted_home_win_prob": 51.61998901702361,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 2.56,
+        "home_xg": 3.15,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5161998901702362,
+      "timestamp": "2025-10-18T14:49:24.811335"
+    },
+    {
+      "game_id": "2025020038",
+      "date": "2025-10-12",
+      "away_team": "WSH",
+      "home_team": "NYR",
+      "predicted_away_win_prob": 47.704918032786885,
+      "predicted_home_win_prob": 52.29508196721312,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 2.48,
+        "home_xg": 3.32,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.47704918032786886,
+      "timestamp": "2025-10-18T14:49:25.374100"
+    },
+    {
+      "game_id": "2025020039",
+      "date": "2025-10-13",
+      "away_team": "COL",
+      "home_team": "BUF",
+      "predicted_away_win_prob": 49.43820224719101,
+      "predicted_home_win_prob": 50.56179775280899,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 2.55,
+        "home_xg": 2.75,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.4943820224719101,
+      "timestamp": "2025-10-18T14:49:25.915499"
+    },
+    {
+      "game_id": "2025020040",
+      "date": "2025-10-13",
+      "away_team": "TBL",
+      "home_team": "BOS",
+      "predicted_away_win_prob": 52.28539576365663,
+      "predicted_home_win_prob": 47.71460423634337,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 3.13,
+        "home_xg": 2.31,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5228539576365663,
+      "timestamp": "2025-10-18T14:49:26.221144"
+    },
+    {
+      "game_id": "2025020041",
+      "date": "2025-10-13",
+      "away_team": "NSH",
+      "home_team": "OTT",
+      "predicted_away_win_prob": 49.41699056079955,
+      "predicted_home_win_prob": 50.583009439200445,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 2.65,
+        "home_xg": 2.86,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.49416990560799545,
+      "timestamp": "2025-10-18T14:49:26.665868"
+    },
+    {
+      "game_id": "2025020042",
+      "date": "2025-10-13",
+      "away_team": "WPG",
+      "home_team": "NYI",
+      "predicted_away_win_prob": 49.94850669412976,
+      "predicted_home_win_prob": 50.05149330587023,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 3.45,
+        "home_xg": 3.47,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.49948506694129763,
+      "timestamp": "2025-10-18T14:49:27.200140"
+    },
+    {
+      "game_id": "2025020043",
+      "date": "2025-10-13",
+      "away_team": "DET",
+      "home_team": "TOR",
+      "predicted_away_win_prob": 45.646295294753926,
+      "predicted_home_win_prob": 54.353704705246074,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 2.19,
+        "home_xg": 3.8,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.45646295294753925,
+      "timestamp": "2025-10-18T14:49:27.527506"
+    },
+    {
+      "game_id": "2025020044",
+      "date": "2025-10-13",
+      "away_team": "FLA",
+      "home_team": "PHI",
+      "predicted_away_win_prob": 49.50603732162458,
+      "predicted_home_win_prob": 50.49396267837542,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 2.77,
+        "home_xg": 2.95,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5049396267837541,
+      "timestamp": "2025-10-18T14:49:27.893193"
+    },
+    {
+      "game_id": "2025020045",
+      "date": "2025-10-13",
+      "away_team": "NJD",
+      "home_team": "CBJ",
+      "predicted_away_win_prob": 48.02847754654984,
+      "predicted_home_win_prob": 51.97152245345017,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 2.52,
+        "home_xg": 3.24,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.48028477546549836,
+      "timestamp": "2025-10-18T14:49:28.232547"
+    },
+    {
+      "game_id": "2025020046",
+      "date": "2025-10-13",
+      "away_team": "STL",
+      "home_team": "VAN",
+      "predicted_away_win_prob": 51.64835164835166,
+      "predicted_home_win_prob": 48.35164835164835,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 3.62,
+        "home_xg": 2.99,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5164835164835165,
+      "timestamp": "2025-10-18T14:49:28.838732"
+    },
+    {
+      "game_id": "2025020047",
+      "date": "2025-10-13",
+      "away_team": "LAK",
+      "home_team": "MIN",
+      "predicted_away_win_prob": 50.782881002087684,
+      "predicted_home_win_prob": 49.217118997912316,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 3.48,
+        "home_xg": 3.18,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.4921711899791232,
+      "timestamp": "2025-10-18T14:49:29.178030"
+    },
+    {
+      "game_id": "2025020048",
+      "date": "2025-10-13",
+      "away_team": "UTA",
+      "home_team": "CHI",
+      "predicted_away_win_prob": 51.36944613511868,
+      "predicted_home_win_prob": 48.630553864881314,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 2.19,
+        "home_xg": 1.74,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.48630553864881315,
+      "timestamp": "2025-10-18T14:49:29.651867"
+    },
+    {
+      "game_id": "2025020049",
+      "date": "2025-10-14",
+      "away_team": "NSH",
+      "home_team": "TOR",
+      "predicted_away_win_prob": 49.08136482939633,
+      "predicted_home_win_prob": 50.91863517060368,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 3.1,
+        "home_xg": 3.45,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5091863517060368,
+      "timestamp": "2025-10-18T14:49:30.132003"
+    },
+    {
+      "game_id": "2025020050",
+      "date": "2025-10-14",
+      "away_team": "SEA",
+      "home_team": "MTL",
+      "predicted_away_win_prob": 48.812810601877416,
+      "predicted_home_win_prob": 51.18718939812259,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 2.59,
+        "home_xg": 3.02,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5118718939812259,
+      "timestamp": "2025-10-18T14:49:30.567566"
+    },
+    {
+      "game_id": "2025020051",
+      "date": "2025-10-14",
+      "away_team": "EDM",
+      "home_team": "NYR",
+      "predicted_away_win_prob": 44.49315068493151,
+      "predicted_home_win_prob": 55.506849315068486,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 1.87,
+        "home_xg": 3.88,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.4449315068493151,
+      "timestamp": "2025-10-18T14:49:30.876959"
+    },
+    {
+      "game_id": "2025020052",
+      "date": "2025-10-14",
+      "away_team": "TBL",
+      "home_team": "WSH",
+      "predicted_away_win_prob": 46.19849100406268,
+      "predicted_home_win_prob": 53.80150899593732,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 1.71,
+        "home_xg": 3.02,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5380150899593732,
+      "timestamp": "2025-10-18T14:49:31.304592"
+    },
+    {
+      "game_id": "2025020053",
+      "date": "2025-10-14",
+      "away_team": "VGK",
+      "home_team": "CGY",
+      "predicted_away_win_prob": 51.38653084323713,
+      "predicted_home_win_prob": 48.613469156762875,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 2.83,
+        "home_xg": 2.34,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5138653084323713,
+      "timestamp": "2025-10-18T14:49:31.809101"
+    },
+    {
+      "game_id": "2025020054",
+      "date": "2025-10-14",
+      "away_team": "MIN",
+      "home_team": "DAL",
+      "predicted_away_win_prob": 49.78308026030369,
+      "predicted_home_win_prob": 50.21691973969631,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 2.93,
+        "home_xg": 3.01,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5021691973969631,
+      "timestamp": "2025-10-18T14:49:32.424830"
+    },
+    {
+      "game_id": "2025020055",
+      "date": "2025-10-14",
+      "away_team": "CAR",
+      "home_team": "SJS",
+      "predicted_away_win_prob": 53.528114663726576,
+      "predicted_home_win_prob": 46.47188533627343,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 3.46,
+        "home_xg": 2.18,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5352811466372658,
+      "timestamp": "2025-10-18T14:49:32.873067"
+    },
+    {
+      "game_id": "2025020056",
+      "date": "2025-10-14",
+      "away_team": "PIT",
+      "home_team": "ANA",
+      "predicted_away_win_prob": 50.49944506104329,
+      "predicted_home_win_prob": 49.50055493895672,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 2.85,
+        "home_xg": 2.67,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.4950055493895672,
+      "timestamp": "2025-10-18T14:49:33.376148"
+    },
+    {
+      "game_id": "2025020057",
+      "date": "2025-10-15",
+      "away_team": "OTT",
+      "home_team": "BUF",
+      "predicted_away_win_prob": 53.51063829787235,
+      "predicted_home_win_prob": 46.48936170212766,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 3.81,
+        "home_xg": 2.49,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.4648936170212766,
+      "timestamp": "2025-10-18T14:49:33.687663"
+    },
+    {
+      "game_id": "2025020058",
+      "date": "2025-10-15",
+      "away_team": "FLA",
+      "home_team": "DET",
+      "predicted_away_win_prob": 52.03031943692474,
+      "predicted_home_win_prob": 47.96968056307526,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 3.36,
+        "home_xg": 2.61,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.47969680563075257,
+      "timestamp": "2025-10-18T14:49:34.125556"
+    },
+    {
+      "game_id": "2025020059",
+      "date": "2025-10-15",
+      "away_team": "CHI",
+      "home_team": "STL",
+      "predicted_away_win_prob": 50.92592592592593,
+      "predicted_home_win_prob": 49.074074074074076,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 3.1,
+        "home_xg": 2.76,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5092592592592593,
+      "timestamp": "2025-10-18T14:49:34.571666"
+    },
+    {
+      "game_id": "2025020060",
+      "date": "2025-10-15",
+      "away_team": "CGY",
+      "home_team": "UTA",
+      "predicted_away_win_prob": 49.31216931216931,
+      "predicted_home_win_prob": 50.68783068783069,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 3.07,
+        "home_xg": 3.33,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5068783068783069,
+      "timestamp": "2025-10-18T14:49:34.999032"
+    },
+    {
+      "game_id": "2025020061",
+      "date": "2025-10-16",
+      "away_team": "NYR",
+      "home_team": "TOR",
+      "predicted_away_win_prob": 53.52112676056338,
+      "predicted_home_win_prob": 46.478873239436616,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 3.63,
+        "home_xg": 2.33,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.4647887323943662,
+      "timestamp": "2025-10-18T14:49:35.507575"
+    },
+    {
+      "game_id": "2025020062",
+      "date": "2025-10-16",
+      "away_team": "NSH",
+      "home_team": "MTL",
+      "predicted_away_win_prob": 47.952586206896555,
+      "predicted_home_win_prob": 52.047413793103445,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 2.65,
+        "home_xg": 3.41,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5204741379310345,
+      "timestamp": "2025-10-18T14:49:35.811841"
+    },
+    {
+      "game_id": "2025020063",
+      "date": "2025-10-16",
+      "away_team": "SEA",
+      "home_team": "OTT",
+      "predicted_away_win_prob": 53.31658291457286,
+      "predicted_home_win_prob": 46.68341708542714,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 4.36,
+        "home_xg": 3.04,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.46683417085427137,
+      "timestamp": "2025-10-18T14:49:36.280983"
+    },
+    {
+      "game_id": "2025020064",
+      "date": "2025-10-16",
+      "away_team": "FLA",
+      "home_team": "NJD",
+      "predicted_away_win_prob": 50.32327586206896,
+      "predicted_home_win_prob": 49.67672413793104,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 3.09,
+        "home_xg": 2.97,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.4967672413793104,
+      "timestamp": "2025-10-18T14:49:36.606139"
+    },
+    {
+      "game_id": "2025020066",
+      "date": "2025-10-16",
+      "away_team": "WPG",
+      "home_team": "PHI",
+      "predicted_away_win_prob": 48.89022195560888,
+      "predicted_home_win_prob": 51.10977804439113,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 1.9,
+        "home_xg": 2.27,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.4889022195560888,
+      "timestamp": "2025-10-18T14:49:36.994392"
+    },
+    {
+      "game_id": "2025020067",
+      "date": "2025-10-16",
+      "away_team": "COL",
+      "home_team": "CBJ",
+      "predicted_away_win_prob": 54.033092037228535,
+      "predicted_home_win_prob": 45.96690796277146,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 4.2,
+        "home_xg": 2.64,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5403309203722854,
+      "timestamp": "2025-10-18T14:49:37.415707"
+    },
+    {
+      "game_id": "2025020065",
+      "date": "2025-10-16",
+      "away_team": "EDM",
+      "home_team": "NYI",
+      "predicted_away_win_prob": 50.479072112960154,
+      "predicted_home_win_prob": 49.52092788703984,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 3.76,
+        "home_xg": 3.57,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.4952092788703984,
+      "timestamp": "2025-10-18T14:49:37.563740"
+    },
+    {
+      "game_id": "2025020068",
+      "date": "2025-10-16",
+      "away_team": "VAN",
+      "home_team": "DAL",
+      "predicted_away_win_prob": 46.37134778510839,
+      "predicted_home_win_prob": 53.628652214891616,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 3.59,
+        "home_xg": 5.13,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.4637134778510839,
+      "timestamp": "2025-10-18T14:49:37.730805"
+    },
+    {
+      "game_id": "2025020069",
+      "date": "2025-10-16",
+      "away_team": "BOS",
+      "home_team": "VGK",
+      "predicted_away_win_prob": 48.98887765419616,
+      "predicted_home_win_prob": 51.01112234580384,
+      "actual_winner": "home",
+      "metrics_used": {
+        "away_xg": 3.44,
+        "home_xg": 3.84,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5101112234580384,
+      "timestamp": "2025-10-18T14:49:37.893592"
+    },
+    {
+      "game_id": "2025020070",
+      "date": "2025-10-16",
+      "away_team": "CAR",
+      "home_team": "ANA",
+      "predicted_away_win_prob": 57.12151394422311,
+      "predicted_home_win_prob": 42.8784860557769,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 5.22,
+        "home_xg": 2.36,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.5712151394422311,
+      "timestamp": "2025-10-18T14:49:38.053961"
+    },
+    {
+      "game_id": "2025020071",
+      "date": "2025-10-16",
+      "away_team": "PIT",
+      "home_team": "LAK",
+      "predicted_away_win_prob": 48.7551867219917,
+      "predicted_home_win_prob": 51.24481327800831,
+      "actual_winner": "away",
+      "metrics_used": {
+        "away_xg": 3.15,
+        "home_xg": 3.63,
+        "away_hdc": 0,
+        "home_hdc": 0,
+        "away_shots": 0,
+        "home_shots": 0,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "faceoff_weight": 0.05,
+          "other_metrics_weight": 0.05
+        }
+      },
+      "prediction_accuracy": 0.487551867219917,
+      "timestamp": "2025-10-18T14:49:38.213194"
+    },
+    {
+      "game_id": 2025020076,
+      "date": "2025-10-18",
+      "away_team": "FLA",
+      "home_team": "BUF",
+      "predicted_away_win_prob": 50.38560411311054,
+      "predicted_home_win_prob": 49.61439588688946,
+      "metrics_used": {
+        "away_xg": 3.2,
+        "home_xg": 3.1,
+        "away_hdc": 10,
+        "home_hdc": 10,
+        "away_shots": 32,
+        "home_shots": 31,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "game_score_weight": 0.1,
+          "other_metrics_weight": 0.0
+        }
+      },
+      "actual_winner": "home",
+      "prediction_accuracy": 0.4961439588688946,
+      "timestamp": "2025-10-18T22:26:26.799492"
+    },
+    {
+      "game_id": 2025020077,
+      "date": "2025-10-18",
+      "away_team": "NYI",
+      "home_team": "OTT",
+      "predicted_away_win_prob": 43.75866851595007,
+      "predicted_home_win_prob": 56.24133148404993,
+      "metrics_used": {
+        "away_xg": 2.3000000000000003,
+        "home_xg": 3.3000000000000003,
+        "away_hdc": 7,
+        "home_hdc": 11,
+        "away_shots": 23,
+        "home_shots": 33,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "game_score_weight": 0.1,
+          "other_metrics_weight": 0.0
+        }
+      },
+      "actual_winner": "away",
+      "prediction_accuracy": 0.4375866851595007,
+      "timestamp": "2025-10-18T22:26:27.020466"
+    },
+    {
+      "game_id": 2025020078,
+      "date": "2025-10-18",
+      "away_team": "EDM",
+      "home_team": "NJD",
+      "predicted_away_win_prob": 54.63695183321351,
+      "predicted_home_win_prob": 45.363048166786484,
+      "metrics_used": {
+        "away_xg": 3.0,
+        "home_xg": 2.3000000000000003,
+        "away_hdc": 10,
+        "home_hdc": 7,
+        "away_shots": 30,
+        "home_shots": 23,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "game_score_weight": 0.1,
+          "other_metrics_weight": 0.0
+        }
+      },
+      "actual_winner": "home",
+      "prediction_accuracy": 0.45363048166786485,
+      "timestamp": "2025-10-18T22:26:27.231124"
+    },
+    {
+      "game_id": 2025020079,
+      "date": "2025-10-18",
+      "away_team": "SEA",
+      "home_team": "TOR",
+      "predicted_away_win_prob": 49.58734525447043,
+      "predicted_home_win_prob": 50.41265474552957,
+      "metrics_used": {
+        "away_xg": 2.8000000000000003,
+        "home_xg": 2.9000000000000004,
+        "away_hdc": 9,
+        "home_hdc": 9,
+        "away_shots": 28,
+        "home_shots": 29,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "game_score_weight": 0.1,
+          "other_metrics_weight": 0.0
+        }
+      },
+      "actual_winner": "away",
+      "prediction_accuracy": 0.4958734525447043,
+      "timestamp": "2025-10-18T22:26:27.489046"
+    },
+    {
+      "game_id": 2025020080,
+      "date": "2025-10-18",
+      "away_team": "NYR",
+      "home_team": "MTL",
+      "predicted_away_win_prob": 48.47298355520752,
+      "predicted_home_win_prob": 51.52701644479249,
+      "metrics_used": {
+        "away_xg": 2.2,
+        "home_xg": 2.4000000000000004,
+        "away_hdc": 7,
+        "home_hdc": 8,
+        "away_shots": 22,
+        "home_shots": 24,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "game_score_weight": 0.1,
+          "other_metrics_weight": 0.0
+        }
+      },
+      "actual_winner": "away",
+      "prediction_accuracy": 0.4847298355520752,
+      "timestamp": "2025-10-18T22:26:27.665849"
+    },
+    {
+      "game_id": 2025020081,
+      "date": "2025-10-18",
+      "away_team": "MIN",
+      "home_team": "PHI",
+      "predicted_away_win_prob": 45.996441281138786,
+      "predicted_home_win_prob": 54.003558718861214,
+      "metrics_used": {
+        "away_xg": 1.6,
+        "home_xg": 2.1,
+        "away_hdc": 5,
+        "home_hdc": 7,
+        "away_shots": 16,
+        "home_shots": 21,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "game_score_weight": 0.1,
+          "other_metrics_weight": 0.0
+        }
+      },
+      "actual_winner": "home",
+      "prediction_accuracy": 0.5400355871886121,
+      "timestamp": "2025-10-18T22:26:27.902520"
+    },
+    {
+      "game_id": 2025020082,
+      "date": "2025-10-18",
+      "away_team": "TBL",
+      "home_team": "CBJ",
+      "predicted_away_win_prob": 46.01398601398601,
+      "predicted_home_win_prob": 53.986013986013994,
+      "metrics_used": {
+        "away_xg": 2.4000000000000004,
+        "home_xg": 3.1,
+        "away_hdc": 8,
+        "home_hdc": 10,
+        "away_shots": 24,
+        "home_shots": 31,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "game_score_weight": 0.1,
+          "other_metrics_weight": 0.0
+        }
+      },
+      "actual_winner": "home",
+      "prediction_accuracy": 0.5398601398601399,
+      "timestamp": "2025-10-18T22:26:28.139793"
+    },
+    {
+      "game_id": 2025020083,
+      "date": "2025-10-18",
+      "away_team": "DAL",
+      "home_team": "STL",
+      "predicted_away_win_prob": 47.85172704296545,
+      "predicted_home_win_prob": 52.148272957034536,
+      "metrics_used": {
+        "away_xg": 1.9000000000000001,
+        "home_xg": 2.2,
+        "away_hdc": 6,
+        "home_hdc": 7,
+        "away_shots": 19,
+        "home_shots": 22,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "game_score_weight": 0.1,
+          "other_metrics_weight": 0.0
+        }
+      },
+      "actual_winner": "home",
+      "prediction_accuracy": 0.5214827295703454,
+      "timestamp": "2025-10-18T22:26:28.375662"
+    },
+    {
+      "game_id": 2025020084,
+      "date": "2025-10-18",
+      "away_team": "NSH",
+      "home_team": "WPG",
+      "predicted_away_win_prob": 53.986013986013994,
+      "predicted_home_win_prob": 46.01398601398601,
+      "metrics_used": {
+        "away_xg": 3.1,
+        "home_xg": 2.4000000000000004,
+        "away_hdc": 10,
+        "home_hdc": 8,
+        "away_shots": 31,
+        "home_shots": 24,
+        "away_fo_pct": 50,
+        "home_fo_pct": 50,
+        "model_weights": {
+          "xg_weight": 0.4,
+          "hdc_weight": 0.3,
+          "shot_attempts_weight": 0.2,
+          "game_score_weight": 0.1,
+          "other_metrics_weight": 0.0
+        }
+      },
+      "actual_winner": "home",
+      "prediction_accuracy": 0.46013986013986014,
+      "timestamp": "2025-10-18T22:26:28.644672"
+    },
+    {
+      "game_id": "2025020093",
+      "date": "2025-10-20",
+      "away_team": "MIN",
+      "home_team": "NYR",
+      "predicted_away_win_prob": 32.14944529792784,
+      "predicted_home_win_prob": 67.85055470207215,
+      "metrics_used": {},
+      "actual_winner": null,
+      "prediction_accuracy": null,
+      "timestamp": "2025-10-20T09:20:32.811501"
+    },
+    {
+      "game_id": "2025020094",
+      "date": "2025-10-20",
+      "away_team": "SEA",
+      "home_team": "PHI",
+      "predicted_away_win_prob": 57.80149297538013,
+      "predicted_home_win_prob": 42.198507024619865,
+      "metrics_used": {},
+      "actual_winner": null,
+      "prediction_accuracy": null,
+      "timestamp": "2025-10-20T09:20:32.811581"
+    },
+    {
+      "game_id": "2025020095",
+      "date": "2025-10-20",
+      "away_team": "BUF",
+      "home_team": "MTL",
+      "predicted_away_win_prob": 40.39906036996208,
+      "predicted_home_win_prob": 59.60093963003792,
+      "metrics_used": {},
+      "actual_winner": null,
+      "prediction_accuracy": null,
+      "timestamp": "2025-10-20T09:20:32.811619"
+    },
+    {
+      "game_id": "2025020096",
+      "date": "2025-10-20",
+      "away_team": "WPG",
+      "home_team": "CGY",
+      "predicted_away_win_prob": 49.30086843228224,
+      "predicted_home_win_prob": 50.69913156771775,
+      "metrics_used": {},
+      "actual_winner": null,
+      "prediction_accuracy": null,
+      "timestamp": "2025-10-20T09:20:32.811643"
+    },
+    {
+      "game_id": "2025020097",
+      "date": "2025-10-20",
+      "away_team": "CAR",
+      "home_team": "VGK",
+      "predicted_away_win_prob": 52.161393793432055,
+      "predicted_home_win_prob": 47.83860620656795,
+      "metrics_used": {},
+      "actual_winner": null,
+      "prediction_accuracy": null,
+      "timestamp": "2025-10-20T09:20:32.811661"
+    }
+  ],
+  "model_weights": {
+    "xg_weight": 0.01000000530563913,
+    "hdc_weight": 0.01000000530563913,
+    "shot_attempts_weight": 0.632258057670143,
+    "game_score_weight": 0.3161290288350715,
+    "other_metrics_weight": 0.03161290288350715
+  },
+  "last_updated": "2025-10-20T09:37:13.243493",
+  "model_performance": {
+    "total_games": 84,
+    "correct_predictions": 43,
+    "accuracy": 0.5119047619047619,
+    "recent_accuracy": 0.5119047619047619
+  },
+  "weight_momentum": {
+    "xg_weight": -0.2899958163399001,
+    "hdc_weight": -0.09354890791920004,
+    "shot_attempts_weight": 0.0,
+    "game_score_weight": 0.0,
+    "other_metrics_weight": 0.0
+  }
+}
