@@ -133,30 +133,35 @@ class GitHubActionsRunner:
             print(f"⚠️  Error updating team stats: {e}")
     
     def get_todays_games(self):
-        """Get all games from today (based on Central Time)"""
+        """Get all games from today and yesterday (based on Central Time)"""
         import pytz
+        from datetime import timedelta
         
         # Use proper Central Time (handles DST automatically)
         central_tz = pytz.timezone('US/Central')
         central_now = datetime.now(central_tz)
         today = central_now.strftime('%Y-%m-%d')
+        yesterday = (central_now - timedelta(days=1)).strftime('%Y-%m-%d')
         
         print(f"🕐 Current time (CT): {central_now.strftime('%Y-%m-%d %I:%M:%S %p')}")
-        print(f"📅 Checking games from: {today}")
+        print(f"📅 Checking games from: {yesterday} and {today}")
         
         all_games = []
         
-        try:
-            schedule = self.client.get_game_schedule(today)
-            if schedule and 'gameWeek' in schedule:
-                for day in schedule['gameWeek']:
-                    # Include games from today only
-                    if day.get('date') == today and 'games' in day:
-                        all_games.extend(day['games'])
-        except Exception as e:
-            print(f"❌ Error fetching schedule for {today}: {e}")
-            import traceback
-            traceback.print_exc()
+        # Check both yesterday and today for completed games
+        for date_to_check in [yesterday, today]:
+            try:
+                schedule = self.client.get_game_schedule(date_to_check)
+                if schedule and 'gameWeek' in schedule:
+                    for day in schedule['gameWeek']:
+                        # Include games from both yesterday and today
+                        if day.get('date') == date_to_check and 'games' in day:
+                            all_games.extend(day['games'])
+                            print(f"   Found {len(day['games'])} games on {date_to_check}")
+            except Exception as e:
+                print(f"❌ Error fetching schedule for {date_to_check}: {e}")
+                import traceback
+                traceback.print_exc()
         
         return all_games
     
@@ -404,9 +409,9 @@ class GitHubActionsRunner:
         print(f"📋 Previously processed: {len(self.processed_games)} games")
         print("="*60)
         
-        # Get today's games
+        # Get games from yesterday and today
         games = self.get_todays_games()
-        print(f"\n🔍 Found {len(games)} games today")
+        print(f"\n🔍 Found {len(games)} games from yesterday and today")
         
         newly_completed = []
         
