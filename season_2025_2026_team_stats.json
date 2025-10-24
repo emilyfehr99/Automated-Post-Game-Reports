@@ -1,5 +1,5 @@
 {
-  "MTL": {
+  "CHI": {
     "home": {
       "games": [],
       "xg": [],
@@ -18,59 +18,431 @@
     },
     "away": {
       "games": [
-        "2025-10-23"
+        "2025-10-24"
       ],
       "xg": [
-        2.4609477456999995
+        2.4751626880625004
       ],
       "hdc": [
-        15
+        5
       ],
       "shots": [
-        28
+        25
       ],
       "goals": [
         null
       ],
       "gs": [
-        3.3499999999999996
+        3.6500000000000026
       ],
       "corsi_pct": [
-        38.88999293411058
+        38.79819870531944
       ],
       "power_play_pct": [
-        33.33333333333333
+        40.0
       ],
       "faceoff_pct": [
-        46.07182940516274
+        39.752321981424146
+      ],
+      "hits": [
+        6.0
+      ],
+      "blocked_shots": [
+        2.3333333333333335
+      ],
+      "giveaways": [
+        4.666666666666667
+      ],
+      "takeaways": [
+        0.6666666666666666
+      ],
+      "penalty_minutes": [
+        2.6666666666666665
+      ]
+    }
+  },
+  "TBL": {
+    "home": {
+      "games": [
+        "2025-10-24"
+      ],
+      "xg": [
+        3.4982653707444205
+      ],
+      "hdc": [
+        11
+      ],
+      "shots": [
+        31
+      ],
+      "goals": [
+        null
+      ],
+      "gs": [
+        3.8750000000000004
+      ],
+      "corsi_pct": [
+        61.20180129468056
+      ],
+      "power_play_pct": [
+        0.0
+      ],
+      "faceoff_pct": [
+        60.24767801857585
+      ],
+      "hits": [
+        6.0
+      ],
+      "blocked_shots": [
+        6.333333333333333
+      ],
+      "giveaways": [
+        4.0
+      ],
+      "takeaways": [
+        1.3333333333333333
+      ],
+      "penalty_minutes": [
+        3.3333333333333335
+      ]
+    },
+    "away": {
+      "games": [],
+      "xg": [],
+      "hdc": [],
+      "shots": [],
+      "goals": [],
+      "gs": [],
+      "corsi_pct": [],
+      "power_play_pct": [],
+      "faceoff_pct": [],
+      "hits": [],
+      "blocked_shots": [],
+      "giveaways": [],
+      "takeaways": [],
+      "penalty_minutes": []
+    }
+  },
+  "ANA": {
+    "home": {
+      "games": [],
+      "xg": [],
+      "hdc": [],
+      "shots": [],
+      "goals": [],
+      "gs": [],
+      "corsi_pct": [],
+      "power_play_pct": [],
+      "faceoff_pct": [],
+      "hits": [],
+      "blocked_shots": [],
+      "giveaways": [],
+      "takeaways": [],
+      "penalty_minutes": []
+    },
+    "away": {
+      "games": [
+        "2025-10-24"
+      ],
+      "xg": [
+        3.2871801871015
+      ],
+      "hdc": [
+        3
+      ],
+      "shots": [
+        30
+      ],
+      "goals": [
+        null
+      ],
+      "gs": [
+        7.325
+      ],
+      "corsi_pct": [
+        42.391356542617046
+      ],
+      "power_play_pct": [
+        75.0
+      ],
+      "faceoff_pct": [
+        41.32664437012264
       ],
       "hits": [
         5.666666666666667
       ],
       "blocked_shots": [
+        5.333333333333333
+      ],
+      "giveaways": [
+        6.666666666666667
+      ],
+      "takeaways": [
+        0.3333333333333333
+      ],
+      "penalty_minutes": [
+        2.0
+      ]
+    }
+  },
+  "BOS": {
+    "home": {
+      "games": [
+        "2025-10-24"
+      ],
+      "xg": [
+        5.565381613236897
+      ],
+      "hdc": [
+        11
+      ],
+      "shots": [
+        41
+      ],
+      "goals": [
+        null
+      ],
+      "gs": [
+        7.149999999999999
+      ],
+      "corsi_pct": [
+        57.60864345738295
+      ],
+      "power_play_pct": [
+        100.0
+      ],
+      "faceoff_pct": [
+        58.67335562987736
+      ],
+      "hits": [
+        6.0
+      ],
+      "blocked_shots": [
+        8.666666666666666
+      ],
+      "giveaways": [
+        6.0
+      ],
+      "takeaways": [
+        1.3333333333333333
+      ],
+      "penalty_minutes": [
+        2.6666666666666665
+      ]
+    },
+    "away": {
+      "games": [],
+      "xg": [],
+      "hdc": [],
+      "shots": [],
+      "goals": [],
+      "gs": [],
+      "corsi_pct": [],
+      "power_play_pct": [],
+      "faceoff_pct": [],
+      "hits": [],
+      "blocked_shots": [],
+      "giveaways": [],
+      "takeaways": [],
+      "penalty_minutes": []
+    }
+  },
+  "PHI": {
+    "home": {
+      "games": [],
+      "xg": [],
+      "hdc": [],
+      "shots": [],
+      "goals": [],
+      "gs": [],
+      "corsi_pct": [],
+      "power_play_pct": [],
+      "faceoff_pct": [],
+      "hits": [],
+      "blocked_shots": [],
+      "giveaways": [],
+      "takeaways": [],
+      "penalty_minutes": []
+    },
+    "away": {
+      "games": [
+        "2025-10-24"
+      ],
+      "xg": [
+        3.170067079425001
+      ],
+      "hdc": [
+        2
+      ],
+      "shots": [
+        23
+      ],
+      "goals": [
+        null
+      ],
+      "gs": [
+        2.3
+      ],
+      "corsi_pct": [
+        47.747611865258925
+      ],
+      "power_play_pct": [
+        0.0
+      ],
+      "faceoff_pct": [
+        55.68181818181818
+      ],
+      "hits": [
+        7.0
+      ],
+      "blocked_shots": [
+        5.333333333333333
+      ],
+      "giveaways": [
         4.0
+      ],
+      "takeaways": [
+        1.3333333333333333
+      ],
+      "penalty_minutes": [
+        4.0
+      ]
+    }
+  },
+  "OTT": {
+    "home": {
+      "games": [
+        "2025-10-24"
+      ],
+      "xg": [
+        2.2092166511249993
+      ],
+      "hdc": [
+        6
+      ],
+      "shots": [
+        33
+      ],
+      "goals": [
+        null
+      ],
+      "gs": [
+        4.075000000000001
+      ],
+      "corsi_pct": [
+        52.25238813474107
+      ],
+      "power_play_pct": [
+        0.0
+      ],
+      "faceoff_pct": [
+        44.31818181818181
+      ],
+      "hits": [
+        5.666666666666667
+      ],
+      "blocked_shots": [
+        5.666666666666667
+      ],
+      "giveaways": [
+        3.6666666666666665
+      ],
+      "takeaways": [
+        1.0
+      ],
+      "penalty_minutes": [
+        2.6666666666666665
+      ]
+    },
+    "away": {
+      "games": [],
+      "xg": [],
+      "hdc": [],
+      "shots": [],
+      "goals": [],
+      "gs": [],
+      "corsi_pct": [],
+      "power_play_pct": [],
+      "faceoff_pct": [],
+      "hits": [],
+      "blocked_shots": [],
+      "giveaways": [],
+      "takeaways": [],
+      "penalty_minutes": []
+    }
+  },
+  "PIT": {
+    "home": {
+      "games": [],
+      "xg": [],
+      "hdc": [],
+      "shots": [],
+      "goals": [],
+      "gs": [],
+      "corsi_pct": [],
+      "power_play_pct": [],
+      "faceoff_pct": [],
+      "hits": [],
+      "blocked_shots": [],
+      "giveaways": [],
+      "takeaways": [],
+      "penalty_minutes": []
+    },
+    "away": {
+      "games": [
+        "2025-10-24"
+      ],
+      "xg": [
+        1.9048843200062502
+      ],
+      "hdc": [
+        4
+      ],
+      "shots": [
+        16
+      ],
+      "goals": [
+        null
+      ],
+      "gs": [
+        4.425000000000001
+      ],
+      "corsi_pct": [
+        33.52869352869353
+      ],
+      "power_play_pct": [
+        100.0
+      ],
+      "faceoff_pct": [
+        53.71794871794872
+      ],
+      "hits": [
+        5.666666666666667
+      ],
+      "blocked_shots": [
+        3.0
       ],
       "giveaways": [
         4.333333333333333
       ],
       "takeaways": [
-        2.0
+        3.0
       ],
       "penalty_minutes": [
-        3.3333333333333335
+        2.6666666666666665
       ]
     }
   },
-  "CGY": {
+  "FLA": {
     "home": {
       "games": [
-        "2025-10-23"
+        "2025-10-24"
       ],
       "xg": [
-        2.888910129160752
+        4.05272032885
       ],
       "hdc": [
-        5
+        8
       ],
       "shots": [
         37
@@ -79,22 +451,270 @@
         null
       ],
       "gs": [
-        4.3
+        5.350000000000002
       ],
       "corsi_pct": [
-        61.11000706588942
+        66.47130647130648
       ],
       "power_play_pct": [
-        0.0
+        50.0
       ],
       "faceoff_pct": [
-        53.92817059483726
+        46.28205128205128
       ],
       "hits": [
-        7.666666666666667
+        8.666666666666666
       ],
       "blocked_shots": [
+        6.666666666666667
+      ],
+      "giveaways": [
+        3.3333333333333335
+      ],
+      "takeaways": [
+        1.3333333333333333
+      ],
+      "penalty_minutes": [
+        2.0
+      ]
+    },
+    "away": {
+      "games": [],
+      "xg": [],
+      "hdc": [],
+      "shots": [],
+      "goals": [],
+      "gs": [],
+      "corsi_pct": [],
+      "power_play_pct": [],
+      "faceoff_pct": [],
+      "hits": [],
+      "blocked_shots": [],
+      "giveaways": [],
+      "takeaways": [],
+      "penalty_minutes": []
+    }
+  },
+  "DET": {
+    "home": {
+      "games": [],
+      "xg": [],
+      "hdc": [],
+      "shots": [],
+      "goals": [],
+      "gs": [],
+      "corsi_pct": [],
+      "power_play_pct": [],
+      "faceoff_pct": [],
+      "hits": [],
+      "blocked_shots": [],
+      "giveaways": [],
+      "takeaways": [],
+      "penalty_minutes": []
+    },
+    "away": {
+      "games": [
+        "2025-10-24"
+      ],
+      "xg": [
+        4.0512088338375
+      ],
+      "hdc": [
+        8
+      ],
+      "shots": [
+        32
+      ],
+      "goals": [
+        null
+      ],
+      "gs": [
+        4.249999999999999
+      ],
+      "corsi_pct": [
+        61.417166295215075
+      ],
+      "power_play_pct": [
+        12.5
+      ],
+      "faceoff_pct": [
+        45.9041394335512
+      ],
+      "hits": [
+        9.333333333333334
+      ],
+      "blocked_shots": [
+        8.333333333333334
+      ],
+      "giveaways": [
+        3.0
+      ],
+      "takeaways": [
+        0.6666666666666666
+      ],
+      "penalty_minutes": [
+        3.3333333333333335
+      ]
+    }
+  },
+  "NYI": {
+    "home": {
+      "games": [
+        "2025-10-24"
+      ],
+      "xg": [
+        3.499025166087501
+      ],
+      "hdc": [
+        10
+      ],
+      "shots": [
+        30
+      ],
+      "goals": [
+        null
+      ],
+      "gs": [
+        6.374999999999998
+      ],
+      "corsi_pct": [
+        38.582833704784925
+      ],
+      "power_play_pct": [
+        60.0
+      ],
+      "faceoff_pct": [
+        54.0958605664488
+      ],
+      "hits": [
+        4.666666666666667
+      ],
+      "blocked_shots": [
+        4.0
+      ],
+      "giveaways": [
+        3.3333333333333335
+      ],
+      "takeaways": [
+        2.0
+      ],
+      "penalty_minutes": [
+        5.333333333333333
+      ]
+    },
+    "away": {
+      "games": [],
+      "xg": [],
+      "hdc": [],
+      "shots": [],
+      "goals": [],
+      "gs": [],
+      "corsi_pct": [],
+      "power_play_pct": [],
+      "faceoff_pct": [],
+      "hits": [],
+      "blocked_shots": [],
+      "giveaways": [],
+      "takeaways": [],
+      "penalty_minutes": []
+    }
+  },
+  "SJS": {
+    "home": {
+      "games": [],
+      "xg": [],
+      "hdc": [],
+      "shots": [],
+      "goals": [],
+      "gs": [],
+      "corsi_pct": [],
+      "power_play_pct": [],
+      "faceoff_pct": [],
+      "hits": [],
+      "blocked_shots": [],
+      "giveaways": [],
+      "takeaways": [],
+      "penalty_minutes": []
+    },
+    "away": {
+      "games": [
+        "2025-10-24"
+      ],
+      "xg": [
+        2.5988949847139495
+      ],
+      "hdc": [
+        4
+      ],
+      "shots": [
+        25
+      ],
+      "goals": [
+        null
+      ],
+      "gs": [
+        5.650000000000002
+      ],
+      "corsi_pct": [
+        40.839646464646464
+      ],
+      "power_play_pct": [
+        50.0
+      ],
+      "faceoff_pct": [
+        46.86868686868687
+      ],
+      "hits": [
         8.666666666666666
+      ],
+      "blocked_shots": [
+        3.6666666666666665
+      ],
+      "giveaways": [
+        7.333333333333333
+      ],
+      "takeaways": [
+        0.3333333333333333
+      ],
+      "penalty_minutes": [
+        3.3333333333333335
+      ]
+    }
+  },
+  "NYR": {
+    "home": {
+      "games": [
+        "2025-10-24"
+      ],
+      "xg": [
+        2.932925455142376
+      ],
+      "hdc": [
+        5
+      ],
+      "shots": [
+        27
+      ],
+      "goals": [
+        null
+      ],
+      "gs": [
+        5.5
+      ],
+      "corsi_pct": [
+        59.16035353535354
+      ],
+      "power_play_pct": [
+        60.0
+      ],
+      "faceoff_pct": [
+        53.131313131313135
+      ],
+      "hits": [
+        8.0
+      ],
+      "blocked_shots": [
+        6.666666666666667
       ],
       "giveaways": [
         4.0
@@ -103,7 +723,7 @@
         1.0
       ],
       "penalty_minutes": [
-        2.0
+        4.0
       ]
     },
     "away": {
