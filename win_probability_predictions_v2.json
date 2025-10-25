@@ -17882,6 +17882,45 @@
       "actual_home_score": null,
       "prediction_accuracy": 51.4,
       "timestamp": "2025-10-25T19:33:18.072614"
+    },
+    {
+      "game_id": "2025020128",
+      "date": "2025-10-25",
+      "away_team": "COL",
+      "home_team": "BOS",
+      "predicted_away_win_prob": 61.5,
+      "predicted_home_win_prob": 38.5,
+      "metrics_used": {
+        "away_xg": 5.505797979682048,
+        "home_xg": 1.7586558533104997,
+        "away_hdc": 5,
+        "home_hdc": 6,
+        "away_shots": 32,
+        "home_shots": 19,
+        "away_gs": 4.85,
+        "home_gs": 3.2000000000000015,
+        "away_corsi_pct": 68.11110013934147,
+        "home_corsi_pct": 31.888899860658523,
+        "away_power_play_pct": 0.0,
+        "home_power_play_pct": 0.0,
+        "away_faceoff_pct": 45.15050167224081,
+        "home_faceoff_pct": 54.84949832775919,
+        "away_hits": 5.0,
+        "home_hits": 8.0,
+        "away_blocked_shots": 11.333333333333334,
+        "home_blocked_shots": 2.3333333333333335,
+        "away_giveaways": 2.6666666666666665,
+        "home_giveaways": 5.333333333333333,
+        "away_takeaways": 2.6666666666666665,
+        "home_takeaways": 1.0,
+        "away_penalty_minutes": 2.6666666666666665,
+        "home_penalty_minutes": 2.6666666666666665
+      },
+      "actual_winner": "home",
+      "actual_away_score": null,
+      "actual_home_score": null,
+      "prediction_accuracy": 38.5,
+      "timestamp": "2025-10-25T21:40:43.810344"
     }
   ],
   "model_weights": {
@@ -17920,13 +17959,13 @@
   },
   "last_updated": "2025-10-24T13:04:11.376004",
   "model_performance": {
-    "total_games": 2661,
+    "total_games": 2662,
     "correct_predictions": 1486,
-    "accuracy": 0.5584366779406238,
-    "recent_accuracy": 0.5454545454545454
+    "accuracy": 0.5582268970698723,
+    "recent_accuracy": 0.5652173913043478
   },
   "team_stats": {
-    "NYI": {
+    "COL": {
       "home": {
         "games": [],
         "xg": [],
@@ -17948,89 +17987,89 @@
           "2025-10-25"
         ],
         "xg": [
-          3.804851435325
+          5.505797979682048
         ],
         "hdc": [
-          6
+          5
         ],
         "shots": [
-          26
+          32
         ],
         "goals": [
           null
         ],
         "gs": [
-          4.675000000000002
+          4.85
         ],
         "corsi_pct": [
-          55.53539019963702
+          68.11110013934147
         ],
         "power_play_pct": [
-          50.0
+          0.0
         ],
         "faceoff_pct": [
-          55.497835497835496
+          45.15050167224081
         ],
         "hits": [
-          7.0
-        ],
-        "blocked_shots": [
-          5.333333333333333
-        ],
-        "giveaways": [
           5.0
         ],
+        "blocked_shots": [
+          11.333333333333334
+        ],
+        "giveaways": [
+          2.6666666666666665
+        ],
         "takeaways": [
-          0.6666666666666666
+          2.6666666666666665
         ],
         "penalty_minutes": [
-          4.666666666666667
+          2.6666666666666665
         ]
       }
     },
-    "PHI": {
+    "BOS": {
       "home": {
         "games": [
           "2025-10-25"
         ],
         "xg": [
-          3.460305145275
+          1.7586558533104997
         ],
         "hdc": [
-          8
+          6
         ],
         "shots": [
-          26
+          19
         ],
         "goals": [
           null
         ],
         "gs": [
-          5.150000000000001
+          3.2000000000000015
         ],
         "corsi_pct": [
-          44.46460980036297
+          31.888899860658523
         ],
         "power_play_pct": [
-          14.285714285714285
+          0.0
         ],
         "faceoff_pct": [
-          44.502164502164504
+          54.84949832775919
         ],
         "hits": [
-          9.666666666666666
+          8.0
         ],
         "blocked_shots": [
-          3.3333333333333335
+          2.3333333333333335
         ],
         "giveaways": [
-          4.666666666666667
+          5.333333333333333
         ],
         "takeaways": [
-          1.6666666666666667
+          1.0
         ],
         "penalty_minutes": [
-          4.0
+          2.6666666666666665
         ]
       },
       "away": {
