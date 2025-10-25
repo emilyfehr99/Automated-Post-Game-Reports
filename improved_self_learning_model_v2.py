@@ -627,21 +627,34 @@ class ImprovedSelfLearningModelV2:
         
         perf["accuracy"] = perf["correct_predictions"] / perf["total_games"]
         
-        # Calculate recent accuracy (last 20 games)
-        recent_games = [p for p in self.model_data["predictions"][-20:] if p.get("actual_winner")]
-        if len(recent_games) >= 10:
+        # Calculate recent accuracy (last 30 games with actual results)
+        # Get all games with actual winners, then take the last 30
+        all_completed_games = [p for p in self.model_data["predictions"] if p.get("actual_winner")]
+        recent_games = all_completed_games[-30:] if len(all_completed_games) >= 30 else all_completed_games
+        
+        # Only calculate recent accuracy if we have enough completed games
+        if len(recent_games) >= 5:
             recent_correct = 0
             for p in recent_games:
                 away_p = p.get("predicted_away_win_prob", 0)
                 home_p = p.get("predicted_home_win_prob", 0)
                 winner = p.get("actual_winner")
                 
+                # Skip 50/50 predictions (placeholder predictions)
+                if abs(away_p - home_p) < 0.01:  # Skip if difference is less than 1%
+                    continue
+                
                 if winner == "away" and away_p > home_p:
                     recent_correct += 1
                 elif winner == "home" and home_p > away_p:
                     recent_correct += 1
             
-            perf["recent_accuracy"] = recent_correct / len(recent_games)
+            # Only update if we have valid predictions
+            valid_recent_games = [p for p in recent_games if abs(p.get("predicted_away_win_prob", 0) - p.get("predicted_home_win_prob", 0)) >= 0.01]
+            if len(valid_recent_games) >= 3:
+                perf["recent_accuracy"] = recent_correct / len(valid_recent_games)
+            else:
+                perf["recent_accuracy"] = perf["accuracy"]
         else:
             perf["recent_accuracy"] = perf["accuracy"]
     

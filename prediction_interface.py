@@ -18,6 +18,127 @@ class PredictionInterface:
         self.api = NHLAPIClient()
         self.learning_model = ImprovedSelfLearningModelV2()
     
+    def check_and_add_missing_games(self):
+        """Check for missing games from recent days and add them to the model"""
+        print("🔍 Checking for missing games...")
+        
+        # Get the last 7 days
+        central_tz = pytz.timezone('US/Central')
+        central_now = datetime.now(central_tz)
+        
+        # Load existing predictions to see what we have
+        try:
+            with open('win_probability_predictions_v2.json', 'r') as f:
+                data = json.load(f)
+            existing_predictions = data.get('predictions', [])
+            existing_game_ids = set(pred.get('game_id') for pred in existing_predictions)
+        except:
+            existing_game_ids = set()
+        
+        games_added = 0
+        
+        # Check each of the last 7 days
+        for days_back in range(1, 8):
+            check_date = (central_now - timedelta(days=days_back)).strftime('%Y-%m-%d')
+            
+            # Get games from this date
+            schedule = self.api.get_game_schedule(check_date)
+            if not schedule or 'gameWeek' not in schedule:
+                continue
+            
+            for day in schedule['gameWeek']:
+                if day.get('date') == check_date and 'games' in day:
+                    for game in day['games']:
+                        game_id = str(game.get('id'))
+                        away_team = game.get('awayTeam', {}).get('abbrev', 'UNK')
+                        home_team = game.get('homeTeam', {}).get('abbrev', 'UNK')
+                        game_state = game.get('gameState', 'UNKNOWN')
+                        
+                        # Check if we already have this game
+                        if game_id in existing_game_ids:
+                            continue
+                        
+                        # Only process completed games
+                        if game_state in ['FINAL', 'OFF']:
+                            try:
+                                # Get comprehensive game data
+                                game_data = self.api.get_comprehensive_game_data(game_id)
+                                if not game_data:
+                                    continue
+                                
+                                # Determine actual winner
+                                away_goals = game_data['boxscore']['awayTeam'].get('score', 0)
+                                home_goals = game_data['boxscore']['homeTeam'].get('score', 0)
+                                
+                                actual_winner = None
+                                if away_goals > home_goals:
+                                    actual_winner = "away"
+                                elif home_goals > away_goals:
+                                    actual_winner = "home"
+                                
+                                if actual_winner:
+                                    # Use the actual model to make a prediction for this game
+                                    try:
+                                        model_prediction = self.learning_model.ensemble_predict(away_team, home_team)
+                                        predicted_away_prob = model_prediction.get('away_prob', 0.5)
+                                        predicted_home_prob = model_prediction.get('home_prob', 0.5)
+                                    except Exception as e:
+                                        print(f"    ⚠️  Could not get model prediction: {e}")
+                                        # Fallback to shot-based prediction
+                                        away_shots = game_data['boxscore']['awayTeam'].get('sog', 0)
+                                        home_shots = game_data['boxscore']['homeTeam'].get('sog', 0)
+                                        total_shots = away_shots + home_shots
+                                        if total_shots > 0:
+                                            predicted_away_prob = away_shots / total_shots
+                                            predicted_home_prob = home_shots / total_shots
+                                        else:
+                                            predicted_away_prob = 0.5
+                                            predicted_home_prob = 0.5
+                                    
+                                    # Create metrics used (simplified)
+                                    metrics_used = {
+                                        "away_xg": 0.0, "home_xg": 0.0,
+                                        "away_hdc": 0, "home_hdc": 0,
+                                        "away_shots": away_shots,
+                                        "home_shots": home_shots,
+                                        "away_gs": 0.0, "home_gs": 0.0,
+                                        "away_corsi_pct": 50.0, "home_corsi_pct": 50.0,
+                                        "away_power_play_pct": 0.0, "home_power_play_pct": 0.0,
+                                        "away_faceoff_pct": 50.0, "home_faceoff_pct": 50.0,
+                                        "away_hits": 0, "home_hits": 0,
+                                        "away_blocked_shots": 0, "home_blocked_shots": 0,
+                                        "away_giveaways": 0, "home_giveaways": 0,
+                                        "away_takeaways": 0, "home_takeaways": 0,
+                                        "away_penalty_minutes": 0, "home_penalty_minutes": 0
+                                    }
+                                    
+                                    # Add to model
+                                    self.learning_model.add_prediction(
+                                        game_id=game_id,
+                                        date=check_date,
+                                        away_team=away_team,
+                                        home_team=home_team,
+                                        predicted_away_prob=predicted_away_prob,
+                                        predicted_home_prob=predicted_home_prob,
+                                        metrics_used=metrics_used,
+                                        actual_winner=actual_winner,
+                                        actual_away_score=away_goals,
+                                        actual_home_score=home_goals
+                                    )
+                                    
+                                    games_added += 1
+                                    print(f"  ✅ Added missing game: {away_team} @ {home_team} ({actual_winner} won)")
+                                    
+                            except Exception as e:
+                                print(f"  ❌ Error processing {away_team} @ {home_team}: {e}")
+        
+        if games_added > 0:
+            print(f"🎉 Added {games_added} missing games to model")
+        else:
+            print("✅ No missing games found")
+        
+        return games_added
+    
     def _compute_model_performance_fallback(self):
         """Compute performance from saved predictions if in-memory stats are empty."""
         try:
@@ -78,6 +199,11 @@ class PredictionInterface:
         central_tz = pytz.timezone('US/Central')
         now_ct = datetime.now(central_tz)
         print(f'📅 Date (CT): {now_ct.strftime("%Y-%m-%d")}')
+        
+        # Check for missing games first
+        missing_games = self.check_and_add_missing_games()
+        if missing_games > 0:
+            print(f"📈 Model updated with {missing_games} missing games")
         
         # Get current model weights
         weights = self.learning_model.get_current_weights()
@@ -260,14 +386,14 @@ class PredictionInterface:
         if not perf or perf.get('total_games', 0) == 0:
             perf = self._compute_model_performance_fallback()
         
-        # Use trained accuracy from historical data + recent accuracy from new games
-        trained_accuracy = 0.562  # 56.2% from comprehensive training
-        trained_total_games = 2624  # Historical games used for training
-        recent_accuracy = perf.get('recent_accuracy', trained_accuracy)  # Recent games accuracy
+        # Get actual model performance from the learning model
+        actual_total_games = perf.get('total_games', 0)
+        actual_accuracy = perf.get('accuracy', 0.0)
+        recent_accuracy = perf.get('recent_accuracy', actual_accuracy)
         
         prediction_text += f"📊 **Model Performance:**\n"
-        prediction_text += f"• Total Games: {trained_total_games}\n"
-        prediction_text += f"• Accuracy: {trained_accuracy:.1%}\n"
+        prediction_text += f"• Total Games: {actual_total_games}\n"
+        prediction_text += f"• Accuracy: {actual_accuracy:.1%}\n"
         prediction_text += f"• Recent Accuracy: {recent_accuracy:.1%}\n\n"
         prediction_text += f"🤖 *Powered by Self-Learning AI Model*"
         
@@ -293,7 +419,7 @@ class PredictionInterface:
                         },
                         {
                             "name": "📊 Model Accuracy",
-                            "value": f"{trained_accuracy:.1%}",
+                            "value": f"{actual_accuracy:.1%}",
                             "inline": True
                         }
                     ],
