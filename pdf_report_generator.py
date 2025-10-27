@@ -1057,7 +1057,7 @@ class PostGameReportGenerator:
                     f'{so_stats["fc_cycle_sog"]}', f'{so_stats["rush_sog"]}'])
             
             # Add Final row for away team
-            away_total_goals = sum(away_period_scores) + away_ot_goals + away_so_goals
+            away_total_goals = sum(away_period_scores) + away_ot_goals  # Don't include shootout goals in final score
             stats_data.append(['Final', str(away_total_goals), str(sum(away_period_stats['shots'])), f"{sum(away_period_stats['corsi_pct'])/3:.1f}%",
                 f"{sum(away_period_stats['pp_goals'])}/{sum(away_period_stats['pp_attempts'])}", str(sum(away_period_stats['pim'])), 
                 str(sum(away_period_stats['hits'])), f"{sum(away_period_stats['fo_pct'])/3:.1f}%", str(sum(away_period_stats['bs'])), 
@@ -1114,7 +1114,7 @@ class PostGameReportGenerator:
                     f'{so_stats["fc_cycle_sog"]}', f'{so_stats["rush_sog"]}'])
             
             # Add Final row for home team
-            home_total_goals = sum(home_period_scores) + home_ot_goals + home_so_goals
+            home_total_goals = sum(home_period_scores) + home_ot_goals  # Don't include shootout goals in final score
             stats_data.append(['Final', str(home_total_goals), str(sum(home_period_stats['shots'])), f"{sum(home_period_stats['corsi_pct'])/3:.1f}%",
                 f"{sum(home_period_stats['pp_goals'])}/{sum(home_period_stats['pp_attempts'])}", str(sum(home_period_stats['pim'])), 
                 str(sum(home_period_stats['hits'])), f"{sum(home_period_stats['fo_pct'])/3:.1f}%", str(sum(home_period_stats['bs'])), 
