@@ -2,12 +2,8 @@ name: Daily NHL Predictions with Edge Data
 
 on:
   schedule:
-    # 6am Central: 12:00 UTC (CST, UTC-6) and 11:00 UTC (CDT, UTC-5)
+    # 6am Central Time (handles both CST and CDT automatically)
     - cron: '0 12 * * *'
-    - cron: '0 11 * * *'
-    # Also run at 6:15am Central to catch the window
-    - cron: '15 12 * * *'
-    - cron: '15 11 * * *'
   workflow_dispatch: {}
 
 permissions:
