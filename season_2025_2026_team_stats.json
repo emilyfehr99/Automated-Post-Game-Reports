@@ -1,1 +1,126 @@
-{}
+{
+  "STL": {
+    "home": {
+      "games": [],
+      "xg": [],
+      "hdc": [],
+      "shots": [],
+      "goals": [],
+      "gs": [],
+      "corsi_pct": [],
+      "power_play_pct": [],
+      "faceoff_pct": [],
+      "hits": [],
+      "blocked_shots": [],
+      "giveaways": [],
+      "takeaways": [],
+      "penalty_minutes": []
+    },
+    "away": {
+      "games": [
+        "2025-10-28"
+      ],
+      "xg": [
+        3.7887979166000023
+      ],
+      "hdc": [
+        6
+      ],
+      "shots": [
+        29
+      ],
+      "goals": [
+        null
+      ],
+      "gs": [
+        5.1000000000000005
+      ],
+      "corsi_pct": [
+        60.361017856274024
+      ],
+      "power_play_pct": [
+        25.0
+      ],
+      "faceoff_pct": [
+        61.44781144781145
+      ],
+      "hits": [
+        5.666666666666667
+      ],
+      "blocked_shots": [
+        7.0
+      ],
+      "giveaways": [
+        5.0
+      ],
+      "takeaways": [
+        0.6666666666666666
+      ],
+      "penalty_minutes": [
+        0.6666666666666666
+      ]
+    }
+  },
+  "PIT": {
+    "home": {
+      "games": [
+        "2025-10-28"
+      ],
+      "xg": [
+        2.9000693143750005
+      ],
+      "hdc": [
+        11
+      ],
+      "shots": [
+        25
+      ],
+      "goals": [
+        null
+      ],
+      "gs": [
+        5.974999999999999
+      ],
+      "corsi_pct": [
+        39.638982143725976
+      ],
+      "power_play_pct": [
+        0.0
+      ],
+      "faceoff_pct": [
+        38.55218855218855
+      ],
+      "hits": [
+        3.0
+      ],
+      "blocked_shots": [
+        4.333333333333333
+      ],
+      "giveaways": [
+        10.333333333333334
+      ],
+      "takeaways": [
+        1.3333333333333333
+      ],
+      "penalty_minutes": [
+        2.6666666666666665
+      ]
+    },
+    "away": {
+      "games": [],
+      "xg": [],
+      "hdc": [],
+      "shots": [],
+      "goals": [],
+      "gs": [],
+      "corsi_pct": [],
+      "power_play_pct": [],
+      "faceoff_pct": [],
+      "hits": [],
+      "blocked_shots": [],
+      "giveaways": [],
+      "takeaways": [],
+      "penalty_minutes": []
+    }
+  }
+}
