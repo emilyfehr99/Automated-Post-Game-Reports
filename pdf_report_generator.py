@@ -3471,7 +3471,14 @@ class PostGameReportGenerator:
         story.extend(self.create_side_by_side_tables(game_data))
         
         # Build the PDF with custom page template for background
-        background_path = "Paper.png"  # Use local project file
+        # Resolve background image using absolute path relative to this file, with cwd fallback
+        try:
+            script_dir = os.path.dirname(__file__)
+        except Exception:
+            script_dir = "."
+        abs_background = os.path.join(script_dir, "Paper.png")
+        cwd_background = "Paper.png"
+        background_path = abs_background if os.path.exists(abs_background) else cwd_background
         if os.path.exists(background_path):
             print(f"Using custom page template with background: {background_path}")
             # Create a custom document with background template
