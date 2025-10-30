@@ -1,0 +1,87 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>CVAT Audit Logger</title>
+    <link rel="stylesheet" href="popup.css" />
+  </head>
+  <body>
+    <div class="container">
+      <header>
+        <h1>CVAT Audit</h1>
+        <div class="header-actions">
+          <button id="undoBtn" title="Undo last delete" disabled>Undo</button>
+          <button id="exportBtn" title="Export CSV/JSON">⬇︎ Export</button>
+        </div>
+      </header>
+
+      <section class="context">
+        <div><label>Page</label><span id="pageTitle">…</span></div>
+        <div><label>URL</label><a id="pageUrl" href="#" target="_blank">…</a></div>
+        <div><label>Task / Job / Frame</label><span id="cvatContext">—</span></div>
+      </section>
+
+      <section class="filters">
+        <div class="filters-row">
+          <input id="filterTask" placeholder="Filter Task ID" />
+          <input id="filterJob" placeholder="Filter Job ID" />
+          <input id="filterFrame" placeholder="Filter Frame" />
+        </div>
+        <div class="filters-row">
+          <button id="filterCurrent">Use current page context</button>
+          <button id="clearFilters">Clear</button>
+        </div>
+      </section>
+
+      <section class="form">
+        <label for="category">Issue</label>
+        <select id="category">
+          <option value="joint_misplaced">Joint misplaced</option>
+          <option value="missing_joint">Missing joint</option>
+          <option value="occlusion">Occlusion</option>
+          <option value="occluded_invisible">Occluded/Not visible</option>
+          <option value="on_rink_point">Point on rink, not player</option>
+          <option value="wrong_person_association">Wrong person association</option>
+          <option value="left_right_swap">Left/Right swapped</option>
+          <option value="duplicate_point">Duplicate point</option>
+          <option value="id_switch">ID switch</option>
+          <option value="tracking_break">Tracking break</option>
+          <option value="blurred">Blurred</option>
+          <option value="lighting_issue">Lighting issue</option>
+          <option value="camera_motion">Camera motion</option>
+          <option value="guideline_deviation">Guideline deviation</option>
+          <option value="other">Other</option>
+        </select>
+
+        <label for="severity">Severity</label>
+        <select id="severity">
+          <option value="low">Low</option>
+          <option value="medium" selected>Medium</option>
+          <option value="high">High</option>
+        </select>
+
+        <label for="notes">Notes</label>
+        <textarea id="notes" rows="3" placeholder="Brief description…"></textarea>
+
+        <div class="actions">
+          <div class="quick">
+            <button id="quickOcclusion">+ Occlusion</button>
+            <button id="quickRinkPoint">+ Rink point</button>
+            <button id="quickMisplaced">+ Misplaced joint</button>
+            <button id="quickWrongAssoc">+ Wrong association</button>
+          </div>
+          <button id="saveBtn" class="primary">Save</button>
+        </div>
+      </section>
+
+      <section class="list">
+        <h2>Recent</h2>
+        <ul id="entries"></ul>
+      </section>
+    </div>
+
+    <script src="popup.js"></script>
+  </body>
+  </html>
+
