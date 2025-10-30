@@ -76,16 +76,32 @@ class BackgroundPageTemplate(PageTemplate):
                 temp_path = "/tmp/background_template.jpg"
                 pil_img.save(temp_path, "JPEG", quality=95)
                 
+                # Draw a white page background to avoid transparency artifacts
+                canvas.saveState()
+                canvas.setFillColorRGB(1, 1, 1)
+                canvas.rect(0, 0, page_width, page_height, fill=1, stroke=0)
                 # Draw the background image FIRST (at the bottom layer)
                 canvas.drawImage(temp_path, 0, 0, width=page_width, height=page_height)
-                print(f"DEBUG: Background drawn successfully on page")
+                canvas.restoreState()
+                print(f"DEBUG: Background drawn successfully on page (JPEG temp)")
                 
                 # Clean up temp file
                 if os.path.exists(temp_path):
                     os.remove(temp_path)
                     
             except Exception as e:
-                print(f"DEBUG: Error drawing background: {e}")
+                # Fallback: try drawing the PNG directly without PIL
+                try:
+                    page_width = canvas._pagesize[0]
+                    page_height = canvas._pagesize[1]
+                    canvas.saveState()
+                    canvas.setFillColorRGB(1, 1, 1)
+                    canvas.rect(0, 0, page_width, page_height, fill=1, stroke=0)
+                    canvas.drawImage(self.background_path, 0, 0, width=page_width, height=page_height)
+                    canvas.restoreState()
+                    print(f"DEBUG: Fallback background drawn directly from PNG: {self.background_path}")
+                except Exception as inner:
+                    print(f"DEBUG: Error drawing background (both methods failed): {e} | Fallback error: {inner}")
         
         # Call the original onPage function if provided
         if hasattr(self, '_original_onPage') and self._original_onPage:
@@ -3480,7 +3496,7 @@ class PostGameReportGenerator:
         cwd_background = "Paper.png"
         background_path = abs_background if os.path.exists(abs_background) else cwd_background
         if os.path.exists(background_path):
-            print(f"Using custom page template with background: {background_path}")
+            print(f"Using custom page template with background: {os.path.abspath(background_path)}")
             # Create a custom document with background template
             from reportlab.platypus.frames import Frame
             from reportlab.platypus.doctemplate import PageTemplate
