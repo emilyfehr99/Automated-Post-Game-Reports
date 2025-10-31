@@ -28,6 +28,9 @@ class ImprovedSelfLearningModelV2:
         }
         # Deterministic mode (disables random noise during evaluation)
         self.deterministic = False
+        # Build goalie start history (team -> [(date, goalie_name)])
+        # Load persisted goalie history if present, else build from predictions
+        self.goalie_history = self.model_data.get('goalie_history') or self._build_goalie_history()
         
         # Improved learning parameters
         self.learning_rate = 0.03  # Slightly higher to adapt a bit faster
@@ -76,7 +79,8 @@ class ImprovedSelfLearningModelV2:
                 "head_to_head_weight": 0.00, # Head-to-head record (disabled - no real data)
                 "rest_days_weight": 0.00,    # Rest days advantage (disabled - no real data)
                 "goalie_performance_weight": 0.00,  # Goalie performance (disabled - no real data)
-                "game_score_weight": 0.15    # Game score (composite metric)
+                "game_score_weight": 0.15,   # Game score (composite metric)
+                "sos_weight": 0.00           # Strength of schedule (small, gated)
             },
             "weight_momentum": {
                 "xg_weight": 0.0,
@@ -93,7 +97,8 @@ class ImprovedSelfLearningModelV2:
                 "head_to_head_weight": 0.0,
                 "rest_days_weight": 0.0,
                 "goalie_performance_weight": 0.0,
-                "game_score_weight": 0.0
+                "game_score_weight": 0.0,
+                "sos_weight": 0.0
             },
             "last_updated": datetime.now().isoformat(),
             "model_performance": {
@@ -136,6 +141,8 @@ class ImprovedSelfLearningModelV2:
                 self.model_data["goalie_stats"] = {}
             if "team_last_game" not in self.model_data:
                 self.model_data["team_last_game"] = {}
+            # Persist goalie history
+            self.model_data["goalie_history"] = self.goalie_history
             with open(self.predictions_file, 'w') as f:
                 json.dump(self.model_data, f, indent=2, default=str)
             logger.info("Model data saved successfully")
@@ -158,6 +165,7 @@ class ImprovedSelfLearningModelV2:
             weights['rest_days_weight'] = 0.0
         if not self.feature_flags.get('use_per_goalie_gsax', True):
             weights['goalie_performance_weight'] = 0.0
+        # sos flag piggybacks on rest flag for now; keep enabled by default when non-zero
         
         # Apply weight clipping to prevent extreme values
         clipped_weights = {}
@@ -171,6 +179,130 @@ class ImprovedSelfLearningModelV2:
                 clipped_weights[key] /= total
         
         return clipped_weights
+
+    def _build_goalie_history(self) -> Dict[str, List[Tuple[str, str]]]:
+        """Build per-team goalie start history from stored predictions/metrics_used."""
+        hist: Dict[str, List[Tuple[str, str]]] = {}
+        try:
+            preds = self.model_data.get('predictions', [])
+            for p in preds:
+                date = p.get('date')
+                if not date:
+                    continue
+                m = p.get('metrics_used') or {}
+                away = (p.get('away_team') or '').upper()
+                home = (p.get('home_team') or '').upper()
+                ag = m.get('away_goalie')
+                hg = m.get('home_goalie')
+                if away and ag:
+                    hist.setdefault(away, []).append((date, ag))
+                if home and hg:
+                    hist.setdefault(home, []).append((date, hg))
+            for team in hist:
+                hist[team].sort(key=lambda t: t[0])
+        except Exception:
+            pass
+        return hist
+
+    def _opponent_strength_index(self, opponent_key: str) -> float:
+        """Estimate opponent strength ~ higher is tougher. Uses xg_avg + gs_avg if available."""
+        try:
+            opp_key = opponent_key.upper()
+            src = None
+            # Prefer historical seasons data if present
+            for _, season in self.historical_stats.items():
+                if 'teams' in season and opp_key in season['teams']:
+                    src = season['teams'][opp_key]
+                    break
+            if not src and opp_key in self.team_stats:
+                src = self.team_stats[opp_key]
+            if isinstance(src, dict):
+                xg = float(src.get('xg_avg', 2.0))
+                gs = float(src.get('gs_avg', 3.0))
+                return xg + gs  # typical ~5
+        except Exception:
+            pass
+        return 5.0
+
+    def _predict_starting_goalie(self, team_key: str, game_date: Optional[str], opponent_key: Optional[str] = None) -> Optional[str]:
+        """Predict starter using simple rotation and B2B heuristic."""
+        try:
+            if not game_date:
+                return None
+            history = self.goalie_history.get(team_key, [])
+            if not history:
+                return None
+            # Last starter
+            last_date, last_goalie = history[-1]
+            # Is B2B? based on last game date
+            tld = (self.model_data.get('team_last_game') or {}).get(team_key)
+            if tld:
+                try:
+                    d_prev = datetime.strptime(tld, '%Y-%m-%d')
+                    d_cur = datetime.strptime(game_date, '%Y-%m-%d')
+                    days = (d_cur - d_prev).days
+                except Exception:
+                    days = 2
+            else:
+                days = 2
+            # Build recent window counts (last 6 starts)
+            recent = [g for _, g in history[-6:]]
+            counts = {}
+            for g in recent:
+                counts[g] = counts.get(g, 0) + 1
+            # Candidate set: top 2 goalies by starts overall
+            overall_counts = {}
+            for _, g in history:
+                overall_counts[g] = overall_counts.get(g, 0) + 1
+            top2 = sorted(overall_counts.items(), key=lambda kv: kv[1], reverse=True)[:2]
+            candidates = [g for g, _ in top2] if top2 else list(overall_counts.keys())
+
+            if days <= 1:
+                # Prefer goalie different from last if in candidates
+                alt = [g for g in candidates if g != last_goalie]
+                if alt:
+                    # Among alternates, choose one with fewer recent starts
+                    alt.sort(key=lambda g: counts.get(g, 0))
+                    return alt[0]
+                return last_goalie
+            # Not B2B: choose goalie with fewer recent starts to balance workload
+            if candidates:
+                candidates.sort(key=lambda g: counts.get(g, 0))
+                # Tie-break by better GSAX if available (games >= 3)
+                gstats = self.model_data.get('goalie_stats', {})
+                if len(candidates) >= 2 and counts.get(candidates[0], 0) == counts.get(candidates[1], 0):
+                    # If opponent is strong, prefer better GSAX; if weak, prefer fewer recent starts
+                    strong_opp = False
+                    if opponent_key:
+                        opp_idx = self._opponent_strength_index(opponent_key)
+                        strong_opp = opp_idx >= 5.3  # threshold for top-half opponent
+                    def gsax(g):
+                        s = gstats.get(g)
+                        if not s or s.get('games', 0) < 3:
+                            return -1e9
+                        games = s['games']
+                        xga = float(s.get('xga_sum', 0.0)) / games
+                        ga = float(s.get('ga_sum', 0.0)) / games
+                        return xga - ga
+                    if strong_opp:
+                        c_sorted = sorted(candidates[:2], key=lambda g: gsax(g), reverse=True)
+                        return c_sorted[0]
+                    # else keep balanced starter (already sorted by fewer recent starts)
+                return candidates[0]
+            gstats = self.model_data.get('goalie_stats', {})
+            candidates = {}
+            for _, g in history:
+                if g in gstats:
+                    cand = gstats[g]
+                    if cand.get('games', 0) >= 3:
+                        xga = float(cand.get('xga_sum', 0.0)) / cand['games']
+                        ga = float(cand.get('ga_sum', 0.0)) / cand['games']
+                        candidates[g] = xga - ga
+            if candidates:
+                return max(candidates.items(), key=lambda kv: kv[1])[0]
+            return last_goalie
+        except Exception:
+            return None
     
     def get_team_performance(self, team: str, venue: str) -> Dict:
         """Get comprehensive team performance data from new team stats format"""
@@ -260,6 +392,45 @@ class ImprovedSelfLearningModelV2:
             'games_played': 0, 'recent_form': 0.5, 'head_to_head': 0.5,
             'rest_days_advantage': 0.0, 'goalie_performance': 0.5, 'confidence': 0.1
         }
+
+    def _calculate_sos(self, team: str, venue: str, window: int = 5) -> float:
+        """Compute a simple strength-of-schedule index from recent opponents.
+
+        Uses average opponent xg_avg + gs_avg over last N opponents as a proxy.
+        Returns a normalized factor around 0.5 (0.4..0.6), small impact only.
+        """
+        try:
+            team_key = team.upper()
+            if team_key not in self.team_stats or venue not in self.team_stats[team_key]:
+                return 0.5
+            opps = self.team_stats[team_key][venue].get('opponents', [])
+            if not opps:
+                return 0.5
+            opps_recent = opps[-window:]
+            vals = []
+            for opp in opps_recent:
+                opp_key = opp.upper()
+                src = None
+                # Prefer historical seasons data if present
+                for _, season in self.historical_stats.items():
+                    if 'teams' in season and opp_key in season['teams']:
+                        src = season['teams'][opp_key]
+                        break
+                if not src and opp_key in self.team_stats:
+                    src = self.team_stats[opp_key]
+                if src:
+                    # Handle both new and historical shapes
+                    xg = src.get('xg_avg', 2.0) if isinstance(src, dict) else 2.0
+                    gs = src.get('gs_avg', 3.0) if isinstance(src, dict) else 3.0
+                    vals.append(xg + gs)
+            if not vals:
+                return 0.5
+            avg = sum(vals) / len(vals)
+            # Normalize: assume typical xg+gs around 5; map +/-1 to +/-0.05 around 0.5
+            norm = 0.5 + max(-0.05, min(0.05, (avg - 5.0) * 0.05))
+            return float(max(0.4, min(0.6, norm)))
+        except Exception:
+            return 0.5
     
     def _calculate_recent_form(self, team: str, venue: str) -> float:
         """Calculate recent form (last 5 games)"""
@@ -300,23 +471,46 @@ class ImprovedSelfLearningModelV2:
         # This could be enhanced with actual head-to-head records
         return 0.5
     
-    def _calculate_rest_days_advantage(self, team: str, venue: str) -> float:
-        """Estimate rest advantage using team-level last game date; fallback to venue series; add bucket adj."""
+    def _calculate_rest_days_advantage(self, team: str, venue: str, game_date: Optional[str] = None) -> float:
+        """Estimate rest advantage using last game before the provided game_date.
+
+        Finds the most recent played date < game_date from combined home+away games.
+        If game_date is None, falls back to last known game vs now (less accurate).
+        """
         try:
             team_key = team.upper()
-            # Prefer team-level last game date if tracked
-            team_last = (self.model_data.get('team_last_game', {}) or {}).get(team_key)
-            if team_last:
-                last_game_date_str = team_last
+            # Build combined sorted list of game dates
+            if team_key not in self.team_stats:
+                return 0.0
+            combined = []
+            for v in ('home', 'away'):
+                v_games = self.team_stats[team_key].get(v, {}).get('games', [])
+                for dt in v_games:
+                    try:
+                        combined.append(datetime.strptime(dt, '%Y-%m-%d'))
+                    except Exception:
+                        continue
+            if not combined:
+                return 0.0
+            combined.sort()
+            if game_date:
+                try:
+                    target = datetime.strptime(game_date, '%Y-%m-%d')
+                except Exception:
+                    target = None
             else:
-                if team_key not in self.team_stats or venue not in self.team_stats[team_key]:
-                    return 0.0
-                games = self.team_stats[team_key][venue].get('games', [])
-                if not games:
-                    return 0.0
-                last_game_date_str = games[-1]
-            last_date = datetime.strptime(last_game_date_str, '%Y-%m-%d')
-            days_rest = (datetime.now() - last_date).days
+                target = None
+            # Find last game strictly before target; else fallback to latest
+            last_date = None
+            if target:
+                for d in reversed(combined):
+                    if d < target:
+                        last_date = d
+                        break
+            if last_date is None:
+                last_date = combined[-1]
+            base_days_ref = target if target else datetime.now()
+            days_rest = (base_days_ref - last_date).days
             # Base heuristic
             base = -0.02 if days_rest == 1 else 0.0 if days_rest == 2 else 0.01 if days_rest >= 3 else 0.0
             # Historical rest-bucket adjustment (cap +/- 0.02)
@@ -328,39 +522,45 @@ class ImprovedSelfLearningModelV2:
     def _rest_bucket_adjustment(self, team_key: str, venue: str, current_days_rest: int) -> float:
         """Compute adjustment from historical performance for the rest bucket.
 
-        Buckets: 1 (B2B), 2, 3+ days. Uses win rate difference vs overall.
+        Uses all recorded games this season (home+away combined) to derive rest buckets.
+        Buckets: 1 (B2B), 2, 3+ days. Adjustment = bucket win rate - overall win rate, scaled.
         """
         if not self.feature_flags.get('use_rest_bucket_adj', True):
             return 0.0
         try:
-            data = self.team_stats.get(team_key, {}).get(venue, {})
-            games = data.get('games', [])
-            goals = data.get('goals', [])
-            opp_goals = data.get('opp_goals', [])
-            if len(games) < 5 or len(goals) != len(opp_goals):
+            team_data = self.team_stats.get(team_key, {})
+            if not team_data:
                 return 0.0
-            # Compute rest days between consecutive games for indices 1..n-1
-            rest_days = []
-            for i in range(1, len(games)):
-                try:
-                    d_prev = datetime.strptime(games[i-1], '%Y-%m-%d')
-                    d_cur = datetime.strptime(games[i], '%Y-%m-%d')
-                    rest_days.append((i, (d_cur - d_prev).days))
-                except Exception:
-                    continue
-            if not rest_days:
+            # Build unified game list [(date, won: int)] from home and away
+            unified = []
+            for v in ('home', 'away'):
+                vdata = team_data.get(v, {})
+                v_games = vdata.get('games', [])
+                v_goals = vdata.get('goals', [])
+                v_opp = vdata.get('opp_goals', [])
+                for dt, gf, ga in zip(v_games, v_goals, v_opp):
+                    try:
+                        d = datetime.strptime(dt, '%Y-%m-%d')
+                    except Exception:
+                        continue
+                    unified.append((d, 1 if float(gf) > float(ga) else 0))
+            if len(unified) < 6:
                 return 0.0
+            unified.sort(key=lambda t: t[0])
+            # Compute rest days and wins aligned to the later game
+            rest_wins = []
+            for i in range(1, len(unified)):
+                d_prev, _ = unified[i-1]
+                d_cur, win_flag = unified[i]
+                days = (d_cur - d_prev).days
+                rest_wins.append((days, win_flag))
             def bucket(d):
                 if d <= 1:
                     return 'B2B'
                 if d == 2:
                     return 'D2'
                 return 'D3+'
-            # Win results aligning to the later game index
-            wins = []
-            for idx, d in rest_days:
-                if idx < len(goals) and idx < len(opp_goals):
-                    wins.append((bucket(d), 1 if goals[idx] > opp_goals[idx] else 0))
+            wins = [(bucket(d), w) for d, w in rest_wins]
             if not wins:
                 return 0.0
             overall = sum(w for _, w in wins) / len(wins)
@@ -398,13 +598,13 @@ class ImprovedSelfLearningModelV2:
                     gs = gstats[last_goalie]
                     games = max(1, gs.get('games', 0))
                     # Require minimum sample to reduce noise
-                    if games < 5:
+                    if games < 3:
                         raise ValueError('insufficient goalie sample, fallback to team proxy')
                     xga = float(gs.get('xga_sum', 0.0)) / games
                     ga = float(gs.get('ga_sum', 0.0)) / games
                     gsax_avg = xga - ga
-                    # Shrink toward neutral based on sample size beyond 5 (up to 15)
-                    shrink = min(1.0, max(0.0, (games - 5) / 10.0))
+                    # Shrink toward neutral based on sample size beyond 3 (up to 13)
+                    shrink = min(1.0, max(0.0, (games - 3) / 10.0))
                     adj = (0.40 / 6.0) * shrink
                     perf = 0.55 + max(-3.0, min(3.0, gsax_avg)) * adj
                     return float(max(0.35, min(0.75, perf)))
@@ -422,6 +622,48 @@ class ImprovedSelfLearningModelV2:
             return float(max(0.35, min(0.75, perf)))
         except Exception:
             return 0.5
+
+    def _goalie_performance_for_game(self, team: str, venue: str, game_date: Optional[str]) -> float:
+        """Get goalie performance using predicted starter when enabled and available."""
+        try:
+            if self.feature_flags.get('use_per_goalie_gsax', True) and game_date:
+                team_key = team.upper()
+                starter = self._predict_starting_goalie(team_key, game_date)
+                if starter:
+                    gs = self.model_data.get('goalie_stats', {}).get(starter)
+                    if gs and gs.get('games', 0) >= 5:
+                        games = gs['games']
+                        xga = float(gs.get('xga_sum', 0.0)) / games
+                        ga = float(gs.get('ga_sum', 0.0)) / games
+                        gsax_avg = xga - ga
+                        shrink = min(1.0, max(0.0, (games - 5) / 10.0))
+                        adj = (0.40 / 6.0) * shrink
+                        perf = 0.55 + max(-3.0, min(3.0, gsax_avg)) * adj
+                        return float(max(0.35, min(0.75, perf)))
+        except Exception:
+            pass
+        return self._calculate_goalie_performance(team, venue)
+
+    def debug_situational_components(self, away_team: str, home_team: str, game_date: Optional[str]) -> Dict:
+        """Expose rest and goalie components for debugging comparisons."""
+        try:
+            away_rest = self._calculate_rest_days_advantage(away_team, 'away', game_date)
+            home_rest = self._calculate_rest_days_advantage(home_team, 'home', game_date)
+            away_goalie = self._goalie_performance_for_game(away_team, 'away', game_date)
+            home_goalie = self._goalie_performance_for_game(home_team, 'home', game_date)
+            return {
+                'away_rest': away_rest,
+                'home_rest': home_rest,
+                'away_goalie_perf': away_goalie,
+                'home_goalie_perf': home_goalie,
+            }
+        except Exception:
+            return {
+                'away_rest': None,
+                'home_rest': None,
+                'away_goalie_perf': None,
+                'home_goalie_perf': None,
+            }
 
     def backtest_recent(self, n: int = 60) -> Dict:
         """Backtest accuracy on last n completed games with actual results."""
@@ -562,7 +804,7 @@ class ImprovedSelfLearningModelV2:
         }
     
     def predict_game(self, away_team: str, home_team: str, current_away_score: int = None, 
-                    current_home_score: int = None, period: int = 1, game_id: str = None) -> Dict:
+                    current_home_score: int = None, period: int = 1, game_id: str = None, game_date: Optional[str] = None) -> Dict:
         """Predict a game with improved features and confidence"""
         
         # Get team performance data
@@ -577,6 +819,16 @@ class ImprovedSelfLearningModelV2:
         weights = self.get_current_weights()
         
         # Calculate weighted scores with comprehensive metrics and advanced features
+        # Override goalie performance with predicted starter when available
+        away_goalie_perf = self._goalie_performance_for_game(away_team, 'away', game_date)
+        home_goalie_perf = self._goalie_performance_for_game(home_team, 'home', game_date)
+        # Strength of schedule modifiers (around 0.5)
+        away_sos = self._calculate_sos(away_team, 'away')
+        home_sos = self._calculate_sos(home_team, 'home')
+        # Recalculate rest for this game date
+        away_rest = self._calculate_rest_days_advantage(away_team, 'away', game_date)
+        home_rest = self._calculate_rest_days_advantage(home_team, 'home', game_date)
+
         away_score = (
             away_perf['xg_avg'] * weights['xg_weight'] +
             away_perf['hdc_avg'] * weights['hdc_weight'] +
@@ -590,8 +842,9 @@ class ImprovedSelfLearningModelV2:
             away_perf['penalty_minutes_avg'] * weights['penalty_minutes_weight'] +
             away_perf['recent_form'] * weights['recent_form_weight'] +
             away_perf['head_to_head'] * weights['head_to_head_weight'] +
-            away_perf['rest_days_advantage'] * weights['rest_days_weight'] +
-            away_perf['goalie_performance'] * weights['goalie_performance_weight']
+            away_rest * weights['rest_days_weight'] +
+            away_goalie_perf * weights['goalie_performance_weight'] +
+            away_sos * weights.get('sos_weight', 0.0)
         )
         
         home_score = (
@@ -607,8 +860,9 @@ class ImprovedSelfLearningModelV2:
             home_perf['penalty_minutes_avg'] * weights['penalty_minutes_weight'] +
             home_perf['recent_form'] * weights['recent_form_weight'] +
             home_perf['head_to_head'] * weights['head_to_head_weight'] +
-            home_perf['rest_days_advantage'] * weights['rest_days_weight'] +
-            home_perf['goalie_performance'] * weights['goalie_performance_weight']
+            home_rest * weights['rest_days_weight'] +
+            home_goalie_perf * weights['goalie_performance_weight'] +
+            home_sos * weights.get('sos_weight', 0.0)
         )
         
         # Add home ice advantage (small but consistent)
@@ -659,11 +913,11 @@ class ImprovedSelfLearningModelV2:
         }
     
     def ensemble_predict(self, away_team: str, home_team: str, current_away_score: int = None, 
-                        current_home_score: int = None, period: int = 1, game_id: str = None) -> Dict:
+                        current_home_score: int = None, period: int = 1, game_id: str = None, game_date: Optional[str] = None) -> Dict:
         """Use ensemble of multiple prediction methods for improved accuracy"""
         
         # Method 1: Traditional metrics (our comprehensive model)
-        traditional = self.predict_game(away_team, home_team, current_away_score, current_home_score, period, game_id)
+        traditional = self.predict_game(away_team, home_team, current_away_score, current_home_score, period, game_id, game_date)
         
         # Method 2: Recent form weighted prediction
         form_based = self._form_based_predict(away_team, home_team)
@@ -729,7 +983,7 @@ class ImprovedSelfLearningModelV2:
         # If we don't have enough data, fall back to traditional metrics
         if away_perf['games_played'] < 3 or home_perf['games_played'] < 3:
             # Use traditional prediction as fallback
-            traditional = self.predict_game(away_team, home_team)
+            traditional = self.predict_game(away_team, home_team, game_date=game_date)
             return {
                 'away_prob': traditional['away_prob'],
                 'home_prob': traditional['home_prob'],
@@ -761,7 +1015,7 @@ class ImprovedSelfLearningModelV2:
         
         # If we don't have enough data, fall back to traditional metrics
         if away_perf['games_played'] < 3 or home_perf['games_played'] < 3:
-            traditional = self.predict_game(away_team, home_team)
+            traditional = self.predict_game(away_team, home_team, game_date=game_date)
             return {
                 'away_prob': traditional['away_prob'],
                 'home_prob': traditional['home_prob'],
@@ -905,6 +1159,7 @@ class ImprovedSelfLearningModelV2:
                 "games": [], "xg": [], "hdc": [], "shots": [], "goals": [], "gs": [],
                 "opp_xg": [], "opp_goals": [],
                 "last_goalie": None,
+                "opponents": [],
                 "corsi_pct": [], "power_play_pct": [], "faceoff_pct": [],
                 "hits": [], "blocked_shots": [], "giveaways": [], "takeaways": [], "penalty_minutes": []
             }
@@ -928,6 +1183,7 @@ class ImprovedSelfLearningModelV2:
         away_data["gs"].append(metrics.get("away_gs", 0.0))
         away_data["opp_xg"].append(metrics.get("home_xg", 0.0))
         away_data["opp_goals"].append(home_score)
+        away_data["opponents"].append(home_team)
         if metrics.get("away_goalie"):
             away_data["last_goalie"] = metrics.get("away_goalie")
         away_data["corsi_pct"].append(metrics.get("away_corsi_pct", 50.0))
@@ -949,6 +1205,7 @@ class ImprovedSelfLearningModelV2:
         home_data["gs"].append(metrics.get("home_gs", 0.0))
         home_data["opp_xg"].append(metrics.get("away_xg", 0.0))
         home_data["opp_goals"].append(away_score)
+        home_data["opponents"].append(away_team)
         if metrics.get("home_goalie"):
             home_data["last_goalie"] = metrics.get("home_goalie")
         home_data["corsi_pct"].append(metrics.get("home_corsi_pct", 50.0))
@@ -1129,6 +1386,57 @@ class ImprovedSelfLearningModelV2:
         
         logger.info(f"Removed {removed_count} duplicate predictions")
         return removed_count
+
+    def backfill_from_predictions(self, max_games: int = 2000) -> int:
+        """Backfill team_last_game and opp_xg/opp_goals from stored predictions.
+
+        Safe: only appends when lengths match dates, avoids duplicate growth.
+        Returns number of teams updated.
+        """
+        updated = 0
+        preds = [p for p in self.model_data.get('predictions', []) if p.get('actual_winner')]
+        if not preds:
+            return 0
+        # Use chronological order
+        preds.sort(key=lambda p: p.get('date',''))
+        for p in preds[-max_games:]:
+            try:
+                date = p.get('date')
+                away = p.get('away_team','').upper()
+                home = p.get('home_team','').upper()
+                metrics = p.get('metrics_used', {}) or {}
+                away_xg = float(metrics.get('away_xg', 0.0))
+                home_xg = float(metrics.get('home_xg', 0.0))
+                away_score = int(p.get('actual_away_score') or 0)
+                home_score = int(p.get('actual_home_score') or 0)
+                # Ensure structures
+                if away not in self.team_stats:
+                    self.team_stats[away] = {"home": {"games": [], "xg": [], "hdc": [], "shots": [], "goals": [], "gs": [], "opp_xg": [], "opp_goals": [], "last_goalie": None, "corsi_pct": [], "power_play_pct": [], "faceoff_pct": [], "hits": [], "blocked_shots": [], "giveaways": [], "takeaways": [], "penalty_minutes": []},
+                                             "away": {"games": [], "xg": [], "hdc": [], "shots": [], "goals": [], "gs": [], "opp_xg": [], "opp_goals": [], "last_goalie": None, "corsi_pct": [], "power_play_pct": [], "faceoff_pct": [], "hits": [], "blocked_shots": [], "giveaways": [], "takeaways": [], "penalty_minutes": []}}
+                if home not in self.team_stats:
+                    self.team_stats[home] = {"home": {"games": [], "xg": [], "hdc": [], "shots": [], "goals": [], "gs": [], "opp_xg": [], "opp_goals": [], "last_goalie": None, "corsi_pct": [], "power_play_pct": [], "faceoff_pct": [], "hits": [], "blocked_shots": [], "giveaways": [], "takeaways": [], "penalty_minutes": []},
+                                             "away": {"games": [], "xg": [], "hdc": [], "shots": [], "goals": [], "gs": [], "opp_xg": [], "opp_goals": [], "last_goalie": None, "corsi_pct": [], "power_play_pct": [], "faceoff_pct": [], "hits": [], "blocked_shots": [], "giveaways": [], "takeaways": [], "penalty_minutes": []}}
+                # Append opp metrics to corresponding venues if date not present
+                if date and date not in self.team_stats[away]['away']['games']:
+                    self.team_stats[away]['away']['games'].append(date)
+                    self.team_stats[away]['away']['goals'].append(away_score)
+                    self.team_stats[away]['away']['opp_xg'].append(home_xg)
+                    self.team_stats[away]['away']['opp_goals'].append(home_score)
+                if date and date not in self.team_stats[home]['home']['games']:
+                    self.team_stats[home]['home']['games'].append(date)
+                    self.team_stats[home]['home']['goals'].append(home_score)
+                    self.team_stats[home]['home']['opp_xg'].append(away_xg)
+                    self.team_stats[home]['home']['opp_goals'].append(away_score)
+                # Update last game dates
+                tld = self.model_data.setdefault('team_last_game', {})
+                tld[away] = date
+                tld[home] = date
+                updated += 1
+            except Exception:
+                continue
+        self.save_model_data()
+        self.save_team_stats()
+        return updated
 
 if __name__ == "__main__":
     # Test the improved model

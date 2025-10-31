@@ -14,9 +14,15 @@ def run(n=60):
     model.feature_flags['use_rest_bucket_adj'] = False
     before = model.backtest_recent_recompute(n)
 
-    # After: enable features
+    # After: enable features and ensure their weights are non-zero for evaluation
     model.feature_flags['use_per_goalie_gsax'] = True
     model.feature_flags['use_rest_bucket_adj'] = True
+    # If weights are zero, give them a small evaluation weight so the signal can show
+    w = model.model_data.get('model_weights', {})
+    if w.get('goalie_performance_weight', 0.0) == 0.0:
+        w['goalie_performance_weight'] = 0.05
+    if w.get('rest_days_weight', 0.0) == 0.0:
+        w['rest_days_weight'] = 0.05
     after = model.backtest_recent_recompute(n)
 
     result = {
