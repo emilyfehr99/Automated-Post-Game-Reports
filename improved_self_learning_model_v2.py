@@ -536,11 +536,48 @@ class ImprovedSelfLearningModelV2:
                 last_date = combined[-1]
             base_days_ref = target if target else datetime.now()
             days_rest = (base_days_ref - last_date).days
-            # Base heuristic
-            base = -0.02 if days_rest == 1 else 0.0 if days_rest == 2 else 0.01 if days_rest >= 3 else 0.0
+            
+            # Detect B2B: need to check if previous game was 1 day before last_date
+            is_b2b = (days_rest == 1)
+            b2b_game = 1  # Default to first game of B2B
+            if is_b2b and len(combined) >= 2:
+                # Find second-to-last game date
+                last_two = sorted([d for d in combined if d < target])[-2:] if target else []
+                if len(last_two) >= 2:
+                    days_between_last_two = (last_two[1] - last_two[0]).days
+                    if days_between_last_two == 1:
+                        b2b_game = 2  # This is the second game of B2B
+            
+            # Travel penalty: if switching venues (away->home or home->away) in B2B
+            travel_penalty = 0.0
+            if is_b2b:
+                # Get venue of last game - check team_stats
+                last_venue = None
+                for v in ('home', 'away'):
+                    v_games = self.team_stats[team_key].get(v, {}).get('games', [])
+                    if last_date.strftime('%Y-%m-%d') in v_games:
+                        last_venue = v
+                        break
+                if last_venue and last_venue != venue:
+                    travel_penalty = -0.015  # Penalty for venue switch in B2B
+            
+            # Base heuristic with B2B detail
+            if is_b2b:
+                if b2b_game == 2:
+                    base = -0.04  # Second game of B2B is worse
+                else:
+                    base = -0.025  # First game of B2B
+            elif days_rest == 2:
+                base = 0.0
+            elif days_rest >= 3:
+                base = 0.02
+            else:
+                base = 0.0
+            
             # Historical rest-bucket adjustment (cap +/- 0.02)
             bucket_adj = self._rest_bucket_adjustment(team_key, venue, days_rest)
-            return float(max(-0.04, min(0.04, base + bucket_adj)))
+            total = base + bucket_adj + travel_penalty
+            return float(max(-0.06, min(0.06, total)))
         except Exception:
             return 0.0
 
