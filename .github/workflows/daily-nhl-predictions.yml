@@ -8,7 +8,6 @@ on:
 
 permissions:
   contents: write
-  pull-requests: write
 
 jobs:
   run:
@@ -74,17 +73,13 @@ jobs:
           git config user.name "github-actions[bot]"
           git add nhl_edge_data.json
           git diff --cached --quiet || git commit -m "Update NHL Edge data - $(date -u +'%Y-%m-%d')"
-
-      - name: Create Pull Request for edge data
-        uses: peter-evans/create-pull-request@v6
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          commit-message: "Update NHL Edge data - ${{ github.run_id }}"
-          title: "Update NHL Edge data"
-          body: |
-            Automated daily update of NHL Edge data used by predictions.
-            - Source: Puckalytics Edge report
-            - File: nhl_edge_data.json
-          branch: chore/update-edge-data
-          base: main
-          delete-branch: true
+      - name: Push edge data changes
+        if: always()
+        run: |
+          # Only push if there are new commits
+          if git log -1 --pretty=%B | grep -q "Update NHL Edge data"; then
+            git pull --rebase origin main
+            git push origin HEAD:main
+          else
+            echo "No edge data changes to push"
+          fi
