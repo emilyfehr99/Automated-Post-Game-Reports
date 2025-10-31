@@ -284,7 +284,7 @@ class ImprovedSelfLearningModelV2:
         return 0.5
     
     def _calculate_rest_days_advantage(self, team: str, venue: str) -> float:
-        """Estimate rest days advantage using last recorded game date in team stats."""
+        """Estimate rest days advantage using last recorded game date and rest-bucket splits."""
         try:
             team_key = team.upper()
             if team_key not in self.team_stats or venue not in self.team_stats[team_key]:
@@ -295,29 +295,90 @@ class ImprovedSelfLearningModelV2:
             last_game_date_str = games[-1]
             last_date = datetime.strptime(last_game_date_str, '%Y-%m-%d')
             days_rest = (datetime.now() - last_date).days
-            if days_rest == 1:
-                return -0.02
-            elif days_rest == 2:
-                return 0.0
-            elif days_rest >= 3:
-                return 0.01
+            # Base heuristic
+            base = -0.02 if days_rest == 1 else 0.0 if days_rest == 2 else 0.01 if days_rest >= 3 else 0.0
+            # Historical rest-bucket adjustment (cap +/- 0.02)
+            bucket_adj = self._rest_bucket_adjustment(team_key, venue, days_rest)
+            return float(max(-0.04, min(0.04, base + bucket_adj)))
+        except Exception:
             return 0.0
+
+    def _rest_bucket_adjustment(self, team_key: str, venue: str, current_days_rest: int) -> float:
+        """Compute adjustment from historical performance for the rest bucket.
+
+        Buckets: 1 (B2B), 2, 3+ days. Uses win rate difference vs overall.
+        """
+        try:
+            data = self.team_stats.get(team_key, {}).get(venue, {})
+            games = data.get('games', [])
+            goals = data.get('goals', [])
+            opp_goals = data.get('opp_goals', [])
+            if len(games) < 5 or len(goals) != len(opp_goals):
+                return 0.0
+            # Compute rest days between consecutive games for indices 1..n-1
+            rest_days = []
+            for i in range(1, len(games)):
+                try:
+                    d_prev = datetime.strptime(games[i-1], '%Y-%m-%d')
+                    d_cur = datetime.strptime(games[i], '%Y-%m-%d')
+                    rest_days.append((i, (d_cur - d_prev).days))
+                except Exception:
+                    continue
+            if not rest_days:
+                return 0.0
+            def bucket(d):
+                if d <= 1:
+                    return 'B2B'
+                if d == 2:
+                    return 'D2'
+                return 'D3+'
+            # Win results aligning to the later game index
+            wins = []
+            for idx, d in rest_days:
+                if idx < len(goals) and idx < len(opp_goals):
+                    wins.append((bucket(d), 1 if goals[idx] > opp_goals[idx] else 0))
+            if not wins:
+                return 0.0
+            overall = sum(w for _, w in wins) / len(wins)
+            by_bucket = {}
+            counts = {}
+            for b, w in wins:
+                by_bucket[b] = by_bucket.get(b, 0) + w
+                counts[b] = counts.get(b, 0) + 1
+            for b in list(by_bucket.keys()):
+                by_bucket[b] /= counts[b]
+            cur_bucket = bucket(current_days_rest)
+            if cur_bucket not in by_bucket or counts.get(cur_bucket, 0) < 2:
+                return 0.0
+            diff = by_bucket[cur_bucket] - overall
+            # Scale to small advantage, cap +/-0.02
+            return float(max(-0.02, min(0.02, diff * 0.05)))
         except Exception:
             return 0.0
     
     def _calculate_goalie_performance(self, team: str, venue: str) -> float:
-        """Approximate starting goalie performance using last game's GS values."""
+        """Proxy starting goalie GSAX from team-level opp xG and opp goals.
+
+        GSAX ≈ xGA - GA using last few games at venue as proxy.
+        Maps recent GSAX into a conservative 0.35-0.75 band.
+        """
         try:
             team_key = team.upper()
             if team_key not in self.team_stats or venue not in self.team_stats[team_key]:
                 return 0.5
-            gs_list = self.team_stats[team_key][venue].get('gs', [])
-            if not gs_list:
+            opp_xg = self.team_stats[team_key][venue].get('opp_xg', [])
+            opp_g = self.team_stats[team_key][venue].get('opp_goals', [])
+            n = min(len(opp_xg), len(opp_g))
+            if n == 0:
                 return 0.5
-            last_gs = float(gs_list[-1])
-            # Map GS (0-10) to 0.35-0.75, clamp
-            perf = 0.35 + max(0.0, min(10.0, last_gs)) / 10.0 * 0.40
-            return float(max(0.3, min(0.8, perf)))
+            window = min(5, n)
+            recent = [(float(opp_xg[-i]), float(opp_g[-i])) for i in range(1, window+1)]
+            gsax_vals = [xg - ga for xg, ga in recent]
+            gsax_avg = sum(gsax_vals) / len(gsax_vals)
+            # Map gsax_avg (roughly -3..+3) to 0.35..0.75 linearly with clamp
+            # Scale: 0.40 width over 6 goals range
+            perf = 0.55 + max(-3.0, min(3.0, gsax_avg)) * (0.40 / 6.0)
+            return float(max(0.35, min(0.75, perf)))
         except Exception:
             return 0.5
 
@@ -746,6 +807,7 @@ class ImprovedSelfLearningModelV2:
         def create_venue_data():
             return {
                 "games": [], "xg": [], "hdc": [], "shots": [], "goals": [], "gs": [],
+                "opp_xg": [], "opp_goals": [],
                 "corsi_pct": [], "power_play_pct": [], "faceoff_pct": [],
                 "hits": [], "blocked_shots": [], "giveaways": [], "takeaways": [], "penalty_minutes": []
             }
@@ -767,6 +829,8 @@ class ImprovedSelfLearningModelV2:
         away_data["hdc"].append(metrics.get("away_hdc", 0))
         away_data["shots"].append(metrics.get("away_shots", 0))
         away_data["gs"].append(metrics.get("away_gs", 0.0))
+        away_data["opp_xg"].append(metrics.get("home_xg", 0.0))
+        away_data["opp_goals"].append(home_score)
         away_data["corsi_pct"].append(metrics.get("away_corsi_pct", 50.0))
         away_data["power_play_pct"].append(metrics.get("away_power_play_pct", 0.0))
         away_data["faceoff_pct"].append(metrics.get("away_faceoff_pct", 50.0))
@@ -784,6 +848,8 @@ class ImprovedSelfLearningModelV2:
         home_data["hdc"].append(metrics.get("home_hdc", 0))
         home_data["shots"].append(metrics.get("home_shots", 0))
         home_data["gs"].append(metrics.get("home_gs", 0.0))
+        home_data["opp_xg"].append(metrics.get("away_xg", 0.0))
+        home_data["opp_goals"].append(away_score)
         home_data["corsi_pct"].append(metrics.get("home_corsi_pct", 50.0))
         home_data["power_play_pct"].append(metrics.get("home_power_play_pct", 0.0))
         home_data["faceoff_pct"].append(metrics.get("home_faceoff_pct", 50.0))
