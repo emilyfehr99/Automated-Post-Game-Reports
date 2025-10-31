@@ -95,8 +95,8 @@ class GitHubActionsRunner:
             
             # Update stats for both teams
             for team_abbrev, xg, hdc, gs in [
-                (away_abbrev, away_xg, home_xg),
-                (home_abbrev, home_xg, home_hdc)
+                (away_abbrev, away_xg, away_hdc, away_gs),
+                (home_abbrev, home_xg, home_hdc, home_gs)
             ]:
                 if team_abbrev not in stats['teams']:
                     stats['teams'][team_abbrev] = {
