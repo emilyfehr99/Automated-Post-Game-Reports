@@ -23,10 +23,10 @@ class ImprovedSelfLearningModelV2:
         self.model_data = self.load_model_data()
         
         # Improved learning parameters
-        self.learning_rate = 0.02  # Reduced to prevent overfitting
+        self.learning_rate = 0.03  # Slightly higher to adapt a bit faster
         self.momentum = 0.8  # Momentum for weight updates
         self.min_games_for_update = 3
-        self.weight_clip_range = (0.05, 0.50)  # Prevent extreme weights
+        self.weight_clip_range = (0.03, 0.65)  # Allow more expressiveness per metric
         
         # Team performance tracking - use new season stats format
         self.team_stats_file = Path("season_2025_2026_team_stats.json")
@@ -163,6 +163,10 @@ class ImprovedSelfLearningModelV2:
         for season_name, season_data in self.historical_stats.items():
             if 'teams' in season_data and team_key in season_data['teams']:
                 team_data = season_data['teams'][team_key]
+                # Compute situational factors
+                rest_adv = self._calculate_rest_days_advantage(team_key, venue="home")
+                goalie_perf = self._calculate_goalie_performance(team_key, venue="home")
+
                 return {
                     'xg': team_data.get('xg_avg', 0.0),
                     'hdc': team_data.get('hdc_avg', 0.0),
@@ -185,14 +189,18 @@ class ImprovedSelfLearningModelV2:
                     'games_played': team_data.get('games_played', 0),
                     'recent_form': 0.5,  # Default recent form
                     'head_to_head': 0.5,  # Default H2H
-                    'rest_days_advantage': 0.0,  # Default rest days
-                    'goalie_performance': 0.5,  # Default goalie performance
+                    'rest_days_advantage': rest_adv,
+                    'goalie_performance': goalie_perf,
                     'confidence': self._calculate_confidence(team_data.get('games_played', 0))
                 }
         
         # Fallback to current season if no historical data
         if team_key in self.team_stats:
             team_data = self.team_stats[team_key]
+            # Compute situational factors
+            rest_adv = self._calculate_rest_days_advantage(team_key, venue)
+            goalie_perf = self._calculate_goalie_performance(team_key, venue)
+
             return {
                 'xg': team_data.get('xg_avg', 0.0),
                 'hdc': team_data.get('hdc_avg', 0.0),
@@ -215,8 +223,8 @@ class ImprovedSelfLearningModelV2:
                 'games_played': team_data.get('games_played', 0),
                 'recent_form': 0.5,  # Default
                 'head_to_head': 0.5,  # Default
-                'rest_days_advantage': 0.0,  # Default
-                'goalie_performance': 0.5,  # Default
+                'rest_days_advantage': rest_adv,
+                'goalie_performance': goalie_perf,
                 'confidence': self._calculate_confidence(team_data.get('games_played', 0))
             }
         
@@ -276,16 +284,82 @@ class ImprovedSelfLearningModelV2:
         return 0.5
     
     def _calculate_rest_days_advantage(self, team: str, venue: str) -> float:
-        """Calculate rest days advantage (back-to-back games)"""
-        # For now, return neutral value - would need schedule data
-        # This could be enhanced with actual rest day calculations
-        return 0.0
+        """Estimate rest days advantage using last recorded game date in team stats."""
+        try:
+            team_key = team.upper()
+            if team_key not in self.team_stats or venue not in self.team_stats[team_key]:
+                return 0.0
+            games = self.team_stats[team_key][venue].get('games', [])
+            if not games:
+                return 0.0
+            last_game_date_str = games[-1]
+            last_date = datetime.strptime(last_game_date_str, '%Y-%m-%d')
+            days_rest = (datetime.now() - last_date).days
+            if days_rest == 1:
+                return -0.02
+            elif days_rest == 2:
+                return 0.0
+            elif days_rest >= 3:
+                return 0.01
+            return 0.0
+        except Exception:
+            return 0.0
     
     def _calculate_goalie_performance(self, team: str, venue: str) -> float:
-        """Calculate goalie performance metrics"""
-        # For now, return neutral value - would need goalie-specific data
-        # This could be enhanced with actual goalie save percentages, GAA, etc.
-        return 0.5
+        """Approximate starting goalie performance using last game's GS values."""
+        try:
+            team_key = team.upper()
+            if team_key not in self.team_stats or venue not in self.team_stats[team_key]:
+                return 0.5
+            gs_list = self.team_stats[team_key][venue].get('gs', [])
+            if not gs_list:
+                return 0.5
+            last_gs = float(gs_list[-1])
+            # Map GS (0-10) to 0.35-0.75, clamp
+            perf = 0.35 + max(0.0, min(10.0, last_gs)) / 10.0 * 0.40
+            return float(max(0.3, min(0.8, perf)))
+        except Exception:
+            return 0.5
+
+    def backtest_recent(self, n: int = 60) -> Dict:
+        """Backtest accuracy on last n completed games with actual results."""
+        import math
+        preds = [p for p in self.model_data.get('predictions', []) if p.get('actual_winner')]
+        if not preds:
+            return {"samples": 0, "accuracy": 0.0, "brier": None, "log_loss": None}
+        sample = preds[-n:]
+        correct = 0
+        brier_sum = 0.0
+        log_loss_sum = 0.0
+        ll_count = 0
+        for p in sample:
+            pa = p.get('predicted_away_win_prob')
+            ph = p.get('predicted_home_win_prob')
+            if pa is None or ph is None:
+                pa = (p.get('predicted_away_win_prob', 50.0) / 100.0)
+                ph = (p.get('predicted_home_win_prob', 50.0) / 100.0)
+            total = (pa or 0.5) + (ph or 0.5)
+            if total > 0:
+                pa /= total
+                ph /= total
+            winner = p.get('actual_winner')
+            predicted = 'away' if pa > ph else 'home'
+            if (winner == p.get('away_team') and predicted == 'away') or (winner == p.get('home_team') and predicted == 'home'):
+                correct += 1
+            y = 1.0 if winner == p.get('away_team') else 0.0 if winner == p.get('home_team') else None
+            if y is not None:
+                brier_sum += (pa - y) ** 2
+                p_true = pa if y == 1.0 else ph
+                p_true = min(max(p_true, 1e-6), 1 - 1e-6)
+                log_loss_sum += -math.log(p_true)
+                ll_count += 1
+        size = len(sample)
+        return {
+            'samples': size,
+            'accuracy': correct / size if size else 0.0,
+            'brier': brier_sum / size if size else None,
+            'log_loss': log_loss_sum / ll_count if ll_count else None,
+        }
     
     def _simple_prediction(self, away_team: str, home_team: str, away_perf: Dict, home_perf: Dict) -> Dict:
         """Simple prediction when we don't have enough data"""
