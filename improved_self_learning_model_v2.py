@@ -21,6 +21,11 @@ class ImprovedSelfLearningModelV2:
         """Initialize the improved self-learning model V2"""
         self.predictions_file = Path(predictions_file)
         self.model_data = self.load_model_data()
+        # Feature flags for experiments/backtests
+        self.feature_flags = {
+            'use_per_goalie_gsax': False,
+            'use_rest_bucket_adj': False,
+        }
         
         # Improved learning parameters
         self.learning_rate = 0.03  # Slightly higher to adapt a bit faster
@@ -311,6 +316,8 @@ class ImprovedSelfLearningModelV2:
 
         Buckets: 1 (B2B), 2, 3+ days. Uses win rate difference vs overall.
         """
+        if not self.feature_flags.get('use_rest_bucket_adj', True):
+            return 0.0
         try:
             data = self.team_stats.get(team_key, {}).get(venue, {})
             games = data.get('games', [])
@@ -369,17 +376,18 @@ class ImprovedSelfLearningModelV2:
             team_key = team.upper()
             if team_key not in self.team_stats or venue not in self.team_stats[team_key]:
                 return 0.5
-            # Try per-goalie first
-            last_goalie = self.team_stats[team_key][venue].get('last_goalie')
-            gstats = self.model_data.get('goalie_stats', {})
-            if last_goalie and last_goalie in gstats:
-                gs = gstats[last_goalie]
-                games = max(1, gs.get('games', 0))
-                xga = float(gs.get('xga_sum', 0.0)) / games
-                ga = float(gs.get('ga_sum', 0.0)) / games
-                gsax_avg = xga - ga
-                perf = 0.55 + max(-3.0, min(3.0, gsax_avg)) * (0.40 / 6.0)
-                return float(max(0.35, min(0.75, perf)))
+            # Try per-goalie first if enabled
+            if self.feature_flags.get('use_per_goalie_gsax', True):
+                last_goalie = self.team_stats[team_key][venue].get('last_goalie')
+                gstats = self.model_data.get('goalie_stats', {})
+                if last_goalie and last_goalie in gstats:
+                    gs = gstats[last_goalie]
+                    games = max(1, gs.get('games', 0))
+                    xga = float(gs.get('xga_sum', 0.0)) / games
+                    ga = float(gs.get('ga_sum', 0.0)) / games
+                    gsax_avg = xga - ga
+                    perf = 0.55 + max(-3.0, min(3.0, gsax_avg)) * (0.40 / 6.0)
+                    return float(max(0.35, min(0.75, perf)))
             # Team proxy fallback
             opp_xg = self.team_stats[team_key][venue].get('opp_xg', [])
             opp_g = self.team_stats[team_key][venue].get('opp_goals', [])
@@ -407,6 +415,8 @@ class ImprovedSelfLearningModelV2:
         log_loss_sum = 0.0
         ll_count = 0
         for p in sample:
+            away_team = p.get('away_team')
+            home_team = p.get('home_team')
             pa = p.get('predicted_away_win_prob')
             ph = p.get('predicted_home_win_prob')
             if pa is None or ph is None:
@@ -417,10 +427,16 @@ class ImprovedSelfLearningModelV2:
                 pa /= total
                 ph /= total
             winner = p.get('actual_winner')
+            # Normalize winner to 'away'/'home' if team abbrev stored
+            if winner and winner not in ('away','home'):
+                if winner == away_team:
+                    winner = 'away'
+                elif winner == home_team:
+                    winner = 'home'
             predicted = 'away' if pa > ph else 'home'
-            if (winner == p.get('away_team') and predicted == 'away') or (winner == p.get('home_team') and predicted == 'home'):
+            if winner in ('away','home') and predicted == winner:
                 correct += 1
-            y = 1.0 if winner == p.get('away_team') else 0.0 if winner == p.get('home_team') else None
+            y = 1.0 if winner == 'away' else 0.0 if winner == 'home' else None
             if y is not None:
                 brier_sum += (pa - y) ** 2
                 p_true = pa if y == 1.0 else ph
