@@ -115,25 +115,41 @@ def add_games_to_predictions_simple(missing_games):
                 "prediction_confidence": prediction['prediction_confidence'],
                 "ensemble_methods": prediction.get('ensemble_methods', {}),
                 "ensemble_weights": prediction.get('ensemble_weights', []),
-                "metrics_used": {
-                    "away_xg": 0.0, "home_xg": 0.0,
-                    "away_hdc": 0, "home_hdc": 0,
-                    "away_shots": 0, "home_shots": 0,
-                    "away_gs": 0.0, "home_gs": 0.0,
-                    "away_corsi_pct": 50.0, "home_corsi_pct": 50.0,
-                    "away_power_play_pct": 0.0, "home_power_play_pct": 0.0,
-                    "away_faceoff_pct": 50.0, "home_faceoff_pct": 50.0,
-                    "away_hits": 0, "home_hits": 0,
-                    "away_blocked_shots": 0, "home_blocked_shots": 0,
-                    "away_giveaways": 0, "home_giveaways": 0,
-                    "away_takeaways": 0, "home_takeaways": 0,
-                    "away_penalty_minutes": 0, "home_penalty_minutes": 0
-                },
+                "metrics_used": {},
                 "model_weights": learning_model.get_current_weights(),
                 "prediction_accuracy": 1.0 if actual_winner == (game['awayTeam'] if prediction['away_prob'] > prediction['home_prob'] else game['homeTeam']) else 0.0,
                 "timestamp": datetime.now().isoformat()
             }
             
+            # Enrich situational metrics for analysis
+            try:
+                away_rest = learning_model._calculate_rest_days_advantage(game['awayTeam'], 'away', game['date'])
+                home_rest = learning_model._calculate_rest_days_advantage(game['homeTeam'], 'home', game['date'])
+            except Exception:
+                away_rest = 0.0
+                home_rest = 0.0
+            try:
+                away_goalie_perf = learning_model._goalie_performance_for_game(game['awayTeam'], 'away', game['date'])
+                home_goalie_perf = learning_model._goalie_performance_for_game(game['homeTeam'], 'home', game['date'])
+            except Exception:
+                away_goalie_perf = 0.0
+                home_goalie_perf = 0.0
+            try:
+                away_sos = learning_model._calculate_sos(game['awayTeam'], 'away')
+                home_sos = learning_model._calculate_sos(game['homeTeam'], 'home')
+            except Exception:
+                away_sos = 0.0
+                home_sos = 0.0
+
+            prediction_record['metrics_used'] = {
+                "away_rest": away_rest,
+                "home_rest": home_rest,
+                "away_goalie_perf": away_goalie_perf,
+                "home_goalie_perf": home_goalie_perf,
+                "away_sos": away_sos,
+                "home_sos": home_sos,
+            }
+
             # Add to predictions
             pred_data['predictions'].append(prediction_record)
             new_predictions += 1

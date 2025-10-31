@@ -430,6 +430,34 @@ class GitHubActionsRunner:
                 else:
                     game_date = datetime.now().strftime('%Y-%m-%d')
                 
+                # Enrich metrics_used with situational features for analysis
+                try:
+                    away_rest = self.learning_model._calculate_rest_days_advantage(away_team, 'away', game_date)
+                    home_rest = self.learning_model._calculate_rest_days_advantage(home_team, 'home', game_date)
+                except Exception:
+                    away_rest = 0.0
+                    home_rest = 0.0
+                try:
+                    away_goalie_perf = self.learning_model._goalie_performance_for_game(away_team, 'away', game_date)
+                    home_goalie_perf = self.learning_model._goalie_performance_for_game(home_team, 'home', game_date)
+                except Exception:
+                    away_goalie_perf = 0.0
+                    home_goalie_perf = 0.0
+                try:
+                    away_sos = self.learning_model._calculate_sos(away_team, 'away')
+                    home_sos = self.learning_model._calculate_sos(home_team, 'home')
+                except Exception:
+                    away_sos = 0.0
+                    home_sos = 0.0
+                metrics_used.update({
+                    "away_rest": away_rest,
+                    "home_rest": home_rest,
+                    "away_goalie_perf": away_goalie_perf,
+                    "home_goalie_perf": home_goalie_perf,
+                    "away_sos": away_sos,
+                    "home_sos": home_sos,
+                })
+
                 self.learning_model.add_prediction(
                     game_id=game_id,
                     date=game_date,

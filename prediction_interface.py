@@ -295,14 +295,43 @@ class PredictionInterface:
         # Save predictions to model for future learning
         for pred in predictions:
             try:
+                # Include situational features at prediction time
+                game_date = datetime.now().strftime('%Y-%m-%d')
+                try:
+                    away_rest = self.learning_model._calculate_rest_days_advantage(pred['away_team'], 'away', game_date)
+                    home_rest = self.learning_model._calculate_rest_days_advantage(pred['home_team'], 'home', game_date)
+                except Exception:
+                    away_rest = 0.0
+                    home_rest = 0.0
+                try:
+                    away_goalie_perf = self.learning_model._goalie_performance_for_game(pred['away_team'], 'away', game_date)
+                    home_goalie_perf = self.learning_model._goalie_performance_for_game(pred['home_team'], 'home', game_date)
+                except Exception:
+                    away_goalie_perf = 0.0
+                    home_goalie_perf = 0.0
+                try:
+                    away_sos = self.learning_model._calculate_sos(pred['away_team'], 'away')
+                    home_sos = self.learning_model._calculate_sos(pred['home_team'], 'home')
+                except Exception:
+                    away_sos = 0.0
+                    home_sos = 0.0
+
+                metrics_used = {
+                    "away_rest": away_rest,
+                    "home_rest": home_rest,
+                    "away_goalie_perf": away_goalie_perf,
+                    "home_goalie_perf": home_goalie_perf,
+                    "away_sos": away_sos,
+                    "home_sos": home_sos,
+                }
                 self.learning_model.add_prediction(
                     game_id=pred.get('game_id', ''),
-                    date=datetime.now().strftime('%Y-%m-%d'),
+                    date=game_date,
                     away_team=pred['away_team'],
                     home_team=pred['home_team'],
                     predicted_away_prob=pred['predicted_away_win_prob'],
                     predicted_home_prob=pred['predicted_home_win_prob'],
-                    metrics_used={},  # Will be filled when game completes
+                    metrics_used=metrics_used,  # Store situational context
                     actual_winner=None  # Will be updated when game completes
                 )
             except Exception as e:
