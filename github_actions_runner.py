@@ -349,10 +349,18 @@ class GitHubActionsRunner:
                     # Attempt to extract starting goalies from boxscore
                     try:
                         box = game_data.get('boxscore', {})
-                        def find_goalie_name(team_key):
+
+                        def extract_from_box(team_key):
                             team = box.get(team_key, {})
+                            # 1) explicit goalie starters list if present
+                            starters = team.get('goalies') or team.get('starters')
+                            if starters and isinstance(starters, list):
+                                for g in starters:
+                                    nm = (g.get('name') or g.get('firstLastName') or g.get('playerName')) if isinstance(g, dict) else None
+                                    if nm:
+                                        return nm
+                            # 2) fall back to players with G position
                             players = team.get('players') or []
-                            # Some feeds use dict with playerId keys
                             if isinstance(players, dict):
                                 players_iter = players.values()
                             else:
@@ -362,19 +370,26 @@ class GitHubActionsRunner:
                                 try:
                                     pos = p.get('positionCode') or p.get('position', {}).get('code')
                                     toi = p.get('toi') or p.get('timeOnIce') or 0
-                                    starter = p.get('starter') or False
+                                    starter = p.get('starter') or p.get('starting') or False
                                     name = p.get('name') or p.get('firstLastName') or p.get('playerName')
                                     if (pos == 'G' or pos == 'GOALIE') and name:
-                                        goalie_candidates.append((bool(starter), int(str(toi).replace(':','')[:4] or 0), name))
+                                        # prefer flagged starter; otherwise highest TOI
+                                        toi_int = 0
+                                        try:
+                                            s = str(toi)
+                                            toi_int = int(s.replace(':','')[:4] or 0)
+                                        except Exception:
+                                            pass
+                                        goalie_candidates.append((bool(starter), toi_int, name))
                                 except Exception:
                                     continue
                             if not goalie_candidates:
                                 return None
-                            # Prefer starter, then highest TOI
                             goalie_candidates.sort(key=lambda t: (t[0], t[1]), reverse=True)
                             return goalie_candidates[0][2]
-                        metrics_used["away_goalie"] = find_goalie_name('awayTeam')
-                        metrics_used["home_goalie"] = find_goalie_name('homeTeam')
+
+                        metrics_used["away_goalie"] = extract_from_box('awayTeam')
+                        metrics_used["home_goalie"] = extract_from_box('homeTeam')
                     except Exception:
                         pass
                     

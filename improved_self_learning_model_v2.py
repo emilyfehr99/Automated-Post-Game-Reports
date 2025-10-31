@@ -134,6 +134,8 @@ class ImprovedSelfLearningModelV2:
             self.model_data["team_stats"] = self.team_stats
             if "goalie_stats" not in self.model_data:
                 self.model_data["goalie_stats"] = {}
+            if "team_last_game" not in self.model_data:
+                self.model_data["team_last_game"] = {}
             with open(self.predictions_file, 'w') as f:
                 json.dump(self.model_data, f, indent=2, default=str)
             logger.info("Model data saved successfully")
@@ -299,15 +301,20 @@ class ImprovedSelfLearningModelV2:
         return 0.5
     
     def _calculate_rest_days_advantage(self, team: str, venue: str) -> float:
-        """Estimate rest days advantage using last recorded game date and rest-bucket splits."""
+        """Estimate rest advantage using team-level last game date; fallback to venue series; add bucket adj."""
         try:
             team_key = team.upper()
-            if team_key not in self.team_stats or venue not in self.team_stats[team_key]:
-                return 0.0
-            games = self.team_stats[team_key][venue].get('games', [])
-            if not games:
-                return 0.0
-            last_game_date_str = games[-1]
+            # Prefer team-level last game date if tracked
+            team_last = (self.model_data.get('team_last_game', {}) or {}).get(team_key)
+            if team_last:
+                last_game_date_str = team_last
+            else:
+                if team_key not in self.team_stats or venue not in self.team_stats[team_key]:
+                    return 0.0
+                games = self.team_stats[team_key][venue].get('games', [])
+                if not games:
+                    return 0.0
+                last_game_date_str = games[-1]
             last_date = datetime.strptime(last_game_date_str, '%Y-%m-%d')
             days_rest = (datetime.now() - last_date).days
             # Base heuristic
@@ -396,7 +403,10 @@ class ImprovedSelfLearningModelV2:
                     xga = float(gs.get('xga_sum', 0.0)) / games
                     ga = float(gs.get('ga_sum', 0.0)) / games
                     gsax_avg = xga - ga
-                    perf = 0.55 + max(-3.0, min(3.0, gsax_avg)) * (0.40 / 6.0)
+                    # Shrink toward neutral based on sample size beyond 5 (up to 15)
+                    shrink = min(1.0, max(0.0, (games - 5) / 10.0))
+                    adj = (0.40 / 6.0) * shrink
+                    perf = 0.55 + max(-3.0, min(3.0, gsax_avg)) * adj
                     return float(max(0.35, min(0.75, perf)))
             # Team proxy fallback
             opp_xg = self.team_stats[team_key][venue].get('opp_xg', [])
@@ -968,6 +978,14 @@ class ImprovedSelfLearningModelV2:
                 gs["games"] += 1
                 gs["xga_sum"] += float(metrics.get("away_xg", 0.0))
                 gs["ga_sum"] += float(away_score)
+        except Exception:
+            pass
+
+        # Update team-level last game dates
+        try:
+            tld = self.model_data.setdefault("team_last_game", {})
+            tld[away_team] = date
+            tld[home_team] = date
         except Exception:
             pass
 
