@@ -7,16 +7,17 @@ def fmt(p):
 
 def run(n=60):
     model = ImprovedSelfLearningModelV2()
+    model.deterministic = True
 
     # Baseline: before features (disable per-goalie GSAX and rest-bucket adj)
     model.feature_flags['use_per_goalie_gsax'] = False
     model.feature_flags['use_rest_bucket_adj'] = False
-    before = model.backtest_recent(n)
+    before = model.backtest_recent_recompute(n)
 
     # After: enable features
     model.feature_flags['use_per_goalie_gsax'] = True
     model.feature_flags['use_rest_bucket_adj'] = True
-    after = model.backtest_recent(n)
+    after = model.backtest_recent_recompute(n)
 
     result = {
         'samples': before.get('samples'),

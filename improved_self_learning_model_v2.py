@@ -26,6 +26,8 @@ class ImprovedSelfLearningModelV2:
             'use_per_goalie_gsax': False,
             'use_rest_bucket_adj': False,
         }
+        # Deterministic mode (disables random noise during evaluation)
+        self.deterministic = False
         
         # Improved learning parameters
         self.learning_rate = 0.03  # Slightly higher to adapt a bit faster
@@ -148,7 +150,12 @@ class ImprovedSelfLearningModelV2:
     
     def get_current_weights(self) -> Dict:
         """Get current model weights with clipping"""
-        weights = self.model_data.get("model_weights", {})
+        weights = dict(self.model_data.get("model_weights", {}))
+        # If features are disabled, force their weights to 0.0 before clipping
+        if not self.feature_flags.get('use_rest_bucket_adj', True):
+            weights['rest_days_weight'] = 0.0
+        if not self.feature_flags.get('use_per_goalie_gsax', True):
+            weights['goalie_performance_weight'] = 0.0
         
         # Apply weight clipping to prevent extreme values
         clipped_weights = {}
@@ -383,6 +390,9 @@ class ImprovedSelfLearningModelV2:
                 if last_goalie and last_goalie in gstats:
                     gs = gstats[last_goalie]
                     games = max(1, gs.get('games', 0))
+                    # Require minimum sample to reduce noise
+                    if games < 5:
+                        raise ValueError('insufficient goalie sample, fallback to team proxy')
                     xga = float(gs.get('xga_sum', 0.0)) / games
                     ga = float(gs.get('ga_sum', 0.0)) / games
                     gsax_avg = xga - ga
@@ -428,6 +438,54 @@ class ImprovedSelfLearningModelV2:
                 ph /= total
             winner = p.get('actual_winner')
             # Normalize winner to 'away'/'home' if team abbrev stored
+            if winner and winner not in ('away','home'):
+                if winner == away_team:
+                    winner = 'away'
+                elif winner == home_team:
+                    winner = 'home'
+            predicted = 'away' if pa > ph else 'home'
+            if winner in ('away','home') and predicted == winner:
+                correct += 1
+            y = 1.0 if winner == 'away' else 0.0 if winner == 'home' else None
+            if y is not None:
+                brier_sum += (pa - y) ** 2
+                p_true = pa if y == 1.0 else ph
+                p_true = min(max(p_true, 1e-6), 1 - 1e-6)
+                log_loss_sum += -math.log(p_true)
+                ll_count += 1
+        size = len(sample)
+        return {
+            'samples': size,
+            'accuracy': correct / size if size else 0.0,
+            'brier': brier_sum / size if size else None,
+            'log_loss': log_loss_sum / ll_count if ll_count else None,
+        }
+
+    def backtest_recent_recompute(self, n: int = 60) -> Dict:
+        """Backtest by recomputing probabilities for last n completed games using current model settings."""
+        import math
+        preds = [p for p in self.model_data.get('predictions', []) if p.get('actual_winner')]
+        if not preds:
+            return {"samples": 0, "accuracy": 0.0, "brier": None, "log_loss": None}
+        sample = preds[-n:]
+        correct = 0
+        brier_sum = 0.0
+        log_loss_sum = 0.0
+        ll_count = 0
+        for p in sample:
+            away_team = p.get('away_team')
+            home_team = p.get('home_team')
+            if not away_team or not home_team:
+                continue
+            # Recompute using ensemble
+            res = self.ensemble_predict(away_team, home_team)
+            pa = res.get('away_prob', 0.5)
+            ph = res.get('home_prob', 0.5)
+            total = (pa or 0.5) + (ph or 0.5)
+            if total > 0:
+                pa /= total
+                ph /= total
+            winner = p.get('actual_winner')
             if winner and winner not in ('away','home'):
                 if winner == away_team:
                     winner = 'away'
@@ -561,10 +619,9 @@ class ImprovedSelfLearningModelV2:
         home_confidence = home_perf['confidence']
         avg_confidence = (away_confidence + home_confidence) / 2
         
-        # Add noise for uncertainty (reduces extreme predictions)
+        # Add noise for uncertainty (reduces extreme predictions) unless deterministic
         uncertainty_noise = (1 - avg_confidence) * 10  # Up to 10% noise
-        noise = np.random.normal(0, uncertainty_noise)
-        
+        noise = 0.0 if self.deterministic else float(np.random.normal(0, uncertainty_noise))
         away_prob += noise
         home_prob -= noise
         
