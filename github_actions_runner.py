@@ -560,8 +560,8 @@ class GitHubActionsRunner:
             print(f"📊 Model Performance: {model_perf['accuracy']:.3f} accuracy ({model_perf['correct_predictions']}/{model_perf['total_games']} games)")
             print(f"📈 Recent Accuracy: {model_perf['recent_accuracy']:.3f}")
             
-            # Periodic re-fitting of correlation weights (every ~50 games)
-            if model_perf['total_games'] % 50 == 0:
+            # Periodic re-fitting of correlation weights (every ~25 games)
+            if model_perf['total_games'] % 25 == 0:
                 print("🔄 Re-fitting correlation model weights...")
                 try:
                     self.corr_model.refit_weights_from_history()
