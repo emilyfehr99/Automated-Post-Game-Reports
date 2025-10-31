@@ -1,6 +1,8 @@
 # Generated reports and temporary files
 *.pdf
 *.png
+!Paper.png
+!nhl_clean_repo/Paper.png
 *.jpeg
 *.jpg
 temp_header_*.png
