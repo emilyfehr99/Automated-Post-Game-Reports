@@ -207,9 +207,9 @@ class PredictionInterface:
         if missing_games > 0:
             print(f"📈 Model updated with {missing_games} missing games")
         
-        # Get current model weights
-        weights = self.learning_model.get_current_weights()
-        print(f'🎯 Model Weights: xG={weights["xg_weight"]}, HDC={weights["hdc_weight"]}, Shots={weights["shots_weight"]}, GS={weights["game_score_weight"]}')
+        # Show model architecture
+        print(f'🎯 Prediction Model: 70% Correlation-Weighted + 30% Ensemble')
+        print(f'   (Correlation model uses re-fitted weights from {len([p for p in self.learning_model.model_data.get("predictions", []) if p.get("actual_winner")])} completed games)')
         print()
         
         # Define today's window in Central Time and convert to UTC bounds
