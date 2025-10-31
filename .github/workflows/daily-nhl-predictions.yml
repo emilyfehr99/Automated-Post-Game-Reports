@@ -1,5 +1,9 @@
 name: Daily NHL Predictions with Edge Data
 
+concurrency:
+  group: daily-nhl-predictions
+  cancel-in-progress: false
+
 on:
   schedule:
     # 6am Central Time (handles both CST and CDT automatically)
@@ -76,9 +80,11 @@ jobs:
       - name: Push edge data changes
         if: always()
         run: |
-          # Only push if there are new commits
-          if git log -1 --pretty=%B | grep -q "Update NHL Edge data"; then
-            git pull --rebase origin main
+          # Only push if there are local commits ahead of origin
+          git fetch origin main
+          AHEAD=$(git rev-list --count origin/main..HEAD || echo 0)
+          if [ "$AHEAD" -gt 0 ]; then
+            git pull --rebase --autostash origin main
             git push origin HEAD:main
           else
             echo "No edge data changes to push"
