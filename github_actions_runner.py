@@ -11,6 +11,7 @@ from nhl_api_client import NHLAPIClient
 from twitter_poster import TwitterPoster
 from twitter_config import TEAM_HASHTAGS, TWITTER_API_KEY
 from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
+from correlation_model import CorrelationModel
 from pdf_report_generator import PostGameReportGenerator
 import json
 import subprocess
@@ -24,6 +25,7 @@ class GitHubActionsRunner:
         self.processed_games_file = Path('processed_games.json')
         self.processed_games = self.load_processed_games()
         self.learning_model = ImprovedSelfLearningModelV2()
+        self.corr_model = CorrelationModel()
         self.report_generator = PostGameReportGenerator()
         self.team_stats_file = Path('season_2025_2026_team_stats.json')
         
@@ -468,6 +470,12 @@ class GitHubActionsRunner:
                     metrics_used=metrics_used,
                     actual_winner=actual_winner
                 )
+                # Online update correlation model
+                try:
+                    label = 'away' if actual_winner in (away_team, 'away') else 'home'
+                    self.corr_model.online_update(metrics_used, label)
+                except Exception:
+                    pass
                 
                 print(f"🧠 Learned from {away_team} @ {home_team}: {actual_winner} won")
                 print(f"   Prediction: {win_prob['away_probability']:.1f}% vs {win_prob['home_probability']:.1f}%")

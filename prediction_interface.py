@@ -9,6 +9,7 @@ import requests
 import os
 from nhl_api_client import NHLAPIClient
 from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
+from correlation_model import CorrelationModel
 from datetime import datetime, timedelta
 import pytz
 
@@ -17,6 +18,7 @@ class PredictionInterface:
         """Initialize the prediction interface"""
         self.api = NHLAPIClient()
         self.learning_model = ImprovedSelfLearningModelV2()
+        self.corr_model = CorrelationModel()
     
     def check_and_add_missing_games(self):
         """Check for missing games from recent days and add them to the model"""
@@ -346,17 +348,59 @@ class PredictionInterface:
         return predictions
     
     def predict_game(self, away_team, home_team):
-        """Predict a single game using the ensemble self-learning model"""
-        # Use the ensemble prediction method for improved accuracy
-        result = self.learning_model.ensemble_predict(away_team, home_team)
-        
-        # Convert to the format expected by the interface
+        """Predict a single game using correlation model (primary) with ensemble as fallback."""
+        # Build situational metrics for correlation model pre-game
+        today_str = datetime.now().strftime('%Y-%m-%d')
+        try:
+            away_rest = self.learning_model._calculate_rest_days_advantage(away_team, 'away', today_str)
+            home_rest = self.learning_model._calculate_rest_days_advantage(home_team, 'home', today_str)
+        except Exception:
+            away_rest = home_rest = 0.0
+        try:
+            away_goalie_perf = self.learning_model._goalie_performance_for_game(away_team, 'away', today_str)
+            home_goalie_perf = self.learning_model._goalie_performance_for_game(home_team, 'home', today_str)
+        except Exception:
+            away_goalie_perf = home_goalie_perf = 0.0
+        try:
+            away_sos = self.learning_model._calculate_sos(away_team, 'away')
+            home_sos = self.learning_model._calculate_sos(home_team, 'home')
+        except Exception:
+            away_sos = home_sos = 0.5
+        # Team venue performance proxies
+        away_perf = self.learning_model.get_team_performance(away_team, 'away')
+        home_perf = self.learning_model.get_team_performance(home_team, 'home')
+        metrics = {
+            'away_gs': away_perf.get('gs_avg', 0.0), 'home_gs': home_perf.get('gs_avg', 0.0),
+            'away_power_play_pct': away_perf.get('power_play_avg', 0.0), 'home_power_play_pct': home_perf.get('power_play_avg', 0.0),
+            'away_blocked_shots': away_perf.get('blocked_shots_avg', 0.0), 'home_blocked_shots': home_perf.get('blocked_shots_avg', 0.0),
+            'away_corsi_pct': away_perf.get('corsi_avg', 50.0), 'home_corsi_pct': home_perf.get('corsi_avg', 50.0),
+            'away_hits': away_perf.get('hits_avg', 0.0), 'home_hits': home_perf.get('hits_avg', 0.0),
+            'away_rest': away_rest, 'home_rest': home_rest,
+            'away_hdc': away_perf.get('hdc_avg', 0.0), 'home_hdc': home_perf.get('hdc_avg', 0.0),
+            'away_shots': away_perf.get('shots_avg', 30.0), 'home_shots': home_perf.get('shots_avg', 30.0),
+            'away_giveaways': away_perf.get('giveaways_avg', 0.0), 'home_giveaways': home_perf.get('giveaways_avg', 0.0),
+            'away_sos': away_sos, 'home_sos': home_sos,
+            'away_takeaways': away_perf.get('takeaways_avg', 0.0), 'home_takeaways': home_perf.get('takeaways_avg', 0.0),
+            'away_xg': away_perf.get('xg_avg', 0.0), 'home_xg': home_perf.get('xg_avg', 0.0),
+            'away_penalty_minutes': away_perf.get('penalty_minutes_avg', 0.0), 'home_penalty_minutes': home_perf.get('penalty_minutes_avg', 0.0),
+            'away_faceoff_pct': away_perf.get('faceoff_avg', 50.0), 'home_faceoff_pct': home_perf.get('faceoff_avg', 50.0),
+        }
+        corr = self.corr_model.predict_from_metrics(metrics)
+        ens = self.learning_model.ensemble_predict(away_team, home_team, game_date=today_str)
+        # 70/30 blend: correlation model (70%) + ensemble (30%)
+        if corr and all(k in corr for k in ('away_prob','home_prob')):
+            away_blend = 0.7 * corr['away_prob'] + 0.3 * ens.get('away_prob', 0.5)
+            home_blend = 1.0 - away_blend
+            return {
+                'away_prob': away_blend,
+                'home_prob': home_blend,
+                'prediction_confidence': max(away_blend, home_blend)
+            }
+        # Fallback to ensemble if correlation fails
         return {
-            'away_prob': result['away_prob'],
-            'home_prob': result['home_prob'],
-            'prediction_confidence': result['prediction_confidence'],
-            'ensemble_methods': result.get('ensemble_methods', {}),
-            'ensemble_weights': result.get('ensemble_weights', [])
+            'away_prob': ens['away_prob'],
+            'home_prob': ens['home_prob'],
+            'prediction_confidence': ens['prediction_confidence']
         }
     
     def get_team_performance_data(self):
