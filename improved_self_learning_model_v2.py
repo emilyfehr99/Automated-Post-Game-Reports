@@ -685,20 +685,41 @@ class ImprovedSelfLearningModelV2:
         except Exception:
             return 0.5
 
-    def _goalie_performance_for_game(self, team: str, venue: str, game_date: Optional[str]) -> float:
-        """Get goalie performance using predicted starter when enabled and available."""
+    def _goalie_performance_for_game(self, team: str, venue: str, game_date: Optional[str], 
+                                      confirmed_goalie: Optional[str] = None) -> float:
+        """Get goalie performance using confirmed or predicted starter when enabled and available.
+        
+        Args:
+            team: Team abbreviation
+            venue: 'home' or 'away'
+            game_date: Game date string
+            confirmed_goalie: Confirmed goalie name (from lineup service), if available
+        """
         try:
             if self.feature_flags.get('use_per_goalie_gsax', True) and game_date:
                 team_key = team.upper()
-                starter = self._predict_starting_goalie(team_key, game_date)
+                # Use confirmed goalie if available, otherwise predict
+                starter = confirmed_goalie or self._predict_starting_goalie(team_key, game_date)
                 if starter:
-                    gs = self.model_data.get('goalie_stats', {}).get(starter)
-                    if gs and gs.get('games', 0) >= 5:
+                    # Try to find goalie in goalie_stats by name (exact or fuzzy match)
+                    goalie_stats = self.model_data.get('goalie_stats', {})
+                    gs = None
+                    # Try exact match first
+                    if starter in goalie_stats:
+                        gs = goalie_stats[starter]
+                    else:
+                        # Fuzzy match: check if any goalie name contains starter name or vice versa
+                        for goalie_name, stats in goalie_stats.items():
+                            if starter.lower() in goalie_name.lower() or goalie_name.lower() in starter.lower():
+                                gs = stats
+                                break
+                    
+                    if gs and gs.get('games', 0) >= 3:  # Lowered threshold since we have confirmed starter
                         games = gs['games']
                         xga = float(gs.get('xga_sum', 0.0)) / games
                         ga = float(gs.get('ga_sum', 0.0)) / games
                         gsax_avg = xga - ga
-                        shrink = min(1.0, max(0.0, (games - 5) / 10.0))
+                        shrink = min(1.0, max(0.0, (games - 3) / 10.0))  # Adjusted for lower threshold
                         adj = (0.40 / 6.0) * shrink
                         perf = 0.55 + max(-3.0, min(3.0, gsax_avg)) * adj
                         return float(max(0.35, min(0.75, perf)))

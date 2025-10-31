@@ -10,7 +10,9 @@ import os
 from nhl_api_client import NHLAPIClient
 from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
 from correlation_model import CorrelationModel
+from lineup_service import LineupService
 from datetime import datetime, timedelta
+from typing import Optional
 import pytz
 
 class PredictionInterface:
@@ -19,6 +21,7 @@ class PredictionInterface:
         self.api = NHLAPIClient()
         self.learning_model = ImprovedSelfLearningModelV2()
         self.corr_model = CorrelationModel()
+        self.lineup_service = LineupService()
     
     def check_and_add_missing_games(self):
         """Check for missing games from recent days and add them to the model"""
@@ -267,8 +270,9 @@ class PredictionInterface:
             print(f'{i+1}. {away_team} @ {home_team}')
             print(f'   🕐 Time: {game_time_ct}')
             
-            # Get prediction using self-learning model
-            prediction = self.predict_game(away_team, home_team)
+            # Get prediction using self-learning model (pass game_id for lineup confirmation)
+            game_id = str(game.get('id'))
+            prediction = self.predict_game(away_team, home_team, game_id=game_id)
             
             print(f'   🎯 Prediction: {away_team} {prediction["away_prob"]*100:.1f}% | {home_team} {prediction["home_prob"]*100:.1f}%')
             
@@ -347,8 +351,14 @@ class PredictionInterface:
 
         return predictions
     
-    def predict_game(self, away_team, home_team):
-        """Predict a single game using correlation model (primary) with ensemble as fallback."""
+    def predict_game(self, away_team, home_team, game_id: Optional[str] = None):
+        """Predict a single game using correlation model (primary) with ensemble as fallback.
+        
+        Args:
+            away_team: Away team abbreviation
+            home_team: Home team abbreviation
+            game_id: Optional game ID for lineup confirmation
+        """
         # Build situational metrics for correlation model pre-game
         today_str = datetime.now().strftime('%Y-%m-%d')
         try:
@@ -356,9 +366,23 @@ class PredictionInterface:
             home_rest = self.learning_model._calculate_rest_days_advantage(home_team, 'home', today_str)
         except Exception:
             away_rest = home_rest = 0.0
+        
+        # Check for confirmed goalies first, fallback to prediction
+        away_goalie_confirmed = None
+        home_goalie_confirmed = None
+        if game_id:
+            away_goalie_confirmed = self.lineup_service.get_confirmed_goalie(away_team, game_id, today_str)
+            home_goalie_confirmed = self.lineup_service.get_confirmed_goalie(home_team, game_id, today_str)
+        
         try:
-            away_goalie_perf = self.learning_model._goalie_performance_for_game(away_team, 'away', today_str)
-            home_goalie_perf = self.learning_model._goalie_performance_for_game(home_team, 'home', today_str)
+            # If confirmed goalies available, use those for GSAX calculation
+            # Otherwise use predicted starter GSAX
+            away_goalie_perf = self.learning_model._goalie_performance_for_game(
+                away_team, 'away', today_str, confirmed_goalie=away_goalie_confirmed
+            )
+            home_goalie_perf = self.learning_model._goalie_performance_for_game(
+                home_team, 'home', today_str, confirmed_goalie=home_goalie_confirmed
+            )
         except Exception:
             away_goalie_perf = home_goalie_perf = 0.0
         try:

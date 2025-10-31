@@ -6,24 +6,34 @@ Uses the 70/30 blend (correlation model + ensemble) and situational features at 
 from __future__ import annotations
 from datetime import datetime, timedelta
 import pytz
-from typing import Dict
+from typing import Dict, Optional
 
 from nhl_api_client import NHLAPIClient
 from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
 from correlation_model import CorrelationModel
+from lineup_service import LineupService
 
 
 def predict_game_for_date(model: ImprovedSelfLearningModelV2, corr: CorrelationModel,
-                          away_team: str, home_team: str, game_date: str) -> Dict[str, float]:
+                          away_team: str, home_team: str, game_date: str, 
+                          game_id: Optional[str] = None, lineup_service: Optional[LineupService] = None) -> Dict[str, float]:
     # Build situational metrics for that date
     try:
         away_rest = model._calculate_rest_days_advantage(away_team, 'away', game_date)
         home_rest = model._calculate_rest_days_advantage(home_team, 'home', game_date)
     except Exception:
         away_rest = home_rest = 0.0
+    
+    # Check for confirmed goalies if lineup service and game_id provided
+    away_goalie_confirmed = None
+    home_goalie_confirmed = None
+    if lineup_service and game_id:
+        away_goalie_confirmed = lineup_service.get_confirmed_goalie(away_team, game_id, game_date)
+        home_goalie_confirmed = lineup_service.get_confirmed_goalie(home_team, game_id, game_date)
+    
     try:
-        away_goalie_perf = model._goalie_performance_for_game(away_team, 'away', game_date)
-        home_goalie_perf = model._goalie_performance_for_game(home_team, 'home', game_date)
+        away_goalie_perf = model._goalie_performance_for_game(away_team, 'away', game_date, confirmed_goalie=away_goalie_confirmed)
+        home_goalie_perf = model._goalie_performance_for_game(home_team, 'home', game_date, confirmed_goalie=home_goalie_confirmed)
     except Exception:
         away_goalie_perf = home_goalie_perf = 0.0
     try:
@@ -78,6 +88,7 @@ def main(target_date: str | None = None):
     model = ImprovedSelfLearningModelV2()
     model.deterministic = True
     corr = CorrelationModel()
+    lineup = LineupService()
 
     print(f'Predictions for {target_date} (pre-game):')
     for day in schedule.get('gameWeek', []):
@@ -86,9 +97,10 @@ def main(target_date: str | None = None):
         for g in day.get('games', []):
             away = (g.get('awayTeam', {}) or {}).get('abbrev')
             home = (g.get('homeTeam', {}) or {}).get('abbrev')
+            game_id = str(g.get('id'))
             if not away or not home:
                 continue
-            res = predict_game_for_date(model, corr, away, home, target_date)
+            res = predict_game_for_date(model, corr, away, home, target_date, game_id=game_id, lineup_service=lineup)
             ap = res['away_prob'] * 100
             hp = res['home_prob'] * 100
             fav = home if hp > ap else away
