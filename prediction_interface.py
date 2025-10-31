@@ -209,10 +209,16 @@ class PredictionInterface:
         missing_games = self.check_and_add_missing_games()
         if missing_games > 0:
             print(f"📈 Model updated with {missing_games} missing games")
+            # Recalculate model performance after adding missing games
+            try:
+                self.learning_model.recalculate_performance_from_scratch()
+            except Exception as e:
+                print(f"⚠️  Warning: Could not recalculate performance: {e}")
         
         # Show model architecture
         print(f'🎯 Prediction Model: 70% Correlation-Weighted + 30% Ensemble')
-        print(f'   (Correlation model uses re-fitted weights from {len([p for p in self.learning_model.model_data.get("predictions", []) if p.get("actual_winner")])} completed games)')
+        completed_count = len([p for p in self.learning_model.model_data.get("predictions", []) if p.get("actual_winner")])
+        print(f'   (Correlation model uses re-fitted weights from {completed_count} completed games)')
         print()
         
         # Define today's window in Central Time and convert to UTC bounds
@@ -483,7 +489,13 @@ class PredictionInterface:
             prediction_text += f"🎯 {away_team} {away_prob:.1f}% | {home_team} {home_prob:.1f}%\n"
             prediction_text += f"⭐ Favorite: {favorite} (+{spread:.1f}%)\n\n"
         
-        # Get current model performance for recent accuracy
+        # Ensure model performance is up-to-date (recalculate from scratch for accuracy)
+        try:
+            self.learning_model.recalculate_performance_from_scratch()
+        except Exception:
+            pass
+        
+        # Get current model performance
         perf = self.learning_model.get_model_performance()
         if not perf or perf.get('total_games', 0) == 0:
             perf = self._compute_model_performance_fallback()
@@ -550,6 +562,12 @@ class PredictionInterface:
 
     def show_model_performance(self):
         """Show current model performance"""
+        # Recalculate to ensure fresh data
+        try:
+            self.learning_model.recalculate_performance_from_scratch()
+        except Exception:
+            pass
+        
         perf = self.learning_model.get_model_performance()
         if not perf or perf.get('total_games', 0) == 0:
             perf = self._compute_model_performance_fallback()

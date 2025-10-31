@@ -1387,6 +1387,9 @@ class ImprovedSelfLearningModelV2:
         self.save_model_data()
         self.save_team_stats()
         
+        # Recalculate performance from scratch to ensure accuracy
+        self.recalculate_performance_from_scratch()
+        
         # Return model performance for the GitHub workflow
         return self.get_model_performance()
     
@@ -1401,6 +1404,64 @@ class ImprovedSelfLearningModelV2:
             updates[weight_name] = np.random.normal(0, 0.01)
         
         return updates
+    
+    def recalculate_performance_from_scratch(self):
+        """Recalculate model performance from all predictions (ensures accuracy after bulk updates)"""
+        predictions = self.model_data.get("predictions", [])
+        completed = [p for p in predictions if p.get("actual_winner")]
+        
+        total_games = len(completed)
+        correct_predictions = 0
+        
+        for pred in completed:
+            away_prob = pred.get("predicted_away_win_prob", 0)
+            home_prob = pred.get("predicted_home_win_prob", 0)
+            actual_winner = pred.get("actual_winner")
+            away_team = (pred.get("away_team") or "").upper()
+            home_team = (pred.get("home_team") or "").upper()
+            
+            # Normalize actual winner
+            if actual_winner in ("away", away_team):
+                predicted = "away" if away_prob > home_prob else "home"
+                if predicted == "away":
+                    correct_predictions += 1
+            elif actual_winner in ("home", home_team):
+                predicted = "away" if away_prob > home_prob else "home"
+                if predicted == "home":
+                    correct_predictions += 1
+        
+        accuracy = correct_predictions / total_games if total_games > 0 else 0.0
+        
+        # Calculate recent accuracy (last 30 completed games)
+        recent_games = [p for p in completed if abs(p.get("predicted_away_win_prob", 0) - p.get("predicted_home_win_prob", 0)) >= 0.01]
+        recent_games = recent_games[-30:] if len(recent_games) > 30 else recent_games
+        recent_correct = 0
+        for pred in recent_games:
+            away_prob = pred.get("predicted_away_win_prob", 0)
+            home_prob = pred.get("predicted_home_win_prob", 0)
+            actual_winner = pred.get("actual_winner")
+            away_team = (pred.get("away_team") or "").upper()
+            home_team = (pred.get("home_team") or "").upper()
+            
+            if actual_winner in ("away", away_team):
+                if away_prob > home_prob:
+                    recent_correct += 1
+            elif actual_winner in ("home", home_team):
+                if home_prob > away_prob:
+                    recent_correct += 1
+        
+        recent_accuracy = recent_correct / len(recent_games) if len(recent_games) >= 3 else accuracy
+        
+        # Update stored performance
+        if "model_performance" not in self.model_data:
+            self.model_data["model_performance"] = {}
+        self.model_data["model_performance"].update({
+            "total_games": total_games,
+            "correct_predictions": correct_predictions,
+            "accuracy": accuracy,
+            "recent_accuracy": recent_accuracy
+        })
+        self.save_model_data()
     
     def get_model_performance(self) -> Dict:
         """Get current model performance"""

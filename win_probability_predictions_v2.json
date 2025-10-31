@@ -31,7 +31,13 @@
         "away_takeaways": 1.3333333333333333,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.2,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.75,
+        "home_sos": 0.25
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -165,7 +171,13 @@
         "away_takeaways": 0.3333333333333333,
         "home_takeaways": 2.0,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": 0.2,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.75,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -299,7 +311,13 @@
         "away_takeaways": 0.6666666666666666,
         "home_takeaways": 2.0,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 4.666666666666667
+        "home_penalty_minutes": 4.666666666666667,
+        "away_rest": -0.3,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.4,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -433,7 +451,13 @@
         "away_takeaways": 2.3333333333333335,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 4.0,
-        "home_penalty_minutes": 3.3333333333333335
+        "home_penalty_minutes": 3.3333333333333335,
+        "away_rest": 0.2,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.0
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -567,7 +591,13 @@
         "away_takeaways": 1.3333333333333333,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 2.6666666666666665
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -701,7 +731,13 @@
         "away_takeaways": 0.3333333333333333,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 1.3333333333333333,
-        "home_penalty_minutes": 0.6666666666666666
+        "home_penalty_minutes": 0.6666666666666666,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -835,7 +871,13 @@
         "away_takeaways": 0.6666666666666666,
         "home_takeaways": 2.3333333333333335,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 4.666666666666667
+        "home_penalty_minutes": 4.666666666666667,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -969,7 +1011,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 0.6666666666666666,
         "away_penalty_minutes": 1.3333333333333333,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -1103,7 +1151,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -1237,7 +1291,13 @@
         "away_takeaways": 1.3333333333333333,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 2.6666666666666665
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -1371,7 +1431,13 @@
         "away_takeaways": 0.6666666666666666,
         "home_takeaways": 1.6666666666666667,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": -0.3,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.0
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -1505,7 +1571,13 @@
         "away_takeaways": 2.3333333333333335,
         "home_takeaways": 1.6666666666666667,
         "away_penalty_minutes": 4.666666666666667,
-        "home_penalty_minutes": 3.3333333333333335
+        "home_penalty_minutes": 3.3333333333333335,
+        "away_rest": 0.1,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.0
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -1639,7 +1711,13 @@
         "away_takeaways": 1.6666666666666667,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 2.6666666666666665
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": 0.1,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.0
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -1773,7 +1851,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": -0.3,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.0
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -1907,7 +1991,13 @@
         "away_takeaways": 0.6666666666666666,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 4.666666666666667,
-        "home_penalty_minutes": 5.333333333333333
+        "home_penalty_minutes": 5.333333333333333,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -2041,7 +2131,13 @@
         "away_takeaways": 1.3333333333333333,
         "home_takeaways": 0.6666666666666666,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": 0.0,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -2175,7 +2271,13 @@
         "away_takeaways": 1.3333333333333333,
         "home_takeaways": 2.0,
         "away_penalty_minutes": 4.666666666666667,
-        "home_penalty_minutes": 2.6666666666666665
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": 0.0,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -2309,7 +2411,13 @@
         "away_takeaways": 1.3333333333333333,
         "home_takeaways": 2.0,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -2443,7 +2551,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 1.6666666666666667,
         "away_penalty_minutes": 1.3333333333333333,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -2577,7 +2691,13 @@
         "away_takeaways": 1.6666666666666667,
         "home_takeaways": 2.6666666666666665,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -2711,7 +2831,13 @@
         "away_takeaways": 0.6666666666666666,
         "home_takeaways": 3.0,
         "away_penalty_minutes": 4.0,
-        "home_penalty_minutes": 4.666666666666667
+        "home_penalty_minutes": 4.666666666666667,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -2845,7 +2971,13 @@
         "away_takeaways": 0.0,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.0,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -2979,7 +3111,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 1.6666666666666667,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 3.3333333333333335
+        "home_penalty_minutes": 3.3333333333333335,
+        "away_rest": -0.3,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 1.0
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -3113,7 +3251,13 @@
         "away_takeaways": 0.0,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 2.6666666666666665
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": -0.3,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.0
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -3247,7 +3391,13 @@
         "away_takeaways": 0.6666666666666666,
         "home_takeaways": 2.3333333333333335,
         "away_penalty_minutes": 1.3333333333333333,
-        "home_penalty_minutes": 0.6666666666666666
+        "home_penalty_minutes": 0.6666666666666666,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -3381,7 +3531,13 @@
         "away_takeaways": 2.6666666666666665,
         "home_takeaways": 1.6666666666666667,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 4.0
+        "home_penalty_minutes": 4.0,
+        "away_rest": 0.2,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -3515,7 +3671,13 @@
         "away_takeaways": 2.6666666666666665,
         "home_takeaways": 2.3333333333333335,
         "away_penalty_minutes": 4.666666666666667,
-        "home_penalty_minutes": 3.3333333333333335
+        "home_penalty_minutes": 3.3333333333333335,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.0
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -3649,7 +3811,13 @@
         "away_takeaways": 0.3333333333333333,
         "home_takeaways": 0.6666666666666666,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 2.6666666666666665
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.0
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -3783,7 +3951,13 @@
         "away_takeaways": 0.6666666666666666,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.2,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 1.0
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -3917,7 +4091,13 @@
         "away_takeaways": 2.0,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 2.6666666666666665
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.0
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -4051,7 +4231,13 @@
         "away_takeaways": 4.333333333333333,
         "home_takeaways": 1.6666666666666667,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 1.0
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -4185,7 +4371,13 @@
         "away_takeaways": 2.0,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": 0.2,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.0
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -4319,7 +4511,13 @@
         "away_takeaways": 2.6666666666666665,
         "home_takeaways": 2.0,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 2.6666666666666665
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -4453,7 +4651,13 @@
         "away_takeaways": 1.6666666666666667,
         "home_takeaways": 0.6666666666666666,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 2.6666666666666665
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.0
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -4587,7 +4791,13 @@
         "away_takeaways": 1.3333333333333333,
         "home_takeaways": 2.6666666666666665,
         "away_penalty_minutes": 4.666666666666667,
-        "home_penalty_minutes": 9.333333333333334
+        "home_penalty_minutes": 9.333333333333334,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -4721,7 +4931,13 @@
         "away_takeaways": 2.0,
         "home_takeaways": 2.3333333333333335,
         "away_penalty_minutes": 4.666666666666667,
-        "home_penalty_minutes": 4.0
+        "home_penalty_minutes": 4.0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.0
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -4855,7 +5071,13 @@
         "away_takeaways": 2.0,
         "home_takeaways": 2.0,
         "away_penalty_minutes": 5.333333333333333,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.0
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -4989,7 +5211,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 1.0
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -5123,7 +5351,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 0.6666666666666666,
         "away_penalty_minutes": 4.0,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.1,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 1.0
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -5257,7 +5491,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 3.3333333333333335
+        "home_penalty_minutes": 3.3333333333333335,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.0
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -5391,7 +5631,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 0.6666666666666666,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 2.6666666666666665
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -5525,7 +5771,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 2.0,
         "away_penalty_minutes": 1.3333333333333333,
-        "home_penalty_minutes": 0.6666666666666666
+        "home_penalty_minutes": 0.6666666666666666,
+        "away_rest": -0.3,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6666666666666666,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -5659,7 +5911,13 @@
         "away_takeaways": 1.6666666666666667,
         "home_takeaways": 2.3333333333333335,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 3.3333333333333335
+        "home_penalty_minutes": 3.3333333333333335,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.6666666666666666
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -5793,7 +6051,13 @@
         "away_takeaways": 3.0,
         "home_takeaways": 2.0,
         "away_penalty_minutes": 4.666666666666667,
-        "home_penalty_minutes": 2.6666666666666665
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.0
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -5927,7 +6191,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 4.0
+        "home_penalty_minutes": 4.0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -6061,7 +6331,13 @@
         "away_takeaways": 1.3333333333333333,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -6195,7 +6471,13 @@
         "away_takeaways": 3.6666666666666665,
         "home_takeaways": 2.3333333333333335,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 3.3333333333333335
+        "home_penalty_minutes": 3.3333333333333335,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -6329,7 +6611,13 @@
         "away_takeaways": 0.6666666666666666,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 3.3333333333333335
+        "home_penalty_minutes": 3.3333333333333335,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 1.0
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -6463,7 +6751,13 @@
         "away_takeaways": 1.6666666666666667,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -6597,7 +6891,13 @@
         "away_takeaways": 2.6666666666666665,
         "home_takeaways": 2.0,
         "away_penalty_minutes": 0.6666666666666666,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -6731,7 +7031,13 @@
         "away_takeaways": 2.0,
         "home_takeaways": 3.0,
         "away_penalty_minutes": 4.0,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.3333333333333333
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -6865,7 +7171,13 @@
         "away_takeaways": 0.3333333333333333,
         "home_takeaways": 0.6666666666666666,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -6999,7 +7311,13 @@
         "away_takeaways": 1.3333333333333333,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": -0.3,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.3333333333333333,
+        "home_sos": 0.6666666666666666
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -7133,7 +7451,13 @@
         "away_takeaways": 1.6666666666666667,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 2.6666666666666665
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": 0.2,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6666666666666666,
+        "home_sos": 1.0
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -7267,7 +7591,13 @@
         "away_takeaways": 2.0,
         "home_takeaways": 0.6666666666666666,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 0.0
+        "home_penalty_minutes": 0.0,
+        "away_rest": 0.2,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -7401,7 +7731,13 @@
         "away_takeaways": 0.6666666666666666,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 2.6666666666666665
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": -0.3,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6666666666666666,
+        "home_sos": 0.3333333333333333
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -7535,7 +7871,13 @@
         "away_takeaways": 2.0,
         "home_takeaways": 2.0,
         "away_penalty_minutes": 1.3333333333333333,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.2,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.3333333333333333,
+        "home_sos": 0.3333333333333333
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -7669,7 +8011,13 @@
         "away_takeaways": 1.3333333333333333,
         "home_takeaways": 1.6666666666666667,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 4.666666666666667
+        "home_penalty_minutes": 4.666666666666667,
+        "away_rest": -0.3,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.6666666666666666
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -7803,7 +8151,13 @@
         "away_takeaways": 1.6666666666666667,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 4.0,
-        "home_penalty_minutes": 2.6666666666666665
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": 0.2,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 1.0
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -7937,7 +8291,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 0.3333333333333333,
         "away_penalty_minutes": 4.0,
-        "home_penalty_minutes": 0.6666666666666666
+        "home_penalty_minutes": 0.6666666666666666,
+        "away_rest": 0.2,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.6666666666666666
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -8071,7 +8431,13 @@
         "away_takeaways": 1.6666666666666667,
         "home_takeaways": 2.0,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 4.666666666666667
+        "home_penalty_minutes": 4.666666666666667,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.3333333333333333
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -8205,7 +8571,13 @@
         "away_takeaways": 0.6666666666666666,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6666666666666666,
+        "home_sos": 0.75
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -8339,7 +8711,13 @@
         "away_takeaways": 3.6666666666666665,
         "home_takeaways": 0.3333333333333333,
         "away_penalty_minutes": 1.3333333333333333,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6666666666666666,
+        "home_sos": 0.25
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -8473,7 +8851,13 @@
         "away_takeaways": 1.6666666666666667,
         "home_takeaways": 0.6666666666666666,
         "away_penalty_minutes": 6.0,
-        "home_penalty_minutes": 4.666666666666667
+        "home_penalty_minutes": 4.666666666666667,
+        "away_rest": -0.3,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.3333333333333333,
+        "home_sos": 0.25
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -8607,7 +8991,13 @@
         "away_takeaways": 2.0,
         "home_takeaways": 0.6666666666666666,
         "away_penalty_minutes": 1.3333333333333333,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.4
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -8741,7 +9131,13 @@
         "away_takeaways": 1.3333333333333333,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.75,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -8875,7 +9271,13 @@
         "away_takeaways": 2.3333333333333335,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 1.3333333333333333,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.1,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.25,
+        "home_sos": 0.6666666666666666
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -9009,7 +9411,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 4.0,
-        "home_penalty_minutes": 4.0
+        "home_penalty_minutes": 4.0,
+        "away_rest": -0.3,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6666666666666666,
+        "home_sos": 0.6
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -9143,7 +9551,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 0.6666666666666666
+        "home_penalty_minutes": 0.6666666666666666,
+        "away_rest": 0.2,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.3333333333333333,
+        "home_sos": 0.6666666666666666
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -9277,7 +9691,13 @@
         "away_takeaways": 2.0,
         "home_takeaways": 0.6666666666666666,
         "away_penalty_minutes": 1.3333333333333333,
-        "home_penalty_minutes": 0.6666666666666666
+        "home_penalty_minutes": 0.6666666666666666,
+        "away_rest": 0.2,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.3333333333333333,
+        "home_sos": 0.75
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -9411,7 +9831,13 @@
         "away_takeaways": 1.6666666666666667,
         "home_takeaways": 1.6666666666666667,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 2.6666666666666665
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": 0.1,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.6666666666666666
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -9545,7 +9971,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.2,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.3333333333333333
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -9679,7 +10111,13 @@
         "away_takeaways": 1.6666666666666667,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.2,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.75
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -9813,7 +10251,13 @@
         "away_takeaways": 1.3333333333333333,
         "home_takeaways": 0.3333333333333333,
         "away_penalty_minutes": 4.666666666666667,
-        "home_penalty_minutes": 3.3333333333333335
+        "home_penalty_minutes": 3.3333333333333335,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6666666666666666,
+        "home_sos": 1.0
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -9947,7 +10391,13 @@
         "away_takeaways": 0.0,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 1.3333333333333333,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": 0.1,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.25,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -10081,7 +10531,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 4.0,
-        "home_penalty_minutes": 6.666666666666667
+        "home_penalty_minutes": 6.666666666666667,
+        "away_rest": 0.1,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.25,
+        "home_sos": 0.4
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -10215,7 +10671,13 @@
         "away_takeaways": 0.6666666666666666,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.4,
+        "home_sos": 0.25
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -10349,7 +10811,13 @@
         "away_takeaways": 1.3333333333333333,
         "home_takeaways": 2.6666666666666665,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.75,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -10483,7 +10951,13 @@
         "away_takeaways": 2.0,
         "home_takeaways": 0.6666666666666666,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -10617,7 +11091,13 @@
         "away_takeaways": 1.3333333333333333,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 3.3333333333333335
+        "home_penalty_minutes": 3.3333333333333335,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 0.4
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -10751,7 +11231,13 @@
         "away_takeaways": 0.3333333333333333,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 2.6666666666666665
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": -0.3,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.25,
+        "home_sos": 0.4
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -10885,7 +11371,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 4.0,
-        "home_penalty_minutes": 4.666666666666667
+        "home_penalty_minutes": 4.666666666666667,
+        "away_rest": -0.3,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.25,
+        "home_sos": 0.2
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -11019,7 +11511,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 2.6666666666666665,
         "away_penalty_minutes": 1.3333333333333333,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": 0.1,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.75
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -11153,7 +11651,13 @@
         "away_takeaways": 1.6666666666666667,
         "home_takeaways": 0.6666666666666666,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 3.3333333333333335
+        "home_penalty_minutes": 3.3333333333333335,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.75,
+        "home_sos": 0.4
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -11368,7 +11872,13 @@
         "away_takeaways": 0.3333333333333333,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 0.6
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -11502,7 +12012,13 @@
         "away_takeaways": 2.3333333333333335,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 0.6666666666666666,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": -0.3,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 0.4
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -11636,7 +12152,13 @@
         "away_takeaways": 0.6666666666666666,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 3.3333333333333335
+        "home_penalty_minutes": 3.3333333333333335,
+        "away_rest": 0.2,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.4,
+        "home_sos": 0.5
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -11770,7 +12292,13 @@
         "away_takeaways": 1.3333333333333333,
         "home_takeaways": 1.6666666666666667,
         "away_penalty_minutes": 1.3333333333333333,
-        "home_penalty_minutes": 0.6666666666666666
+        "home_penalty_minutes": 0.6666666666666666,
+        "away_rest": -0.3,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6,
+        "home_sos": 0.6
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -11904,7 +12432,13 @@
         "away_takeaways": 1.6666666666666667,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 3.3333333333333335
+        "home_penalty_minutes": 3.3333333333333335,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -12038,7 +12572,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 0.0,
-        "home_penalty_minutes": 0.6666666666666666
+        "home_penalty_minutes": 0.6666666666666666,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -12172,7 +12712,13 @@
         "away_takeaways": 2.3333333333333335,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 3.3333333333333335
+        "home_penalty_minutes": 3.3333333333333335,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -12306,7 +12852,13 @@
         "away_takeaways": 2.6666666666666665,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 4.666666666666667,
-        "home_penalty_minutes": 4.0
+        "home_penalty_minutes": 4.0,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -12440,7 +12992,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 0.6666666666666666,
         "away_penalty_minutes": 0.6666666666666666,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -12574,7 +13132,13 @@
         "away_takeaways": 1.3333333333333333,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 4.666666666666667,
-        "home_penalty_minutes": 6.0
+        "home_penalty_minutes": 6.0,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -12708,7 +13272,13 @@
         "away_takeaways": 2.0,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": -0.3,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 0.5
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -12842,7 +13412,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 3.3333333333333335
+        "home_penalty_minutes": 3.3333333333333335,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -12976,7 +13552,13 @@
         "away_takeaways": 0.3333333333333333,
         "home_takeaways": 0.6666666666666666,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 2.6666666666666665
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": 0.1,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 0.5
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -13110,7 +13692,13 @@
         "away_takeaways": 2.0,
         "home_takeaways": 2.3333333333333335,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 2.6666666666666665
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": 0.0,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.6
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -13244,7 +13832,13 @@
         "away_takeaways": 1.6666666666666667,
         "home_takeaways": 0.3333333333333333,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -13378,7 +13972,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.4,
+        "home_sos": 0.2
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -13512,7 +14112,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 0.4
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -13646,7 +14252,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6,
+        "home_sos": 0.6
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -13780,7 +14392,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 1.0
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -13914,7 +14532,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 0.8
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -14048,7 +14672,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -14182,7 +14812,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -14316,7 +14952,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -14450,7 +15092,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -14584,7 +15232,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 0.5
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -14718,7 +15372,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -14852,7 +15512,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.2,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.2,
+        "home_sos": 1.0
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -14986,7 +15652,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.2,
+        "home_sos": 0.4
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -15120,7 +15792,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.2,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.0
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -15254,7 +15932,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6,
+        "home_sos": 0.6
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -15388,7 +16072,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": -0.3,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 0.2
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -15522,7 +16212,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.2,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.8
       },
       "model_weights": {
         "xg_weight": 0.20660782324190424,
@@ -15575,7 +16271,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.2,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.2,
+        "home_sos": 0.6
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -15614,7 +16316,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.2,
+        "home_sos": 0.6
       },
       "actual_winner": "away",
       "actual_away_score": 7,
@@ -15653,7 +16361,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.2,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.8
       },
       "actual_winner": "home",
       "actual_away_score": 1,
@@ -15692,7 +16406,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.2,
+        "home_sos": 1.0
       },
       "actual_winner": "away",
       "actual_away_score": 5,
@@ -15731,7 +16451,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": -0.3,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.8
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -15770,7 +16496,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.4,
+        "home_sos": 0.0
       },
       "actual_winner": "away",
       "actual_away_score": 6,
@@ -15809,7 +16541,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6,
+        "home_sos": 0.8
       },
       "actual_winner": "away",
       "actual_away_score": 7,
@@ -15848,7 +16586,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.2
       },
       "actual_winner": "home",
       "actual_away_score": 1,
@@ -15887,7 +16631,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.0
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -15926,7 +16676,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.4
       },
       "actual_winner": "away",
       "actual_away_score": 3,
@@ -15965,7 +16721,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.2,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6,
+        "home_sos": 0.6
       },
       "actual_winner": "away",
       "actual_away_score": 5,
@@ -16004,7 +16766,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": -0.3,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6,
+        "home_sos": 0.6
       },
       "actual_winner": "home",
       "actual_away_score": 5,
@@ -16019,7 +16787,14 @@
       "home_team": "BUF",
       "predicted_away_win_prob": 0.4757888553277743,
       "predicted_home_win_prob": 0.5242111446722256,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.2,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6,
+        "home_sos": 0.0
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -16033,7 +16808,14 @@
       "home_team": "NJD",
       "predicted_away_win_prob": 0.4661860426861115,
       "predicted_home_win_prob": 0.5338139573138885,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": -0.3,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.2
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -16047,7 +16829,14 @@
       "home_team": "CBJ",
       "predicted_away_win_prob": 0.4980106379145326,
       "predicted_home_win_prob": 0.5019893620854673,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.2,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.8
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -16061,7 +16850,14 @@
       "home_team": "WPG",
       "predicted_away_win_prob": 0.4731966984223564,
       "predicted_home_win_prob": 0.5268033015776435,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 0.0
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -16099,7 +16895,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.4
       },
       "actual_winner": "home",
       "actual_away_score": 1,
@@ -16138,7 +16940,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.2,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6,
+        "home_sos": 1.0
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -16177,7 +16985,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.6
       },
       "actual_winner": "away",
       "actual_away_score": 2,
@@ -16216,7 +17030,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.2,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.0
       },
       "actual_winner": "home",
       "actual_away_score": 3,
@@ -16255,7 +17075,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6,
+        "home_sos": 0.6
       },
       "actual_winner": "home",
       "actual_away_score": 1,
@@ -16294,7 +17120,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": -0.3,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 0.2
       },
       "actual_winner": "home",
       "actual_away_score": 1,
@@ -16333,7 +17165,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.2,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.4,
+        "home_sos": 0.0
       },
       "actual_winner": "away",
       "actual_away_score": 4,
@@ -16372,7 +17210,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.2,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 0.2
       },
       "actual_winner": "away",
       "actual_away_score": 2,
@@ -16411,7 +17255,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.2,
+        "home_sos": 0.4
       },
       "actual_winner": "away",
       "actual_away_score": 5,
@@ -16450,7 +17300,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.2,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.8
       },
       "actual_winner": "away",
       "actual_away_score": 5,
@@ -16489,7 +17345,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.2,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 0.8
       },
       "actual_winner": "home",
       "actual_away_score": 3,
@@ -16528,7 +17390,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.25,
+        "home_sos": 0.4
       },
       "actual_winner": "home",
       "actual_away_score": 0,
@@ -16567,7 +17435,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.4,
+        "home_sos": 0.25
       },
       "actual_winner": "away",
       "actual_away_score": 5,
@@ -16606,7 +17480,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.75,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": 3,
@@ -16645,7 +17525,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": 4,
@@ -16684,7 +17570,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 0.4
       },
       "actual_winner": "away",
       "actual_away_score": 4,
@@ -16723,7 +17615,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": -0.3,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.25,
+        "home_sos": 0.4
       },
       "actual_winner": "home",
       "actual_away_score": 1,
@@ -16762,7 +17660,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": -0.3,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.25,
+        "home_sos": 0.2
       },
       "actual_winner": "home",
       "actual_away_score": 2,
@@ -16801,7 +17705,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.75
       },
       "actual_winner": "home",
       "actual_away_score": 1,
@@ -16840,7 +17750,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.75,
+        "home_sos": 0.4
       },
       "actual_winner": "home",
       "actual_away_score": 1,
@@ -16855,7 +17771,14 @@
       "home_team": "BUF",
       "predicted_away_win_prob": 0.51015245199202,
       "predicted_home_win_prob": 0.48984754800798,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.2,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6,
+        "home_sos": 0.0
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -16869,7 +17792,14 @@
       "home_team": "NJD",
       "predicted_away_win_prob": 0.4793063487690046,
       "predicted_home_win_prob": 0.5206936512309954,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": -0.3,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.2
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -16883,7 +17813,14 @@
       "home_team": "CBJ",
       "predicted_away_win_prob": 0.48895199210256335,
       "predicted_home_win_prob": 0.5110480078974365,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.2,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.8
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -16897,7 +17834,14 @@
       "home_team": "WPG",
       "predicted_away_win_prob": 0.4870759763137019,
       "predicted_home_win_prob": 0.512924023686298,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 0.0
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -16911,7 +17855,14 @@
       "home_team": "BUF",
       "predicted_away_win_prob": 0.47409942527520926,
       "predicted_home_win_prob": 0.5259005747247908,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.2,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6,
+        "home_sos": 0.0
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -16925,7 +17876,14 @@
       "home_team": "NJD",
       "predicted_away_win_prob": 0.48416941194423146,
       "predicted_home_win_prob": 0.5158305880557686,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": -0.3,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.2
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -16939,7 +17897,14 @@
       "home_team": "CBJ",
       "predicted_away_win_prob": 0.4859528862632908,
       "predicted_home_win_prob": 0.5140471137367092,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.2,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.8
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -16953,7 +17918,14 @@
       "home_team": "WPG",
       "predicted_away_win_prob": 0.475597418872308,
       "predicted_home_win_prob": 0.5244025811276919,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 0.0
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -16991,7 +17963,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.2,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6,
+        "home_sos": 0.0
       },
       "actual_winner": "home",
       "actual_away_score": 3,
@@ -17030,7 +18008,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": -0.3,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.2
       },
       "actual_winner": "home",
       "actual_away_score": 1,
@@ -17069,7 +18053,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.2,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.8
       },
       "actual_winner": "away",
       "actual_away_score": 5,
@@ -17108,7 +18098,13 @@
         "away_takeaways": 0,
         "home_takeaways": 0,
         "away_penalty_minutes": 0,
-        "home_penalty_minutes": 0
+        "home_penalty_minutes": 0,
+        "away_rest": 0.1,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 0.0
       },
       "actual_winner": "home",
       "actual_away_score": 3,
@@ -17123,7 +18119,14 @@
       "home_team": "PHI",
       "predicted_away_win_prob": 0.4863922306767951,
       "predicted_home_win_prob": 0.513607769323205,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 1.0
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17137,7 +18140,14 @@
       "home_team": "BOS",
       "predicted_away_win_prob": 0.4719703747226099,
       "predicted_home_win_prob": 0.5280296252773902,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.4
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17151,7 +18161,14 @@
       "home_team": "TBL",
       "predicted_away_win_prob": 0.46411499497964526,
       "predicted_home_win_prob": 0.5358850050203547,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.6
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17165,7 +18182,14 @@
       "home_team": "TOR",
       "predicted_away_win_prob": 0.4780465536922635,
       "predicted_home_win_prob": 0.5219534463077364,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": -0.3,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.6
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17179,7 +18203,14 @@
       "home_team": "FLA",
       "predicted_away_win_prob": 0.47549190599512414,
       "predicted_home_win_prob": 0.5245080940048759,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.2,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.2,
+        "home_sos": 0.8
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17193,7 +18224,14 @@
       "home_team": "MIN",
       "predicted_away_win_prob": 0.4894163015905279,
       "predicted_home_win_prob": 0.510583698409472,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.4,
+        "home_sos": 1.0
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17207,7 +18245,14 @@
       "home_team": "DET",
       "predicted_away_win_prob": 0.48090463377138604,
       "predicted_home_win_prob": 0.519095366228614,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6,
+        "home_sos": 0.4
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17221,7 +18266,14 @@
       "home_team": "PIT",
       "predicted_away_win_prob": 0.46893990925385615,
       "predicted_home_win_prob": 0.5310600907461438,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": -0.3,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.8
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17235,7 +18287,14 @@
       "home_team": "WSH",
       "predicted_away_win_prob": 0.497699635872155,
       "predicted_home_win_prob": 0.502300364127845,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.2
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17249,7 +18308,14 @@
       "home_team": "VAN",
       "predicted_away_win_prob": 0.4872141811152474,
       "predicted_home_win_prob": 0.5127858188847526,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.6
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17263,7 +18329,14 @@
       "home_team": "NSH",
       "predicted_away_win_prob": 0.4901518178194445,
       "predicted_home_win_prob": 0.5098481821805555,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.2,
+        "home_sos": 0.4
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17277,7 +18350,14 @@
       "home_team": "DAL",
       "predicted_away_win_prob": 0.4749766636415265,
       "predicted_home_win_prob": 0.5250233363584734,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.6
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17291,7 +18371,14 @@
       "home_team": "SEA",
       "predicted_away_win_prob": 0.4690011964031872,
       "predicted_home_win_prob": 0.5309988035968127,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.2,
+        "home_sos": 0.8
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17305,7 +18392,14 @@
       "home_team": "PHI",
       "predicted_away_win_prob": 0.48486369374019406,
       "predicted_home_win_prob": 0.515136306259806,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 1.0
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17319,7 +18413,14 @@
       "home_team": "BOS",
       "predicted_away_win_prob": 0.48644373888424286,
       "predicted_home_win_prob": 0.5135562611157571,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.4
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17333,7 +18434,14 @@
       "home_team": "TBL",
       "predicted_away_win_prob": 0.46290069847396453,
       "predicted_home_win_prob": 0.5370993015260356,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.6
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17347,7 +18455,14 @@
       "home_team": "TOR",
       "predicted_away_win_prob": 0.4746947237102435,
       "predicted_home_win_prob": 0.5253052762897564,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": -0.3,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.6
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17361,7 +18476,14 @@
       "home_team": "FLA",
       "predicted_away_win_prob": 0.49502326665117563,
       "predicted_home_win_prob": 0.5049767333488244,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.2,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.2,
+        "home_sos": 0.8
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17375,7 +18497,14 @@
       "home_team": "MIN",
       "predicted_away_win_prob": 0.4740872610870469,
       "predicted_home_win_prob": 0.5259127389129531,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.4,
+        "home_sos": 1.0
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17389,7 +18518,14 @@
       "home_team": "DET",
       "predicted_away_win_prob": 0.4719649204966554,
       "predicted_home_win_prob": 0.5280350795033446,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6,
+        "home_sos": 0.4
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17403,7 +18539,14 @@
       "home_team": "PIT",
       "predicted_away_win_prob": 0.47217236795888484,
       "predicted_home_win_prob": 0.5278276320411152,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": -0.3,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.8
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17417,7 +18560,14 @@
       "home_team": "WSH",
       "predicted_away_win_prob": 0.4973736900810944,
       "predicted_home_win_prob": 0.5026263099189056,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.2
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17431,7 +18581,14 @@
       "home_team": "VAN",
       "predicted_away_win_prob": 0.5047047326041992,
       "predicted_home_win_prob": 0.4952952673958009,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.6
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17445,7 +18602,14 @@
       "home_team": "NSH",
       "predicted_away_win_prob": 0.4838058945672341,
       "predicted_home_win_prob": 0.5161941054327659,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.2,
+        "home_sos": 0.4
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17459,7 +18623,14 @@
       "home_team": "DAL",
       "predicted_away_win_prob": 0.4919133918943784,
       "predicted_home_win_prob": 0.5080866081056217,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.6
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17473,7 +18644,14 @@
       "home_team": "SEA",
       "predicted_away_win_prob": 0.4887719344582194,
       "predicted_home_win_prob": 0.5112280655417806,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.2,
+        "home_sos": 0.8
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17487,7 +18665,14 @@
       "home_team": "PHI",
       "predicted_away_win_prob": 0.5007209480840241,
       "predicted_home_win_prob": 0.4992790519159759,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 1.0
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17501,7 +18686,14 @@
       "home_team": "BOS",
       "predicted_away_win_prob": 0.47110599513255424,
       "predicted_home_win_prob": 0.5288940048674458,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.4
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17515,7 +18707,14 @@
       "home_team": "TBL",
       "predicted_away_win_prob": 0.47941971773519143,
       "predicted_home_win_prob": 0.5205802822648086,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.6
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17529,7 +18728,14 @@
       "home_team": "TOR",
       "predicted_away_win_prob": 0.4915545526610498,
       "predicted_home_win_prob": 0.5084454473389501,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": -0.3,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.6
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17543,7 +18749,14 @@
       "home_team": "FLA",
       "predicted_away_win_prob": 0.4952397954922918,
       "predicted_home_win_prob": 0.5047602045077082,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.2,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.2,
+        "home_sos": 0.8
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17557,7 +18770,14 @@
       "home_team": "MIN",
       "predicted_away_win_prob": 0.4998227109234263,
       "predicted_home_win_prob": 0.5001772890765737,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.4,
+        "home_sos": 1.0
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17571,7 +18791,14 @@
       "home_team": "DET",
       "predicted_away_win_prob": 0.48641756171225936,
       "predicted_home_win_prob": 0.5135824382877408,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6,
+        "home_sos": 0.4
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17585,7 +18812,14 @@
       "home_team": "PIT",
       "predicted_away_win_prob": 0.4907533167293097,
       "predicted_home_win_prob": 0.5092466832706903,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": -0.3,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.8
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17599,7 +18833,14 @@
       "home_team": "WSH",
       "predicted_away_win_prob": 0.4824410879807668,
       "predicted_home_win_prob": 0.5175589120192331,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.2
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17613,7 +18854,14 @@
       "home_team": "VAN",
       "predicted_away_win_prob": 0.4794990861483342,
       "predicted_home_win_prob": 0.5205009138516659,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.6
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17627,7 +18875,14 @@
       "home_team": "NSH",
       "predicted_away_win_prob": 0.48672928871636983,
       "predicted_home_win_prob": 0.5132707112836301,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.2,
+        "home_sos": 0.4
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17641,7 +18896,14 @@
       "home_team": "DAL",
       "predicted_away_win_prob": 0.49916300473727676,
       "predicted_home_win_prob": 0.5008369952627233,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.6
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17655,7 +18917,14 @@
       "home_team": "SEA",
       "predicted_away_win_prob": 0.48852551343362166,
       "predicted_home_win_prob": 0.5114744865663783,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.2,
+        "home_sos": 0.8
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17669,7 +18938,14 @@
       "home_team": "PHI",
       "predicted_away_win_prob": 0.4808966957771898,
       "predicted_home_win_prob": 0.5191033042228103,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 1.0
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17683,7 +18959,14 @@
       "home_team": "BOS",
       "predicted_away_win_prob": 0.47853622282847325,
       "predicted_home_win_prob": 0.5214637771715267,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.4
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17697,7 +18980,14 @@
       "home_team": "TBL",
       "predicted_away_win_prob": 0.47689089487073744,
       "predicted_home_win_prob": 0.5231091051292627,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.6
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17711,7 +19001,14 @@
       "home_team": "TOR",
       "predicted_away_win_prob": 0.4872994455282634,
       "predicted_home_win_prob": 0.5127005544717367,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": -0.3,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.6
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17725,7 +19022,14 @@
       "home_team": "FLA",
       "predicted_away_win_prob": 0.4755752005836909,
       "predicted_home_win_prob": 0.5244247994163092,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.2,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.2,
+        "home_sos": 0.8
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17739,7 +19043,14 @@
       "home_team": "MIN",
       "predicted_away_win_prob": 0.48462635149187955,
       "predicted_home_win_prob": 0.5153736485081205,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.4,
+        "home_sos": 1.0
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17753,7 +19064,14 @@
       "home_team": "DET",
       "predicted_away_win_prob": 0.48668770567611874,
       "predicted_home_win_prob": 0.5133122943238813,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6,
+        "home_sos": 0.4
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17767,7 +19085,14 @@
       "home_team": "PIT",
       "predicted_away_win_prob": 0.48917253231019814,
       "predicted_home_win_prob": 0.5108274676898019,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": -0.3,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.8
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17781,7 +19106,14 @@
       "home_team": "WSH",
       "predicted_away_win_prob": 0.4881072011311314,
       "predicted_home_win_prob": 0.5118927988688686,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.2
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17795,7 +19127,14 @@
       "home_team": "VAN",
       "predicted_away_win_prob": 0.48936563907064495,
       "predicted_home_win_prob": 0.510634360929355,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.6
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17809,7 +19148,14 @@
       "home_team": "NSH",
       "predicted_away_win_prob": 0.47248466790836147,
       "predicted_home_win_prob": 0.5275153320916385,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.2,
+        "home_sos": 0.4
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17823,7 +19169,14 @@
       "home_team": "DAL",
       "predicted_away_win_prob": 0.4775623052654515,
       "predicted_home_win_prob": 0.5224376947345486,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.6
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17837,7 +19190,14 @@
       "home_team": "SEA",
       "predicted_away_win_prob": 0.49172435625888383,
       "predicted_home_win_prob": 0.5082756437411162,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.2,
+        "home_sos": 0.8
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -17875,7 +19235,13 @@
         "away_takeaways": 0.6666666666666666,
         "home_takeaways": 1.6666666666666667,
         "away_penalty_minutes": 4.666666666666667,
-        "home_penalty_minutes": 4.0
+        "home_penalty_minutes": 4.0,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 1.0
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -17914,7 +19280,13 @@
         "away_takeaways": 2.6666666666666665,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 2.6666666666666665
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.4
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -17953,7 +19325,13 @@
         "away_takeaways": 2.3333333333333335,
         "home_takeaways": 1.6666666666666667,
         "away_penalty_minutes": 5.333333333333333,
-        "home_penalty_minutes": 2.6666666666666665
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.6
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -17992,7 +19370,13 @@
         "away_takeaways": 2.0,
         "home_takeaways": 0.6666666666666666,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 3.3333333333333335
+        "home_penalty_minutes": 3.3333333333333335,
+        "away_rest": -0.3,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.6
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -18031,7 +19415,13 @@
         "away_takeaways": 1.6666666666666667,
         "home_takeaways": 2.3333333333333335,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": -0.3,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.2,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -18070,7 +19460,13 @@
         "away_takeaways": 1.6666666666666667,
         "home_takeaways": 0.6666666666666666,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": -0.3,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 0.2
       },
       "actual_winner": "away",
       "actual_away_score": null,
@@ -18109,7 +19505,13 @@
         "away_takeaways": 1.3333333333333333,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 2.6666666666666665
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -18148,7 +19550,13 @@
         "away_takeaways": 0.6666666666666666,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.0,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.8
       },
       "actual_winner": "away",
       "actual_away_score": null,
@@ -18187,7 +19595,13 @@
         "away_takeaways": 2.3333333333333335,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": null,
@@ -18226,7 +19640,13 @@
         "away_takeaways": 2.6666666666666665,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 4.0,
-        "home_penalty_minutes": 5.333333333333333
+        "home_penalty_minutes": 5.333333333333333,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": null,
@@ -18265,7 +19685,13 @@
         "away_takeaways": 1.6666666666666667,
         "home_takeaways": 3.0,
         "away_penalty_minutes": 0.6666666666666666,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": -0.3,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 0.0
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -18304,7 +19730,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.0,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.2
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -18343,7 +19775,13 @@
         "away_takeaways": 2.3333333333333335,
         "home_takeaways": 0.6666666666666666,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": -0.3,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.0,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -18382,7 +19820,13 @@
         "away_takeaways": 2.3333333333333335,
         "home_takeaways": 3.3333333333333335,
         "away_penalty_minutes": 0.6666666666666666,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": -0.3,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 1.0,
+        "home_sos": 0.4
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -18421,7 +19865,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 0.6666666666666666,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 2.6666666666666665
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": -0.3,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.2,
+        "home_sos": 0.8
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -18460,7 +19910,13 @@
         "away_takeaways": 1.6666666666666667,
         "home_takeaways": 1.6666666666666667,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": null,
@@ -18499,7 +19955,13 @@
         "away_takeaways": 1.3333333333333333,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 1.3333333333333333,
-        "home_penalty_minutes": 3.3333333333333335
+        "home_penalty_minutes": 3.3333333333333335,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": null,
@@ -18538,7 +20000,13 @@
         "away_takeaways": 1.3333333333333333,
         "home_takeaways": 2.0,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": null,
@@ -18577,7 +20045,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 1.3333333333333333,
-        "home_penalty_minutes": 3.3333333333333335
+        "home_penalty_minutes": 3.3333333333333335,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": null,
@@ -18616,7 +20090,13 @@
         "away_takeaways": 3.3333333333333335,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 0.6666666666666666
+        "home_penalty_minutes": 0.6666666666666666,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -18655,7 +20135,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 1.6666666666666667,
         "away_penalty_minutes": 1.3333333333333333,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -18670,7 +20156,14 @@
       "home_team": "PIT",
       "predicted_away_win_prob": 0.49450852307717097,
       "predicted_home_win_prob": 0.505491476922829,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 0.4
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -18684,7 +20177,14 @@
       "home_team": "OTT",
       "predicted_away_win_prob": 0.49815541978087907,
       "predicted_home_win_prob": 0.5018445802191209,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.4,
+        "home_sos": 0.2
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -18722,7 +20222,13 @@
         "away_takeaways": 0.6666666666666666,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 0.6666666666666666,
-        "home_penalty_minutes": 2.6666666666666665
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": -0.3,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6,
+        "home_sos": 0.8
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -18761,7 +20267,13 @@
         "away_takeaways": 1.6666666666666667,
         "home_takeaways": 0.6666666666666666,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 0.6666666666666666
+        "home_penalty_minutes": 0.6666666666666666,
+        "away_rest": -0.3,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 0.6
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -18776,7 +20288,14 @@
       "home_team": "PHI",
       "predicted_away_win_prob": 0.4760023097601075,
       "predicted_home_win_prob": 0.5239976902398925,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": -0.3,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 0.8
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -18790,7 +20309,14 @@
       "home_team": "TOR",
       "predicted_away_win_prob": 0.49126363356762026,
       "predicted_home_win_prob": 0.5087363664323798,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.2,
+        "home_sos": 0.2
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -18804,7 +20330,14 @@
       "home_team": "CAR",
       "predicted_away_win_prob": 0.47218918506344026,
       "predicted_home_win_prob": 0.5278108149365598,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.4,
+        "home_sos": 0.6
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -18818,7 +20351,14 @@
       "home_team": "BUF",
       "predicted_away_win_prob": 0.4982999457910003,
       "predicted_home_win_prob": 0.5017000542089997,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.2,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.4,
+        "home_sos": 0.8
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -18832,7 +20372,14 @@
       "home_team": "FLA",
       "predicted_away_win_prob": 0.47976535465023995,
       "predicted_home_win_prob": 0.52023464534976,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.2,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.4,
+        "home_sos": 0.4
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -18846,7 +20393,14 @@
       "home_team": "BOS",
       "predicted_away_win_prob": 0.4960377357260053,
       "predicted_home_win_prob": 0.5039622642739946,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.2,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.2,
+        "home_sos": 0.8
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -18860,7 +20414,14 @@
       "home_team": "NSH",
       "predicted_away_win_prob": 0.4939527731065725,
       "predicted_home_win_prob": 0.5060472268934275,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.4,
+        "home_sos": 0.4
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -18874,7 +20435,14 @@
       "home_team": "MIN",
       "predicted_away_win_prob": 0.4885753159643093,
       "predicted_home_win_prob": 0.5114246840356906,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.4,
+        "home_sos": 0.6
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -18888,7 +20456,14 @@
       "home_team": "STL",
       "predicted_away_win_prob": 0.4782063327898966,
       "predicted_home_win_prob": 0.5217936672101035,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.2,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.4,
+        "home_sos": 0.6
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -18902,7 +20477,14 @@
       "home_team": "DAL",
       "predicted_away_win_prob": 0.4812497914236974,
       "predicted_home_win_prob": 0.5187502085763025,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.2,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.4,
+        "home_sos": 0.8
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -18916,7 +20498,14 @@
       "home_team": "CHI",
       "predicted_away_win_prob": 0.4980647500557861,
       "predicted_home_win_prob": 0.5019352499442139,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": -0.3,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6,
+        "home_sos": 0.4
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -18930,7 +20519,14 @@
       "home_team": "COL",
       "predicted_away_win_prob": 0.47886276532075017,
       "predicted_home_win_prob": 0.5211372346792499,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.2,
+        "home_sos": 1.0
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -18944,7 +20540,14 @@
       "home_team": "EDM",
       "predicted_away_win_prob": 0.4943149328972874,
       "predicted_home_win_prob": 0.5056850671027125,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6,
+        "home_sos": 1.0
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -18958,7 +20561,14 @@
       "home_team": "VAN",
       "predicted_away_win_prob": 0.49771187941340217,
       "predicted_home_win_prob": 0.5022881205865978,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.2,
+        "home_sos": 0.2
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -18972,7 +20582,14 @@
       "home_team": "SEA",
       "predicted_away_win_prob": 0.49006901929660157,
       "predicted_home_win_prob": 0.5099309807033984,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.2,
+        "home_rest": 0.2,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.4,
+        "home_sos": 0.8
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -18986,7 +20603,14 @@
       "home_team": "SJS",
       "predicted_away_win_prob": 0.4860488457389806,
       "predicted_home_win_prob": 0.5139511542610194,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": 0.1,
+        "home_rest": 0.1,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.4,
+        "home_sos": 0.6
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -19024,7 +20648,13 @@
         "away_takeaways": 1.6666666666666667,
         "home_takeaways": 0.3333333333333333,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -19063,7 +20693,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 2.3333333333333335,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.0,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.8
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -19102,7 +20738,13 @@
         "away_takeaways": 1.6666666666666667,
         "home_takeaways": 2.6666666666666665,
         "away_penalty_minutes": 1.3333333333333333,
-        "home_penalty_minutes": 3.3333333333333335
+        "home_penalty_minutes": 3.3333333333333335,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": null,
@@ -19141,7 +20783,13 @@
         "away_takeaways": 2.0,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": -0.3,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.2,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": null,
@@ -19180,7 +20828,13 @@
         "away_takeaways": 1.6666666666666667,
         "home_takeaways": 2.0,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 2.6666666666666665
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -19219,7 +20873,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 0.6666666666666666,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 4.0
+        "home_penalty_minutes": 4.0,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": null,
@@ -19258,7 +20918,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 2.0,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 4.0
+        "home_penalty_minutes": 4.0,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": null,
@@ -19297,7 +20963,13 @@
         "away_takeaways": 1.3333333333333333,
         "home_takeaways": 2.0,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": null,
@@ -19336,7 +21008,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": null,
@@ -19375,7 +21053,13 @@
         "away_takeaways": 2.3333333333333335,
         "home_takeaways": 2.3333333333333335,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -19414,7 +21098,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 3.3333333333333335,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 4.666666666666667
+        "home_penalty_minutes": 4.666666666666667,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -19453,7 +21143,13 @@
         "away_takeaways": 0.3333333333333333,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 4.0,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -19492,7 +21188,13 @@
         "away_takeaways": 2.0,
         "home_takeaways": 2.0,
         "away_penalty_minutes": 0.6666666666666666,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -19531,7 +21233,13 @@
         "away_takeaways": 1.3333333333333333,
         "home_takeaways": 2.0,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 3.3333333333333335
+        "home_penalty_minutes": 3.3333333333333335,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": null,
@@ -19570,7 +21278,13 @@
         "away_takeaways": 1.3333333333333333,
         "home_takeaways": 1.6666666666666667,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": null,
@@ -19609,7 +21323,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 2.0,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 0.6666666666666666
+        "home_penalty_minutes": 0.6666666666666666,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": null,
@@ -19624,7 +21344,14 @@
       "home_team": "CBJ",
       "predicted_away_win_prob": 0.5010549661393937,
       "predicted_home_win_prob": 0.49894503386060635,
-      "metrics_used": {},
+      "metrics_used": {
+        "away_rest": -0.3,
+        "home_rest": -0.3,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.8,
+        "home_sos": 0.2
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
@@ -19662,7 +21389,13 @@
         "away_takeaways": 3.0,
         "home_takeaways": 2.3333333333333335,
         "away_penalty_minutes": 1.3333333333333333,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -19701,7 +21434,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 1.6666666666666667,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -19740,7 +21479,13 @@
         "away_takeaways": 1.3333333333333333,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 1.3333333333333333,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -19779,7 +21524,13 @@
         "away_takeaways": 1.6666666666666667,
         "home_takeaways": 1.0,
         "away_penalty_minutes": 3.3333333333333335,
-        "home_penalty_minutes": 4.0
+        "home_penalty_minutes": 4.0,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -19818,7 +21569,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 2.3333333333333335,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 2.6666666666666665
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -19857,7 +21614,13 @@
         "away_takeaways": 0.6666666666666666,
         "home_takeaways": 1.6666666666666667,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 4.0
+        "home_penalty_minutes": 4.0,
+        "away_rest": -0.3,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -19896,7 +21659,13 @@
         "away_takeaways": 1.6666666666666667,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 2.6666666666666665,
-        "home_penalty_minutes": 0.6666666666666666
+        "home_penalty_minutes": 0.6666666666666666,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": null,
@@ -19935,7 +21704,13 @@
         "away_takeaways": 1.3333333333333333,
         "home_takeaways": 1.6666666666666667,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -19974,7 +21749,13 @@
         "away_takeaways": 1.6666666666666667,
         "home_takeaways": 1.3333333333333333,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": null,
@@ -20013,7 +21794,13 @@
         "away_takeaways": 2.0,
         "home_takeaways": 3.0,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 1.3333333333333333
+        "home_penalty_minutes": 1.3333333333333333,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": null,
@@ -20052,7 +21839,13 @@
         "away_takeaways": 2.0,
         "home_takeaways": 0.3333333333333333,
         "away_penalty_minutes": 1.3333333333333333,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
       },
       "actual_winner": "home",
       "actual_away_score": null,
@@ -20091,7 +21884,13 @@
         "away_takeaways": 1.0,
         "home_takeaways": 0.6666666666666666,
         "away_penalty_minutes": 2.0,
-        "home_penalty_minutes": 2.0
+        "home_penalty_minutes": 2.0,
+        "away_rest": -0.3,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.6,
+        "home_sos": 0.5
       },
       "actual_winner": "away",
       "actual_away_score": null,
@@ -20104,84 +21903,2206 @@
       "date": "2025-10-31",
       "away_team": "COL",
       "home_team": "VGK",
-      "predicted_away_win_prob": 0.48563418706784134,
-      "predicted_home_win_prob": 0.5143658129321587,
-      "metrics_used": {},
+      "predicted_away_win_prob": 0.5459035193063427,
+      "predicted_home_win_prob": 0.45409648069365727,
+      "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
       "prediction_accuracy": null,
-      "timestamp": "2025-10-31T12:34:24.512408"
+      "timestamp": "2025-10-31T11:47:48.022561"
     },
     {
       "game_id": 2025020179,
       "date": "2025-10-31",
       "away_team": "NYI",
       "home_team": "WSH",
-      "predicted_away_win_prob": 0.5139052725603993,
-      "predicted_home_win_prob": 0.4860947274396007,
-      "metrics_used": {},
+      "predicted_away_win_prob": 0.6059546002851418,
+      "predicted_home_win_prob": 0.3940453997148582,
+      "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
       "prediction_accuracy": null,
-      "timestamp": "2025-10-31T12:34:24.543057"
+      "timestamp": "2025-10-31T11:47:48.040664"
     },
     {
       "game_id": 2025020180,
       "date": "2025-10-31",
       "away_team": "DET",
       "home_team": "ANA",
-      "predicted_away_win_prob": 0.49330944881011696,
-      "predicted_home_win_prob": 0.506690551189883,
-      "metrics_used": {},
+      "predicted_away_win_prob": 0.6174418917800194,
+      "predicted_home_win_prob": 0.3825581082199806,
+      "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5
+      },
       "actual_winner": null,
       "actual_away_score": null,
       "actual_home_score": null,
       "prediction_accuracy": null,
-      "timestamp": "2025-10-31T12:34:24.573870"
+      "timestamp": "2025-10-31T11:47:48.057592"
     }
   ],
   "model_weights": {
-    "xg_weight": 0.1138414616479354,
-    "hdc_weight": 0.04630828442181158,
-    "corsi_weight": 0.055745950447480486,
-    "power_play_weight": 0.04630828442181158,
-    "faceoff_weight": 0.06016339660753131,
-    "shots_weight": 0.04630828442181158,
-    "hits_weight": 0.04630828442181158,
-    "blocked_shots_weight": 0.07701507139727466,
-    "takeaways_weight": 0.1910294807376847,
-    "penalty_minutes_weight": 0.04630828442181158,
-    "recent_form_weight": 0.04630828442181158,
-    "head_to_head_weight": 0.0854300793657891,
-    "rest_days_weight": 0.04630828442181158,
-    "goalie_performance_weight": 0.04630828442181158,
-    "game_score_weight": 0.04630828442181158
+    "xg_weight": 0.11738344367815406,
+    "hdc_weight": 0.03262003752408132,
+    "corsi_weight": 0.04986083120006545,
+    "power_play_weight": 0.05845136959163479,
+    "faceoff_weight": 0.05656495160091772,
+    "shots_weight": 0.03203607347844825,
+    "hits_weight": 0.03585061637760795,
+    "blocked_shots_weight": 0.0919499880834077,
+    "takeaways_weight": 0.2095629598452195,
+    "penalty_minutes_weight": 0.05123242182700695,
+    "recent_form_weight": 0.03845599065685052,
+    "head_to_head_weight": 0.10208675988194638,
+    "rest_days_weight": 0.03338871053189045,
+    "goalie_performance_weight": 0.04647341611371005,
+    "game_score_weight": 0.04408242960905899
   },
   "weight_momentum": {
-    "xg_weight": 0.02003900915659807,
-    "hdc_weight": 1.2818781333055057e-05,
-    "corsi_weight": 0.012511197525509275,
-    "power_play_weight": -0.006813956689377754,
-    "faceoff_weight": 0.011321743841025488,
-    "shots_weight": -0.04445249539298432,
-    "hits_weight": 0.0012902069283178136,
-    "blocked_shots_weight": 0.0068640513210870835,
-    "takeaways_weight": 0.01911922672338878,
-    "penalty_minutes_weight": -0.01841909061392628,
-    "recent_form_weight": -0.008696686864931904,
-    "head_to_head_weight": -0.0045260564543614015,
-    "rest_days_weight": -0.01988644200107951,
-    "goalie_performance_weight": -0.022657581590690437,
-    "game_score_weight": -0.014097229401821667
+    "xg_weight": 0.00704512172079215,
+    "hdc_weight": -0.017131993306261695,
+    "corsi_weight": -0.0009869494816032824,
+    "power_play_weight": 0.0005584411848932698,
+    "faceoff_weight": -0.0006679742901767481,
+    "shots_weight": -0.04246143345587598,
+    "hits_weight": -0.014106735992159253,
+    "blocked_shots_weight": 0.009815353402297696,
+    "takeaways_weight": 0.009104846491848523,
+    "penalty_minutes_weight": 0.0002974688112916419,
+    "recent_form_weight": -0.011666947969140175,
+    "head_to_head_weight": -0.0011680875793483234,
+    "rest_days_weight": -0.01641217381122316,
+    "goalie_performance_weight": -0.004159075199788658,
+    "game_score_weight": -0.006398101002616421
   },
-  "last_updated": "2025-10-31T12:34:24.604941",
+  "last_updated": "2025-10-31T11:47:48.076271",
   "model_performance": {
     "total_games": 2711,
     "correct_predictions": 1513,
     "accuracy": 0.5580966433050535,
     "recent_accuracy": 0.4666666666666667
   },
-  "team_stats": {}
+  "team_stats": {},
+  "team_last_game": {
+    "CHI": "2025-10-31",
+    "FLA": "2025-10-29",
+    "PIT": "2025-10-31",
+    "NYR": "2025-10-31",
+    "COL": "2025-10-29",
+    "LAK": "2025-10-31",
+    "MTL": "2025-10-29",
+    "TOR": "2025-10-30",
+    "BOS": "2025-10-31",
+    "WSH": "2025-10-29",
+    "CGY": "2025-10-31",
+    "EDM": "2025-10-31",
+    "VGK": "2025-10-29",
+    "BUF": "2025-10-31",
+    "DET": "2025-10-31",
+    "OTT": "2025-10-31",
+    "TBL": "2025-10-31",
+    "PHI": "2025-10-31",
+    "NYI": "2025-10-31",
+    "NJD": "2025-10-31",
+    "CAR": "2025-10-31",
+    "MIN": "2025-10-31",
+    "STL": "2025-10-31",
+    "CBJ": "2025-10-30",
+    "NSH": "2025-10-31",
+    "DAL": "2025-10-31",
+    "WPG": "2025-10-31",
+    "UTA": "2025-10-29",
+    "VAN": "2025-10-31",
+    "SJS": "2025-10-31",
+    "ANA": "2025-10-29",
+    "SEA": "2025-10-29"
+  },
+  "goalie_stats": {
+    "Alex Lyon": {
+      "games": 10,
+      "xga_sum": 34.698546880477025,
+      "ga_sum": 34.0
+    },
+    "Joonas Korpisalo": {
+      "games": 7,
+      "xga_sum": 25.197088652060003,
+      "ga_sum": 23.0
+    },
+    "Devin Cooley": {
+      "games": 2,
+      "xga_sum": 6.608428231575001,
+      "ga_sum": 7.0
+    },
+    "Linus Ullmark": {
+      "games": 11,
+      "xga_sum": 31.22303167899433,
+      "ga_sum": 38.0
+    },
+    "Jake Oettinger": {
+      "games": 10,
+      "xga_sum": 30.871414365800703,
+      "ga_sum": 27.0
+    },
+    "Andrei Vasilevskiy": {
+      "games": 9,
+      "xga_sum": 25.587847796621556,
+      "ga_sum": 29.0
+    },
+    "Juuse Saros": {
+      "games": 11,
+      "xga_sum": 35.770890509824085,
+      "ga_sum": 33.0
+    },
+    "Dan Vladar": {
+      "games": 7,
+      "xga_sum": 19.39294916224625,
+      "ga_sum": 13.0
+    },
+    "David Rittich": {
+      "games": 3,
+      "xga_sum": 12.991224163590932,
+      "ga_sum": 10.0
+    },
+    "Brandon Bussi": {
+      "games": 4,
+      "xga_sum": 11.644533420878652,
+      "ga_sum": 9.0
+    },
+    "Kevin Lankinen": {
+      "games": 6,
+      "xga_sum": 22.356913416228384,
+      "ga_sum": 20.0
+    },
+    "Jordan Binnington": {
+      "games": 8,
+      "xga_sum": 20.130787203189996,
+      "ga_sum": 26.0
+    },
+    "Tristan Jarry": {
+      "games": 7,
+      "xga_sum": 23.00987450843166,
+      "ga_sum": 18.0
+    },
+    "Filip Gustavsson": {
+      "games": 10,
+      "xga_sum": 33.46415687225275,
+      "ga_sum": 38.0
+    },
+    "Spencer Knight": {
+      "games": 9,
+      "xga_sum": 31.593238741811177,
+      "ga_sum": 25.0
+    },
+    "Connor Hellebuyck": {
+      "games": 10,
+      "xga_sum": 32.87238432530432,
+      "ga_sum": 27.0
+    },
+    "Igor Shesterkin": {
+      "games": 10,
+      "xga_sum": 28.220006640026504,
+      "ga_sum": 29.0
+    },
+    "Stuart Skinner": {
+      "games": 8,
+      "xga_sum": 25.969504555636018,
+      "ga_sum": 24.0
+    },
+    "Jake Allen": {
+      "games": 8,
+      "xga_sum": 26.636926820379287,
+      "ga_sum": 21.0
+    },
+    "Alex Nedeljkovic": {
+      "games": 6,
+      "xga_sum": 18.534228917760878,
+      "ga_sum": 20.0
+    },
+    "Cam Talbot": {
+      "games": 6,
+      "xga_sum": 20.127785358534656,
+      "ga_sum": 17.0
+    },
+    "Darcy Kuemper": {
+      "games": 9,
+      "xga_sum": 30.438966364744076,
+      "ga_sum": 30.0
+    },
+    "Cayden Primeau": {
+      "games": 3,
+      "xga_sum": 8.537652157454653,
+      "ga_sum": 13.0
+    },
+    "Elvis Merzlikins": {
+      "games": 6,
+      "xga_sum": 20.68573900101688,
+      "ga_sum": 18.0
+    },
+    "Arturs Silovs": {
+      "games": 7,
+      "xga_sum": 25.631773538700052,
+      "ga_sum": 20.0
+    },
+    "Samuel Ersson": {
+      "games": 5,
+      "xga_sum": 16.0467348437926,
+      "ga_sum": 18.0
+    },
+    "Dustin Wolf": {
+      "games": 11,
+      "xga_sum": 35.75621902279083,
+      "ga_sum": 41.0
+    },
+    "Anthony Stolarz": {
+      "games": 9,
+      "xga_sum": 29.733549114171634,
+      "ga_sum": 32.0
+    },
+    "Akira Schmid": {
+      "games": 5,
+      "xga_sum": 15.376941055146276,
+      "ga_sum": 15.0
+    },
+    "Frederik Andersen": {
+      "games": 6,
+      "xga_sum": 19.987975926107804,
+      "ga_sum": 21.0
+    },
+    "Lukas Dostal": {
+      "games": 8,
+      "xga_sum": 28.47385310674861,
+      "ga_sum": 25.0
+    },
+    "Daniil Tarasov": {
+      "games": 4,
+      "xga_sum": 13.387953105880655,
+      "ga_sum": 16.0
+    },
+    "Ilya Sorokin": {
+      "games": 8,
+      "xga_sum": 28.334701379375403,
+      "ga_sum": 32.0
+    },
+    "John Gibson": {
+      "games": 7,
+      "xga_sum": 21.622597838162037,
+      "ga_sum": 23.0
+    },
+    "Logan Thompson": {
+      "games": 8,
+      "xga_sum": 20.767670073840094,
+      "ga_sum": 12.0
+    },
+    "Jacob Markstrom": {
+      "games": 4,
+      "xga_sum": 11.978657679881502,
+      "ga_sum": 18.0
+    },
+    "Scott Wedgewood": {
+      "games": 12,
+      "xga_sum": 33.8811133204313,
+      "ga_sum": 31.0
+    },
+    "Karel Vejmelka": {
+      "games": 8,
+      "xga_sum": 24.942859801666046,
+      "ga_sum": 24.0
+    },
+    "Jonathan Quick": {
+      "games": 4,
+      "xga_sum": 9.709832887764883,
+      "ga_sum": 7.0
+    },
+    "Thatcher Demko": {
+      "games": 8,
+      "xga_sum": 29.833545329421934,
+      "ga_sum": 19.0
+    },
+    "Jakub Dobes": {
+      "games": 6,
+      "xga_sum": 21.06803567867718,
+      "ga_sum": 12.0
+    },
+    "Joey Daccord": {
+      "games": 9,
+      "xga_sum": 26.280386822601773,
+      "ga_sum": 23.0
+    },
+    "Yaroslav Askarov": {
+      "games": 8,
+      "xga_sum": 25.739721770086817,
+      "ga_sum": 40.0
+    },
+    "Joel Hofer": {
+      "games": 5,
+      "xga_sum": 12.39700065828906,
+      "ga_sum": 23.0
+    },
+    "Jeremy Swayman": {
+      "games": 8,
+      "xga_sum": 29.957179083186805,
+      "ga_sum": 26.0
+    },
+    "Leevi Meril\u00e4inen": {
+      "games": 3,
+      "xga_sum": 7.750921712150001,
+      "ga_sum": 17.0
+    },
+    "Trent Miner": {
+      "games": 1,
+      "xga_sum": 2.9105283290158,
+      "ga_sum": 4.0
+    },
+    "Carl Lindbom": {
+      "games": 1,
+      "xga_sum": 4.163339747311001,
+      "ga_sum": 2.0
+    },
+    "Jesper Wallstedt": {
+      "games": 3,
+      "xga_sum": 9.469735352447028,
+      "ga_sum": 11.0
+    },
+    "Vitek Vanecek": {
+      "games": 4,
+      "xga_sum": 12.101398867025853,
+      "ga_sum": 8.0
+    },
+    "Anton Forsberg": {
+      "games": 5,
+      "xga_sum": 14.319741127772504,
+      "ga_sum": 16.0
+    },
+    "Arvid Soderblom": {
+      "games": 4,
+      "xga_sum": 11.378627149437664,
+      "ga_sum": 14.0
+    },
+    "Casey DeSmith": {
+      "games": 2,
+      "xga_sum": 6.838970834237102,
+      "ga_sum": 7.0
+    },
+    "Justus Annunen": {
+      "games": 2,
+      "xga_sum": 6.989424391615963,
+      "ga_sum": 10.0
+    },
+    "Calvin Pickard": {
+      "games": 5,
+      "xga_sum": 13.691137264067,
+      "ga_sum": 17.0
+    },
+    "Jonas Johansson": {
+      "games": 3,
+      "xga_sum": 8.277154398701255,
+      "ga_sum": 9.0
+    },
+    "Ukko-Pekka Luukkonen": {
+      "games": 2,
+      "xga_sum": 5.9218517161422515,
+      "ga_sum": 9.0
+    },
+    "Sergei Bobrovsky": {
+      "games": 9,
+      "xga_sum": 20.48673151171916,
+      "ga_sum": 20.0
+    },
+    "Charlie Lindgren": {
+      "games": 4,
+      "xga_sum": 13.507021562234003,
+      "ga_sum": 14.0
+    },
+    "Jet Greaves": {
+      "games": 4,
+      "xga_sum": 13.551369994790551,
+      "ga_sum": 12.0
+    },
+    "Eric Comrie": {
+      "games": 2,
+      "xga_sum": 7.505952946998024,
+      "ga_sum": 5.0
+    },
+    "Petr Mrazek": {
+      "games": 2,
+      "xga_sum": 7.848088338674397,
+      "ga_sum": 11.0
+    },
+    "Sam Montembeault": {
+      "games": 6,
+      "xga_sum": 17.31202818010875,
+      "ga_sum": 24.0
+    },
+    "Nico Daws": {
+      "games": 1,
+      "xga_sum": 4.4259390800587495,
+      "ga_sum": 1.0
+    },
+    "Colten Ellis": {
+      "games": 1,
+      "xga_sum": 3.540064031514501,
+      "ga_sum": 2.0
+    },
+    "Matt Murray": {
+      "games": 1,
+      "xga_sum": 3.5827000958125015,
+      "ga_sum": 4.0
+    },
+    "Adin Hill": {
+      "games": 6,
+      "xga_sum": 14.94790285787461,
+      "ga_sum": 16.0
+    },
+    "Philipp Grubauer": {
+      "games": 1,
+      "xga_sum": 3.0414429284200013,
+      "ga_sum": 4.0
+    },
+    "Pyotr Kochetkov": {
+      "games": 1,
+      "xga_sum": 2.9015521163375007,
+      "ga_sum": 3.0
+    },
+    "Dennis Hildeby": {
+      "games": 1,
+      "xga_sum": 5.357416883375003,
+      "ga_sum": 6.0
+    },
+    "Brandon Halverson": {
+      "games": 1,
+      "xga_sum": 2.4590761404812,
+      "ga_sum": 2.0
+    },
+    "Ivan Prosvetov": {
+      "games": 1,
+      "xga_sum": 2.6541868835468745,
+      "ga_sum": 8.0
+    },
+    "Calle Clang": {
+      "games": 1,
+      "xga_sum": 2.4577947994624996,
+      "ga_sum": 2.0
+    }
+  },
+  "goalie_history": {
+    "TEST": [
+      [
+        "2025-10-30",
+        "Goalie X"
+      ]
+    ],
+    "BUF": [
+      [
+        "2025-10-01",
+        "Ukko-Pekka Luukkonen"
+      ],
+      [
+        "2025-10-03",
+        "Alex Lyon"
+      ],
+      [
+        "2025-10-09",
+        "Alex Lyon"
+      ],
+      [
+        "2025-10-11",
+        "Alex Lyon"
+      ],
+      [
+        "2025-10-13",
+        "Alex Lyon"
+      ],
+      [
+        "2025-10-15",
+        "Alex Lyon"
+      ],
+      [
+        "2025-10-18",
+        "Alex Lyon"
+      ],
+      [
+        "2025-10-20",
+        "Alex Lyon"
+      ],
+      [
+        "2025-10-22",
+        "Colten Ellis"
+      ],
+      [
+        "2025-10-24",
+        "Alex Lyon"
+      ],
+      [
+        "2025-10-25",
+        "Ukko-Pekka Luukkonen"
+      ],
+      [
+        "2025-10-28",
+        "Alex Lyon"
+      ],
+      [
+        "2025-10-30",
+        "Alex Lyon"
+      ]
+    ],
+    "BOS": [
+      [
+        "2025-10-02",
+        "Joonas Korpisalo"
+      ],
+      [
+        "2025-10-04",
+        "Jeremy Swayman"
+      ],
+      [
+        "2025-10-08",
+        "Jeremy Swayman"
+      ],
+      [
+        "2025-10-09",
+        "Joonas Korpisalo"
+      ],
+      [
+        "2025-10-11",
+        "Jeremy Swayman"
+      ],
+      [
+        "2025-10-13",
+        "Joonas Korpisalo"
+      ],
+      [
+        "2025-10-16",
+        "Jeremy Swayman"
+      ],
+      [
+        "2025-10-18",
+        "Jeremy Swayman"
+      ],
+      [
+        "2025-10-19",
+        "Joonas Korpisalo"
+      ],
+      [
+        "2025-10-21",
+        "Jeremy Swayman"
+      ],
+      [
+        "2025-10-23",
+        "Joonas Korpisalo"
+      ],
+      [
+        "2025-10-25",
+        "Jeremy Swayman"
+      ],
+      [
+        "2025-10-27",
+        "Jeremy Swayman"
+      ],
+      [
+        "2025-10-28",
+        "Joonas Korpisalo"
+      ],
+      [
+        "2025-10-30",
+        "Joonas Korpisalo"
+      ]
+    ],
+    "CGY": [
+      [
+        "2025-10-01",
+        "Ivan Prosvetov"
+      ],
+      [
+        "2025-10-03",
+        "Dustin Wolf"
+      ],
+      [
+        "2025-10-08",
+        "Dustin Wolf"
+      ],
+      [
+        "2025-10-09",
+        "Dustin Wolf"
+      ],
+      [
+        "2025-10-11",
+        "Dustin Wolf"
+      ],
+      [
+        "2025-10-14",
+        "Dustin Wolf"
+      ],
+      [
+        "2025-10-15",
+        "Devin Cooley"
+      ],
+      [
+        "2025-10-18",
+        "Dustin Wolf"
+      ],
+      [
+        "2025-10-20",
+        "Dustin Wolf"
+      ],
+      [
+        "2025-10-22",
+        "Dustin Wolf"
+      ],
+      [
+        "2025-10-24",
+        "Dustin Wolf"
+      ],
+      [
+        "2025-10-26",
+        "Dustin Wolf"
+      ],
+      [
+        "2025-10-28",
+        "Dustin Wolf"
+      ],
+      [
+        "2025-10-30",
+        "Devin Cooley"
+      ]
+    ],
+    "OTT": [
+      [
+        "2025-10-02",
+        "Leevi Meril\u00e4inen"
+      ],
+      [
+        "2025-10-04",
+        "Linus Ullmark"
+      ],
+      [
+        "2025-10-09",
+        "Linus Ullmark"
+      ],
+      [
+        "2025-10-11",
+        "Linus Ullmark"
+      ],
+      [
+        "2025-10-13",
+        "Linus Ullmark"
+      ],
+      [
+        "2025-10-15",
+        "Leevi Meril\u00e4inen"
+      ],
+      [
+        "2025-10-16",
+        "Linus Ullmark"
+      ],
+      [
+        "2025-10-18",
+        "Linus Ullmark"
+      ],
+      [
+        "2025-10-21",
+        "Linus Ullmark"
+      ],
+      [
+        "2025-10-23",
+        "Linus Ullmark"
+      ],
+      [
+        "2025-10-25",
+        "Linus Ullmark"
+      ],
+      [
+        "2025-10-27",
+        "Leevi Meril\u00e4inen"
+      ],
+      [
+        "2025-10-28",
+        "Linus Ullmark"
+      ],
+      [
+        "2025-10-30",
+        "Linus Ullmark"
+      ]
+    ],
+    "DAL": [
+      [
+        "2025-10-04",
+        "Jake Oettinger"
+      ],
+      [
+        "2025-10-09",
+        "Jake Oettinger"
+      ],
+      [
+        "2025-10-11",
+        "Jake Oettinger"
+      ],
+      [
+        "2025-10-14",
+        "Jake Oettinger"
+      ],
+      [
+        "2025-10-16",
+        "Casey DeSmith"
+      ],
+      [
+        "2025-10-18",
+        "Jake Oettinger"
+      ],
+      [
+        "2025-10-21",
+        "Jake Oettinger"
+      ],
+      [
+        "2025-10-23",
+        "Jake Oettinger"
+      ],
+      [
+        "2025-10-25",
+        "Jake Oettinger"
+      ],
+      [
+        "2025-10-26",
+        "Casey DeSmith"
+      ],
+      [
+        "2025-10-28",
+        "Jake Oettinger"
+      ],
+      [
+        "2025-10-30",
+        "Jake Oettinger"
+      ]
+    ],
+    "TBL": [
+      [
+        "2025-10-02",
+        "Brandon Halverson"
+      ],
+      [
+        "2025-10-04",
+        "Andrei Vasilevskiy"
+      ],
+      [
+        "2025-10-09",
+        "Andrei Vasilevskiy"
+      ],
+      [
+        "2025-10-11",
+        "Andrei Vasilevskiy"
+      ],
+      [
+        "2025-10-13",
+        "Jonas Johansson"
+      ],
+      [
+        "2025-10-14",
+        "Andrei Vasilevskiy"
+      ],
+      [
+        "2025-10-17",
+        "Andrei Vasilevskiy"
+      ],
+      [
+        "2025-10-18",
+        "Jonas Johansson"
+      ],
+      [
+        "2025-10-23",
+        "Andrei Vasilevskiy"
+      ],
+      [
+        "2025-10-25",
+        "Jonas Johansson"
+      ],
+      [
+        "2025-10-26",
+        "Andrei Vasilevskiy"
+      ],
+      [
+        "2025-10-28",
+        "Andrei Vasilevskiy"
+      ],
+      [
+        "2025-10-30",
+        "Andrei Vasilevskiy"
+      ]
+    ],
+    "NSH": [
+      [
+        "2025-10-04",
+        "Juuse Saros"
+      ],
+      [
+        "2025-10-09",
+        "Juuse Saros"
+      ],
+      [
+        "2025-10-11",
+        "Juuse Saros"
+      ],
+      [
+        "2025-10-13",
+        "Juuse Saros"
+      ],
+      [
+        "2025-10-14",
+        "Justus Annunen"
+      ],
+      [
+        "2025-10-16",
+        "Juuse Saros"
+      ],
+      [
+        "2025-10-18",
+        "Juuse Saros"
+      ],
+      [
+        "2025-10-21",
+        "Juuse Saros"
+      ],
+      [
+        "2025-10-23",
+        "Juuse Saros"
+      ],
+      [
+        "2025-10-25",
+        "Juuse Saros"
+      ],
+      [
+        "2025-10-26",
+        "Justus Annunen"
+      ],
+      [
+        "2025-10-28",
+        "Juuse Saros"
+      ],
+      [
+        "2025-10-30",
+        "Juuse Saros"
+      ]
+    ],
+    "PHI": [
+      [
+        "2025-10-02",
+        "Samuel Ersson"
+      ],
+      [
+        "2025-10-04",
+        "Dan Vladar"
+      ],
+      [
+        "2025-10-09",
+        "Dan Vladar"
+      ],
+      [
+        "2025-10-11",
+        "Samuel Ersson"
+      ],
+      [
+        "2025-10-13",
+        "Dan Vladar"
+      ],
+      [
+        "2025-10-16",
+        "Samuel Ersson"
+      ],
+      [
+        "2025-10-18",
+        "Dan Vladar"
+      ],
+      [
+        "2025-10-20",
+        "Dan Vladar"
+      ],
+      [
+        "2025-10-23",
+        "Dan Vladar"
+      ],
+      [
+        "2025-10-25",
+        "Samuel Ersson"
+      ],
+      [
+        "2025-10-28",
+        "Samuel Ersson"
+      ],
+      [
+        "2025-10-30",
+        "Dan Vladar"
+      ]
+    ],
+    "NYI": [
+      [
+        "2025-10-02",
+        "Ilya Sorokin"
+      ],
+      [
+        "2025-10-09",
+        "Ilya Sorokin"
+      ],
+      [
+        "2025-10-11",
+        "Ilya Sorokin"
+      ],
+      [
+        "2025-10-13",
+        "Ilya Sorokin"
+      ],
+      [
+        "2025-10-16",
+        "David Rittich"
+      ],
+      [
+        "2025-10-18",
+        "Ilya Sorokin"
+      ],
+      [
+        "2025-10-21",
+        "Ilya Sorokin"
+      ],
+      [
+        "2025-10-23",
+        "David Rittich"
+      ],
+      [
+        "2025-10-25",
+        "Ilya Sorokin"
+      ],
+      [
+        "2025-10-28",
+        "Ilya Sorokin"
+      ],
+      [
+        "2025-10-30",
+        "David Rittich"
+      ]
+    ],
+    "CAR": [
+      [
+        "2025-10-04",
+        "Pyotr Kochetkov"
+      ],
+      [
+        "2025-10-09",
+        "Frederik Andersen"
+      ],
+      [
+        "2025-10-11",
+        "Frederik Andersen"
+      ],
+      [
+        "2025-10-14",
+        "Brandon Bussi"
+      ],
+      [
+        "2025-10-16",
+        "Frederik Andersen"
+      ],
+      [
+        "2025-10-18",
+        "Brandon Bussi"
+      ],
+      [
+        "2025-10-20",
+        "Frederik Andersen"
+      ],
+      [
+        "2025-10-23",
+        "Frederik Andersen"
+      ],
+      [
+        "2025-10-25",
+        "Brandon Bussi"
+      ],
+      [
+        "2025-10-28",
+        "Frederik Andersen"
+      ],
+      [
+        "2025-10-30",
+        "Brandon Bussi"
+      ]
+    ],
+    "VAN": [
+      [
+        "2025-10-01",
+        "Kevin Lankinen"
+      ],
+      [
+        "2025-10-03",
+        "Thatcher Demko"
+      ],
+      [
+        "2025-10-09",
+        "Thatcher Demko"
+      ],
+      [
+        "2025-10-11",
+        "Thatcher Demko"
+      ],
+      [
+        "2025-10-13",
+        "Kevin Lankinen"
+      ],
+      [
+        "2025-10-16",
+        "Thatcher Demko"
+      ],
+      [
+        "2025-10-17",
+        "Kevin Lankinen"
+      ],
+      [
+        "2025-10-19",
+        "Thatcher Demko"
+      ],
+      [
+        "2025-10-21",
+        "Kevin Lankinen"
+      ],
+      [
+        "2025-10-23",
+        "Thatcher Demko"
+      ],
+      [
+        "2025-10-25",
+        "Kevin Lankinen"
+      ],
+      [
+        "2025-10-26",
+        "Thatcher Demko"
+      ],
+      [
+        "2025-10-28",
+        "Thatcher Demko"
+      ],
+      [
+        "2025-10-30",
+        "Kevin Lankinen"
+      ]
+    ],
+    "STL": [
+      [
+        "2025-10-02",
+        "Jordan Binnington"
+      ],
+      [
+        "2025-10-04",
+        "Joel Hofer"
+      ],
+      [
+        "2025-10-09",
+        "Jordan Binnington"
+      ],
+      [
+        "2025-10-11",
+        "Joel Hofer"
+      ],
+      [
+        "2025-10-13",
+        "Jordan Binnington"
+      ],
+      [
+        "2025-10-15",
+        "Joel Hofer"
+      ],
+      [
+        "2025-10-18",
+        "Jordan Binnington"
+      ],
+      [
+        "2025-10-21",
+        "Jordan Binnington"
+      ],
+      [
+        "2025-10-23",
+        "Joel Hofer"
+      ],
+      [
+        "2025-10-25",
+        "Jordan Binnington"
+      ],
+      [
+        "2025-10-27",
+        "Joel Hofer"
+      ],
+      [
+        "2025-10-28",
+        "Jordan Binnington"
+      ],
+      [
+        "2025-10-30",
+        "Jordan Binnington"
+      ]
+    ],
+    "PIT": [
+      [
+        "2025-10-01",
+        "Arturs Silovs"
+      ],
+      [
+        "2025-10-03",
+        "Tristan Jarry"
+      ],
+      [
+        "2025-10-07",
+        "Arturs Silovs"
+      ],
+      [
+        "2025-10-09",
+        "Tristan Jarry"
+      ],
+      [
+        "2025-10-11",
+        "Arturs Silovs"
+      ],
+      [
+        "2025-10-14",
+        "Tristan Jarry"
+      ],
+      [
+        "2025-10-16",
+        "Arturs Silovs"
+      ],
+      [
+        "2025-10-18",
+        "Tristan Jarry"
+      ],
+      [
+        "2025-10-21",
+        "Arturs Silovs"
+      ],
+      [
+        "2025-10-23",
+        "Tristan Jarry"
+      ],
+      [
+        "2025-10-25",
+        "Arturs Silovs"
+      ],
+      [
+        "2025-10-27",
+        "Tristan Jarry"
+      ],
+      [
+        "2025-10-28",
+        "Arturs Silovs"
+      ],
+      [
+        "2025-10-30",
+        "Tristan Jarry"
+      ]
+    ],
+    "MIN": [
+      [
+        "2025-10-03",
+        "Filip Gustavsson"
+      ],
+      [
+        "2025-10-09",
+        "Filip Gustavsson"
+      ],
+      [
+        "2025-10-11",
+        "Filip Gustavsson"
+      ],
+      [
+        "2025-10-13",
+        "Jesper Wallstedt"
+      ],
+      [
+        "2025-10-14",
+        "Filip Gustavsson"
+      ],
+      [
+        "2025-10-17",
+        "Filip Gustavsson"
+      ],
+      [
+        "2025-10-18",
+        "Jesper Wallstedt"
+      ],
+      [
+        "2025-10-20",
+        "Filip Gustavsson"
+      ],
+      [
+        "2025-10-22",
+        "Filip Gustavsson"
+      ],
+      [
+        "2025-10-25",
+        "Filip Gustavsson"
+      ],
+      [
+        "2025-10-26",
+        "Jesper Wallstedt"
+      ],
+      [
+        "2025-10-28",
+        "Filip Gustavsson"
+      ],
+      [
+        "2025-10-30",
+        "Filip Gustavsson"
+      ]
+    ],
+    "CHI": [
+      [
+        "2025-10-03",
+        "Spencer Knight"
+      ],
+      [
+        "2025-10-04",
+        "Arvid Soderblom"
+      ],
+      [
+        "2025-10-07",
+        "Spencer Knight"
+      ],
+      [
+        "2025-10-09",
+        "Arvid Soderblom"
+      ],
+      [
+        "2025-10-11",
+        "Spencer Knight"
+      ],
+      [
+        "2025-10-13",
+        "Spencer Knight"
+      ],
+      [
+        "2025-10-15",
+        "Arvid Soderblom"
+      ],
+      [
+        "2025-10-17",
+        "Spencer Knight"
+      ],
+      [
+        "2025-10-19",
+        "Spencer Knight"
+      ],
+      [
+        "2025-10-23",
+        "Spencer Knight"
+      ],
+      [
+        "2025-10-26",
+        "Arvid Soderblom"
+      ],
+      [
+        "2025-10-28",
+        "Spencer Knight"
+      ],
+      [
+        "2025-10-30",
+        "Spencer Knight"
+      ]
+    ],
+    "WPG": [
+      [
+        "2025-10-03",
+        "Connor Hellebuyck"
+      ],
+      [
+        "2025-10-09",
+        "Connor Hellebuyck"
+      ],
+      [
+        "2025-10-11",
+        "Connor Hellebuyck"
+      ],
+      [
+        "2025-10-13",
+        "Eric Comrie"
+      ],
+      [
+        "2025-10-16",
+        "Connor Hellebuyck"
+      ],
+      [
+        "2025-10-18",
+        "Connor Hellebuyck"
+      ],
+      [
+        "2025-10-20",
+        "Connor Hellebuyck"
+      ],
+      [
+        "2025-10-23",
+        "Connor Hellebuyck"
+      ],
+      [
+        "2025-10-24",
+        "Eric Comrie"
+      ],
+      [
+        "2025-10-26",
+        "Connor Hellebuyck"
+      ],
+      [
+        "2025-10-28",
+        "Connor Hellebuyck"
+      ],
+      [
+        "2025-10-30",
+        "Connor Hellebuyck"
+      ]
+    ],
+    "NYR": [
+      [
+        "2025-10-02",
+        "Jonathan Quick"
+      ],
+      [
+        "2025-10-04",
+        "Igor Shesterkin"
+      ],
+      [
+        "2025-10-07",
+        "Igor Shesterkin"
+      ],
+      [
+        "2025-10-09",
+        "Igor Shesterkin"
+      ],
+      [
+        "2025-10-11",
+        "Igor Shesterkin"
+      ],
+      [
+        "2025-10-12",
+        "Jonathan Quick"
+      ],
+      [
+        "2025-10-14",
+        "Igor Shesterkin"
+      ],
+      [
+        "2025-10-16",
+        "Igor Shesterkin"
+      ],
+      [
+        "2025-10-18",
+        "Jonathan Quick"
+      ],
+      [
+        "2025-10-20",
+        "Igor Shesterkin"
+      ],
+      [
+        "2025-10-23",
+        "Igor Shesterkin"
+      ],
+      [
+        "2025-10-26",
+        "Igor Shesterkin"
+      ],
+      [
+        "2025-10-28",
+        "Jonathan Quick"
+      ],
+      [
+        "2025-10-30",
+        "Igor Shesterkin"
+      ]
+    ],
+    "EDM": [
+      [
+        "2025-10-01",
+        "Calvin Pickard"
+      ],
+      [
+        "2025-10-03",
+        "Calvin Pickard"
+      ],
+      [
+        "2025-10-08",
+        "Stuart Skinner"
+      ],
+      [
+        "2025-10-11",
+        "Calvin Pickard"
+      ],
+      [
+        "2025-10-14",
+        "Stuart Skinner"
+      ],
+      [
+        "2025-10-16",
+        "Stuart Skinner"
+      ],
+      [
+        "2025-10-19",
+        "Stuart Skinner"
+      ],
+      [
+        "2025-10-21",
+        "Stuart Skinner"
+      ],
+      [
+        "2025-10-23",
+        "Calvin Pickard"
+      ],
+      [
+        "2025-10-25",
+        "Stuart Skinner"
+      ],
+      [
+        "2025-10-26",
+        "Calvin Pickard"
+      ],
+      [
+        "2025-10-28",
+        "Stuart Skinner"
+      ],
+      [
+        "2025-10-30",
+        "Stuart Skinner"
+      ]
+    ],
+    "NJD": [
+      [
+        "2025-10-02",
+        "Jacob Markstrom"
+      ],
+      [
+        "2025-10-04",
+        "Jake Allen"
+      ],
+      [
+        "2025-10-09",
+        "Jacob Markstrom"
+      ],
+      [
+        "2025-10-11",
+        "Jacob Markstrom"
+      ],
+      [
+        "2025-10-13",
+        "Jake Allen"
+      ],
+      [
+        "2025-10-16",
+        "Jake Allen"
+      ],
+      [
+        "2025-10-18",
+        "Jake Allen"
+      ],
+      [
+        "2025-10-21",
+        "Jake Allen"
+      ],
+      [
+        "2025-10-22",
+        "Nico Daws"
+      ],
+      [
+        "2025-10-24",
+        "Jake Allen"
+      ],
+      [
+        "2025-10-26",
+        "Jake Allen"
+      ],
+      [
+        "2025-10-28",
+        "Jacob Markstrom"
+      ],
+      [
+        "2025-10-30",
+        "Jake Allen"
+      ]
+    ],
+    "SJS": [
+      [
+        "2025-10-01",
+        "Yaroslav Askarov"
+      ],
+      [
+        "2025-10-03",
+        "Alex Nedeljkovic"
+      ],
+      [
+        "2025-10-04",
+        "Yaroslav Askarov"
+      ],
+      [
+        "2025-10-09",
+        "Alex Nedeljkovic"
+      ],
+      [
+        "2025-10-11",
+        "Yaroslav Askarov"
+      ],
+      [
+        "2025-10-14",
+        "Alex Nedeljkovic"
+      ],
+      [
+        "2025-10-17",
+        "Yaroslav Askarov"
+      ],
+      [
+        "2025-10-18",
+        "Alex Nedeljkovic"
+      ],
+      [
+        "2025-10-21",
+        "Yaroslav Askarov"
+      ],
+      [
+        "2025-10-23",
+        "Alex Nedeljkovic"
+      ],
+      [
+        "2025-10-24",
+        "Yaroslav Askarov"
+      ],
+      [
+        "2025-10-26",
+        "Yaroslav Askarov"
+      ],
+      [
+        "2025-10-28",
+        "Yaroslav Askarov"
+      ],
+      [
+        "2025-10-30",
+        "Alex Nedeljkovic"
+      ]
+    ],
+    "DET": [
+      [
+        "2025-10-02",
+        "Cam Talbot"
+      ],
+      [
+        "2025-10-04",
+        "John Gibson"
+      ],
+      [
+        "2025-10-09",
+        "John Gibson"
+      ],
+      [
+        "2025-10-11",
+        "Cam Talbot"
+      ],
+      [
+        "2025-10-13",
+        "Cam Talbot"
+      ],
+      [
+        "2025-10-15",
+        "Cam Talbot"
+      ],
+      [
+        "2025-10-17",
+        "John Gibson"
+      ],
+      [
+        "2025-10-19",
+        "John Gibson"
+      ],
+      [
+        "2025-10-22",
+        "John Gibson"
+      ],
+      [
+        "2025-10-23",
+        "Cam Talbot"
+      ],
+      [
+        "2025-10-25",
+        "John Gibson"
+      ],
+      [
+        "2025-10-28",
+        "John Gibson"
+      ],
+      [
+        "2025-10-30",
+        "Cam Talbot"
+      ]
+    ],
+    "LAK": [
+      [
+        "2025-10-02",
+        "Anton Forsberg"
+      ],
+      [
+        "2025-10-04",
+        "Darcy Kuemper"
+      ],
+      [
+        "2025-10-07",
+        "Darcy Kuemper"
+      ],
+      [
+        "2025-10-08",
+        "Anton Forsberg"
+      ],
+      [
+        "2025-10-11",
+        "Darcy Kuemper"
+      ],
+      [
+        "2025-10-13",
+        "Darcy Kuemper"
+      ],
+      [
+        "2025-10-16",
+        "Anton Forsberg"
+      ],
+      [
+        "2025-10-18",
+        "Anton Forsberg"
+      ],
+      [
+        "2025-10-21",
+        "Darcy Kuemper"
+      ],
+      [
+        "2025-10-23",
+        "Darcy Kuemper"
+      ],
+      [
+        "2025-10-25",
+        "Darcy Kuemper"
+      ],
+      [
+        "2025-10-26",
+        "Anton Forsberg"
+      ],
+      [
+        "2025-10-28",
+        "Darcy Kuemper"
+      ],
+      [
+        "2025-10-30",
+        "Darcy Kuemper"
+      ]
+    ],
+    "TOR": [
+      [
+        "2025-10-02",
+        "Anthony Stolarz"
+      ],
+      [
+        "2025-10-04",
+        "Dennis Hildeby"
+      ],
+      [
+        "2025-10-08",
+        "Anthony Stolarz"
+      ],
+      [
+        "2025-10-11",
+        "Anthony Stolarz"
+      ],
+      [
+        "2025-10-13",
+        "Anthony Stolarz"
+      ],
+      [
+        "2025-10-14",
+        "Cayden Primeau"
+      ],
+      [
+        "2025-10-16",
+        "Anthony Stolarz"
+      ],
+      [
+        "2025-10-18",
+        "Anthony Stolarz"
+      ],
+      [
+        "2025-10-21",
+        "Anthony Stolarz"
+      ],
+      [
+        "2025-10-24",
+        "Anthony Stolarz"
+      ],
+      [
+        "2025-10-25",
+        "Cayden Primeau"
+      ],
+      [
+        "2025-10-28",
+        "Anthony Stolarz"
+      ],
+      [
+        "2025-10-29",
+        "Cayden Primeau"
+      ]
+    ],
+    "CBJ": [
+      [
+        "2025-10-04",
+        "Elvis Merzlikins"
+      ],
+      [
+        "2025-10-09",
+        "Jet Greaves"
+      ],
+      [
+        "2025-10-11",
+        "Elvis Merzlikins"
+      ],
+      [
+        "2025-10-13",
+        "Jet Greaves"
+      ],
+      [
+        "2025-10-16",
+        "Elvis Merzlikins"
+      ],
+      [
+        "2025-10-18",
+        "Jet Greaves"
+      ],
+      [
+        "2025-10-21",
+        "Elvis Merzlikins"
+      ],
+      [
+        "2025-10-24",
+        "Jet Greaves"
+      ],
+      [
+        "2025-10-25",
+        "Elvis Merzlikins"
+      ],
+      [
+        "2025-10-29",
+        "Elvis Merzlikins"
+      ]
+    ],
+    "VGK": [
+      [
+        "2025-10-01",
+        "Akira Schmid"
+      ],
+      [
+        "2025-10-03",
+        "Adin Hill"
+      ],
+      [
+        "2025-10-08",
+        "Adin Hill"
+      ],
+      [
+        "2025-10-09",
+        "Akira Schmid"
+      ],
+      [
+        "2025-10-11",
+        "Adin Hill"
+      ],
+      [
+        "2025-10-14",
+        "Adin Hill"
+      ],
+      [
+        "2025-10-16",
+        "Akira Schmid"
+      ],
+      [
+        "2025-10-18",
+        "Adin Hill"
+      ],
+      [
+        "2025-10-20",
+        "Adin Hill"
+      ],
+      [
+        "2025-10-25",
+        "Akira Schmid"
+      ],
+      [
+        "2025-10-26",
+        "Carl Lindbom"
+      ],
+      [
+        "2025-10-28",
+        "Akira Schmid"
+      ]
+    ],
+    "ANA": [
+      [
+        "2025-10-01",
+        "Calle Clang"
+      ],
+      [
+        "2025-10-04",
+        "Lukas Dostal"
+      ],
+      [
+        "2025-10-09",
+        "Lukas Dostal"
+      ],
+      [
+        "2025-10-11",
+        "Petr Mrazek"
+      ],
+      [
+        "2025-10-14",
+        "Lukas Dostal"
+      ],
+      [
+        "2025-10-16",
+        "Lukas Dostal"
+      ],
+      [
+        "2025-10-19",
+        "Lukas Dostal"
+      ],
+      [
+        "2025-10-21",
+        "Lukas Dostal"
+      ],
+      [
+        "2025-10-23",
+        "Petr Mrazek"
+      ],
+      [
+        "2025-10-25",
+        "Lukas Dostal"
+      ],
+      [
+        "2025-10-28",
+        "Lukas Dostal"
+      ]
+    ],
+    "FLA": [
+      [
+        "2025-10-02",
+        "Daniil Tarasov"
+      ],
+      [
+        "2025-10-04",
+        "Sergei Bobrovsky"
+      ],
+      [
+        "2025-10-07",
+        "Sergei Bobrovsky"
+      ],
+      [
+        "2025-10-09",
+        "Sergei Bobrovsky"
+      ],
+      [
+        "2025-10-11",
+        "Sergei Bobrovsky"
+      ],
+      [
+        "2025-10-13",
+        "Daniil Tarasov"
+      ],
+      [
+        "2025-10-15",
+        "Sergei Bobrovsky"
+      ],
+      [
+        "2025-10-16",
+        "Daniil Tarasov"
+      ],
+      [
+        "2025-10-18",
+        "Sergei Bobrovsky"
+      ],
+      [
+        "2025-10-21",
+        "Sergei Bobrovsky"
+      ],
+      [
+        "2025-10-23",
+        "Sergei Bobrovsky"
+      ],
+      [
+        "2025-10-25",
+        "Sergei Bobrovsky"
+      ],
+      [
+        "2025-10-28",
+        "Daniil Tarasov"
+      ]
+    ],
+    "WSH": [
+      [
+        "2025-10-02",
+        "Charlie Lindgren"
+      ],
+      [
+        "2025-10-04",
+        "Logan Thompson"
+      ],
+      [
+        "2025-10-08",
+        "Logan Thompson"
+      ],
+      [
+        "2025-10-11",
+        "Logan Thompson"
+      ],
+      [
+        "2025-10-12",
+        "Charlie Lindgren"
+      ],
+      [
+        "2025-10-14",
+        "Logan Thompson"
+      ],
+      [
+        "2025-10-17",
+        "Logan Thompson"
+      ],
+      [
+        "2025-10-19",
+        "Charlie Lindgren"
+      ],
+      [
+        "2025-10-21",
+        "Logan Thompson"
+      ],
+      [
+        "2025-10-24",
+        "Logan Thompson"
+      ],
+      [
+        "2025-10-25",
+        "Charlie Lindgren"
+      ],
+      [
+        "2025-10-28",
+        "Logan Thompson"
+      ]
+    ],
+    "COL": [
+      [
+        "2025-10-01",
+        "Scott Wedgewood"
+      ],
+      [
+        "2025-10-04",
+        "Scott Wedgewood"
+      ],
+      [
+        "2025-10-07",
+        "Scott Wedgewood"
+      ],
+      [
+        "2025-10-09",
+        "Scott Wedgewood"
+      ],
+      [
+        "2025-10-11",
+        "Scott Wedgewood"
+      ],
+      [
+        "2025-10-13",
+        "Scott Wedgewood"
+      ],
+      [
+        "2025-10-16",
+        "Scott Wedgewood"
+      ],
+      [
+        "2025-10-18",
+        "Scott Wedgewood"
+      ],
+      [
+        "2025-10-21",
+        "Scott Wedgewood"
+      ],
+      [
+        "2025-10-23",
+        "Scott Wedgewood"
+      ],
+      [
+        "2025-10-25",
+        "Scott Wedgewood"
+      ],
+      [
+        "2025-10-26",
+        "Trent Miner"
+      ],
+      [
+        "2025-10-28",
+        "Scott Wedgewood"
+      ]
+    ],
+    "UTA": [
+      [
+        "2025-10-02",
+        "Vitek Vanecek"
+      ],
+      [
+        "2025-10-04",
+        "Karel Vejmelka"
+      ],
+      [
+        "2025-10-09",
+        "Karel Vejmelka"
+      ],
+      [
+        "2025-10-11",
+        "Karel Vejmelka"
+      ],
+      [
+        "2025-10-13",
+        "Vitek Vanecek"
+      ],
+      [
+        "2025-10-15",
+        "Karel Vejmelka"
+      ],
+      [
+        "2025-10-19",
+        "Vitek Vanecek"
+      ],
+      [
+        "2025-10-21",
+        "Karel Vejmelka"
+      ],
+      [
+        "2025-10-23",
+        "Karel Vejmelka"
+      ],
+      [
+        "2025-10-25",
+        "Karel Vejmelka"
+      ],
+      [
+        "2025-10-26",
+        "Vitek Vanecek"
+      ],
+      [
+        "2025-10-28",
+        "Karel Vejmelka"
+      ]
+    ],
+    "MTL": [
+      [
+        "2025-10-04",
+        "Sam Montembeault"
+      ],
+      [
+        "2025-10-08",
+        "Sam Montembeault"
+      ],
+      [
+        "2025-10-09",
+        "Jakub Dobes"
+      ],
+      [
+        "2025-10-11",
+        "Sam Montembeault"
+      ],
+      [
+        "2025-10-14",
+        "Sam Montembeault"
+      ],
+      [
+        "2025-10-16",
+        "Jakub Dobes"
+      ],
+      [
+        "2025-10-18",
+        "Sam Montembeault"
+      ],
+      [
+        "2025-10-20",
+        "Jakub Dobes"
+      ],
+      [
+        "2025-10-22",
+        "Jakub Dobes"
+      ],
+      [
+        "2025-10-23",
+        "Sam Montembeault"
+      ],
+      [
+        "2025-10-25",
+        "Jakub Dobes"
+      ],
+      [
+        "2025-10-28",
+        "Jakub Dobes"
+      ]
+    ],
+    "SEA": [
+      [
+        "2025-10-01",
+        "Joey Daccord"
+      ],
+      [
+        "2025-10-09",
+        "Joey Daccord"
+      ],
+      [
+        "2025-10-11",
+        "Joey Daccord"
+      ],
+      [
+        "2025-10-14",
+        "Joey Daccord"
+      ],
+      [
+        "2025-10-16",
+        "Philipp Grubauer"
+      ],
+      [
+        "2025-10-18",
+        "Joey Daccord"
+      ],
+      [
+        "2025-10-20",
+        "Joey Daccord"
+      ],
+      [
+        "2025-10-21",
+        "Matt Murray"
+      ],
+      [
+        "2025-10-23",
+        "Joey Daccord"
+      ],
+      [
+        "2025-10-25",
+        "Joey Daccord"
+      ],
+      [
+        "2025-10-28",
+        "Joey Daccord"
+      ]
+    ]
+  }
 }
