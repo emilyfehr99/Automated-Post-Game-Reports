@@ -94,7 +94,8 @@ class ImprovedSelfLearningModelV2:
                 "correct_predictions": 0,
                 "accuracy": 0.0,
                 "recent_accuracy": 0.0
-            }
+            },
+            "goalie_stats": {}
         }
     
     def load_team_stats(self) -> Dict:
@@ -124,6 +125,8 @@ class ImprovedSelfLearningModelV2:
         try:
             # Include team stats in the main model data
             self.model_data["team_stats"] = self.team_stats
+            if "goalie_stats" not in self.model_data:
+                self.model_data["goalie_stats"] = {}
             with open(self.predictions_file, 'w') as f:
                 json.dump(self.model_data, f, indent=2, default=str)
             logger.info("Model data saved successfully")
@@ -357,15 +360,27 @@ class ImprovedSelfLearningModelV2:
             return 0.0
     
     def _calculate_goalie_performance(self, team: str, venue: str) -> float:
-        """Proxy starting goalie GSAX from team-level opp xG and opp goals.
+        """Proxy starting goalie GSAX.
 
-        GSAX ≈ xGA - GA using last few games at venue as proxy.
-        Maps recent GSAX into a conservative 0.35-0.75 band.
+        Prefer per-goalie GSAX when we have a last_goalie for this venue and
+        accumulated goalie_stats for that goalie; otherwise fallback to team proxy.
         """
         try:
             team_key = team.upper()
             if team_key not in self.team_stats or venue not in self.team_stats[team_key]:
                 return 0.5
+            # Try per-goalie first
+            last_goalie = self.team_stats[team_key][venue].get('last_goalie')
+            gstats = self.model_data.get('goalie_stats', {})
+            if last_goalie and last_goalie in gstats:
+                gs = gstats[last_goalie]
+                games = max(1, gs.get('games', 0))
+                xga = float(gs.get('xga_sum', 0.0)) / games
+                ga = float(gs.get('ga_sum', 0.0)) / games
+                gsax_avg = xga - ga
+                perf = 0.55 + max(-3.0, min(3.0, gsax_avg)) * (0.40 / 6.0)
+                return float(max(0.35, min(0.75, perf)))
+            # Team proxy fallback
             opp_xg = self.team_stats[team_key][venue].get('opp_xg', [])
             opp_g = self.team_stats[team_key][venue].get('opp_goals', [])
             n = min(len(opp_xg), len(opp_g))
@@ -375,8 +390,6 @@ class ImprovedSelfLearningModelV2:
             recent = [(float(opp_xg[-i]), float(opp_g[-i])) for i in range(1, window+1)]
             gsax_vals = [xg - ga for xg, ga in recent]
             gsax_avg = sum(gsax_vals) / len(gsax_vals)
-            # Map gsax_avg (roughly -3..+3) to 0.35..0.75 linearly with clamp
-            # Scale: 0.40 width over 6 goals range
             perf = 0.55 + max(-3.0, min(3.0, gsax_avg)) * (0.40 / 6.0)
             return float(max(0.35, min(0.75, perf)))
         except Exception:
@@ -808,6 +821,7 @@ class ImprovedSelfLearningModelV2:
             return {
                 "games": [], "xg": [], "hdc": [], "shots": [], "goals": [], "gs": [],
                 "opp_xg": [], "opp_goals": [],
+                "last_goalie": None,
                 "corsi_pct": [], "power_play_pct": [], "faceoff_pct": [],
                 "hits": [], "blocked_shots": [], "giveaways": [], "takeaways": [], "penalty_minutes": []
             }
@@ -831,6 +845,8 @@ class ImprovedSelfLearningModelV2:
         away_data["gs"].append(metrics.get("away_gs", 0.0))
         away_data["opp_xg"].append(metrics.get("home_xg", 0.0))
         away_data["opp_goals"].append(home_score)
+        if metrics.get("away_goalie"):
+            away_data["last_goalie"] = metrics.get("away_goalie")
         away_data["corsi_pct"].append(metrics.get("away_corsi_pct", 50.0))
         away_data["power_play_pct"].append(metrics.get("away_power_play_pct", 0.0))
         away_data["faceoff_pct"].append(metrics.get("away_faceoff_pct", 50.0))
@@ -850,6 +866,8 @@ class ImprovedSelfLearningModelV2:
         home_data["gs"].append(metrics.get("home_gs", 0.0))
         home_data["opp_xg"].append(metrics.get("away_xg", 0.0))
         home_data["opp_goals"].append(away_score)
+        if metrics.get("home_goalie"):
+            home_data["last_goalie"] = metrics.get("home_goalie")
         home_data["corsi_pct"].append(metrics.get("home_corsi_pct", 50.0))
         home_data["power_play_pct"].append(metrics.get("home_power_play_pct", 0.0))
         home_data["faceoff_pct"].append(metrics.get("home_faceoff_pct", 50.0))
@@ -859,6 +877,27 @@ class ImprovedSelfLearningModelV2:
         home_data["takeaways"].append(metrics.get("home_takeaways", 0))
         home_data["penalty_minutes"].append(metrics.get("home_penalty_minutes", 0))
         
+        # Update per-goalie GSAX aggregates if goalie names provided
+        try:
+            if "goalie_stats" not in self.model_data:
+                self.model_data["goalie_stats"] = {}
+            # Away goalie faced home xG and allowed home goals
+            away_goalie = metrics.get("away_goalie")
+            if away_goalie:
+                gs = self.model_data["goalie_stats"].setdefault(away_goalie, {"games": 0, "xga_sum": 0.0, "ga_sum": 0.0})
+                gs["games"] += 1
+                gs["xga_sum"] += float(metrics.get("home_xg", 0.0))
+                gs["ga_sum"] += float(home_score)
+            # Home goalie faced away xG and allowed away goals
+            home_goalie = metrics.get("home_goalie")
+            if home_goalie:
+                gs = self.model_data["goalie_stats"].setdefault(home_goalie, {"games": 0, "xga_sum": 0.0, "ga_sum": 0.0})
+                gs["games"] += 1
+                gs["xga_sum"] += float(metrics.get("away_xg", 0.0))
+                gs["ga_sum"] += float(away_score)
+        except Exception:
+            pass
+
         # Keep only last 20 games to prevent memory bloat
         all_metric_keys = ["games", "xg", "hdc", "shots", "goals", "gs", "corsi_pct", "power_play_pct", 
                           "faceoff_pct", "hits", "blocked_shots", "giveaways", "takeaways", "penalty_minutes"]

@@ -329,6 +329,7 @@ class GitHubActionsRunner:
                     "away_shots": game_data['boxscore']['awayTeam'].get('sog', 0),
                     "home_shots": game_data['boxscore']['homeTeam'].get('sog', 0),
                     "away_gs": 0.0, "home_gs": 0.0,
+                    "away_goalie": None, "home_goalie": None,
                     "away_corsi_pct": 50.0, "home_corsi_pct": 50.0,
                     "away_power_play_pct": 0.0, "home_power_play_pct": 0.0,
                     "away_faceoff_pct": 50.0, "home_faceoff_pct": 50.0,
@@ -345,6 +346,37 @@ class GitHubActionsRunner:
                     away_xg, home_xg = generator._calculate_xg_from_plays(game_data)
                     away_hdc, home_hdc = generator._calculate_hdc_from_plays(game_data)
                     away_gs, home_gs = generator._calculate_game_scores(game_data)
+                    # Attempt to extract starting goalies from boxscore
+                    try:
+                        box = game_data.get('boxscore', {})
+                        def find_goalie_name(team_key):
+                            team = box.get(team_key, {})
+                            players = team.get('players') or []
+                            # Some feeds use dict with playerId keys
+                            if isinstance(players, dict):
+                                players_iter = players.values()
+                            else:
+                                players_iter = players
+                            goalie_candidates = []
+                            for p in players_iter:
+                                try:
+                                    pos = p.get('positionCode') or p.get('position', {}).get('code')
+                                    toi = p.get('toi') or p.get('timeOnIce') or 0
+                                    starter = p.get('starter') or False
+                                    name = p.get('name') or p.get('firstLastName') or p.get('playerName')
+                                    if (pos == 'G' or pos == 'GOALIE') and name:
+                                        goalie_candidates.append((bool(starter), int(str(toi).replace(':','')[:4] or 0), name))
+                                except Exception:
+                                    continue
+                            if not goalie_candidates:
+                                return None
+                            # Prefer starter, then highest TOI
+                            goalie_candidates.sort(key=lambda t: (t[0], t[1]), reverse=True)
+                            return goalie_candidates[0][2]
+                        metrics_used["away_goalie"] = find_goalie_name('awayTeam')
+                        metrics_used["home_goalie"] = find_goalie_name('homeTeam')
+                    except Exception:
+                        pass
                     
                     # Advanced metrics from period stats
                     away_period_stats = generator._calculate_real_period_stats(game_data, game_data['boxscore']['awayTeam']['id'], 'away')
