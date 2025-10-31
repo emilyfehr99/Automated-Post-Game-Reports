@@ -69,7 +69,7 @@ class CorrelationModel:
             pass
 
     def _feature_row_from_metrics(self, metrics: Dict) -> Dict[str, float]:
-        return {
+        feat = {
             'gs_diff': float(metrics.get('away_gs', 0.0)) - float(metrics.get('home_gs', 0.0)),
             'power_play_diff': float(metrics.get('away_power_play_pct', 0.0)) - float(metrics.get('home_power_play_pct', 0.0)),
             'blocked_shots_diff': float(metrics.get('away_blocked_shots', 0.0)) - float(metrics.get('home_blocked_shots', 0.0)),
@@ -85,6 +85,12 @@ class CorrelationModel:
             'pim_diff': float(metrics.get('away_penalty_minutes', 0.0)) - float(metrics.get('home_penalty_minutes', 0.0)),
             'faceoff_diff': float(metrics.get('away_faceoff_pct', 50.0)) - float(metrics.get('home_faceoff_pct', 50.0)),
         }
+        # Add goalie and recent form if available
+        if 'away_goalie_perf' in metrics and 'home_goalie_perf' in metrics:
+            feat['goalie_perf_diff'] = float(metrics.get('away_goalie_perf', 0.0)) - float(metrics.get('home_goalie_perf', 0.0))
+        if 'recent_form_diff' in metrics:
+            feat['recent_form_diff'] = float(metrics.get('recent_form_diff', 0.0))
+        return feat
 
     def _score(self, feats: Dict[str, float]) -> float:
         s = self.bias
@@ -93,7 +99,16 @@ class CorrelationModel:
             # Simple scale for percentage-like features to similar magnitude
             if k in ('power_play_diff','corsi_diff','faceoff_diff'):
                 v = v / 10.0
+            # Reduce GS weight (was over-weighted in misses)
+            if k == 'gs_diff':
+                v = v * 0.5  # Reduce GS influence by 50%
             s += w * v
+        # Add home ice advantage (typically 3-5% in NHL)
+        s -= 0.15  # Home advantage bias (negative because score favors away, so negative = home advantage)
+        # Add recent form if available
+        recent_form_diff = feats.get('recent_form_diff', 0.0)
+        if recent_form_diff != 0.0:
+            s += 0.2 * recent_form_diff  # Weight recent form
         return s
 
     def predict_from_metrics(self, metrics: Dict) -> Dict[str, float]:
@@ -120,5 +135,79 @@ class CorrelationModel:
             self.weights[k] = self.weights.get(k, 0.0) - lr * err * g
         self.bias = self.bias - lr * err
         self._save()
+    
+    def refit_weights_from_history(self, predictions_file: str = 'win_probability_predictions_v2.json') -> None:
+        """Periodically re-fit weights using logistic regression on all completed games.
+        This should be called weekly/monthly to ensure weights stay current.
+        """
+        import json
+        from pathlib import Path
+        
+        pred_file = Path(predictions_file)
+        if not pred_file.exists():
+            return
+        
+        with open(pred_file, 'r') as f:
+            data = json.load(f)
+        
+        completed = [p for p in data.get('predictions', []) if p.get('actual_winner')]
+        if len(completed) < 20:  # Need minimum samples
+            return
+        
+        # Build feature matrix and labels
+        X = []
+        y = []
+        for pred in completed:
+            metrics = pred.get('metrics_used', {})
+            if not metrics:
+                continue
+            feats = self._feature_row_from_metrics(metrics)
+            X.append([feats.get(k, 0.0) for k in self.feature_keys])
+            # Normalize label
+            actual = pred.get('actual_winner')
+            away = (pred.get('away_team') or '').upper()
+            home = (pred.get('home_team') or '').upper()
+            if actual in ('away', away):
+                y.append(1.0)
+            elif actual in ('home', home):
+                y.append(0.0)
+            else:
+                continue
+        
+        if len(X) < 20:
+            return
+        
+        # Simple batch gradient descent (logistic regression)
+        # Initialize from current weights
+        weights_vec = np.array([self.weights.get(k, 0.0) for k in self.feature_keys])
+        bias_val = self.bias
+        X_arr = np.array(X)
+        y_arr = np.array(y)
+        
+        # Scale percentage features
+        for i, k in enumerate(self.feature_keys):
+            if k in ('power_play_diff','corsi_diff','faceoff_diff'):
+                X_arr[:, i] = X_arr[:, i] / 10.0
+            if k == 'gs_diff':
+                X_arr[:, i] = X_arr[:, i] * 0.5  # Apply GS reduction
+        
+        # Gradient descent
+        lr = 0.01
+        epochs = 100
+        for epoch in range(epochs):
+            scores = X_arr @ weights_vec + bias_val
+            probs = 1.0 / (1.0 + np.exp(-np.clip(scores, -500, 500)))
+            err = probs - y_arr
+            grad_weights = X_arr.T @ err / len(X_arr)
+            grad_bias = np.mean(err)
+            weights_vec -= lr * grad_weights
+            bias_val -= lr * grad_bias
+        
+        # Update weights
+        for i, k in enumerate(self.feature_keys):
+            self.weights[k] = float(weights_vec[i])
+        self.bias = float(bias_val)
+        self._save()
+        print(f"✅ Re-fitted correlation weights from {len(X)} completed games")
 
 

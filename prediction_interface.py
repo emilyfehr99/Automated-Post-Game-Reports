@@ -369,6 +369,9 @@ class PredictionInterface:
         # Team venue performance proxies
         away_perf = self.learning_model.get_team_performance(away_team, 'away')
         home_perf = self.learning_model.get_team_performance(home_team, 'home')
+        # Get recent form (last 5-10 games windowed)
+        away_recent_form = away_perf.get('recent_form', 0.5)
+        home_recent_form = home_perf.get('recent_form', 0.5)
         metrics = {
             'away_gs': away_perf.get('gs_avg', 0.0), 'home_gs': home_perf.get('gs_avg', 0.0),
             'away_power_play_pct': away_perf.get('power_play_avg', 0.0), 'home_power_play_pct': home_perf.get('power_play_avg', 0.0),
@@ -384,6 +387,8 @@ class PredictionInterface:
             'away_xg': away_perf.get('xg_avg', 0.0), 'home_xg': home_perf.get('xg_avg', 0.0),
             'away_penalty_minutes': away_perf.get('penalty_minutes_avg', 0.0), 'home_penalty_minutes': home_perf.get('penalty_minutes_avg', 0.0),
             'away_faceoff_pct': away_perf.get('faceoff_avg', 50.0), 'home_faceoff_pct': home_perf.get('faceoff_avg', 50.0),
+            'away_goalie_perf': away_goalie_perf, 'home_goalie_perf': home_goalie_perf,
+            'recent_form_diff': away_recent_form - home_recent_form,  # Add recent form difference
         }
         corr = self.corr_model.predict_from_metrics(metrics)
         ens = self.learning_model.ensemble_predict(away_team, home_team, game_date=today_str)

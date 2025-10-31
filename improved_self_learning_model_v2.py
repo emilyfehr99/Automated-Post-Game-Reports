@@ -336,7 +336,7 @@ class ImprovedSelfLearningModelV2:
                     'takeaways_avg': 0.0,  # Default takeaways
                     'penalty_minutes_avg': 0.0,  # Default PIM
                     'games_played': team_data.get('games_played', 0),
-                    'recent_form': 0.5,  # Default recent form
+                    'recent_form': self._calculate_recent_form(team_key, venue, window=10),  # Venue-aware, last 10 games
                     'head_to_head': 0.5,  # Default H2H
                     'rest_days_advantage': rest_adv,
                     'goalie_performance': goalie_perf,
@@ -370,7 +370,7 @@ class ImprovedSelfLearningModelV2:
                 'takeaways_avg': 0.0,  # Default (not in new format yet)
                 'penalty_minutes_avg': 0.0,  # Default (not in new format yet)
                 'games_played': team_data.get('games_played', 0),
-                'recent_form': 0.5,  # Default
+                'recent_form': self._calculate_recent_form(team_key, venue, window=10),  # Venue-aware, last 10 games
                 'head_to_head': 0.5,  # Default
                 'rest_days_advantage': rest_adv,
                 'goalie_performance': goalie_perf,
@@ -432,27 +432,52 @@ class ImprovedSelfLearningModelV2:
         except Exception:
             return 0.5
     
-    def _calculate_recent_form(self, team: str, venue: str) -> float:
-        """Calculate recent form (last 5 games)"""
-        if team not in self.team_stats or venue not in self.team_stats[team]:
-            return 0.5
+    def _calculate_recent_form(self, team: str, venue: str, window: int = 10) -> float:
+        """Calculate venue-aware recent form from completed predictions (last 7-10 games).
         
-        games = self.team_stats[team][venue].get('games', [])
-        goals = self.team_stats[team][venue].get('goals', [])
+        Uses actual game results from stored predictions, filtered by venue.
+        Returns win rate in last N games at that venue (home/away).
+        """
+        team_key = team.upper()
+        predictions = self.model_data.get('predictions', [])
         
-        if len(games) < 2:
-            return 0.5
+        # Filter for games involving this team at this venue with actual results
+        relevant_games = []
+        for pred in predictions:
+            if not pred.get('actual_winner'):
+                continue
+            away_team = (pred.get('away_team') or '').upper()
+            home_team = (pred.get('home_team') or '').upper()
+            date = pred.get('date', '')
+            actual_winner = pred.get('actual_winner')
+            
+            # Check if team played at this venue
+            if venue == 'away' and team_key == away_team:
+                relevant_games.append((date, 'away', actual_winner, away_team, home_team))
+            elif venue == 'home' and team_key == home_team:
+                relevant_games.append((date, 'home', actual_winner, away_team, home_team))
         
-        # Use last 5 games or all available
-        recent_games = min(5, len(games))
-        recent_goals = goals[-recent_games:] if len(goals) >= recent_games else goals
+        # Sort by date and take last window games
+        relevant_games.sort(key=lambda x: x[0])
+        recent_games = relevant_games[-window:] if len(relevant_games) > window else relevant_games
         
-        if not recent_goals:
-            return 0.5
+        if not recent_games:
+            return 0.5  # Default neutral
         
-        # Calculate win rate (goals > 0 means win in this context)
-        wins = sum(1 for g in recent_goals if g > 0)
-        return wins / len(recent_goals)
+        # Calculate win rate
+        wins = 0
+        for date, v, winner, away, home in recent_games:
+            # Normalize winner
+            if winner in ('away', away):
+                won = (v == 'away' and team_key == away)
+            elif winner in ('home', home):
+                won = (v == 'home' and team_key == home)
+            else:
+                won = False
+            if won:
+                wins += 1
+        
+        return wins / len(recent_games) if recent_games else 0.5
     
     def _calculate_confidence(self, games_played: int) -> float:
         """Calculate confidence based on sample size"""
