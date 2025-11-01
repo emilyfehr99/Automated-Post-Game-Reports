@@ -102,6 +102,18 @@ def analyze_components():
             except:
                 row['recent_form_diff'] = 0.0
             
+            # Get venue win percentages (full season)
+            stored_venue = metrics.get('away_venue_win_pct') is not None and metrics.get('home_venue_win_pct') is not None
+            if stored_venue:
+                row['venue_win_pct_diff'] = metrics.get('away_venue_win_pct', 0.5) - metrics.get('home_venue_win_pct', 0.5)
+            else:
+                try:
+                    away_venue_win_pct = model._calculate_venue_win_percentage(away_team, 'away')
+                    home_venue_win_pct = model._calculate_venue_win_percentage(home_team, 'home')
+                    row['venue_win_pct_diff'] = away_venue_win_pct - home_venue_win_pct
+                except Exception:
+                    row['venue_win_pct_diff'] = 0.0
+            
             components_data.append(row)
         except Exception as e:
             continue
@@ -117,15 +129,15 @@ def analyze_components():
     correlations = {}
     for col in df.columns:
         if col != 'outcome':
-            # Skip columns with all zeros or constant values (but include rest/goalie/sos even if low variance)
-            if df[col].std() > 1e-6 or col in ['rest_diff', 'goalie_diff', 'sos_diff', 'recent_form_diff']:
+            # Skip columns with all zeros or constant values (but include rest/goalie/sos/venue even if low variance)
+            if df[col].std() > 1e-6 or col in ['rest_diff', 'goalie_diff', 'sos_diff', 'recent_form_diff', 'venue_win_pct_diff']:
                 corr = df[col].corr(df['outcome'])
                 if not np.isnan(corr):
                     correlations[col] = corr
     
     # Debug: show variance for situational factors
     print("\nSituational factor variance:")
-    for factor in ['rest_diff', 'goalie_diff', 'sos_diff', 'recent_form_diff']:
+    for factor in ['rest_diff', 'goalie_diff', 'sos_diff', 'recent_form_diff', 'venue_win_pct_diff']:
         if factor in df.columns:
             std_val = df[factor].std()
             mean_val = df[factor].mean()

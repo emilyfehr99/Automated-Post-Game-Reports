@@ -90,6 +90,9 @@ class CorrelationModel:
             feat['goalie_perf_diff'] = float(metrics.get('away_goalie_perf', 0.0)) - float(metrics.get('home_goalie_perf', 0.0))
         if 'recent_form_diff' in metrics:
             feat['recent_form_diff'] = float(metrics.get('recent_form_diff', 0.0))
+        # Add venue win percentage difference (replaces generic home ice advantage)
+        if 'away_venue_win_pct' in metrics and 'home_venue_win_pct' in metrics:
+            feat['venue_win_pct_diff'] = float(metrics.get('away_venue_win_pct', 0.5)) - float(metrics.get('home_venue_win_pct', 0.5))
         return feat
 
     def _score(self, feats: Dict[str, float]) -> float:
@@ -103,8 +106,16 @@ class CorrelationModel:
             if k == 'gs_diff':
                 v = v * 0.5  # Reduce GS influence by 50%
             s += w * v
-        # Add home ice advantage (typically 3-5% in NHL)
-        s -= 0.15  # Home advantage bias (negative because score favors away, so negative = home advantage)
+        # Use venue-specific win percentage difference instead of generic home ice advantage
+        # This accounts for teams that are actually bad at home or good on the road
+        venue_win_pct_diff = feats.get('venue_win_pct_diff', 0.0)
+        if venue_win_pct_diff != 0.0:
+            # Weight venue win% difference: positive = away team better at away than home team at home
+            # Scale by 0.5 to account for typical NHL home advantage range
+            s += 0.5 * venue_win_pct_diff
+        else:
+            # Fallback to neutral if no venue data available
+            pass
         # Add recent form if available
         recent_form_diff = feats.get('recent_form_diff', 0.0)
         if recent_form_diff != 0.0:

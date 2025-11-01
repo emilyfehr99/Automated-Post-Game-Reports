@@ -46,6 +46,15 @@ def predict_game_for_date(model: ImprovedSelfLearningModelV2, corr: CorrelationM
     home_perf = model.get_team_performance(home_team, 'home')
     away_recent_form = away_perf.get('recent_form', 0.5)
     home_recent_form = home_perf.get('recent_form', 0.5)
+    
+    # Get venue-specific win percentages (full season)
+    try:
+        away_venue_win_pct = model._calculate_venue_win_percentage(away_team, 'away')
+        home_venue_win_pct = model._calculate_venue_win_percentage(home_team, 'home')
+    except Exception:
+        away_venue_win_pct = 0.5
+        home_venue_win_pct = 0.5
+    
     metrics = {
         'away_gs': away_perf.get('gs_avg', 0.0), 'home_gs': home_perf.get('gs_avg', 0.0),
         'away_power_play_pct': away_perf.get('power_play_avg', 0.0), 'home_power_play_pct': home_perf.get('power_play_avg', 0.0),
@@ -63,6 +72,7 @@ def predict_game_for_date(model: ImprovedSelfLearningModelV2, corr: CorrelationM
         'away_faceoff_pct': away_perf.get('faceoff_avg', 50.0), 'home_faceoff_pct': home_perf.get('faceoff_avg', 50.0),
         'away_goalie_perf': away_goalie_perf, 'home_goalie_perf': home_goalie_perf,
         'recent_form_diff': away_recent_form - home_recent_form,
+        'away_venue_win_pct': away_venue_win_pct, 'home_venue_win_pct': home_venue_win_pct,  # Venue-specific win rates
     }
 
     corr_pred = corr.predict_from_metrics(metrics)

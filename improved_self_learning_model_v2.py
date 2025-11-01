@@ -479,6 +479,45 @@ class ImprovedSelfLearningModelV2:
         
         return wins / len(recent_games) if recent_games else 0.5
     
+    def _calculate_venue_win_percentage(self, team: str, venue: str) -> float:
+        """Calculate full-season win percentage at a specific venue (home/away).
+        
+        Returns win rate (0.0-1.0) for this team at this venue across all completed games.
+        Returns 0.5 if no data available (neutral).
+        """
+        team_key = team.upper()
+        predictions = self.model_data.get('predictions', [])
+        
+        # Filter for all games involving this team at this venue with actual results
+        relevant_games = []
+        for pred in predictions:
+            if not pred.get('actual_winner'):
+                continue
+            away_team = (pred.get('away_team') or '').upper()
+            home_team = (pred.get('home_team') or '').upper()
+            actual_winner = pred.get('actual_winner')
+            
+            # Check if team played at this venue
+            if venue == 'away' and team_key == away_team:
+                relevant_games.append((actual_winner, away_team, home_team))
+            elif venue == 'home' and team_key == home_team:
+                relevant_games.append((actual_winner, away_team, home_team))
+        
+        if not relevant_games:
+            return 0.5  # Default neutral if no data
+        
+        # Calculate win rate
+        wins = 0
+        for winner, away, home in relevant_games:
+            if venue == 'away':
+                won = (winner in ('away', away, team_key))
+            else:  # venue == 'home'
+                won = (winner in ('home', home, team_key))
+            if won:
+                wins += 1
+        
+        return float(wins / len(relevant_games))
+    
     def _calculate_confidence(self, games_played: int) -> float:
         """Calculate confidence based on sample size"""
         if games_played == 0:

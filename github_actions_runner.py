@@ -451,6 +451,12 @@ class GitHubActionsRunner:
                 except Exception:
                     away_sos = 0.0
                     home_sos = 0.0
+                try:
+                    away_venue_win_pct = self.learning_model._calculate_venue_win_percentage(away_team, 'away')
+                    home_venue_win_pct = self.learning_model._calculate_venue_win_percentage(home_team, 'home')
+                except Exception:
+                    away_venue_win_pct = 0.5
+                    home_venue_win_pct = 0.5
                 metrics_used.update({
                     "away_rest": away_rest,
                     "home_rest": home_rest,
@@ -458,6 +464,8 @@ class GitHubActionsRunner:
                     "home_goalie_perf": home_goalie_perf,
                     "away_sos": away_sos,
                     "home_sos": home_sos,
+                    "away_venue_win_pct": away_venue_win_pct,
+                    "home_venue_win_pct": home_venue_win_pct,
                 })
 
                 self.learning_model.add_prediction(
