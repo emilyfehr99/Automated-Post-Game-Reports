@@ -1,5 +1,5 @@
 {
-  "COL": {
+  "DAL": {
     "home": {
       "games": [],
       "xg": [],
@@ -22,50 +22,714 @@
     },
     "away": {
       "games": [
-        "2025-11-01"
+        "2025-11-02"
       ],
       "xg": [
-        3.3728379347535022
+        2.472969041275
       ],
       "hdc": [
-        7
+        8
       ],
       "shots": [
-        38
+        22
       ],
       "goals": [
         null
       ],
       "gs": [
-        4.575000000000001
+        4.325000000000001
       ],
       "opp_xg": [
-        1.8999946239914998
+        4.783350717119475
       ],
       "opp_goals": [
         null
       ],
       "last_goalie": null,
       "opponents": [
-        "SJS"
+        "FLA"
       ],
       "corsi_pct": [
-        63.678151836046574
+        34.5679012345679
       ],
       "power_play_pct": [
-        33.33333333333333
+        66.66666666666666
       ],
       "faceoff_pct": [
-        50.46113306982872
+        60.6060606060606
       ],
       "hits": [
-        4.333333333333333
+        7.0
       ],
       "blocked_shots": [
-        5.0
+        3.3333333333333335
       ],
       "giveaways": [
-        6.0
+        4.333333333333333
+      ],
+      "takeaways": [
+        2.3333333333333335
+      ],
+      "penalty_minutes": [
+        0.6666666666666666
+      ]
+    }
+  },
+  "FLA": {
+    "home": {
+      "games": [
+        "2025-11-02"
+      ],
+      "xg": [
+        4.783350717119475
+      ],
+      "hdc": [
+        7
+      ],
+      "shots": [
+        28
+      ],
+      "goals": [
+        null
+      ],
+      "gs": [
+        5.825000000000002
+      ],
+      "opp_xg": [
+        2.472969041275
+      ],
+      "opp_goals": [
+        null
+      ],
+      "last_goalie": null,
+      "opponents": [
+        "DAL"
+      ],
+      "corsi_pct": [
+        65.43209876543209
+      ],
+      "power_play_pct": [
+        0.0
+      ],
+      "faceoff_pct": [
+        39.3939393939394
+      ],
+      "hits": [
+        8.666666666666666
+      ],
+      "blocked_shots": [
+        7.333333333333333
+      ],
+      "giveaways": [
+        7.0
+      ],
+      "takeaways": [
+        1.0
+      ],
+      "penalty_minutes": [
+        1.3333333333333333
+      ]
+    },
+    "away": {
+      "games": [],
+      "xg": [],
+      "hdc": [],
+      "shots": [],
+      "goals": [],
+      "gs": [],
+      "opp_xg": [],
+      "opp_goals": [],
+      "last_goalie": null,
+      "opponents": [],
+      "corsi_pct": [],
+      "power_play_pct": [],
+      "faceoff_pct": [],
+      "hits": [],
+      "blocked_shots": [],
+      "giveaways": [],
+      "takeaways": [],
+      "penalty_minutes": []
+    }
+  },
+  "WSH": {
+    "home": {
+      "games": [],
+      "xg": [],
+      "hdc": [],
+      "shots": [],
+      "goals": [],
+      "gs": [],
+      "opp_xg": [],
+      "opp_goals": [],
+      "last_goalie": null,
+      "opponents": [],
+      "corsi_pct": [],
+      "power_play_pct": [],
+      "faceoff_pct": [],
+      "hits": [],
+      "blocked_shots": [],
+      "giveaways": [],
+      "takeaways": [],
+      "penalty_minutes": []
+    },
+    "away": {
+      "games": [
+        "2025-11-02"
+      ],
+      "xg": [
+        4.083214656189501
+      ],
+      "hdc": [
+        13
+      ],
+      "shots": [
+        34
+      ],
+      "goals": [
+        null
+      ],
+      "gs": [
+        4.475000000000003
+      ],
+      "opp_xg": [
+        3.17694502912185
+      ],
+      "opp_goals": [
+        null
+      ],
+      "last_goalie": null,
+      "opponents": [
+        "BUF"
+      ],
+      "corsi_pct": [
+        50.98151622541866
+      ],
+      "power_play_pct": [
+        0.0
+      ],
+      "faceoff_pct": [
+        51.85758513931889
+      ],
+      "hits": [
+        5.666666666666667
+      ],
+      "blocked_shots": [
+        4.666666666666667
+      ],
+      "giveaways": [
+        5.0
+      ],
+      "takeaways": [
+        1.0
+      ],
+      "penalty_minutes": [
+        4.666666666666667
+      ]
+    }
+  },
+  "BUF": {
+    "home": {
+      "games": [
+        "2025-11-02"
+      ],
+      "xg": [
+        3.17694502912185
+      ],
+      "hdc": [
+        9
+      ],
+      "shots": [
+        24
+      ],
+      "goals": [
+        null
+      ],
+      "gs": [
+        4.325000000000001
+      ],
+      "opp_xg": [
+        4.083214656189501
+      ],
+      "opp_goals": [
+        null
+      ],
+      "last_goalie": null,
+      "opponents": [
+        "WSH"
+      ],
+      "corsi_pct": [
+        49.018483774581334
+      ],
+      "power_play_pct": [
+        14.285714285714285
+      ],
+      "faceoff_pct": [
+        48.14241486068111
+      ],
+      "hits": [
+        7.333333333333333
+      ],
+      "blocked_shots": [
+        4.333333333333333
+      ],
+      "giveaways": [
+        5.333333333333333
+      ],
+      "takeaways": [
+        1.0
+      ],
+      "penalty_minutes": [
+        4.666666666666667
+      ]
+    },
+    "away": {
+      "games": [],
+      "xg": [],
+      "hdc": [],
+      "shots": [],
+      "goals": [],
+      "gs": [],
+      "opp_xg": [],
+      "opp_goals": [],
+      "last_goalie": null,
+      "opponents": [],
+      "corsi_pct": [],
+      "power_play_pct": [],
+      "faceoff_pct": [],
+      "hits": [],
+      "blocked_shots": [],
+      "giveaways": [],
+      "takeaways": [],
+      "penalty_minutes": []
+    }
+  },
+  "OTT": {
+    "home": {
+      "games": [],
+      "xg": [],
+      "hdc": [],
+      "shots": [],
+      "goals": [],
+      "gs": [],
+      "opp_xg": [],
+      "opp_goals": [],
+      "last_goalie": null,
+      "opponents": [],
+      "corsi_pct": [],
+      "power_play_pct": [],
+      "faceoff_pct": [],
+      "hits": [],
+      "blocked_shots": [],
+      "giveaways": [],
+      "takeaways": [],
+      "penalty_minutes": []
+    },
+    "away": {
+      "games": [
+        "2025-11-02"
+      ],
+      "xg": [
+        2.0860141216061696
+      ],
+      "hdc": [
+        5
+      ],
+      "shots": [
+        17
+      ],
+      "goals": [
+        null
+      ],
+      "gs": [
+        3.4500000000000006
+      ],
+      "opp_xg": [
+        2.8832123538374996
+      ],
+      "opp_goals": [
+        null
+      ],
+      "last_goalie": null,
+      "opponents": [
+        "MTL"
+      ],
+      "corsi_pct": [
+        52.20588235294118
+      ],
+      "power_play_pct": [
+        20.0
+      ],
+      "faceoff_pct": [
+        57.251461988304094
+      ],
+      "hits": [
+        9.0
+      ],
+      "blocked_shots": [
+        7.0
+      ],
+      "giveaways": [
+        4.666666666666667
+      ],
+      "takeaways": [
+        1.6666666666666667
+      ],
+      "penalty_minutes": [
+        4.0
+      ]
+    }
+  },
+  "MTL": {
+    "home": {
+      "games": [
+        "2025-11-02"
+      ],
+      "xg": [
+        2.8832123538374996
+      ],
+      "hdc": [
+        8
+      ],
+      "shots": [
+        27
+      ],
+      "goals": [
+        null
+      ],
+      "gs": [
+        4.575000000000002
+      ],
+      "opp_xg": [
+        2.0860141216061696
+      ],
+      "opp_goals": [
+        null
+      ],
+      "last_goalie": null,
+      "opponents": [
+        "OTT"
+      ],
+      "corsi_pct": [
+        47.79411764705882
+      ],
+      "power_play_pct": [
+        16.666666666666664
+      ],
+      "faceoff_pct": [
+        42.748538011695906
+      ],
+      "hits": [
+        9.0
+      ],
+      "blocked_shots": [
+        4.0
+      ],
+      "giveaways": [
+        2.6666666666666665
+      ],
+      "takeaways": [
+        0.6666666666666666
+      ],
+      "penalty_minutes": [
+        3.3333333333333335
+      ]
+    },
+    "away": {
+      "games": [],
+      "xg": [],
+      "hdc": [],
+      "shots": [],
+      "goals": [],
+      "gs": [],
+      "opp_xg": [],
+      "opp_goals": [],
+      "last_goalie": null,
+      "opponents": [],
+      "corsi_pct": [],
+      "power_play_pct": [],
+      "faceoff_pct": [],
+      "hits": [],
+      "blocked_shots": [],
+      "giveaways": [],
+      "takeaways": [],
+      "penalty_minutes": []
+    }
+  },
+  "TOR": {
+    "home": {
+      "games": [],
+      "xg": [],
+      "hdc": [],
+      "shots": [],
+      "goals": [],
+      "gs": [],
+      "opp_xg": [],
+      "opp_goals": [],
+      "last_goalie": null,
+      "opponents": [],
+      "corsi_pct": [],
+      "power_play_pct": [],
+      "faceoff_pct": [],
+      "hits": [],
+      "blocked_shots": [],
+      "giveaways": [],
+      "takeaways": [],
+      "penalty_minutes": []
+    },
+    "away": {
+      "games": [
+        "2025-11-02"
+      ],
+      "xg": [
+        2.6385282674874992
+      ],
+      "hdc": [
+        10
+      ],
+      "shots": [
+        27
+      ],
+      "goals": [
+        null
+      ],
+      "gs": [
+        5.15
+      ],
+      "opp_xg": [
+        3.021969953087501
+      ],
+      "opp_goals": [
+        null
+      ],
+      "last_goalie": null,
+      "opponents": [
+        "PHI"
+      ],
+      "corsi_pct": [
+        40.11119081779053
+      ],
+      "power_play_pct": [
+        66.66666666666666
+      ],
+      "faceoff_pct": [
+        57.23765432098765
+      ],
+      "hits": [
+        6.666666666666667
+      ],
+      "blocked_shots": [
+        4.333333333333333
+      ],
+      "giveaways": [
+        5.0
+      ],
+      "takeaways": [
+        0.0
+      ],
+      "penalty_minutes": [
+        4.0
+      ]
+    }
+  },
+  "PHI": {
+    "home": {
+      "games": [
+        "2025-11-02"
+      ],
+      "xg": [
+        3.021969953087501
+      ],
+      "hdc": [
+        5
+      ],
+      "shots": [
+        33
+      ],
+      "goals": [
+        null
+      ],
+      "gs": [
+        4.375000000000001
+      ],
+      "opp_xg": [
+        2.6385282674874992
+      ],
+      "opp_goals": [
+        null
+      ],
+      "last_goalie": null,
+      "opponents": [
+        "TOR"
+      ],
+      "corsi_pct": [
+        59.888809182209464
+      ],
+      "power_play_pct": [
+        16.666666666666664
+      ],
+      "faceoff_pct": [
+        42.76234567901235
+      ],
+      "hits": [
+        5.666666666666667
+      ],
+      "blocked_shots": [
+        6.666666666666667
+      ],
+      "giveaways": [
+        5.666666666666667
+      ],
+      "takeaways": [
+        0.3333333333333333
+      ],
+      "penalty_minutes": [
+        2.0
+      ]
+    },
+    "away": {
+      "games": [],
+      "xg": [],
+      "hdc": [],
+      "shots": [],
+      "goals": [],
+      "gs": [],
+      "opp_xg": [],
+      "opp_goals": [],
+      "last_goalie": null,
+      "opponents": [],
+      "corsi_pct": [],
+      "power_play_pct": [],
+      "faceoff_pct": [],
+      "hits": [],
+      "blocked_shots": [],
+      "giveaways": [],
+      "takeaways": [],
+      "penalty_minutes": []
+    }
+  },
+  "STL": {
+    "home": {
+      "games": [],
+      "xg": [],
+      "hdc": [],
+      "shots": [],
+      "goals": [],
+      "gs": [],
+      "opp_xg": [],
+      "opp_goals": [],
+      "last_goalie": null,
+      "opponents": [],
+      "corsi_pct": [],
+      "power_play_pct": [],
+      "faceoff_pct": [],
+      "hits": [],
+      "blocked_shots": [],
+      "giveaways": [],
+      "takeaways": [],
+      "penalty_minutes": []
+    },
+    "away": {
+      "games": [
+        "2025-11-02"
+      ],
+      "xg": [
+        3.8928465466248756
+      ],
+      "hdc": [
+        2
+      ],
+      "shots": [
+        39
+      ],
+      "goals": [
+        null
+      ],
+      "gs": [
+        4.325000000000001
+      ],
+      "opp_xg": [
+        4.062128226475002
+      ],
+      "opp_goals": [
+        null
+      ],
+      "last_goalie": null,
+      "opponents": [
+        "CBJ"
+      ],
+      "corsi_pct": [
+        52.97055489168736
+      ],
+      "power_play_pct": [
+        0.0
+      ],
+      "faceoff_pct": [
+        55.897832817337466
+      ],
+      "hits": [
+        7.0
+      ],
+      "blocked_shots": [
+        4.333333333333333
+      ],
+      "giveaways": [
+        4.666666666666667
+      ],
+      "takeaways": [
+        1.3333333333333333
+      ],
+      "penalty_minutes": [
+        2.6666666666666665
+      ]
+    }
+  },
+  "CBJ": {
+    "home": {
+      "games": [
+        "2025-11-02"
+      ],
+      "xg": [
+        4.062128226475002
+      ],
+      "hdc": [
+        14
+      ],
+      "shots": [
+        35
+      ],
+      "goals": [
+        null
+      ],
+      "gs": [
+        4.900000000000001
+      ],
+      "opp_xg": [
+        3.8928465466248756
+      ],
+      "opp_goals": [
+        null
+      ],
+      "last_goalie": null,
+      "opponents": [
+        "STL"
+      ],
+      "corsi_pct": [
+        47.02944510831264
+      ],
+      "power_play_pct": [
+        25.0
+      ],
+      "faceoff_pct": [
+        44.102167182662534
+      ],
+      "hits": [
+        4.666666666666667
+      ],
+      "blocked_shots": [
+        4.666666666666667
+      ],
+      "giveaways": [
+        5.0
       ],
       "takeaways": [
         0.6666666666666666
@@ -73,61 +737,157 @@
       "penalty_minutes": [
         2.0
       ]
+    },
+    "away": {
+      "games": [],
+      "xg": [],
+      "hdc": [],
+      "shots": [],
+      "goals": [],
+      "gs": [],
+      "opp_xg": [],
+      "opp_goals": [],
+      "last_goalie": null,
+      "opponents": [],
+      "corsi_pct": [],
+      "power_play_pct": [],
+      "faceoff_pct": [],
+      "hits": [],
+      "blocked_shots": [],
+      "giveaways": [],
+      "takeaways": [],
+      "penalty_minutes": []
     }
   },
-  "SJS": {
+  "VAN": {
     "home": {
+      "games": [],
+      "xg": [],
+      "hdc": [],
+      "shots": [],
+      "goals": [],
+      "gs": [],
+      "opp_xg": [],
+      "opp_goals": [],
+      "last_goalie": null,
+      "opponents": [],
+      "corsi_pct": [],
+      "power_play_pct": [],
+      "faceoff_pct": [],
+      "hits": [],
+      "blocked_shots": [],
+      "giveaways": [],
+      "takeaways": [],
+      "penalty_minutes": []
+    },
+    "away": {
       "games": [
-        "2025-11-01"
+        "2025-11-02"
       ],
       "xg": [
-        1.8999946239914998
+        2.3555604391212506
       ],
       "hdc": [
-        9
+        4
       ],
       "shots": [
-        23
+        28
       ],
       "goals": [
         null
       ],
       "gs": [
-        4.25
+        3.450000000000001
       ],
       "opp_xg": [
-        3.3728379347535022
+        2.9987051547850014
       ],
       "opp_goals": [
         null
       ],
       "last_goalie": null,
       "opponents": [
-        "COL"
+        "MIN"
       ],
       "corsi_pct": [
-        36.321848163953426
+        52.527472527472526
       ],
       "power_play_pct": [
-        33.33333333333333
+        0.0
       ],
       "faceoff_pct": [
-        49.538866930171274
+        48.7869618304401
       ],
       "hits": [
-        5.333333333333333
+        7.333333333333333
       ],
       "blocked_shots": [
-        5.333333333333333
+        5.0
       ],
       "giveaways": [
-        6.0
+        4.666666666666667
       ],
       "takeaways": [
-        2.0
+        0.6666666666666666
       ],
       "penalty_minutes": [
-        1.3333333333333333
+        3.3333333333333335
+      ]
+    }
+  },
+  "MIN": {
+    "home": {
+      "games": [
+        "2025-11-02"
+      ],
+      "xg": [
+        2.9987051547850014
+      ],
+      "hdc": [
+        8
+      ],
+      "shots": [
+        27
+      ],
+      "goals": [
+        null
+      ],
+      "gs": [
+        5.25
+      ],
+      "opp_xg": [
+        2.3555604391212506
+      ],
+      "opp_goals": [
+        null
+      ],
+      "last_goalie": null,
+      "opponents": [
+        "VAN"
+      ],
+      "corsi_pct": [
+        47.472527472527474
+      ],
+      "power_play_pct": [
+        20.0
+      ],
+      "faceoff_pct": [
+        51.2130381695599
+      ],
+      "hits": [
+        8.666666666666666
+      ],
+      "blocked_shots": [
+        4.0
+      ],
+      "giveaways": [
+        3.6666666666666665
+      ],
+      "takeaways": [
+        0.3333333333333333
+      ],
+      "penalty_minutes": [
+        3.3333333333333335
       ]
     },
     "away": {
