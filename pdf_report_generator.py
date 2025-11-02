@@ -1,5 +1,5 @@
 from reportlab.lib.pagesizes import letter, A4
-from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, PageTemplate, BaseDocTemplate
+from reportlab.platypus import SimpleDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, PageTemplate, BaseDocTemplate, PageBreak
 from reportlab.lib.styles import getSampleStyleSheet, ParagraphStyle
 from reportlab.lib.units import inch
 from reportlab.lib import colors
@@ -1229,15 +1229,41 @@ class PostGameReportGenerator:
         return story
     
     def calculate_win_probability(self, game_data):
-        """Calculate win probability based on xG, high danger chances, and shot attempts using sophisticated model weights"""
+        """Calculate win probability using POSTGAME correlation-based weights.
+        Uses actual game stats with weights derived from correlation analysis of completed games.
+        Based on analysis of 189 games, top predictors: Game Score (0.6504), Power Play % (0.3933), Corsi % (-0.3598)
+        """
         try:
-            # Get team data from boxscore (the actual data structure)
+            import math
+            import numpy as np
+            
+            # Helper function for sigmoid
+            def sigmoid(x: float) -> float:
+                try:
+                    return 1.0 / (1.0 + math.exp(-x))
+                except OverflowError:
+                    return 0.0 if x < 0 else 1.0
+            
+            # POSTGAME CORRELATION WEIGHTS (from postgame_correlation_analysis.py, 189 games)
+            # These are derived from actual game outcomes vs actual game metrics
+            POSTGAME_WEIGHTS = {
+                'gs_diff': 0.6504,           # Game Score difference - STRONGEST predictor
+                'power_play_diff': 0.3933,   # Power Play % difference
+                'corsi_diff': -0.3598,       # Corsi % difference (negative: higher Corsi favors home)
+                'hits_diff': -0.2434,        # Hits difference (negative: more hits favors home)
+                'hdc_diff': 0.0747,          # High Danger Chances difference
+                'xg_diff': -0.0545,          # Expected Goals difference
+                'pim_diff': 0.0173,          # Penalty Minutes difference
+                'shots_diff': -0.0158,       # Shots on Goal difference
+            }
+            
+            # Get team data from boxscore
             away_team = game_data['boxscore']['awayTeam']
             home_team = game_data['boxscore']['homeTeam']
+            away_team_id = away_team.get('id')
+            home_team_id = home_team.get('id')
             
             # Get basic stats from boxscore
-            away_goals = away_team.get('score', 0)
-            home_goals = home_team.get('score', 0)
             away_sog = away_team.get('sog', 0)
             home_sog = home_team.get('sog', 0)
             
@@ -1250,44 +1276,78 @@ class PostGameReportGenerator:
             # Calculate Game Score from play-by-play data
             away_gs, home_gs = self._calculate_game_scores(game_data)
             
-            # Use fixed weights for post-game win probability analysis (NOT the learning model)
-            # This is purely based on the actual game data, not predictions
-            weights = {
-                'xg_weight': 0.4,           # Expected Goals - 40% weight
-                'hdc_weight': 0.3,          # High Danger Chances - 30% weight  
-                'shot_attempts_weight': 0.2, # Shot Attempts - 20% weight
-                'game_score_weight': 0.1,   # Game Score - 10% weight (no faceoff %)
-                'other_metrics_weight': 0.0  # Other metrics - 0% weight
-            }
+            # Get period stats for additional metrics
+            away_period_stats = self._calculate_real_period_stats(game_data, away_team_id, 'away')
+            home_period_stats = self._calculate_real_period_stats(game_data, home_team_id, 'home')
             
-            # Calculate weighted scores
-            away_score = (
-                away_xg * weights['xg_weight'] +
-                away_hdc * weights['hdc_weight'] +
-                away_sog * weights['shot_attempts_weight'] +
-                away_gs * weights['game_score_weight']
-            )
+            # Calculate Corsi percentage
+            away_corsi_pct = np.mean(away_period_stats.get('corsi_pct', [50.0])) if away_period_stats.get('corsi_pct') else 50.0
+            home_corsi_pct = np.mean(home_period_stats.get('corsi_pct', [50.0])) if home_period_stats.get('corsi_pct') else 50.0
             
-            home_score = (
-                home_xg * weights['xg_weight'] +
-                home_hdc * weights['hdc_weight'] +
-                home_sog * weights['shot_attempts_weight'] +
-                home_gs * weights['game_score_weight']
-            )
+            # Power play percentage
+            away_pp_goals = sum(away_period_stats.get('pp_goals', [0]))
+            away_pp_attempts = sum(away_period_stats.get('pp_attempts', [0]))
+            home_pp_goals = sum(home_period_stats.get('pp_goals', [0]))
+            home_pp_attempts = sum(home_period_stats.get('pp_attempts', [0]))
             
+            away_pp_pct = (away_pp_goals / max(1, away_pp_attempts)) * 100 if away_pp_attempts > 0 else 0.0
+            home_pp_pct = (home_pp_goals / max(1, home_pp_attempts)) * 100 if home_pp_attempts > 0 else 0.0
             
-            # Calculate probabilities using softmax
-            total_score = away_score + home_score
-            if total_score > 0:
-                away_prob = (away_score / total_score) * 100
-                home_prob = (home_score / total_score) * 100
-            else:
-                away_prob = 50.0
-                home_prob = 50.0
+            # Hits
+            away_hits = sum(away_period_stats.get('hits', [0]))
+            home_hits = sum(home_period_stats.get('hits', [0]))
             
-            print(f"Win probability calculation: Away {away_team['abbrev']} {away_prob:.1f}% vs Home {home_team['abbrev']} {home_prob:.1f}%")
-            print(f"  Away: xG={away_xg:.2f}, HDC={away_hdc}, SOG={away_sog}, GS={away_gs:.1f}")
-            print(f"  Home: xG={home_xg:.2f}, HDC={home_hdc}, SOG={home_sog}, GS={home_gs:.1f}")
+            # Penalty Minutes
+            away_pim = sum(away_period_stats.get('pim', [0]))
+            home_pim = sum(home_period_stats.get('pim', [0]))
+            
+            # Calculate differences (away - home)
+            gs_diff = away_gs - home_gs
+            xg_diff = away_xg - home_xg
+            hdc_diff = away_hdc - home_hdc
+            shots_diff = away_sog - home_sog
+            corsi_diff = away_corsi_pct - home_corsi_pct
+            power_play_diff = away_pp_pct - home_pp_pct
+            hits_diff = away_hits - home_hits
+            pim_diff = away_pim - home_pim
+            
+            # Calculate weighted score using POSTGAME correlation weights
+            # Normalize weights so strongest predictor (gs_diff) has appropriate scaling
+            # Game Score typically ranges from -5 to +15, so we scale it
+            score = 0.0
+            
+            # Game Score difference (strongest predictor) - scale by 0.1 to normalize
+            score += POSTGAME_WEIGHTS['gs_diff'] * (gs_diff * 0.1)
+            
+            # Power Play % difference - already a percentage (0-100), scale by 0.01
+            score += POSTGAME_WEIGHTS['power_play_diff'] * (power_play_diff * 0.01)
+            
+            # Corsi % difference - already a percentage (0-100), scale by 0.01
+            score += POSTGAME_WEIGHTS['corsi_diff'] * (corsi_diff * 0.01)
+            
+            # Hits difference - scale by 0.01 (typical range 10-50)
+            score += POSTGAME_WEIGHTS['hits_diff'] * (hits_diff * 0.01)
+            
+            # High Danger Chances difference - scale by 0.05 (typical range 5-20)
+            score += POSTGAME_WEIGHTS['hdc_diff'] * (hdc_diff * 0.05)
+            
+            # Expected Goals difference - scale by 0.2 (typical range 0-5)
+            score += POSTGAME_WEIGHTS['xg_diff'] * (xg_diff * 0.2)
+            
+            # Penalty Minutes difference - scale by 0.01 (typical range 5-25)
+            score += POSTGAME_WEIGHTS['pim_diff'] * (pim_diff * 0.01)
+            
+            # Shots on Goal difference - scale by 0.02 (typical range 0-30)
+            score += POSTGAME_WEIGHTS['shots_diff'] * (shots_diff * 0.02)
+            
+            # Convert score to probabilities using sigmoid
+            away_prob = sigmoid(score) * 100
+            home_prob = (1.0 - sigmoid(score)) * 100
+            
+            print(f"Win probability calculation (postgame correlation-based): Away {away_team['abbrev']} {away_prob:.1f}% vs Home {home_team['abbrev']} {home_prob:.1f}%")
+            print(f"  Away: xG={away_xg:.2f}, HDC={away_hdc}, SOG={away_sog}, GS={away_gs:.1f}, PP%={away_pp_pct:.1f}, Corsi%={away_corsi_pct:.1f}")
+            print(f"  Home: xG={home_xg:.2f}, HDC={home_hdc}, SOG={home_sog}, GS={home_gs:.1f}, PP%={home_pp_pct:.1f}, Corsi%={home_corsi_pct:.1f}")
+            print(f"  Differences: GS={gs_diff:.1f} (w={POSTGAME_WEIGHTS['gs_diff']:.4f}), PP%={power_play_diff:.1f} (w={POSTGAME_WEIGHTS['power_play_diff']:.4f}), Corsi%={corsi_diff:.1f} (w={POSTGAME_WEIGHTS['corsi_diff']:.4f}), Score={score:.3f}")
             
             return {
                 'away_probability': round(away_prob, 1),
@@ -1298,12 +1358,40 @@ class PostGameReportGenerator:
             
         except Exception as e:
             print(f"Error calculating win probability: {e}")
-            return {
-                'away_probability': 50.0,
-                'home_probability': 50.0,
-                'away_team': 'AWY',
-                'home_team': 'HME'
-            }
+            import traceback
+            traceback.print_exc()
+            # Fallback to simple calculation if correlation model fails
+            try:
+                away_team = game_data['boxscore']['awayTeam']
+                home_team = game_data['boxscore']['homeTeam']
+                away_sog = away_team.get('sog', 0)
+                home_sog = home_team.get('sog', 0)
+                away_xg, home_xg = self._calculate_xg_from_plays(game_data)
+                away_hdc, home_hdc = self._calculate_hdc_from_plays(game_data)
+                away_gs, home_gs = self._calculate_game_scores(game_data)
+                
+                # Simple fallback: use Game Score as primary indicator
+                total_gs = away_gs + home_gs
+                if total_gs > 0:
+                    away_prob = (away_gs / total_gs) * 100
+                    home_prob = (home_gs / total_gs) * 100
+                else:
+                    away_prob = 50.0
+                    home_prob = 50.0
+                
+                return {
+                    'away_probability': round(away_prob, 1),
+                    'home_probability': round(home_prob, 1),
+                    'away_team': away_team.get('abbrev', 'AWY'),
+                    'home_team': home_team.get('abbrev', 'HME')
+                }
+            except:
+                return {
+                    'away_probability': 50.0,
+                    'home_probability': 50.0,
+                    'away_team': 'AWY',
+                    'home_team': 'HME'
+                }
     
     def _calculate_xg_from_plays(self, game_data):
         """Calculate expected goals from play-by-play data using the working ImprovedXGModel"""
@@ -2767,7 +2855,7 @@ class PostGameReportGenerator:
         
         # Create SHOT LOCATIONS title bar - narrow and centered over the shot plot
         shot_locations_title_data = [["SHOT LOCATIONS"]]
-        shot_locations_title_table = Table(shot_locations_title_data, colWidths=[2.4*inch])  # Same width as shot plot
+        shot_locations_title_table = Table(shot_locations_title_data, colWidths=[3.0*inch])  # Match plot width (3.0 inches)
         shot_locations_title_table.setStyle(TableStyle([
             ('BACKGROUND', (0, 0), (-1, -1), home_team_color),
             ('TEXTCOLOR', (0, 0), (-1, -1), colors.white),
@@ -2783,7 +2871,7 @@ class PostGameReportGenerator:
         ]))
         
         # Position the SHOT LOCATIONS title bar centered over the shot plot
-        shot_locations_wrapper = Table([[shot_locations_title_table]], colWidths=[2.4*inch])
+        shot_locations_wrapper = Table([[shot_locations_title_table]], colWidths=[3.0*inch])  # Match plot width (3.0 inches)
         shot_locations_wrapper.setStyle(TableStyle([
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
@@ -2833,13 +2921,13 @@ class PostGameReportGenerator:
                 # Position the shot plot above the Top Players table location
                 # Modify the existing table's positioning
                 # Update the table's column width to match the new image size
-                item._colWidths = [2.4*inch]
+                item._colWidths = [3.0*inch]
                 item.setStyle(TableStyle([
                     ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
                     ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                     ('LEFTPADDING', (0, 0), (-1, -1), 2.44*inch),  # Move 0.1 cm to the right (2.4 + 0.1*0.3937 = 2.4 + 0.039 = 2.439, rounded to 2.44)
                     ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-                    ('TOPPADDING', (0, 0), (-1, -1), -3.76*inch),  # Move down 0.1 cm (-3.8 + 0.1*0.3937 = -3.8 + 0.039 = -3.761, rounded to -3.76)
+                    ('TOPPADDING', (0, 0), (-1, -1), -3.602*inch),  # Moved up 0.1 cm from -3.563 (-3.563 - 0.039 = -3.602)
                     ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
                 ]))
                 story.append(item)
@@ -2855,7 +2943,8 @@ class PostGameReportGenerator:
                 # Position it to the right of the advanced metrics table (which starts at -1.6 inches from left)
                 # Advanced metrics table is 4.4 inches wide, so Top Players should start around 2.8 inches from left
                 # Move up an additional 0.5 cm (0.197 inches) if game has OT/SO
-                top_padding = -1.48*inch - (0.197*inch if has_ot_or_so else 0)  # Move down 0.1 cm (-1.52 + 0.1*0.3937 = -1.52 + 0.039 = -1.481, rounded to -1.48)
+                # Moved up 1.2 cm (0.473 inches) total from original position
+                top_padding = -1.953*inch - (0.197*inch if has_ot_or_so else 0)  # Base: -1.48 - 0.079 - 0.394 = -1.953, OT/SO adds -0.197 more
                 
                 right_table = Table([[item]], colWidths=[2.3*inch])
                 right_table.setStyle(TableStyle([
@@ -2994,18 +3083,39 @@ class PostGameReportGenerator:
             # Create the plot - original size
             plt.ioff()
             fig, ax = plt.subplots(figsize=(8, 5.5))
+            # Minimize padding around the plot to reduce white borders
+            fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
             
             # Load and display the rink image
-            # Use path relative to script location
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            rink_path = os.path.join(script_dir, 'F300E016-E2BD-450A-B624-5BADF3853AC0.jpeg')
+            # Use the specific rink image path
+            rink_path = '/Users/emilyfehr8/CascadeProjects/F300E016-E2BD-450A-B624-5BADF3853AC0.jpeg'
             try:
                 if os.path.exists(rink_path):
                     from matplotlib.image import imread
+                    import numpy as np
                     rink_img = imread(rink_path)
-                    # Display the rink image beneath plotted points
-                    ax.imshow(rink_img, extent=[-100, 100, -42.5, 42.5], aspect='equal', alpha=0.75, zorder=0)
-                    print(f"Loaded rink image from: {rink_path}")
+                    
+                    # Create alpha channel to make black/dark background transparent
+                    # The rink image has black corners (RGB ~0,0,0), so we mask those out
+                    if len(rink_img.shape) == 3 and rink_img.shape[2] == 3:  # RGB image
+                        # Calculate brightness/lightness of each pixel
+                        # Black/dark pixels (sum < threshold) become transparent
+                        brightness = rink_img.sum(axis=2)
+                        # Threshold: pixels with brightness < 50 (very dark/black) become transparent
+                        # This preserves the rink lines but removes black background
+                        alpha_threshold = 50 * 3  # 50 per channel * 3 channels
+                        alpha = np.where(brightness < alpha_threshold, 0, 255).astype(np.uint8)
+                        
+                        # Combine RGB with alpha channel
+                        rink_img_rgba = np.dstack([rink_img, alpha])
+                        
+                        # Display the rink image with transparency
+                        ax.imshow(rink_img_rgba, extent=[-100, 100, -42.5, 42.5], aspect='equal', alpha=0.75, zorder=0)
+                        print(f"Loaded rink image from: {rink_path} (with transparent background)")
+                    else:
+                        # Fallback if image format is unexpected
+                        ax.imshow(rink_img, extent=[-100, 100, -42.5, 42.5], aspect='equal', alpha=0.75, zorder=0)
+                        print(f"Loaded rink image from: {rink_path}")
                 else:
                     print(f"Rink image not found at: {rink_path}")
                     # Fallback to drawing rink outline
@@ -3124,8 +3234,56 @@ class PostGameReportGenerator:
             plot_filename = f'combined_shot_plot_{away_team["abbrev"]}_vs_{home_team["abbrev"]}_{timestamp}.png'
             abs_plot_filename = os.path.abspath(plot_filename)
             print(f"Saving combined plot to: {abs_plot_filename}")
-            fig.savefig(abs_plot_filename, dpi=300, bbox_inches='tight', facecolor='none', transparent=True)
+            # Use transparent background initially, then composite on white background after cropping
+            # This prevents white borders from matplotlib's bbox calculation
+            fig.patch.set_facecolor('none')  # Transparent figure background
+            ax.patch.set_facecolor('none')  # Ensure axes background is transparent
+            fig.savefig(abs_plot_filename, dpi=300, bbox_inches='tight', pad_inches=0, 
+                       facecolor='none', edgecolor='none', transparent=True)
             plt.close(fig)
+            
+            # Crop borders from the saved image (transparent/white/black borders)
+            try:
+                from PIL import Image
+                import numpy as np
+                img = Image.open(abs_plot_filename)
+                img_array = np.array(img)
+                
+                # For RGBA images, find the actual content bounds using alpha channel
+                # This is more accurate than checking RGB values
+                if img.mode == 'RGBA':
+                    alpha_channel = img_array[:, :, 3]
+                    h, w = alpha_channel.shape
+                    
+                    # Find bounds where alpha > 0 (actual content)
+                    rows_with_content = np.any(alpha_channel > 0, axis=1)
+                    cols_with_content = np.any(alpha_channel > 0, axis=0)
+                    
+                    if np.any(rows_with_content) and np.any(cols_with_content):
+                        top_crop = np.argmax(rows_with_content)
+                        bottom_crop = len(rows_with_content) - np.argmax(rows_with_content[::-1])
+                        left_crop = np.argmax(cols_with_content)
+                        right_crop = len(cols_with_content) - np.argmax(cols_with_content[::-1])
+                        
+                        # Crop to content bounds (keeping transparency)
+                        if top_crop > 0 or bottom_crop < h or left_crop > 0 or right_crop < w:
+                            img = img.crop((left_crop, top_crop, right_crop, bottom_crop))
+                            print(f"Cropped transparent borders using alpha: {right_crop-left_crop}x{bottom_crop-top_crop}")
+                    
+                    # Keep as RGBA with transparency - do NOT composite on white background
+                    # This preserves the transparent background so it blends with the PDF/page background
+                    print("Keeping image as transparent RGBA (no white background)")
+                else:
+                    # For non-RGBA images, convert to RGBA to preserve transparency capability
+                    if img.mode != 'RGBA':
+                        # Convert to RGBA (adds alpha channel)
+                        img = img.convert('RGBA')
+                        print("Converted image to RGBA for transparency support")
+                
+                # Save final cropped image with transparency preserved
+                img.save(abs_plot_filename, 'PNG')
+            except Exception as e:
+                print(f"Could not crop borders: {e}")
             
             # Verify file was created
             if os.path.exists(abs_plot_filename):
@@ -3414,17 +3572,34 @@ class PostGameReportGenerator:
                 if combined_plot and os.path.exists(combined_plot):
                     print(f"Adding combined plot from file: {combined_plot}")
                     try:
-                        combined_image = Image(combined_plot, width=2.4*inch, height=1.65*inch)
-                        combined_image.hAlign = 'CENTER'
+                        # Get actual image dimensions to preserve aspect ratio and avoid borders
+                        from PIL import Image as PILImage
+                        img_temp = PILImage.open(combined_plot)
+                        img_width, img_height = img_temp.size
+                        img_mode = img_temp.mode
+                        img_temp.close()
                         
-                        # Move the plot up 3 cm
-                        plot_wrapper = Table([[combined_image]], colWidths=[2.4*inch])
+                        # Calculate height based on width to maintain aspect ratio (no borders added)
+                        # Plot size: slightly smaller than previous 3.2 inches
+                        target_width = 3.0*inch
+                        aspect_ratio = img_height / img_width
+                        target_height = target_width * aspect_ratio
+                        
+                        # Create Image with transparency support
+                        # ReportLab's Image class automatically handles PNG alpha channels when present
+                        combined_image = Image(combined_plot, width=target_width, height=target_height)
+                        combined_image.hAlign = 'CENTER'
+                        if img_mode == 'RGBA':
+                            print(f"Image has transparency (RGBA mode) - ReportLab should preserve it")
+                        
+                        # Plot positioned directly after title with 0.5cm spacing from title's BOTTOMPADDING
+                        plot_wrapper = Table([[combined_image]], colWidths=[3.2*inch])
                         plot_wrapper.setStyle(TableStyle([
                             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                             ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                             ('LEFTPADDING', (0, 0), (-1, -1), 0),
                             ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-                            ('TOPPADDING', (0, 0), (-1, -1), -1.2*inch),  # Move up 3 cm
+                            ('TOPPADDING', (0, 0), (-1, -1), 0),
                             ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
                         ]))
                         story.append(plot_wrapper)
