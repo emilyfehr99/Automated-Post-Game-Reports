@@ -1,36 +1,19 @@
-# Generated reports and temporary files
-*.pdf
-*.png
-!Paper.png
-!nhl_clean_repo/Paper.png
-*.jpeg
-*.jpg
-temp_header_*.png
-combined_shot_plot_*.png
-nhl_postgame_report_*.pdf
-*_post_game_report_*.pdf
-*_shot_chart_*.png
-*_report_*.png
-
-# Python cache
 __pycache__/
-*.pyc
-*.pyo
-*.pyd
-.Python
+*.py[cod]
+*$py.class
 *.so
-
-# Virtual environment
-venv/
+.Python
 env/
+venv/
 ENV/
-
-# IDE files
-.vscode/
-.idea/
-*.swp
-*.swo
-
-# OS files
+.venv
+*.log
+*.json
+*.png
+*.jpg
+*.jpeg
 .DS_Store
-Thumbs.db
+*.pdf
+nhl_postgame_reports/*.pdf
+*.csv
+*.zip
