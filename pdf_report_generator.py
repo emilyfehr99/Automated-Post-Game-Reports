@@ -3087,8 +3087,16 @@ class PostGameReportGenerator:
             fig.subplots_adjust(left=0, right=1, top=1, bottom=0)
             
             # Load and display the rink image
-            # Use the specific rink image path
-            rink_path = '/Users/emilyfehr8/CascadeProjects/F300E016-E2BD-450A-B624-5BADF3853AC0.jpeg'
+            # Use relative path from script directory (works in both local and GitHub Actions)
+            try:
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+            except NameError:
+                # Fallback if __file__ not available (shouldn't happen in normal use)
+                script_dir = os.getcwd()
+            rink_path = os.path.join(script_dir, 'F300E016-E2BD-450A-B624-5BADF3853AC0.jpeg')
+            # Also try current directory as fallback
+            if not os.path.exists(rink_path):
+                rink_path = os.path.join(os.getcwd(), 'F300E016-E2BD-450A-B624-5BADF3853AC0.jpeg')
             try:
                 if os.path.exists(rink_path):
                     from matplotlib.image import imread
@@ -3117,29 +3125,16 @@ class PostGameReportGenerator:
                         ax.imshow(rink_img, extent=[-100, 100, -42.5, 42.5], aspect='equal', alpha=0.75, zorder=0)
                         print(f"Loaded rink image from: {rink_path}")
                 else:
-                    print(f"Rink image not found at: {rink_path}")
-                    # Fallback to drawing rink outline
-                    ax.plot([-100, 100], [42.5, 42.5], 'k-', linewidth=3)  # Top boards
-                    ax.plot([-100, 100], [-42.5, -42.5], 'k-', linewidth=3)  # Bottom boards
-                    ax.plot([-100, -100], [-42.5, 42.5], 'k-', linewidth=3)  # Left boards
-                    ax.plot([100, 100], [-42.5, 42.5], 'k-', linewidth=3)  # Right boards
-                    ax.plot([89, 89], [-42.5, 42.5], 'r-', linewidth=2)  # Right goal line
-                    ax.plot([-89, -89], [-42.5, 42.5], 'r-', linewidth=2)  # Left goal line
-                    ax.plot([25, 25], [-42.5, 42.5], 'b-', linewidth=2)  # Right blue line
-                    ax.plot([-25, -25], [-42.5, 42.5], 'b-', linewidth=2)  # Left blue line
-                    ax.plot([0, 0], [-42.5, 42.5], 'k-', linewidth=1)  # Center line
+                    # Rink image is required - fail if not found
+                    plt.close(fig)
+                    raise FileNotFoundError(f"Rink image not found at: {rink_path}. Report generation aborted.")
+            except FileNotFoundError:
+                # Re-raise FileNotFoundError to stop report generation
+                raise
             except Exception as e:
-                print(f"Error loading rink image: {e}")
-                # Fallback to drawing rink outline
-                ax.plot([-100, 100], [42.5, 42.5], 'k-', linewidth=3)  # Top boards
-                ax.plot([-100, 100], [-42.5, -42.5], 'k-', linewidth=3)  # Bottom boards
-                ax.plot([-100, -100], [-42.5, 42.5], 'k-', linewidth=3)  # Left boards
-                ax.plot([100, 100], [-42.5, 42.5], 'k-', linewidth=3)  # Right boards
-                ax.plot([89, 89], [-42.5, 42.5], 'r-', linewidth=2)  # Right goal line
-                ax.plot([-89, -89], [-42.5, 42.5], 'r-', linewidth=2)  # Left goal line
-                ax.plot([25, 25], [-42.5, 42.5], 'b-', linewidth=2)  # Right blue line
-                ax.plot([-25, -25], [-42.5, 42.5], 'b-', linewidth=2)  # Left blue line
-                ax.plot([0, 0], [-42.5, 42.5], 'k-', linewidth=1)  # Center line
+                # Any other error loading the rink image should also stop report generation
+                plt.close(fig)
+                raise RuntimeError(f"Error loading rink image: {e}. Report generation aborted.")
             
             # Get team colors based on actual teams playing
             away_color = self._get_team_color(away_team['abbrev'])
@@ -3294,7 +3289,12 @@ class PostGameReportGenerator:
                 print(f"Failed to create combined plot: {abs_plot_filename}")
                 return None
             
+        except (FileNotFoundError, RuntimeError) as e:
+            # Re-raise critical errors (like missing rink image) to stop report generation
+            print(f"CRITICAL: Error creating combined shot location plot: {e}")
+            raise
         except Exception as e:
+            # Other errors are non-critical, return None to continue without plot
             print(f"Error creating combined shot location plot: {e}")
             return None
     
@@ -3617,10 +3617,18 @@ class PostGameReportGenerator:
                     story.append(Paragraph("Shot location analysis could not be generated.", self.normal_style))
                 
                 story.append(Spacer(1, 20))
+            except (FileNotFoundError, RuntimeError) as e:
+                # Re-raise critical errors (like missing rink image) to stop report generation
+                print(f"CRITICAL: Error creating combined plot: {e}")
+                raise
             except Exception as e:
                 print(f"Error creating combined plot: {e}")
                 story.append(Paragraph("Combined shot location plot could not be created.", self.normal_style))
             
+        except (FileNotFoundError, RuntimeError) as e:
+            # Re-raise critical errors (like missing rink image) to stop report generation
+            print(f"CRITICAL: Error creating shot location plots: {e}")
+            raise
         except Exception as e:
             print(f"Error creating shot location plots: {e}")
             story.append(Paragraph("Shot location analysis could not be created for this game.", self.normal_style))
