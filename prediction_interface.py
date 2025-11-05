@@ -577,7 +577,7 @@ class PredictionInterface:
         except Exception as e:
             print(f"❌ Error sending Discord notification: {e}")
             return False
-
+    
     def show_model_performance(self):
         """Show current model performance"""
         # Recalculate to ensure fresh data

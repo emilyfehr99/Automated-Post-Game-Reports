@@ -37,7 +37,7 @@ Render offers a free tier with automatic deployments from GitHub.
    - `PORT`: Render sets this automatically, don't override
 
 6. **Click "Create Web Service"**
-
+h
 7. **Wait for deployment** (~2-3 minutes for first build)
 
 8. **Your dashboard will be live at**: `https://your-app-name.onrender.com`

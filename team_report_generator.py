@@ -15,10 +15,11 @@ from collections import defaultdict
 import numpy as np
 import json
 from pathlib import Path
-from datetime import datetime
-from io import BytesIO
+from datetime import datetime, timedelta
+from io import BytesIO, StringIO
 import os
 import requests
+import csv
 
 class TeamReportGenerator(PostGameReportGenerator):
     """Generate comprehensive team reports aggregating data across all games"""
@@ -26,6 +27,143 @@ class TeamReportGenerator(PostGameReportGenerator):
     def __init__(self):
         super().__init__()
         self.api = NHLAPIClient()
+        self._moneypuck_cache = None
+        self._moneypuck_cache_date = None
+    
+    def fetch_moneypuck_data(self, season_year: int = 2025):
+        """Fetch MoneyPuck team data for the specified season. Caches data to disk for 24 hours (refreshes once per day)."""
+        import json
+        import tempfile
+        
+        # Use file-based cache so it persists across script runs
+        cache_file = os.path.join(tempfile.gettempdir(), f'nhl_moneypuck_cache_{season_year}.json')
+        
+        # Try to load from disk cache first
+        if os.path.exists(cache_file):
+            try:
+                with open(cache_file, 'r') as f:
+                    cache_data = json.load(f)
+                    cache_date_str = cache_data.get('date', '')
+                    
+                    # Check if cache is from today
+                    today = datetime.now().date()
+                    cache_date = datetime.strptime(cache_date_str, '%Y-%m-%d').date() if cache_date_str else None
+                    
+                    if cache_date == today:
+                        csv_data = cache_data.get('data', [])
+                        if csv_data:
+                            print(f"Using cached MoneyPuck data from today: {len(csv_data)} rows")
+                            # Also cache in memory
+                            self._moneypuck_cache = csv_data
+                            self._moneypuck_cache_date = today
+                            return csv_data
+            except Exception:
+                # If cache file is corrupted, continue to fetch fresh data
+                pass
+        
+        # Check in-memory cache as fallback
+        today = datetime.now().date()
+        if self._moneypuck_cache and self._moneypuck_cache_date == today:
+            return self._moneypuck_cache
+        
+        # Fetch fresh data
+        try:
+            url = f"https://moneypuck.com/moneypuck/playerData/seasonSummary/{season_year}/regular/teams.csv"
+            response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=30)
+            response.raise_for_status()
+            
+            # Parse CSV
+            csv_data = []
+            csv_reader = csv.DictReader(StringIO(response.text))
+            for row in csv_reader:
+                csv_data.append(row)
+            
+            # Cache to disk (persists across script runs, refreshes once per day)
+            try:
+                cache_data = {
+                    'date': today.isoformat(),
+                    'data': csv_data
+                }
+                with open(cache_file, 'w') as f:
+                    json.dump(cache_data, f)
+            except Exception:
+                # If disk cache fails, fall back to in-memory cache
+                pass
+            
+            # Also cache in memory
+            self._moneypuck_cache = csv_data
+            self._moneypuck_cache_date = today
+            
+            print(f"Fetched MoneyPuck data: {len(csv_data)} rows")
+            return csv_data
+        except Exception as e:
+            print(f"Error fetching MoneyPuck data: {e}")
+            # Try to return cached data if available (even if from previous day)
+            if os.path.exists(cache_file):
+                try:
+                    with open(cache_file, 'r') as f:
+                        cache_data = json.load(f)
+                        csv_data = cache_data.get('data', [])
+                        if csv_data:
+                            print("Using cached MoneyPuck data (may be from previous day)")
+                            return csv_data
+                except Exception:
+                    pass
+            
+            # Return in-memory cache if available
+            if self._moneypuck_cache:
+                print("Using cached MoneyPuck data")
+                return self._moneypuck_cache
+            return []
+    
+    def get_team_rebounds_from_moneypuck(self, team_abbrev: str, situation: str = 'all'):
+        """
+        Get rebounds data from MoneyPuck for a specific team and situation.
+        
+        Args:
+            team_abbrev: Team abbreviation (e.g., 'NJD', 'NYR')
+            situation: Situation filter ('all', 'home', 'away', or period-specific like 'p1', 'p2', 'p3')
+        
+        Returns:
+            dict with 'reboundsFor' and 'reboundsAgainst' or None if not found
+        """
+        moneypuck_data = self.fetch_moneypuck_data()
+        if not moneypuck_data:
+            return None
+        
+        # Find matching rows for this team
+        # The CSV has columns: team, situation, reboundsFor, reboundsAgainst
+        # We need to filter by team and situation
+        team_abbrev_upper = team_abbrev.upper()
+        
+        # MoneyPuck season summary has situations: 'all', '5on5', '4on5', '5on4', 'other'
+        # For home/away/period, we use 'all' situation as the season summary doesn't have that granularity
+        # Note: If more granular data is needed, we'd need to fetch game-by-game data and aggregate
+        
+        # Always use 'all' situation for season summary data
+        moneypuck_situation = 'all'
+        
+        # Try to find team-level data with 'all' situation
+        for row in moneypuck_data:
+            row_team = row.get('team', '').upper()
+            row_situation = row.get('situation', '').lower()
+            row_position = row.get('position', '').lower()
+            
+            # Only process team-level data (position should be 'Team Level' or similar)
+            if row_team == team_abbrev_upper and row_position.lower() in ('', 'team', 'teamall', 'team level'):
+                # Check if situation matches
+                if row_situation == moneypuck_situation:
+                    try:
+                        rebounds_for = float(row.get('reboundsFor', 0))
+                        rebounds_against = float(row.get('reboundsAgainst', 0))
+                        return {
+                            'reboundsFor': rebounds_for,
+                            'reboundsAgainst': rebounds_against
+                        }
+                    except (ValueError, TypeError):
+                        continue
+        
+        return None
     
     def get_team_games(self, team_abbrev: str, season_start_date: str = None):
         """Get all games for a team from predictions file"""
@@ -107,8 +245,14 @@ class TeamReportGenerator(PostGameReportGenerator):
             'clutch': {
                 'third_period_goals': 0,
                 'one_goal_games': 0,
-                'one_goal_wins': 0
+                'one_goal_wins': 0,
+                'comeback_wins': 0,  # Wins when trailing after 2 periods
+                'scored_first_wins': 0,  # Games won when scoring first
+                'scored_first_losses': 0,  # Games lost when scoring first
+                'opponent_scored_first_wins': 0,  # Games won when opponent scored first
+                'opponent_scored_first_losses': 0,  # Games lost when opponent scored first
             },
+            'current_streak': {'type': 'none', 'count': 0},  # 'win', 'loss', or 'none'
             
             # Home stats
             'home': {
@@ -241,6 +385,41 @@ class TeamReportGenerator(PostGameReportGenerator):
                     if game_info['won']:
                         aggregated['clutch']['one_goal_wins'] += 1
                 
+                # Track comeback wins (winning when trailing after 2 periods)
+                if 'play_by_play' in game_data:
+                    period_goals_list, _, _ = self._calculate_goals_by_period(game_data, team_id)
+                    # Get opponent goals by period
+                    opp_period_goals_list, _, _ = self._calculate_goals_by_period(game_data, opponent_data.get('id'))
+                    
+                    # Check if trailing after 2 periods (periods 1 and 2, indices 0 and 1)
+                    team_goals_after_2 = period_goals_list[0] + period_goals_list[1]
+                    opp_goals_after_2 = opp_period_goals_list[0] + opp_period_goals_list[1]
+                    
+                    if team_goals_after_2 < opp_goals_after_2 and game_info['won']:
+                        aggregated['clutch']['comeback_wins'] += 1
+                
+                # Track scoring first
+                if 'play_by_play' in game_data and 'plays' in game_data['play_by_play']:
+                    first_goal_scorer = None
+                    for play in game_data['play_by_play']['plays']:
+                        if play.get('typeDescKey') == 'goal':
+                            details = play.get('details', {})
+                            first_goal_scorer = details.get('eventOwnerTeamId')
+                            break  # First goal found
+                    
+                    if first_goal_scorer == team_id:
+                        # Team scored first
+                        if game_info['won']:
+                            aggregated['clutch']['scored_first_wins'] += 1
+                        else:
+                            aggregated['clutch']['scored_first_losses'] += 1
+                    elif first_goal_scorer == opponent_data.get('id'):
+                        # Opponent scored first
+                        if game_info['won']:
+                            aggregated['clutch']['opponent_scored_first_wins'] += 1
+                        else:
+                            aggregated['clutch']['opponent_scored_first_losses'] += 1
+                
                 aggregated[venue_key]['goals_for'].append(goals_for)
                 aggregated[venue_key]['goals_against'].append(goals_against)
                 aggregated[venue_key]['shots_for'].append(shots_for)
@@ -372,6 +551,22 @@ class TeamReportGenerator(PostGameReportGenerator):
         aggregated['home_win_pct'] = (aggregated['home_wins'] / home_games * 100) if home_games > 0 else 0.0
         aggregated['away_win_pct'] = (aggregated['away_wins'] / away_games * 100) if away_games > 0 else 0.0
         
+        # Calculate current win/loss streak (from most recent games)
+        if games:
+            current_streak_type = None
+            current_streak_count = 0
+            # Go through games in reverse order (most recent first)
+            for game_info in reversed(games):
+                won = game_info['won']
+                if current_streak_type is None:
+                    current_streak_type = 'win' if won else 'loss'
+                    current_streak_count = 1
+                elif (current_streak_type == 'win' and won) or (current_streak_type == 'loss' and not won):
+                    current_streak_count += 1
+                else:
+                    break  # Streak broken
+            aggregated['current_streak'] = {'type': current_streak_type, 'count': current_streak_count}
+        
         return aggregated
     
     def create_header_image(self, team_abbrev: str):
@@ -386,10 +581,10 @@ class TeamReportGenerator(PostGameReportGenerator):
                 'CAR': 'Carolina Hurricanes', 'WSH': 'Washington Capitals', 'PIT': 'Pittsburgh Penguins',
                 'NYR': 'New York Rangers', 'NYI': 'New York Islanders', 'NJD': 'New Jersey Devils',
                 'PHI': 'Philadelphia Flyers', 'CBJ': 'Columbus Blue Jackets', 'STL': 'St. Louis Blues',
-                'MIN': 'Minnesota Wild', 'WPG': 'Winnipeg Jets', 'ARI': 'Arizona Coyotes',
+                'MIN': 'Minnesota Wild', 'WPG': 'Winnipeg Jets',
                 'VGK': 'Vegas Golden Knights', 'SJS': 'San Jose Sharks', 'LAK': 'Los Angeles Kings',
                 'ANA': 'Anaheim Ducks', 'CGY': 'Calgary Flames', 'VAN': 'Vancouver Canucks',
-                'SEA': 'Seattle Kraken', 'UTA': 'Utah Hockey Club', 'CHI': 'Chicago Blackhawks'
+                'SEA': 'Seattle Kraken', 'UTA': 'Utah Hockey Club', 'CHI': 'Chicago Blackhawks'  # Note: UTA may also be referred to as Utah Mammoth
             }
             
             full_team_name = team_names.get(team_abbrev, team_abbrev)
@@ -450,7 +645,7 @@ class TeamReportGenerator(PostGameReportGenerator):
                 'MTL': 'mtl', 'OTT': 'ott', 'BUF': 'buf', 'DET': 'det',
                 'CAR': 'car', 'WSH': 'wsh', 'PIT': 'pit', 'NYR': 'nyr',
                 'NYI': 'nyi', 'NJD': 'nj', 'PHI': 'phi', 'CBJ': 'cbj',
-                'STL': 'stl', 'MIN': 'min', 'WPG': 'wpg', 'ARI': 'ari',
+                'STL': 'stl', 'MIN': 'min', 'WPG': 'wpg',
                 'VGK': 'vgk', 'SJS': 'sj', 'LAK': 'la', 'ANA': 'ana',
                 'CGY': 'cgy', 'VAN': 'van', 'SEA': 'sea', 'CHI': 'chi',
                 'UTA': 'utah'
@@ -491,11 +686,28 @@ class TeamReportGenerator(PostGameReportGenerator):
             
             draw.text((subtitle_x, subtitle_y), subtitle_text, font=subtitle_font, fill=(127, 127, 127))
             
-            # Draw grey line below subtitle
+            # Get team primary color for the line (must match team_colors dictionary)
+            team_primary_colors_rgb = {
+                'TBL': (0, 32, 91), 'NSH': (255, 184, 28), 'EDM': (0, 32, 91),  # Tampa - Blue (PANTONE 281 C), Nashville - Gold, Edmonton - Royal Blue
+                'FLA': (200, 16, 46), 'COL': (111, 38, 61), 'DAL': (0, 132, 61),  # Florida - Red, Colorado - Burgundy, Dallas - Victory Green
+                'BOS': (255, 184, 28), 'TOR': (0, 32, 91), 'MTL': (166, 25, 46),  # Boston - Gold, Toronto - Blue, Montreal - Red
+                'OTT': (200, 16, 46), 'BUF': (0, 48, 135), 'DET': (200, 16, 46),  # Ottawa - Red, Buffalo - Royal Blue, Detroit - Red
+                'CAR': (200, 16, 46), 'WSH': (200, 16, 46), 'PIT': (255, 184, 28),  # Carolina - Red, Washington - Red, Pittsburgh - Gold
+                'NYR': (0, 50, 160), 'NYI': (0, 48, 135), 'NJD': (200, 16, 46),  # NY Rangers - Blue, NY Islanders - Royal Blue, New Jersey - Red
+                'PHI': (207, 69, 32), 'CBJ': (4, 30, 66), 'STL': (0, 114, 206),  # Philadelphia - Orange, Columbus - Union Blue, St. Louis - Blue
+                'MIN': (21, 71, 52), 'WPG': (4, 30, 66),  # Minnesota - Forest Green, Winnipeg - Polar Night Blue
+                'VGK': (185, 151, 91), 'SJS': (0, 98, 113), 'LAK': (1, 1, 1),  # Vegas - Gold, San Jose - Deep Pacific Teal, LA Kings - Black
+                'ANA': (207, 69, 32), 'CGY': (200, 16, 46), 'VAN': (0, 132, 61),  # Anaheim - Orange (PANTONE 173 C), Calgary - Red (PANTONE 186 C), Vancouver - Green (PANTONE 348 C)
+                'SEA': (200, 16, 46), 'UTA': (1, 1, 1), 'CHI': (207, 10, 44)  # Seattle - Red Alert, Utah - Rock Black
+            }
+            primary_color_rgb = team_primary_colors_rgb.get(team_abbrev, (127, 127, 127))
+            
+            # Draw primary color line below subtitle (thicker: 12 pixels)
             line_y = subtitle_y + subtitle_text_height + 42
             line_start_x = subtitle_x
             line_width = subtitle_text_width
-            draw.rectangle([line_start_x, line_y, line_start_x + line_width, line_y + 2], fill=(127, 127, 127))
+            line_thickness = 12  # Thicker line (was 7, now 12)
+            draw.rectangle([line_start_x, line_y, line_start_x + line_width, line_y + line_thickness], fill=primary_color_rgb)
             
             # Save to temporary file (same format as parent class) - use absolute path
             modified_header_path = os.path.join(script_dir, f"temp_header_{team_abbrev}_{os.getpid()}.png")
@@ -571,25 +783,61 @@ class TeamReportGenerator(PostGameReportGenerator):
         
         # Get team color
         team_colors = {
-            'TBL': colors.Color(0/255, 40/255, 104/255), 'NSH': colors.Color(255/255, 184/255, 28/255),
-            'EDM': colors.Color(4/255, 30/255, 66/255), 'FLA': colors.Color(200/255, 16/255, 46/255),
-            'COL': colors.Color(111/255, 38/255, 61/255), 'DAL': colors.Color(0/255, 99/255, 65/255),
-            'BOS': colors.Color(252/255, 181/255, 20/255), 'TOR': colors.Color(0/255, 32/255, 91/255),
-            'MTL': colors.Color(175/255, 30/255, 45/255), 'OTT': colors.Color(200/255, 16/255, 46/255),
-            'BUF': colors.Color(0/255, 38/255, 84/255), 'DET': colors.Color(206/255, 17/255, 38/255),
-            'CAR': colors.Color(226/255, 24/255, 54/255), 'WSH': colors.Color(4/255, 30/255, 66/255),
-            'PIT': colors.Color(255/255, 184/255, 28/255), 'NYR': colors.Color(0/255, 56/255, 168/255),
-            'NYI': colors.Color(0/255, 83/255, 155/255), 'NJD': colors.Color(206/255, 17/255, 38/255),
-            'PHI': colors.Color(247/255, 30/255, 36/255), 'CBJ': colors.Color(0/255, 38/255, 84/255),
-            'STL': colors.Color(0/255, 47/255, 108/255), 'MIN': colors.Color(0/255, 99/255, 65/255),
-            'WPG': colors.Color(4/255, 30/255, 66/255), 'ARI': colors.Color(140/255, 38/255, 51/255),
-            'VGK': colors.Color(185/255, 151/255, 91/255), 'SJS': colors.Color(0/255, 109/255, 117/255),
-            'LAK': colors.Color(162/255, 170/255, 173/255), 'ANA': colors.Color(185/255, 151/255, 91/255),
-            'CGY': colors.Color(200/255, 16/255, 46/255), 'VAN': colors.Color(0/255, 32/255, 91/255),
-            'SEA': colors.Color(0/255, 22/255, 40/255), 'UTA': colors.Color(105/255, 179/255, 231/255),
+            'TBL': colors.Color(0/255, 32/255, 91/255), 'NSH': colors.Color(255/255, 184/255, 28/255),  # Tampa - Blue (PANTONE 281 C), Nashville - Gold (PANTONE 1235 C)
+            'EDM': colors.Color(0/255, 32/255, 91/255), 'FLA': colors.Color(200/255, 16/255, 46/255),  # Edmonton - Royal Blue (PANTONE 281 C), Florida - Red (PANTONE 186 C)
+            'COL': colors.Color(111/255, 38/255, 61/255), 'DAL': colors.Color(0/255, 132/255, 61/255),  # Colorado - Burgundy (PANTONE 209 C), Dallas - Victory Green (PANTONE 348 C)
+            'BOS': colors.Color(255/255, 184/255, 28/255), 'TOR': colors.Color(0/255, 32/255, 91/255),  # Boston - Gold (PANTONE 1235 C)
+            'MTL': colors.Color(166/255, 25/255, 46/255), 'OTT': colors.Color(200/255, 16/255, 46/255),  # Montreal - Red (PANTONE 187 C), Ottawa - Red (PANTONE 186 C)
+            'BUF': colors.Color(0/255, 48/255, 135/255), 'DET': colors.Color(200/255, 16/255, 46/255),  # Buffalo - Royal Blue (PANTONE 287 C), Detroit - Red (PANTONE 186 C)
+            'CAR': colors.Color(200/255, 16/255, 46/255), 'WSH': colors.Color(200/255, 16/255, 46/255),  # Carolina - Red (PANTONE 186 C), Washington - Red (PANTONE 186 C)
+            'PIT': colors.Color(255/255, 184/255, 28/255), 'NYR': colors.Color(0/255, 50/255, 160/255),  # Pittsburgh - Gold (PANTONE 1235 C), NY Rangers - Blue (PANTONE 286 C)
+            'NYI': colors.Color(0/255, 48/255, 135/255), 'NJD': colors.Color(200/255, 16/255, 46/255),  # NY Islanders - Royal Blue (PANTONE 287 C), New Jersey - Red (PANTONE 186 C)
+            'PHI': colors.Color(207/255, 69/255, 32/255), 'CBJ': colors.Color(4/255, 30/255, 66/255),  # Philadelphia - Orange (PANTONE 173 C), Columbus - Union Blue (PANTONE 282 C)
+            'STL': colors.Color(0/255, 114/255, 206/255), 'MIN': colors.Color(21/255, 71/255, 52/255),  # St. Louis - Blue (PANTONE 285 C), Minnesota - Forest Green (PANTONE 3435 C)
+            'WPG': colors.Color(4/255, 30/255, 66/255),
+            'VGK': colors.Color(185/255, 151/255, 91/255), 'SJS': colors.Color(0/255, 98/255, 113/255),  # Vegas - Gold (PANTONE 465 C), San Jose - Deep Pacific Teal (PANTONE 3155 C)
+            'LAK': colors.Color(1/255, 1/255, 1/255), 'ANA': colors.Color(207/255, 69/255, 32/255),  # LA Kings - Black, Anaheim - Orange (PANTONE 173 C)
+            'CGY': colors.Color(200/255, 16/255, 46/255), 'VAN': colors.Color(0/255, 132/255, 61/255),  # Calgary - Red (PANTONE 186 C), Vancouver - Green (PANTONE 348 C) - Primary
+            'SEA': colors.Color(200/255, 16/255, 46/255), 'UTA': colors.Color(1/255, 1/255, 1/255),  # Seattle - Red Alert (PANTONE 186 C), Utah - Rock Black
             'CHI': colors.Color(207/255, 10/255, 44/255)
         }
+        # Accent colors for row labels (first column)
+        team_accent_colors = {
+            'TBL': colors.Color(1/255, 1/255, 1/255),  # Tampa - Black
+            'NSH': colors.Color(4/255, 30/255, 66/255),  # Nashville - Dark Blue (PANTONE 282 C)
+            'EDM': colors.Color(207/255, 69/255, 32/255),  # Edmonton - Orange (PANTONE 173 C)
+            'FLA': colors.Color(185/255, 151/255, 91/255),  # Florida - Gold (PANTONE 465 C)
+            'COL': colors.Color(35/255, 97/255, 146/255),  # Colorado - Steel Blue (PANTONE 647 C)
+            'DAL': colors.Color(1/255, 1/255, 1/255),  # Dallas - Black
+            'BOS': colors.Color(0/255, 0/255, 0/255),  # Boston - Black
+            'TOR': colors.Color(128/255, 128/255, 128/255),  # Toronto - Gray (approximate)
+            'MTL': colors.Color(0/255, 30/255, 98/255),  # Montreal - Blue (PANTONE 2758 C)
+            'OTT': colors.Color(185/255, 151/255, 91/255),  # Ottawa - Gold (PANTONE 465 C)
+            'BUF': colors.Color(255/255, 184/255, 28/255),  # Buffalo - Gold (PANTONE 1235 C)
+            'DET': colors.Color(128/255, 128/255, 128/255),  # Detroit - Gray (approximate)
+            'CAR': colors.Color(0/255, 0/255, 0/255),  # Carolina - Black
+            'WSH': colors.Color(4/255, 30/255, 66/255),  # Washington - Navy (PANTONE 282 C)
+            'PIT': colors.Color(255/255, 184/255, 28/255),  # Pittsburgh - Gold (PANTONE 1235 C) - primary is gold
+            'NYR': colors.Color(200/255, 16/255, 46/255),  # NY Rangers - Red (PANTONE 186 C)
+            'NYI': colors.Color(252/255, 76/255, 2/255),  # NY Islanders - Orange (PANTONE 1655 C)
+            'NJD': colors.Color(1/255, 1/255, 1/255),  # New Jersey - Black
+            'PHI': colors.Color(1/255, 1/255, 1/255),  # Philadelphia - Black
+            'CBJ': colors.Color(200/255, 16/255, 46/255),  # Columbus - Goal Red (PANTONE 186 C)
+            'STL': colors.Color(255/255, 184/255, 28/255),  # St. Louis - Yellow (PANTONE 1235 C)
+            'MIN': colors.Color(166/255, 25/255, 46/255),  # Minnesota - Iron Range Red (PANTONE 187 C)
+            'WPG': colors.Color(166/255, 25/255, 46/255),  # Winnipeg - Red (PANTONE 187 C)
+            'VGK': colors.Color(1/255, 1/255, 1/255),  # Vegas - Black
+            'SJS': colors.Color(1/255, 1/255, 1/255),  # San Jose - Black
+            'LAK': colors.Color(162/255, 170/255, 173/255),  # LA Kings - Silver (PANTONE 429 C)
+            'ANA': colors.Color(185/255, 151/255, 91/255),  # Anaheim - Gold (PANTONE 465 C)
+            'CGY': colors.Color(241/255, 190/255, 72/255),  # Calgary - Gold (PANTONE 142 C)
+            'VAN': colors.Color(0/255, 32/255, 91/255),  # Vancouver - Blue (PANTONE 281 C)
+            'SEA': colors.Color(156/255, 219/255, 217/255),  # Seattle - Ice Blue (PANTONE 324 C)
+            'UTA': colors.Color(105/255, 179/255, 231/255),  # Utah - Mountain Blue (PANTONE 292 C)
+            'CHI': colors.Color(255/255, 184/255, 28/255)  # Chicago - Gold
+        }
         team_color = team_colors.get(team_abbrev, colors.grey)
+        team_accent_color = team_accent_colors.get(team_abbrev, colors.grey)
         
         # Get record from standings for the table (needed for Record column)
         standings_record = self.get_team_record_from_standings(team_abbrev)
@@ -678,17 +926,29 @@ class TeamReportGenerator(PostGameReportGenerator):
             home_record = f"{stats['home_wins']}-{stats['home_losses']}"
             away_record = f"{stats['away_wins']}-{stats['away_losses']}"
         
-        # Table with all columns plus Record (2nd column) and WinsAX
+        # Get rebounds data from MoneyPuck
+        home_rebounds = self.get_team_rebounds_from_moneypuck(team_abbrev, 'home')
+        away_rebounds = self.get_team_rebounds_from_moneypuck(team_abbrev, 'away')
+        
+        # Calculate per-game averages for rebounds
+        home_avg_rebounds_for = (home_rebounds['reboundsFor'] / home_games) if home_rebounds and home_games > 0 else 0.0
+        home_avg_rebounds_against = (home_rebounds['reboundsAgainst'] / home_games) if home_rebounds and home_games > 0 else 0.0
+        away_avg_rebounds_for = (away_rebounds['reboundsFor'] / away_games) if away_rebounds and away_games > 0 else 0.0
+        away_avg_rebounds_against = (away_rebounds['reboundsAgainst'] / away_games) if away_rebounds and away_games > 0 else 0.0
+        
+        # Table with all columns plus Record (2nd column), Wins Above Expected, and Rebounds
+        # Column order: ... DZS, REB, REBA, FC, Rush, Wins Above Expected
         comparison_data = [
-            # Header row (added Record as 2nd column, WinsAX at end)
-            ['Venue', 'Record', 'GF', 'S', 'CF%', 'PP%', 'PIM', 'Hits', 'FO%', 'BLK', 'GV', 'TK', 'GS', 'xG', 'NZT', 'NZTSA', 'OZS', 'NZS', 'DZS', 'FC', 'Rush', 'WinsAX'],
+            # Header row (Rebounds columns moved to after DZS, before FC and Rush)
+            ['Venue', 'Record', 'GF', 'S', 'CF%', 'PP%', 'PIM', 'Hits', 'FO%', 'BLK', 'GV', 'TK', 'GS', 'xG', 'NZT', 'NZTSA', 'OZS', 'NZS', 'DZS', 'REB', 'REBA', 'FC', 'Rush', 'Wins\nAbove\nExpected'],
             # Home row
             ['Home', home_record,
              f"{home_avg_goals_for:.1f}", f"{home_avg_shots:.1f}", f"{stats['avg_home_corsi']:.1f}%",
              f"{home_pp_display}", f"{home_avg_pim:.1f}", f"{home_avg_hits:.1f}", 
              f"{stats['avg_home_fo']:.1f}%", f"{home_avg_blocks:.1f}", f"{home_avg_gv:.1f}", f"{home_avg_tk:.1f}", 
              f"{home_avg_gs:.1f}", f"{home_avg_xg:.2f}", f"{home_avg_nzt:.1f}", f"{home_avg_nztsa:.1f}",
-             f"{home_avg_ozs:.1f}", f"{home_avg_nzs:.1f}", f"{home_avg_dzs:.1f}", f"{home_avg_fc:.1f}", f"{home_avg_rush:.1f}",
+             f"{home_avg_ozs:.1f}", f"{home_avg_nzs:.1f}", f"{home_avg_dzs:.1f}", f"{home_avg_rebounds_for:.1f}", f"{home_avg_rebounds_against:.1f}",
+             f"{home_avg_fc:.1f}", f"{home_avg_rush:.1f}",
              str(home_wins_ax)],
             # Away row
             ['Away', away_record,
@@ -696,26 +956,35 @@ class TeamReportGenerator(PostGameReportGenerator):
              f"{away_pp_display}", f"{away_avg_pim:.1f}", f"{away_avg_hits:.1f}",
              f"{stats['avg_away_fo']:.1f}%", f"{away_avg_blocks:.1f}", f"{away_avg_gv:.1f}", f"{away_avg_tk:.1f}",
              f"{away_avg_gs:.1f}", f"{away_avg_xg:.2f}", f"{away_avg_nzt:.1f}", f"{away_avg_nztsa:.1f}",
-             f"{away_avg_ozs:.1f}", f"{away_avg_nzs:.1f}", f"{away_avg_dzs:.1f}", f"{away_avg_fc:.1f}", f"{away_avg_rush:.1f}",
+             f"{away_avg_ozs:.1f}", f"{away_avg_nzs:.1f}", f"{away_avg_dzs:.1f}", f"{away_avg_rebounds_for:.1f}", f"{away_avg_rebounds_against:.1f}",
+             f"{away_avg_fc:.1f}", f"{away_avg_rush:.1f}",
              str(away_wins_ax)],
         ]
         
-        # Calculate column widths for 22 columns (added Record as 2nd column)
-        col_widths = [0.5*inch, 0.4*inch, 0.35*inch, 0.35*inch, 0.4*inch, 0.35*inch, 0.35*inch, 0.35*inch, 
-                      0.4*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.4*inch, 0.35*inch, 0.4*inch,
-                      0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.4*inch]
+        # Calculate column widths for 24 columns (22 + 2 rebounds columns)
+        # Slightly wider to ensure all text is viewable: total ~7.25 inches (page is 8.5" with margins)
+        # Increased widths by ~0.01-0.015 inches per column (about 0.15-0.2 cm total increase)
+        col_widths = [0.46*inch, 0.36*inch, 0.31*inch, 0.31*inch, 0.36*inch, 0.31*inch, 0.31*inch, 0.31*inch, 
+                      0.36*inch, 0.31*inch, 0.31*inch, 0.31*inch, 0.31*inch, 0.36*inch, 0.31*inch, 0.36*inch,
+                      0.31*inch, 0.31*inch, 0.31*inch, 0.36*inch, 0.36*inch, 0.31*inch, 0.31*inch, 0.36*inch]
         
         table = Table(comparison_data, colWidths=col_widths)
         table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), team_color),
+            # Header row with accent color
+            ('BACKGROUND', (0, 0), (-1, 0), team_accent_color),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('FONTNAME', (0, 0), (-1, 0), 'RussoOne-Regular'),
             ('FONTSIZE', (0, 0), (-1, 0), 7),
-            ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-            ('BACKGROUND', (0, 1), (-1, 1), colors.beige),
-            ('BACKGROUND', (0, 2), (-1, 2), colors.lightgrey),
+            # Smaller font size for "Wins Above Expected" (index 23) with line breaks
+            # REB and REBA columns (19, 20) now use regular font size since they're shorter
+            ('FONTSIZE', (23, 0), (23, 0), 5),
+            # Minimal padding for header row - just enough to fit the multi-line text
+            ('TOPPADDING', (0, 0), (-1, 0), 4),
+            ('BOTTOMPADDING', (0, 0), (-1, 0), 4),
+            ('BACKGROUND', (0, 1), (-1, 1), colors.white),
+            ('BACKGROUND', (0, 2), (-1, 2), colors.white),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
             ('FONTNAME', (0, 1), (-1, -1), 'RussoOne-Regular'),
             ('FONTSIZE', (0, 1), (-1, -1), 6),
@@ -734,25 +1003,61 @@ class TeamReportGenerator(PostGameReportGenerator):
         
         # Get team color
         team_colors = {
-            'TBL': colors.Color(0/255, 40/255, 104/255), 'NSH': colors.Color(255/255, 184/255, 28/255),
-            'EDM': colors.Color(4/255, 30/255, 66/255), 'FLA': colors.Color(200/255, 16/255, 46/255),
-            'COL': colors.Color(111/255, 38/255, 61/255), 'DAL': colors.Color(0/255, 99/255, 65/255),
-            'BOS': colors.Color(252/255, 181/255, 20/255), 'TOR': colors.Color(0/255, 32/255, 91/255),
-            'MTL': colors.Color(175/255, 30/255, 45/255), 'OTT': colors.Color(200/255, 16/255, 46/255),
-            'BUF': colors.Color(0/255, 38/255, 84/255), 'DET': colors.Color(206/255, 17/255, 38/255),
-            'CAR': colors.Color(226/255, 24/255, 54/255), 'WSH': colors.Color(4/255, 30/255, 66/255),
-            'PIT': colors.Color(255/255, 184/255, 28/255), 'NYR': colors.Color(0/255, 56/255, 168/255),
-            'NYI': colors.Color(0/255, 83/255, 155/255), 'NJD': colors.Color(206/255, 17/255, 38/255),
-            'PHI': colors.Color(247/255, 30/255, 36/255), 'CBJ': colors.Color(0/255, 38/255, 84/255),
-            'STL': colors.Color(0/255, 47/255, 108/255), 'MIN': colors.Color(0/255, 99/255, 65/255),
-            'WPG': colors.Color(4/255, 30/255, 66/255), 'ARI': colors.Color(140/255, 38/255, 51/255),
-            'VGK': colors.Color(185/255, 151/255, 91/255), 'SJS': colors.Color(0/255, 109/255, 117/255),
-            'LAK': colors.Color(162/255, 170/255, 173/255), 'ANA': colors.Color(185/255, 151/255, 91/255),
-            'CGY': colors.Color(200/255, 16/255, 46/255), 'VAN': colors.Color(0/255, 32/255, 91/255),
-            'SEA': colors.Color(0/255, 22/255, 40/255), 'UTA': colors.Color(105/255, 179/255, 231/255),
+            'TBL': colors.Color(0/255, 32/255, 91/255), 'NSH': colors.Color(255/255, 184/255, 28/255),  # Tampa - Blue (PANTONE 281 C), Nashville - Gold (PANTONE 1235 C)
+            'EDM': colors.Color(0/255, 32/255, 91/255), 'FLA': colors.Color(200/255, 16/255, 46/255),  # Edmonton - Royal Blue (PANTONE 281 C), Florida - Red (PANTONE 186 C)
+            'COL': colors.Color(111/255, 38/255, 61/255), 'DAL': colors.Color(0/255, 132/255, 61/255),  # Colorado - Burgundy (PANTONE 209 C), Dallas - Victory Green (PANTONE 348 C)
+            'BOS': colors.Color(255/255, 184/255, 28/255), 'TOR': colors.Color(0/255, 32/255, 91/255),  # Boston - Gold (PANTONE 1235 C)
+            'MTL': colors.Color(166/255, 25/255, 46/255), 'OTT': colors.Color(200/255, 16/255, 46/255),  # Montreal - Red (PANTONE 187 C), Ottawa - Red (PANTONE 186 C)
+            'BUF': colors.Color(0/255, 48/255, 135/255), 'DET': colors.Color(200/255, 16/255, 46/255),  # Buffalo - Royal Blue (PANTONE 287 C), Detroit - Red (PANTONE 186 C)
+            'CAR': colors.Color(200/255, 16/255, 46/255), 'WSH': colors.Color(200/255, 16/255, 46/255),  # Carolina - Red (PANTONE 186 C), Washington - Red (PANTONE 186 C)
+            'PIT': colors.Color(255/255, 184/255, 28/255), 'NYR': colors.Color(0/255, 50/255, 160/255),  # Pittsburgh - Gold (PANTONE 1235 C), NY Rangers - Blue (PANTONE 286 C)
+            'NYI': colors.Color(0/255, 48/255, 135/255), 'NJD': colors.Color(200/255, 16/255, 46/255),  # NY Islanders - Royal Blue (PANTONE 287 C), New Jersey - Red (PANTONE 186 C)
+            'PHI': colors.Color(207/255, 69/255, 32/255), 'CBJ': colors.Color(4/255, 30/255, 66/255),  # Philadelphia - Orange (PANTONE 173 C), Columbus - Union Blue (PANTONE 282 C)
+            'STL': colors.Color(0/255, 114/255, 206/255), 'MIN': colors.Color(21/255, 71/255, 52/255),  # St. Louis - Blue (PANTONE 285 C), Minnesota - Forest Green (PANTONE 3435 C)
+            'WPG': colors.Color(4/255, 30/255, 66/255),
+            'VGK': colors.Color(185/255, 151/255, 91/255), 'SJS': colors.Color(0/255, 98/255, 113/255),  # Vegas - Gold (PANTONE 465 C), San Jose - Deep Pacific Teal (PANTONE 3155 C)
+            'LAK': colors.Color(1/255, 1/255, 1/255), 'ANA': colors.Color(207/255, 69/255, 32/255),  # LA Kings - Black, Anaheim - Orange (PANTONE 173 C)
+            'CGY': colors.Color(200/255, 16/255, 46/255), 'VAN': colors.Color(0/255, 132/255, 61/255),  # Calgary - Red (PANTONE 186 C), Vancouver - Green (PANTONE 348 C) - Primary
+            'SEA': colors.Color(200/255, 16/255, 46/255), 'UTA': colors.Color(1/255, 1/255, 1/255),  # Seattle - Red Alert (PANTONE 186 C), Utah - Rock Black
             'CHI': colors.Color(207/255, 10/255, 44/255)
         }
+        # Accent colors for row labels (first column) - not used in movement patterns but defined for consistency
+        team_accent_colors = {
+            'TBL': colors.Color(1/255, 1/255, 1/255),  # Tampa - Black
+            'NSH': colors.Color(4/255, 30/255, 66/255),  # Nashville - Dark Blue (PANTONE 282 C)
+            'EDM': colors.Color(207/255, 69/255, 32/255),  # Edmonton - Orange (PANTONE 173 C)
+            'FLA': colors.Color(185/255, 151/255, 91/255),  # Florida - Gold (PANTONE 465 C)
+            'COL': colors.Color(35/255, 97/255, 146/255),  # Colorado - Steel Blue (PANTONE 647 C)
+            'DAL': colors.Color(1/255, 1/255, 1/255),  # Dallas - Black
+            'BOS': colors.Color(0/255, 0/255, 0/255),  # Boston - Black
+            'TOR': colors.Color(128/255, 128/255, 128/255),  # Toronto - Gray (approximate)
+            'MTL': colors.Color(0/255, 30/255, 98/255),  # Montreal - Blue (PANTONE 2758 C)
+            'OTT': colors.Color(185/255, 151/255, 91/255),  # Ottawa - Gold (PANTONE 465 C)
+            'BUF': colors.Color(255/255, 184/255, 28/255),  # Buffalo - Gold (PANTONE 1235 C)
+            'DET': colors.Color(128/255, 128/255, 128/255),  # Detroit - Gray (approximate)
+            'CAR': colors.Color(0/255, 0/255, 0/255),  # Carolina - Black
+            'WSH': colors.Color(4/255, 30/255, 66/255),  # Washington - Navy (PANTONE 282 C)
+            'PIT': colors.Color(255/255, 184/255, 28/255),  # Pittsburgh - Gold (PANTONE 1235 C) - primary is gold
+            'NYR': colors.Color(200/255, 16/255, 46/255),  # NY Rangers - Red (PANTONE 186 C)
+            'NYI': colors.Color(252/255, 76/255, 2/255),  # NY Islanders - Orange (PANTONE 1655 C)
+            'NJD': colors.Color(1/255, 1/255, 1/255),  # New Jersey - Black
+            'PHI': colors.Color(1/255, 1/255, 1/255),  # Philadelphia - Black
+            'CBJ': colors.Color(200/255, 16/255, 46/255),  # Columbus - Goal Red (PANTONE 186 C)
+            'STL': colors.Color(255/255, 184/255, 28/255),  # St. Louis - Yellow (PANTONE 1235 C)
+            'MIN': colors.Color(166/255, 25/255, 46/255),  # Minnesota - Iron Range Red (PANTONE 187 C)
+            'WPG': colors.Color(166/255, 25/255, 46/255),  # Winnipeg - Red (PANTONE 187 C)
+            'VGK': colors.Color(1/255, 1/255, 1/255),  # Vegas - Black
+            'SJS': colors.Color(1/255, 1/255, 1/255),  # San Jose - Black
+            'LAK': colors.Color(162/255, 170/255, 173/255),  # LA Kings - Silver (PANTONE 429 C)
+            'ANA': colors.Color(185/255, 151/255, 91/255),  # Anaheim - Gold (PANTONE 465 C)
+            'CGY': colors.Color(241/255, 190/255, 72/255),  # Calgary - Gold (PANTONE 142 C)
+            'VAN': colors.Color(0/255, 32/255, 91/255),  # Vancouver - Blue (PANTONE 281 C)
+            'SEA': colors.Color(156/255, 219/255, 217/255),  # Seattle - Ice Blue (PANTONE 324 C)
+            'UTA': colors.Color(105/255, 179/255, 231/255),  # Utah - Mountain Blue (PANTONE 292 C)
+            'CHI': colors.Color(255/255, 184/255, 28/255)  # Chicago - Gold
+        }
         team_color = team_colors.get(team_abbrev, colors.grey)
+        team_accent_color = team_accent_colors.get(team_abbrev, colors.grey)
         
         # Collect movement data
         home_lateral = stats['home']['lateral'] if stats['home']['lateral'] else []
@@ -824,15 +1129,16 @@ class TeamReportGenerator(PostGameReportGenerator):
         
         movement_table = Table(movement_data, colWidths=[0.8*inch, 1.3*inch, 1.3*inch])
         movement_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), team_color),
+            # Header row with accent color
+            ('BACKGROUND', (0, 0), (-1, 0), team_accent_color),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('FONTNAME', (0, 0), (-1, -1), 'RussoOne-Regular'),
             ('FONTSIZE', (0, 0), (-1, -1), 7),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
-            ('BACKGROUND', (0, 1), (-1, 1), colors.beige),
-            ('BACKGROUND', (0, 2), (-1, 2), colors.lightgrey),
+            ('BACKGROUND', (0, 1), (-1, 1), colors.white),
+            ('BACKGROUND', (0, 2), (-1, 2), colors.white),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
             ('FONTNAME', (0, 1), (-1, -1), 'RussoOne-Regular'),
             ('FONTSIZE', (0, 1), (-1, -1), 7),
@@ -951,7 +1257,8 @@ class TeamReportGenerator(PostGameReportGenerator):
         # Adjust: moved up 5cm = 5 * 72 / 2.54 ≈ 141.7 points, then down 3cm = 3 * 72 / 2.54 ≈ 85.0 points
         # Then down another 7cm = 7 * 72 / 2.54 ≈ 198.4 points, then down 0.5cm = 0.5 * 72 / 2.54 ≈ 14.2 points
         # Then down another 1.5cm = 1.5 * 72 / 2.54 ≈ 42.5 points
-        title_shift_up_points = 170.0 + 141.7 - 85.0 - 198.4 - 14.2 - 42.5  # Shift: 170pt + 141.7pt (5cm) - 85.0pt (3cm) - 198.4pt (7cm) - 14.2pt (0.5cm) - 42.5pt (1.5cm) = -28.4pt
+        # Move up 0.3cm = 0.3 * 72 / 2.54 ≈ 8.5 points
+        title_shift_up_points = 170.0 + 141.7 - 85.0 - 198.4 - 14.2 - 42.5 + 8.5  # Shift: 170pt + 141.7pt (5cm) - 85.0pt (3cm) - 198.4pt (7cm) - 14.2pt (0.5cm) - 42.5pt (1.5cm) + 8.5pt (0.3cm up) = -19.9pt
         title_wrapper_shifted = CenteredShiftFlowable(title_wrapper, title_shift_up_points, title_width, left_position=title_bar_left, center_vertically=False)
         
         # Movement table wrapper - positioned directly, no LEFTPADDING
@@ -966,7 +1273,8 @@ class TeamReportGenerator(PostGameReportGenerator):
         # Movement table - positioned just below title (about 25pt lower for title height)
         # Adjust: moved up 5cm = 5 * 72 / 2.54 ≈ 141.7 points, then down 3cm = 3 * 72 / 2.54 ≈ 85.0 points
         # Then down another 7cm = 7 * 72 / 2.54 ≈ 198.4 points, then down 1.5cm = 1.5 * 72 / 2.54 ≈ 42.5 points
-        table_shift_up_points = 145.0 + 141.7 - 85.0 - 198.4 - 42.5  # Shift: 145pt + 141.7pt (5cm) - 85.0pt (3cm) - 198.4pt (7cm) - 42.5pt (1.5cm) = -39.2pt
+        # Move up 0.3cm = 0.3 * 72 / 2.54 ≈ 8.5 points, then another 0.2cm = 0.2 * 72 / 2.54 ≈ 5.7 points
+        table_shift_up_points = 145.0 + 141.7 - 85.0 - 198.4 - 42.5 + 8.5 + 5.7  # Shift: 145pt + 141.7pt (5cm) - 85.0pt (3cm) - 198.4pt (7cm) - 42.5pt (1.5cm) + 8.5pt (0.3cm up) + 5.7pt (0.2cm up) = -25.0pt
         movement_wrapper_shifted = CenteredShiftFlowable(movement_wrapper, table_shift_up_points, movement_table_width, left_position=movement_table_left, center_vertically=False)
         
         story.append(title_wrapper_shifted)
@@ -1022,6 +1330,7 @@ class TeamReportGenerator(PostGameReportGenerator):
             goals_against = [g['goals_against'] for g in games]
             xg_for = [g['xG_for'] for g in games]
             
+            # Use original colors for lines
             ax1.plot(game_nums, goals_for, label='GF', marker='o', markersize=3, 
                     linewidth=1.5, color='green', alpha=0.7)
             ax1.plot(game_nums, goals_against, label='GA', marker='s', markersize=3,
@@ -1040,6 +1349,11 @@ class TeamReportGenerator(PostGameReportGenerator):
                 ax1.set_xlabel('Game Number', fontsize=9, fontweight='bold', fontproperties=russo_font_prop)
                 ax1.set_ylabel('Goals / Expected Goals', fontsize=9, fontweight='bold', color='black', fontproperties=russo_font_prop)
                 ax1.tick_params(axis='both', labelsize=8)
+                # Set tick label font to Russo One
+                for label in ax1.get_xticklabels():
+                    label.set_fontproperties(russo_font_prop)
+                for label in ax1.get_yticklabels():
+                    label.set_fontproperties(russo_font_prop)
                 ax1.legend(loc='upper left', fontsize=7, prop=russo_font_prop)
                 plt.title(f'{team_abbrev} Performance Trends', fontsize=10, fontweight='bold', pad=10, fontproperties=russo_font_prop)
             else:
@@ -1065,6 +1379,9 @@ class TeamReportGenerator(PostGameReportGenerator):
             if russo_font_prop:
                 ax2.set_ylabel('Cumulative Win %', fontsize=9, fontweight='bold', color='purple', fontproperties=russo_font_prop)
                 ax2.tick_params(axis='y', labelsize=8, labelcolor='purple')
+                # Set tick label font to Russo One
+                for label in ax2.get_yticklabels():
+                    label.set_fontproperties(russo_font_prop)
             else:
                 ax2.set_ylabel('Cumulative Win %', fontsize=9, fontweight='bold', color='purple')
                 ax2.tick_params(axis='y', labelsize=8, labelcolor='purple')
@@ -1294,14 +1611,14 @@ class TeamReportGenerator(PostGameReportGenerator):
                 if val >= 50:
                     # Green to yellow gradient (50-100%)
                     ratio = (val - 50) / 50.0
-                    r = ratio * 0.2  # Green to yellow
-                    g = 0.8 + ratio * 0.2
-                    b = ratio * 0.2
+                    r = min(1.0, max(0.0, ratio * 0.2))  # Green to yellow, clamped
+                    g = min(1.0, max(0.0, 0.8 + ratio * 0.2))  # Clamped
+                    b = min(1.0, max(0.0, ratio * 0.2))  # Clamped
                 else:
                     # Yellow to red gradient (0-50%)
                     ratio = val / 50.0
-                    r = 0.8 + ratio * 0.2
-                    g = 0.8 - ratio * 0.8
+                    r = min(1.0, max(0.0, 0.8 + ratio * 0.2))  # Clamped
+                    g = min(1.0, max(0.0, 0.8 - ratio * 0.8))  # Clamped
                     b = 0.0
                 colors_list.append((r, g, b))
             
@@ -1334,6 +1651,11 @@ class TeamReportGenerator(PostGameReportGenerator):
                 ax.set_ylabel('Rolling Win %', fontsize=9, fontweight='bold', 
                              fontproperties=russo_font_prop, alpha=0.7)
                 ax.tick_params(axis='both', labelsize=7, labelcolor='black')
+                # Set tick label font to Russo One
+                for label in ax.get_xticklabels():
+                    label.set_fontproperties(russo_font_prop)
+                for label in ax.get_yticklabels():
+                    label.set_fontproperties(russo_font_prop)
                 plt.title('Momentum Wave', fontsize=11, fontweight='bold', 
                          pad=8, fontproperties=russo_font_prop, alpha=0.9)
             else:
@@ -1393,9 +1715,9 @@ class TeamReportGenerator(PostGameReportGenerator):
                     image_width = self.width
                     center_x = (page_width - image_width) / 2.0
                     
-                    # Position vertically - moved down by 14.5cm from center (7cm + 3cm + 4.5cm)
-                    # 14.5cm = 14.5 * 72 / 2.54 ≈ 411.0 points
-                    shift_down_cm = 14.5
+                    # Position vertically - moved down by 13.6cm from center (7cm + 3cm + 4.5cm - 0.3cm up - 0.3cm up - 0.5cm up + 0.2cm down)
+                    # 13.6cm = 13.6 * 72 / 2.54 ≈ 385.5 points
+                    shift_down_cm = 13.6
                     shift_down_points = shift_down_cm * 72 / 2.54
                     
                     if current_y is not None:
@@ -1496,25 +1818,61 @@ class TeamReportGenerator(PostGameReportGenerator):
         
         # Get team color
         team_colors = {
-            'TBL': colors.Color(0/255, 40/255, 104/255), 'NSH': colors.Color(255/255, 184/255, 28/255),
-            'EDM': colors.Color(4/255, 30/255, 66/255), 'FLA': colors.Color(200/255, 16/255, 46/255),
-            'COL': colors.Color(111/255, 38/255, 61/255), 'DAL': colors.Color(0/255, 99/255, 65/255),
-            'BOS': colors.Color(252/255, 181/255, 20/255), 'TOR': colors.Color(0/255, 32/255, 91/255),
-            'MTL': colors.Color(175/255, 30/255, 45/255), 'OTT': colors.Color(200/255, 16/255, 46/255),
-            'BUF': colors.Color(0/255, 38/255, 84/255), 'DET': colors.Color(206/255, 17/255, 38/255),
-            'CAR': colors.Color(226/255, 24/255, 54/255), 'WSH': colors.Color(4/255, 30/255, 66/255),
-            'PIT': colors.Color(255/255, 184/255, 28/255), 'NYR': colors.Color(0/255, 56/255, 168/255),
-            'NYI': colors.Color(0/255, 83/255, 155/255), 'NJD': colors.Color(206/255, 17/255, 38/255),
-            'PHI': colors.Color(247/255, 30/255, 36/255), 'CBJ': colors.Color(0/255, 38/255, 84/255),
-            'STL': colors.Color(0/255, 47/255, 108/255), 'MIN': colors.Color(0/255, 99/255, 65/255),
-            'WPG': colors.Color(4/255, 30/255, 66/255), 'ARI': colors.Color(140/255, 38/255, 51/255),
-            'VGK': colors.Color(185/255, 151/255, 91/255), 'SJS': colors.Color(0/255, 109/255, 117/255),
-            'LAK': colors.Color(162/255, 170/255, 173/255), 'ANA': colors.Color(185/255, 151/255, 91/255),
-            'CGY': colors.Color(200/255, 16/255, 46/255), 'VAN': colors.Color(0/255, 32/255, 91/255),
-            'SEA': colors.Color(0/255, 22/255, 40/255), 'UTA': colors.Color(105/255, 179/255, 231/255),
+            'TBL': colors.Color(0/255, 32/255, 91/255), 'NSH': colors.Color(255/255, 184/255, 28/255),  # Tampa - Blue (PANTONE 281 C), Nashville - Gold (PANTONE 1235 C)
+            'EDM': colors.Color(0/255, 32/255, 91/255), 'FLA': colors.Color(200/255, 16/255, 46/255),  # Edmonton - Royal Blue (PANTONE 281 C), Florida - Red (PANTONE 186 C)
+            'COL': colors.Color(111/255, 38/255, 61/255), 'DAL': colors.Color(0/255, 132/255, 61/255),  # Colorado - Burgundy (PANTONE 209 C), Dallas - Victory Green (PANTONE 348 C)
+            'BOS': colors.Color(255/255, 184/255, 28/255), 'TOR': colors.Color(0/255, 32/255, 91/255),  # Boston - Gold (PANTONE 1235 C)
+            'MTL': colors.Color(166/255, 25/255, 46/255), 'OTT': colors.Color(200/255, 16/255, 46/255),  # Montreal - Red (PANTONE 187 C), Ottawa - Red (PANTONE 186 C)
+            'BUF': colors.Color(0/255, 48/255, 135/255), 'DET': colors.Color(200/255, 16/255, 46/255),  # Buffalo - Royal Blue (PANTONE 287 C), Detroit - Red (PANTONE 186 C)
+            'CAR': colors.Color(200/255, 16/255, 46/255), 'WSH': colors.Color(200/255, 16/255, 46/255),  # Carolina - Red (PANTONE 186 C), Washington - Red (PANTONE 186 C)
+            'PIT': colors.Color(255/255, 184/255, 28/255), 'NYR': colors.Color(0/255, 50/255, 160/255),  # Pittsburgh - Gold (PANTONE 1235 C), NY Rangers - Blue (PANTONE 286 C)
+            'NYI': colors.Color(0/255, 48/255, 135/255), 'NJD': colors.Color(200/255, 16/255, 46/255),  # NY Islanders - Royal Blue (PANTONE 287 C), New Jersey - Red (PANTONE 186 C)
+            'PHI': colors.Color(207/255, 69/255, 32/255), 'CBJ': colors.Color(4/255, 30/255, 66/255),  # Philadelphia - Orange (PANTONE 173 C), Columbus - Union Blue (PANTONE 282 C)
+            'STL': colors.Color(0/255, 114/255, 206/255), 'MIN': colors.Color(21/255, 71/255, 52/255),  # St. Louis - Blue (PANTONE 285 C), Minnesota - Forest Green (PANTONE 3435 C)
+            'WPG': colors.Color(4/255, 30/255, 66/255),
+            'VGK': colors.Color(185/255, 151/255, 91/255), 'SJS': colors.Color(0/255, 98/255, 113/255),  # Vegas - Gold (PANTONE 465 C), San Jose - Deep Pacific Teal (PANTONE 3155 C)
+            'LAK': colors.Color(1/255, 1/255, 1/255), 'ANA': colors.Color(207/255, 69/255, 32/255),  # LA Kings - Black, Anaheim - Orange (PANTONE 173 C)
+            'CGY': colors.Color(200/255, 16/255, 46/255), 'VAN': colors.Color(0/255, 132/255, 61/255),  # Calgary - Red (PANTONE 186 C), Vancouver - Green (PANTONE 348 C) - Primary
+            'SEA': colors.Color(200/255, 16/255, 46/255), 'UTA': colors.Color(1/255, 1/255, 1/255),  # Seattle - Red Alert (PANTONE 186 C), Utah - Rock Black
             'CHI': colors.Color(207/255, 10/255, 44/255)
         }
+        # Accent colors for row labels (first column)
+        team_accent_colors = {
+            'TBL': colors.Color(1/255, 1/255, 1/255),  # Tampa - Black
+            'NSH': colors.Color(4/255, 30/255, 66/255),  # Nashville - Dark Blue (PANTONE 282 C)
+            'EDM': colors.Color(207/255, 69/255, 32/255),  # Edmonton - Orange (PANTONE 173 C)
+            'FLA': colors.Color(185/255, 151/255, 91/255),  # Florida - Gold (PANTONE 465 C)
+            'COL': colors.Color(35/255, 97/255, 146/255),  # Colorado - Steel Blue (PANTONE 647 C)
+            'DAL': colors.Color(1/255, 1/255, 1/255),  # Dallas - Black
+            'BOS': colors.Color(0/255, 0/255, 0/255),  # Boston - Black
+            'TOR': colors.Color(128/255, 128/255, 128/255),  # Toronto - Gray (approximate)
+            'MTL': colors.Color(0/255, 30/255, 98/255),  # Montreal - Blue (PANTONE 2758 C)
+            'OTT': colors.Color(185/255, 151/255, 91/255),  # Ottawa - Gold (PANTONE 465 C)
+            'BUF': colors.Color(255/255, 184/255, 28/255),  # Buffalo - Gold (PANTONE 1235 C)
+            'DET': colors.Color(128/255, 128/255, 128/255),  # Detroit - Gray (approximate)
+            'CAR': colors.Color(0/255, 0/255, 0/255),  # Carolina - Black
+            'WSH': colors.Color(4/255, 30/255, 66/255),  # Washington - Navy (PANTONE 282 C)
+            'PIT': colors.Color(255/255, 184/255, 28/255),  # Pittsburgh - Gold (PANTONE 1235 C) - primary is gold
+            'NYR': colors.Color(200/255, 16/255, 46/255),  # NY Rangers - Red (PANTONE 186 C)
+            'NYI': colors.Color(252/255, 76/255, 2/255),  # NY Islanders - Orange (PANTONE 1655 C)
+            'NJD': colors.Color(1/255, 1/255, 1/255),  # New Jersey - Black
+            'PHI': colors.Color(1/255, 1/255, 1/255),  # Philadelphia - Black
+            'CBJ': colors.Color(200/255, 16/255, 46/255),  # Columbus - Goal Red (PANTONE 186 C)
+            'STL': colors.Color(255/255, 184/255, 28/255),  # St. Louis - Yellow (PANTONE 1235 C)
+            'MIN': colors.Color(166/255, 25/255, 46/255),  # Minnesota - Iron Range Red (PANTONE 187 C)
+            'WPG': colors.Color(166/255, 25/255, 46/255),  # Winnipeg - Red (PANTONE 187 C)
+            'VGK': colors.Color(1/255, 1/255, 1/255),  # Vegas - Black
+            'SJS': colors.Color(1/255, 1/255, 1/255),  # San Jose - Black
+            'LAK': colors.Color(162/255, 170/255, 173/255),  # LA Kings - Silver (PANTONE 429 C)
+            'ANA': colors.Color(185/255, 151/255, 91/255),  # Anaheim - Gold (PANTONE 465 C)
+            'CGY': colors.Color(241/255, 190/255, 72/255),  # Calgary - Gold (PANTONE 142 C)
+            'VAN': colors.Color(0/255, 32/255, 91/255),  # Vancouver - Blue (PANTONE 281 C)
+            'SEA': colors.Color(156/255, 219/255, 217/255),  # Seattle - Ice Blue (PANTONE 324 C)
+            'UTA': colors.Color(105/255, 179/255, 231/255),  # Utah - Mountain Blue (PANTONE 292 C)
+            'CHI': colors.Color(255/255, 184/255, 28/255)  # Chicago - Gold
+        }
         team_color = team_colors.get(team_abbrev, colors.grey)
+        team_accent_color = team_accent_colors.get(team_abbrev, colors.grey)
         
         # Convert player stats to list and filter (need at least 3 games, exclude goalies)
         player_list = []
@@ -1566,11 +1924,12 @@ class TeamReportGenerator(PostGameReportGenerator):
         title_offset = (table_total_width - title_width) / 2
         
         # Wrap title table to shift it right by 9cm (moved 1cm left from 10cm) and center it over the table
+        # Move up 0.3cm = 0.3 * 72 / 2.54 ≈ 8.5 points, then another 0.2cm = 0.2 * 72 / 2.54 ≈ 5.7 points, then another 0.3cm = 8.5 points, then down 0.3cm = 8.5 points, then up 0.1cm = 2.8 points
         title_wrapper = Table([[title_table]], colWidths=[7.5*inch])
         title_wrapper.setStyle(TableStyle([
             ('LEFTPADDING', (0, 0), (-1, -1), 9 * 72 / 2.54 + title_offset),  # 9cm right + center offset (moved 1cm left)
             ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING', (0, 0), (-1, -1), -17.0),  # Move up 0.3cm + 0.2cm + 0.3cm - 0.3cm down + 0.1cm up = 17.0 points net up
             ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
         ]))
         story.append(title_wrapper)
@@ -1603,27 +1962,29 @@ class TeamReportGenerator(PostGameReportGenerator):
         # Updated column widths: removed GP column, now 5 columns instead of 6
         combined_table = Table(combined_data, colWidths=[0.4*inch, 1.5*inch, 0.6*inch, 0.6*inch, 0.7*inch])
         combined_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), colors.grey),
-            ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
+            # Header row with accent color
+            ('BACKGROUND', (0, 0), (-1, 0), team_accent_color),
+            ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('FONTNAME', (0, 0), (-1, -1), 'RussoOne-Regular'),
             ('FONTSIZE', (0, 0), (-1, -1), 7),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-            # Top 3 rows (beige background)
-            ('BACKGROUND', (0, 1), (-1, 3), colors.beige),
-            # Bottom 3 rows (lightgrey background) - start after top 3
-            ('BACKGROUND', (0, 4), (-1, -1), colors.lightgrey),
+            # Top 3 rows (white background)
+            ('BACKGROUND', (0, 1), (-1, 3), colors.white),
+            # Bottom 3 rows (white background) - start after top 3
+            ('BACKGROUND', (0, 4), (-1, -1), colors.white),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
             ('FONTSIZE', (0, 1), (-1, -1), 7),
         ]))
         
-        # Wrap combined table to shift it right by 10cm (9cm + 1cm) - add left padding to push content right
+        # Wrap combined table to shift it right by 9cm (moved 1cm left from 10cm) - add left padding to push content right
+        # Move up 0.3cm = 0.3 * 72 / 2.54 ≈ 8.5 points, then move down 0.2cm = 0.2 * 72 / 2.54 ≈ 5.7 points, then down another 0.5cm = 14.2 points, then up 0.3cm = 8.5 points
         table_wrapper = Table([[combined_table]], colWidths=[7.5*inch])
         table_wrapper.setStyle(TableStyle([
-            ('LEFTPADDING', (0, 0), (-1, -1), 10 * 72 / 2.54),  # Add 10cm left padding to push content right
+            ('LEFTPADDING', (0, 0), (-1, -1), 9 * 72 / 2.54),  # Add 9cm left padding to push content right (moved 1cm left)
             ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-            ('TOPPADDING', (0, 0), (-1, -1), 0),
+            ('TOPPADDING', (0, 0), (-1, -1), 2.9),  # Move down 0.5cm - 0.3cm up = 0.2cm net down = 2.9 points (was 11.4, now 2.9)
             ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
         ]))
         story.append(table_wrapper)
@@ -1637,25 +1998,61 @@ class TeamReportGenerator(PostGameReportGenerator):
         
         # Get team color
         team_colors = {
-            'TBL': colors.Color(0/255, 40/255, 104/255), 'NSH': colors.Color(255/255, 184/255, 28/255),
-            'EDM': colors.Color(4/255, 30/255, 66/255), 'FLA': colors.Color(200/255, 16/255, 46/255),
-            'COL': colors.Color(111/255, 38/255, 61/255), 'DAL': colors.Color(0/255, 99/255, 65/255),
-            'BOS': colors.Color(252/255, 181/255, 20/255), 'TOR': colors.Color(0/255, 32/255, 91/255),
-            'MTL': colors.Color(175/255, 30/255, 45/255), 'OTT': colors.Color(200/255, 16/255, 46/255),
-            'BUF': colors.Color(0/255, 38/255, 84/255), 'DET': colors.Color(206/255, 17/255, 38/255),
-            'CAR': colors.Color(226/255, 24/255, 54/255), 'WSH': colors.Color(4/255, 30/255, 66/255),
-            'PIT': colors.Color(255/255, 184/255, 28/255), 'NYR': colors.Color(0/255, 56/255, 168/255),
-            'NYI': colors.Color(0/255, 83/255, 155/255), 'NJD': colors.Color(206/255, 17/255, 38/255),
-            'PHI': colors.Color(247/255, 30/255, 36/255), 'CBJ': colors.Color(0/255, 38/255, 84/255),
-            'STL': colors.Color(0/255, 47/255, 108/255), 'MIN': colors.Color(0/255, 99/255, 65/255),
-            'WPG': colors.Color(4/255, 30/255, 66/255), 'ARI': colors.Color(140/255, 38/255, 51/255),
-            'VGK': colors.Color(185/255, 151/255, 91/255), 'SJS': colors.Color(0/255, 109/255, 117/255),
-            'LAK': colors.Color(162/255, 170/255, 173/255), 'ANA': colors.Color(185/255, 151/255, 91/255),
-            'CGY': colors.Color(200/255, 16/255, 46/255), 'VAN': colors.Color(0/255, 32/255, 91/255),
-            'SEA': colors.Color(0/255, 22/255, 40/255), 'UTA': colors.Color(105/255, 179/255, 231/255),
+            'TBL': colors.Color(0/255, 32/255, 91/255), 'NSH': colors.Color(255/255, 184/255, 28/255),  # Tampa - Blue (PANTONE 281 C), Nashville - Gold (PANTONE 1235 C)
+            'EDM': colors.Color(0/255, 32/255, 91/255), 'FLA': colors.Color(200/255, 16/255, 46/255),  # Edmonton - Royal Blue (PANTONE 281 C), Florida - Red (PANTONE 186 C)
+            'COL': colors.Color(111/255, 38/255, 61/255), 'DAL': colors.Color(0/255, 132/255, 61/255),  # Colorado - Burgundy (PANTONE 209 C), Dallas - Victory Green (PANTONE 348 C)
+            'BOS': colors.Color(255/255, 184/255, 28/255), 'TOR': colors.Color(0/255, 32/255, 91/255),  # Boston - Gold (PANTONE 1235 C)
+            'MTL': colors.Color(166/255, 25/255, 46/255), 'OTT': colors.Color(200/255, 16/255, 46/255),  # Montreal - Red (PANTONE 187 C), Ottawa - Red (PANTONE 186 C)
+            'BUF': colors.Color(0/255, 48/255, 135/255), 'DET': colors.Color(200/255, 16/255, 46/255),  # Buffalo - Royal Blue (PANTONE 287 C), Detroit - Red (PANTONE 186 C)
+            'CAR': colors.Color(200/255, 16/255, 46/255), 'WSH': colors.Color(200/255, 16/255, 46/255),  # Carolina - Red (PANTONE 186 C), Washington - Red (PANTONE 186 C)
+            'PIT': colors.Color(255/255, 184/255, 28/255), 'NYR': colors.Color(0/255, 50/255, 160/255),  # Pittsburgh - Gold (PANTONE 1235 C), NY Rangers - Blue (PANTONE 286 C)
+            'NYI': colors.Color(0/255, 48/255, 135/255), 'NJD': colors.Color(200/255, 16/255, 46/255),  # NY Islanders - Royal Blue (PANTONE 287 C), New Jersey - Red (PANTONE 186 C)
+            'PHI': colors.Color(207/255, 69/255, 32/255), 'CBJ': colors.Color(4/255, 30/255, 66/255),  # Philadelphia - Orange (PANTONE 173 C), Columbus - Union Blue (PANTONE 282 C)
+            'STL': colors.Color(0/255, 114/255, 206/255), 'MIN': colors.Color(21/255, 71/255, 52/255),  # St. Louis - Blue (PANTONE 285 C), Minnesota - Forest Green (PANTONE 3435 C)
+            'WPG': colors.Color(4/255, 30/255, 66/255),
+            'VGK': colors.Color(185/255, 151/255, 91/255), 'SJS': colors.Color(0/255, 98/255, 113/255),  # Vegas - Gold (PANTONE 465 C), San Jose - Deep Pacific Teal (PANTONE 3155 C)
+            'LAK': colors.Color(1/255, 1/255, 1/255), 'ANA': colors.Color(207/255, 69/255, 32/255),  # LA Kings - Black, Anaheim - Orange (PANTONE 173 C)
+            'CGY': colors.Color(200/255, 16/255, 46/255), 'VAN': colors.Color(0/255, 132/255, 61/255),  # Calgary - Red (PANTONE 186 C), Vancouver - Green (PANTONE 348 C) - Primary
+            'SEA': colors.Color(200/255, 16/255, 46/255), 'UTA': colors.Color(1/255, 1/255, 1/255),  # Seattle - Red Alert (PANTONE 186 C), Utah - Rock Black
             'CHI': colors.Color(207/255, 10/255, 44/255)
         }
+        # Accent colors for row labels (first column)
+        team_accent_colors = {
+            'TBL': colors.Color(1/255, 1/255, 1/255),  # Tampa - Black
+            'NSH': colors.Color(4/255, 30/255, 66/255),  # Nashville - Dark Blue (PANTONE 282 C)
+            'EDM': colors.Color(207/255, 69/255, 32/255),  # Edmonton - Orange (PANTONE 173 C)
+            'FLA': colors.Color(185/255, 151/255, 91/255),  # Florida - Gold (PANTONE 465 C)
+            'COL': colors.Color(35/255, 97/255, 146/255),  # Colorado - Steel Blue (PANTONE 647 C)
+            'DAL': colors.Color(1/255, 1/255, 1/255),  # Dallas - Black
+            'BOS': colors.Color(0/255, 0/255, 0/255),  # Boston - Black
+            'TOR': colors.Color(128/255, 128/255, 128/255),  # Toronto - Gray (approximate)
+            'MTL': colors.Color(0/255, 30/255, 98/255),  # Montreal - Blue (PANTONE 2758 C)
+            'OTT': colors.Color(185/255, 151/255, 91/255),  # Ottawa - Gold (PANTONE 465 C)
+            'BUF': colors.Color(255/255, 184/255, 28/255),  # Buffalo - Gold (PANTONE 1235 C)
+            'DET': colors.Color(128/255, 128/255, 128/255),  # Detroit - Gray (approximate)
+            'CAR': colors.Color(0/255, 0/255, 0/255),  # Carolina - Black
+            'WSH': colors.Color(4/255, 30/255, 66/255),  # Washington - Navy (PANTONE 282 C)
+            'PIT': colors.Color(255/255, 184/255, 28/255),  # Pittsburgh - Gold (PANTONE 1235 C) - primary is gold
+            'NYR': colors.Color(200/255, 16/255, 46/255),  # NY Rangers - Red (PANTONE 186 C)
+            'NYI': colors.Color(252/255, 76/255, 2/255),  # NY Islanders - Orange (PANTONE 1655 C)
+            'NJD': colors.Color(1/255, 1/255, 1/255),  # New Jersey - Black
+            'PHI': colors.Color(1/255, 1/255, 1/255),  # Philadelphia - Black
+            'CBJ': colors.Color(200/255, 16/255, 46/255),  # Columbus - Goal Red (PANTONE 186 C)
+            'STL': colors.Color(255/255, 184/255, 28/255),  # St. Louis - Yellow (PANTONE 1235 C)
+            'MIN': colors.Color(166/255, 25/255, 46/255),  # Minnesota - Iron Range Red (PANTONE 187 C)
+            'WPG': colors.Color(166/255, 25/255, 46/255),  # Winnipeg - Red (PANTONE 187 C)
+            'VGK': colors.Color(1/255, 1/255, 1/255),  # Vegas - Black
+            'SJS': colors.Color(1/255, 1/255, 1/255),  # San Jose - Black
+            'LAK': colors.Color(162/255, 170/255, 173/255),  # LA Kings - Silver (PANTONE 429 C)
+            'ANA': colors.Color(185/255, 151/255, 91/255),  # Anaheim - Gold (PANTONE 465 C)
+            'CGY': colors.Color(241/255, 190/255, 72/255),  # Calgary - Gold (PANTONE 142 C)
+            'VAN': colors.Color(0/255, 32/255, 91/255),  # Vancouver - Blue (PANTONE 281 C)
+            'SEA': colors.Color(156/255, 219/255, 217/255),  # Seattle - Ice Blue (PANTONE 324 C)
+            'UTA': colors.Color(105/255, 179/255, 231/255),  # Utah - Mountain Blue (PANTONE 292 C)
+            'CHI': colors.Color(255/255, 184/255, 28/255)  # Chicago - Gold
+        }
         team_color = team_colors.get(team_abbrev, colors.grey)
+        team_accent_color = team_accent_colors.get(team_abbrev, colors.grey)
         
         # Title bar - minimum width to fit text
         title_data = [["PERIOD PERFORMANCE"]]
@@ -1682,13 +2079,23 @@ class TeamReportGenerator(PostGameReportGenerator):
         def sum_list(lst):
             return sum(lst) if lst else 0
         
-        # Build period data with all metrics
+        # Build period data with all metrics including rebounds
+        # Column order: ... DZS, REB, REBA, FC, Rush
         period_data = [
-            # Header row (same as post-game reports)
-            ['Period', 'GF', 'S', 'CF%', 'PP', 'PIM', 'Hits', 'FO%', 'BLK', 'GV', 'TK', 'GS', 'xG', 'NZT', 'NZTSA', 'OZS', 'NZS', 'DZS', 'FC', 'Rush']
+            # Header row with rebounds columns moved to after DZS, before FC and Rush
+            ['Period', 'GF', 'S', 'CF%', 'PP', 'PIM', 'Hits', 'FO%', 'BLK', 'GV', 'TK', 'GS', 'xG', 'NZT', 'NZTSA', 'OZS', 'NZS', 'DZS', 'REB', 'REBA', 'FC', 'Rush']
         ]
         
+        # Get rebounds data for each period
+        p1_rebounds = self.get_team_rebounds_from_moneypuck(team_abbrev, 'p1')
+        p2_rebounds = self.get_team_rebounds_from_moneypuck(team_abbrev, 'p2')
+        p3_rebounds = self.get_team_rebounds_from_moneypuck(team_abbrev, 'p3')
+        
+        # Calculate total games for per-game averages
+        total_games = stats.get('games_played', 1)
+        
         # Add data for each period (1st, 2nd, 3rd)
+        period_rebounds_map = {'p1': p1_rebounds, 'p2': p2_rebounds, 'p3': p3_rebounds}
         for period_key, period_label in [('p1', '1'), ('p2', '2'), ('p3', '3')]:
             period_metrics = stats['period_metrics'][period_key]
             
@@ -1714,6 +2121,11 @@ class TeamReportGenerator(PostGameReportGenerator):
             avg_fc = avg_or_zero(period_metrics['fc'])
             avg_rush = avg_or_zero(period_metrics['rush'])
             
+            # Get rebounds for this period
+            period_rebounds = period_rebounds_map.get(period_key)
+            avg_rebounds_for = (period_rebounds['reboundsFor'] / total_games) if period_rebounds and total_games > 0 else 0.0
+            avg_rebounds_against = (period_rebounds['reboundsAgainst'] / total_games) if period_rebounds and total_games > 0 else 0.0
+            
             # Format PP as "goals/attempts"
             pp_display = f"{total_pp_goals}/{total_pp_attempts}" if total_pp_attempts > 0 else "0/0"
             
@@ -1736,28 +2148,32 @@ class TeamReportGenerator(PostGameReportGenerator):
                 f"{avg_ozs:.1f}",
                 f"{avg_nzs:.1f}",
                 f"{avg_dzs:.1f}",
+                f"{avg_rebounds_for:.1f}",
+                f"{avg_rebounds_against:.1f}",
                 f"{avg_fc:.1f}",
                 f"{avg_rush:.1f}"
             ])
         
-        # Column widths matching post-game report (20 columns)
+        # Column widths for 22 columns (20 original + 2 rebounds)
         col_widths = [0.4*inch, 0.35*inch, 0.35*inch, 0.4*inch, 0.35*inch, 0.35*inch, 0.35*inch, 
                       0.4*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.4*inch, 0.35*inch, 
-                      0.4*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch]
+                      0.4*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.4*inch, 0.4*inch]
         
         period_table = Table(period_data, colWidths=col_widths)
         period_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, 0), team_color),
+            # Header row with accent color
+            ('BACKGROUND', (0, 0), (-1, 0), team_accent_color),
             ('TEXTCOLOR', (0, 0), (-1, 0), colors.white),
             ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
             ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
             ('FONTNAME', (0, 0), (-1, -1), 'RussoOne-Regular'),
             ('FONTSIZE', (0, 0), (-1, 0), 7),
+            # REB and REBA columns (18, 19) now use regular font size since they're shorter
             ('FONTSIZE', (0, 1), (-1, -1), 6.5),
             ('BOTTOMPADDING', (0, 0), (-1, 0), 8),
-            ('BACKGROUND', (0, 1), (-1, 1), colors.beige),
-            ('BACKGROUND', (0, 2), (-1, 2), colors.lightgrey),
-            ('BACKGROUND', (0, 3), (-1, 3), colors.beige),
+            ('BACKGROUND', (0, 1), (-1, 1), colors.white),
+            ('BACKGROUND', (0, 2), (-1, 2), colors.white),
+            ('BACKGROUND', (0, 3), (-1, 3), colors.white),
             ('GRID', (0, 0), (-1, -1), 0.5, colors.black),
             ('TOPPADDING', (0, 1), (-1, -1), 4),
             ('BOTTOMPADDING', (0, 1), (-1, -1), 4),
@@ -1770,28 +2186,124 @@ class TeamReportGenerator(PostGameReportGenerator):
         
         return story
     
+    def get_league_clutch_rankings(self):
+        """Calculate clutch rankings for all teams in the league (1-32, cached to disk for 24 hours)"""
+        import time
+        import json
+        import tempfile
+        
+        # Use file-based cache so it persists across script runs
+        cache_file = os.path.join(tempfile.gettempdir(), 'nhl_clutch_rankings_cache.json')
+        
+        # Try to load from disk cache first
+        if os.path.exists(cache_file):
+            try:
+                with open(cache_file, 'r') as f:
+                    cache_data = json.load(f)
+                    cache_time = cache_data.get('timestamp', 0)
+                    cache_age = time.time() - cache_time
+                    
+                    # Cache valid for 24 hours (refresh once per day)
+                    if cache_age < 86400:  # 24 hours
+                        return cache_data.get('rankings', {})
+            except Exception:
+                # If cache file is corrupted, continue to recalculate
+                pass
+        
+        # Check in-memory cache as fallback
+        if hasattr(self, '_clutch_rankings_cache') and hasattr(self, '_clutch_rankings_cache_time'):
+            cache_age = time.time() - self._clutch_rankings_cache_time
+            if self._clutch_rankings_cache is not None and cache_age < 86400:  # 24 hours
+                return self._clutch_rankings_cache
+        
+        # Calculate rankings for all teams
+        import requests
+        url = 'https://api-web.nhle.com/v1/standings/now'
+        response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
+        
+        if response.status_code != 200:
+            # If API fails, return empty dict (will fall back to estimated rank)
+            return {}
+        
+        standings_data = response.json()
+        teams_data = []
+        
+        # Calculate clutch score for each team
+        for team in standings_data.get('standings', []):
+            abbrev = team.get('teamAbbrev', {}).get('default', '')
+            if not abbrev:
+                continue
+            
+            try:
+                games = self.get_team_games(abbrev)
+                if not games:
+                    continue
+                
+                team_stats = self.aggregate_team_stats(abbrev, games)
+                third_period_goals = team_stats['clutch']['third_period_goals']
+                one_goal_games = team_stats['clutch']['one_goal_games']
+                one_goal_wins = team_stats['clutch']['one_goal_wins']
+                one_goal_win_pct = (one_goal_wins / one_goal_games * 100) if one_goal_games > 0 else 0.0
+                
+                # Same clutch score formula as in create_clutch_performance_box
+                clutch_score = (third_period_goals * 2) + (one_goal_win_pct * 0.5)
+                
+                teams_data.append({
+                    'abbrev': abbrev,
+                    'clutch_score': clutch_score
+                })
+            except Exception as e:
+                # Skip teams that fail
+                continue
+        
+        # Sort by clutch score (descending - higher is better)
+        teams_data.sort(key=lambda x: x['clutch_score'], reverse=True)
+        
+        # Create ranking dict: team_abbrev -> rank (1-32, where 1 is most clutch)
+        rankings = {}
+        for rank, team_data in enumerate(teams_data, start=1):
+            rankings[team_data['abbrev']] = rank
+        
+        # Cache the result to disk (persists across script runs)
+        try:
+            cache_data = {
+                'timestamp': time.time(),
+                'rankings': rankings
+            }
+            with open(cache_file, 'w') as f:
+                json.dump(cache_data, f)
+        except Exception:
+            # If disk cache fails, fall back to in-memory cache
+            pass
+        
+        # Also cache in memory as fallback
+        self._clutch_rankings_cache = rankings
+        self._clutch_rankings_cache_time = time.time()
+        
+        return rankings
+    
     def create_clutch_performance_box(self, stats: dict, team_abbrev: str):
         """Create clutch performance indicator box with league rank"""
         story = []
         
         # Get team color
         team_colors = {
-            'TBL': colors.Color(0/255, 40/255, 104/255), 'NSH': colors.Color(255/255, 184/255, 28/255),
-            'EDM': colors.Color(4/255, 30/255, 66/255), 'FLA': colors.Color(200/255, 16/255, 46/255),
-            'COL': colors.Color(111/255, 38/255, 61/255), 'DAL': colors.Color(0/255, 99/255, 65/255),
-            'BOS': colors.Color(252/255, 181/255, 20/255), 'TOR': colors.Color(0/255, 32/255, 91/255),
-            'MTL': colors.Color(175/255, 30/255, 45/255), 'OTT': colors.Color(200/255, 16/255, 46/255),
-            'BUF': colors.Color(0/255, 38/255, 84/255), 'DET': colors.Color(206/255, 17/255, 38/255),
-            'CAR': colors.Color(226/255, 24/255, 54/255), 'WSH': colors.Color(4/255, 30/255, 66/255),
-            'PIT': colors.Color(255/255, 184/255, 28/255), 'NYR': colors.Color(0/255, 56/255, 168/255),
-            'NYI': colors.Color(0/255, 83/255, 155/255), 'NJD': colors.Color(206/255, 17/255, 38/255),
-            'PHI': colors.Color(247/255, 30/255, 36/255), 'CBJ': colors.Color(0/255, 38/255, 84/255),
-            'STL': colors.Color(0/255, 47/255, 108/255), 'MIN': colors.Color(0/255, 99/255, 65/255),
-            'WPG': colors.Color(4/255, 30/255, 66/255), 'ARI': colors.Color(140/255, 38/255, 51/255),
-            'VGK': colors.Color(185/255, 151/255, 91/255), 'SJS': colors.Color(0/255, 109/255, 117/255),
-            'LAK': colors.Color(162/255, 170/255, 173/255), 'ANA': colors.Color(185/255, 151/255, 91/255),
-            'CGY': colors.Color(200/255, 16/255, 46/255), 'VAN': colors.Color(0/255, 32/255, 91/255),
-            'SEA': colors.Color(0/255, 22/255, 40/255), 'UTA': colors.Color(105/255, 179/255, 231/255),
+            'TBL': colors.Color(0/255, 32/255, 91/255), 'NSH': colors.Color(255/255, 184/255, 28/255),  # Tampa - Blue (PANTONE 281 C), Nashville - Gold (PANTONE 1235 C)
+            'EDM': colors.Color(0/255, 32/255, 91/255), 'FLA': colors.Color(200/255, 16/255, 46/255),  # Edmonton - Royal Blue (PANTONE 281 C), Florida - Red (PANTONE 186 C)
+            'COL': colors.Color(111/255, 38/255, 61/255), 'DAL': colors.Color(0/255, 132/255, 61/255),  # Colorado - Burgundy (PANTONE 209 C), Dallas - Victory Green (PANTONE 348 C)
+            'BOS': colors.Color(255/255, 184/255, 28/255), 'TOR': colors.Color(0/255, 32/255, 91/255),  # Boston - Gold (PANTONE 1235 C)
+            'MTL': colors.Color(166/255, 25/255, 46/255), 'OTT': colors.Color(200/255, 16/255, 46/255),  # Montreal - Red (PANTONE 187 C), Ottawa - Red (PANTONE 186 C)
+            'BUF': colors.Color(0/255, 48/255, 135/255), 'DET': colors.Color(200/255, 16/255, 46/255),  # Buffalo - Royal Blue (PANTONE 287 C), Detroit - Red (PANTONE 186 C)
+            'CAR': colors.Color(200/255, 16/255, 46/255), 'WSH': colors.Color(200/255, 16/255, 46/255),  # Carolina - Red (PANTONE 186 C), Washington - Red (PANTONE 186 C)
+            'PIT': colors.Color(255/255, 184/255, 28/255), 'NYR': colors.Color(0/255, 50/255, 160/255),  # Pittsburgh - Gold (PANTONE 1235 C), NY Rangers - Blue (PANTONE 286 C)
+            'NYI': colors.Color(0/255, 48/255, 135/255), 'NJD': colors.Color(200/255, 16/255, 46/255),  # NY Islanders - Royal Blue (PANTONE 287 C), New Jersey - Red (PANTONE 186 C)
+            'PHI': colors.Color(207/255, 69/255, 32/255), 'CBJ': colors.Color(4/255, 30/255, 66/255),  # Philadelphia - Orange (PANTONE 173 C), Columbus - Union Blue (PANTONE 282 C)
+            'STL': colors.Color(0/255, 114/255, 206/255), 'MIN': colors.Color(21/255, 71/255, 52/255),  # St. Louis - Blue (PANTONE 285 C), Minnesota - Forest Green (PANTONE 3435 C)
+            'WPG': colors.Color(4/255, 30/255, 66/255),
+            'VGK': colors.Color(185/255, 151/255, 91/255), 'SJS': colors.Color(0/255, 98/255, 113/255),  # Vegas - Gold (PANTONE 465 C), San Jose - Deep Pacific Teal (PANTONE 3155 C)
+            'LAK': colors.Color(1/255, 1/255, 1/255), 'ANA': colors.Color(207/255, 69/255, 32/255),  # LA Kings - Black, Anaheim - Orange (PANTONE 173 C)
+            'CGY': colors.Color(200/255, 16/255, 46/255), 'VAN': colors.Color(0/255, 132/255, 61/255),  # Calgary - Red (PANTONE 186 C), Vancouver - Green (PANTONE 348 C) - Primary
+            'SEA': colors.Color(200/255, 16/255, 46/255), 'UTA': colors.Color(1/255, 1/255, 1/255),  # Seattle - Red Alert (PANTONE 186 C), Utah - Rock Black
             'CHI': colors.Color(207/255, 10/255, 44/255)
         }
         team_color = team_colors.get(team_abbrev, colors.grey)
@@ -1802,15 +2314,13 @@ class TeamReportGenerator(PostGameReportGenerator):
         one_goal_wins = stats['clutch']['one_goal_wins']
         one_goal_win_pct = (one_goal_wins / one_goal_games * 100) if one_goal_games > 0 else 0.0
         
-        # Calculate composite clutch score (simplified - in reality would compare to league)
-        # For now, estimate rank based on metrics (would need league data for accurate ranking)
-        # Using a simple heuristic: combine 3rd period goals and one-goal win%
+        # Get actual league rank (1-32, where 1 is most clutch)
+        rankings = self.get_league_clutch_rankings()
+        league_rank = rankings.get(team_abbrev.upper())
+
+        # Fallback to estimated rank if league data unavailable (single-line to avoid indent issues)
         clutch_score = (third_period_goals * 2) + (one_goal_win_pct * 0.5)
-        
-        # Estimate league rank (1-32) - this is a placeholder
-        # In production, you'd fetch league-wide data and calculate actual rank
-        # For now, estimate based on score percentile (higher score = better rank)
-        estimated_rank = max(1, min(32, int(32 - (clutch_score / 10))))  # Rough estimate
+        league_rank = league_rank if league_rank is not None else max(1, min(32, int(32 - (clutch_score / 10))))  # Rough estimate
         
         # Format rank with suffix
         def get_rank_suffix(n):
@@ -1818,7 +2328,7 @@ class TeamReportGenerator(PostGameReportGenerator):
                 return 'th'
             return {1: 'st', 2: 'nd', 3: 'rd'}.get(n % 10, 'th')
         
-        rank_text = f"{estimated_rank}{get_rank_suffix(estimated_rank)} rank"
+        rank_text = f"{league_rank}{get_rank_suffix(league_rank)} rank"
         
         # Create single-column table with two rows
         clutch_data = [
@@ -1919,7 +2429,194 @@ class TeamReportGenerator(PostGameReportGenerator):
         story.append(clutch_flowable)
         return story
     
-    def generate_team_report(self, team_abbrev: str, output_filename: str = None, season_start_date: str = None):
+    def create_game_state_metrics_box(self, stats: dict, team_abbrev: str):
+        """Create minimalist icon + number display showing win streak, comeback wins, and scoring first record"""
+        story = []
+        
+        # Get team color
+        team_colors = {
+            'TBL': colors.Color(0/255, 32/255, 91/255), 'NSH': colors.Color(255/255, 184/255, 28/255),  # Tampa - Blue (PANTONE 281 C), Nashville - Gold (PANTONE 1235 C)
+            'EDM': colors.Color(0/255, 32/255, 91/255), 'FLA': colors.Color(200/255, 16/255, 46/255),  # Edmonton - Royal Blue (PANTONE 281 C), Florida - Red (PANTONE 186 C)
+            'COL': colors.Color(111/255, 38/255, 61/255), 'DAL': colors.Color(0/255, 132/255, 61/255),  # Colorado - Burgundy (PANTONE 209 C), Dallas - Victory Green (PANTONE 348 C)
+            'BOS': colors.Color(255/255, 184/255, 28/255), 'TOR': colors.Color(0/255, 32/255, 91/255),  # Boston - Gold (PANTONE 1235 C)
+            'MTL': colors.Color(166/255, 25/255, 46/255), 'OTT': colors.Color(200/255, 16/255, 46/255),  # Montreal - Red (PANTONE 187 C), Ottawa - Red (PANTONE 186 C)
+            'BUF': colors.Color(0/255, 48/255, 135/255), 'DET': colors.Color(200/255, 16/255, 46/255),  # Buffalo - Royal Blue (PANTONE 287 C), Detroit - Red (PANTONE 186 C)
+            'CAR': colors.Color(200/255, 16/255, 46/255), 'WSH': colors.Color(200/255, 16/255, 46/255),  # Carolina - Red (PANTONE 186 C), Washington - Red (PANTONE 186 C)
+            'PIT': colors.Color(255/255, 184/255, 28/255), 'NYR': colors.Color(0/255, 50/255, 160/255),  # Pittsburgh - Gold (PANTONE 1235 C), NY Rangers - Blue (PANTONE 286 C)
+            'NYI': colors.Color(0/255, 48/255, 135/255), 'NJD': colors.Color(200/255, 16/255, 46/255),  # NY Islanders - Royal Blue (PANTONE 287 C), New Jersey - Red (PANTONE 186 C)
+            'PHI': colors.Color(207/255, 69/255, 32/255), 'CBJ': colors.Color(4/255, 30/255, 66/255),  # Philadelphia - Orange (PANTONE 173 C), Columbus - Union Blue (PANTONE 282 C)
+            'STL': colors.Color(0/255, 114/255, 206/255), 'MIN': colors.Color(21/255, 71/255, 52/255),  # St. Louis - Blue (PANTONE 285 C), Minnesota - Forest Green (PANTONE 3435 C)
+            'WPG': colors.Color(4/255, 30/255, 66/255),
+            'VGK': colors.Color(185/255, 151/255, 91/255), 'SJS': colors.Color(0/255, 98/255, 113/255),  # Vegas - Gold (PANTONE 465 C), San Jose - Deep Pacific Teal (PANTONE 3155 C)
+            'LAK': colors.Color(1/255, 1/255, 1/255), 'ANA': colors.Color(207/255, 69/255, 32/255),  # LA Kings - Black, Anaheim - Orange (PANTONE 173 C)
+            'CGY': colors.Color(200/255, 16/255, 46/255), 'VAN': colors.Color(0/255, 132/255, 61/255),  # Calgary - Red (PANTONE 186 C), Vancouver - Green (PANTONE 348 C) - Primary
+            'SEA': colors.Color(200/255, 16/255, 46/255), 'UTA': colors.Color(1/255, 1/255, 1/255),  # Seattle - Red Alert (PANTONE 186 C), Utah - Rock Black
+            'CHI': colors.Color(207/255, 10/255, 44/255)
+        }
+        team_color = team_colors.get(team_abbrev, colors.grey)
+        
+        # Calculate metrics
+        streak = stats.get('current_streak', {'type': 'none', 'count': 0})
+        comeback_wins = stats['clutch'].get('comeback_wins', 0)
+        
+        # Scoring first record
+        scored_first_wins = stats['clutch'].get('scored_first_wins', 0)
+        scored_first_losses = stats['clutch'].get('scored_first_losses', 0)
+        scored_first_total = scored_first_wins + scored_first_losses
+        scored_first_pct = (scored_first_wins / scored_first_total * 100) if scored_first_total > 0 else 0.0
+        
+        # Format streak
+        if streak['type'] == 'win':
+            streak_text = f"W{streak['count']}"
+        elif streak['type'] == 'loss':
+            streak_text = f"L{streak['count']}"
+        else:
+            streak_text = "-"
+        
+        # Create minimalist icon + number display flowables
+        class MinimalistMetric(Flowable):
+            def __init__(self, icon_image_path, number, label, icon_color):
+                Flowable.__init__(self)
+                self.icon_image_path = icon_image_path
+                self.number = number
+                self.label = label
+                self.icon_color = icon_color  # Keep for potential future use
+                self.width = 0.6 * inch
+                self.height = 0.9 * inch
+                
+            def wrap(self, availWidth, availHeight):
+                return (self.width, self.height)
+                
+            def draw(self):
+                self.canv.saveState()
+                
+                center_x = self.width / 2
+                # Icons moved up by 1.8 cm total (1.5 cm + 0.3 cm)
+                icon_shift_up = 1.8 * 72 / 2.54
+                icon_y = self.height - 0.35*inch + icon_shift_up
+                
+                # Text (numbers and labels) moved up by 1.3 cm total (1.0 cm + 0.3 cm)
+                text_shift_up = 1.3 * 72 / 2.54
+                
+                # Load and draw icon image
+                try:
+                    if os.path.exists(self.icon_image_path):
+                        # Draw image on canvas
+                        icon_size = 0.3 * inch  # Size of icon on PDF
+                        self.canv.drawImage(self.icon_image_path, 
+                                          center_x - icon_size/2, 
+                                          icon_y - icon_size/2 - 0.05*inch,
+                                          width=icon_size, 
+                                          height=icon_size,
+                                          mask='auto')
+                    else:
+                        # Fallback if image not found
+                        self.canv.setFillColor(self.icon_color)
+                        self.canv.circle(center_x, icon_y, 0.08*inch, fill=1)
+                except Exception as e:
+                    # Fallback: draw simple circle in team color
+                    self.canv.setFillColor(self.icon_color)
+                    self.canv.circle(center_x, icon_y, 0.08*inch, fill=1)
+                
+                # Draw large number - moved up by 1.0 cm (less than icons)
+                # Try to use Russo One font, fallback to Helvetica-Bold if not available
+                try:
+                    from reportlab.pdfbase import pdfmetrics
+                    if 'RussoOne-Regular' in pdfmetrics.getRegisteredFontNames():
+                        self.canv.setFont("RussoOne-Regular", 20)
+                    else:
+                        self.canv.setFont("Helvetica-Bold", 20)
+                except:
+                    self.canv.setFont("Helvetica-Bold", 20)
+                self.canv.setFillColor(colors.black)
+                self.canv.drawCentredString(self.width/2, self.height - 0.65*inch + text_shift_up, str(self.number))
+                
+                # Draw subtle label - moved up by 1.0 cm (less than icons)
+                # Try to use Russo One font, fallback to Helvetica if not available
+                try:
+                    from reportlab.pdfbase import pdfmetrics
+                    if 'RussoOne-Regular' in pdfmetrics.getRegisteredFontNames():
+                        self.canv.setFont("RussoOne-Regular", 7)
+                    else:
+                        self.canv.setFont("Helvetica", 7)
+                except:
+                    self.canv.setFont("Helvetica", 7)
+                self.canv.setFillColor(colors.grey)
+                self.canv.drawCentredString(self.width/2, 0.1*inch + text_shift_up, self.label)
+                
+                self.canv.restoreState()
+        
+        # Icon image paths - now in project directory
+        script_dir = os.path.dirname(os.path.abspath(__file__))
+        icon_paths = {
+            'streak': os.path.join(script_dir, 'fire_1f525.png'),
+            'comeback': os.path.join(script_dir, 'upwards-black-arrow_2b06.png'),
+            'score_first': os.path.join(script_dir, 'direct-hit_1f3af.png')
+        }
+        
+        # Use team color for all three metrics (or can use variations)
+        # For now, use team color for all icons
+        metrics_list = [
+            MinimalistMetric(icon_paths['streak'], streak_text, "STREAK", team_color),
+            MinimalistMetric(icon_paths['comeback'], comeback_wins, "COMEBACKS", team_color),
+            MinimalistMetric(icon_paths['score_first'], f"{scored_first_pct:.0f}%", "SCORE 1ST", team_color)
+        ]
+        
+        # Position under clutch box (same left position, shifted down)
+        clutch_left_cm = 3.0
+        metrics_left_points = clutch_left_cm * 72 / 2.54
+        
+        # Shift down from clutch box position
+        # Clutch box shift is: 78.3 - 113.4 - 85.0 - 85.0 + (4 * 72 / 2.54)
+        # Shift metrics box down by approximately the height of clutch box + small gap + 2cm more
+        clutch_shift = 78.3 - 113.4 - 85.0 - 85.0 + (4 * 72 / 2.54)
+        clutch_box_height = 50  # Approximate height
+        gap = 0.3 * 72 / 2.54  # 0.3cm gap
+        extra_down = 2.0 * 72 / 2.54  # 2cm more down
+        metrics_shift = clutch_shift - clutch_box_height - gap - extra_down
+        
+        class MetricsBoxFlowable(Flowable):
+            def __init__(self, metrics_list, left_points, shift_up_points):
+                Flowable.__init__(self)
+                self.metrics_list = metrics_list
+                self.left_points = left_points
+                self.shift_up_points = shift_up_points
+                self.width = 1.8 * inch  # 3 metrics * 0.6 inch each
+                self.height = 0.9 * inch
+                
+            def wrap(self, availWidth, availHeight):
+                return (0, 0)  # Takes no space in flow
+                
+            def draw(self):
+                self.canv.saveState()
+                current_y = self.canv._y if hasattr(self.canv, '_y') else 0
+                
+                if current_y is not None and current_y > 0:
+                    y_translation = -abs(self.shift_up_points) if self.shift_up_points < 0 else self.shift_up_points - current_y
+                    if self.shift_up_points < 0:
+                        y_translation = -abs(self.shift_up_points)
+                else:
+                    y_translation = -abs(self.shift_up_points) if self.shift_up_points < 0 else self.shift_up_points
+                
+                if abs(y_translation) > 700:
+                    y_translation = -250.0  # Fallback
+                
+                # Translate to position
+                self.canv.translate(self.left_points, y_translation)
+                
+                # Draw each metric side by side
+                x_offset = 0
+                for metric in self.metrics_list:
+                    metric.drawOn(self.canv, x_offset, 0)
+                    x_offset += metric.width
+                
+                self.canv.restoreState()
+        
+        metrics_flowable = MetricsBoxFlowable(metrics_list, metrics_left_points, metrics_shift)
+        story.append(metrics_flowable)
+        return story
+    
+    def generate_team_report(self, team_abbrev: str, output_filename: str = None, season_start_date: str = None, open_in_preview: bool = True):
         """Generate complete team report"""
         print(f"Generating team report for {team_abbrev}...")
         
@@ -1984,6 +2681,11 @@ class TeamReportGenerator(PostGameReportGenerator):
         if clutch_story:
             story.extend(clutch_story)
         
+        # Add game state metrics box under clutch performance box
+        metrics_story = self.create_game_state_metrics_box(stats, team_abbrev)
+        if metrics_story:
+            story.extend(metrics_story)
+        
         # Add player stats section early to keep it on page 1
         from reportlab.platypus import KeepTogether
         player_stats_content = self.create_player_stats_section(stats, team_abbrev)
@@ -2008,15 +2710,186 @@ class TeamReportGenerator(PostGameReportGenerator):
         
         doc.build(story)
         
-        # Open in Preview instead of saving to directory
-        import subprocess
-        
-        # Open in Preview on macOS
-        subprocess.run(['open', '-a', 'Preview', temp_filepath])
-        print(f"Team report opened in Preview: {temp_filepath}")
+        # Optionally open in Preview on macOS
+        if open_in_preview:
+            import subprocess
+            subprocess.run(['open', '-a', 'Preview', temp_filepath])
+            print(f"Team report opened in Preview: {temp_filepath}")
         
         return temp_filepath
 
+
+    def generate_team_report_image(self, team_abbrev: str, season_start_date: str = None, dpi: int = 4000) -> str:
+        """Generate report PDF, export a high-DPI PNG to Desktop, delete the PDF, and return the image path.
+
+        Uses ultra-high DPI (4000) for maximum sharpness when zooming. Attempts multiple methods:
+        1. pdf2image (PIL/Pillow) - often best quality
+        2. ImageMagick CLI - excellent quality
+        3. Wand (ImageMagick bindings) - good quality
+        4. macOS sips - fallback only
+        """
+        from pathlib import Path
+        import subprocess
+        import os
+
+        pdf_path = self.generate_team_report(team_abbrev, season_start_date=season_start_date, open_in_preview=False)
+        if not pdf_path or not os.path.exists(pdf_path):
+            return ""
+
+        desktop = Path.home() / "Desktop"
+        try:
+            desktop.mkdir(parents=True, exist_ok=True)
+        except Exception:
+            pass
+        image_path = desktop / f"{team_abbrev}_report.png"
+
+        converted = False
+
+        # Method 1: Direct pdftocairo call for maximum quality and guaranteed resolution
+        # Target: 12000x16000 pixels (very high quality for zooming)
+        target_width = 12000
+        target_height = 16000
+        try:
+            import shutil
+            pdftocairo = shutil.which('pdftocairo')
+            if pdftocairo:
+                # Use pdftocairo directly with scale factor
+                # For 8.5x11 page: scale = target_width / (8.5 * 72) = 12000 / 612 ≈ 19.6
+                scale = target_width / 612.0
+                cmd = [
+                    pdftocairo,
+                    '-png',
+                    '-scale-to-x', str(target_width),
+                    '-scale-to-y', str(target_height),
+                    '-r', '300',  # Base resolution
+                    '-f', '1',    # First page
+                    '-l', '1',    # Last page
+                    pdf_path,
+                    str(image_path).replace('.png', '')  # pdftocairo adds .png-1
+                ]
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+                # pdftocairo outputs filename-1.png for first page
+                expected_output = str(image_path).replace('.png', '-1.png')
+                if os.path.exists(expected_output):
+                    os.rename(expected_output, str(image_path))
+                    converted = image_path.exists()
+        except Exception:
+            converted = False
+
+        # Method 1b: pdf2image fallback if pdftocairo didn't work
+        if not converted:
+            try:
+                from pdf2image import convert_from_path
+                from PIL import Image
+                # Increase PIL's image size limit for high-res images
+                Image.MAX_IMAGE_PIXELS = None
+                # Try with very high DPI
+                high_dpi = 2000
+                images = convert_from_path(pdf_path, dpi=high_dpi, first_page=1, last_page=1, 
+                                          fmt='png', thread_count=1, use_pdftocairo=True)
+                if images and len(images) > 0:
+                    img = images[0]
+                    # Verify we got reasonable resolution (at least 5000px wide)
+                    if img.width >= 5000:
+                        img.save(str(image_path), 'PNG', optimize=False, compress_level=1)
+                        converted = image_path.exists()
+            except Exception:
+                pass
+
+        # Method 2: ImageMagick CLI for best rasterization quality at ultra-high DPI
+        if not converted:
+            try:
+                import shutil
+                magick = shutil.which('magick') or shutil.which('convert')
+                if magick:
+                    # Ultra-high density (4000 DPI), first page only, optimized settings
+                    cmd = [
+                        magick,
+                        '-density', str(dpi),
+                        f"{pdf_path}[0]",
+                        '-colorspace', 'sRGB',
+                        '-background', 'white',
+                        '-alpha', 'remove',
+                        '-alpha', 'off',
+                        '-filter', 'Lanczos',
+                        '-sharpen', '0x0.5',
+                        '-quality', '100',
+                        '-define', 'png:compression-level=1',  # Faster compression, less compression
+                        '-define', 'png:compression-strategy=0',
+                        'PNG24:' + str(image_path)
+                    ]
+                    result = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+                    converted = (result.returncode == 0 and image_path.exists())
+                    if not converted and result.stderr:
+                        print(f"ImageMagick error: {result.stderr}")
+            except subprocess.TimeoutExpired:
+                print(f"ImageMagick conversion timed out for {team_abbrev}")
+                converted = False
+            except Exception as e:
+                converted = False
+
+        # Method 3: Wand (ImageMagick bindings) with ultra-high DPI
+        if not converted:
+            try:
+                from wand.image import Image as WandImage
+                # Read PDF and extract first page - resolution must be set when reading
+                # Use a temporary file approach to ensure resolution is applied
+                with WandImage() as img:
+                    img.options['pdf:use-cropbox'] = 'true'
+                    img.read(filename=pdf_path, resolution=dpi)
+                    # Get first page
+                    if len(img.sequence) > 0:
+                        first_page = WandImage(img.sequence[0])
+                        first_page.background_color = 'white'
+                        first_page.alpha_channel = 'remove'
+                        first_page.colorspace = 'srgb'
+                        first_page.compression_quality = 100
+                        first_page.unsharp_mask(0, 0.5, 1.0, 0.05)  # Slight sharpening
+                        first_page.format = 'png'
+                        first_page.save(filename=str(image_path))
+                        first_page.close()
+                converted = image_path.exists()
+                # Verify dimensions - if too small, resolution didn't apply
+                if converted:
+                    try:
+                        from PIL import Image
+                        with Image.open(image_path) as verify_img:
+                            width, height = verify_img.size
+                            expected_width = int(8.5 * dpi)
+                            if width < expected_width * 0.5:
+                                print(f"Wand produced {width}x{height}px (expected ~{expected_width}x{int(11*dpi)}px) - trying sips")
+                                converted = False
+                                if os.path.exists(image_path):
+                                    os.remove(image_path)
+                    except:
+                        pass
+            except Exception as e:
+                converted = False
+
+        # Method 4: macOS sips (lower quality but works as last resort)
+        if not converted:
+            try:
+                result = subprocess.run(
+                    [
+                        'sips', '-s', 'format', 'png',
+                        '--out', str(image_path),
+                        pdf_path
+                    ], capture_output=True, text=True
+                )
+                converted = (result.returncode == 0 and image_path.exists())
+            except Exception:
+                converted = False
+
+        # Delete the PDF only if we successfully created the image
+        if converted:
+            try:
+                os.remove(pdf_path)
+            except Exception:
+                pass
+            return str(image_path)
+
+        # If conversion failed, return the PDF path so the caller can still access it
+        return str(pdf_path)
 
 def main():
     """Example usage"""
