@@ -1,5 +1,5 @@
 {
-  "scraped_at": "2025-11-04T12:37:02.781919",
+  "scraped_at": "2025-11-05T12:35:17.370441",
   "total_players": 718,
   "player_data": [
     {
@@ -20,13 +20,13 @@
       "Player": "Corey Perry",
       "Team": "LAK",
       "Pos": "R",
-      "GP": 7,
+      "GP": 8,
       "Top Speed": 19.67,
-      "Distance Skated": 14.57,
-      "Average Speed": 8.67,
+      "Distance Skated": 16.28,
+      "Average Speed": 8.52,
       "Bursts>20 per mile": 0.0,
-      "ES Dist. Skated": 12.76,
-      "ES Avg. Speed": 9.12
+      "ES Dist. Skated": 14.01,
+      "ES Avg. Speed": 9.05
     },
     {
       "": "",
@@ -1892,13 +1892,13 @@
       "Player": "Filip Forsberg",
       "Team": "NSH",
       "Pos": "L",
-      "GP": 14,
+      "GP": 15,
       "Top Speed": 21.29,
-      "Distance Skated": 41.44,
+      "Distance Skated": 44.6,
       "Average Speed": 9.35,
       "Bursts>20 per mile": 0.07,
-      "ES Dist. Skated": 35.23,
-      "ES Avg. Speed": 9.77
+      "ES Dist. Skated": 38.18,
+      "ES Avg. Speed": 9.76
     },
     {
       "": "",
@@ -5545,13 +5545,13 @@
       "Player": "Ryan McLeod",
       "Team": "BUF",
       "Pos": "C",
-      "GP": 12,
+      "GP": 13,
       "Top Speed": 21.92,
-      "Distance Skated": 38.47,
-      "Average Speed": 10.78,
-      "Bursts>20 per mile": 0.7,
-      "ES Dist. Skated": 29.2,
-      "ES Avg. Speed": 11.03
+      "Distance Skated": 42.12,
+      "Average Speed": 10.81,
+      "Bursts>20 per mile": 0.74,
+      "ES Dist. Skated": 32.08,
+      "ES Avg. Speed": 11.05
     },
     {
       "": "",
@@ -9646,13 +9646,13 @@
           "Player": "Corey Perry",
           "Team": "LAK",
           "Pos": "R",
-          "GP": 7,
+          "GP": 8,
           "Top Speed": 19.67,
-          "Distance Skated": 14.57,
-          "Average Speed": 8.67,
+          "Distance Skated": 16.28,
+          "Average Speed": 8.52,
           "Bursts>20 per mile": 0.0,
-          "ES Dist. Skated": 12.76,
-          "ES Avg. Speed": 9.12
+          "ES Dist. Skated": 14.01,
+          "ES Avg. Speed": 9.05
         },
         {
           "": "",
@@ -9915,17 +9915,17 @@
           "ES Avg. Speed": 9.22
         }
       ],
-      "total_distance": 592.21,
-      "avg_speed": 9.18142857142857,
+      "total_distance": 593.92,
+      "avg_speed": 9.174285714285714,
       "max_speed": 22.89,
       "total_bursts": 9.139999999999999,
       "player_count": 21,
-      "avg_distance": 28.20047619047619,
+      "avg_distance": 28.28190476190476,
       "avg_bursts": 0.4352380952380952,
-      "speed_score": 0.918142857142857,
+      "speed_score": 0.9174285714285715,
       "distance_score": 1.0,
       "burst_score": 0.2176190476190476,
-      "edge_advantage": 0.802595238095238
+      "edge_advantage": 0.8022380952380952
     },
     "WSH": {
       "players": [
@@ -14265,13 +14265,13 @@
           "Player": "Filip Forsberg",
           "Team": "NSH",
           "Pos": "L",
-          "GP": 14,
+          "GP": 15,
           "Top Speed": 21.29,
-          "Distance Skated": 41.44,
+          "Distance Skated": 44.6,
           "Average Speed": 9.35,
           "Bursts>20 per mile": 0.07,
-          "ES Dist. Skated": 35.23,
-          "ES Avg. Speed": 9.77
+          "ES Dist. Skated": 38.18,
+          "ES Avg. Speed": 9.76
         },
         {
           "": "",
@@ -14482,12 +14482,12 @@
           "ES Avg. Speed": 10.62
         }
       ],
-      "total_distance": 600.9800000000001,
+      "total_distance": 604.1400000000001,
       "avg_speed": 9.351304347826087,
       "max_speed": 23.39,
       "total_bursts": 9.02,
       "player_count": 23,
-      "avg_distance": 26.12956521739131,
+      "avg_distance": 26.266956521739136,
       "avg_bursts": 0.39217391304347826,
       "speed_score": 0.9351304347826087,
       "distance_score": 1.0,
@@ -17732,13 +17732,13 @@
           "Player": "Ryan McLeod",
           "Team": "BUF",
           "Pos": "C",
-          "GP": 12,
+          "GP": 13,
           "Top Speed": 21.92,
-          "Distance Skated": 38.47,
-          "Average Speed": 10.78,
-          "Bursts>20 per mile": 0.7,
-          "ES Dist. Skated": 29.2,
-          "ES Avg. Speed": 11.03
+          "Distance Skated": 42.12,
+          "Average Speed": 10.81,
+          "Bursts>20 per mile": 0.74,
+          "ES Dist. Skated": 32.08,
+          "ES Avg. Speed": 11.05
         },
         {
           "": "",
@@ -17949,17 +17949,17 @@
           "ES Avg. Speed": 8.78
         }
       ],
-      "total_distance": 549.67,
-      "avg_speed": 9.363703703703704,
+      "total_distance": 553.3199999999999,
+      "avg_speed": 9.364814814814814,
       "max_speed": 22.95,
-      "total_bursts": 13.439999999999998,
+      "total_bursts": 13.479999999999997,
       "player_count": 27,
-      "avg_distance": 20.358148148148146,
-      "avg_bursts": 0.4977777777777777,
-      "speed_score": 0.9363703703703704,
+      "avg_distance": 20.493333333333332,
+      "avg_bursts": 0.4992592592592591,
+      "speed_score": 0.9364814814814814,
       "distance_score": 1.0,
-      "burst_score": 0.24888888888888885,
-      "edge_advantage": 0.817962962962963
+      "burst_score": 0.24962962962962956,
+      "edge_advantage": 0.8181666666666666
     },
     "CBJ": {
       "players": [
