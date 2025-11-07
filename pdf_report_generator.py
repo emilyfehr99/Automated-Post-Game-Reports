@@ -2882,35 +2882,7 @@ class PostGameReportGenerator:
         ]))
         story.append(shot_locations_wrapper)
         
-        # Create TOP PLAYERS title bar - positioned under the shot location map
-        top_players_title_data = [["TOP PLAYERS"]]
-        top_players_title_table = Table(top_players_title_data, colWidths=[2.3*inch])  # Same width as Top Players table
-        top_players_title_table.setStyle(TableStyle([
-            ('BACKGROUND', (0, 0), (-1, -1), home_team_color),
-            ('TEXTCOLOR', (0, 0), (-1, -1), colors.white),
-            ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
-            ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
-            ('FONTNAME', (0, 0), (-1, -1), 'RussoOne-Regular'),
-            ('FONTSIZE', (0, 0), (-1, -1), 10),
-            ('FONTWEIGHT', (0, 0), (-1, -1), 'BOLD'),
-            ('TOPPADDING', (0, 0), (-1, -1), 6),
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 6),
-            ('LEFTPADDING', (0, 0), (-1, -1), 0),
-            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-        ]))
-        
-        # Position the TOP PLAYERS title bar under the shot location map, moved 3 cm to the left
-        # Move up an additional 0.2 cm (0.079 inches) for tighter spacing
-        top_players_title_wrapper = Table([[top_players_title_table]], colWidths=[2.3*inch])
-        top_players_title_wrapper.setStyle(TableStyle([
-            ('ALIGN', (0, 0), (-1, -1), 'LEFT'),
-            ('VALIGN', (0, 0), (-1, -1), 'TOP'),
-            ('LEFTPADDING', (0, 0), (-1, -1), 2.38*inch),  # Move 0.3 cm more to the left (2.5 - 0.3*0.3937 = 2.5 - 0.118 = 2.382, rounded to 2.38)
-            ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-            ('TOPPADDING', (0, 0), (-1, -1), -2.08*inch),  # Move down 0.1 cm (-2.12 + 0.1*0.3937 = -2.12 + 0.039 = -2.081, rounded to -2.08)
-            ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
-        ]))
-        story.append(top_players_title_wrapper)
+        # Removed Top Players title bar; table positioning alone keeps layout aligned with the shot map.
         
         # Add shot location plot above the Top Players table position
         shot_plot_story = self.create_visualizations(game_data)

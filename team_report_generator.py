@@ -2753,27 +2753,34 @@ class TeamReportGenerator(PostGameReportGenerator):
             import shutil
             pdftocairo = shutil.which('pdftocairo')
             if pdftocairo:
-                # Use pdftocairo directly with scale factor
-                # For 8.5x11 page: scale = target_width / (8.5 * 72) = 12000 / 612 ≈ 19.6
-                scale = target_width / 612.0
+                # Use pdftocairo with very high DPI for maximum quality
+                # Calculate DPI needed: 12000px / 8.5in ≈ 1412 DPI
+                high_dpi = int(target_width / 8.5)
                 cmd = [
                     pdftocairo,
                     '-png',
-                    '-scale-to-x', str(target_width),
-                    '-scale-to-y', str(target_height),
-                    '-r', '300',  # Base resolution
+                    '-r', str(high_dpi),  # Very high resolution (1412 DPI)
                     '-f', '1',    # First page
                     '-l', '1',    # Last page
                     pdf_path,
                     str(image_path).replace('.png', '')  # pdftocairo adds .png-1
                 ]
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=180)
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
                 # pdftocairo outputs filename-1.png for first page
                 expected_output = str(image_path).replace('.png', '-1.png')
                 if os.path.exists(expected_output):
-                    os.rename(expected_output, str(image_path))
+                    # Resize to exact target dimensions if needed, preserving quality
+                    from PIL import Image
+                    Image.MAX_IMAGE_PIXELS = None
+                    img = Image.open(expected_output)
+                    if img.size != (target_width, target_height):
+                        # Use Lanczos resampling for highest quality resize
+                        img = img.resize((target_width, target_height), Image.Resampling.LANCZOS)
+                    # Save with maximum quality (no compression)
+                    img.save(str(image_path), 'PNG', optimize=False, compress_level=0)
+                    os.remove(expected_output)
                     converted = image_path.exists()
-        except Exception:
+        except Exception as e:
             converted = False
 
         # Method 1b: pdf2image fallback if pdftocairo didn't work
