@@ -24600,51 +24600,100 @@
       "actual_home_score": null,
       "prediction_accuracy": 52.1,
       "timestamp": "2025-11-08T20:23:51.986031"
+    },
+    {
+      "game_id": "2025020232",
+      "date": "2025-11-08",
+      "away_team": "OTT",
+      "home_team": "PHI",
+      "predicted_away_win_prob": 49.0,
+      "predicted_home_win_prob": 51.0,
+      "metrics_used": {
+        "away_xg": 2.2311252719337498,
+        "home_xg": 2.58647653805,
+        "away_hdc": 4,
+        "home_hdc": 6,
+        "away_shots": 13,
+        "home_shots": 22,
+        "away_gs": 2.95,
+        "home_gs": 3.399999999999999,
+        "away_goalie": null,
+        "home_goalie": null,
+        "away_corsi_pct": 40.2272366121087,
+        "home_corsi_pct": 59.7727633878913,
+        "away_power_play_pct": 0.0,
+        "home_power_play_pct": 25.0,
+        "away_faceoff_pct": 53.39820138581748,
+        "home_faceoff_pct": 46.60179861418251,
+        "away_hits": 6.0,
+        "home_hits": 8.666666666666666,
+        "away_blocked_shots": 3.6666666666666665,
+        "home_blocked_shots": 6.333333333333333,
+        "away_giveaways": 5.333333333333333,
+        "home_giveaways": 4.0,
+        "away_takeaways": 1.6666666666666667,
+        "home_takeaways": 2.6666666666666665,
+        "away_penalty_minutes": 2.6666666666666665,
+        "home_penalty_minutes": 2.6666666666666665,
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5,
+        "away_venue_win_pct": 0.2857142857142857,
+        "home_venue_win_pct": 0.7272727272727273
+      },
+      "actual_winner": "away",
+      "actual_away_score": null,
+      "actual_home_score": null,
+      "prediction_accuracy": 49.0,
+      "timestamp": "2025-11-08T20:51:55.008634"
     }
   ],
   "model_weights": {
-    "xg_weight": 0.049819213876504634,
-    "hdc_weight": 0.08933076194912648,
-    "corsi_weight": 0.1461590582287366,
-    "power_play_weight": 0.0286280836617843,
-    "faceoff_weight": 0.0286280836617843,
-    "shots_weight": 0.16167435431040217,
-    "hits_weight": 0.0286280836617843,
-    "blocked_shots_weight": 0.10918486224299573,
-    "takeaways_weight": 0.0286280836617843,
-    "penalty_minutes_weight": 0.0879869277908853,
-    "recent_form_weight": 0.0436747731396143,
-    "head_to_head_weight": 0.10426492926601102,
-    "rest_days_weight": 0.03291538202996471,
-    "goalie_performance_weight": 0.0286280836617843,
-    "game_score_weight": 0.03184931885683768
+    "xg_weight": 0.060994181802910066,
+    "hdc_weight": 0.0986903789160572,
+    "corsi_weight": 0.13654561689476324,
+    "power_play_weight": 0.027292070783884653,
+    "faceoff_weight": 0.030420021021001328,
+    "shots_weight": 0.15971760145723027,
+    "hits_weight": 0.027292070783884653,
+    "blocked_shots_weight": 0.09933576726735126,
+    "takeaways_weight": 0.027292070783884653,
+    "penalty_minutes_weight": 0.09809925695291924,
+    "recent_form_weight": 0.040788141311176244,
+    "head_to_head_weight": 0.11137020854056504,
+    "rest_days_weight": 0.027578471916602704,
+    "goalie_performance_weight": 0.027292070783884653,
+    "game_score_weight": 0.027292070783884653
   },
   "weight_momentum": {
-    "xg_weight": 0.0008108433898161085,
-    "hdc_weight": 0.01966346550693669,
-    "corsi_weight": 0.01383951542208678,
-    "power_play_weight": -0.031464534613777274,
-    "faceoff_weight": -0.012057044299814771,
-    "shots_weight": 0.015503671190405823,
-    "hits_weight": -0.012773901375791171,
-    "blocked_shots_weight": -0.00948019922335009,
-    "takeaways_weight": -0.020821811181488674,
-    "penalty_minutes_weight": 0.014835026103391985,
-    "recent_form_weight": -0.015580118334394412,
-    "head_to_head_weight": 0.007285127180202588,
-    "rest_days_weight": 0.0007100756552179685,
-    "goalie_performance_weight": -0.010061842776963436,
-    "game_score_weight": -0.004098901253452962
+    "xg_weight": 0.017226832888395743,
+    "hdc_weight": 0.01915171235362773,
+    "corsi_weight": 0.003934664570110507,
+    "power_play_weight": -0.04493630021333299,
+    "faceoff_weight": 0.004810222938567537,
+    "shots_weight": 0.013890485809615232,
+    "hits_weight": -0.02126058042536575,
+    "blocked_shots_weight": 7.036078629718383e-06,
+    "takeaways_weight": -0.011281956385769641,
+    "penalty_minutes_weight": 0.01984577321197662,
+    "recent_form_weight": 0.0011603824271747606,
+    "head_to_head_weight": 0.018155471980705586,
+    "rest_days_weight": -0.0026005640724129234,
+    "goalie_performance_weight": -0.01568314036759956,
+    "game_score_weight": -0.004326713517245443
   },
-  "last_updated": "2025-11-08T20:23:55.702504",
+  "last_updated": "2025-11-08T20:51:58.927139",
   "model_performance": {
-    "total_games": 257,
+    "total_games": 258,
     "correct_predictions": 156,
-    "accuracy": 0.6070038910505836,
-    "recent_accuracy": 0.8333333333333334
+    "accuracy": 0.6046511627906976,
+    "recent_accuracy": 0.8
   },
   "team_stats": {
-    "PIT": {
+    "OTT": {
       "home": {
         "games": [],
         "xg": [],
@@ -24670,109 +24719,109 @@
           "2025-11-08"
         ],
         "xg": [
-          3.2316262388425017
+          2.2311252719337498
         ],
         "hdc": [
-          7
+          4
         ],
         "shots": [
-          34
+          13
         ],
         "goals": [
           null
         ],
         "gs": [
-          4.075
+          2.95
         ],
         "opp_xg": [
-          2.8978975636375015
+          2.58647653805
         ],
         "opp_goals": [
           null
         ],
         "last_goalie": null,
         "opponents": [
-          "NJD"
+          "PHI"
         ],
         "corsi_pct": [
-          58.108108108108105
+          40.2272366121087
         ],
         "power_play_pct": [
           0.0
         ],
         "faceoff_pct": [
-          42.857142857142854
+          53.39820138581748
         ],
         "hits": [
           6.0
         ],
         "blocked_shots": [
-          7.333333333333333
+          3.6666666666666665
         ],
         "giveaways": [
-          4.0
+          5.333333333333333
         ],
         "takeaways": [
-          0.6666666666666666
+          1.6666666666666667
         ],
         "penalty_minutes": [
-          2.0
+          2.6666666666666665
         ]
       }
     },
-    "NJD": {
+    "PHI": {
       "home": {
         "games": [
           "2025-11-08"
         ],
         "xg": [
-          2.8978975636375015
+          2.58647653805
         ],
         "hdc": [
-          10
+          6
         ],
         "shots": [
-          24
+          22
         ],
         "goals": [
           null
         ],
         "gs": [
-          4.375
+          3.399999999999999
         ],
         "opp_xg": [
-          3.2316262388425017
+          2.2311252719337498
         ],
         "opp_goals": [
           null
         ],
         "last_goalie": null,
         "opponents": [
-          "PIT"
+          "OTT"
         ],
         "corsi_pct": [
-          41.891891891891895
+          59.7727633878913
         ],
         "power_play_pct": [
-          0.0
+          25.0
         ],
         "faceoff_pct": [
-          57.14285714285714
+          46.60179861418251
         ],
         "hits": [
-          7.333333333333333
+          8.666666666666666
         ],
         "blocked_shots": [
-          4.333333333333333
+          6.333333333333333
         ],
         "giveaways": [
-          3.6666666666666665
+          4.0
         ],
         "takeaways": [
-          2.0
+          2.6666666666666665
         ],
         "penalty_minutes": [
-          1.3333333333333333
+          2.6666666666666665
         ]
       },
       "away": {
@@ -24813,9 +24862,9 @@
     "VGK": "2025-11-07",
     "BUF": "2025-11-07",
     "DET": "2025-11-08",
-    "OTT": "2025-11-07",
+    "OTT": "2025-11-08",
     "TBL": "2025-11-07",
-    "PHI": "2025-11-07",
+    "PHI": "2025-11-08",
     "NYI": "2025-11-08",
     "NJD": "2025-11-08",
     "CAR": "2025-11-07",
