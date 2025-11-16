@@ -250,23 +250,41 @@ def debug_game_data(game_id):
         boxscore = api.get_game_boxscore(game_id)
         comp_data = api.get_comprehensive_game_data(game_id)
         
-        return jsonify({
-            'boxscore_structure': {
-                'keys': list(boxscore.keys()) if boxscore else [],
-                'awayTeam_keys': list(boxscore.get('awayTeam', {}).keys()) if boxscore else [],
-                'homeTeam_keys': list(boxscore.get('homeTeam', {}).keys()) if boxscore else [],
-                'awayTeam_score': boxscore.get('awayTeam', {}).get('score') if boxscore else None,
-                'homeTeam_score': boxscore.get('homeTeam', {}).get('score') if boxscore else None,
-                'awayTeam_teamStats': bool(boxscore.get('awayTeam', {}).get('teamStats')) if boxscore else False,
-            },
-            'comp_data_structure': {
-                'has_boxscore': bool(comp_data.get('boxscore')) if comp_data else False,
-                'has_play_by_play': bool(comp_data.get('play_by_play')) if comp_data else False,
-            },
-            'raw_boxscore_sample': {k: str(v)[:100] for k, v in (boxscore.items() if boxscore else {})} if boxscore else None
-        })
+        debug_info = {
+            'boxscore_exists': boxscore is not None,
+            'comp_data_exists': comp_data is not None,
+        }
+        
+        if boxscore:
+            debug_info['boxscore_keys'] = list(boxscore.keys())[:20]
+            away_team = boxscore.get('awayTeam', {})
+            home_team = boxscore.get('homeTeam', {})
+            debug_info['awayTeam'] = {
+                'keys': list(away_team.keys())[:15],
+                'score': away_team.get('score'),
+                'goals': away_team.get('goals'),
+                'has_teamStats': bool(away_team.get('teamStats')),
+                'teamStats_keys': list(away_team.get('teamStats', {}).keys())[:10] if away_team.get('teamStats') else [],
+                'teamSkaterStats_keys': list(away_team.get('teamStats', {}).get('teamSkaterStats', {}).keys())[:15] if away_team.get('teamStats', {}).get('teamSkaterStats') else [],
+            }
+            debug_info['homeTeam'] = {
+                'keys': list(home_team.keys())[:15],
+                'score': home_team.get('score'),
+                'goals': home_team.get('goals'),
+                'has_teamStats': bool(home_team.get('teamStats')),
+            }
+        
+        if comp_data:
+            comp_boxscore = comp_data.get('boxscore', {})
+            debug_info['comp_boxscore'] = {
+                'keys': list(comp_boxscore.keys())[:15] if comp_boxscore else [],
+                'awayTeam_score': comp_boxscore.get('awayTeam', {}).get('score') if comp_boxscore else None,
+            }
+        
+        return jsonify(debug_info)
     except Exception as e:
-        return jsonify({'error': str(e)}), 500
+        import traceback
+        return jsonify({'error': str(e), 'traceback': traceback.format_exc()}), 500
 
 
 @app.route('/api/game/<game_id>/report')
