@@ -724,10 +724,19 @@ def get_live_game_report(game_id):
                     shot_type = details.get('shotType', 'wrist').title() or 'Wrist'
                     
                     # Calculate xG for this goal
+                    play_index = -1
+                    try:
+                        play_index = plays.index(play)
+                    except:
+                        pass
+                    
+                    xg_value = 0.0
                     try:
                         # Get previous events for context (rebounds, rushes)
-                        play_index = plays.index(play)
-                        previous_events = plays[max(0, play_index-10):play_index]
+                        if play_index >= 0:
+                            previous_events = plays[max(0, play_index-10):play_index]
+                        else:
+                            previous_events = []
                         xg_value = report_generator._calculate_shot_xg(details, 'goal', play, previous_events)
                     except Exception as e:
                         print(f"Error calculating xG: {e}")
@@ -747,11 +756,11 @@ def get_live_game_report(game_id):
                             prev_details = prev_play.get('details', {})
                             prev_x = prev_details.get('xCoord', 0)
                             prev_y = prev_details.get('yCoord', 0)
-                            if prev_x and prev_y:
+                            if prev_x and prev_y and x_coord and y_coord:
                                 # Lateral = X movement (east-west)
-                                lateral_movement = abs(x_coord - prev_x) if x_coord and prev_x else 0
+                                lateral_movement = abs(x_coord - prev_x)
                                 # Longitudinal = Y movement (north-south)
-                                longitudinal_movement = abs(y_coord - prev_y) if y_coord and prev_y else 0
+                                longitudinal_movement = abs(y_coord - prev_y)
                     except:
                         pass
                     
