@@ -127,12 +127,36 @@ def get_games():
                     try:
                         boxscore_data = api.get_game_boxscore(game_id)
                         if boxscore_data:
-                            away_score = boxscore_data.get('awayTeam', {}).get('score', 0)
-                            home_score = boxscore_data.get('homeTeam', {}).get('score', 0)
+                            # Try multiple paths for scores
+                            away_team_data = boxscore_data.get('awayTeam', {})
+                            home_team_data = boxscore_data.get('homeTeam', {})
+                            
+                            away_score = (
+                                away_team_data.get('score') or 
+                                away_team_data.get('goals') or 
+                                away_team_data.get('teamStats', {}).get('teamSkaterStats', {}).get('goals') or
+                                0
+                            )
+                            home_score = (
+                                home_team_data.get('score') or 
+                                home_team_data.get('goals') or 
+                                home_team_data.get('teamStats', {}).get('teamSkaterStats', {}).get('goals') or
+                                0
+                            )
+                            
+                            # Get period info
                             period_desc = boxscore_data.get('periodDescriptor', {})
-                            current_period = period_desc.get('number', 1)
+                            if not period_desc:
+                                period_desc = boxscore_data.get('periodInfo', {})
+                            
+                            current_period = period_desc.get('number') or period_desc.get('currentPeriod') or 1
+                            
+                            # Get clock/time
                             clock = boxscore_data.get('clock', {})
-                            time_remaining = clock.get('timeRemaining', '20:00')
+                            if not clock:
+                                clock = boxscore_data.get('periodInfo', {})
+                            
+                            time_remaining = clock.get('timeRemaining') or clock.get('timeInPeriod') or '20:00'
                             
                             game_data['away_score'] = away_score
                             game_data['home_score'] = home_score
@@ -140,6 +164,8 @@ def get_games():
                             game_data['time_remaining'] = time_remaining
                     except Exception as e:
                         print(f"Error getting live scores: {e}")
+                        import traceback
+                        traceback.print_exc()
                     
                     # Get live prediction
                     live = get_live_prediction(game_id)
@@ -217,6 +243,32 @@ def get_game(game_id):
         return jsonify({'error': str(e)}), 500
 
 
+@app.route('/api/debug/<game_id>')
+def debug_game_data(game_id):
+    """Debug endpoint to see actual API structure"""
+    try:
+        boxscore = api.get_game_boxscore(game_id)
+        comp_data = api.get_comprehensive_game_data(game_id)
+        
+        return jsonify({
+            'boxscore_structure': {
+                'keys': list(boxscore.keys()) if boxscore else [],
+                'awayTeam_keys': list(boxscore.get('awayTeam', {}).keys()) if boxscore else [],
+                'homeTeam_keys': list(boxscore.get('homeTeam', {}).keys()) if boxscore else [],
+                'awayTeam_score': boxscore.get('awayTeam', {}).get('score') if boxscore else None,
+                'homeTeam_score': boxscore.get('homeTeam', {}).get('score') if boxscore else None,
+                'awayTeam_teamStats': bool(boxscore.get('awayTeam', {}).get('teamStats')) if boxscore else False,
+            },
+            'comp_data_structure': {
+                'has_boxscore': bool(comp_data.get('boxscore')) if comp_data else False,
+                'has_play_by_play': bool(comp_data.get('play_by_play')) if comp_data else False,
+            },
+            'raw_boxscore_sample': {k: str(v)[:100] for k, v in (boxscore.items() if boxscore else {})} if boxscore else None
+        })
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
 @app.route('/api/game/<game_id>/report')
 def get_live_game_report(game_id):
     """Get detailed live game report with comprehensive stats"""
@@ -226,22 +278,33 @@ def get_live_game_report(game_id):
         if not game_data:
             return jsonify({'error': 'Could not fetch game data'}), 404
         
-        # Extract basic game info
+        # Extract basic game info - boxscore is at top level
         boxscore = game_data.get('boxscore', {})
         if not boxscore:
             return jsonify({'error': 'No boxscore data available'}), 404
         
+        # NHL API boxscore structure: {awayTeam: {...}, homeTeam: {...}, ...}
         away_team = boxscore.get('awayTeam', {})
         home_team = boxscore.get('homeTeam', {})
         
-        away_abbrev = away_team.get('abbrev', '')
-        home_abbrev = home_team.get('abbrev', '')
+        away_abbrev = away_team.get('abbrev', '') or away_team.get('abbreviation', '')
+        home_abbrev = home_team.get('abbrev', '') or home_team.get('abbreviation', '')
         away_id = away_team.get('id')
         home_id = home_team.get('id')
         
-        # Get current scores and stats
-        away_score = away_team.get('score', 0)
-        home_score = home_team.get('score', 0)
+        # Get current scores - try multiple paths
+        away_score = (
+            away_team.get('score') or 
+            away_team.get('goals') or
+            away_team.get('teamStats', {}).get('teamSkaterStats', {}).get('goals') or
+            0
+        )
+        home_score = (
+            home_team.get('score') or 
+            home_team.get('goals') or
+            home_team.get('teamStats', {}).get('teamSkaterStats', {}).get('goals') or
+            0
+        )
         
         # Get period info
         period_descriptor = boxscore.get('periodDescriptor', {})
@@ -313,7 +376,11 @@ def get_live_game_report(game_id):
             away_team_stats = {}
             home_team_stats = {}
             
-            # Path 1: teamStats.teamSkaterStats
+            # Debug: Print structure to understand API response
+            # print(f"DEBUG - Away team keys: {list(away_team.keys())}")
+            # print(f"DEBUG - Boxscore keys: {list(boxscore.keys())[:10]}")
+            
+            # Path 1: teamStats.teamSkaterStats (most common)
             if away_team.get('teamStats', {}).get('teamSkaterStats'):
                 away_team_stats = away_team.get('teamStats', {}).get('teamSkaterStats', {})
             # Path 2: teamStats directly
@@ -331,18 +398,46 @@ def get_live_game_report(game_id):
                 home_team_stats = home_team.get('stats', {})
             
             # Also try getting from boxscore directly if available
-            if not away_team_stats and boxscore.get('awayTeam', {}).get('teamStats'):
-                away_team_stats = boxscore.get('awayTeam', {}).get('teamStats', {}).get('teamSkaterStats', {})
-            if not home_team_stats and boxscore.get('homeTeam', {}).get('teamStats'):
-                home_team_stats = boxscore.get('homeTeam', {}).get('teamStats', {}).get('teamSkaterStats', {})
+            if not away_team_stats:
+                away_from_box = boxscore.get('awayTeam', {})
+                if away_from_box.get('teamStats', {}).get('teamSkaterStats'):
+                    away_team_stats = away_from_box.get('teamStats', {}).get('teamSkaterStats', {})
+                elif away_from_box.get('teamStats'):
+                    away_team_stats = away_from_box.get('teamStats', {})
+            
+            if not home_team_stats:
+                home_from_box = boxscore.get('homeTeam', {})
+                if home_from_box.get('teamStats', {}).get('teamSkaterStats'):
+                    home_team_stats = home_from_box.get('teamStats', {}).get('teamSkaterStats', {})
+                elif home_from_box.get('teamStats'):
+                    home_team_stats = home_from_box.get('teamStats', {})
+            
+            # If still empty, try getting comprehensive game data structure
+            if not away_team_stats or not home_team_stats:
+                comp_data = api.get_comprehensive_game_data(game_id)
+                if comp_data:
+                    comp_boxscore = comp_data.get('boxscore', {})
+                    if comp_boxscore:
+                        comp_away = comp_boxscore.get('awayTeam', {})
+                        comp_home = comp_boxscore.get('homeTeam', {})
+                        if not away_team_stats and comp_away.get('teamStats', {}).get('teamSkaterStats'):
+                            away_team_stats = comp_away.get('teamStats', {}).get('teamSkaterStats', {})
+                        if not home_team_stats and comp_home.get('teamStats', {}).get('teamSkaterStats'):
+                            home_team_stats = comp_home.get('teamStats', {}).get('teamSkaterStats', {})
+            
+            # Calculate faceoff totals if we have wins but not total
+            away_fo_wins = away_team_stats.get('faceOffWins') or away_team_stats.get('faceoffWins') or 0
+            home_fo_wins = home_team_stats.get('faceOffWins') or home_team_stats.get('faceoffWins') or 0
+            away_fo_total = away_team_stats.get('faceOffTaken') or away_team_stats.get('faceoffTaken') or (away_fo_wins + home_fo_wins if (away_fo_wins + home_fo_wins) > 0 else 1)
+            home_fo_total = home_team_stats.get('faceOffTaken') or home_team_stats.get('faceoffTaken') or (away_fo_wins + home_fo_wins if (away_fo_wins + home_fo_wins) > 0 else 1)
             
             report_data['stats'] = {
                 'away': {
                     'shots': away_team_stats.get('shots') or away_team_stats.get('sog') or 0,
                     'hits': away_team_stats.get('hits') or 0,
                     'pim': away_team_stats.get('pim') or 0,
-                    'faceoff_wins': away_team_stats.get('faceOffWins') or away_team_stats.get('faceoffWins') or 0,
-                    'faceoff_total': away_team_stats.get('faceOffTaken') or away_team_stats.get('faceoffTaken') or (away_team_stats.get('faceOffWins', 0) + away_team_stats.get('faceoffWins', 0)),
+                    'faceoff_wins': away_fo_wins,
+                    'faceoff_total': away_fo_total,
                     'power_play_goals': away_team_stats.get('powerPlayGoals') or away_team_stats.get('ppGoals') or 0,
                     'power_play_opportunities': away_team_stats.get('powerPlayOpportunities') or away_team_stats.get('ppOpportunities') or 0,
                     'blocked_shots': away_team_stats.get('blocked') or away_team_stats.get('blockedShots') or 0,
@@ -353,8 +448,8 @@ def get_live_game_report(game_id):
                     'shots': home_team_stats.get('shots') or home_team_stats.get('sog') or 0,
                     'hits': home_team_stats.get('hits') or 0,
                     'pim': home_team_stats.get('pim') or 0,
-                    'faceoff_wins': home_team_stats.get('faceOffWins') or home_team_stats.get('faceoffWins') or 0,
-                    'faceoff_total': home_team_stats.get('faceOffTaken') or home_team_stats.get('faceoffTaken') or (home_team_stats.get('faceOffWins', 0) + home_team_stats.get('faceoffWins', 0)),
+                    'faceoff_wins': home_fo_wins,
+                    'faceoff_total': home_fo_total,
                     'power_play_goals': home_team_stats.get('powerPlayGoals') or home_team_stats.get('ppGoals') or 0,
                     'power_play_opportunities': home_team_stats.get('powerPlayOpportunities') or home_team_stats.get('ppOpportunities') or 0,
                     'blocked_shots': home_team_stats.get('blocked') or home_team_stats.get('blockedShots') or 0,
@@ -457,13 +552,25 @@ def get_live_game_report(game_id):
                     details = play.get('details', {})
                     scorer_name = 'Unknown'
                     
-                    # Try scoringPlayerName (most common)
+                    # Try scoringPlayerName (most common) - NHL API structure
                     if details.get('scoringPlayerName'):
                         scorer_name_obj = details['scoringPlayerName']
                         if isinstance(scorer_name_obj, dict):
-                            scorer_name = scorer_name_obj.get('default') or scorer_name_obj.get('fullName') or scorer_name_obj.get('firstName', '') + ' ' + scorer_name_obj.get('lastName', '') or 'Unknown'
+                            # Try all possible name fields
+                            scorer_name = (
+                                scorer_name_obj.get('default') or 
+                                scorer_name_obj.get('fullName') or 
+                                (scorer_name_obj.get('firstName', '') + ' ' + scorer_name_obj.get('lastName', '')).strip() or
+                                scorer_name_obj.get('lastName') or
+                                'Unknown'
+                            )
                         else:
-                            scorer_name = str(scorer_name_obj)
+                            scorer_name = str(scorer_name_obj) if scorer_name_obj else 'Unknown'
+                    
+                    # Also try getting from roster if we have player ID
+                    if scorer_name == 'Unknown' and details.get('scoringPlayerId'):
+                        # Could look up from roster, but for now just mark as needing lookup
+                        scorer_name = f"Player #{details.get('scoringPlayerId')}"
                     # Try other possible fields
                     elif details.get('scorer'):
                         scorer_obj = details['scorer']
@@ -485,19 +592,31 @@ def get_live_game_report(game_id):
                     # Process assist1
                     if assist1:
                         if isinstance(assist1, dict):
-                            assist_name = assist1.get('default') or assist1.get('fullName') or assist1.get('firstName', '') + ' ' + assist1.get('lastName', '')
+                            assist_name = (
+                                assist1.get('default') or 
+                                assist1.get('fullName') or 
+                                (assist1.get('firstName', '') + ' ' + assist1.get('lastName', '')).strip() or
+                                assist1.get('lastName') or
+                                ''
+                            )
                         else:
-                            assist_name = str(assist1)
-                        if assist_name and assist_name != 'Unknown':
+                            assist_name = str(assist1) if assist1 else ''
+                        if assist_name and assist_name != 'Unknown' and assist_name.strip():
                             assists.append(assist_name)
                     
                     # Process assist2
                     if assist2:
                         if isinstance(assist2, dict):
-                            assist_name = assist2.get('default') or assist2.get('fullName') or assist2.get('firstName', '') + ' ' + assist2.get('lastName', '')
+                            assist_name = (
+                                assist2.get('default') or 
+                                assist2.get('fullName') or 
+                                (assist2.get('firstName', '') + ' ' + assist2.get('lastName', '')).strip() or
+                                assist2.get('lastName') or
+                                ''
+                            )
                         else:
-                            assist_name = str(assist2)
-                        if assist_name and assist_name != 'Unknown':
+                            assist_name = str(assist2) if assist2 else ''
+                        if assist_name and assist_name != 'Unknown' and assist_name.strip():
                             assists.append(assist_name)
                     
                     # Process assistDetails array if available

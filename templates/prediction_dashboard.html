@@ -33,11 +33,15 @@
         }
 
         header h1 {
-            font-size: 2.8em;
-            margin-bottom: 10px;
-            text-shadow: 0 2px 10px rgba(255,255,255,0.1);
-            letter-spacing: 2px;
-            font-weight: 700;
+            font-size: 3.2em;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 15px rgba(200,16,46,0.3);
+            letter-spacing: 3px;
+            font-weight: 900;
+            background: linear-gradient(135deg, #fff 0%, #c8102e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
         }
 
         .last-updated {
@@ -83,12 +87,30 @@
         }
 
         .game-card {
-            background: #1a1a1a;
+            background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%);
             border: 2px solid #333;
-            border-radius: 8px;
-            padding: 25px;
+            border-radius: 12px;
+            padding: 30px;
             transition: all 0.3s;
-            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.6);
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .game-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            right: 0;
+            height: 3px;
+            background: linear-gradient(90deg, transparent, #c8102e, transparent);
+            opacity: 0;
+            transition: opacity 0.3s;
+        }
+        
+        .game-card:hover::before {
+            opacity: 1;
         }
 
         .game-card:hover {
@@ -142,12 +164,17 @@
         }
 
         .score {
-            font-size: 2em;
-            font-weight: 700;
-            margin: 15px 0;
+            font-size: 2.5em;
+            font-weight: 900;
+            margin: 20px 0;
             color: #fff;
             text-align: center;
-            letter-spacing: 2px;
+            letter-spacing: 3px;
+            text-shadow: 0 2px 10px rgba(200,16,46,0.4);
+            padding: 15px;
+            background: rgba(200,16,46,0.1);
+            border-radius: 8px;
+            border: 1px solid rgba(200,16,46,0.3);
         }
 
         .period-info {
