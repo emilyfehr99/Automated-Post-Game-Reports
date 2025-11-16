@@ -495,29 +495,32 @@ def get_live_game_report(game_id):
                     except Exception as e2:
                         print(f"Error calculating stats from players: {e2}")
             
-            # Calculate faceoff totals - ensure we have proper totals
+            # Calculate faceoff totals - use actual totals from stats
             away_fo_wins = away_team_stats.get('faceOffWins') or away_team_stats.get('faceoffWins') or 0
             home_fo_wins = home_team_stats.get('faceOffWins') or home_team_stats.get('faceoffWins') or 0
             away_fo_taken = away_team_stats.get('faceOffTaken') or away_team_stats.get('faceoffTaken') or 0
             home_fo_taken = home_team_stats.get('faceOffTaken') or home_team_stats.get('faceoffTaken') or 0
             
-            # If we don't have totals but have wins, calculate from both teams
+            # If totals are missing, calculate from wins (total = away wins + home wins)
             if away_fo_taken == 0 and home_fo_taken == 0:
                 total_faceoffs = away_fo_wins + home_fo_wins
                 if total_faceoffs > 0:
-                    # Estimate: assume roughly 50/50 split if we only have wins
-                    away_fo_total = max(away_fo_wins, total_faceoffs // 2)
-                    home_fo_total = max(home_fo_wins, total_faceoffs // 2)
+                    # Total faceoffs = sum of wins from both teams
+                    away_fo_total = total_faceoffs  # Each team takes all faceoffs
+                    home_fo_total = total_faceoffs
                 else:
                     away_fo_total = 0
                     home_fo_total = 0
             elif away_fo_taken == 0:
-                away_fo_total = max(away_fo_wins, home_fo_taken - home_fo_wins) if home_fo_taken > 0 else away_fo_wins
+                # If away total missing, use home total (they should be the same)
+                away_fo_total = home_fo_taken
                 home_fo_total = home_fo_taken
             elif home_fo_taken == 0:
+                # If home total missing, use away total
                 away_fo_total = away_fo_taken
-                home_fo_total = max(home_fo_wins, away_fo_taken - away_fo_wins) if away_fo_taken > 0 else home_fo_wins
+                home_fo_total = away_fo_taken
             else:
+                # Both totals available
                 away_fo_total = away_fo_taken
                 home_fo_total = home_fo_taken
             
@@ -549,6 +552,7 @@ def get_live_game_report(game_id):
             }
             
             # Calculate percentages - only if we have valid data
+            # For faceoffs: percentage = wins / total faceoffs taken by that team
             away_fo_pct = 0.0
             home_fo_pct = 0.0
             if report_data['stats']['away']['faceoff_total'] > 0:
@@ -558,20 +562,22 @@ def get_live_game_report(game_id):
                 home_fo_pct = (report_data['stats']['home']['faceoff_wins'] / 
                               report_data['stats']['home']['faceoff_total']) * 100
             
-            report_data['stats']['away']['faceoff_pct'] = round(away_fo_pct, 1)
-            report_data['stats']['home']['faceoff_pct'] = round(home_fo_pct, 1)
+            report_data['stats']['away']['faceoff_pct'] = round(away_fo_pct, 1) if away_fo_pct > 0 else 0.0
+            report_data['stats']['home']['faceoff_pct'] = round(home_fo_pct, 1) if home_fo_pct > 0 else 0.0
             
+            # For power play: percentage = goals / opportunities
             away_pp_pct = 0.0
             home_pp_pct = 0.0
-            if report_data['stats']['away']['power_play_opportunities'] > 0:
-                away_pp_pct = (report_data['stats']['away']['power_play_goals'] / 
-                              report_data['stats']['away']['power_play_opportunities']) * 100
-            if report_data['stats']['home']['power_play_opportunities'] > 0:
-                home_pp_pct = (report_data['stats']['home']['power_play_goals'] / 
-                              report_data['stats']['home']['power_play_opportunities']) * 100
+            away_pp_opps = report_data['stats']['away']['power_play_opportunities']
+            home_pp_opps = report_data['stats']['home']['power_play_opportunities']
             
-            report_data['stats']['away']['power_play_pct'] = round(away_pp_pct, 1)
-            report_data['stats']['home']['power_play_pct'] = round(home_pp_pct, 1)
+            if away_pp_opps > 0:
+                away_pp_pct = (report_data['stats']['away']['power_play_goals'] / away_pp_opps) * 100
+            if home_pp_opps > 0:
+                home_pp_pct = (report_data['stats']['home']['power_play_goals'] / home_pp_opps) * 100
+            
+            report_data['stats']['away']['power_play_pct'] = round(away_pp_pct, 1) if away_pp_pct > 0 else 0.0
+            report_data['stats']['home']['power_play_pct'] = round(home_pp_pct, 1) if home_pp_pct > 0 else 0.0
             
         except Exception as e:
             print(f"Error extracting team stats: {e}")
@@ -890,6 +896,9 @@ def get_live_game_report(game_id):
                             plot_x = -x_coord
                             plot_y = -y_coord
                     
+                    # Get team color for this goal
+                    team_color = report_generator._get_team_color(team_abbrev)
+                    
                     scoring_plays.append({
                         'period': period_num,
                         'time': time_str,
@@ -902,6 +911,7 @@ def get_live_game_report(game_id):
                         'y_coord': plot_y,
                         'team_id': team_id,  # Store original team_id for reference
                         'is_away': is_away_goal,
+                        'team_color': team_color,  # Store team color for plotting
                         'longitudinal_movement': round(longitudinal_movement, 1) if longitudinal_movement else 0,
                         'lateral_movement': round(lateral_movement, 1) if lateral_movement else 0
                     })

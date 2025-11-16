@@ -988,6 +988,10 @@
                 
                 ctx.drawImage(rinkImg, drawX, drawY, drawWidth, drawHeight);
                 
+                // Get team colors for legend
+                const awayColor = shotData.find(g => g.is_away)?.team_color || '#666666';
+                const homeColor = shotData.find(g => !g.is_away)?.team_color || '#666666';
+                
                 // Now plot goals on top of the rink
                 shotData.forEach(goal => {
                     // Use the same logic as post-game reports
@@ -1003,13 +1007,23 @@
                     const x = drawX + normX * drawWidth;
                     const y = drawY + normY * drawHeight;
                     
-                    // Draw goal marker with shadow
+                    // Use team color from goal data (from post-game report generator)
+                    const goalColor = goal.team_color || (isAway ? awayColor : homeColor);
+                    
+                    // Draw goal marker with shadow and black border (like post-game reports)
                     ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
                     ctx.shadowBlur = 4;
                     ctx.shadowOffsetX = 2;
                     ctx.shadowOffsetY = 2;
                     
-                    ctx.fillStyle = isAway ? '#4CAF50' : '#FF6B6B';
+                    // Draw black border
+                    ctx.fillStyle = '#000';
+                    ctx.beginPath();
+                    ctx.arc(x, y, 12, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Draw goal marker in team color
+                    ctx.fillStyle = goalColor;
                     ctx.beginPath();
                     ctx.arc(x, y, 10, 0, Math.PI * 2);
                     ctx.fill();
@@ -1029,18 +1043,18 @@
                     ctx.fillText(goal.xg.toFixed(3), x + 12, y - 8);
                 });
                 
-                // Add legend
+                // Add legend with actual team colors
                 ctx.fillStyle = '#fff';
                 ctx.font = 'bold 13px Inter';
                 ctx.fillText(`${awayTeam} Goals`, 20, height - 30);
-                ctx.fillStyle = '#4CAF50';
+                ctx.fillStyle = awayColor;
                 ctx.beginPath();
                 ctx.arc(15, height - 35, 7, 0, Math.PI * 2);
                 ctx.fill();
                 
                 ctx.fillStyle = '#fff';
                 ctx.fillText(`${homeTeam} Goals`, width - 180, height - 30);
-                ctx.fillStyle = '#FF6B6B';
+                ctx.fillStyle = homeColor;
                 ctx.beginPath();
                 ctx.arc(width - 185, height - 35, 7, 0, Math.PI * 2);
                 ctx.fill();
