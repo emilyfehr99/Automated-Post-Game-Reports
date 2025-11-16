@@ -376,11 +376,7 @@ def get_live_game_report(game_id):
             away_team_stats = {}
             home_team_stats = {}
             
-            # Debug: Print structure to understand API response
-            # print(f"DEBUG - Away team keys: {list(away_team.keys())}")
-            # print(f"DEBUG - Boxscore keys: {list(boxscore.keys())[:10]}")
-            
-            # Path 1: teamStats.teamSkaterStats (most common)
+            # Path 1: teamStats.teamSkaterStats (most common NHL API structure)
             if away_team.get('teamStats', {}).get('teamSkaterStats'):
                 away_team_stats = away_team.get('teamStats', {}).get('teamSkaterStats', {})
             # Path 2: teamStats directly
@@ -397,33 +393,41 @@ def get_live_game_report(game_id):
             elif home_team.get('stats'):
                 home_team_stats = home_team.get('stats', {})
             
-            # Also try getting from boxscore directly if available
-            if not away_team_stats:
-                away_from_box = boxscore.get('awayTeam', {})
-                if away_from_box.get('teamStats', {}).get('teamSkaterStats'):
-                    away_team_stats = away_from_box.get('teamStats', {}).get('teamSkaterStats', {})
-                elif away_from_box.get('teamStats'):
-                    away_team_stats = away_from_box.get('teamStats', {})
-            
-            if not home_team_stats:
-                home_from_box = boxscore.get('homeTeam', {})
-                if home_from_box.get('teamStats', {}).get('teamSkaterStats'):
-                    home_team_stats = home_from_box.get('teamStats', {}).get('teamSkaterStats', {})
-                elif home_from_box.get('teamStats'):
-                    home_team_stats = home_from_box.get('teamStats', {})
-            
-            # If still empty, try getting comprehensive game data structure
+            # Fallback: Calculate from player stats if team stats not available
             if not away_team_stats or not home_team_stats:
-                comp_data = api.get_comprehensive_game_data(game_id)
-                if comp_data:
-                    comp_boxscore = comp_data.get('boxscore', {})
-                    if comp_boxscore:
-                        comp_away = comp_boxscore.get('awayTeam', {})
-                        comp_home = comp_boxscore.get('homeTeam', {})
-                        if not away_team_stats and comp_away.get('teamStats', {}).get('teamSkaterStats'):
-                            away_team_stats = comp_away.get('teamStats', {}).get('teamSkaterStats', {})
-                        if not home_team_stats and comp_home.get('teamStats', {}).get('teamSkaterStats'):
-                            home_team_stats = comp_home.get('teamStats', {}).get('teamSkaterStats', {})
+                try:
+                    # Try to get stats from player data
+                    player_by_game = boxscore.get('playerByGameStats', {})
+                    if player_by_game:
+                        away_players = player_by_game.get('away', {})
+                        home_players = player_by_game.get('home', {})
+                        
+                        # Calculate team stats from summing player stats
+                        def calc_team_from_players(players):
+                            stats = {
+                                'shots': 0, 'hits': 0, 'pim': 0,
+                                'faceOffWins': 0, 'faceOffTaken': 0,
+                                'powerPlayGoals': 0, 'powerPlayOpportunities': 0,
+                                'blocked': 0, 'giveaways': 0, 'takeaways': 0
+                            }
+                            for pos_group in ['forwards', 'defense', 'goalies']:
+                                if pos_group in players:
+                                    for player in players[pos_group]:
+                                        stats['shots'] += player.get('shots', 0)
+                                        stats['hits'] += player.get('hits', 0)
+                                        stats['pim'] += player.get('pim', 0)
+                                        stats['blocked'] += player.get('blockedShots', 0)
+                                        stats['giveaways'] += player.get('giveaways', 0)
+                                        stats['takeaways'] += player.get('takeaways', 0)
+                                        stats['powerPlayGoals'] += player.get('powerPlayGoals', 0)
+                            return stats
+                        
+                        if not away_team_stats and away_players:
+                            away_team_stats = calc_team_from_players(away_players)
+                        if not home_team_stats and home_players:
+                            home_team_stats = calc_team_from_players(home_players)
+                except Exception as e:
+                    print(f"Error calculating stats from players: {e}")
             
             # Calculate faceoff totals if we have wins but not total
             away_fo_wins = away_team_stats.get('faceOffWins') or away_team_stats.get('faceoffWins') or 0
