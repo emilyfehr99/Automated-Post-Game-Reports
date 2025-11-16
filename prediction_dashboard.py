@@ -847,13 +847,25 @@ def get_live_game_report(game_id):
                     team_abbrev = away_abbrev
                     is_away_goal = False
                     if team_id:
-                        # Try both string and int comparison
-                        if (str(team_id) == str(away_id)) or (int(team_id) == int(away_id) if (isinstance(team_id, (int, str)) and isinstance(away_id, (int, str)) and str(team_id).isdigit() and str(away_id).isdigit()) else False):
+                        # Convert both to strings for comparison
+                        team_id_str = str(team_id)
+                        away_id_str = str(away_id)
+                        home_id_str = str(home_id)
+                        
+                        if team_id_str == away_id_str:
                             team_abbrev = away_abbrev
                             is_away_goal = True
-                        else:
+                        elif team_id_str == home_id_str:
                             team_abbrev = home_abbrev
                             is_away_goal = False
+                        else:
+                            # Fallback: use coordinates to determine team
+                            if x_coord and x_coord < 0:
+                                team_abbrev = away_abbrev
+                                is_away_goal = True
+                            else:
+                                team_abbrev = home_abbrev
+                                is_away_goal = False
                     else:
                         # Fallback: use coordinates to determine team
                         if x_coord and x_coord < 0:
