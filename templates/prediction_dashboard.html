@@ -12,11 +12,11 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Oxygen, Ubuntu, Cantarell, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #0a0a0a;
             min-height: 100vh;
             padding: 20px;
-            color: #333;
+            color: #e0e0e0;
         }
 
         .container {
@@ -26,38 +26,45 @@
 
         header {
             text-align: center;
-            color: white;
-            margin-bottom: 30px;
+            color: #ffffff;
+            margin-bottom: 40px;
+            padding: 20px 0;
+            border-bottom: 2px solid #333;
         }
 
         header h1 {
-            font-size: 2.5em;
+            font-size: 2.8em;
             margin-bottom: 10px;
-            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+            text-shadow: 0 2px 10px rgba(255,255,255,0.1);
+            letter-spacing: 2px;
+            font-weight: 700;
         }
 
         .last-updated {
             font-size: 0.9em;
-            opacity: 0.9;
+            color: #888;
+            margin-top: 10px;
         }
 
         .refresh-btn {
             position: fixed;
             top: 20px;
             right: 20px;
-            background: white;
-            border: none;
+            background: #1a1a1a;
+            color: #fff;
+            border: 2px solid #333;
             padding: 12px 24px;
-            border-radius: 25px;
+            border-radius: 6px;
             cursor: pointer;
-            font-size: 1em;
+            font-size: 0.95em;
             font-weight: 600;
-            box-shadow: 0 4px 6px rgba(0,0,0,0.2);
-            transition: transform 0.2s;
+            transition: all 0.2s;
+            z-index: 100;
         }
 
         .refresh-btn:hover {
-            transform: scale(1.05);
+            background: #2a2a2a;
+            border-color: #555;
         }
 
         .refresh-btn:active {
@@ -72,30 +79,33 @@
         .games-grid {
             display: grid;
             grid-template-columns: repeat(auto-fill, minmax(600px, 1fr));
-            gap: 20px;
+            gap: 25px;
         }
 
         .game-card {
-            background: white;
-            border-radius: 15px;
+            background: #1a1a1a;
+            border: 2px solid #333;
+            border-radius: 8px;
             padding: 25px;
-            box-shadow: 0 10px 30px rgba(0,0,0,0.2);
-            transition: transform 0.2s, box-shadow 0.2s;
+            transition: all 0.3s;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.5);
         }
 
         .game-card:hover {
-            transform: translateY(-5px);
-            box-shadow: 0 15px 40px rgba(0,0,0,0.3);
+            transform: translateY(-3px);
+            border-color: #555;
+            box-shadow: 0 8px 25px rgba(0,0,0,0.7);
         }
 
         .game-card.live {
-            border: 3px solid #ff4444;
-            animation: pulse 2s infinite;
+            border: 2px solid #c8102e;
+            background: #1a0a0a;
+            animation: pulse-border 2s infinite;
         }
 
-        @keyframes pulse {
-            0%, 100% { border-color: #ff4444; }
-            50% { border-color: #ff8888; }
+        @keyframes pulse-border {
+            0%, 100% { border-color: #c8102e; box-shadow: 0 0 10px rgba(200,16,46,0.3); }
+            50% { border-color: #ff4444; box-shadow: 0 0 20px rgba(200,16,46,0.5); }
         }
 
         .game-header {
@@ -104,36 +114,48 @@
             align-items: center;
             margin-bottom: 20px;
             padding-bottom: 15px;
-            border-bottom: 2px solid #eee;
+            border-bottom: 1px solid #333;
         }
 
         .matchup {
-            font-size: 1.5em;
+            font-size: 1.6em;
             font-weight: 700;
-            color: #333;
+            color: #fff;
+            letter-spacing: 1px;
         }
 
         .live-badge {
-            background: #ff4444;
+            background: #c8102e;
             color: white;
-            padding: 5px 15px;
-            border-radius: 20px;
-            font-size: 0.8em;
-            font-weight: 600;
+            padding: 6px 16px;
+            border-radius: 4px;
+            font-size: 0.75em;
+            font-weight: 700;
             text-transform: uppercase;
+            letter-spacing: 1px;
+            animation: blink 1.5s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
         }
 
         .score {
-            font-size: 1.3em;
-            font-weight: 600;
-            margin: 10px 0;
-            color: #333;
+            font-size: 2em;
+            font-weight: 700;
+            margin: 15px 0;
+            color: #fff;
+            text-align: center;
+            letter-spacing: 2px;
         }
 
         .period-info {
-            color: #666;
-            font-size: 0.9em;
+            color: #aaa;
+            font-size: 0.95em;
             margin-bottom: 20px;
+            text-align: center;
+            font-weight: 500;
         }
 
         .predictions-container {
@@ -144,23 +166,25 @@
         }
 
         .prediction-box {
-            background: #f8f9fa;
-            border-radius: 10px;
+            background: #0f0f0f;
+            border: 1px solid #333;
+            border-radius: 6px;
             padding: 20px;
-            border-left: 4px solid #667eea;
+            border-left: 4px solid #666;
         }
 
         .prediction-box.live {
-            border-left-color: #ff4444;
+            border-left-color: #c8102e;
+            background: #150a0a;
         }
 
         .prediction-title {
-            font-size: 0.9em;
+            font-size: 0.85em;
             text-transform: uppercase;
-            color: #666;
+            color: #888;
             margin-bottom: 15px;
             font-weight: 600;
-            letter-spacing: 1px;
+            letter-spacing: 1.5px;
         }
 
         .probabilities {
@@ -176,91 +200,97 @@
 
         .team-name {
             font-weight: 600;
-            margin-bottom: 5px;
+            margin-bottom: 8px;
             font-size: 0.9em;
-            color: #333;
+            color: #ccc;
         }
 
         .prob-value {
-            font-size: 2em;
+            font-size: 2.2em;
             font-weight: 700;
-            color: #667eea;
+            color: #fff;
         }
 
         .prob-value.live {
-            color: #ff4444;
+            color: #c8102e;
         }
 
         .winner {
             text-align: center;
             margin-top: 15px;
             padding-top: 15px;
-            border-top: 1px solid #ddd;
+            border-top: 1px solid #333;
         }
 
         .winner-text {
             font-weight: 600;
-            color: #333;
+            color: #fff;
         }
 
         .confidence {
             font-size: 0.85em;
-            color: #666;
+            color: #888;
             margin-top: 5px;
         }
 
         .no-games {
             text-align: center;
-            color: white;
+            color: #888;
             font-size: 1.5em;
             padding: 50px;
-            background: rgba(255,255,255,0.1);
-            border-radius: 15px;
-            backdrop-filter: blur(10px);
+            background: #1a1a1a;
+            border: 2px solid #333;
+            border-radius: 8px;
         }
 
         .loading {
             text-align: center;
-            color: white;
+            color: #888;
             font-size: 1.2em;
             padding: 50px;
         }
 
         .error {
-            background: #ff4444;
+            background: #c8102e;
             color: white;
             padding: 15px;
-            border-radius: 10px;
+            border-radius: 6px;
             margin: 20px 0;
             text-align: center;
+            border: 1px solid #a00;
         }
 
         .momentum-info {
             margin-top: 15px;
             padding-top: 15px;
-            border-top: 1px solid #ddd;
+            border-top: 1px solid #333;
             font-size: 0.85em;
-            color: #666;
+            color: #888;
         }
 
         .momentum-info strong {
-            color: #333;
+            color: #ccc;
         }
 
         .view-report-btn {
-            background: #667eea;
-            color: white;
-            border: none;
-            padding: 10px 20px;
-            border-radius: 8px;
+            background: #1a1a1a;
+            color: #fff;
+            border: 2px solid #c8102e;
+            padding: 12px 24px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 0.9em;
             font-weight: 600;
-            transition: background 0.2s;
+            transition: all 0.2s;
+            width: 100%;
+            margin-top: 15px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .view-report-btn:hover {
-            background: #5568d3;
+            background: #c8102e;
+            border-color: #c8102e;
         }
 
         .modal {
@@ -271,18 +301,19 @@
             top: 0;
             width: 100%;
             height: 100%;
-            background-color: rgba(0,0,0,0.7);
+            background-color: rgba(0,0,0,0.9);
             overflow-y: auto;
         }
 
         .modal-content {
-            background-color: white;
+            background-color: #1a1a1a;
             margin: 20px auto;
             padding: 30px;
-            border-radius: 15px;
+            border-radius: 8px;
             max-width: 1200px;
             width: 90%;
-            box-shadow: 0 10px 40px rgba(0,0,0,0.3);
+            border: 2px solid #333;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.8);
         }
 
         .modal-header {
@@ -291,27 +322,29 @@
             align-items: center;
             margin-bottom: 25px;
             padding-bottom: 15px;
-            border-bottom: 2px solid #eee;
+            border-bottom: 2px solid #333;
         }
 
         .modal-header h2 {
-            color: #333;
+            color: #fff;
             margin: 0;
+            font-size: 1.8em;
         }
 
         .close-modal {
-            background: #ff4444;
+            background: #c8102e;
             color: white;
             border: none;
-            padding: 8px 16px;
-            border-radius: 5px;
+            padding: 10px 20px;
+            border-radius: 6px;
             cursor: pointer;
             font-size: 1.2em;
             font-weight: bold;
+            transition: background 0.2s;
         }
 
         .close-modal:hover {
-            background: #cc0000;
+            background: #a00;
         }
 
         .report-section {
@@ -319,43 +352,52 @@
         }
 
         .report-section h3 {
-            color: #667eea;
+            color: #fff;
             margin-bottom: 15px;
             padding-bottom: 10px;
-            border-bottom: 2px solid #667eea;
+            border-bottom: 2px solid #c8102e;
+            font-size: 1.3em;
+            text-transform: uppercase;
+            letter-spacing: 1px;
         }
 
         .stats-table {
             width: 100%;
             border-collapse: collapse;
             margin-bottom: 20px;
+            background: #0f0f0f;
         }
 
         .stats-table th,
         .stats-table td {
             padding: 12px;
             text-align: left;
-            border-bottom: 1px solid #ddd;
+            border-bottom: 1px solid #333;
+            color: #e0e0e0;
         }
 
         .stats-table th {
-            background: #f8f9fa;
+            background: #1a1a1a;
             font-weight: 600;
-            color: #333;
+            color: #fff;
+            text-transform: uppercase;
+            font-size: 0.85em;
+            letter-spacing: 1px;
         }
 
         .stats-table tr:hover {
-            background: #f8f9fa;
+            background: #222;
         }
 
         .team-col {
-            font-weight: 600;
+            font-weight: 700;
+            color: #fff;
         }
 
         .loading-report {
             text-align: center;
             padding: 50px;
-            color: #666;
+            color: #888;
         }
     </style>
 </head>
@@ -364,7 +406,7 @@
     
     <div class="container">
         <header>
-            <h1>🏒 NHL Predictions Dashboard</h1>
+            <h1>🏒 NHL PREDICTIONS</h1>
             <div class="last-updated" id="lastUpdated">Loading...</div>
         </header>
 
@@ -439,12 +481,12 @@
 
             const pregameSection = game.pregame_prediction 
                 ? createPredictionBox(game.pregame_prediction, game.away_team, game.home_team, 'Pre-Game')
-                : '<div class="prediction-box"><div class="prediction-title">Pre-Game</div><div>Not available</div></div>';
+                : '<div class="prediction-box"><div class="prediction-title">Pre-Game</div><div style="color: #888;">Not available</div></div>';
 
             const liveSection = game.live_prediction
                 ? createPredictionBox(game.live_prediction, game.away_team, game.home_team, 'Live', true)
                 : isLive 
-                    ? '<div class="prediction-box live"><div class="prediction-title">Live</div><div>Updating...</div></div>'
+                    ? '<div class="prediction-box live"><div class="prediction-title">Live</div><div style="color: #888;">Updating...</div></div>'
                     : '';
 
             return `
@@ -453,12 +495,12 @@
                         <div class="matchup">${game.away_team} @ ${game.home_team}</div>
                         ${isLive ? '<span class="live-badge">🔴 LIVE</span>' : ''}
                     </div>
+                    ${scoreSection}
                     ${isLive ? `<div style="text-align: center; margin-top: 10px;">
                         <button class="view-report-btn" onclick="viewLiveReport('${game.game_id}', '${game.away_team}', '${game.home_team}')">
                             📊 View Live Report
                         </button>
                     </div>` : ''}
-                    ${scoreSection}
                     <div class="predictions-container">
                         ${pregameSection}
                         ${liveSection}
@@ -643,10 +685,10 @@
             let html = `
                 <div class="report-section">
                     <h3>Game Status</h3>
-                    <div style="font-size: 1.2em; margin-bottom: 10px;">
-                        <strong>Score:</strong> ${data.away_team} ${data.away_score} - ${data.home_score} ${data.home_team}
+                    <div style="font-size: 1.4em; margin-bottom: 15px; color: #fff; text-align: center;">
+                        <strong>${data.away_team} ${data.away_score} - ${data.home_score} ${data.home_team}</strong>
                     </div>
-                    <div>
+                    <div style="text-align: center; color: #aaa;">
                         Period ${data.current_period} - ${data.time_remaining} remaining
                     </div>
                 </div>
@@ -803,20 +845,29 @@
                             </thead>
                             <tbody>
                                 ${scoring.map(goal => {
-                                    // goal.team is the team ID, we need to match it to away/home
-                                    const teamName = goal.team === data.away_id || goal.team === data.away_team ? data.away_team : data.home_team;
+                                    // Match team ID to team name
+                                    const teamName = (goal.team === data.away_id || goal.team === data.away_team) ? data.away_team : data.home_team;
                                     return `
                                     <tr>
                                         <td>${goal.period}</td>
                                         <td>${goal.time}</td>
                                         <td class="team-col">${teamName}</td>
-                                        <td>${goal.scorer}</td>
+                                        <td style="font-weight: 600;">${goal.scorer}</td>
                                         <td>${goal.assists.join(', ') || 'Unassisted'}</td>
                                     </tr>
                                 `;
                                 }).join('')}
                             </tbody>
                         </table>
+                    </div>
+                `;
+            } else {
+                html += `
+                    <div class="report-section">
+                        <h3>Scoring Summary</h3>
+                        <div style="color: #888; text-align: center; padding: 20px;">
+                            No goals scored yet
+                        </div>
                     </div>
                 `;
             }
@@ -834,4 +885,3 @@
     </script>
 </body>
 </html>
-

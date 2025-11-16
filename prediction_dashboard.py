@@ -122,16 +122,35 @@ def get_games():
                 if pregame:
                     game_data['pregame_prediction'] = pregame
                 
-                # Get live prediction if game is live
+                # Get live scores and stats directly from API for homepage
                 if game_data['is_live']:
+                    try:
+                        boxscore_data = api.get_game_boxscore(game_id)
+                        if boxscore_data:
+                            away_score = boxscore_data.get('awayTeam', {}).get('score', 0)
+                            home_score = boxscore_data.get('homeTeam', {}).get('score', 0)
+                            period_desc = boxscore_data.get('periodDescriptor', {})
+                            current_period = period_desc.get('number', 1)
+                            clock = boxscore_data.get('clock', {})
+                            time_remaining = clock.get('timeRemaining', '20:00')
+                            
+                            game_data['away_score'] = away_score
+                            game_data['home_score'] = home_score
+                            game_data['current_period'] = current_period
+                            game_data['time_remaining'] = time_remaining
+                    except Exception as e:
+                        print(f"Error getting live scores: {e}")
+                    
+                    # Get live prediction
                     live = get_live_prediction(game_id)
                     if live:
                         game_data['live_prediction'] = live
-                        # Update scores from live data
-                        game_data['away_score'] = live['away_score']
-                        game_data['home_score'] = live['home_score']
-                        game_data['current_period'] = live['current_period']
-                        game_data['time_remaining'] = live['time_remaining']
+                        # Use scores from live prediction if boxscore didn't work
+                        if 'away_score' not in game_data:
+                            game_data['away_score'] = live.get('away_score', 0)
+                            game_data['home_score'] = live.get('home_score', 0)
+                            game_data['current_period'] = live.get('current_period', 1)
+                            game_data['time_remaining'] = live.get('time_remaining', '20:00')
                 
                 games.append(game_data)
         
@@ -437,25 +456,61 @@ def get_live_game_report(game_id):
                     # Extract scorer - try multiple paths
                     details = play.get('details', {})
                     scorer_name = 'Unknown'
+                    
+                    # Try scoringPlayerName (most common)
                     if details.get('scoringPlayerName'):
-                        if isinstance(details['scoringPlayerName'], dict):
-                            scorer_name = details['scoringPlayerName'].get('default') or details['scoringPlayerName'].get('fullName') or 'Unknown'
+                        scorer_name_obj = details['scoringPlayerName']
+                        if isinstance(scorer_name_obj, dict):
+                            scorer_name = scorer_name_obj.get('default') or scorer_name_obj.get('fullName') or scorer_name_obj.get('firstName', '') + ' ' + scorer_name_obj.get('lastName', '') or 'Unknown'
                         else:
-                            scorer_name = details['scoringPlayerName']
+                            scorer_name = str(scorer_name_obj)
+                    # Try other possible fields
                     elif details.get('scorer'):
-                        scorer_name = details['scorer'].get('fullName', 'Unknown') if isinstance(details['scorer'], dict) else details['scorer']
+                        scorer_obj = details['scorer']
+                        if isinstance(scorer_obj, dict):
+                            scorer_name = scorer_obj.get('fullName') or scorer_obj.get('name', {}).get('default', 'Unknown') if isinstance(scorer_obj.get('name'), dict) else 'Unknown'
+                        else:
+                            scorer_name = str(scorer_obj)
                     elif play.get('player', {}).get('fullName'):
                         scorer_name = play['player']['fullName']
                     
-                    # Extract assists - try multiple paths
+                    # Extract assists - NHL API uses assist1PlayerName and assist2PlayerName
                     assists = []
-                    assist_details = details.get('assistDetails', []) or details.get('assists', []) or []
+                    assist1 = details.get('assist1PlayerName')
+                    assist2 = details.get('assist2PlayerName')
+                    
+                    # Also try assistDetails array
+                    assist_details = details.get('assistDetails', [])
+                    
+                    # Process assist1
+                    if assist1:
+                        if isinstance(assist1, dict):
+                            assist_name = assist1.get('default') or assist1.get('fullName') or assist1.get('firstName', '') + ' ' + assist1.get('lastName', '')
+                        else:
+                            assist_name = str(assist1)
+                        if assist_name and assist_name != 'Unknown':
+                            assists.append(assist_name)
+                    
+                    # Process assist2
+                    if assist2:
+                        if isinstance(assist2, dict):
+                            assist_name = assist2.get('default') or assist2.get('fullName') or assist2.get('firstName', '') + ' ' + assist2.get('lastName', '')
+                        else:
+                            assist_name = str(assist2)
+                        if assist_name and assist_name != 'Unknown':
+                            assists.append(assist_name)
+                    
+                    # Process assistDetails array if available
                     for assist in assist_details:
                         if isinstance(assist, dict):
-                            assist_name = assist.get('playerName', {}).get('default') if isinstance(assist.get('playerName'), dict) else assist.get('playerName') or assist.get('fullName', '')
+                            assist_name = assist.get('playerName', {})
+                            if isinstance(assist_name, dict):
+                                assist_name = assist_name.get('default') or assist_name.get('fullName', '')
+                            else:
+                                assist_name = assist.get('playerName') or assist.get('fullName', '')
                         else:
                             assist_name = str(assist)
-                        if assist_name:
+                        if assist_name and assist_name != 'Unknown' and assist_name not in assists:
                             assists.append(assist_name)
                     
                     scoring_plays.append({
