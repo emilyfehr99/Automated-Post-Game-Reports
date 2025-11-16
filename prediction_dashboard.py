@@ -3,9 +3,10 @@
 Fast Mini Site for Viewing Pre-Game and In-Game Predictions
 """
 
-from flask import Flask, render_template, jsonify
+from flask import Flask, render_template, jsonify, send_file
 from datetime import datetime, timedelta
 import pytz
+import os
 from nhl_api_client import NHLAPIClient
 from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
 from correlation_model import CorrelationModel
@@ -240,6 +241,21 @@ def get_game(game_id):
     
     except Exception as e:
         print(f"Error getting game: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/static/rink.jpg')
+def serve_rink_image():
+    """Serve the rink image for shot charts"""
+    try:
+        rink_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'F300E016-E2BD-450A-B624-5BADF3853AC0.jpeg')
+        if not os.path.exists(rink_path):
+            rink_path = os.path.join(os.getcwd(), 'F300E016-E2BD-450A-B624-5BADF3853AC0.jpeg')
+        if os.path.exists(rink_path):
+            return send_file(rink_path, mimetype='image/jpeg')
+        else:
+            return jsonify({'error': 'Rink image not found'}), 404
+    except Exception as e:
         return jsonify({'error': str(e)}), 500
 
 

@@ -955,75 +955,111 @@
             ctx.fillStyle = '#0f0f0f';
             ctx.fillRect(0, 0, width, height);
             
-            // Draw rink outline (simplified)
-            ctx.strokeStyle = '#444';
-            ctx.lineWidth = 2;
-            ctx.beginPath();
-            // Rink shape
-            ctx.rect(50, 50, width - 100, height - 100);
-            ctx.stroke();
-            
-            // Draw center line
-            ctx.strokeStyle = '#666';
-            ctx.beginPath();
-            ctx.moveTo(width / 2, 50);
-            ctx.lineTo(width / 2, height - 50);
-            ctx.stroke();
-            
-            // Draw goal lines
-            ctx.strokeStyle = '#c8102e';
-            ctx.lineWidth = 3;
-            ctx.beginPath();
-            ctx.moveTo(100, 50);
-            ctx.lineTo(100, height - 50);
-            ctx.moveTo(width - 100, 50);
-            ctx.lineTo(width - 100, height - 50);
-            ctx.stroke();
-            
-            // Draw goals
-            ctx.fillStyle = '#c8102e';
-            ctx.fillRect(90, height / 2 - 30, 20, 60);
-            ctx.fillRect(width - 110, height / 2 - 30, 20, 60);
-            
-            // Plot shots
-            shotData.forEach(goal => {
-                // Convert NHL coordinates to canvas coordinates
-                // NHL: X ranges from -100 to 100, Y from -42.5 to 42.5
-                // For away team (left side), X is negative
-                // For home team (right side), X is positive
-                const isAway = goal.x_coord < 0 || goal.team === awayTeam;
-                const x = isAway 
-                    ? 100 + (Math.abs(goal.x_coord) / 100) * (width / 2 - 150)
-                    : width / 2 + (Math.abs(goal.x_coord) / 100) * (width / 2 - 150);
-                const y = height / 2 - (goal.y_coord / 42.5) * (height / 2 - 100);
+            // Load and draw rink image
+            const rinkImg = new Image();
+            rinkImg.crossOrigin = 'anonymous';
+            rinkImg.onload = function() {
+                // NHL coordinate system: X from -100 to 100, Y from -42.5 to 42.5
+                // Map to canvas coordinates
+                const xMin = -100;
+                const xMax = 100;
+                const yMin = -42.5;
+                const yMax = 42.5;
                 
-                // Draw goal marker
-                ctx.fillStyle = isAway ? '#4CAF50' : '#FF6B6B';
+                // Draw rink image with proper scaling
+                // The rink image should fill the canvas while maintaining aspect ratio
+                const rinkAspect = (xMax - xMin) / (yMax - yMin); // 200 / 85 = ~2.35
+                const canvasAspect = width / height;
+                
+                let drawWidth, drawHeight, drawX, drawY;
+                if (canvasAspect > rinkAspect) {
+                    // Canvas is wider - fit to height
+                    drawHeight = height;
+                    drawWidth = height * rinkAspect;
+                    drawX = (width - drawWidth) / 2;
+                    drawY = 0;
+                } else {
+                    // Canvas is taller - fit to width
+                    drawWidth = width;
+                    drawHeight = width / rinkAspect;
+                    drawX = 0;
+                    drawY = (height - drawHeight) / 2;
+                }
+                
+                ctx.drawImage(rinkImg, drawX, drawY, drawWidth, drawHeight);
+                
+                // Now plot goals on top of the rink
+                shotData.forEach(goal => {
+                    // Convert NHL coordinates to canvas coordinates
+                    // NHL: X ranges from -100 to 100, Y from -42.5 to 42.5
+                    const isAway = goal.x_coord < 0 || goal.team === awayTeam;
+                    
+                    // Normalize coordinates to 0-1 range
+                    const normX = (goal.x_coord - xMin) / (xMax - xMin);
+                    const normY = 1 - (goal.y_coord - yMin) / (yMax - yMin); // Flip Y axis
+                    
+                    // Convert to canvas coordinates
+                    const x = drawX + normX * drawWidth;
+                    const y = drawY + normY * drawHeight;
+                    
+                    // Draw goal marker with shadow
+                    ctx.shadowColor = 'rgba(0, 0, 0, 0.5)';
+                    ctx.shadowBlur = 4;
+                    ctx.shadowOffsetX = 2;
+                    ctx.shadowOffsetY = 2;
+                    
+                    ctx.fillStyle = isAway ? '#4CAF50' : '#FF6B6B';
+                    ctx.beginPath();
+                    ctx.arc(x, y, 10, 0, Math.PI * 2);
+                    ctx.fill();
+                    
+                    // Reset shadow
+                    ctx.shadowColor = 'transparent';
+                    ctx.shadowBlur = 0;
+                    ctx.shadowOffsetX = 0;
+                    ctx.shadowOffsetY = 0;
+                    
+                    // Draw xG value
+                    ctx.fillStyle = '#fff';
+                    ctx.font = 'bold 11px Inter';
+                    ctx.strokeStyle = '#000';
+                    ctx.lineWidth = 3;
+                    ctx.strokeText(goal.xg.toFixed(3), x + 12, y - 8);
+                    ctx.fillText(goal.xg.toFixed(3), x + 12, y - 8);
+                });
+                
+                // Add legend
+                ctx.fillStyle = '#fff';
+                ctx.font = 'bold 13px Inter';
+                ctx.fillText(`${awayTeam} Goals`, 20, height - 30);
+                ctx.fillStyle = '#4CAF50';
                 ctx.beginPath();
-                ctx.arc(x, y, 8, 0, Math.PI * 2);
+                ctx.arc(15, height - 35, 7, 0, Math.PI * 2);
                 ctx.fill();
                 
-                // Draw xG value
                 ctx.fillStyle = '#fff';
-                ctx.font = '10px Inter';
-                ctx.fillText(goal.xg.toFixed(3), x + 10, y - 5);
-            });
+                ctx.fillText(`${homeTeam} Goals`, width - 180, height - 30);
+                ctx.fillStyle = '#FF6B6B';
+                ctx.beginPath();
+                ctx.arc(width - 185, height - 35, 7, 0, Math.PI * 2);
+                ctx.fill();
+            };
             
-            // Add legend
-            ctx.fillStyle = '#fff';
-            ctx.font = '12px Inter';
-            ctx.fillText(`${awayTeam} Goals`, 120, height - 30);
-            ctx.fillStyle = '#4CAF50';
-            ctx.beginPath();
-            ctx.arc(110, height - 35, 6, 0, Math.PI * 2);
-            ctx.fill();
+            rinkImg.onerror = function() {
+                // Fallback: draw simple rink outline if image fails to load
+                ctx.strokeStyle = '#444';
+                ctx.lineWidth = 2;
+                ctx.strokeRect(50, 50, width - 100, height - 100);
+                
+                // Draw center line
+                ctx.strokeStyle = '#666';
+                ctx.beginPath();
+                ctx.moveTo(width / 2, 50);
+                ctx.lineTo(width / 2, height - 50);
+                ctx.stroke();
+            };
             
-            ctx.fillStyle = '#fff';
-            ctx.fillText(`${homeTeam} Goals`, width - 200, height - 30);
-            ctx.fillStyle = '#FF6B6B';
-            ctx.beginPath();
-            ctx.arc(width - 210, height - 35, 6, 0, Math.PI * 2);
-            ctx.fill();
+            rinkImg.src = '/static/rink.jpg';
         }
 
         // Close modal when clicking outside
