@@ -990,11 +990,12 @@
                 
                 // Now plot goals on top of the rink
                 shotData.forEach(goal => {
-                    // Convert NHL coordinates to canvas coordinates
-                    // NHL: X ranges from -100 to 100, Y from -42.5 to 42.5
-                    const isAway = goal.x_coord < 0 || goal.team === awayTeam;
+                    // Use the same logic as post-game reports
+                    // Away team goals should be on left side (negative X), Home on right (positive X)
+                    const isAway = goal.is_away !== undefined ? goal.is_away : (goal.x_coord < 0 || goal.team === awayTeam);
                     
                     // Normalize coordinates to 0-1 range
+                    // x_coord is already flipped in Python code for proper plotting
                     const normX = (goal.x_coord - xMin) / (xMax - xMin);
                     const normY = 1 - (goal.y_coord - yMin) / (yMax - yMin); // Flip Y axis
                     

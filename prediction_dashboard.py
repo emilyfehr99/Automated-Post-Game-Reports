@@ -495,11 +495,31 @@ def get_live_game_report(game_id):
                     except Exception as e2:
                         print(f"Error calculating stats from players: {e2}")
             
-            # Calculate faceoff totals if we have wins but not total
+            # Calculate faceoff totals - ensure we have proper totals
             away_fo_wins = away_team_stats.get('faceOffWins') or away_team_stats.get('faceoffWins') or 0
             home_fo_wins = home_team_stats.get('faceOffWins') or home_team_stats.get('faceoffWins') or 0
-            away_fo_total = away_team_stats.get('faceOffTaken') or away_team_stats.get('faceoffTaken') or (away_fo_wins + home_fo_wins if (away_fo_wins + home_fo_wins) > 0 else 1)
-            home_fo_total = home_team_stats.get('faceOffTaken') or home_team_stats.get('faceoffTaken') or (away_fo_wins + home_fo_wins if (away_fo_wins + home_fo_wins) > 0 else 1)
+            away_fo_taken = away_team_stats.get('faceOffTaken') or away_team_stats.get('faceoffTaken') or 0
+            home_fo_taken = home_team_stats.get('faceOffTaken') or home_team_stats.get('faceoffTaken') or 0
+            
+            # If we don't have totals but have wins, calculate from both teams
+            if away_fo_taken == 0 and home_fo_taken == 0:
+                total_faceoffs = away_fo_wins + home_fo_wins
+                if total_faceoffs > 0:
+                    # Estimate: assume roughly 50/50 split if we only have wins
+                    away_fo_total = max(away_fo_wins, total_faceoffs // 2)
+                    home_fo_total = max(home_fo_wins, total_faceoffs // 2)
+                else:
+                    away_fo_total = 0
+                    home_fo_total = 0
+            elif away_fo_taken == 0:
+                away_fo_total = max(away_fo_wins, home_fo_taken - home_fo_wins) if home_fo_taken > 0 else away_fo_wins
+                home_fo_total = home_fo_taken
+            elif home_fo_taken == 0:
+                away_fo_total = away_fo_taken
+                home_fo_total = max(home_fo_wins, away_fo_taken - away_fo_wins) if away_fo_taken > 0 else home_fo_wins
+            else:
+                away_fo_total = away_fo_taken
+                home_fo_total = home_fo_taken
             
             report_data['stats'] = {
                 'away': {
@@ -528,19 +548,27 @@ def get_live_game_report(game_id):
                 }
             }
             
-            # Calculate percentages
-            away_fo_pct = (report_data['stats']['away']['faceoff_wins'] / 
-                          max(1, report_data['stats']['away']['faceoff_total'])) * 100
-            home_fo_pct = (report_data['stats']['home']['faceoff_wins'] / 
-                          max(1, report_data['stats']['home']['faceoff_total'])) * 100
+            # Calculate percentages - only if we have valid data
+            away_fo_pct = 0.0
+            home_fo_pct = 0.0
+            if report_data['stats']['away']['faceoff_total'] > 0:
+                away_fo_pct = (report_data['stats']['away']['faceoff_wins'] / 
+                              report_data['stats']['away']['faceoff_total']) * 100
+            if report_data['stats']['home']['faceoff_total'] > 0:
+                home_fo_pct = (report_data['stats']['home']['faceoff_wins'] / 
+                              report_data['stats']['home']['faceoff_total']) * 100
             
             report_data['stats']['away']['faceoff_pct'] = round(away_fo_pct, 1)
             report_data['stats']['home']['faceoff_pct'] = round(home_fo_pct, 1)
             
-            away_pp_pct = (report_data['stats']['away']['power_play_goals'] / 
-                          max(1, report_data['stats']['away']['power_play_opportunities'])) * 100
-            home_pp_pct = (report_data['stats']['home']['power_play_goals'] / 
-                          max(1, report_data['stats']['home']['power_play_opportunities'])) * 100
+            away_pp_pct = 0.0
+            home_pp_pct = 0.0
+            if report_data['stats']['away']['power_play_opportunities'] > 0:
+                away_pp_pct = (report_data['stats']['away']['power_play_goals'] / 
+                              report_data['stats']['away']['power_play_opportunities']) * 100
+            if report_data['stats']['home']['power_play_opportunities'] > 0:
+                home_pp_pct = (report_data['stats']['home']['power_play_goals'] / 
+                              report_data['stats']['home']['power_play_opportunities']) * 100
             
             report_data['stats']['away']['power_play_pct'] = round(away_pp_pct, 1)
             report_data['stats']['home']['power_play_pct'] = round(home_pp_pct, 1)
@@ -638,16 +666,26 @@ def get_live_game_report(game_id):
                     # Extract time
                     time_str = play.get('timeInPeriod') or play.get('timeRemaining') or play.get('time', '')
                     
+                    # Extract details first
+                    details = play.get('details', {})
+                    
                     # Extract team - try multiple paths
                     team_id = (
-                        play.get('details', {}).get('eventOwnerTeamId') or
+                        details.get('eventOwnerTeamId') or
                         play.get('team', {}).get('id') or
                         play.get('teamId') or
-                        play.get('eventOwnerTeam', {}).get('id')
+                        play.get('eventOwnerTeam', {}).get('id') or
+                        details.get('scoringTeamId')
                     )
                     
+                    # Convert to int for comparison if needed
+                    if team_id:
+                        try:
+                            team_id = int(team_id)
+                        except:
+                            pass
+                    
                     # Extract scorer - try multiple paths
-                    details = play.get('details', {})
                     scorer_name = 'Unknown'
                     
                     # Try scoringPlayerName (most common) - NHL API structure
@@ -793,8 +831,52 @@ def get_live_game_report(game_id):
                         if assist_name and assist_name != 'Unknown' and assist_name not in assists:
                             assists.append(assist_name)
                     
-                    # Determine team abbreviation
-                    team_abbrev = away_abbrev if team_id == away_id else home_abbrev
+                    # Also try looking up assists by ID if we have IDs but no names
+                    assist1_id = details.get('assist1PlayerId')
+                    assist2_id = details.get('assist2PlayerId')
+                    if assist1_id and str(assist1_id) in player_roster_map:
+                        assist_name = player_roster_map[str(assist1_id)]
+                        if assist_name and assist_name not in assists:
+                            assists.append(assist_name)
+                    if assist2_id and str(assist2_id) in player_roster_map:
+                        assist_name = player_roster_map[str(assist2_id)]
+                        if assist_name and assist_name not in assists:
+                            assists.append(assist_name)
+                    
+                    # Determine team abbreviation - ensure proper comparison
+                    team_abbrev = away_abbrev
+                    is_away_goal = False
+                    if team_id:
+                        # Try both string and int comparison
+                        if (str(team_id) == str(away_id)) or (int(team_id) == int(away_id) if (isinstance(team_id, (int, str)) and isinstance(away_id, (int, str)) and str(team_id).isdigit() and str(away_id).isdigit()) else False):
+                            team_abbrev = away_abbrev
+                            is_away_goal = True
+                        else:
+                            team_abbrev = home_abbrev
+                            is_away_goal = False
+                    else:
+                        # Fallback: use coordinates to determine team
+                        if x_coord and x_coord < 0:
+                            team_abbrev = away_abbrev
+                            is_away_goal = True
+                        else:
+                            team_abbrev = home_abbrev
+                            is_away_goal = False
+                    
+                    # Apply coordinate flipping logic like post-game reports
+                    # Away team: Always left side (negative X), Home team: Always right side (positive X)
+                    plot_x = x_coord
+                    plot_y = y_coord
+                    if is_away_goal:
+                        # Away team goals - force to left side
+                        if x_coord > 0:  # If goal is on right side, flip to left
+                            plot_x = -x_coord
+                            plot_y = -y_coord
+                    else:
+                        # Home team goals - force to right side
+                        if x_coord < 0:  # If goal is on left side, flip to right
+                            plot_x = -x_coord
+                            plot_y = -y_coord
                     
                     scoring_plays.append({
                         'period': period_num,
@@ -804,8 +886,10 @@ def get_live_game_report(game_id):
                         'assists': ', '.join(assists) if assists else 'Unassisted',
                         'xg': round(xg_value, 3),
                         'shot_type': shot_type,
-                        'x_coord': x_coord,
-                        'y_coord': y_coord,
+                        'x_coord': plot_x,  # Use flipped coordinates for plotting
+                        'y_coord': plot_y,
+                        'team_id': team_id,  # Store original team_id for reference
+                        'is_away': is_away_goal,
                         'longitudinal_movement': round(longitudinal_movement, 1) if longitudinal_movement else 0,
                         'lateral_movement': round(lateral_movement, 1) if lateral_movement else 0
                     })
