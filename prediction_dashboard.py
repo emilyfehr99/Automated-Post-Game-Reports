@@ -421,43 +421,46 @@ def get_live_game_report(game_id):
             elif home_team.get('teamStats'):
                 home_team_stats = home_team.get('teamStats', {})
             
-            # If not found, use report generator's method to calculate from play-by-play
-            if not away_team_stats or not home_team_stats:
-                try:
-                    # Use report generator's method which calculates from play-by-play
-                    away_stats_pbp = report_generator._calculate_team_stats_from_play_by_play(game_data, 'awayTeam')
-                    home_stats_pbp = report_generator._calculate_team_stats_from_play_by_play(game_data, 'homeTeam')
-                    
-                    # Convert to our format
-                    if away_stats_pbp and not away_team_stats:
-                        away_team_stats = {
-                            'shots': away_stats_pbp.get('shotsOnGoal', 0),
-                            'hits': away_stats_pbp.get('hits', 0),
-                            'pim': away_stats_pbp.get('penaltyMinutes', 0),
-                            'faceOffWins': away_stats_pbp.get('faceoffWins', 0),
-                            'faceOffTaken': away_stats_pbp.get('faceoffTotal', 0),
-                            'powerPlayGoals': away_stats_pbp.get('powerPlayGoals', 0),
-                            'powerPlayOpportunities': away_stats_pbp.get('powerPlayOpportunities', 0),
-                            'blocked': away_stats_pbp.get('blockedShots', 0),
-                            'giveaways': away_stats_pbp.get('giveaways', 0),
-                            'takeaways': away_stats_pbp.get('takeaways', 0)
-                        }
-                    
-                    if home_stats_pbp and not home_team_stats:
-                        home_team_stats = {
-                            'shots': home_stats_pbp.get('shotsOnGoal', 0),
-                            'hits': home_stats_pbp.get('hits', 0),
-                            'pim': home_stats_pbp.get('penaltyMinutes', 0),
-                            'faceOffWins': home_stats_pbp.get('faceoffWins', 0),
-                            'faceOffTaken': home_stats_pbp.get('faceoffTotal', 0),
-                            'powerPlayGoals': home_stats_pbp.get('powerPlayGoals', 0),
-                            'powerPlayOpportunities': home_stats_pbp.get('powerPlayOpportunities', 0),
-                            'blocked': home_stats_pbp.get('blockedShots', 0),
-                            'giveaways': home_stats_pbp.get('giveaways', 0),
-                            'takeaways': home_stats_pbp.get('takeaways', 0)
-                        }
-                except Exception as e:
-                    print(f"Error calculating stats from play-by-play: {e}")
+            # Always try to use report generator's method to calculate from play-by-play
+            # This is more accurate than boxscore stats for faceoffs and power plays
+            try:
+                # Use report generator's method which calculates from play-by-play
+                away_stats_pbp = report_generator._calculate_team_stats_from_play_by_play(game_data, 'awayTeam')
+                home_stats_pbp = report_generator._calculate_team_stats_from_play_by_play(game_data, 'homeTeam')
+                
+                if away_stats_pbp:
+                    # Merge play-by-play stats with boxscore stats (play-by-play takes precedence for faceoffs/PP)
+                    away_team_stats = {
+                        'shots': away_team_stats.get('shots') or away_team_stats.get('sog') or away_stats_pbp.get('shotsOnGoal', 0),
+                        'hits': away_team_stats.get('hits') or away_stats_pbp.get('hits', 0),
+                        'pim': away_team_stats.get('pim') or away_stats_pbp.get('penaltyMinutes', 0),
+                        'faceOffWins': away_stats_pbp.get('faceoffWins', 0),
+                        'faceOffTaken': away_stats_pbp.get('faceoffTotal', 0),
+                        'powerPlayGoals': away_stats_pbp.get('powerPlayGoals', 0),
+                        'powerPlayOpportunities': away_stats_pbp.get('powerPlayOpportunities', 0),
+                        'blocked': away_team_stats.get('blocked') or away_team_stats.get('blockedShots') or away_stats_pbp.get('blockedShots', 0),
+                        'giveaways': away_team_stats.get('giveaways') or away_stats_pbp.get('giveaways', 0),
+                        'takeaways': away_team_stats.get('takeaways') or away_stats_pbp.get('takeaways', 0)
+                    }
+                
+                if home_stats_pbp:
+                    # Merge play-by-play stats with boxscore stats
+                    home_team_stats = {
+                        'shots': home_team_stats.get('shots') or home_team_stats.get('sog') or home_stats_pbp.get('shotsOnGoal', 0),
+                        'hits': home_team_stats.get('hits') or home_stats_pbp.get('hits', 0),
+                        'pim': home_team_stats.get('pim') or home_stats_pbp.get('penaltyMinutes', 0),
+                        'faceOffWins': home_stats_pbp.get('faceoffWins', 0),
+                        'faceOffTaken': home_stats_pbp.get('faceoffTotal', 0),
+                        'powerPlayGoals': home_stats_pbp.get('powerPlayGoals', 0),
+                        'powerPlayOpportunities': home_stats_pbp.get('powerPlayOpportunities', 0),
+                        'blocked': home_team_stats.get('blocked') or home_team_stats.get('blockedShots') or home_stats_pbp.get('blockedShots', 0),
+                        'giveaways': home_team_stats.get('giveaways') or home_stats_pbp.get('giveaways', 0),
+                        'takeaways': home_team_stats.get('takeaways') or home_stats_pbp.get('takeaways', 0)
+                    }
+            except Exception as e:
+                print(f"Error calculating stats from play-by-play: {e}")
+                import traceback
+                traceback.print_exc()
                     # Final fallback: calculate from player data
                     try:
                         player_by_game = boxscore.get('playerByGameStats', {})
@@ -501,28 +504,28 @@ def get_live_game_report(game_id):
             away_fo_taken = away_team_stats.get('faceOffTaken') or away_team_stats.get('faceoffTaken') or 0
             home_fo_taken = home_team_stats.get('faceOffTaken') or home_team_stats.get('faceoffTaken') or 0
             
-            # If totals are missing, calculate from wins (total = away wins + home wins)
-            if away_fo_taken == 0 and home_fo_taken == 0:
+            # Faceoff totals should be the same for both teams (total faceoffs in game)
+            # The play-by-play method returns faceoffTotal which is the total number of faceoffs
+            # Both teams participate in the same faceoffs, so totals should be equal
+            if away_fo_taken > 0:
+                # Use away total for both (they should be the same)
+                away_fo_total = away_fo_taken
+                home_fo_total = away_fo_taken
+            elif home_fo_taken > 0:
+                # Use home total for both
+                away_fo_total = home_fo_taken
+                home_fo_total = home_fo_taken
+            else:
+                # No totals available - calculate from wins
+                # Total faceoffs = away wins + home wins (each faceoff has one winner)
                 total_faceoffs = away_fo_wins + home_fo_wins
                 if total_faceoffs > 0:
-                    # Total faceoffs = sum of wins from both teams
-                    away_fo_total = total_faceoffs  # Each team takes all faceoffs
+                    # Both teams take the same total number of faceoffs
+                    away_fo_total = total_faceoffs
                     home_fo_total = total_faceoffs
                 else:
                     away_fo_total = 0
                     home_fo_total = 0
-            elif away_fo_taken == 0:
-                # If away total missing, use home total (they should be the same)
-                away_fo_total = home_fo_taken
-                home_fo_total = home_fo_taken
-            elif home_fo_taken == 0:
-                # If home total missing, use away total
-                away_fo_total = away_fo_taken
-                home_fo_total = away_fo_taken
-            else:
-                # Both totals available
-                away_fo_total = away_fo_taken
-                home_fo_total = home_fo_taken
             
             report_data['stats'] = {
                 'away': {
