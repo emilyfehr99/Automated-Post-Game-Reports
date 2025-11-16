@@ -288,35 +288,59 @@ def get_live_game_report(game_id):
         except Exception as e:
             print(f"Error calculating advanced metrics: {e}")
         
-        # Extract team stats from boxscore
+        # Extract team stats from boxscore - try multiple possible paths
         try:
-            away_team_stats = away_team.get('teamStats', {}).get('teamSkaterStats', {})
-            home_team_stats = home_team.get('teamStats', {}).get('teamSkaterStats', {})
+            # Try different possible paths for stats
+            away_team_stats = {}
+            home_team_stats = {}
+            
+            # Path 1: teamStats.teamSkaterStats
+            if away_team.get('teamStats', {}).get('teamSkaterStats'):
+                away_team_stats = away_team.get('teamStats', {}).get('teamSkaterStats', {})
+            # Path 2: teamStats directly
+            elif away_team.get('teamStats'):
+                away_team_stats = away_team.get('teamStats', {})
+            # Path 3: stats directly on team
+            elif away_team.get('stats'):
+                away_team_stats = away_team.get('stats', {})
+            
+            if home_team.get('teamStats', {}).get('teamSkaterStats'):
+                home_team_stats = home_team.get('teamStats', {}).get('teamSkaterStats', {})
+            elif home_team.get('teamStats'):
+                home_team_stats = home_team.get('teamStats', {})
+            elif home_team.get('stats'):
+                home_team_stats = home_team.get('stats', {})
+            
+            # Also try getting from boxscore directly if available
+            if not away_team_stats and boxscore.get('awayTeam', {}).get('teamStats'):
+                away_team_stats = boxscore.get('awayTeam', {}).get('teamStats', {}).get('teamSkaterStats', {})
+            if not home_team_stats and boxscore.get('homeTeam', {}).get('teamStats'):
+                home_team_stats = boxscore.get('homeTeam', {}).get('teamStats', {}).get('teamSkaterStats', {})
             
             report_data['stats'] = {
                 'away': {
-                    'shots': away_team_stats.get('shots', 0),
-                    'hits': away_team_stats.get('hits', 0),
-                    'pim': away_team_stats.get('pim', 0),
-                    'faceoff_wins': away_team_stats.get('faceOffWins', 0),
-                    'faceoff_total': away_team_stats.get('faceOffTaken', 0),
-                    'power_play_goals': away_team_stats.get('powerPlayGoals', 0),
-                    'power_play_opportunities': away_team_stats.get('powerPlayOpportunities', 0),
-                    'blocked_shots': away_team_stats.get('blocked', 0),
-                    'giveaways': away_team_stats.get('giveaways', 0),
-                    'takeaways': away_team_stats.get('takeaways', 0)
+                    'shots': away_team_stats.get('shots') or away_team_stats.get('sog') or 0,
+                    'hits': away_team_stats.get('hits') or 0,
+                    'pim': away_team_stats.get('pim') or 0,
+                    'faceoff_wins': away_team_stats.get('faceOffWins') or away_team_stats.get('faceoffWins') or 0,
+                    'faceoff_total': away_team_stats.get('faceOffTaken') or away_team_stats.get('faceoffTaken') or (away_team_stats.get('faceOffWins', 0) + away_team_stats.get('faceoffWins', 0)),
+                    'power_play_goals': away_team_stats.get('powerPlayGoals') or away_team_stats.get('ppGoals') or 0,
+                    'power_play_opportunities': away_team_stats.get('powerPlayOpportunities') or away_team_stats.get('ppOpportunities') or 0,
+                    'blocked_shots': away_team_stats.get('blocked') or away_team_stats.get('blockedShots') or 0,
+                    'giveaways': away_team_stats.get('giveaways') or 0,
+                    'takeaways': away_team_stats.get('takeaways') or 0
                 },
                 'home': {
-                    'shots': home_team_stats.get('shots', 0),
-                    'hits': home_team_stats.get('hits', 0),
-                    'pim': home_team_stats.get('pim', 0),
-                    'faceoff_wins': home_team_stats.get('faceOffWins', 0),
-                    'faceoff_total': home_team_stats.get('faceOffTaken', 0),
-                    'power_play_goals': home_team_stats.get('powerPlayGoals', 0),
-                    'power_play_opportunities': home_team_stats.get('powerPlayOpportunities', 0),
-                    'blocked_shots': home_team_stats.get('blocked', 0),
-                    'giveaways': home_team_stats.get('giveaways', 0),
-                    'takeaways': home_team_stats.get('takeaways', 0)
+                    'shots': home_team_stats.get('shots') or home_team_stats.get('sog') or 0,
+                    'hits': home_team_stats.get('hits') or 0,
+                    'pim': home_team_stats.get('pim') or 0,
+                    'faceoff_wins': home_team_stats.get('faceOffWins') or home_team_stats.get('faceoffWins') or 0,
+                    'faceoff_total': home_team_stats.get('faceOffTaken') or home_team_stats.get('faceoffTaken') or (home_team_stats.get('faceOffWins', 0) + home_team_stats.get('faceoffWins', 0)),
+                    'power_play_goals': home_team_stats.get('powerPlayGoals') or home_team_stats.get('ppGoals') or 0,
+                    'power_play_opportunities': home_team_stats.get('powerPlayOpportunities') or home_team_stats.get('ppOpportunities') or 0,
+                    'blocked_shots': home_team_stats.get('blocked') or home_team_stats.get('blockedShots') or 0,
+                    'giveaways': home_team_stats.get('giveaways') or 0,
+                    'takeaways': home_team_stats.get('takeaways') or 0
                 }
             }
             
@@ -376,22 +400,78 @@ def get_live_game_report(game_id):
         # Get scoring summary
         try:
             scoring_plays = []
-            if game_data.get('play_by_play') and 'plays' in game_data['play_by_play']:
-                for play in game_data['play_by_play']['plays']:
-                    if play.get('typeDescKey') == 'goal':
-                        scoring_plays.append({
-                            'period': play.get('periodDescriptor', {}).get('number', 1),
-                            'time': play.get('timeInPeriod', ''),
-                            'team': play.get('details', {}).get('eventOwnerTeamId'),
-                            'scorer': play.get('details', {}).get('scoringPlayerName', {}).get('default', 'Unknown'),
-                            'assists': [a.get('playerName', {}).get('default', '') 
-                                       for a in play.get('details', {}).get('assistDetails', [])]
-                        })
+            pbp = game_data.get('play_by_play', {})
+            
+            # Try different play-by-play structures
+            plays = []
+            if isinstance(pbp, dict):
+                plays = pbp.get('plays', []) or pbp.get('events', []) or []
+            elif isinstance(pbp, list):
+                plays = pbp
+            
+            for play in plays:
+                # Check if it's a goal - try multiple keys
+                is_goal = (
+                    play.get('typeDescKey') == 'goal' or 
+                    play.get('type') == 'goal' or
+                    play.get('eventTypeId') == 'GOAL' or
+                    play.get('result', {}).get('eventTypeId') == 'GOAL'
+                )
+                
+                if is_goal:
+                    # Extract period info
+                    period_desc = play.get('periodDescriptor') or play.get('period') or {}
+                    period_num = period_desc.get('number') if isinstance(period_desc, dict) else (period_desc if isinstance(period_desc, int) else play.get('period', 1))
+                    
+                    # Extract time
+                    time_str = play.get('timeInPeriod') or play.get('timeRemaining') or play.get('time', '')
+                    
+                    # Extract team - try multiple paths
+                    team_id = (
+                        play.get('details', {}).get('eventOwnerTeamId') or
+                        play.get('team', {}).get('id') or
+                        play.get('teamId') or
+                        play.get('eventOwnerTeam', {}).get('id')
+                    )
+                    
+                    # Extract scorer - try multiple paths
+                    details = play.get('details', {})
+                    scorer_name = 'Unknown'
+                    if details.get('scoringPlayerName'):
+                        if isinstance(details['scoringPlayerName'], dict):
+                            scorer_name = details['scoringPlayerName'].get('default') or details['scoringPlayerName'].get('fullName') or 'Unknown'
+                        else:
+                            scorer_name = details['scoringPlayerName']
+                    elif details.get('scorer'):
+                        scorer_name = details['scorer'].get('fullName', 'Unknown') if isinstance(details['scorer'], dict) else details['scorer']
+                    elif play.get('player', {}).get('fullName'):
+                        scorer_name = play['player']['fullName']
+                    
+                    # Extract assists - try multiple paths
+                    assists = []
+                    assist_details = details.get('assistDetails', []) or details.get('assists', []) or []
+                    for assist in assist_details:
+                        if isinstance(assist, dict):
+                            assist_name = assist.get('playerName', {}).get('default') if isinstance(assist.get('playerName'), dict) else assist.get('playerName') or assist.get('fullName', '')
+                        else:
+                            assist_name = str(assist)
+                        if assist_name:
+                            assists.append(assist_name)
+                    
+                    scoring_plays.append({
+                        'period': period_num,
+                        'time': time_str,
+                        'team': team_id,
+                        'scorer': scorer_name,
+                        'assists': assists
+                    })
             
             report_data['scoring_summary'] = scoring_plays
         
         except Exception as e:
             print(f"Error extracting scoring summary: {e}")
+            import traceback
+            traceback.print_exc()
         
         return jsonify(report_data)
     
