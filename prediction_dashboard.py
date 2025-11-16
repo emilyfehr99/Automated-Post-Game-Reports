@@ -388,64 +388,96 @@ def get_live_game_report(game_id):
         except Exception as e:
             print(f"Error calculating advanced metrics: {e}")
         
-        # Extract team stats from boxscore - try multiple possible paths
+        # Extract team stats - use report generator's method which handles all cases
         try:
-            # Try different possible paths for stats
+            # First try direct boxscore extraction
             away_team_stats = {}
             home_team_stats = {}
             
             # Path 1: teamStats.teamSkaterStats (most common NHL API structure)
             if away_team.get('teamStats', {}).get('teamSkaterStats'):
                 away_team_stats = away_team.get('teamStats', {}).get('teamSkaterStats', {})
-            # Path 2: teamStats directly
             elif away_team.get('teamStats'):
                 away_team_stats = away_team.get('teamStats', {})
-            # Path 3: stats directly on team
-            elif away_team.get('stats'):
-                away_team_stats = away_team.get('stats', {})
             
             if home_team.get('teamStats', {}).get('teamSkaterStats'):
                 home_team_stats = home_team.get('teamStats', {}).get('teamSkaterStats', {})
             elif home_team.get('teamStats'):
                 home_team_stats = home_team.get('teamStats', {})
-            elif home_team.get('stats'):
-                home_team_stats = home_team.get('stats', {})
             
-            # Fallback: Calculate from player stats if team stats not available
+            # If not found, use report generator's method to calculate from play-by-play
             if not away_team_stats or not home_team_stats:
                 try:
-                    # Try to get stats from player data
-                    player_by_game = boxscore.get('playerByGameStats', {})
-                    if player_by_game:
-                        away_players = player_by_game.get('away', {})
-                        home_players = player_by_game.get('home', {})
-                        
-                        # Calculate team stats from summing player stats
-                        def calc_team_from_players(players):
-                            stats = {
-                                'shots': 0, 'hits': 0, 'pim': 0,
-                                'faceOffWins': 0, 'faceOffTaken': 0,
-                                'powerPlayGoals': 0, 'powerPlayOpportunities': 0,
-                                'blocked': 0, 'giveaways': 0, 'takeaways': 0
-                            }
-                            for pos_group in ['forwards', 'defense', 'goalies']:
-                                if pos_group in players:
-                                    for player in players[pos_group]:
-                                        stats['shots'] += player.get('shots', 0)
-                                        stats['hits'] += player.get('hits', 0)
-                                        stats['pim'] += player.get('pim', 0)
-                                        stats['blocked'] += player.get('blockedShots', 0)
-                                        stats['giveaways'] += player.get('giveaways', 0)
-                                        stats['takeaways'] += player.get('takeaways', 0)
-                                        stats['powerPlayGoals'] += player.get('powerPlayGoals', 0)
-                            return stats
-                        
-                        if not away_team_stats and away_players:
-                            away_team_stats = calc_team_from_players(away_players)
-                        if not home_team_stats and home_players:
-                            home_team_stats = calc_team_from_players(home_players)
+                    # Use report generator's method which calculates from play-by-play
+                    away_stats_pbp = report_generator._calculate_team_stats_from_play_by_play(game_data, 'awayTeam')
+                    home_stats_pbp = report_generator._calculate_team_stats_from_play_by_play(game_data, 'homeTeam')
+                    
+                    # Convert to our format
+                    if away_stats_pbp and not away_team_stats:
+                        away_team_stats = {
+                            'shots': away_stats_pbp.get('shotsOnGoal', 0),
+                            'hits': away_stats_pbp.get('hits', 0),
+                            'pim': away_stats_pbp.get('penaltyMinutes', 0),
+                            'faceOffWins': away_stats_pbp.get('faceoffWins', 0),
+                            'faceOffTaken': away_stats_pbp.get('faceoffTotal', 0),
+                            'powerPlayGoals': away_stats_pbp.get('powerPlayGoals', 0),
+                            'powerPlayOpportunities': away_stats_pbp.get('powerPlayOpportunities', 0),
+                            'blocked': away_stats_pbp.get('blockedShots', 0),
+                            'giveaways': away_stats_pbp.get('giveaways', 0),
+                            'takeaways': away_stats_pbp.get('takeaways', 0)
+                        }
+                    
+                    if home_stats_pbp and not home_team_stats:
+                        home_team_stats = {
+                            'shots': home_stats_pbp.get('shotsOnGoal', 0),
+                            'hits': home_stats_pbp.get('hits', 0),
+                            'pim': home_stats_pbp.get('penaltyMinutes', 0),
+                            'faceOffWins': home_stats_pbp.get('faceoffWins', 0),
+                            'faceOffTaken': home_stats_pbp.get('faceoffTotal', 0),
+                            'powerPlayGoals': home_stats_pbp.get('powerPlayGoals', 0),
+                            'powerPlayOpportunities': home_stats_pbp.get('powerPlayOpportunities', 0),
+                            'blocked': home_stats_pbp.get('blockedShots', 0),
+                            'giveaways': home_stats_pbp.get('giveaways', 0),
+                            'takeaways': home_stats_pbp.get('takeaways', 0)
+                        }
                 except Exception as e:
-                    print(f"Error calculating stats from players: {e}")
+                    print(f"Error calculating stats from play-by-play: {e}")
+                    # Final fallback: calculate from player data
+                    try:
+                        player_by_game = boxscore.get('playerByGameStats', {})
+                        if player_by_game:
+                            away_players = player_by_game.get('away', {})
+                            home_players = player_by_game.get('home', {})
+                            
+                            def calc_team_from_players(players):
+                                stats = {
+                                    'shots': 0, 'hits': 0, 'pim': 0,
+                                    'faceOffWins': 0, 'faceOffTaken': 0,
+                                    'powerPlayGoals': 0, 'powerPlayOpportunities': 0,
+                                    'blocked': 0, 'giveaways': 0, 'takeaways': 0
+                                }
+                                for pos_group in ['forwards', 'defense', 'goalies']:
+                                    if pos_group in players:
+                                        for player in players[pos_group]:
+                                            stats['shots'] += player.get('shots', 0) or player.get('sog', 0)
+                                            stats['hits'] += player.get('hits', 0)
+                                            stats['pim'] += player.get('pim', 0) or player.get('penaltyMinutes', 0)
+                                            stats['blocked'] += player.get('blockedShots', 0) or player.get('blocked', 0)
+                                            stats['giveaways'] += player.get('giveaways', 0)
+                                            stats['takeaways'] += player.get('takeaways', 0)
+                                            stats['powerPlayGoals'] += player.get('powerPlayGoals', 0)
+                                            fo_wins = player.get('faceoffWins', 0) or player.get('faceOffWins', 0)
+                                            fo_taken = player.get('faceoffTaken', 0) or player.get('faceOffTaken', 0)
+                                            stats['faceOffWins'] += fo_wins
+                                            stats['faceOffTaken'] += fo_taken
+                                return stats
+                            
+                            if not away_team_stats and away_players:
+                                away_team_stats = calc_team_from_players(away_players)
+                            if not home_team_stats and home_players:
+                                home_team_stats = calc_team_from_players(home_players)
+                    except Exception as e2:
+                        print(f"Error calculating stats from players: {e2}")
             
             # Calculate faceoff totals if we have wins but not total
             away_fo_wins = away_team_stats.get('faceOffWins') or away_team_stats.get('faceoffWins') or 0
@@ -533,6 +565,34 @@ def get_live_game_report(game_id):
         except Exception as e:
             print(f"Error extracting goalie stats: {e}")
         
+        # Create player roster map for name lookups
+        player_roster_map = {}
+        try:
+            pbp = game_data.get('play_by_play', {})
+            if pbp and 'rosterSpots' in pbp:
+                for player in pbp['rosterSpots']:
+                    player_id = str(player.get('playerId') or player.get('id') or player.get('personId', ''))
+                    if player_id:
+                        # Build name from firstName/lastName
+                        first_name = ''
+                        last_name = ''
+                        if player.get('firstName'):
+                            if isinstance(player['firstName'], dict):
+                                first_name = player['firstName'].get('default', '')
+                            else:
+                                first_name = str(player['firstName'])
+                        if player.get('lastName'):
+                            if isinstance(player['lastName'], dict):
+                                last_name = player['lastName'].get('default', '')
+                            else:
+                                last_name = str(player['lastName'])
+                        
+                        full_name = f"{first_name} {last_name}".strip()
+                        if full_name:
+                            player_roster_map[player_id] = full_name
+        except Exception as e:
+            print(f"Error creating player roster map: {e}")
+        
         # Get scoring summary
         try:
             scoring_plays = []
@@ -589,12 +649,15 @@ def get_live_game_report(game_id):
                         else:
                             scorer_name = str(scorer_name_obj) if scorer_name_obj else 'Unknown'
                     
-                    # Also try getting from roster if we have player ID
-                    if scorer_name == 'Unknown' and details.get('scoringPlayerId'):
-                        # Could look up from roster, but for now just mark as needing lookup
-                        scorer_name = f"Player #{details.get('scoringPlayerId')}"
+                    # Look up player name from roster map using player ID
+                    if scorer_name == 'Unknown' or scorer_name.startswith('Player #'):
+                        player_id = str(details.get('scoringPlayerId') or details.get('playerId') or '')
+                        if player_id and player_id in player_roster_map:
+                            scorer_name = player_roster_map[player_id]
+                        elif player_id:
+                            scorer_name = f"Player #{player_id}"
                     # Try other possible fields
-                    elif details.get('scorer'):
+                    if scorer_name == 'Unknown' and details.get('scorer'):
                         scorer_obj = details['scorer']
                         if isinstance(scorer_obj, dict):
                             scorer_name = scorer_obj.get('fullName') or scorer_obj.get('name', {}).get('default', 'Unknown') if isinstance(scorer_obj.get('name'), dict) else 'Unknown'
@@ -611,8 +674,9 @@ def get_live_game_report(game_id):
                     # Also try assistDetails array
                     assist_details = details.get('assistDetails', [])
                     
-                    # Process assist1
+                    # Process assist1 - try name first, then lookup by ID
                     if assist1:
+                        assist_name = ''
                         if isinstance(assist1, dict):
                             assist_name = (
                                 assist1.get('default') or 
@@ -623,11 +687,19 @@ def get_live_game_report(game_id):
                             )
                         else:
                             assist_name = str(assist1) if assist1 else ''
-                        if assist_name and assist_name != 'Unknown' and assist_name.strip():
+                        
+                        # If no name, try looking up by assist1PlayerId
+                        if not assist_name or assist_name == 'Unknown':
+                            assist_id = str(details.get('assist1PlayerId') or '')
+                            if assist_id and assist_id in player_roster_map:
+                                assist_name = player_roster_map[assist_id]
+                        
+                        if assist_name and assist_name != 'Unknown' and assist_name.strip() and not assist_name.startswith('Player #'):
                             assists.append(assist_name)
                     
-                    # Process assist2
+                    # Process assist2 - try name first, then lookup by ID
                     if assist2:
+                        assist_name = ''
                         if isinstance(assist2, dict):
                             assist_name = (
                                 assist2.get('default') or 
@@ -638,7 +710,14 @@ def get_live_game_report(game_id):
                             )
                         else:
                             assist_name = str(assist2) if assist2 else ''
-                        if assist_name and assist_name != 'Unknown' and assist_name.strip():
+                        
+                        # If no name, try looking up by assist2PlayerId
+                        if not assist_name or assist_name == 'Unknown':
+                            assist_id = str(details.get('assist2PlayerId') or '')
+                            if assist_id and assist_id in player_roster_map:
+                                assist_name = player_roster_map[assist_id]
+                        
+                        if assist_name and assist_name != 'Unknown' and assist_name.strip() and not assist_name.startswith('Player #'):
                             assists.append(assist_name)
                     
                     # Process assistDetails array if available
