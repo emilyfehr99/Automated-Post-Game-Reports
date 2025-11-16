@@ -720,6 +720,41 @@ def get_live_game_report(game_id):
                         if assist_name and assist_name != 'Unknown' and assist_name.strip() and not assist_name.startswith('Player #'):
                             assists.append(assist_name)
                     
+                    # Extract shot type
+                    shot_type = details.get('shotType', 'wrist').title() or 'Wrist'
+                    
+                    # Calculate xG for this goal
+                    try:
+                        # Get previous events for context (rebounds, rushes)
+                        play_index = plays.index(play)
+                        previous_events = plays[max(0, play_index-10):play_index]
+                        xg_value = report_generator._calculate_shot_xg(details, 'goal', play, previous_events)
+                    except Exception as e:
+                        print(f"Error calculating xG: {e}")
+                        xg_value = 0.0
+                    
+                    # Get coordinates for shot chart
+                    x_coord = details.get('xCoord', 0)
+                    y_coord = details.get('yCoord', 0)
+                    
+                    # Calculate longitudinal (north-south) and lateral (east-west) movement
+                    # Get previous shot/play coordinates to calculate movement
+                    longitudinal_movement = 0
+                    lateral_movement = 0
+                    try:
+                        if play_index > 0:
+                            prev_play = plays[play_index - 1]
+                            prev_details = prev_play.get('details', {})
+                            prev_x = prev_details.get('xCoord', 0)
+                            prev_y = prev_details.get('yCoord', 0)
+                            if prev_x and prev_y:
+                                # Lateral = X movement (east-west)
+                                lateral_movement = abs(x_coord - prev_x) if x_coord and prev_x else 0
+                                # Longitudinal = Y movement (north-south)
+                                longitudinal_movement = abs(y_coord - prev_y) if y_coord and prev_y else 0
+                    except:
+                        pass
+                    
                     # Process assistDetails array if available
                     for assist in assist_details:
                         if isinstance(assist, dict):
@@ -733,12 +768,21 @@ def get_live_game_report(game_id):
                         if assist_name and assist_name != 'Unknown' and assist_name not in assists:
                             assists.append(assist_name)
                     
+                    # Determine team abbreviation
+                    team_abbrev = away_abbrev if team_id == away_id else home_abbrev
+                    
                     scoring_plays.append({
                         'period': period_num,
                         'time': time_str,
-                        'team': team_id,
+                        'team': team_abbrev,
                         'scorer': scorer_name,
-                        'assists': assists
+                        'assists': ', '.join(assists) if assists else 'Unassisted',
+                        'xg': round(xg_value, 3),
+                        'shot_type': shot_type,
+                        'x_coord': x_coord,
+                        'y_coord': y_coord,
+                        'longitudinal_movement': round(longitudinal_movement, 1) if longitudinal_movement else 0,
+                        'lateral_movement': round(lateral_movement, 1) if lateral_movement else 0
                     })
             
             report_data['scoring_summary'] = scoring_plays

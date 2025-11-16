@@ -4,6 +4,9 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>NHL Predictions Dashboard</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
     <style>
         * {
             margin: 0;
@@ -12,11 +15,13 @@
         }
 
         body {
-            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
             background: #0a0a0a;
             min-height: 100vh;
             padding: 20px;
             color: #e0e0e0;
+            font-weight: 400;
+            letter-spacing: -0.01em;
         }
 
         .container {
@@ -33,11 +38,12 @@
         }
 
         header h1 {
-            font-size: 3.2em;
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3.5em;
             margin-bottom: 15px;
-            text-shadow: 0 2px 15px rgba(200,16,46,0.3);
-            letter-spacing: 3px;
-            font-weight: 900;
+            text-shadow: 0 2px 20px rgba(200,16,46,0.4);
+            letter-spacing: -0.02em;
+            font-weight: 700;
             background: linear-gradient(135deg, #fff 0%, #c8102e 100%);
             -webkit-background-clip: text;
             -webkit-text-fill-color: transparent;
@@ -857,37 +863,62 @@
             }
             
             if (scoring.length > 0) {
+                // Collect shot data for chart
+                const shotData = scoring.filter(g => g.x_coord && g.y_coord);
+                
                 html += `
                     <div class="report-section">
                         <h3>Scoring Summary</h3>
-                        <table class="stats-table">
-                            <thead>
-                                <tr>
-                                    <th>Period</th>
-                                    <th>Time</th>
-                                    <th>Team</th>
-                                    <th>Scorer</th>
-                                    <th>Assists</th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                ${scoring.map(goal => {
-                                    // Match team ID to team name
-                                    const teamName = (goal.team === data.away_id || goal.team === data.away_team) ? data.away_team : data.home_team;
-                                    return `
+                        <div style="overflow-x: auto;">
+                            <table class="stats-table" style="min-width: 1000px;">
+                                <thead>
                                     <tr>
-                                        <td>${goal.period}</td>
-                                        <td>${goal.time}</td>
-                                        <td class="team-col">${teamName}</td>
-                                        <td style="font-weight: 600;">${goal.scorer}</td>
-                                        <td>${goal.assists.join(', ') || 'Unassisted'}</td>
+                                        <th>Period</th>
+                                        <th>Time</th>
+                                        <th>Team</th>
+                                        <th>Scorer</th>
+                                        <th>Assists</th>
+                                        <th>xG</th>
+                                        <th>Shot Type</th>
+                                        <th>Longitudinal</th>
+                                        <th>Lateral</th>
                                     </tr>
-                                `;
-                                }).join('')}
-                            </tbody>
-                        </table>
+                                </thead>
+                                <tbody>
+                                    ${scoring.map(goal => {
+                                        const teamName = goal.team || ((goal.team === data.away_id || goal.team === data.away_team) ? data.away_team : data.home_team);
+                                        const assists = typeof goal.assists === 'string' ? goal.assists : (goal.assists?.join(', ') || 'Unassisted');
+                                        return `
+                                        <tr>
+                                            <td>${goal.period}</td>
+                                            <td>${goal.time}</td>
+                                            <td class="team-col">${teamName}</td>
+                                            <td style="font-weight: 600;">${goal.scorer}</td>
+                                            <td>${assists}</td>
+                                            <td style="color: #4CAF50; font-weight: 600;">${goal.xg || '0.000'}</td>
+                                            <td>${goal.shot_type || 'Wrist'}</td>
+                                            <td>${goal.longitudinal_movement || 0} ft</td>
+                                            <td>${goal.lateral_movement || 0} ft</td>
+                                        </tr>
+                                    `;
+                                    }).join('')}
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 `;
+                
+                // Add shot chart if we have coordinates
+                if (shotData.length > 0) {
+                    html += `
+                        <div class="report-section">
+                            <h3>Shot Chart</h3>
+                            <div style="background: #1a1a1a; padding: 20px; border-radius: 8px; margin-top: 15px;">
+                                <canvas id="shotChart" width="800" height="400" style="max-width: 100%; height: auto; background: #0f0f0f; border-radius: 4px;"></canvas>
+                            </div>
+                        </div>
+                    `;
+                }
             } else {
                 html += `
                     <div class="report-section">
@@ -899,7 +930,100 @@
                 `;
             }
             
+            // Draw shot chart if it exists
+            if (scoring.length > 0) {
+                const shotData = scoring.filter(g => g.x_coord && g.y_coord);
+                if (shotData.length > 0) {
+                    setTimeout(() => {
+                        drawShotChart(shotData, data.away_team, data.home_team);
+                    }, 100);
+                }
+            }
+            
             return html;
+        }
+        
+        function drawShotChart(shotData, awayTeam, homeTeam) {
+            const canvas = document.getElementById('shotChart');
+            if (!canvas) return;
+            
+            const ctx = canvas.getContext('2d');
+            const width = canvas.width;
+            const height = canvas.height;
+            
+            // Clear canvas
+            ctx.fillStyle = '#0f0f0f';
+            ctx.fillRect(0, 0, width, height);
+            
+            // Draw rink outline (simplified)
+            ctx.strokeStyle = '#444';
+            ctx.lineWidth = 2;
+            ctx.beginPath();
+            // Rink shape
+            ctx.rect(50, 50, width - 100, height - 100);
+            ctx.stroke();
+            
+            // Draw center line
+            ctx.strokeStyle = '#666';
+            ctx.beginPath();
+            ctx.moveTo(width / 2, 50);
+            ctx.lineTo(width / 2, height - 50);
+            ctx.stroke();
+            
+            // Draw goal lines
+            ctx.strokeStyle = '#c8102e';
+            ctx.lineWidth = 3;
+            ctx.beginPath();
+            ctx.moveTo(100, 50);
+            ctx.lineTo(100, height - 50);
+            ctx.moveTo(width - 100, 50);
+            ctx.lineTo(width - 100, height - 50);
+            ctx.stroke();
+            
+            // Draw goals
+            ctx.fillStyle = '#c8102e';
+            ctx.fillRect(90, height / 2 - 30, 20, 60);
+            ctx.fillRect(width - 110, height / 2 - 30, 20, 60);
+            
+            // Plot shots
+            shotData.forEach(goal => {
+                // Convert NHL coordinates to canvas coordinates
+                // NHL: X ranges from -100 to 100, Y from -42.5 to 42.5
+                // For away team (left side), X is negative
+                // For home team (right side), X is positive
+                const isAway = goal.x_coord < 0 || goal.team === awayTeam;
+                const x = isAway 
+                    ? 100 + (Math.abs(goal.x_coord) / 100) * (width / 2 - 150)
+                    : width / 2 + (Math.abs(goal.x_coord) / 100) * (width / 2 - 150);
+                const y = height / 2 - (goal.y_coord / 42.5) * (height / 2 - 100);
+                
+                // Draw goal marker
+                ctx.fillStyle = isAway ? '#4CAF50' : '#FF6B6B';
+                ctx.beginPath();
+                ctx.arc(x, y, 8, 0, Math.PI * 2);
+                ctx.fill();
+                
+                // Draw xG value
+                ctx.fillStyle = '#fff';
+                ctx.font = '10px Inter';
+                ctx.fillText(goal.xg.toFixed(3), x + 10, y - 5);
+            });
+            
+            // Add legend
+            ctx.fillStyle = '#fff';
+            ctx.font = '12px Inter';
+            ctx.fillText(`${awayTeam} Goals`, 120, height - 30);
+            ctx.fillStyle = '#4CAF50';
+            ctx.beginPath();
+            ctx.arc(110, height - 35, 6, 0, Math.PI * 2);
+            ctx.fill();
+            
+            ctx.fillStyle = '#fff';
+            ctx.fillText(`${homeTeam} Goals`, width - 200, height - 30);
+            ctx.fillStyle = '#FF6B6B';
+            ctx.beginPath();
+            ctx.arc(width - 210, height - 35, 6, 0, Math.PI * 2);
+            ctx.fill();
         }
 
         // Close modal when clicking outside
