@@ -10,11 +10,30 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 import logging
-import requests
+from correlation_model import CorrelationModel
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
+
+DEFAULT_WEIGHT_PRIORS = {
+    "xg_weight": 0.40,
+    "hdc_weight": 0.20,
+    "corsi_weight": 0.10,
+    "power_play_weight": 0.08,
+    "faceoff_weight": 0.06,
+    "shots_weight": 0.05,
+    "hits_weight": 0.03,
+    "blocked_shots_weight": 0.03,
+    "takeaways_weight": 0.02,
+    "penalty_minutes_weight": 0.01,
+    "recent_form_weight": 0.02,
+    "head_to_head_weight": 0.00,
+    "rest_days_weight": 0.00,
+    "goalie_performance_weight": 0.00,
+    "game_score_weight": 0.15,
+    "sos_weight": 0.00,
+}
 
 class ImprovedSelfLearningModelV2:
     def __init__(self, predictions_file: str = "win_probability_predictions_v2.json"):
@@ -48,6 +67,256 @@ class ImprovedSelfLearningModelV2:
         # Load historical stats if available
         self.historical_stats = self.load_historical_stats()
         
+        # Correlation model for diagnostics and weight signals
+        try:
+            self.correlation_model = CorrelationModel()
+        except Exception as exc:
+            logger.warning(f"Failed to initialize correlation model: {exc}")
+            self.correlation_model = None
+
+        self.upset_model = self.model_data.get("upset_model")
+        self.backtest_reports = self.model_data.get("backtest_reports", [])
+
+    def predict_upset_probability(self, features: List[float]) -> float:
+        """Predict upset probability using stored logistic regression coefficients."""
+        model_params = self.model_data.get("upset_model")
+        if not model_params:
+            # fallback heuristic
+            coeffs = [0.5, -0.4, 0.2, 0.8]
+            intercept = -1.0
+        else:
+            coeffs = model_params.get("coef", [0.5, -0.4, 0.2, 0.8])
+            intercept = model_params.get("intercept", -1.0)
+        coeffs = list(coeffs) + [0.0] * (len(features) - len(coeffs))
+        z = intercept
+        for w, x in zip(coeffs, features):
+            z += float(w) * float(x)
+        try:
+            return 1.0 / (1.0 + np.exp(-z))
+        except OverflowError:
+            return 0.0 if z < 0 else 1.0
+        
+    @staticmethod
+    def _normalize_outcome_side(value: Optional[str], away_team: Optional[str], home_team: Optional[str]) -> Optional[str]:
+        """Normalize a winner string to 'away' or 'home'."""
+        if not value:
+            return None
+        if not isinstance(value, str):
+            return None
+        normalized = value.strip().lower()
+        if normalized in ("away", "home"):
+            return normalized
+        if away_team and normalized == away_team.lower():
+            return "away"
+        if home_team and normalized == home_team.lower():
+            return "home"
+        return None
+    
+    @staticmethod
+    def _side_to_team(side: Optional[str], away_team: Optional[str], home_team: Optional[str]) -> Optional[str]:
+        """Return the team abbreviation for a normalized side value."""
+        if side == "away":
+            return away_team
+        if side == "home":
+            return home_team
+        return None
+
+    @staticmethod
+    def _is_number(value) -> bool:
+        if isinstance(value, (int, float)):
+            return True
+        try:
+            float(value)
+            return True
+        except (TypeError, ValueError):
+            return False
+
+    @staticmethod
+    def _determine_context_bucket(away_rest: float, home_rest: float) -> str:
+        """Determine schedule context bucket based on rest advantage."""
+        if away_rest <= -0.5 and home_rest >= 0.5:
+            return "away_b2b_vs_rest"
+        if home_rest <= -0.5 and away_rest >= 0.5:
+            return "home_b2b_vs_rest"
+        if away_rest <= -0.5 and home_rest <= -0.5:
+            return "both_b2b"
+        if away_rest >= 0.5 and home_rest >= 0.5:
+            return "both_rest_adv"
+        if away_rest <= -0.5:
+            return "away_b2b"
+        if home_rest <= -0.5:
+            return "home_b2b"
+        if away_rest >= 0.5:
+            return "away_rest_adv"
+        if home_rest >= 0.5:
+            return "home_rest_adv"
+        return "neutral"
+
+    def determine_context_bucket(self, away_rest: float, home_rest: float) -> str:
+        return self._determine_context_bucket(away_rest, home_rest)
+
+    @staticmethod
+    def _compute_calibration_points(records: List[Tuple[float, float]], num_bins: int = 12) -> Tuple[List[Tuple[float, float]], int]:
+        if not records:
+            return [], 0
+        records = sorted(records, key=lambda x: x[0])
+        bins = [0.0 for _ in range(num_bins)]
+        counts = [0 for _ in range(num_bins)]
+        bin_bounds = np.linspace(0.0, 1.0, num_bins + 1)
+        for prob, outcome in records:
+            idx = min(num_bins - 1, max(0, int(np.searchsorted(bin_bounds, prob, side="right") - 1)))
+            bins[idx] += outcome
+            counts[idx] += 1
+        calibrated = []
+        running_prev = 0.0
+        for i in range(num_bins):
+            if counts[i] > 0:
+                acc = bins[i] / counts[i]
+            else:
+                acc = running_prev
+            acc = max(running_prev, acc)
+            running_prev = acc
+            midpoint = (bin_bounds[i] + bin_bounds[i + 1]) / 2.0
+            calibrated.append((float(midpoint), float(acc)))
+        return calibrated, len(records)
+
+    @staticmethod
+    def _apply_calibration_points(prob: float, points: List[Tuple[float, float]]) -> float:
+        if not points:
+            return prob
+        points = sorted(points, key=lambda x: x[0])
+        if prob <= points[0][0]:
+            return max(0.0, min(1.0, points[0][1]))
+        if prob >= points[-1][0]:
+            return max(0.0, min(1.0, points[-1][1]))
+        for i in range(1, len(points)):
+            x0, y0 = points[i - 1]
+            x1, y1 = points[i]
+            if x0 <= prob <= x1:
+                if x1 == x0:
+                    return max(0.0, min(1.0, y1))
+                t = (prob - x0) / (x1 - x0)
+                calibrated = y0 + t * (y1 - y0)
+                return max(0.0, min(1.0, calibrated))
+        return prob
+
+    def _determine_upset(self, predicted_side: Optional[str], actual_side: Optional[str],
+                          prediction_confidence: Optional[float], prediction_margin: Optional[float],
+                          confidence_threshold: float = 0.6, margin_threshold: float = 0.1) -> bool:
+        if not predicted_side or not actual_side:
+            return False
+        if predicted_side == actual_side:
+            return False
+        conf = prediction_confidence or 0.0
+        margin = prediction_margin or 0.0
+        return conf >= confidence_threshold or margin >= margin_threshold
+
+    def _estimate_monte_carlo_signal(self, prediction: Dict, iterations: int = 40) -> float:
+        """Estimate volatility by perturbing metrics and observing prediction flips."""
+        if not self.correlation_model:
+            return 0.0
+        metrics = prediction.get("metrics_used") or {}
+        if not metrics:
+            return 0.0
+        predicted_side = prediction.get("predicted_winner")
+        if predicted_side not in ("away", "home"):
+            away_prob = prediction.get("raw_away_prob", prediction.get("predicted_away_win_prob", 0.5))
+            home_prob = prediction.get("raw_home_prob", prediction.get("predicted_home_win_prob", 0.5))
+            predicted_side = "away" if away_prob >= home_prob else "home"
+        if predicted_side not in ("away", "home"):
+            return 0.0
+        flips = 0
+        samples = 0
+        for _ in range(iterations):
+            perturbed = {}
+            for key, value in metrics.items():
+                if self._is_number(value):
+                    val = float(value)
+                    scale = max(0.02, abs(val) * 0.1)
+                    perturbed[key] = val + float(np.random.normal(0.0, scale))
+                else:
+                    perturbed[key] = value
+            try:
+                corr_probs = self.correlation_model.predict_from_metrics(perturbed)
+            except Exception:
+                continue
+            sample_side = "away" if corr_probs.get("away_prob", 0.5) >= corr_probs.get("home_prob", 0.5) else "home"
+            samples += 1
+            if sample_side != predicted_side:
+                flips += 1
+        if samples == 0:
+            return 0.0
+        return flips / samples
+
+    def update_calibration_model(self, min_games: int = 60, num_bins: int = 12) -> int:
+        """Recompute calibration curve using completed games, segmented by context."""
+        completed = [p for p in self.model_data.get("predictions", []) if p.get("actual_winner")]
+        overall_records: List[Tuple[float, float]] = []
+        bucket_records: Dict[str, List[Tuple[float, float]]] = {}
+        for pred in completed:
+            away_prob = pred.get("raw_away_prob")
+            if away_prob is None:
+                away_prob = pred.get("predicted_away_win_prob")
+            if away_prob is None:
+                continue
+            actual_side = self._normalize_outcome_side(
+                pred.get("actual_winner"),
+                pred.get("away_team"),
+                pred.get("home_team"),
+            )
+            if actual_side not in ("away", "home"):
+                continue
+            try:
+                prob_val = max(0.0, min(1.0, float(away_prob)))
+            except (TypeError, ValueError):
+                continue
+            outcome = 1.0 if actual_side == "away" else 0.0
+            overall_records.append((prob_val, outcome))
+            context_bucket = pred.get("context_bucket") or "neutral"
+            bucket_records.setdefault(context_bucket, []).append((prob_val, outcome))
+        if len(overall_records) < min_games:
+            return 0
+
+        overall_points, total_samples = self._compute_calibration_points(overall_records, num_bins)
+        bucket_points = {}
+        bucket_sizes = {}
+        min_bucket_samples = max(30, min_games // 2)
+        for bucket, records in bucket_records.items():
+            if len(records) < min_bucket_samples:
+                continue
+            points, size = self._compute_calibration_points(records, num_bins)
+            if size >= min_bucket_samples:
+                bucket_points[bucket] = points
+                bucket_sizes[bucket] = size
+
+        self.model_data["calibration_points"] = overall_points
+        self.model_data["calibration_by_bucket"] = bucket_points
+        self.model_data["calibration_metadata"] = {
+            "updated_at": datetime.now().isoformat(),
+            "sample_size": total_samples,
+            "num_bins": num_bins,
+            "bucket_samples": bucket_sizes,
+        }
+        return total_samples
+
+    def apply_calibration(self, away_probability: Optional[float], context_bucket: Optional[str] = None) -> float:
+        if away_probability is None:
+            return 0.5
+        try:
+            prob = float(away_probability)
+        except (TypeError, ValueError):
+            prob = 0.5
+        prob = max(0.0, min(1.0, prob))
+        bucket_map = self.model_data.get("calibration_by_bucket") or {}
+        if context_bucket:
+            bucket_points = bucket_map.get(context_bucket)
+            if bucket_points and len(bucket_points) >= 2:
+                return self._apply_calibration_points(prob, bucket_points)
+        points = self.model_data.get("calibration_points") or []
+        if len(points) < 2:
+            return prob
+        return self._apply_calibration_points(prob, points)
+        
     def load_model_data(self) -> Dict:
         """Load existing model data and predictions"""
         if self.predictions_file.exists():
@@ -57,6 +326,10 @@ class ImprovedSelfLearningModelV2:
                     # Load team stats from main file if available
                     if "team_stats" in data:
                         self.team_stats = data["team_stats"]
+                    data.setdefault("calibration_points", [])
+                    data.setdefault("calibration_metadata", {})
+                    data.setdefault("calibration_by_bucket", {})
+                    data.setdefault("backtest_reports", [])
                     return data
             except Exception as e:
                 logger.error(f"Error loading model data: {e}")
@@ -64,24 +337,7 @@ class ImprovedSelfLearningModelV2:
         # Initialize with improved balanced model
         return {
             "predictions": [],
-            "model_weights": {
-                "xg_weight": 0.40,           # Expected goals - STRONGEST predictor
-                "hdc_weight": 0.20,          # High danger chances - good predictor
-                "corsi_weight": 0.10,        # Corsi % - possession metric
-                "power_play_weight": 0.08,   # Power play performance
-                "faceoff_weight": 0.06,      # Faceoff percentage
-                "shots_weight": 0.05,        # Shots on goal
-                "hits_weight": 0.03,         # Physical play
-                "blocked_shots_weight": 0.03, # Defensive play
-                "takeaways_weight": 0.02,    # Defensive plays (positive)
-                "penalty_minutes_weight": 0.01, # Discipline
-                "recent_form_weight": 0.02,  # Recent form (reduced - limited data)
-                "head_to_head_weight": 0.00, # Head-to-head record (disabled - no real data)
-                "rest_days_weight": 0.00,    # Rest days advantage (disabled - no real data)
-                "goalie_performance_weight": 0.00,  # Goalie performance (disabled - no real data)
-                "game_score_weight": 0.15,   # Game score (composite metric)
-                "sos_weight": 0.00           # Strength of schedule (small, gated)
-            },
+            "model_weights": DEFAULT_WEIGHT_PRIORS.copy(),
             "weight_momentum": {
                 "xg_weight": 0.0,
                 "hdc_weight": 0.0,
@@ -107,6 +363,10 @@ class ImprovedSelfLearningModelV2:
                 "accuracy": 0.0,
                 "recent_accuracy": 0.0
             },
+            "calibration_points": [],
+            "calibration_metadata": {},
+            "calibration_by_bucket": {},
+            "backtest_reports": [],
             "goalie_stats": {}
         }
     
@@ -116,7 +376,10 @@ class ImprovedSelfLearningModelV2:
             try:
                 with open(self.team_stats_file, 'r') as f:
                     data = json.load(f)
-                    return data.get('teams', {})
+                    if isinstance(data, dict):
+                        if 'teams' in data:
+                            return data.get('teams', {})
+                        return data
             except Exception as e:
                 logger.error(f"Error loading team stats: {e}")
         return {}
@@ -152,8 +415,9 @@ class ImprovedSelfLearningModelV2:
     def save_team_stats(self):
         """Save team statistics to file"""
         try:
+            payload = {'teams': self.team_stats}
             with open(self.team_stats_file, 'w') as f:
-                json.dump(self.team_stats, f, indent=2, default=str)
+                json.dump(payload, f, indent=2, default=str)
         except Exception as e:
             logger.error(f"Error saving team stats: {e}")
     
@@ -308,75 +572,99 @@ class ImprovedSelfLearningModelV2:
         """Get comprehensive team performance data from new team stats format"""
         team_key = team.upper()
         
-        # Try historical data first (more comprehensive)
+        # Prefer current season stats if available
+        if team_key in self.team_stats:
+            venue_data = self.team_stats[team_key].get(venue, {})
+            # Compute situational factors
+            rest_adv = self._calculate_rest_days_advantage(team_key, venue)
+            goalie_perf = self._calculate_goalie_performance(team_key, venue)
+ 
+            # Calculate averages from arrays if they exist
+            def safe_mean(arr, default=0.0):
+                if arr and len(arr) > 0:
+                    return float(np.mean([float(x) for x in arr if x is not None]))
+                return default
+            
+            xg_avg = safe_mean(venue_data.get('xg', []), 0.0)
+            hdc_avg = safe_mean(venue_data.get('hdc', []), 0.0)
+            shots_avg = safe_mean(venue_data.get('shots', []), 30.0)
+            goals_avg = safe_mean(venue_data.get('goals', []), 2.0)
+            gs_avg = safe_mean(venue_data.get('gs', []), 0.0)
+            corsi_avg = safe_mean(venue_data.get('corsi_pct', []), 50.0)
+            power_play_avg = safe_mean(venue_data.get('power_play_pct', []), 0.0)
+            penalty_kill_avg = safe_mean(venue_data.get('penalty_kill_pct', []), 80.0)
+            faceoff_avg = safe_mean(venue_data.get('faceoff_pct', []), 50.0)
+            hits_avg = safe_mean(venue_data.get('hits', []), 0.0)
+            blocked_shots_avg = safe_mean(venue_data.get('blocked_shots', []), 0.0)
+            giveaways_avg = safe_mean(venue_data.get('giveaways', []), 0.0)
+            takeaways_avg = safe_mean(venue_data.get('takeaways', []), 0.0)
+            penalty_minutes_avg = safe_mean(venue_data.get('penalty_minutes', []), 0.0)
+            
+            games_played = len(venue_data.get('games', []))
+
+            if games_played:
+                return {
+                    'xg': xg_avg,
+                    'hdc': hdc_avg,
+                    'shots': shots_avg,
+                    'goals': goals_avg,
+                    'gs': gs_avg,
+                    'xg_avg': xg_avg,
+                    'hdc_avg': hdc_avg,
+                    'shots_avg': shots_avg,
+                    'goals_avg': goals_avg,
+                    'gs_avg': gs_avg,
+                    'corsi_avg': corsi_avg,
+                    'power_play_avg': power_play_avg,
+                    'penalty_kill_avg': penalty_kill_avg,
+                    'faceoff_avg': faceoff_avg,
+                    'hits_avg': hits_avg,
+                    'blocked_shots_avg': blocked_shots_avg,
+                    'giveaways_avg': giveaways_avg,
+                    'takeaways_avg': takeaways_avg,
+                    'penalty_minutes_avg': penalty_minutes_avg,
+                    'games_played': games_played,
+                    'recent_form': self._calculate_recent_form(team_key, venue, window=10),  # Venue-aware, last 10 games
+                    'head_to_head': 0.5,  # Default
+                    'rest_days_advantage': rest_adv,
+                    'goalie_performance': goalie_perf,
+                    'confidence': self._calculate_confidence(games_played)
+                }
+
+        # Fallback to historical data if current season not available
         for season_name, season_data in self.historical_stats.items():
             if 'teams' in season_data and team_key in season_data['teams']:
                 team_data = season_data['teams'][team_key]
-                # Compute situational factors
                 rest_adv = self._calculate_rest_days_advantage(team_key, venue="home")
                 goalie_perf = self._calculate_goalie_performance(team_key, venue="home")
 
                 return {
                     'xg': team_data.get('xg_avg', 0.0),
                     'hdc': team_data.get('hdc_avg', 0.0),
-                    'shots': 30.0,  # Default shots
-                    'goals': 2.0,   # Default goals
+                    'shots': 30.0,
+                    'goals': 2.0,
                     'gs': team_data.get('gs_avg', 0.0),
                     'xg_avg': team_data.get('xg_avg', 0.0),
                     'hdc_avg': team_data.get('hdc_avg', 0.0),
                     'shots_avg': 30.0,
                     'goals_avg': 2.0,
                     'gs_avg': team_data.get('gs_avg', 0.0),
-                    'corsi_avg': 50.0,  # Default Corsi
-                    'power_play_avg': 0.0,  # Default PP
-                    'faceoff_avg': 50.0,  # Default faceoffs
-                    'hits_avg': 0.0,  # Default hits
-                    'blocked_shots_avg': 0.0,  # Default blocked shots
-                    'giveaways_avg': 0.0,  # Default giveaways
-                    'takeaways_avg': 0.0,  # Default takeaways
-                    'penalty_minutes_avg': 0.0,  # Default PIM
+                    'corsi_avg': 50.0,
+                    'power_play_avg': 0.0,
+                    'penalty_kill_avg': 80.0,
+                    'faceoff_avg': 50.0,
+                    'hits_avg': 0.0,
+                    'blocked_shots_avg': 0.0,
+                    'giveaways_avg': 0.0,
+                    'takeaways_avg': 0.0,
+                    'penalty_minutes_avg': 0.0,
                     'games_played': team_data.get('games_played', 0),
-                    'recent_form': self._calculate_recent_form(team_key, venue, window=10),  # Venue-aware, last 10 games
-                    'head_to_head': 0.5,  # Default H2H
+                    'recent_form': self._calculate_recent_form(team_key, venue, window=10),
+                    'head_to_head': 0.5,
                     'rest_days_advantage': rest_adv,
                     'goalie_performance': goalie_perf,
                     'confidence': self._calculate_confidence(team_data.get('games_played', 0))
                 }
-        
-        # Fallback to current season if no historical data
-        if team_key in self.team_stats:
-            team_data = self.team_stats[team_key]
-            # Compute situational factors
-            rest_adv = self._calculate_rest_days_advantage(team_key, venue)
-            goalie_perf = self._calculate_goalie_performance(team_key, venue)
-
-            return {
-                'xg': team_data.get('xg_avg', 0.0),
-                'hdc': team_data.get('hdc_avg', 0.0),
-                'shots': 30.0,  # Default shots (not in new format yet)
-                'goals': 2.0,   # Default goals (not in new format yet)
-                'gs': team_data.get('gs_avg', 0.0),
-                'xg_avg': team_data.get('xg_avg', 0.0),
-                'hdc_avg': team_data.get('hdc_avg', 0.0),
-                'shots_avg': 30.0,
-                'goals_avg': 2.0,
-                'gs_avg': team_data.get('gs_avg', 0.0),
-                'corsi_avg': 50.0,  # Default (not in new format yet)
-                'power_play_avg': 0.0,  # Default (not in new format yet)
-                'faceoff_avg': 50.0,  # Default (not in new format yet)
-                'hits_avg': 0.0,  # Default (not in new format yet)
-                'blocked_shots_avg': 0.0,  # Default (not in new format yet)
-                'giveaways_avg': 0.0,  # Default (not in new format yet)
-                'takeaways_avg': 0.0,  # Default (not in new format yet)
-                'penalty_minutes_avg': 0.0,  # Default (not in new format yet)
-                'games_played': team_data.get('games_played', 0),
-                'recent_form': self._calculate_recent_form(team_key, venue, window=10),  # Venue-aware, last 10 games
-                'head_to_head': 0.5,  # Default
-                'rest_days_advantage': rest_adv,
-                'goalie_performance': goalie_perf,
-                'confidence': self._calculate_confidence(team_data.get('games_played', 0))
-            }
-        
         
         # Return defaults if no data found
         return self._get_default_performance()
@@ -386,7 +674,7 @@ class ImprovedSelfLearningModelV2:
         return {
             'xg': 2.0, 'hdc': 2.0, 'shots': 30.0, 'goals': 2.0, 'gs': 3.0,
             'xg_avg': 2.0, 'hdc_avg': 2.0, 'shots_avg': 30.0, 'goals_avg': 2.0, 'gs_avg': 3.0,
-            'corsi_avg': 50.0, 'power_play_avg': 0.0, 'faceoff_avg': 50.0,
+            'corsi_avg': 50.0, 'power_play_avg': 0.0, 'penalty_kill_avg': 80.0, 'faceoff_avg': 50.0,
             'hits_avg': 0.0, 'blocked_shots_avg': 0.0, 'giveaways_avg': 0.0,
             'takeaways_avg': 0.0, 'penalty_minutes_avg': 0.0,
             'games_played': 0, 'recent_form': 0.5, 'head_to_head': 0.5,
@@ -766,6 +1054,65 @@ class ImprovedSelfLearningModelV2:
             pass
         return self._calculate_goalie_performance(team, venue)
 
+    def _calculate_goalie_matchup_quality(self, away_team: str, home_team: str, game_date: Optional[str],
+                                          away_goalie_confirmed: Optional[str] = None,
+                                          home_goalie_confirmed: Optional[str] = None) -> float:
+        """Calculate goalie matchup quality advantage for away team.
+        
+        Returns a value between -1.0 and 1.0 where:
+        - Positive = away goalie is better than home goalie
+        - Negative = home goalie is better than away goalie
+        - Magnitude indicates the strength of the advantage
+        """
+        try:
+            away_goalie_perf = self._goalie_performance_for_game(
+                away_team, 'away', game_date, confirmed_goalie=away_goalie_confirmed
+            )
+            home_goalie_perf = self._goalie_performance_for_game(
+                home_team, 'home', game_date, confirmed_goalie=home_goalie_confirmed
+            )
+            # Goalie performance is normalized 0.35-0.75, so difference ranges from -0.4 to +0.4
+            # Scale to -1.0 to +1.0 for better interpretability
+            matchup_diff = (away_goalie_perf - home_goalie_perf) / 0.4
+            return float(max(-1.0, min(1.0, matchup_diff)))
+        except Exception:
+            return 0.0
+    
+    def _calculate_special_teams_matchup(self, away_team: str, home_team: str) -> float:
+        """Calculate special teams matchup advantage for away team.
+        
+        Combines:
+        - Away PP% vs Home PK%
+        - Home PP% vs Away PK%
+        
+        Returns a value between -1.0 and 1.0 where:
+        - Positive = away team has special teams advantage
+        - Negative = home team has special teams advantage
+        """
+        try:
+            away_perf = self.get_team_performance(away_team, 'away')
+            home_perf = self.get_team_performance(home_team, 'home')
+            
+            # Get power play percentages
+            away_pp_pct = away_perf.get('power_play_avg', 0.0) / 100.0  # Convert to 0-1
+            home_pp_pct = home_perf.get('power_play_avg', 0.0) / 100.0
+            
+            # Get penalty kill percentages (100 - PK% = goals allowed rate)
+            away_pk_pct = away_perf.get('penalty_kill_avg', 80.0) / 100.0  # Default 80% PK
+            home_pk_pct = home_perf.get('penalty_kill_avg', 80.0) / 100.0
+            
+            # Calculate expected goals on power play
+            # Away PP effectiveness = away_pp_pct * (1 - home_pk_pct)
+            away_pp_effectiveness = away_pp_pct * (1.0 - home_pk_pct)
+            home_pp_effectiveness = home_pp_pct * (1.0 - away_pk_pct)
+            
+            # Special teams advantage = difference in effectiveness
+            # Normalize to -1.0 to +1.0 range
+            st_diff = (away_pp_effectiveness - home_pp_effectiveness) * 2.0
+            return float(max(-1.0, min(1.0, st_diff)))
+        except Exception:
+            return 0.0
+
     def debug_situational_components(self, away_team: str, home_team: str, game_date: Optional[str]) -> Dict:
         """Expose rest and goalie components for debugging comparisons."""
         try:
@@ -773,11 +1120,15 @@ class ImprovedSelfLearningModelV2:
             home_rest = self._calculate_rest_days_advantage(home_team, 'home', game_date)
             away_goalie = self._goalie_performance_for_game(away_team, 'away', game_date)
             home_goalie = self._goalie_performance_for_game(home_team, 'home', game_date)
+            goalie_matchup = self._calculate_goalie_matchup_quality(away_team, home_team, game_date)
+            special_teams_matchup = self._calculate_special_teams_matchup(away_team, home_team)
             return {
                 'away_rest': away_rest,
                 'home_rest': home_rest,
                 'away_goalie_perf': away_goalie,
                 'home_goalie_perf': home_goalie,
+                'goalie_matchup_quality': goalie_matchup,
+                'special_teams_matchup': special_teams_matchup,
             }
         except Exception:
             return {
@@ -785,6 +1136,8 @@ class ImprovedSelfLearningModelV2:
                 'home_rest': None,
                 'away_goalie_perf': None,
                 'home_goalie_perf': None,
+                'goalie_matchup_quality': None,
+                'special_teams_matchup': None,
             }
 
     def backtest_recent(self, n: int = 60) -> Dict:
@@ -913,6 +1266,9 @@ class ImprovedSelfLearningModelV2:
         total = away_prob + home_prob
         away_prob = (away_prob / total) * 100
         home_prob = (home_prob / total) * 100
+        
+        confidence_pct = confidence
+        confidence = max(0.0, min(1.0, confidence_pct / 100.0))
         
         return {
             'away_prob': away_prob,
@@ -1105,7 +1461,7 @@ class ImprovedSelfLearningModelV2:
         # If we don't have enough data, fall back to traditional metrics
         if away_perf['games_played'] < 3 or home_perf['games_played'] < 3:
             # Use traditional prediction as fallback
-            traditional = self.predict_game(away_team, home_team, game_date=game_date)
+            traditional = self.predict_game(away_team, home_team)
             return {
                 'away_prob': traditional['away_prob'],
                 'home_prob': traditional['home_prob'],
@@ -1122,7 +1478,8 @@ class ImprovedSelfLearningModelV2:
             home_prob = 50.0
         
         # Lower confidence for form-based predictions
-        confidence = min(away_perf['confidence'], home_perf['confidence']) * 0.8 * 100
+        confidence_pct = min(away_perf['confidence'], home_perf['confidence']) * 0.8 * 100
+        confidence = max(0.0, min(1.0, confidence_pct / 100.0))
         
         return {
             'away_prob': away_prob,
@@ -1137,7 +1494,7 @@ class ImprovedSelfLearningModelV2:
         
         # If we don't have enough data, fall back to traditional metrics
         if away_perf['games_played'] < 3 or home_perf['games_played'] < 3:
-            traditional = self.predict_game(away_team, home_team, game_date=game_date)
+            traditional = self.predict_game(away_team, home_team)
             return {
                 'away_prob': traditional['away_prob'],
                 'home_prob': traditional['home_prob'],
@@ -1161,7 +1518,8 @@ class ImprovedSelfLearningModelV2:
             home_prob = 50.0
         
         # Lower confidence for momentum-based predictions
-        confidence = min(away_perf['confidence'], home_perf['confidence']) * 0.6 * 100
+        confidence_pct = min(away_perf['confidence'], home_perf['confidence']) * 0.6 * 100
+        confidence = max(0.0, min(1.0, confidence_pct / 100.0))
         
         return {
             'away_prob': away_prob,
@@ -1172,8 +1530,65 @@ class ImprovedSelfLearningModelV2:
     def add_prediction(self, game_id: str, date: str, away_team: str, home_team: str,
                       predicted_away_prob: float, predicted_home_prob: float,
                       metrics_used: Dict, actual_winner: Optional[str] = None,
-                      actual_away_score: int = None, actual_home_score: int = None):
+                      actual_away_score: int = None, actual_home_score: int = None,
+                      prediction_confidence: Optional[float] = None,
+                      raw_away_prob: Optional[float] = None, raw_home_prob: Optional[float] = None,
+                      calibrated_away_prob: Optional[float] = None, calibrated_home_prob: Optional[float] = None,
+                      correlation_away_prob: Optional[float] = None, correlation_home_prob: Optional[float] = None,
+                      ensemble_away_prob: Optional[float] = None, ensemble_home_prob: Optional[float] = None):
         """Add a new prediction with actual game outcomes"""
+        
+        predicted_side = "away" if predicted_away_prob > predicted_home_prob else "home"
+        predicted_team = self._side_to_team(predicted_side, away_team, home_team)
+        
+        if prediction_confidence is None:
+            prediction_confidence = max(predicted_away_prob, predicted_home_prob)
+        if prediction_confidence is not None:
+            if prediction_confidence > 1:
+                prediction_confidence = prediction_confidence / 100.0
+            prediction_confidence = max(0.0, min(1.0, prediction_confidence))
+        
+        if raw_away_prob is None:
+            raw_away_prob = predicted_away_prob
+        if raw_home_prob is None:
+            raw_home_prob = predicted_home_prob
+        if calibrated_away_prob is None:
+            calibrated_away_prob = predicted_away_prob
+        if calibrated_home_prob is None:
+            calibrated_home_prob = predicted_home_prob
+        
+        prediction_margin = abs(predicted_away_prob - predicted_home_prob)
+        corr_disagreement = None
+        if correlation_away_prob is not None and correlation_home_prob is not None:
+            corr_disagreement = abs(float(correlation_away_prob) - float(correlation_home_prob if correlation_home_prob is not None else correlation_away_prob))
+        if corr_disagreement is None and correlation_away_prob is not None and ensemble_away_prob is not None:
+            corr_disagreement = abs(float(correlation_away_prob) - float(ensemble_away_prob))
+        if corr_disagreement is None:
+            corr_disagreement = 0.0
+        
+        away_rest_val = float(metrics_used.get("away_rest", 0.0)) if metrics_used else 0.0
+        home_rest_val = float(metrics_used.get("home_rest", 0.0)) if metrics_used else 0.0
+        context_bucket = self.determine_context_bucket(away_rest_val, home_rest_val)
+        away_b2b = away_rest_val <= -0.5
+        home_b2b = home_rest_val <= -0.5
+
+        flip_rate = float(metrics_used.get("monte_carlo_flip_rate", 0.0)) if metrics_used else 0.0
+        if flip_rate == 0.0:
+            try:
+                flip_rate = self._estimate_monte_carlo_signal({
+                    "metrics_used": metrics_used,
+                    "predicted_winner": predicted_side,
+                    "raw_away_prob": raw_away_prob,
+                    "raw_home_prob": raw_home_prob
+                }, iterations=40)
+            except Exception:
+                flip_rate = 0.0
+        
+        feature_vec = [prediction_confidence, prediction_margin, corr_disagreement, flip_rate]
+        upset_probability = self.predict_upset_probability(feature_vec)
+        
+        actual_side = self._normalize_outcome_side(actual_winner, away_team, home_team)
+        actual_team = self._side_to_team(actual_side, away_team, home_team)
         
         prediction = {
             "game_id": game_id,
@@ -1184,17 +1599,39 @@ class ImprovedSelfLearningModelV2:
             "predicted_home_win_prob": predicted_home_prob,  # Already in decimal format
             "metrics_used": metrics_used,
             "actual_winner": actual_winner,
+            "actual_winner_side": actual_side,
+            "actual_winner_team": actual_team or actual_winner,
             "actual_away_score": actual_away_score,
             "actual_home_score": actual_home_score,
             "prediction_accuracy": None,
-            "timestamp": datetime.now().isoformat()
+            "timestamp": datetime.now().isoformat(),
+            "predicted_winner": predicted_side,
+            "predicted_winner_team": predicted_team,
+            "prediction_confidence": prediction_confidence,
+            "prediction_margin": prediction_margin,
+            "raw_away_prob": raw_away_prob,
+            "raw_home_prob": raw_home_prob,
+            "calibrated_away_prob": calibrated_away_prob,
+            "calibrated_home_prob": calibrated_home_prob,
+            "correlation_away_prob": correlation_away_prob,
+            "correlation_home_prob": correlation_home_prob,
+            "ensemble_away_prob": ensemble_away_prob,
+            "ensemble_home_prob": ensemble_home_prob,
+            "corr_disagreement": corr_disagreement,
+            "monte_carlo_flip_rate": flip_rate,
+            "upset_probability": upset_probability,
+            "context_bucket": context_bucket,
+            "away_back_to_back": away_b2b,
+            "home_back_to_back": home_b2b,
+            "away_rest_value": away_rest_val,
+            "home_rest_value": home_rest_val
         }
         
         # Calculate prediction accuracy if we know the actual winner
-        if actual_winner:
-            if actual_winner == "away":
+        if actual_side:
+            if actual_side == "away":
                 prediction["prediction_accuracy"] = predicted_away_prob  # Already in decimal format
-            elif actual_winner == "home":
+            elif actual_side == "home":
                 prediction["prediction_accuracy"] = predicted_home_prob  # Already in decimal format
             
             # Update model performance
@@ -1202,9 +1639,26 @@ class ImprovedSelfLearningModelV2:
             
             # Update team stats with actual game data
             self.update_team_stats(prediction)
+            
+            # Correlation diagnostics and upset flag
+            correlation_side = None
+            if correlation_away_prob is not None and correlation_home_prob is not None:
+                correlation_side = "away" if correlation_away_prob >= correlation_home_prob else "home"
+                prediction["correlation_predicted_winner"] = correlation_side
+                prediction["correlation_correct"] = (correlation_side == actual_side)
+            prediction["was_upset"] = self._determine_upset(
+                predicted_side, actual_side, prediction_confidence, prediction_margin
+            )
+        else:
+            prediction["correlation_predicted_winner"] = None
+            prediction["correlation_correct"] = None
+            prediction["was_upset"] = False
         
         self.model_data["predictions"].append(prediction)
-        logger.info(f"Added prediction for {away_team} @ {home_team}: {predicted_away_prob:.1f}% vs {predicted_home_prob:.1f}%")
+        logger.info(
+            f"Added prediction for {away_team} @ {home_team}: "
+            f"{predicted_away_prob * 100:.1f}% vs {predicted_home_prob * 100:.1f}%"
+        )
         
         # Save the updated model data immediately
         self.save_model_data()
@@ -1225,11 +1679,13 @@ class ImprovedSelfLearningModelV2:
         # Check if prediction was correct
         away_prob = prediction.get("predicted_away_win_prob", 0)
         home_prob = prediction.get("predicted_home_win_prob", 0)
-        actual_winner = prediction.get("actual_winner")
+        away_team = prediction.get("away_team")
+        home_team = prediction.get("home_team")
+        actual_side = self._normalize_outcome_side(prediction.get("actual_winner"), away_team, home_team)
         
-        if actual_winner == "away" and away_prob > home_prob:
+        if actual_side == "away" and away_prob >= home_prob:
             perf["correct_predictions"] += 1
-        elif actual_winner == "home" and home_prob > away_prob:
+        elif actual_side == "home" and home_prob >= away_prob:
             perf["correct_predictions"] += 1
         
         perf["accuracy"] = perf["correct_predictions"] / perf["total_games"]
@@ -1245,15 +1701,17 @@ class ImprovedSelfLearningModelV2:
             for p in recent_games:
                 away_p = p.get("predicted_away_win_prob", 0)
                 home_p = p.get("predicted_home_win_prob", 0)
-                winner = p.get("actual_winner")
+                winner_side = self._normalize_outcome_side(
+                    p.get("actual_winner"), p.get("away_team"), p.get("home_team")
+                )
                 
                 # Skip 50/50 predictions (placeholder predictions)
                 if abs(away_p - home_p) < 0.01:  # Skip if difference is less than 1%
                     continue
                 
-                if winner == "away" and away_p > home_p:
+                if winner_side == "away" and away_p >= home_p:
                     recent_correct += 1
-                elif winner == "home" and home_p > away_p:
+                elif winner_side == "home" and home_p >= away_p:
                     recent_correct += 1
             
             # Only update if we have valid predictions
@@ -1282,7 +1740,7 @@ class ImprovedSelfLearningModelV2:
                 "opp_xg": [], "opp_goals": [],
                 "last_goalie": None,
                 "opponents": [],
-                "corsi_pct": [], "power_play_pct": [], "faceoff_pct": [],
+                "corsi_pct": [], "power_play_pct": [], "penalty_kill_pct": [], "faceoff_pct": [],
                 "hits": [], "blocked_shots": [], "giveaways": [], "takeaways": [], "penalty_minutes": []
             }
         
@@ -1310,6 +1768,7 @@ class ImprovedSelfLearningModelV2:
             away_data["last_goalie"] = metrics.get("away_goalie")
         away_data["corsi_pct"].append(metrics.get("away_corsi_pct", 50.0))
         away_data["power_play_pct"].append(metrics.get("away_power_play_pct", 0.0))
+        away_data["penalty_kill_pct"].append(metrics.get("away_penalty_kill_pct", 80.0))
         away_data["faceoff_pct"].append(metrics.get("away_faceoff_pct", 50.0))
         away_data["hits"].append(metrics.get("away_hits", 0))
         away_data["blocked_shots"].append(metrics.get("away_blocked_shots", 0))
@@ -1332,6 +1791,7 @@ class ImprovedSelfLearningModelV2:
             home_data["last_goalie"] = metrics.get("home_goalie")
         home_data["corsi_pct"].append(metrics.get("home_corsi_pct", 50.0))
         home_data["power_play_pct"].append(metrics.get("home_power_play_pct", 0.0))
+        home_data["penalty_kill_pct"].append(metrics.get("home_penalty_kill_pct", 80.0))
         home_data["faceoff_pct"].append(metrics.get("home_faceoff_pct", 50.0))
         home_data["hits"].append(metrics.get("home_hits", 0))
         home_data["blocked_shots"].append(metrics.get("home_blocked_shots", 0))
@@ -1415,6 +1875,8 @@ class ImprovedSelfLearningModelV2:
         if total > 0:
             for key in current_weights:
                 current_weights[key] /= total
+                current_weights[key] = float(current_weights[key])
+                momentum[key] = float(momentum.get(key, 0.0))
         
         # Update momentum
         self.model_data["weight_momentum"] = momentum
@@ -1433,14 +1895,78 @@ class ImprovedSelfLearningModelV2:
         return self.get_model_performance()
     
     def _calculate_weight_updates(self, recent_predictions: List[Dict]) -> Dict:
-        """Calculate weight updates based on recent prediction performance"""
-        # This is a simplified version - in practice, you'd use more sophisticated methods
-        # like gradient descent or reinforcement learning
+        """Calculate deterministic weight updates based on recent performance signals."""
+        weight_names = list(self.model_data["model_weights"].keys())
+        if not recent_predictions:
+            return {name: 0.0 for name in weight_names}
         
+        perf = self.model_data.get("model_performance", {})
+        baseline_accuracy = perf.get("accuracy", 0.0)
+        
+        correct = 0
+        confidence_balance = 0.0
+        correlation_correct = 0
+        correlation_total = 0
+        upset_count = 0
+        monte_samples: List[float] = []
+        for pred in recent_predictions:
+            away_prob = pred.get("predicted_away_win_prob", 0.5)
+            home_prob = pred.get("predicted_home_win_prob", 0.5)
+            predicted_side = pred.get("predicted_winner")
+            if predicted_side not in ("away", "home"):
+                predicted_side = "away" if away_prob > home_prob else "home"
+            actual_side = self._normalize_outcome_side(
+                pred.get("actual_winner"), pred.get("away_team"), pred.get("home_team")
+            )
+            confidence = pred.get("prediction_confidence")
+            if confidence is None:
+                confidence = max(away_prob, home_prob)
+            if confidence > 1:
+                confidence = confidence / 100.0
+            confidence = max(0.0, min(1.0, confidence))
+            
+            if actual_side and predicted_side == actual_side:
+                correct += 1
+                confidence_balance += confidence
+            else:
+                confidence_balance -= confidence
+            if pred.get("was_upset"):
+                upset_count += 1
+            corr_away = pred.get("correlation_away_prob")
+            corr_home = pred.get("correlation_home_prob")
+            if corr_away is not None and corr_home is not None and actual_side:
+                correlation_total += 1
+                corr_side = "away" if corr_away >= corr_home else "home"
+                if corr_side == actual_side:
+                    correlation_correct += 1
+            if self.correlation_model:
+                sensitivity = self._estimate_monte_carlo_signal(pred)
+                if sensitivity:
+                    monte_samples.append(sensitivity)
+        
+        total = len(recent_predictions)
+        recent_accuracy = correct / total if total else baseline_accuracy
+        accuracy_delta = recent_accuracy - baseline_accuracy
+        confidence_signal = confidence_balance / total if total else 0.0
+        correlation_accuracy = (correlation_correct / correlation_total) if correlation_total else baseline_accuracy
+        correlation_delta = correlation_accuracy - baseline_accuracy
+        upset_rate = upset_count / total if total else 0.0
+        monte_signal = float(np.mean(monte_samples)) if monte_samples else 0.0
+        
+        current_weights = self.model_data["model_weights"]
         updates = {}
-        for weight_name in self.model_data["model_weights"].keys():
-            # Small random updates to prevent getting stuck
-            updates[weight_name] = np.random.normal(0, 0.01)
+        for weight_name in weight_names:
+            prior = DEFAULT_WEIGHT_PRIORS.get(weight_name, 0.05)
+            current_value = current_weights.get(weight_name, prior)
+            deviation_from_prior = current_value - prior
+            
+            performance_signal = (accuracy_delta * prior * 0.3) + (confidence_signal * prior * 0.1)
+            correlation_signal = correlation_delta * prior * 0.25
+            upset_signal = -upset_rate * prior * 0.2
+            monte_carlo_signal = -monte_signal * prior * 0.15
+            mean_reversion = -deviation_from_prior * 0.2
+            
+            updates[weight_name] = performance_signal + correlation_signal + upset_signal + monte_carlo_signal + mean_reversion
         
         return updates
     
@@ -1455,18 +1981,17 @@ class ImprovedSelfLearningModelV2:
         for pred in completed:
             away_prob = pred.get("predicted_away_win_prob", 0)
             home_prob = pred.get("predicted_home_win_prob", 0)
-            actual_winner = pred.get("actual_winner")
-            away_team = (pred.get("away_team") or "").upper()
-            home_team = (pred.get("home_team") or "").upper()
+            away_team = pred.get("away_team")
+            home_team = pred.get("home_team")
+            actual_side = self._normalize_outcome_side(pred.get("actual_winner"), away_team, home_team)
+            predicted_side = pred.get("predicted_winner")
+            if predicted_side not in ("away", "home"):
+                predicted_side = "away" if away_prob > home_prob else "home"
             
-            # Normalize actual winner
-            if actual_winner in ("away", away_team):
-                predicted = "away" if away_prob > home_prob else "home"
-                if predicted == "away":
+            if actual_side and predicted_side == actual_side:
+                if actual_side == "away" and away_prob >= home_prob:
                     correct_predictions += 1
-            elif actual_winner in ("home", home_team):
-                predicted = "away" if away_prob > home_prob else "home"
-                if predicted == "home":
+                elif actual_side == "home" and home_prob >= away_prob:
                     correct_predictions += 1
         
         accuracy = correct_predictions / total_games if total_games > 0 else 0.0
@@ -1478,15 +2003,13 @@ class ImprovedSelfLearningModelV2:
         for pred in recent_games:
             away_prob = pred.get("predicted_away_win_prob", 0)
             home_prob = pred.get("predicted_home_win_prob", 0)
-            actual_winner = pred.get("actual_winner")
-            away_team = (pred.get("away_team") or "").upper()
-            home_team = (pred.get("home_team") or "").upper()
+            away_team = pred.get("away_team")
+            home_team = pred.get("home_team")
+            actual_side = self._normalize_outcome_side(pred.get("actual_winner"), away_team, home_team)
             
-            if actual_winner in ("away", away_team):
-                if away_prob > home_prob:
+            if actual_side == "away" and away_prob >= home_prob:
                     recent_correct += 1
-            elif actual_winner in ("home", home_team):
-                if home_prob > away_prob:
+            elif actual_side == "home" and home_prob >= away_prob:
                     recent_correct += 1
         
         recent_accuracy = recent_correct / len(recent_games) if len(recent_games) >= 3 else accuracy
@@ -1500,6 +2023,9 @@ class ImprovedSelfLearningModelV2:
             "accuracy": accuracy,
             "recent_accuracy": recent_accuracy
         })
+        updated_samples = self.update_calibration_model()
+        if updated_samples:
+            logger.info(f"Updated calibration model with {updated_samples} samples")
         self.save_model_data()
     
     def get_model_performance(self) -> Dict:
@@ -1523,8 +2049,8 @@ class ImprovedSelfLearningModelV2:
             if pred.get("actual_winner"):
                 away_team = pred.get("away_team")
                 home_team = pred.get("home_team")
-                predicted_winner = pred.get("predicted_winner")
-                actual_winner = pred.get("actual_winner")
+                predicted_side = self._normalize_outcome_side(pred.get("predicted_winner"), away_team, home_team)
+                actual_side = self._normalize_outcome_side(pred.get("actual_winner"), away_team, home_team)
                 
                 # Count games for each team
                 if away_team:
@@ -1533,11 +2059,10 @@ class ImprovedSelfLearningModelV2:
                     team_games[home_team] = team_games.get(home_team, 0) + 1
                 
                 # Count correct predictions for each team
-                if predicted_winner == actual_winner:
-                    if actual_winner == away_team and away_team:
-                        team_accuracy[away_team] = team_accuracy.get(away_team, 0) + 1
-                    elif actual_winner == home_team and home_team:
-                        team_accuracy[home_team] = team_accuracy.get(home_team, 0) + 1
+                predicted_team = self._side_to_team(predicted_side, away_team, home_team)
+                actual_team = self._side_to_team(actual_side, away_team, home_team)
+                if predicted_team and actual_team and predicted_team == actual_team:
+                    team_accuracy[actual_team] = team_accuracy.get(actual_team, 0) + 1
         
         # Convert to percentages
         for team in team_accuracy:
@@ -1549,6 +2074,94 @@ class ImprovedSelfLearningModelV2:
             "team_games": team_games,
             "total_predictions": len(predictions)
         }
+
+    def run_automated_backtest(self, window: int = 60, save_report: bool = True) -> Dict:
+        """Run an automated backtest over the most recent window of completed games."""
+        completed = [p for p in self.model_data.get("predictions", []) if p.get("actual_winner_side")]
+        if not completed:
+            return {}
+        subset = completed[-window:] if window and window > 0 and len(completed) >= window else completed
+        total = len(subset)
+        if total == 0:
+            return {}
+
+        correct = sum(1 for p in subset if p.get("actual_winner_side") == p.get("predicted_winner"))
+        accuracy = correct / total
+
+        brier_sum = 0.0
+        log_loss_sum = 0.0
+        high_risk_threshold = 0.55
+        high_risk_total = 0
+        high_risk_hits = 0
+        upset_probs = []
+        upset_labels = []
+        for p in subset:
+            away_prob = float(p.get("predicted_away_win_prob", 0.5))
+            away_prob = max(0.0, min(1.0, away_prob))
+            actual = 1.0 if p.get("actual_winner_side") == "away" else 0.0
+            brier_sum += (away_prob - actual) ** 2
+            epsilon = 1e-12
+            log_loss_sum += -(actual * np.log(max(away_prob, epsilon)) + (1 - actual) * np.log(max(1 - away_prob, epsilon)))
+            upset_prob = float(p.get("upset_probability", 0.0))
+            upset_probs.append(upset_prob)
+            upset_label = 0 if p.get("actual_winner_side") == p.get("predicted_winner") else 1
+            upset_labels.append(upset_label)
+            if upset_prob >= high_risk_threshold:
+                high_risk_total += 1
+                if upset_label == 1:
+                    high_risk_hits += 1
+        brier = brier_sum / total
+        log_loss = log_loss_sum / total
+        high_risk_precision = (high_risk_hits / high_risk_total) if high_risk_total else None
+        high_risk_coverage = high_risk_total / total if total else None
+
+        roc_auc = None
+        try:
+            from sklearn.metrics import roc_auc_score
+            if len(set(upset_labels)) > 1:
+                roc_auc = float(roc_auc_score(upset_labels, upset_probs))
+        except Exception:
+            roc_auc = None
+
+        context_summary: Dict[str, Dict] = {}
+        for p in subset:
+            bucket = p.get("context_bucket") or "neutral"
+            entry = context_summary.setdefault(bucket, {"total": 0, "correct": 0, "avg_upset_prob": []})
+            entry["total"] += 1
+            if p.get("actual_winner_side") == p.get("predicted_winner"):
+                entry["correct"] += 1
+            entry["avg_upset_prob"].append(float(p.get("upset_probability", 0.0)))
+        for bucket, entry in context_summary.items():
+            total_bucket = entry["total"]
+            entry["accuracy"] = entry["correct"] / total_bucket if total_bucket else 0.0
+            entry["upset_rate"] = 1.0 - entry["accuracy"]
+            entry["avg_upset_prob"] = float(np.mean(entry["avg_upset_prob"])) if entry["avg_upset_prob"] else 0.0
+            entry.pop("correct", None)
+
+        report = {
+            "generated_at": datetime.now().isoformat(),
+            "window": window,
+            "sample_size": total,
+            "accuracy": accuracy,
+            "upset_rate": 1.0 - accuracy,
+            "brier": brier,
+            "log_loss": log_loss,
+            "mean_upset_probability": float(np.mean(upset_probs)) if upset_probs else 0.0,
+            "high_risk_threshold": high_risk_threshold,
+            "high_risk_precision": high_risk_precision,
+            "high_risk_coverage": high_risk_coverage,
+            "roc_auc": roc_auc,
+            "context_summary": context_summary,
+        }
+
+        if save_report:
+            reports = self.model_data.setdefault("backtest_reports", [])
+            reports.append(report)
+            self.model_data["backtest_reports"] = reports[-20:]
+            self.backtest_reports = self.model_data["backtest_reports"]
+            self.save_model_data()
+
+        return report
     
     def clean_duplicate_predictions(self):
         """Remove duplicate game entries from model data"""
@@ -1594,22 +2207,68 @@ class ImprovedSelfLearningModelV2:
                 home_score = int(p.get('actual_home_score') or 0)
                 # Ensure structures
                 if away not in self.team_stats:
-                    self.team_stats[away] = {"home": {"games": [], "xg": [], "hdc": [], "shots": [], "goals": [], "gs": [], "opp_xg": [], "opp_goals": [], "last_goalie": None, "corsi_pct": [], "power_play_pct": [], "faceoff_pct": [], "hits": [], "blocked_shots": [], "giveaways": [], "takeaways": [], "penalty_minutes": []},
-                                             "away": {"games": [], "xg": [], "hdc": [], "shots": [], "goals": [], "gs": [], "opp_xg": [], "opp_goals": [], "last_goalie": None, "corsi_pct": [], "power_play_pct": [], "faceoff_pct": [], "hits": [], "blocked_shots": [], "giveaways": [], "takeaways": [], "penalty_minutes": []}}
+                    self.team_stats[away] = {
+                        "home": {"games": [], "opponents": [], "xg": [], "hdc": [], "shots": [], "goals": [], "gs": [], "opp_xg": [], "opp_goals": [], "last_goalie": None, "corsi_pct": [], "power_play_pct": [], "penalty_kill_pct": [], "faceoff_pct": [], "hits": [], "blocked_shots": [], "giveaways": [], "takeaways": [], "penalty_minutes": []},
+                        "away": {"games": [], "opponents": [], "xg": [], "hdc": [], "shots": [], "goals": [], "gs": [], "opp_xg": [], "opp_goals": [], "last_goalie": None, "corsi_pct": [], "power_play_pct": [], "penalty_kill_pct": [], "faceoff_pct": [], "hits": [], "blocked_shots": [], "giveaways": [], "takeaways": [], "penalty_minutes": []}
+                    }
                 if home not in self.team_stats:
-                    self.team_stats[home] = {"home": {"games": [], "xg": [], "hdc": [], "shots": [], "goals": [], "gs": [], "opp_xg": [], "opp_goals": [], "last_goalie": None, "corsi_pct": [], "power_play_pct": [], "faceoff_pct": [], "hits": [], "blocked_shots": [], "giveaways": [], "takeaways": [], "penalty_minutes": []},
-                                             "away": {"games": [], "xg": [], "hdc": [], "shots": [], "goals": [], "gs": [], "opp_xg": [], "opp_goals": [], "last_goalie": None, "corsi_pct": [], "power_play_pct": [], "faceoff_pct": [], "hits": [], "blocked_shots": [], "giveaways": [], "takeaways": [], "penalty_minutes": []}}
+                    self.team_stats[home] = {
+                        "home": {"games": [], "opponents": [], "xg": [], "hdc": [], "shots": [], "goals": [], "gs": [], "opp_xg": [], "opp_goals": [], "last_goalie": None, "corsi_pct": [], "power_play_pct": [], "penalty_kill_pct": [], "faceoff_pct": [], "hits": [], "blocked_shots": [], "giveaways": [], "takeaways": [], "penalty_minutes": []},
+                        "away": {"games": [], "opponents": [], "xg": [], "hdc": [], "shots": [], "goals": [], "gs": [], "opp_xg": [], "opp_goals": [], "last_goalie": None, "corsi_pct": [], "power_play_pct": [], "penalty_kill_pct": [], "faceoff_pct": [], "hits": [], "blocked_shots": [], "giveaways": [], "takeaways": [], "penalty_minutes": []}
+                    }
                 # Append opp metrics to corresponding venues if date not present
-                if date and date not in self.team_stats[away]['away']['games']:
-                    self.team_stats[away]['away']['games'].append(date)
-                    self.team_stats[away]['away']['goals'].append(away_score)
-                    self.team_stats[away]['away']['opp_xg'].append(home_xg)
-                    self.team_stats[away]['away']['opp_goals'].append(home_score)
-                if date and date not in self.team_stats[home]['home']['games']:
-                    self.team_stats[home]['home']['games'].append(date)
-                    self.team_stats[home]['home']['goals'].append(home_score)
-                    self.team_stats[home]['home']['opp_xg'].append(away_xg)
-                    self.team_stats[home]['home']['opp_goals'].append(away_score)
+                away_data = self.team_stats[away]['away']
+                home_data = self.team_stats[home]['home']
+
+                if date and date not in away_data['games']:
+                    away_data['games'].append(date)
+                    away_data['opponents'].append(home)
+                    away_data['goals'].append(away_score)
+                    away_data['xg'].append(float(metrics.get('away_xg', 0.0)))
+                    away_data['hdc'].append(float(metrics.get('away_hdc', 0.0)))
+                    away_data['shots'].append(float(metrics.get('away_shots', 0.0)))
+                    away_data['gs'].append(float(metrics.get('away_gs', 0.0)))
+                    away_data['opp_xg'].append(home_xg)
+                    away_data['opp_goals'].append(home_score)
+                    away_data['corsi_pct'].append(float(metrics.get('away_corsi_pct', 50.0)))
+                    away_data['power_play_pct'].append(float(metrics.get('away_power_play_pct', 0.0)))
+                    away_pk = metrics.get('away_penalty_kill_pct')
+                    if away_pk is None:
+                        away_pk = 100.0 - float(metrics.get('home_power_play_pct', 0.0))
+                    away_data['penalty_kill_pct'].append(float(max(0.0, min(100.0, away_pk))))
+                    away_data['faceoff_pct'].append(float(metrics.get('away_faceoff_pct', 50.0)))
+                    away_data['hits'].append(float(metrics.get('away_hits', 0.0)))
+                    away_data['blocked_shots'].append(float(metrics.get('away_blocked_shots', 0.0)))
+                    away_data['giveaways'].append(float(metrics.get('away_giveaways', 0.0)))
+                    away_data['takeaways'].append(float(metrics.get('away_takeaways', 0.0)))
+                    away_data['penalty_minutes'].append(float(metrics.get('away_penalty_minutes', 0.0)))
+                    if metrics.get('away_goalie'):
+                        away_data['last_goalie'] = metrics.get('away_goalie')
+
+                if date and date not in home_data['games']:
+                    home_data['games'].append(date)
+                    home_data['opponents'].append(away)
+                    home_data['goals'].append(home_score)
+                    home_data['xg'].append(float(metrics.get('home_xg', 0.0)))
+                    home_data['hdc'].append(float(metrics.get('home_hdc', 0.0)))
+                    home_data['shots'].append(float(metrics.get('home_shots', 0.0)))
+                    home_data['gs'].append(float(metrics.get('home_gs', 0.0)))
+                    home_data['opp_xg'].append(away_xg)
+                    home_data['opp_goals'].append(away_score)
+                    home_data['corsi_pct'].append(float(metrics.get('home_corsi_pct', 50.0)))
+                    home_data['power_play_pct'].append(float(metrics.get('home_power_play_pct', 0.0)))
+                    home_pk = metrics.get('home_penalty_kill_pct')
+                    if home_pk is None:
+                        home_pk = 100.0 - float(metrics.get('away_power_play_pct', 0.0))
+                    home_data['penalty_kill_pct'].append(float(max(0.0, min(100.0, home_pk))))
+                    home_data['faceoff_pct'].append(float(metrics.get('home_faceoff_pct', 50.0)))
+                    home_data['hits'].append(float(metrics.get('home_hits', 0.0)))
+                    home_data['blocked_shots'].append(float(metrics.get('home_blocked_shots', 0.0)))
+                    home_data['giveaways'].append(float(metrics.get('home_giveaways', 0.0)))
+                    home_data['takeaways'].append(float(metrics.get('home_takeaways', 0.0)))
+                    home_data['penalty_minutes'].append(float(metrics.get('home_penalty_minutes', 0.0)))
+                    if metrics.get('home_goalie'):
+                        home_data['last_goalie'] = metrics.get('home_goalie')
                 # Update last game dates
                 tld = self.model_data.setdefault('team_last_game', {})
                 tld[away] = date
@@ -1633,7 +2292,7 @@ if __name__ == "__main__":
     print(f"TOR @ MTL Prediction:")
     print(f"  Away (TOR): {prediction['away_prob']:.1f}%")
     print(f"  Home (MTL): {prediction['home_prob']:.1f}%")
-    print(f"  Confidence: {prediction['prediction_confidence']:.1f}%")
+    print(f"  Confidence: {prediction['prediction_confidence'] * 100:.1f}%")
     print(f"  Uncertainty: {prediction['uncertainty']:.2f}")
     
     # Show team performance data

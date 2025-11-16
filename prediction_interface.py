@@ -82,11 +82,26 @@ class PredictionInterface:
                                     actual_winner = "home"
                                 
                                 if actual_winner:
+                                    away_shots = game_data['boxscore']['awayTeam'].get('sog', 0)
+                                    home_shots = game_data['boxscore']['homeTeam'].get('sog', 0)
+                                    try:
+                                        away_rest = self.learning_model._calculate_rest_days_advantage(away_team, 'away', check_date)
+                                        home_rest = self.learning_model._calculate_rest_days_advantage(home_team, 'home', check_date)
+                                    except Exception:
+                                        away_rest = home_rest = 0.0
+                                    context_bucket = self.learning_model.determine_context_bucket(away_rest, home_rest)
+                                    away_b2b = away_rest <= -0.5
+                                    home_b2b = home_rest <= -0.5
                                     # Use the actual model to make a prediction for this game
                                     try:
                                         model_prediction = self.learning_model.ensemble_predict(away_team, home_team)
-                                        predicted_away_prob = model_prediction.get('away_prob', 0.5)
-                                        predicted_home_prob = model_prediction.get('home_prob', 0.5)
+                                        raw_away_prob = model_prediction.get('away_prob', 0.5)
+                                        raw_home_prob = model_prediction.get('home_prob', 0.5)
+                                        predicted_away_prob = self.learning_model.apply_calibration(raw_away_prob, context_bucket)
+                                        predicted_home_prob = 1.0 - predicted_away_prob
+                                        prediction_confidence = max(predicted_away_prob, predicted_home_prob)
+                                        ensemble_away_prob = raw_away_prob
+                                        ensemble_home_prob = raw_home_prob
                                     except Exception as e:
                                         print(f"    ⚠️  Could not get model prediction: {e}")
                                         # Fallback to shot-based prediction
@@ -94,11 +109,16 @@ class PredictionInterface:
                                         home_shots = game_data['boxscore']['homeTeam'].get('sog', 0)
                                         total_shots = away_shots + home_shots
                                         if total_shots > 0:
-                                            predicted_away_prob = away_shots / total_shots
-                                            predicted_home_prob = home_shots / total_shots
+                                            raw_away_prob = away_shots / total_shots
+                                            raw_home_prob = home_shots / total_shots
                                         else:
-                                            predicted_away_prob = 0.5
-                                            predicted_home_prob = 0.5
+                                            raw_away_prob = 0.5
+                                            raw_home_prob = 0.5
+                                        predicted_away_prob = self.learning_model.apply_calibration(raw_away_prob, context_bucket)
+                                        predicted_home_prob = 1.0 - predicted_away_prob
+                                        prediction_confidence = max(predicted_away_prob, predicted_home_prob)
+                                        ensemble_away_prob = raw_away_prob
+                                        ensemble_home_prob = raw_home_prob
                                     
                                     # Create metrics used (simplified)
                                     metrics_used = {
@@ -114,8 +134,46 @@ class PredictionInterface:
                                         "away_blocked_shots": 0, "home_blocked_shots": 0,
                                         "away_giveaways": 0, "home_giveaways": 0,
                                         "away_takeaways": 0, "home_takeaways": 0,
-                                        "away_penalty_minutes": 0, "home_penalty_minutes": 0
+                                        "away_penalty_minutes": 0, "home_penalty_minutes": 0,
+                                        "away_rest": away_rest,
+                                        "home_rest": home_rest,
+                                        "context_bucket": context_bucket,
+                                        "away_back_to_back": away_b2b,
+                                        "home_back_to_back": home_b2b
                                     }
+                                    
+                                    correlation_away_prob = None
+                                    correlation_home_prob = None
+                                    try:
+                                        corr_prediction = self.corr_model.predict_from_metrics(metrics_used)
+                                        correlation_away_prob = corr_prediction.get('away_prob')
+                                        correlation_home_prob = corr_prediction.get('home_prob')
+                                    except Exception:
+                                        pass
+                                    corr_disagreement = 0.0
+                                    if correlation_away_prob is not None:
+                                        if correlation_home_prob is not None:
+                                            corr_disagreement = abs(float(correlation_away_prob) - float(correlation_home_prob))
+                                        elif ensemble_away_prob is not None:
+                                            corr_disagreement = abs(float(correlation_away_prob) - float(ensemble_away_prob))
+                                    metrics_used["corr_disagreement"] = corr_disagreement
+                                    flip_rate = 0.0
+                                    try:
+                                        flip_rate = self.learning_model._estimate_monte_carlo_signal(
+                                            {
+                                                "metrics_used": metrics_used,
+                                                "predicted_winner": "away" if raw_away_prob >= raw_home_prob else "home",
+                                                "raw_away_prob": raw_away_prob,
+                                                "raw_home_prob": raw_home_prob
+                                            },
+                                            iterations=40
+                                        )
+                                    except Exception:
+                                        flip_rate = 0.0
+                                    metrics_used["monte_carlo_flip_rate"] = flip_rate
+                                    upset_probability = self.learning_model.predict_upset_probability(
+                                        [prediction_confidence, abs(raw_away_prob - raw_home_prob), corr_disagreement, flip_rate]
+                                    )
                                     
                                     # Add to model
                                     self.learning_model.add_prediction(
@@ -128,7 +186,16 @@ class PredictionInterface:
                                         metrics_used=metrics_used,
                                         actual_winner=actual_winner,
                                         actual_away_score=away_goals,
-                                        actual_home_score=home_goals
+                                        actual_home_score=home_goals,
+                                        prediction_confidence=prediction_confidence,
+                                        raw_away_prob=raw_away_prob,
+                                        raw_home_prob=raw_home_prob,
+                                        calibrated_away_prob=predicted_away_prob,
+                                        calibrated_home_prob=predicted_home_prob,
+                                        correlation_away_prob=correlation_away_prob,
+                                        correlation_home_prob=correlation_home_prob,
+                                        ensemble_away_prob=ensemble_away_prob,
+                                        ensemble_home_prob=ensemble_home_prob
                                     )
                                     
                                     games_added += 1
@@ -300,6 +367,21 @@ class PredictionInterface:
                 'home_team': home_team,
                 'predicted_away_win_prob': prediction["away_prob"],  # Already decimal
                 'predicted_home_win_prob': prediction["home_prob"],  # Already decimal
+                'prediction_confidence': max(prediction["away_prob"], prediction["home_prob"]),
+                'raw_away_prob': prediction.get("raw_away_prob"),
+                'raw_home_prob': prediction.get("raw_home_prob"),
+                'correlation_away_prob': prediction.get("correlation_away_prob"),
+                'correlation_home_prob': prediction.get("correlation_home_prob"),
+                'ensemble_away_prob': prediction.get("ensemble_away_prob"),
+                'ensemble_home_prob': prediction.get("ensemble_home_prob"),
+                'corr_disagreement': prediction.get("corr_disagreement"),
+                'monte_carlo_flip_rate': prediction.get("monte_carlo_flip_rate"),
+                'upset_probability': prediction.get("upset_probability"),
+                'context_bucket': prediction.get("context_bucket"),
+                'away_back_to_back': prediction.get("away_back_to_back"),
+                'home_back_to_back': prediction.get("home_back_to_back"),
+                'away_rest': prediction.get("away_rest"),
+                'home_rest': prediction.get("home_rest"),
                 'favorite': favorite,
                 'spread': spread
             })
@@ -343,6 +425,8 @@ class PredictionInterface:
                     "home_sos": home_sos,
                     "away_venue_win_pct": away_venue_win_pct,
                     "home_venue_win_pct": home_venue_win_pct,
+                    "corr_disagreement": pred.get('corr_disagreement'),
+                    "monte_carlo_flip_rate": pred.get('monte_carlo_flip_rate')
                 }
                 self.learning_model.add_prediction(
                     game_id=pred.get('game_id', ''),
@@ -352,7 +436,16 @@ class PredictionInterface:
                     predicted_away_prob=pred['predicted_away_win_prob'],
                     predicted_home_prob=pred['predicted_home_win_prob'],
                     metrics_used=metrics_used,  # Store situational context
-                    actual_winner=None  # Will be updated when game completes
+                    actual_winner=None,  # Will be updated when game completes
+                    prediction_confidence=pred.get('prediction_confidence'),
+                    raw_away_prob=pred.get('raw_away_prob'),
+                    raw_home_prob=pred.get('raw_home_prob'),
+                    calibrated_away_prob=pred.get('predicted_away_win_prob'),
+                    calibrated_home_prob=pred.get('predicted_home_win_prob'),
+                    correlation_away_prob=pred.get('correlation_away_prob'),
+                    correlation_home_prob=pred.get('correlation_home_prob'),
+                    ensemble_away_prob=pred.get('ensemble_away_prob'),
+                    ensemble_home_prob=pred.get('ensemble_home_prob')
                 )
             except Exception as e:
                 print(f"⚠️  Error saving prediction: {e}")
@@ -380,6 +473,9 @@ class PredictionInterface:
             home_rest = self.learning_model._calculate_rest_days_advantage(home_team, 'home', today_str)
         except Exception:
             away_rest = home_rest = 0.0
+        context_bucket = self.learning_model.determine_context_bucket(away_rest, home_rest)
+        away_b2b = away_rest <= -0.5
+        home_b2b = home_rest <= -0.5
         
         # Check for confirmed goalies first, fallback to prediction
         away_goalie_confirmed = None
@@ -399,6 +495,18 @@ class PredictionInterface:
             )
         except Exception:
             away_goalie_perf = home_goalie_perf = 0.0
+        
+        # Calculate goalie matchup quality and special teams matchup
+        try:
+            goalie_matchup_quality = self.learning_model._calculate_goalie_matchup_quality(
+                away_team, home_team, today_str,
+                away_goalie_confirmed=away_goalie_confirmed,
+                home_goalie_confirmed=home_goalie_confirmed
+            )
+            special_teams_matchup = self.learning_model._calculate_special_teams_matchup(away_team, home_team)
+        except Exception:
+            goalie_matchup_quality = 0.0
+            special_teams_matchup = 0.0
         try:
             away_sos = self.learning_model._calculate_sos(away_team, 'away')
             home_sos = self.learning_model._calculate_sos(home_team, 'home')
@@ -435,25 +543,104 @@ class PredictionInterface:
             'away_penalty_minutes': away_perf.get('penalty_minutes_avg', 0.0), 'home_penalty_minutes': home_perf.get('penalty_minutes_avg', 0.0),
             'away_faceoff_pct': away_perf.get('faceoff_avg', 50.0), 'home_faceoff_pct': home_perf.get('faceoff_avg', 50.0),
             'away_goalie_perf': away_goalie_perf, 'home_goalie_perf': home_goalie_perf,
+            'goalie_matchup_quality': goalie_matchup_quality,  # Goalie matchup advantage
+            'special_teams_matchup': special_teams_matchup,  # Special teams matchup advantage
             'recent_form_diff': away_recent_form - home_recent_form,  # Add recent form difference
             'away_venue_win_pct': away_venue_win_pct, 'home_venue_win_pct': home_venue_win_pct,  # Venue-specific win rates
+            'context_bucket': context_bucket,
+            'away_back_to_back': away_b2b,
+            'home_back_to_back': home_b2b,
         }
         corr = self.corr_model.predict_from_metrics(metrics)
         ens = self.learning_model.ensemble_predict(away_team, home_team, game_date=today_str)
         # 70/30 blend: correlation model (70%) + ensemble (30%)
         if corr and all(k in corr for k in ('away_prob','home_prob')):
-            away_blend = 0.7 * corr['away_prob'] + 0.3 * ens.get('away_prob', 0.5)
-            home_blend = 1.0 - away_blend
+            away_blend_raw = 0.7 * corr['away_prob'] + 0.3 * ens.get('away_prob', 0.5)
+            home_blend_raw = 1.0 - away_blend_raw
+            away_calibrated = self.learning_model.apply_calibration(away_blend_raw, context_bucket)
+            home_calibrated = 1.0 - away_calibrated
+            corr_disagreement = abs(corr['away_prob'] - ens.get('away_prob', away_blend_raw))
+            flip_rate = self.learning_model._estimate_monte_carlo_signal(
+                {
+                    "metrics_used": metrics,
+                    "predicted_winner": "away" if away_blend_raw >= home_blend_raw else "home",
+                    "raw_away_prob": away_blend_raw,
+                    "raw_home_prob": home_blend_raw
+                },
+                iterations=40
+            )
+            upset_probability = self.learning_model.predict_upset_probability(
+                [max(away_calibrated, home_calibrated), abs(away_blend_raw - home_blend_raw), corr_disagreement, flip_rate]
+            )
+            metrics["corr_disagreement"] = corr_disagreement
+            metrics["monte_carlo_flip_rate"] = flip_rate
             return {
-                'away_prob': away_blend,
-                'home_prob': home_blend,
-                'prediction_confidence': max(away_blend, home_blend)
+                'away_prob': away_calibrated,
+                'home_prob': home_calibrated,
+                'prediction_confidence': max(away_calibrated, home_calibrated),
+                'raw_away_prob': away_blend_raw,
+                'raw_home_prob': home_blend_raw,
+                'correlation_away_prob': corr['away_prob'],
+                'correlation_home_prob': corr['home_prob'],
+                'ensemble_away_prob': ens.get('away_prob', 0.5),
+                'ensemble_home_prob': ens.get('home_prob', 0.5),
+                'calibration_applied': True,
+                'corr_disagreement': corr_disagreement,
+                'monte_carlo_flip_rate': flip_rate,
+                'upset_probability': upset_probability,
+                'context_bucket': context_bucket,
+                'away_back_to_back': away_b2b,
+                'home_back_to_back': home_b2b,
+                'away_rest': away_rest,
+                'home_rest': home_rest,
+                'goalie_matchup_quality': goalie_matchup_quality,
+                'special_teams_matchup': special_teams_matchup,
+                'away_goalie_perf': away_goalie_perf,
+                'home_goalie_perf': home_goalie_perf
             }
         # Fallback to ensemble if correlation fails
+        fallback_away = ens['away_prob']
+        fallback_home = ens['home_prob']
+        away_calibrated = self.learning_model.apply_calibration(fallback_away, context_bucket)
+        home_calibrated = 1.0 - away_calibrated
+        corr_disagreement = 0.0
+        flip_rate = self.learning_model._estimate_monte_carlo_signal(
+            {
+                "metrics_used": metrics,
+                "predicted_winner": "away" if fallback_away >= fallback_home else "home",
+                "raw_away_prob": fallback_away,
+                "raw_home_prob": fallback_home
+            },
+            iterations=40
+        )
+        upset_probability = self.learning_model.predict_upset_probability(
+            [max(away_calibrated, home_calibrated), abs(fallback_away - fallback_home), corr_disagreement, flip_rate]
+        )
+        metrics["corr_disagreement"] = corr_disagreement
+        metrics["monte_carlo_flip_rate"] = flip_rate
         return {
-            'away_prob': ens['away_prob'],
-            'home_prob': ens['home_prob'],
-            'prediction_confidence': ens['prediction_confidence']
+            'away_prob': away_calibrated,
+            'home_prob': home_calibrated,
+            'prediction_confidence': max(away_calibrated, home_calibrated),
+            'raw_away_prob': fallback_away,
+            'raw_home_prob': fallback_home,
+            'correlation_away_prob': None,
+            'correlation_home_prob': None,
+            'ensemble_away_prob': fallback_away,
+            'ensemble_home_prob': fallback_home,
+            'calibration_applied': True,
+            'corr_disagreement': corr_disagreement,
+            'monte_carlo_flip_rate': flip_rate,
+            'upset_probability': upset_probability,
+            'context_bucket': context_bucket,
+            'away_back_to_back': away_b2b,
+            'home_back_to_back': home_b2b,
+            'away_rest': away_rest,
+            'home_rest': home_rest,
+            'goalie_matchup_quality': goalie_matchup_quality,
+            'special_teams_matchup': special_teams_matchup,
+            'away_goalie_perf': away_goalie_perf,
+            'home_goalie_perf': home_goalie_perf
         }
     
     def get_team_performance_data(self):
@@ -505,7 +692,11 @@ class PredictionInterface:
             
             prediction_text += f"**{i}. {away_team} @ {home_team}**\n"
             prediction_text += f"🎯 {away_team} {away_prob:.1f}% | {home_team} {home_prob:.1f}%\n"
-            prediction_text += f"⭐ Favorite: {favorite} (+{spread:.1f}%)\n\n"
+            prediction_text += f"⭐ Favorite: {favorite} (+{spread:.1f}%)\n"
+            upset = pred.get('upset_probability')
+            if upset is not None:
+                prediction_text += f"⚠️ Upset Risk: {upset*100:.1f}%\n"
+            prediction_text += "\n"
         
         # Ensure model performance is up-to-date (recalculate from scratch for accuracy)
         try:

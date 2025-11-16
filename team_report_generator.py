@@ -1390,9 +1390,9 @@ class TeamReportGenerator(PostGameReportGenerator):
             
             plt.tight_layout()
             
-            # Save to buffer with transparent background
+            # Save to buffer with transparent background at high DPI for maximum quality
             img_buffer = BytesIO()
-            plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight', 
+            plt.savefig(img_buffer, format='png', dpi=1200, bbox_inches='tight', 
                        transparent=True, facecolor='none', edgecolor='none')
             img_buffer.seek(0)
             # Store buffer for custom drawing
@@ -1669,9 +1669,9 @@ class TeamReportGenerator(PostGameReportGenerator):
             
             plt.tight_layout()
             
-            # Save to buffer with transparent background
+            # Save to buffer with transparent background at high DPI for maximum quality
             img_buffer = BytesIO()
-            plt.savefig(img_buffer, format='png', dpi=150, bbox_inches='tight', 
+            plt.savefig(img_buffer, format='png', dpi=1200, bbox_inches='tight', 
                        transparent=True, facecolor='none', edgecolor='none')
             img_buffer.seek(0)
             img_buffer_copy = BytesIO(img_buffer.read())
@@ -1933,7 +1933,7 @@ class TeamReportGenerator(PostGameReportGenerator):
             ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
         ]))
         story.append(title_wrapper)
-        story.append(Spacer(1, 3))  # Reduced from 5 to move section up
+        story.append(Spacer(1, 31.3))  # Spacer enlarged (~1cm drop) so table sits lower without moving title
         
         # Combined table with top 3 and bottom 3 (per game values)
         combined_data = [['Rank', 'Player', 'GS/GP', 'xG/GP', 'TOTAL']]
@@ -2747,38 +2747,42 @@ class TeamReportGenerator(PostGameReportGenerator):
 
         # Method 1: Direct pdftocairo call for maximum quality and guaranteed resolution
         # Target: 12000x16000 pixels (very high quality for zooming)
+        # Strategy: Render at 2x resolution (24000x32000) then downscale for maximum sharpness
         target_width = 12000
         target_height = 16000
+        render_width = target_width * 2  # Render at 2x for oversampling
+        render_height = target_height * 2
         try:
             import shutil
             pdftocairo = shutil.which('pdftocairo')
             if pdftocairo:
-                # Use pdftocairo with very high DPI for maximum quality
-                # Calculate DPI needed: 12000px / 8.5in ≈ 1412 DPI
-                high_dpi = int(target_width / 8.5)
+                # Use pdftocairo with ultra-high DPI for oversampling
+                # Calculate DPI: 24000px / 8.5in ≈ 2824 DPI (2x oversampling)
+                ultra_high_dpi = int(render_width / 8.5)
+                temp_output = str(image_path).replace('.png', '_temp.png')
                 cmd = [
                     pdftocairo,
                     '-png',
-                    '-r', str(high_dpi),  # Very high resolution (1412 DPI)
+                    '-r', str(ultra_high_dpi),  # Ultra-high resolution for oversampling
                     '-f', '1',    # First page
                     '-l', '1',    # Last page
                     pdf_path,
-                    str(image_path).replace('.png', '')  # pdftocairo adds .png-1
+                    temp_output.replace('.png', '')  # pdftocairo adds .png-1
                 ]
-                result = subprocess.run(cmd, capture_output=True, text=True, timeout=300)
+                result = subprocess.run(cmd, capture_output=True, text=True, timeout=600)
                 # pdftocairo outputs filename-1.png for first page
-                expected_output = str(image_path).replace('.png', '-1.png')
-                if os.path.exists(expected_output):
-                    # Resize to exact target dimensions if needed, preserving quality
+                temp_file = temp_output.replace('.png', '-1.png')
+                if os.path.exists(temp_file):
+                    # Open the oversampled image and downscale with high-quality resampling
                     from PIL import Image
                     Image.MAX_IMAGE_PIXELS = None
-                    img = Image.open(expected_output)
+                    img = Image.open(temp_file)
+                    # Downscale from 2x to 1x using Lanczos for maximum quality
                     if img.size != (target_width, target_height):
-                        # Use Lanczos resampling for highest quality resize
                         img = img.resize((target_width, target_height), Image.Resampling.LANCZOS)
                     # Save with maximum quality (no compression)
                     img.save(str(image_path), 'PNG', optimize=False, compress_level=0)
-                    os.remove(expected_output)
+                    os.remove(temp_file)
                     converted = image_path.exists()
         except Exception as e:
             converted = False
@@ -2790,16 +2794,18 @@ class TeamReportGenerator(PostGameReportGenerator):
                 from PIL import Image
                 # Increase PIL's image size limit for high-res images
                 Image.MAX_IMAGE_PIXELS = None
-                # Try with very high DPI
-                high_dpi = 2000
-                images = convert_from_path(pdf_path, dpi=high_dpi, first_page=1, last_page=1, 
+                # Use ultra-high DPI for 2x oversampling, then downscale
+                ultra_high_dpi = int(render_width / 8.5)  # ~2824 DPI for oversampling
+                images = convert_from_path(pdf_path, dpi=ultra_high_dpi, first_page=1, last_page=1, 
                                           fmt='png', thread_count=1, use_pdftocairo=True)
                 if images and len(images) > 0:
                     img = images[0]
-                    # Verify we got reasonable resolution (at least 5000px wide)
-                    if img.width >= 5000:
-                        img.save(str(image_path), 'PNG', optimize=False, compress_level=1)
-                        converted = image_path.exists()
+                    # Downscale from oversampled size to target using Lanczos
+                    if img.size != (target_width, target_height):
+                        img = img.resize((target_width, target_height), Image.Resampling.LANCZOS)
+                    # Save with maximum quality (no compression)
+                    img.save(str(image_path), 'PNG', optimize=False, compress_level=0)
+                    converted = image_path.exists()
             except Exception:
                 pass
 

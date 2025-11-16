@@ -30,7 +30,8 @@ class CorrelationModel:
         self.feature_keys: List[str] = [
             'gs_diff','power_play_diff','blocked_shots_diff','corsi_diff','hits_diff',
             'rest_diff','hdc_diff','shots_diff','giveaways_diff','sos_diff',
-            'takeaways_diff','xg_diff','pim_diff','faceoff_diff'
+            'takeaways_diff','xg_diff','pim_diff','faceoff_diff',
+            'goalie_matchup_quality','special_teams_matchup'
         ]
         self._load()
 
@@ -59,6 +60,8 @@ class CorrelationModel:
             'xg_diff': -0.0274,
             'pim_diff': 0.0160,
             'faceoff_diff': -0.0118,
+            'goalie_matchup_quality': 0.0,  # Will be learned from data
+            'special_teams_matchup': 0.0,  # Will be learned from data
         }
         self.bias = 0.0
 
@@ -93,6 +96,11 @@ class CorrelationModel:
         # Add venue win percentage difference (replaces generic home ice advantage)
         if 'away_venue_win_pct' in metrics and 'home_venue_win_pct' in metrics:
             feat['venue_win_pct_diff'] = float(metrics.get('away_venue_win_pct', 0.5)) - float(metrics.get('home_venue_win_pct', 0.5))
+        # Add goalie matchup quality and special teams matchup
+        if 'goalie_matchup_quality' in metrics:
+            feat['goalie_matchup_quality'] = float(metrics.get('goalie_matchup_quality', 0.0))
+        if 'special_teams_matchup' in metrics:
+            feat['special_teams_matchup'] = float(metrics.get('special_teams_matchup', 0.0))
         return feat
 
     def _score(self, feats: Dict[str, float]) -> float:
@@ -120,6 +128,14 @@ class CorrelationModel:
         recent_form_diff = feats.get('recent_form_diff', 0.0)
         if recent_form_diff != 0.0:
             s += 0.2 * recent_form_diff  # Weight recent form
+        # Add goalie matchup quality (already normalized -1 to +1)
+        goalie_matchup = feats.get('goalie_matchup_quality', 0.0)
+        if goalie_matchup != 0.0:
+            s += 0.2 * goalie_matchup  # Weight goalie matchup (tuned for best accuracy)
+        # Add special teams matchup (already normalized -1 to +1)
+        special_teams = feats.get('special_teams_matchup', 0.0)
+        if special_teams != 0.0:
+            s += 0.1 * special_teams  # Weight special teams matchup (tuned for best accuracy)
         return s
 
     def predict_from_metrics(self, metrics: Dict) -> Dict[str, float]:
