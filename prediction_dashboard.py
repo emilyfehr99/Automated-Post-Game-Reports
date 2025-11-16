@@ -461,42 +461,42 @@ def get_live_game_report(game_id):
                 print(f"Error calculating stats from play-by-play: {e}")
                 import traceback
                 traceback.print_exc()
-                    # Final fallback: calculate from player data
-                    try:
-                        player_by_game = boxscore.get('playerByGameStats', {})
-                        if player_by_game:
-                            away_players = player_by_game.get('away', {})
-                            home_players = player_by_game.get('home', {})
-                            
-                            def calc_team_from_players(players):
-                                stats = {
-                                    'shots': 0, 'hits': 0, 'pim': 0,
-                                    'faceOffWins': 0, 'faceOffTaken': 0,
-                                    'powerPlayGoals': 0, 'powerPlayOpportunities': 0,
-                                    'blocked': 0, 'giveaways': 0, 'takeaways': 0
-                                }
-                                for pos_group in ['forwards', 'defense', 'goalies']:
-                                    if pos_group in players:
-                                        for player in players[pos_group]:
-                                            stats['shots'] += player.get('shots', 0) or player.get('sog', 0)
-                                            stats['hits'] += player.get('hits', 0)
-                                            stats['pim'] += player.get('pim', 0) or player.get('penaltyMinutes', 0)
-                                            stats['blocked'] += player.get('blockedShots', 0) or player.get('blocked', 0)
-                                            stats['giveaways'] += player.get('giveaways', 0)
-                                            stats['takeaways'] += player.get('takeaways', 0)
-                                            stats['powerPlayGoals'] += player.get('powerPlayGoals', 0)
-                                            fo_wins = player.get('faceoffWins', 0) or player.get('faceOffWins', 0)
-                                            fo_taken = player.get('faceoffTaken', 0) or player.get('faceOffTaken', 0)
-                                            stats['faceOffWins'] += fo_wins
-                                            stats['faceOffTaken'] += fo_taken
-                                return stats
-                            
-                            if not away_team_stats and away_players:
-                                away_team_stats = calc_team_from_players(away_players)
-                            if not home_team_stats and home_players:
-                                home_team_stats = calc_team_from_players(home_players)
-                    except Exception as e2:
-                        print(f"Error calculating stats from players: {e2}")
+                # Final fallback: calculate from player data
+                try:
+                    player_by_game = boxscore.get('playerByGameStats', {})
+                    if player_by_game:
+                        away_players = player_by_game.get('away', {})
+                        home_players = player_by_game.get('home', {})
+                        
+                        def calc_team_from_players(players):
+                            stats = {
+                                'shots': 0, 'hits': 0, 'pim': 0,
+                                'faceOffWins': 0, 'faceOffTaken': 0,
+                                'powerPlayGoals': 0, 'powerPlayOpportunities': 0,
+                                'blocked': 0, 'giveaways': 0, 'takeaways': 0
+                            }
+                            for pos_group in ['forwards', 'defense', 'goalies']:
+                                if pos_group in players:
+                                    for player in players[pos_group]:
+                                        stats['shots'] += player.get('shots', 0) or player.get('sog', 0)
+                                        stats['hits'] += player.get('hits', 0)
+                                        stats['pim'] += player.get('pim', 0) or player.get('penaltyMinutes', 0)
+                                        stats['blocked'] += player.get('blockedShots', 0) or player.get('blocked', 0)
+                                        stats['giveaways'] += player.get('giveaways', 0)
+                                        stats['takeaways'] += player.get('takeaways', 0)
+                                        stats['powerPlayGoals'] += player.get('powerPlayGoals', 0)
+                                        fo_wins = player.get('faceoffWins', 0) or player.get('faceOffWins', 0)
+                                        fo_taken = player.get('faceoffTaken', 0) or player.get('faceOffTaken', 0)
+                                        stats['faceOffWins'] += fo_wins
+                                        stats['faceOffTaken'] += fo_taken
+                            return stats
+                        
+                        if not away_team_stats and away_players:
+                            away_team_stats = calc_team_from_players(away_players)
+                        if not home_team_stats and home_players:
+                            home_team_stats = calc_team_from_players(home_players)
+                except Exception as e2:
+                    print(f"Error calculating stats from players: {e2}")
             
             # Calculate faceoff totals - use actual totals from stats
             away_fo_wins = away_team_stats.get('faceOffWins') or away_team_stats.get('faceoffWins') or 0
