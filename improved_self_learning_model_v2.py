@@ -685,7 +685,7 @@ class ImprovedSelfLearningModelV2:
             if response.status_code == 200:
                 standings = response.json()
                 if standings and 'standings' in standings:
-                for team_data in standings['standings']:
+                    for team_data in standings['standings']:
                     team_abbrev_obj = team_data.get('teamAbbrev', {})
                     if isinstance(team_abbrev_obj, dict):
                         abbrev = team_abbrev_obj.get('default', '')
