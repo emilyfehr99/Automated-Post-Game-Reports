@@ -679,10 +679,12 @@ class ImprovedSelfLearningModelV2:
         
         # Try to get team data from NHL API standings as fallback
         try:
-            from nhl_api_client import NHLAPIClient
-            api = NHLAPIClient()
-            standings = api.get_standings()
-            if standings and 'standings' in standings:
+            import requests
+            url = 'https://api-web.nhle.com/v1/standings/now'
+            response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
+            if response.status_code == 200:
+                standings = response.json()
+                if standings and 'standings' in standings:
                 for team_data in standings['standings']:
                     team_abbrev_obj = team_data.get('teamAbbrev', {})
                     if isinstance(team_abbrev_obj, dict):
