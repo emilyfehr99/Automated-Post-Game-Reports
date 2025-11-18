@@ -17,3 +17,35 @@ ENV/
 nhl_postgame_reports/*.pdf
 *.csv
 *.zip
+
+# IDE files
+.idea/
+.vscode/
+*.swp
+*.swo
+*~
+
+# Other projects (not part of StrideSync Dashboard)
+all-three-zones-api/
+Computer-Vision-for-Hockey/
+automated-post-game-reports/
+biomechanical_dashboard/
+detection/
+nhl_clean_repo/
+third_party/
+nhlapi/
+nhlpackageattempt/
+ajhl-system/
+cup/
+cvat-audit-extension/
+game_data_*/
+goalie_analysis_app/
+hockey-practice-planner/
+hockey-practice-pro/
+nhl_postgame_reports/
+real_nhl_logos/
+src/
+stride_analysis_app/
+
+# Keep logo.png for dashboard
+!static/logo.png
