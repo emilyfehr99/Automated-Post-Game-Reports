@@ -17,9 +17,8 @@ from nhl_api_client import NHLAPIClient
 from correlation_model import CorrelationModel
 from lineup_service import LineupService
 
-# Set random seed for reproducibility
-random.seed(42)
-np.random.seed(42)
+# Don't set global random seed - we need variance in simulations
+# Each simulation will use different random values
 
 class PlayoffPredictionModel:
     def __init__(self):
@@ -310,14 +309,15 @@ class PlayoffPredictionModel:
                     game_predictions[game_key] = pred
                     
                     # Collect sample predictions for debugging
-                    if len(sample_predictions) < 5:
-                        sample_predictions.append(f"{away}@{home}: away={pred['away_prob']:.3f}, home={pred['home_prob']:.3f}")
+                    if len(sample_predictions) < 10:
+                        conf = pred.get('confidence', 0.0)
+                        sample_predictions.append(f"{away}@{home}: away={pred['away_prob']:.3f}, home={pred['home_prob']:.3f}, conf={conf:.1f}%")
                 except Exception as e:
                     print(f"Error predicting {away} @ {home}: {e}")
                     import traceback
                     traceback.print_exc()
                     # Use fallback prediction
-                    game_predictions[game_key] = {'away_prob': 0.5, 'home_prob': 0.5}
+                    game_predictions[game_key] = {'away_prob': 0.5, 'home_prob': 0.5, 'confidence': 0.0}
             
             # Progress indicator
             if (i + 1) % 50 == 0:
@@ -346,6 +346,12 @@ class PlayoffPredictionModel:
         for sim in range(num_simulations):
             if (sim + 1) % 200 == 0:
                 print(f"  Completed {sim + 1}/{num_simulations} simulations...")
+            
+            # Set a different random seed for each simulation to ensure variance
+            # Use simulation number as seed so each sim is different but reproducible
+            random.seed(sim * 1000 + int(datetime.now().timestamp()) % 10000)
+            np.random.seed(sim * 1000 + int(datetime.now().timestamp()) % 10000)
+            
             # Start with current points
             sim_points = {team: record['points'] for team, record in team_records.items()}
             

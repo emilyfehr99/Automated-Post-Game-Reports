@@ -47,6 +47,12 @@ def predict_game_for_date(model: ImprovedSelfLearningModelV2, corr: CorrelationM
     away_recent_form = away_perf.get('recent_form', 0.5)
     home_recent_form = home_perf.get('recent_form', 0.5)
     
+    # Debug: Check if we have actual team data
+    away_games = away_perf.get('games_played', 0)
+    home_games = home_perf.get('games_played', 0)
+    if away_games == 0 or home_games == 0:
+        print(f"WARNING: Missing team data - {away_team}: {away_games} games, {home_team}: {home_games} games")
+    
     # Get venue-specific win percentages (full season)
     try:
         away_venue_win_pct = model._calculate_venue_win_percentage(away_team, 'away')
@@ -78,12 +84,40 @@ def predict_game_for_date(model: ImprovedSelfLearningModelV2, corr: CorrelationM
     corr_pred = corr.predict_from_metrics(metrics)
     ens_pred = model.ensemble_predict(away_team, home_team, game_date=game_date)
 
-    away_blend = 0.7 * corr_pred.get('away_prob', 0.5) + 0.3 * ens_pred.get('away_prob', 0.5)
+    # Ensure probabilities are in 0-1 range
+    corr_away = corr_pred.get('away_prob', 0.5)
+    corr_home = corr_pred.get('home_prob', 0.5)
+    if corr_away > 1.0:
+        corr_away = corr_away / 100.0
+    if corr_home > 1.0:
+        corr_home = corr_home / 100.0
+    
+    ens_away = ens_pred.get('away_prob', 0.5)
+    ens_home = ens_pred.get('home_prob', 0.5)
+    if ens_away > 1.0:
+        ens_away = ens_away / 100.0
+    if ens_home > 1.0:
+        ens_home = ens_home / 100.0
+    
+    # Normalize to sum to 1.0
+    corr_total = corr_away + corr_home
+    if corr_total > 0:
+        corr_away = corr_away / corr_total
+        corr_home = corr_home / corr_total
+    
+    ens_total = ens_away + ens_home
+    if ens_total > 0:
+        ens_away = ens_away / ens_total
+        ens_home = ens_home / ens_total
+
+    away_blend = 0.7 * corr_away + 0.3 * ens_away
     home_blend = 1.0 - away_blend
     
     # Calculate confidence from both models
-    corr_confidence = abs(corr_pred.get('away_prob', 0.5) - 0.5) * 2  # Distance from 0.5, scaled
-    ens_confidence = ens_pred.get('prediction_confidence', 0.5) if 'prediction_confidence' in ens_pred else abs(ens_pred.get('away_prob', 0.5) - 0.5) * 2
+    corr_confidence = abs(corr_away - 0.5) * 2  # Distance from 0.5, scaled
+    ens_confidence = ens_pred.get('prediction_confidence', 0.5) if 'prediction_confidence' in ens_pred else abs(ens_away - 0.5) * 2
+    if ens_confidence > 1.0:
+        ens_confidence = ens_confidence / 100.0
     blended_confidence = 0.7 * corr_confidence + 0.3 * ens_confidence
     
     return {
