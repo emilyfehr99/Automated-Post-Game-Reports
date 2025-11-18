@@ -204,24 +204,32 @@ def get_games():
                     try:
                         boxscore_data = api.get_game_boxscore(game_id)
                         if boxscore_data:
-                            # Try multiple paths for scores
+                            # Try multiple paths for scores - need to check if key exists, not just truthiness
                             away_team_data = boxscore_data.get('awayTeam', {})
                             home_team_data = boxscore_data.get('homeTeam', {})
                             
-                            away_score = (
-                                away_team_data.get('score') or 
-                                away_team_data.get('goals') or 
-                                away_team_data.get('teamStats', {}).get('teamSkaterStats', {}).get('goals') or
-                                None
-                            )
-                            home_score = (
-                                home_team_data.get('score') or 
-                                home_team_data.get('goals') or 
-                                home_team_data.get('teamStats', {}).get('teamSkaterStats', {}).get('goals') or
-                                None
-                            )
+                            # Try to get score - check if key exists (0 is a valid score!)
+                            away_score = None
+                            if 'score' in away_team_data:
+                                away_score = away_team_data['score']
+                            elif 'goals' in away_team_data:
+                                away_score = away_team_data['goals']
+                            else:
+                                team_stats = away_team_data.get('teamStats', {}).get('teamSkaterStats', {})
+                                if 'goals' in team_stats:
+                                    away_score = team_stats['goals']
                             
-                            # Only use boxscore scores if they're actually available (not None)
+                            home_score = None
+                            if 'score' in home_team_data:
+                                home_score = home_team_data['score']
+                            elif 'goals' in home_team_data:
+                                home_score = home_team_data['goals']
+                            else:
+                                team_stats = home_team_data.get('teamStats', {}).get('teamSkaterStats', {})
+                                if 'goals' in team_stats:
+                                    home_score = team_stats['goals']
+                            
+                            # Use scores if we found them (even if they're 0 - that's a valid score!)
                             if away_score is not None and home_score is not None:
                                 boxscore_scores_available = True
                                 game_data['away_score'] = away_score
@@ -263,12 +271,11 @@ def get_games():
                         game_data['live_prediction'] = live
                         
                         # ONLY use scores from live prediction if boxscore didn't have scores
-                        # AND the live prediction scores are not both 0 (which might be default/error)
                         if not boxscore_scores_available:
-                            live_away_score = live.get('away_score', 0)
-                            live_home_score = live.get('home_score', 0)
-                            # Only use if at least one score is non-zero (game has started)
-                            if live_away_score > 0 or live_home_score > 0 or game_data.get('current_period', 1) > 1:
+                            live_away_score = live.get('away_score')
+                            live_home_score = live.get('home_score')
+                            # Use live prediction scores if they exist (even if 0)
+                            if live_away_score is not None and live_home_score is not None:
                                 game_data['away_score'] = live_away_score
                                 game_data['home_score'] = live_home_score
                                 if 'current_period' not in game_data:
