@@ -137,11 +137,27 @@ class PlayoffPredictionModel:
             if prediction:
                 away_prob = prediction.get('away_prob', 0.5)
                 home_prob = prediction.get('home_prob', 0.5)
-                predicted_winner = prediction.get('predicted_winner', home_team if home_prob > away_prob else away_team)
+                
+                # Normalize to 0-1 range (predict_game_for_date returns 0-1, but ensemble_predict might return 0-100)
+                if away_prob > 1.0:
+                    away_prob = away_prob / 100.0
+                if home_prob > 1.0:
+                    home_prob = home_prob / 100.0
+                
+                # Ensure they sum to 1.0
+                total = away_prob + home_prob
+                if total > 0:
+                    away_prob = away_prob / total
+                    home_prob = home_prob / total
+                else:
+                    away_prob = 0.5
+                    home_prob = 0.5
+                
+                predicted_winner = home_team if home_prob > away_prob else away_team
                 
                 return {
-                    'away_prob': away_prob / 100.0 if away_prob > 1.0 else away_prob,
-                    'home_prob': home_prob / 100.0 if home_prob > 1.0 else home_prob,
+                    'away_prob': away_prob,
+                    'home_prob': home_prob,
                     'predicted_winner': predicted_winner
                 }
         except Exception as e:
@@ -154,7 +170,7 @@ class PlayoffPredictionModel:
             'predicted_winner': home_team  # Default to home team
         }
     
-    def simulate_game(self, away_team: str, home_team: str, away_prob: float, home_prob: float) -> Tuple[str, int]:
+    def simulate_game(self, away_team: str, home_team: str, away_prob: float, home_prob: float) -> Tuple[str, int, int]:
         """
         Simulate a single game outcome
         Returns (winner, points_for_away, points_for_home)
@@ -162,7 +178,12 @@ class PlayoffPredictionModel:
         """
         rand = random.random()
         
-        # Normalize probabilities
+        # Normalize probabilities (handle both 0-1 and 0-100 formats)
+        # If probabilities are > 1, they're in percentage format
+        if away_prob > 1.0 or home_prob > 1.0:
+            away_prob = away_prob / 100.0
+            home_prob = home_prob / 100.0
+        
         total_prob = away_prob + home_prob
         if total_prob > 0:
             away_prob_norm = away_prob / total_prob
@@ -267,6 +288,8 @@ class PlayoffPredictionModel:
         
         print(f"Predicting {len(games_to_predict)} remaining games (out of {len(remaining_games)} total)...")
         game_predictions = {}
+        sample_predictions = []  # For debugging
+        
         for i, game in enumerate(games_to_predict):
             away = game['away_team']
             home = game['home_team']
@@ -278,8 +301,14 @@ class PlayoffPredictionModel:
                 try:
                     pred = self.predict_game_outcome(away, home, game['date'], game.get('game_id'))
                     game_predictions[game_key] = pred
+                    
+                    # Collect sample predictions for debugging
+                    if len(sample_predictions) < 5:
+                        sample_predictions.append(f"{away}@{home}: away={pred['away_prob']:.3f}, home={pred['home_prob']:.3f}")
                 except Exception as e:
                     print(f"Error predicting {away} @ {home}: {e}")
+                    import traceback
+                    traceback.print_exc()
                     # Use fallback prediction
                     game_predictions[game_key] = {'away_prob': 0.5, 'home_prob': 0.5}
             
@@ -288,6 +317,8 @@ class PlayoffPredictionModel:
                 print(f"  Predicted {i + 1}/{len(games_to_predict)} games...")
         
         print(f"Cached {len(game_predictions)} game predictions")
+        if sample_predictions:
+            print(f"Sample predictions: {', '.join(sample_predictions)}")
         
         # Simulate remaining season
         playoff_counts = {team: 0 for team in team_records.keys()}
