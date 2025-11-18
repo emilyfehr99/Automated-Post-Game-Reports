@@ -677,6 +677,51 @@ class ImprovedSelfLearningModelV2:
                     'confidence': self._calculate_confidence(team_data.get('games_played', 0))
                 }
         
+        # Try to get team data from NHL API standings as fallback
+        try:
+            from nhl_api_client import NHLAPIClient
+            api = NHLAPIClient()
+            standings = api.get_standings()
+            if standings and 'standings' in standings:
+                for team_data in standings['standings']:
+                    team_abbrev_obj = team_data.get('teamAbbrev', {})
+                    if isinstance(team_abbrev_obj, dict):
+                        abbrev = team_abbrev_obj.get('default', '')
+                    else:
+                        abbrev = str(team_abbrev_obj) if team_abbrev_obj else ''
+                    
+                    if abbrev.upper() == team_key:
+                        # Use standings data to estimate performance
+                        wins = team_data.get('wins', 0)
+                        losses = team_data.get('losses', 0)
+                        ot_losses = team_data.get('otLosses', 0)
+                        games_played = wins + losses + ot_losses
+                        points = wins * 2 + ot_losses
+                        
+                        if games_played > 0:
+                            win_pct = wins / games_played
+                            points_per_game = points / games_played
+                            
+                            # Estimate metrics from win percentage and points
+                            # Better teams have higher xG, more shots, better corsi
+                            xg_estimate = 2.0 + (win_pct - 0.5) * 1.5  # Range: 1.25 to 3.5
+                            shots_estimate = 28.0 + (win_pct - 0.5) * 8.0  # Range: 24 to 32
+                            corsi_estimate = 45.0 + win_pct * 10.0  # Range: 45 to 55
+                            
+                            logger.info(f"Using API standings fallback for {team_key}: {wins}-{losses}-{ot_losses}, win_pct={win_pct:.3f}")
+                            
+                            return {
+                                'xg': xg_estimate, 'hdc': 2.0, 'shots': shots_estimate, 'goals': 2.5, 'gs': 3.0,
+                                'xg_avg': xg_estimate, 'hdc_avg': 2.0, 'shots_avg': shots_estimate, 'goals_avg': 2.5, 'gs_avg': 3.0,
+                                'corsi_avg': corsi_estimate, 'power_play_avg': 20.0, 'penalty_kill_avg': 80.0, 'faceoff_avg': 50.0,
+                                'hits_avg': 20.0, 'blocked_shots_avg': 15.0, 'giveaways_avg': 8.0,
+                                'takeaways_avg': 6.0, 'penalty_minutes_avg': 8.0,
+                                'games_played': games_played, 'recent_form': win_pct, 'head_to_head': 0.5,
+                                'rest_days_advantage': 0.0, 'goalie_performance': 0.5, 'confidence': min(0.5, games_played / 20.0)
+                            }
+        except Exception as e:
+            logger.warning(f"Could not get standings fallback for {team_key}: {e}")
+        
         # Return defaults if no data found
         return self._get_default_performance()
     
