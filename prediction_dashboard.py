@@ -863,7 +863,7 @@ def get_live_game_report(game_id):
                         else:
                             previous_events = []
                         report_gen = get_report_generator()
-                       xg_value = report_gen._calculate_shot_xg(details, 'goal', play, previous_events)
+                        xg_value = report_gen._calculate_shot_xg(details, 'goal', play, previous_events)
                     except Exception as e:
                         print(f"Error calculating xG: {e}")
                         xg_value = 0.0
@@ -964,7 +964,7 @@ def get_live_game_report(game_id):
                     
                     # Get team color for this goal
                     report_gen = get_report_generator()
-                   team_color = report_gen._get_team_color(team_abbrev)
+                    team_color = report_gen._get_team_color(team_abbrev)
                     
                     scoring_plays.append({
                         'period': period_num,
