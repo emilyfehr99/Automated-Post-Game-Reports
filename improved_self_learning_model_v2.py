@@ -378,10 +378,21 @@ class ImprovedSelfLearningModelV2:
                     data = json.load(f)
                     if isinstance(data, dict):
                         if 'teams' in data:
-                            return data.get('teams', {})
+                            stats = data.get('teams', {})
+                            if stats:
+                                logger.info(f"Loaded team stats for {len(stats)} teams")
+                            else:
+                                logger.warning(f"Team stats file exists but 'teams' dict is empty")
+                            return stats
+                        if data:
+                            logger.info(f"Loaded team stats with {len(data)} teams")
+                        else:
+                            logger.warning(f"Team stats file exists but is empty")
                         return data
             except Exception as e:
                 logger.error(f"Error loading team stats: {e}")
+        else:
+            logger.warning(f"Team stats file not found: {self.team_stats_file}")
         return {}
     
     def load_historical_stats(self) -> Dict:

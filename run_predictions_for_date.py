@@ -50,8 +50,15 @@ def predict_game_for_date(model: ImprovedSelfLearningModelV2, corr: CorrelationM
     # Debug: Check if we have actual team data
     away_games = away_perf.get('games_played', 0)
     home_games = home_perf.get('games_played', 0)
+    away_xg = away_perf.get('xg_avg', 0.0)
+    home_xg = home_perf.get('xg_avg', 0.0)
+    
     if away_games == 0 or home_games == 0:
-        print(f"WARNING: Missing team data - {away_team}: {away_games} games, {home_team}: {home_games} games")
+        print(f"WARNING: Missing team data - {away_team}: {away_games} games (xg={away_xg:.2f}), {home_team}: {home_games} games (xg={home_xg:.2f})")
+    
+    # If all metrics are default/identical, predictions will be identical
+    if abs(away_xg - home_xg) < 0.1 and away_games == 0 and home_games == 0:
+        print(f"WARNING: Both teams have identical default values - predictions will be ~50/50")
     
     # Get venue-specific win percentages (full season)
     try:
