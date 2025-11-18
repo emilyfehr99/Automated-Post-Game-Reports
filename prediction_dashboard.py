@@ -428,6 +428,26 @@ def get_live_game_report(game_id):
                 away_stats_pbp = report_generator._calculate_team_stats_from_play_by_play(game_data, 'awayTeam')
                 home_stats_pbp = report_generator._calculate_team_stats_from_play_by_play(game_data, 'homeTeam')
                 
+                # Calculate total faceoffs from play-by-play (count ALL faceoff events, not per-team)
+                total_faceoffs = 0
+                try:
+                    pbp = game_data.get('play_by_play', {})
+                    plays = []
+                    if isinstance(pbp, dict):
+                        plays = pbp.get('plays', []) or pbp.get('events', []) or []
+                    elif isinstance(pbp, list):
+                        plays = pbp
+                    
+                    for play in plays:
+                        play_type = play.get('typeDescKey', '') or play.get('type', '')
+                        if play_type == 'faceoff':
+                            total_faceoffs += 1
+                except Exception as e:
+                    print(f"Error counting total faceoffs: {e}")
+                    # Fallback: use sum of wins (each faceoff has one winner)
+                    total_faceoffs = (away_stats_pbp.get('faceoffWins', 0) if away_stats_pbp else 0) + \
+                                    (home_stats_pbp.get('faceoffWins', 0) if home_stats_pbp else 0)
+                
                 if away_stats_pbp:
                     # Merge play-by-play stats with boxscore stats (play-by-play takes precedence for faceoffs/PP)
                     away_team_stats = {
@@ -435,7 +455,7 @@ def get_live_game_report(game_id):
                         'hits': away_team_stats.get('hits') or away_stats_pbp.get('hits', 0),
                         'pim': away_team_stats.get('pim') or away_stats_pbp.get('penaltyMinutes', 0),
                         'faceOffWins': away_stats_pbp.get('faceoffWins', 0),
-                        'faceOffTaken': away_stats_pbp.get('faceoffTotal', 0),
+                        'faceOffTaken': total_faceoffs,  # Use total faceoffs for both teams
                         'powerPlayGoals': away_stats_pbp.get('powerPlayGoals', 0),
                         'powerPlayOpportunities': away_stats_pbp.get('powerPlayOpportunities', 0),
                         'blocked': away_team_stats.get('blocked') or away_team_stats.get('blockedShots') or away_stats_pbp.get('blockedShots', 0),
@@ -450,7 +470,7 @@ def get_live_game_report(game_id):
                         'hits': home_team_stats.get('hits') or home_stats_pbp.get('hits', 0),
                         'pim': home_team_stats.get('pim') or home_stats_pbp.get('penaltyMinutes', 0),
                         'faceOffWins': home_stats_pbp.get('faceoffWins', 0),
-                        'faceOffTaken': home_stats_pbp.get('faceoffTotal', 0),
+                        'faceOffTaken': total_faceoffs,  # Use total faceoffs for both teams
                         'powerPlayGoals': home_stats_pbp.get('powerPlayGoals', 0),
                         'powerPlayOpportunities': home_stats_pbp.get('powerPlayOpportunities', 0),
                         'blocked': home_team_stats.get('blocked') or home_team_stats.get('blockedShots') or home_stats_pbp.get('blockedShots', 0),
@@ -505,16 +525,13 @@ def get_live_game_report(game_id):
             home_fo_taken = home_team_stats.get('faceOffTaken') or home_team_stats.get('faceoffTaken') or 0
             
             # Faceoff totals should be the same for both teams (total faceoffs in game)
-            # The play-by-play method returns faceoffTotal which is the total number of faceoffs
             # Both teams participate in the same faceoffs, so totals should be equal
-            if away_fo_taken > 0:
-                # Use away total for both (they should be the same)
-                away_fo_total = away_fo_taken
-                home_fo_total = away_fo_taken
-            elif home_fo_taken > 0:
-                # Use home total for both
-                away_fo_total = home_fo_taken
-                home_fo_total = home_fo_taken
+            # Use the maximum of the two totals, or calculate from wins if both are 0
+            if away_fo_taken > 0 or home_fo_taken > 0:
+                # Use the maximum (they should be the same, but use max as safety)
+                total_faceoffs = max(away_fo_taken, home_fo_taken)
+                away_fo_total = total_faceoffs
+                home_fo_total = total_faceoffs
             else:
                 # No totals available - calculate from wins
                 # Total faceoffs = away wins + home wins (each faceoff has one winner)
