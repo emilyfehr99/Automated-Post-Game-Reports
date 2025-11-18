@@ -18,22 +18,59 @@ from pdf_report_generator import PostGameReportGenerator
 app = Flask(__name__)
 app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
 
-# Initialize components
+# Initialize lightweight components immediately
 api = NHLAPIClient()
-model = ImprovedSelfLearningModelV2()
-model.deterministic = True
-corr = CorrelationModel()
-lineup = LineupService()
-live_predictor = LiveInGamePredictor()
-report_generator = PostGameReportGenerator()
 ct_tz = pytz.timezone('US/Central')
+
+# Lazy-load heavy components (only initialize when needed)
+_model = None
+_corr = None
+_lineup = None
+_live_predictor = None
+_report_generator = None
+
+def get_model():
+    """Lazy-load the prediction model"""
+    global _model
+    if _model is None:
+        _model = ImprovedSelfLearningModelV2()
+        _model.deterministic = True
+    return _model
+
+def get_corr():
+    """Lazy-load the correlation model"""
+    global _corr
+    if _corr is None:
+        _corr = CorrelationModel()
+    return _corr
+
+def get_lineup():
+    """Lazy-load the lineup service"""
+    global _lineup
+    if _lineup is None:
+        _lineup = LineupService()
+    return _lineup
+
+def get_live_predictor():
+    """Lazy-load the live predictor"""
+    global _live_predictor
+    if _live_predictor is None:
+        _live_predictor = LiveInGamePredictor()
+    return _live_predictor
+
+def get_report_generator():
+    """Lazy-load the report generator"""
+    global _report_generator
+    if _report_generator is None:
+        _report_generator = PostGameReportGenerator()
+    return _report_generator
 
 
 def get_pregame_prediction(away_team, home_team, game_date, game_id):
     """Get pre-game prediction"""
     try:
-        result = predict_game_for_date(model, corr, away_team, home_team, game_date, 
-                                     game_id=game_id, lineup_service=lineup)
+        result = predict_game_for_date(get_model(), get_corr(), away_team, home_team, game_date, 
+                                     game_id=game_id, lineup_service=get_lineup())
         return {
             'away_prob': result['away_prob'] * 100,
             'home_prob': result['home_prob'] * 100,
@@ -48,11 +85,12 @@ def get_pregame_prediction(away_team, home_team, game_date, game_id):
 def get_live_prediction(game_id):
     """Get live in-game prediction"""
     try:
-        live_metrics = live_predictor.get_live_game_data(game_id)
+        predictor = get_live_predictor()
+        live_metrics = predictor.get_live_game_data(game_id)
         if not live_metrics:
             return None
         
-        prediction = live_predictor.predict_live_game(live_metrics)
+        prediction = predictor.predict_live_game(live_metrics)
         if not prediction:
             return None
         
@@ -79,6 +117,11 @@ def get_live_prediction(game_id):
 def index():
     """Main dashboard page"""
     return render_template('prediction_dashboard.html')
+
+@app.route('/health')
+def health():
+    """Health check endpoint for faster startup"""
+    return jsonify({'status': 'ok', 'service': 'nhl-prediction-dashboard'}), 200
 
 
 @app.route('/api/games')
@@ -370,9 +413,10 @@ def get_live_game_report(game_id):
         try:
             # Calculate xG and other advanced metrics
             if game_data.get('play_by_play') and away_id and home_id:
-                away_xg, home_xg = report_generator._calculate_xg_from_plays(game_data)
-                away_gs_periods, away_xg_periods = report_generator._calculate_period_metrics(game_data, away_id, 'away')
-                home_gs_periods, home_xg_periods = report_generator._calculate_period_metrics(game_data, home_id, 'home')
+                report_gen = get_report_generator()
+                away_xg, home_xg = report_gen._calculate_xg_from_plays(game_data)
+                away_gs_periods, away_xg_periods = report_gen._calculate_period_metrics(game_data, away_id, 'away')
+                home_gs_periods, home_xg_periods = report_gen._calculate_period_metrics(game_data, home_id, 'home')
                 
                 report_data['advanced_metrics'] = {
                     'away_xg': round(away_xg, 2),
@@ -384,8 +428,8 @@ def get_live_game_report(game_id):
                 }
                 
                 # Get period stats
-                away_period_stats = report_generator._calculate_real_period_stats(game_data, away_id, 'away')
-                home_period_stats = report_generator._calculate_real_period_stats(game_data, home_id, 'home')
+                away_period_stats = report_gen._calculate_real_period_stats(game_data, away_id, 'away')
+                home_period_stats = report_gen._calculate_real_period_stats(game_data, home_id, 'home')
                 
                 report_data['period_stats'] = {
                     'away': away_period_stats,
@@ -393,8 +437,8 @@ def get_live_game_report(game_id):
                 }
                 
                 # Get pass metrics
-                away_ew, away_ns, away_bn = report_generator._calculate_pass_metrics(game_data, away_id, 'away')
-                home_ew, home_ns, home_bn = report_generator._calculate_pass_metrics(game_data, home_id, 'home')
+                away_ew, away_ns, away_bn = report_gen._calculate_pass_metrics(game_data, away_id, 'away')
+                home_ew, home_ns, home_bn = report_gen._calculate_pass_metrics(game_data, home_id, 'home')
                 
                 report_data['advanced_metrics']['pass_metrics'] = {
                     'away': {'east_west': away_ew, 'north_south': away_ns, 'behind_net': away_bn},
@@ -425,8 +469,9 @@ def get_live_game_report(game_id):
             # This is more accurate than boxscore stats for faceoffs and power plays
             try:
                 # Use report generator's method which calculates from play-by-play
-                away_stats_pbp = report_generator._calculate_team_stats_from_play_by_play(game_data, 'awayTeam')
-                home_stats_pbp = report_generator._calculate_team_stats_from_play_by_play(game_data, 'homeTeam')
+                report_gen = get_report_generator()
+                away_stats_pbp = report_gen._calculate_team_stats_from_play_by_play(game_data, 'awayTeam')
+                home_stats_pbp = report_gen._calculate_team_stats_from_play_by_play(game_data, 'homeTeam')
                 
                 # Calculate total faceoffs from play-by-play (count ALL faceoff events, not per-team)
                 total_faceoffs = 0
@@ -817,7 +862,8 @@ def get_live_game_report(game_id):
                             previous_events = plays[max(0, play_index-10):play_index]
                         else:
                             previous_events = []
-                        xg_value = report_generator._calculate_shot_xg(details, 'goal', play, previous_events)
+                        report_gen = get_report_generator()
+                       xg_value = report_gen._calculate_shot_xg(details, 'goal', play, previous_events)
                     except Exception as e:
                         print(f"Error calculating xG: {e}")
                         xg_value = 0.0
@@ -917,7 +963,8 @@ def get_live_game_report(game_id):
                             plot_y = -y_coord
                     
                     # Get team color for this goal
-                    team_color = report_generator._get_team_color(team_abbrev)
+                    report_gen = get_report_generator()
+                   team_color = report_gen._get_team_color(team_abbrev)
                     
                     scoring_plays.append({
                         'period': period_num,
