@@ -564,6 +564,21 @@
                     ? '<div class="prediction-box live"><div class="prediction-title">Live</div><div style="color: #888;">Updating...</div></div>'
                     : '';
 
+            const isFinal = game.is_final || game.game_state === 'FINAL' || game.game_state === 'OFF';
+            const reportButton = isLive 
+                ? `<div style="text-align: center; margin-top: 10px;">
+                    <button class="view-report-btn" onclick="viewLiveReport('${game.game_id}', '${game.away_team}', '${game.home_team}')">
+                        📊 View Live Report
+                    </button>
+                </div>`
+                : isFinal
+                    ? `<div style="text-align: center; margin-top: 10px;">
+                        <button class="view-report-btn" onclick="viewPostGameReport('${game.game_id}', '${game.away_team}', '${game.home_team}')">
+                            📊 View Post-Game Report
+                        </button>
+                    </div>`
+                    : '';
+
             return `
                 <div class="game-card ${liveClass}" data-game-id="${game.game_id}">
                     <div class="game-header" style="display: flex; align-items: center; justify-content: space-between;">
@@ -572,14 +587,10 @@
                             <span>${game.away_team} @ ${game.home_team}</span>
                             <img src="${homeLogo}" alt="${game.home_team}" style="width: 30px; height: 30px; object-fit: contain;">
                         </div>
-                        ${isLive ? '<span class="live-badge">🔴 LIVE</span>' : ''}
+                        ${isLive ? '<span class="live-badge">🔴 LIVE</span>' : isFinal ? '<span style="color: #888; font-size: 0.9em;">FINAL</span>' : ''}
                     </div>
                     ${scoreSection}
-                    ${isLive ? `<div style="text-align: center; margin-top: 10px;">
-                        <button class="view-report-btn" onclick="viewLiveReport('${game.game_id}', '${game.away_team}', '${game.home_team}')">
-                            📊 View Live Report
-                        </button>
-                    </div>` : ''}
+                    ${reportButton}
                     <div class="predictions-container">
                         ${pregameSection}
                         ${liveSection}
@@ -793,6 +804,40 @@
 
         function closeReportModal() {
             document.getElementById('reportModal').style.display = 'none';
+        }
+
+        async function viewPostGameReport(gameId, awayTeam, homeTeam) {
+            const modal = document.getElementById('reportModal');
+            const content = document.getElementById('reportContent');
+            const title = document.getElementById('modalTitle');
+            
+            const awayLogo = getTeamLogoUrl(awayTeam);
+            const homeLogo = getTeamLogoUrl(homeTeam);
+            title.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <img src="${awayLogo}" alt="${awayTeam}" style="width: 40px; height: 40px; object-fit: contain;">
+                    <span>${awayTeam} @ ${homeTeam}</span>
+                    <img src="${homeLogo}" alt="${homeTeam}" style="width: 40px; height: 40px; object-fit: contain;">
+                    <span style="color: #888; font-size: 0.7em;">- Post-Game Report</span>
+                </div>
+            `;
+            modal.style.display = 'block';
+            content.innerHTML = '<div class="loading-report">Loading post-game report...</div>';
+            
+            try {
+                const response = await fetch(`/api/game/${gameId}/report`);
+                const data = await response.json();
+                
+                if (data.error) {
+                    content.innerHTML = `<div class="error">${data.error}</div>`;
+                    return;
+                }
+                
+                content.innerHTML = formatLiveReport(data);
+            } catch (error) {
+                console.error('Error loading post-game report:', error);
+                content.innerHTML = '<div class="error">Failed to load post-game report. Please try again.</div>';
+            }
         }
 
         function formatLiveReport(data) {

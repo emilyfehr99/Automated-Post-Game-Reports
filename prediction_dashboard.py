@@ -188,6 +188,7 @@ def get_games():
                     'start_time': start_time,
                     'date': today,
                     'is_live': game_state in ['LIVE', 'CRIT'],
+                    'is_final': game_state in ['FINAL', 'OFF'],
                     'pregame_prediction': None,
                     'live_prediction': None
                 }
@@ -197,8 +198,8 @@ def get_games():
                 if pregame:
                     game_data['pregame_prediction'] = pregame
                 
-                # Get live scores and stats directly from API for homepage
-                if game_data['is_live']:
+                # Get scores for finished games too
+                if game_data['is_live'] or game_data['is_final']:
                     # First, try to get scores from boxscore (most reliable)
                     boxscore_scores_available = False
                     try:
@@ -235,53 +236,67 @@ def get_games():
                                 game_data['away_score'] = away_score
                                 game_data['home_score'] = home_score
                                 
-                                # Get period info
-                                period_desc = boxscore_data.get('periodDescriptor', {})
-                                if not period_desc:
-                                    period_desc = boxscore_data.get('periodInfo', {})
-                                
-                                current_period = period_desc.get('number') or period_desc.get('currentPeriod') or 1
-                                
-                                # Get clock/time
-                                clock = boxscore_data.get('clock', {})
-                                if not clock:
-                                    clock = boxscore_data.get('periodInfo', {})
-                                
-                                time_remaining = clock.get('timeRemaining') or clock.get('timeInPeriod') or '20:00'
-                                
-                                game_data['current_period'] = current_period
-                                game_data['time_remaining'] = time_remaining
+                                # Get period info (for finished games, show "Final" or "Final/OT")
+                                if game_data['is_final']:
+                                    period_desc = boxscore_data.get('periodDescriptor', {})
+                                    if not period_desc:
+                                        period_desc = boxscore_data.get('periodInfo', {})
+                                    
+                                    period_num = period_desc.get('number') or period_desc.get('currentPeriod') or 3
+                                    if period_num > 3:
+                                        game_data['current_period'] = f"Final/OT"
+                                    else:
+                                        game_data['current_period'] = "Final"
+                                    game_data['time_remaining'] = "0:00"
+                                else:
+                                    # Live game - get period and time
+                                    period_desc = boxscore_data.get('periodDescriptor', {})
+                                    if not period_desc:
+                                        period_desc = boxscore_data.get('periodInfo', {})
+                                    
+                                    current_period = period_desc.get('number') or period_desc.get('currentPeriod') or 1
+                                    
+                                    # Get clock/time
+                                    clock = boxscore_data.get('clock', {})
+                                    if not clock:
+                                        clock = boxscore_data.get('periodInfo', {})
+                                    
+                                    time_remaining = clock.get('timeRemaining') or clock.get('timeInPeriod') or '20:00'
+                                    
+                                    game_data['current_period'] = current_period
+                                    game_data['time_remaining'] = time_remaining
                     except Exception as e:
                         print(f"Error getting live scores: {e}")
                         import traceback
                         traceback.print_exc()
                     
-                    # Get live prediction (for prediction data, not scores)
-                    live = get_live_prediction(game_id)
-                    if live:
-                        # Ensure team names are set from game data if missing
-                        if not live.get('away_team') and away_team:
-                            live['away_team'] = away_team
-                        if not live.get('home_team') and home_team:
-                            live['home_team'] = home_team
-                        # Recalculate predicted_winner if we now have team names
-                        if live.get('away_team') and live.get('home_team') and not live.get('predicted_winner'):
-                            live['predicted_winner'] = live['home_team'] if live['home_prob'] > live['away_prob'] else live['away_team']
-                        
-                        game_data['live_prediction'] = live
-                        
-                        # ONLY use scores from live prediction if boxscore didn't have scores
-                        if not boxscore_scores_available:
-                            live_away_score = live.get('away_score')
-                            live_home_score = live.get('home_score')
-                            # Use live prediction scores if they exist (even if 0)
-                            if live_away_score is not None and live_home_score is not None:
-                                game_data['away_score'] = live_away_score
-                                game_data['home_score'] = live_home_score
-                                if 'current_period' not in game_data:
-                                    game_data['current_period'] = live.get('current_period', 1)
-                                if 'time_remaining' not in game_data:
-                                    game_data['time_remaining'] = live.get('time_remaining', '20:00')
+                    # Get live prediction (only for live games, not finished)
+                    if game_data['is_live']:
+                        live = get_live_prediction(game_id)
+                        if live:
+                            # Ensure team names are set from game data if missing
+                            if not live.get('away_team') and away_team:
+                                live['away_team'] = away_team
+                            if not live.get('home_team') and home_team:
+                                live['home_team'] = home_team
+                            # Recalculate predicted_winner if we now have team names
+                            if live.get('away_team') and live.get('home_team') and not live.get('predicted_winner'):
+                                live['predicted_winner'] = live['home_team'] if live['home_prob'] > live['away_prob'] else live['away_team']
+                            
+                            game_data['live_prediction'] = live
+                            
+                            # ONLY use scores from live prediction if boxscore didn't have scores
+                            if not boxscore_scores_available:
+                                live_away_score = live.get('away_score')
+                                live_home_score = live.get('home_score')
+                                # Use live prediction scores if they exist (even if 0)
+                                if live_away_score is not None and live_home_score is not None:
+                                    game_data['away_score'] = live_away_score
+                                    game_data['home_score'] = live_home_score
+                                    if 'current_period' not in game_data:
+                                        game_data['current_period'] = live.get('current_period', 1)
+                                    if 'time_remaining' not in game_data:
+                                        game_data['time_remaining'] = live.get('time_remaining', '20:00')
                 
                 games.append(game_data)
         
