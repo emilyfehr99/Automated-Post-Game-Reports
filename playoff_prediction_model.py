@@ -180,10 +180,11 @@ class PlayoffPredictionModel:
     
     def simulate_game(self, away_team: str, home_team: str, away_prob: float, home_prob: float) -> Tuple[str, int, int]:
         """
-        Simulate a single game outcome
+        Simulate a single game outcome with proper randomness
         Returns (winner, points_for_away, points_for_home)
         Points: 2 for win, 1 for OT loss, 0 for regulation loss
         """
+        # Use random seed per simulation to ensure variance
         rand = random.random()
         
         # Normalize probabilities (handle both 0-1 and 0-100 formats)
@@ -199,6 +200,13 @@ class PlayoffPredictionModel:
         else:
             away_prob_norm = 0.5
             home_prob_norm = 0.5
+        
+        # Add some variance to prevent deterministic outcomes
+        # Even strong favorites can lose sometimes
+        variance = 0.05  # 5% chance of upset regardless of prediction
+        if random.random() < variance:
+            # Upset: flip the probabilities
+            away_prob_norm, home_prob_norm = home_prob_norm, away_prob_norm
         
         # Determine winner (with OT probability ~20% of games)
         if rand < away_prob_norm:

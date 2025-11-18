@@ -80,11 +80,13 @@ def get_pregame_prediction(away_team, home_team, game_date, game_id):
     try:
         result = predict_game_for_date(get_model(), get_corr(), away_team, home_team, game_date, 
                                      game_id=game_id, lineup_service=get_lineup())
+        # Use confidence from prediction if available, otherwise calculate
+        confidence = result.get('confidence', abs(result['home_prob'] - result['away_prob']) * 100)
         return {
             'away_prob': result['away_prob'] * 100,
             'home_prob': result['home_prob'] * 100,
             'predicted_winner': home_team if result['home_prob'] > result['away_prob'] else away_team,
-            'confidence': abs(result['home_prob'] - result['away_prob']) * 100
+            'confidence': confidence
         }
     except Exception as e:
         print(f"Error getting pre-game prediction: {e}")
