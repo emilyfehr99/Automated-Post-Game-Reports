@@ -621,7 +621,7 @@
                 }
             }
             
-            const momentumInfo = (isLive && momentumValue !== null && momentumValue !== '0.0')
+            const momentumInfo = (isLive && momentumValue !== null && parseFloat(momentumValue) !== 0)
                 ? `<div class="momentum-info">
                      <strong>Momentum:</strong> ${momentumValue}%
                    </div>`

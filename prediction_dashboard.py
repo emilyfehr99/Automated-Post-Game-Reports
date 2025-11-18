@@ -245,6 +245,15 @@ def get_games():
                     # Get live prediction
                     live = get_live_prediction(game_id)
                     if live:
+                        # Ensure team names are set from game data if missing
+                        if not live.get('away_team') and away_team:
+                            live['away_team'] = away_team
+                        if not live.get('home_team') and home_team:
+                            live['home_team'] = home_team
+                        # Recalculate predicted_winner if we now have team names
+                        if live.get('away_team') and live.get('home_team') and not live.get('predicted_winner'):
+                            live['predicted_winner'] = live['home_team'] if live['home_prob'] > live['away_prob'] else live['away_team']
+                        
                         game_data['live_prediction'] = live
                         # Use scores from live prediction if boxscore didn't work
                         if 'away_score' not in game_data:
