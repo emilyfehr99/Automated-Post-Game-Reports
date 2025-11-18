@@ -311,10 +311,22 @@ class PlayoffPredictionModel:
         if sample_predictions:
             print(f"Sample predictions: {', '.join(sample_predictions)}")
         
+        # Verify predictions are varying (not all 50/50)
+        if len(game_predictions) > 0:
+            probs = [p['away_prob'] for p in game_predictions.values()]
+            avg_prob = sum(probs) / len(probs)
+            min_prob = min(probs)
+            max_prob = max(probs)
+            print(f"Prediction variance: avg={avg_prob:.3f}, min={min_prob:.3f}, max={max_prob:.3f}")
+            if max_prob - min_prob < 0.1:
+                print("WARNING: Predictions have very low variance! They may not be working correctly.")
+        
         # Simulate remaining season
         playoff_counts = {team: 0 for team in team_records.keys()}
         
         print(f"Running {num_simulations} simulations...")
+        print(f"Using {len(game_predictions)} cached predictions for {len(games_to_predict)} games")
+        
         for sim in range(num_simulations):
             if (sim + 1) % 200 == 0:
                 print(f"  Completed {sim + 1}/{num_simulations} simulations...")
