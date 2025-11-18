@@ -579,27 +579,41 @@
         function createPredictionBox(pred, awayTeam, homeTeam, title, isLive = false) {
             const liveClass = isLive ? 'live' : '';
             
+            // Debug: log the prediction data (remove in production if needed)
+            if (pred) {
+                console.log('Prediction data for', title, ':', JSON.stringify(pred, null, 2));
+            }
+            
+            // Ensure all values exist with proper defaults
+            const awayProb = (pred && pred.away_prob !== undefined) ? parseFloat(pred.away_prob).toFixed(1) : '0.0';
+            const homeProb = (pred && pred.home_prob !== undefined) ? parseFloat(pred.home_prob).toFixed(1) : '0.0';
+            const predictedWinner = (pred && pred.predicted_winner) ? pred.predicted_winner : 'N/A';
+            const confidence = (pred && pred.confidence !== undefined) ? parseFloat(pred.confidence).toFixed(1) : '0.0';
+            
             // Handle momentum - check if it exists and has the right structure
-            let momentumValue = 0;
-            if (isLive && pred.momentum) {
+            let momentumValue = null;
+            if (isLive && pred && pred.momentum) {
                 if (typeof pred.momentum === 'object' && pred.momentum.total_momentum !== undefined) {
-                    momentumValue = (pred.momentum.total_momentum * 100).toFixed(1);
+                    momentumValue = parseFloat(pred.momentum.total_momentum * 100).toFixed(1);
+                } else if (typeof pred.momentum === 'object' && pred.momentum !== null) {
+                    // Try to find any numeric value in the momentum object
+                    const momentumKeys = Object.keys(pred.momentum);
+                    for (const key of momentumKeys) {
+                        if (typeof pred.momentum[key] === 'number') {
+                            momentumValue = parseFloat(pred.momentum[key] * 100).toFixed(1);
+                            break;
+                        }
+                    }
                 } else if (typeof pred.momentum === 'number') {
-                    momentumValue = (pred.momentum * 100).toFixed(1);
+                    momentumValue = parseFloat(pred.momentum * 100).toFixed(1);
                 }
             }
             
-            const momentumInfo = isLive && momentumValue !== 0
+            const momentumInfo = (isLive && momentumValue !== null && momentumValue !== '0.0')
                 ? `<div class="momentum-info">
                      <strong>Momentum:</strong> ${momentumValue}%
                    </div>`
                 : '';
-
-            // Ensure all values exist
-            const predictedWinner = pred.predicted_winner || 'N/A';
-            const confidence = pred.confidence !== undefined ? pred.confidence.toFixed(1) : '0.0';
-            const awayProb = pred.away_prob !== undefined ? pred.away_prob.toFixed(1) : '0.0';
-            const homeProb = pred.home_prob !== undefined ? pred.home_prob.toFixed(1) : '0.0';
 
             return `
                 <div class="prediction-box ${liveClass}">
