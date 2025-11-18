@@ -25,7 +25,8 @@ class PlayoffPredictionModel:
     def __init__(self):
         """Initialize the playoff prediction model"""
         self.model = ImprovedSelfLearningModelV2()
-        self.model.deterministic = True
+        # Don't use deterministic mode - we need randomness for simulations
+        self.model.deterministic = False
         self.api = NHLAPIClient()
         self.corr_model = CorrelationModel()
         self.lineup_service = LineupService()
@@ -153,12 +154,19 @@ class PlayoffPredictionModel:
                     away_prob = 0.5
                     home_prob = 0.5
                 
+                # Calculate confidence based on how far from 50/50
+                # Confidence = distance from 0.5, scaled to 0-1, then to percentage
+                max_prob = max(away_prob, home_prob)
+                confidence = abs(max_prob - 0.5) * 2  # 0 to 1 scale
+                confidence_pct = confidence * 100  # Convert to percentage
+                
                 predicted_winner = home_team if home_prob > away_prob else away_team
                 
                 return {
                     'away_prob': away_prob,
                     'home_prob': home_prob,
-                    'predicted_winner': predicted_winner
+                    'predicted_winner': predicted_winner,
+                    'confidence': confidence_pct
                 }
         except Exception as e:
             print(f"Error predicting {away_team} @ {home_team}: {e}")

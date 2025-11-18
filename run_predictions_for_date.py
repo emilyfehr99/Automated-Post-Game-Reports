@@ -80,7 +80,17 @@ def predict_game_for_date(model: ImprovedSelfLearningModelV2, corr: CorrelationM
 
     away_blend = 0.7 * corr_pred.get('away_prob', 0.5) + 0.3 * ens_pred.get('away_prob', 0.5)
     home_blend = 1.0 - away_blend
-    return {'away_prob': away_blend, 'home_prob': home_blend}
+    
+    # Calculate confidence from both models
+    corr_confidence = abs(corr_pred.get('away_prob', 0.5) - 0.5) * 2  # Distance from 0.5, scaled
+    ens_confidence = ens_pred.get('prediction_confidence', 0.5) if 'prediction_confidence' in ens_pred else abs(ens_pred.get('away_prob', 0.5) - 0.5) * 2
+    blended_confidence = 0.7 * corr_confidence + 0.3 * ens_confidence
+    
+    return {
+        'away_prob': away_blend,
+        'home_prob': home_blend,
+        'confidence': blended_confidence * 100  # Convert to percentage
+    }
 
 
 def main(target_date: str | None = None):
