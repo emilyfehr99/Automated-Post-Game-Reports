@@ -50,6 +50,29 @@
             background-clip: text;
         }
 
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .nav-links a {
+            color: #888;
+            text-decoration: none;
+            font-size: 1.1em;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #c8102e;
+        }
+
+        .nav-links a.active {
+            color: #c8102e;
+            font-weight: 600;
+        }
+
         .last-updated {
             font-size: 0.9em;
             color: #888;
@@ -443,6 +466,10 @@
                 <img src="https://a.espncdn.com/i/teamlogos/leagues/500/nhl.png" alt="NHL" style="width: 60px; height: 60px; object-fit: contain;">
                 NHL PREDICTIONS
             </h1>
+            <div class="nav-links">
+                <a href="/" class="active">Daily Predictions</a>
+                <a href="/playoffs">Playoff Probabilities</a>
+            </div>
             <div class="last-updated" id="lastUpdated">Loading...</div>
         </header>
 

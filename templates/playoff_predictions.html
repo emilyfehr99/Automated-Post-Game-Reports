@@ -1,0 +1,288 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>NHL Playoff Probabilities</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Inter', -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, 'Helvetica Neue', Arial, sans-serif;
+            background: #0a0a0a;
+            min-height: 100vh;
+            padding: 20px;
+            color: #e0e0e0;
+            font-weight: 400;
+            letter-spacing: -0.01em;
+        }
+
+        .container {
+            max-width: 1400px;
+            margin: 0 auto;
+        }
+
+        header {
+            text-align: center;
+            color: #ffffff;
+            margin-bottom: 40px;
+            padding: 20px 0;
+            border-bottom: 2px solid #333;
+        }
+
+        header h1 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 3.5em;
+            margin-bottom: 15px;
+            text-shadow: 0 2px 20px rgba(200,16,46,0.4);
+            letter-spacing: -0.02em;
+            font-weight: 700;
+            background: linear-gradient(135deg, #fff 0%, #c8102e 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
+        }
+
+        .nav-links {
+            display: flex;
+            justify-content: center;
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .nav-links a {
+            color: #888;
+            text-decoration: none;
+            font-size: 1.1em;
+            transition: color 0.2s;
+        }
+
+        .nav-links a:hover {
+            color: #c8102e;
+        }
+
+        .nav-links a.active {
+            color: #c8102e;
+            font-weight: 600;
+        }
+
+        .refresh-btn {
+            position: fixed;
+            top: 20px;
+            right: 20px;
+            background: #1a1a1a;
+            color: #fff;
+            border: 2px solid #333;
+            padding: 12px 24px;
+            border-radius: 6px;
+            cursor: pointer;
+            font-size: 0.95em;
+            font-weight: 600;
+            transition: all 0.2s;
+            z-index: 100;
+        }
+
+        .refresh-btn:hover {
+            background: #2a2a2a;
+            border-color: #555;
+        }
+
+        .loading {
+            text-align: center;
+            padding: 60px 20px;
+            color: #888;
+            font-size: 1.2em;
+        }
+
+        .error {
+            background: #2a1a1a;
+            border: 2px solid #c8102e;
+            border-radius: 8px;
+            padding: 20px;
+            margin: 20px 0;
+            color: #ff6b6b;
+        }
+
+        .standings-section {
+            background: linear-gradient(180deg, #1a1a1a 0%, #0f0f0f 100%);
+            border: 2px solid #333;
+            border-radius: 12px;
+            padding: 30px;
+            margin: 30px 0;
+        }
+
+        .standings-section h3 {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 2em;
+            margin-bottom: 10px;
+            color: #fff;
+        }
+
+        .standings-section p {
+            color: #888;
+            margin-bottom: 20px;
+        }
+
+        .standings-table {
+            width: 100%;
+            border-collapse: collapse;
+        }
+
+        .standings-table th {
+            text-align: left;
+            padding: 12px;
+            border-bottom: 2px solid #333;
+            color: #c8102e;
+            font-weight: 600;
+        }
+
+        .standings-table td {
+            padding: 12px;
+            border-bottom: 1px solid #222;
+        }
+
+        .standings-table tr:hover {
+            background: #151515;
+        }
+    </style>
+</head>
+<body>
+    <button class="refresh-btn" onclick="loadPredictions()">🔄 Refresh</button>
+    
+    <div class="container">
+        <header>
+            <h1>🏆 Playoff Probabilities</h1>
+            <div class="nav-links">
+                <a href="/">Daily Predictions</a>
+                <a href="/playoffs" class="active">Playoff Probabilities</a>
+            </div>
+        </header>
+
+        <div id="loading" class="loading">Loading playoff probabilities...</div>
+        <div id="error" class="error" style="display: none;"></div>
+        <div id="content" style="display: none;">
+            <div class="standings-section">
+                <h3>Playoff Probabilities</h3>
+                <p>Probability each team makes the playoffs based on current standings and remaining schedule</p>
+                <div id="probabilities-content"></div>
+            </div>
+        </div>
+    </div>
+
+    <script>
+        async function loadPredictions() {
+            const loading = document.getElementById('loading');
+            const error = document.getElementById('error');
+            const content = document.getElementById('content');
+            
+            loading.style.display = 'block';
+            error.style.display = 'none';
+            content.style.display = 'none';
+
+            try {
+                const probResponse = await fetch('/api/playoffs/probabilities');
+                const probData = await probResponse.json();
+
+                if (!probData.success) {
+                    throw new Error(probData.error || 'Failed to load probabilities');
+                }
+
+                displayProbabilities(probData.probabilities);
+
+                loading.style.display = 'none';
+                content.style.display = 'block';
+
+            } catch (err) {
+                console.error('Error loading predictions:', err);
+                loading.style.display = 'none';
+                error.style.display = 'block';
+                error.textContent = `Error: ${err.message}`;
+            }
+        }
+
+        function displayProbabilities(probabilities) {
+            const probabilitiesContent = document.getElementById('probabilities-content');
+            
+            if (!probabilities || Object.keys(probabilities).length === 0) {
+                probabilitiesContent.innerHTML = '<p style="color: #888;">No playoff probability data available.</p>';
+                return;
+            }
+
+            const sortedTeams = Object.entries(probabilities)
+                .sort((a, b) => (b[1].playoff_probability || 0) - (a[1].playoff_probability || 0));
+
+            const eastern = sortedTeams.filter(([team, data]) => 
+                data.conference && data.conference.toLowerCase().includes('east'));
+            const western = sortedTeams.filter(([team, data]) => 
+                data.conference && data.conference.toLowerCase().includes('west'));
+            const unknown = sortedTeams.filter(([team, data]) => 
+                !data.conference || (!data.conference.toLowerCase().includes('east') && !data.conference.toLowerCase().includes('west')));
+
+            let html = '';
+
+            if (eastern.length > 0) {
+                html += '<h4 style="color: #c8102e; margin-top: 20px; margin-bottom: 15px;">Eastern Conference</h4>';
+                html += createProbabilitiesTable(eastern);
+            }
+
+            if (western.length > 0) {
+                html += '<h4 style="color: #c8102e; margin-top: 30px; margin-bottom: 15px;">Western Conference</h4>';
+                html += createProbabilitiesTable(western);
+            }
+
+            if (unknown.length > 0) {
+                html += '<h4 style="color: #c8102e; margin-top: 30px; margin-bottom: 15px;">Other Teams</h4>';
+                html += createProbabilitiesTable(unknown);
+            }
+
+            probabilitiesContent.innerHTML = html;
+        }
+
+        function createProbabilitiesTable(teams) {
+            let html = `
+                <table class="standings-table">
+                    <thead>
+                        <tr>
+                            <th>Team</th>
+                            <th>Playoff %</th>
+                            <th>Points</th>
+                            <th>Record</th>
+                            <th>GP</th>
+                            <th>Remaining</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+            `;
+
+            teams.forEach(([team, data]) => {
+                const prob = (data.playoff_probability * 100).toFixed(1);
+                const probColor = prob >= 90 ? '#4ade80' : prob >= 50 ? '#fbbf24' : prob >= 10 ? '#fb923c' : '#ef4444';
+                const record = `${data.wins}-${data.losses}-${data.ot_losses}`;
+
+                html += `
+                    <tr>
+                        <td><strong>${team}</strong></td>
+                        <td style="color: ${probColor}; font-weight: 600; font-size: 1.1em;">${prob}%</td>
+                        <td>${data.current_points}</td>
+                        <td>${record}</td>
+                        <td>${data.games_played}</td>
+                        <td>${data.remaining_games}</td>
+                    </tr>
+                `;
+            });
+
+            html += '</tbody></table>';
+            return html;
+        }
+
+        loadPredictions();
+    </script>
+</body>
+</html>
