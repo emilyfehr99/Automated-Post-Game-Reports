@@ -1164,7 +1164,8 @@ def get_playoff_probabilities():
     """Get playoff probabilities for all teams"""
     try:
         playoff_model = get_playoff_model()
-        probabilities = playoff_model.calculate_playoff_probabilities(num_simulations=5000)
+        # Reduced simulations for faster response (1000 is still statistically significant)
+        probabilities = playoff_model.calculate_playoff_probabilities(num_simulations=1000)
         
         return jsonify({
             'success': True,

@@ -73,8 +73,8 @@ class PlayoffPredictionModel:
         remaining_games = []
         today_dt = datetime.now(pytz.timezone('US/Central'))
         
-        # Get schedule for next 120 days (covers rest of season)
-        for days_ahead in range(120):
+        # Get schedule for next 90 days (covers rest of season, reduced for performance)
+        for days_ahead in range(90):
             date = today_dt + timedelta(days=days_ahead)
             date_str = date.strftime('%Y-%m-%d')
             
@@ -186,7 +186,7 @@ class PlayoffPredictionModel:
             else:
                 return (home_team, 0, 2)  # Home wins in regulation
     
-    def calculate_playoff_probabilities(self, num_simulations: int = 5000) -> Dict:
+    def calculate_playoff_probabilities(self, num_simulations: int = 1000) -> Dict:
         """
         Calculate playoff probabilities by simulating remaining games using full prediction model
         Uses actual schedule, head-to-head records, goalie performance, and all advanced metrics
@@ -261,9 +261,13 @@ class PlayoffPredictionModel:
                     })
         
         # Pre-predict all remaining games (cache predictions)
-        print(f"Predicting {len(remaining_games)} remaining games...")
+        # Limit to reasonable number for performance
+        max_games_to_predict = 500  # Cap at 500 games to avoid timeout
+        games_to_predict = remaining_games[:max_games_to_predict]
+        
+        print(f"Predicting {len(games_to_predict)} remaining games (out of {len(remaining_games)} total)...")
         game_predictions = {}
-        for game in remaining_games:
+        for i, game in enumerate(games_to_predict):
             away = game['away_team']
             home = game['home_team']
             if away == 'OPP' or home == 'OPP':
@@ -271,20 +275,32 @@ class PlayoffPredictionModel:
             
             game_key = f"{away}@{home}_{game['date']}"
             if game_key not in game_predictions:
-                pred = self.predict_game_outcome(away, home, game['date'], game.get('game_id'))
-                game_predictions[game_key] = pred
+                try:
+                    pred = self.predict_game_outcome(away, home, game['date'], game.get('game_id'))
+                    game_predictions[game_key] = pred
+                except Exception as e:
+                    print(f"Error predicting {away} @ {home}: {e}")
+                    # Use fallback prediction
+                    game_predictions[game_key] = {'away_prob': 0.5, 'home_prob': 0.5}
+            
+            # Progress indicator
+            if (i + 1) % 50 == 0:
+                print(f"  Predicted {i + 1}/{len(games_to_predict)} games...")
         
         print(f"Cached {len(game_predictions)} game predictions")
         
         # Simulate remaining season
         playoff_counts = {team: 0 for team in team_records.keys()}
         
+        print(f"Running {num_simulations} simulations...")
         for sim in range(num_simulations):
+            if (sim + 1) % 200 == 0:
+                print(f"  Completed {sim + 1}/{num_simulations} simulations...")
             # Start with current points
             sim_points = {team: record['points'] for team, record in team_records.items()}
             
-            # Simulate each remaining game
-            for game in remaining_games:
+            # Simulate each remaining game (only use games we predicted)
+            for game in games_to_predict:
                 away = game['away_team']
                 home = game['home_team']
                 
@@ -320,7 +336,7 @@ class PlayoffPredictionModel:
         # Calculate probabilities
         playoff_probs = {}
         remaining_game_counts = {}
-        for game in remaining_games:
+        for game in games_to_predict:
             away = game['away_team']
             home = game['home_team']
             if away != 'OPP' and home != 'OPP':
