@@ -265,21 +265,12 @@ class PlayoffPredictionModel:
         
         # Get remaining schedule
         remaining_games = self.get_remaining_schedule()
+        print(f"Found {len(remaining_games)} remaining games in schedule")
         
-        if not remaining_games:
-            # Fallback: estimate remaining games if schedule unavailable
-            remaining_games = []
-            for team_abbrev, record in team_records.items():
-                games_played = record['games_played']
-                remaining = max(0, 82 - games_played)
-                # Create placeholder games (simplified)
-                for i in range(remaining):
-                    remaining_games.append({
-                        'away_team': team_abbrev,
-                        'home_team': 'OPP',  # Placeholder
-                        'date': '2025-12-31',
-                        'game_id': None
-                    })
+        if not remaining_games or len(remaining_games) < 10:
+            print("WARNING: Very few remaining games found. This may cause inaccurate probabilities.")
+            # If we have very few games, the current standings will dominate
+            # This is expected if we're late in the season
         
         # Pre-predict all remaining games (cache predictions)
         # Limit to reasonable number for performance
