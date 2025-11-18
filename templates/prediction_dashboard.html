@@ -500,14 +500,41 @@
             startLiveUpdates(games.filter(g => g.is_live));
         }
 
+        function getTeamLogoUrl(teamAbbrev) {
+            const logoMap = {
+                'TBL': 'tb', 'NSH': 'nsh', 'EDM': 'edm', 'FLA': 'fla',
+                'COL': 'col', 'DAL': 'dal', 'BOS': 'bos', 'TOR': 'tor',
+                'MTL': 'mtl', 'OTT': 'ott', 'BUF': 'buf', 'DET': 'det',
+                'CAR': 'car', 'WSH': 'wsh', 'PIT': 'pit', 'NYR': 'nyr',
+                'NYI': 'nyi', 'NJD': 'nj', 'PHI': 'phi', 'CBJ': 'cbj',
+                'STL': 'stl', 'MIN': 'min', 'WPG': 'wpg', 'ARI': 'ari',
+                'VGK': 'vgk', 'SJS': 'sj', 'LAK': 'la', 'ANA': 'ana',
+                'CGY': 'cgy', 'VAN': 'van', 'SEA': 'sea', 'CHI': 'chi', 'UTA': 'utah'
+            };
+            const logoAbbrev = logoMap[teamAbbrev] || teamAbbrev.toLowerCase();
+            return `https://a.espncdn.com/i/teamlogos/nhl/500/${logoAbbrev}.png`;
+        }
+
         function createGameCard(game) {
             const isLive = game.is_live;
             const liveClass = isLive ? 'live' : '';
+            const awayLogo = getTeamLogoUrl(game.away_team);
+            const homeLogo = getTeamLogoUrl(game.home_team);
             
             let scoreSection = '';
             if (isLive && game.away_score !== undefined) {
                 scoreSection = `
-                    <div class="score">${game.away_team} ${game.away_score} - ${game.home_score} ${game.home_team}</div>
+                    <div class="score" style="display: flex; align-items: center; justify-content: center; gap: 15px;">
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <img src="${awayLogo}" alt="${game.away_team}" style="width: 40px; height: 40px; object-fit: contain;">
+                            <span>${game.away_team} ${game.away_score}</span>
+                        </div>
+                        <span style="color: #888;">-</span>
+                        <div style="display: flex; align-items: center; gap: 10px;">
+                            <span>${game.home_score} ${game.home_team}</span>
+                            <img src="${homeLogo}" alt="${game.home_team}" style="width: 40px; height: 40px; object-fit: contain;">
+                        </div>
+                    </div>
                     <div class="period-info">Period ${game.current_period} - ${game.time_remaining || 'N/A'}</div>
                 `;
             }
@@ -524,8 +551,12 @@
 
             return `
                 <div class="game-card ${liveClass}" data-game-id="${game.game_id}">
-                    <div class="game-header">
-                        <div class="matchup">${game.away_team} @ ${game.home_team}</div>
+                    <div class="game-header" style="display: flex; align-items: center; justify-content: space-between;">
+                        <div class="matchup" style="display: flex; align-items: center; gap: 10px;">
+                            <img src="${awayLogo}" alt="${game.away_team}" style="width: 30px; height: 30px; object-fit: contain;">
+                            <span>${game.away_team} @ ${game.home_team}</span>
+                            <img src="${homeLogo}" alt="${game.home_team}" style="width: 30px; height: 30px; object-fit: contain;">
+                        </div>
                         ${isLive ? '<span class="live-badge">🔴 LIVE</span>' : ''}
                     </div>
                     ${scoreSection}
@@ -685,7 +716,16 @@
             const content = document.getElementById('reportContent');
             const title = document.getElementById('modalTitle');
             
-            title.textContent = `${awayTeam} @ ${homeTeam} - Live Report`;
+            const awayLogo = getTeamLogoUrl(awayTeam);
+            const homeLogo = getTeamLogoUrl(homeTeam);
+            title.innerHTML = `
+                <div style="display: flex; align-items: center; gap: 15px;">
+                    <img src="${awayLogo}" alt="${awayTeam}" style="width: 40px; height: 40px; object-fit: contain;">
+                    <span>${awayTeam} @ ${homeTeam}</span>
+                    <img src="${homeLogo}" alt="${homeTeam}" style="width: 40px; height: 40px; object-fit: contain;">
+                    <span style="color: #888; font-size: 0.7em;">- Live Report</span>
+                </div>
+            `;
             modal.style.display = 'block';
             content.innerHTML = '<div class="loading-report">Loading report...</div>';
             
@@ -714,12 +754,16 @@
             const adv = data.advanced_metrics || {};
             const goalies = data.goalie_stats || {};
             const scoring = data.scoring_summary || [];
+            const awayLogo = getTeamLogoUrl(data.away_team);
+            const homeLogo = getTeamLogoUrl(data.home_team);
             
             let html = `
                 <div class="report-section">
                     <h3>Game Status</h3>
-                    <div style="font-size: 1.4em; margin-bottom: 15px; color: #fff; text-align: center;">
+                    <div style="font-size: 1.4em; margin-bottom: 15px; color: #fff; text-align: center; display: flex; align-items: center; justify-content: center; gap: 15px;">
+                        <img src="${awayLogo}" alt="${data.away_team}" style="width: 50px; height: 50px; object-fit: contain;">
                         <strong>${data.away_team} ${data.away_score} - ${data.home_score} ${data.home_team}</strong>
+                        <img src="${homeLogo}" alt="${data.home_team}" style="width: 50px; height: 50px; object-fit: contain;">
                     </div>
                     <div style="text-align: center; color: #aaa;">
                         Period ${data.current_period} - ${data.time_remaining} remaining
@@ -732,8 +776,14 @@
                         <thead>
                             <tr>
                                 <th>Stat</th>
-                                <th>${data.away_team}</th>
-                                <th>${data.home_team}</th>
+                                <th style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+                                    <img src="${awayLogo}" alt="${data.away_team}" style="width: 24px; height: 24px; object-fit: contain;">
+                                    ${data.away_team}
+                                </th>
+                                <th style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+                                    <img src="${homeLogo}" alt="${data.home_team}" style="width: 24px; height: 24px; object-fit: contain;">
+                                    ${data.home_team}
+                                </th>
                             </tr>
                         </thead>
                         <tbody>
@@ -790,8 +840,14 @@
                             <thead>
                                 <tr>
                                     <th>Metric</th>
-                                    <th>${data.away_team}</th>
-                                    <th>${data.home_team}</th>
+                                    <th style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+                                        <img src="${awayLogo}" alt="${data.away_team}" style="width: 24px; height: 24px; object-fit: contain;">
+                                        ${data.away_team}
+                                    </th>
+                                    <th style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+                                        <img src="${homeLogo}" alt="${data.home_team}" style="width: 24px; height: 24px; object-fit: contain;">
+                                        ${data.home_team}
+                                    </th>
                                 </tr>
                             </thead>
                             <tbody>

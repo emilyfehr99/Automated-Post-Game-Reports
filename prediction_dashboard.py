@@ -630,19 +630,25 @@ def get_live_game_report(game_id):
             report_data['stats']['away']['faceoff_pct'] = round(away_fo_pct, 1) if away_fo_pct > 0 else 0.0
             report_data['stats']['home']['faceoff_pct'] = round(home_fo_pct, 1) if home_fo_pct > 0 else 0.0
             
-            # For power play: percentage = goals / opportunities
-            away_pp_pct = 0.0
-            home_pp_pct = 0.0
+            # For power play: percentage = (goals / opportunities) * 100
+            away_pp_goals = report_data['stats']['away']['power_play_goals']
+            home_pp_goals = report_data['stats']['home']['power_play_goals']
             away_pp_opps = report_data['stats']['away']['power_play_opportunities']
             home_pp_opps = report_data['stats']['home']['power_play_opportunities']
             
+            # Calculate percentage: (goals / opportunities) * 100
             if away_pp_opps > 0:
-                away_pp_pct = (report_data['stats']['away']['power_play_goals'] / away_pp_opps) * 100
-            if home_pp_opps > 0:
-                home_pp_pct = (report_data['stats']['home']['power_play_goals'] / home_pp_opps) * 100
+                away_pp_pct = (away_pp_goals / away_pp_opps) * 100
+            else:
+                away_pp_pct = 0.0
             
-            report_data['stats']['away']['power_play_pct'] = round(away_pp_pct, 1) if away_pp_pct > 0 else 0.0
-            report_data['stats']['home']['power_play_pct'] = round(home_pp_pct, 1) if home_pp_pct > 0 else 0.0
+            if home_pp_opps > 0:
+                home_pp_pct = (home_pp_goals / home_pp_opps) * 100
+            else:
+                home_pp_pct = 0.0
+            
+            report_data['stats']['away']['power_play_pct'] = round(away_pp_pct, 1)
+            report_data['stats']['home']['power_play_pct'] = round(home_pp_pct, 1)
             
         except Exception as e:
             print(f"Error extracting team stats: {e}")
