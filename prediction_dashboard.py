@@ -200,73 +200,139 @@ def get_games():
                 
                 # Get scores for finished games too
                 if game_data['is_live'] or game_data['is_final']:
-                    # First, try to get scores from boxscore (most reliable)
-                    boxscore_scores_available = False
+                    # Try multiple sources for scores - comprehensive game data is most reliable
+                    scores_found = False
                     try:
-                        boxscore_data = api.get_game_boxscore(game_id)
-                        if boxscore_data:
-                            # Try multiple paths for scores - need to check if key exists, not just truthiness
-                            away_team_data = boxscore_data.get('awayTeam', {})
-                            home_team_data = boxscore_data.get('homeTeam', {})
+                        # First try comprehensive game data (most reliable for live games)
+                        comprehensive_data = api.get_comprehensive_game_data(game_id)
+                        if comprehensive_data:
+                            boxscore = comprehensive_data.get('game_center', {}).get('boxscore', {})
+                            if not boxscore:
+                                boxscore = comprehensive_data.get('boxscore', {})
                             
-                            # Try to get score - check if key exists (0 is a valid score!)
-                            away_score = None
-                            if 'score' in away_team_data:
-                                away_score = away_team_data['score']
-                            elif 'goals' in away_team_data:
-                                away_score = away_team_data['goals']
-                            else:
-                                team_stats = away_team_data.get('teamStats', {}).get('teamSkaterStats', {})
-                                if 'goals' in team_stats:
-                                    away_score = team_stats['goals']
-                            
-                            home_score = None
-                            if 'score' in home_team_data:
-                                home_score = home_team_data['score']
-                            elif 'goals' in home_team_data:
-                                home_score = home_team_data['goals']
-                            else:
-                                team_stats = home_team_data.get('teamStats', {}).get('teamSkaterStats', {})
-                                if 'goals' in team_stats:
-                                    home_score = team_stats['goals']
-                            
-                            # Use scores if we found them (even if they're 0 - that's a valid score!)
-                            if away_score is not None and home_score is not None:
-                                boxscore_scores_available = True
-                                game_data['away_score'] = away_score
-                                game_data['home_score'] = home_score
+                            if boxscore:
+                                # Try multiple paths in comprehensive data
+                                away_team_data = boxscore.get('awayTeam', {})
+                                home_team_data = boxscore.get('homeTeam', {})
                                 
-                                # Get period info (for finished games, show "Final" or "Final/OT")
-                                if game_data['is_final']:
-                                    period_desc = boxscore_data.get('periodDescriptor', {})
-                                    if not period_desc:
-                                        period_desc = boxscore_data.get('periodInfo', {})
+                                # Also try teams.away / teams.home structure
+                                if not away_team_data:
+                                    teams = boxscore.get('teams', {})
+                                    away_team_data = teams.get('away', {})
+                                    home_team_data = teams.get('home', {})
+                                
+                                # Try to extract scores - try multiple paths
+                                away_score = None
+                                home_score = None
+                                
+                                # Path 1: Direct score field
+                                if 'score' in away_team_data:
+                                    away_score = away_team_data['score']
+                                if 'score' in home_team_data:
+                                    home_score = home_team_data['score']
+                                
+                                # Path 2: Direct goals field
+                                if away_score is None and 'goals' in away_team_data:
+                                    away_score = away_team_data['goals']
+                                if home_score is None and 'goals' in home_team_data:
+                                    home_score = home_team_data['goals']
+                                
+                                # Path 3: teamStats.teamSkaterStats.goals
+                                if away_score is None:
+                                    team_stats = away_team_data.get('teamStats', {})
+                                    if team_stats:
+                                        skater_stats = team_stats.get('teamSkaterStats', {})
+                                        if skater_stats and 'goals' in skater_stats:
+                                            away_score = skater_stats['goals']
+                                
+                                if home_score is None:
+                                    team_stats = home_team_data.get('teamStats', {})
+                                    if team_stats:
+                                        skater_stats = team_stats.get('teamSkaterStats', {})
+                                        if skater_stats and 'goals' in skater_stats:
+                                            home_score = skater_stats['goals']
+                                
+                                # If we found both scores, use them
+                                if away_score is not None and home_score is not None:
+                                    scores_found = True
+                                    game_data['away_score'] = away_score
+                                    game_data['home_score'] = home_score
                                     
-                                    period_num = period_desc.get('number') or period_desc.get('currentPeriod') or 3
-                                    if period_num > 3:
-                                        game_data['current_period'] = f"Final/OT"
+                                    # Get period info
+                                    period_desc = boxscore.get('periodDescriptor', {})
+                                    if not period_desc:
+                                        period_desc = boxscore.get('periodInfo', {})
+                                    
+                                    if game_data['is_final']:
+                                        period_num = period_desc.get('number') or period_desc.get('currentPeriod') or 3
+                                        if period_num > 3:
+                                            game_data['current_period'] = f"Final/OT"
+                                        else:
+                                            game_data['current_period'] = "Final"
+                                        game_data['time_remaining'] = "0:00"
                                     else:
-                                        game_data['current_period'] = "Final"
-                                    game_data['time_remaining'] = "0:00"
+                                        current_period = period_desc.get('number') or period_desc.get('currentPeriod') or 1
+                                        clock = boxscore.get('clock', {})
+                                        if not clock:
+                                            clock = boxscore.get('periodInfo', {})
+                                        time_remaining = clock.get('timeRemaining') or clock.get('timeInPeriod') or '20:00'
+                                        game_data['current_period'] = current_period
+                                        game_data['time_remaining'] = time_remaining
+                        
+                        # Fallback: try get_game_boxscore if comprehensive didn't work
+                        if not scores_found:
+                            boxscore_data = api.get_game_boxscore(game_id)
+                            if boxscore_data:
+                                away_team_data = boxscore_data.get('awayTeam', {})
+                                home_team_data = boxscore_data.get('homeTeam', {})
+                                
+                                away_score = None
+                                if 'score' in away_team_data:
+                                    away_score = away_team_data['score']
+                                elif 'goals' in away_team_data:
+                                    away_score = away_team_data['goals']
                                 else:
-                                    # Live game - get period and time
+                                    team_stats = away_team_data.get('teamStats', {}).get('teamSkaterStats', {})
+                                    if team_stats and 'goals' in team_stats:
+                                        away_score = team_stats['goals']
+                                
+                                home_score = None
+                                if 'score' in home_team_data:
+                                    home_score = home_team_data['score']
+                                elif 'goals' in home_team_data:
+                                    home_score = home_team_data['goals']
+                                else:
+                                    team_stats = home_team_data.get('teamStats', {}).get('teamSkaterStats', {})
+                                    if team_stats and 'goals' in team_stats:
+                                        home_score = team_stats['goals']
+                                
+                                if away_score is not None and home_score is not None:
+                                    scores_found = True
+                                    game_data['away_score'] = away_score
+                                    game_data['home_score'] = home_score
+                                    
+                                    # Get period info
                                     period_desc = boxscore_data.get('periodDescriptor', {})
                                     if not period_desc:
                                         period_desc = boxscore_data.get('periodInfo', {})
                                     
-                                    current_period = period_desc.get('number') or period_desc.get('currentPeriod') or 1
-                                    
-                                    # Get clock/time
-                                    clock = boxscore_data.get('clock', {})
-                                    if not clock:
-                                        clock = boxscore_data.get('periodInfo', {})
-                                    
-                                    time_remaining = clock.get('timeRemaining') or clock.get('timeInPeriod') or '20:00'
-                                    
-                                    game_data['current_period'] = current_period
-                                    game_data['time_remaining'] = time_remaining
+                                    if game_data['is_final']:
+                                        period_num = period_desc.get('number') or period_desc.get('currentPeriod') or 3
+                                        if period_num > 3:
+                                            game_data['current_period'] = f"Final/OT"
+                                        else:
+                                            game_data['current_period'] = "Final"
+                                        game_data['time_remaining'] = "0:00"
+                                    else:
+                                        current_period = period_desc.get('number') or period_desc.get('currentPeriod') or 1
+                                        clock = boxscore_data.get('clock', {})
+                                        if not clock:
+                                            clock = boxscore_data.get('periodInfo', {})
+                                        time_remaining = clock.get('timeRemaining') or clock.get('timeInPeriod') or '20:00'
+                                        game_data['current_period'] = current_period
+                                        game_data['time_remaining'] = time_remaining
                     except Exception as e:
-                        print(f"Error getting live scores: {e}")
+                        print(f"Error getting live scores for game {game_id}: {e}")
                         import traceback
                         traceback.print_exc()
                     
@@ -285,11 +351,10 @@ def get_games():
                             
                             game_data['live_prediction'] = live
                             
-                            # ONLY use scores from live prediction if boxscore didn't have scores
-                            if not boxscore_scores_available:
+                            # Use scores from live prediction as last resort if we still don't have scores
+                            if not scores_found:
                                 live_away_score = live.get('away_score')
                                 live_home_score = live.get('home_score')
-                                # Use live prediction scores if they exist (even if 0)
                                 if live_away_score is not None and live_home_score is not None:
                                     game_data['away_score'] = live_away_score
                                     game_data['home_score'] = live_home_score
