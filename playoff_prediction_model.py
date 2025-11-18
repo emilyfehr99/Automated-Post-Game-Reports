@@ -331,6 +331,7 @@ class PlayoffPredictionModel:
             sim_points = {team: record['points'] for team, record in team_records.items()}
             
             # Simulate each remaining game (only use games we predicted)
+            games_simulated = 0
             for game in games_to_predict:
                 away = game['away_team']
                 home = game['home_team']
@@ -341,12 +342,18 @@ class PlayoffPredictionModel:
                 game_key = f"{away}@{home}_{game['date']}"
                 pred = game_predictions.get(game_key)
                 
-                if pred:
+                if pred and 'away_prob' in pred and 'home_prob' in pred:
                     winner, away_pts, home_pts = self.simulate_game(
                         away, home, pred['away_prob'], pred['home_prob']
                     )
                     sim_points[away] += away_pts
                     sim_points[home] += home_pts
+                    games_simulated += 1
+            
+            # Debug: show sample simulation results for first sim
+            if sim == 0 and games_simulated > 0:
+                sample_teams = list(sim_points.items())[:5]
+                print(f"Sample simulation results (first sim): {sample_teams}")
             
             # Determine playoff teams (top 8 in each conference)
             eastern_teams = [(team, sim_points[team]) for team, data in team_records.items() 
@@ -373,6 +380,12 @@ class PlayoffPredictionModel:
             if away != 'OPP' and home != 'OPP':
                 remaining_game_counts[away] = remaining_game_counts.get(away, 0) + 1
                 remaining_game_counts[home] = remaining_game_counts.get(home, 0) + 1
+        
+        # Debug: show playoff counts
+        print(f"\nPlayoff counts (sample):")
+        sample_counts = sorted(playoff_counts.items(), key=lambda x: x[1], reverse=True)[:10]
+        for team, count in sample_counts:
+            print(f"  {team}: {count}/{num_simulations} ({count/num_simulations*100:.1f}%)")
         
         for team, count in playoff_counts.items():
             prob = count / num_simulations
