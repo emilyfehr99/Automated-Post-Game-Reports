@@ -63,7 +63,13 @@ class PlayoffPredictionModel:
         team_records = {}
         
         for team_data in standings_data.get('standings', []):
-            team_abbrev = team_data.get('teamAbbrev', {}).get('default', '')
+            # Handle teamAbbrev - could be dict or string
+            team_abbrev_obj = team_data.get('teamAbbrev', {})
+            if isinstance(team_abbrev_obj, dict):
+                team_abbrev = team_abbrev_obj.get('default', '')
+            else:
+                team_abbrev = str(team_abbrev_obj) if team_abbrev_obj else ''
+            
             if not team_abbrev:
                 continue
             
@@ -72,9 +78,19 @@ class PlayoffPredictionModel:
             losses = team_data.get('losses', 0)
             points = wins * 2 + ot_losses  # NHL point system: 2 for win, 1 for OT loss
             
-            # Determine conference
-            conference = team_data.get('conferenceName', {}).get('default', '')
-            division = team_data.get('divisionName', {}).get('default', '')
+            # Determine conference - could be dict or string
+            conference_obj = team_data.get('conferenceName', {})
+            if isinstance(conference_obj, dict):
+                conference = conference_obj.get('default', '')
+            else:
+                conference = str(conference_obj) if conference_obj else ''
+            
+            # Determine division - could be dict or string
+            division_obj = team_data.get('divisionName', {})
+            if isinstance(division_obj, dict):
+                division = division_obj.get('default', '')
+            else:
+                division = str(division_obj) if division_obj else ''
             
             team_records[team_abbrev] = {
                 'wins': wins,
