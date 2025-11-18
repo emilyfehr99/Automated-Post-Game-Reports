@@ -1,15 +1,21 @@
 #!/usr/bin/env python3
 """
 Playoff Prediction Model
-Uses daily scraped data to calculate playoff probabilities
+Uses daily scraped data and full prediction model to calculate playoff probabilities
+Simulates remaining games using actual schedule and comprehensive metrics
 """
 
 import json
 import random
 from pathlib import Path
-from typing import Dict, List, Optional
+from typing import Dict, List, Optional, Tuple
+from datetime import datetime, timedelta
 import numpy as np
+import pytz
 from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
+from nhl_api_client import NHLAPIClient
+from correlation_model import CorrelationModel
+from lineup_service import LineupService
 
 # Set random seed for reproducibility
 random.seed(42)
@@ -20,10 +26,17 @@ class PlayoffPredictionModel:
         """Initialize the playoff prediction model"""
         self.model = ImprovedSelfLearningModelV2()
         self.model.deterministic = True
+        self.api = NHLAPIClient()
+        self.corr_model = CorrelationModel()
+        self.lineup_service = LineupService()
         
         # Load team stats
         self.team_stats_file = Path("season_2025_2026_team_stats.json")
         self.team_stats = self.load_team_stats()
+        
+        # Cache for remaining schedule
+        self._remaining_schedule_cache = None
+        self._schedule_cache_date = None
     
     def load_team_stats(self) -> Dict:
         """Load current season team statistics"""
@@ -47,9 +60,136 @@ class PlayoffPredictionModel:
             print(f"Error getting standings: {e}")
         return {}
     
-    def calculate_playoff_probabilities(self, num_simulations: int = 10000) -> Dict:
+    def get_remaining_schedule(self) -> List[Dict]:
         """
-        Calculate playoff probabilities for each team by simulating remaining games
+        Get all remaining games in the season from NHL API
+        Returns list of games with away_team, home_team, and date
+        """
+        # Cache schedule for today
+        today = datetime.now(pytz.timezone('US/Central')).strftime('%Y-%m-%d')
+        if self._remaining_schedule_cache and self._schedule_cache_date == today:
+            return self._remaining_schedule_cache
+        
+        remaining_games = []
+        today_dt = datetime.now(pytz.timezone('US/Central'))
+        
+        # Get schedule for next 120 days (covers rest of season)
+        for days_ahead in range(120):
+            date = today_dt + timedelta(days=days_ahead)
+            date_str = date.strftime('%Y-%m-%d')
+            
+            try:
+                schedule = self.api.get_game_schedule(date_str)
+                if schedule and 'gameWeek' in schedule:
+                    for day in schedule.get('gameWeek', []):
+                        if day.get('date') != date_str:
+                            continue
+                        for game in day.get('games', []):
+                            game_state = game.get('gameState', '')
+                            # Only include future games (PREVIEW or not started)
+                            if game_state in ['PREVIEW', 'LIVE', 'CRIT']:
+                                away_team_obj = game.get('awayTeam', {})
+                                home_team_obj = game.get('homeTeam', {})
+                                
+                                # Handle team abbrev - could be dict or string
+                                away_abbrev = away_team_obj.get('abbrev', {})
+                                if isinstance(away_abbrev, dict):
+                                    away_abbrev = away_abbrev.get('default', '')
+                                
+                                home_abbrev = home_team_obj.get('abbrev', {})
+                                if isinstance(home_abbrev, dict):
+                                    home_abbrev = home_abbrev.get('default', '')
+                                
+                                if away_abbrev and home_abbrev:
+                                    remaining_games.append({
+                                        'away_team': away_abbrev,
+                                        'home_team': home_abbrev,
+                                        'date': date_str,
+                                        'game_id': game.get('id')
+                                    })
+            except Exception as e:
+                print(f"Error fetching schedule for {date_str}: {e}")
+                continue
+        
+        self._remaining_schedule_cache = remaining_games
+        self._schedule_cache_date = today
+        return remaining_games
+    
+    def predict_game_outcome(self, away_team: str, home_team: str, game_date: str, game_id: Optional[str] = None) -> Dict:
+        """
+        Predict a single game using the full prediction model
+        Returns dict with 'away_prob', 'home_prob', and 'predicted_winner'
+        """
+        try:
+            # Use the same prediction logic as run_predictions_for_date
+            from run_predictions_for_date import predict_game_for_date
+            
+            prediction = predict_game_for_date(
+                self.model,
+                self.corr_model,
+                away_team,
+                home_team,
+                game_date,
+                game_id=game_id,
+                lineup_service=self.lineup_service
+            )
+            
+            if prediction:
+                away_prob = prediction.get('away_prob', 0.5)
+                home_prob = prediction.get('home_prob', 0.5)
+                predicted_winner = prediction.get('predicted_winner', home_team if home_prob > away_prob else away_team)
+                
+                return {
+                    'away_prob': away_prob / 100.0 if away_prob > 1.0 else away_prob,
+                    'home_prob': home_prob / 100.0 if home_prob > 1.0 else home_prob,
+                    'predicted_winner': predicted_winner
+                }
+        except Exception as e:
+            print(f"Error predicting {away_team} @ {home_team}: {e}")
+        
+        # Fallback to 50/50 if prediction fails
+        return {
+            'away_prob': 0.5,
+            'home_prob': 0.5,
+            'predicted_winner': home_team  # Default to home team
+        }
+    
+    def simulate_game(self, away_team: str, home_team: str, away_prob: float, home_prob: float) -> Tuple[str, int]:
+        """
+        Simulate a single game outcome
+        Returns (winner, points_for_away, points_for_home)
+        Points: 2 for win, 1 for OT loss, 0 for regulation loss
+        """
+        rand = random.random()
+        
+        # Normalize probabilities
+        total_prob = away_prob + home_prob
+        if total_prob > 0:
+            away_prob_norm = away_prob / total_prob
+            home_prob_norm = home_prob / total_prob
+        else:
+            away_prob_norm = 0.5
+            home_prob_norm = 0.5
+        
+        # Determine winner (with OT probability ~20% of games)
+        if rand < away_prob_norm:
+            # Away team wins
+            # 20% chance of OT win
+            if random.random() < 0.2:
+                return (away_team, 2, 1)  # Away wins in OT, home gets 1 point
+            else:
+                return (away_team, 2, 0)  # Away wins in regulation
+        else:
+            # Home team wins
+            if random.random() < 0.2:
+                return (home_team, 1, 2)  # Home wins in OT, away gets 1 point
+            else:
+                return (home_team, 0, 2)  # Home wins in regulation
+    
+    def calculate_playoff_probabilities(self, num_simulations: int = 5000) -> Dict:
+        """
+        Calculate playoff probabilities by simulating remaining games using full prediction model
+        Uses actual schedule, head-to-head records, goalie performance, and all advanced metrics
         
         Returns:
             Dict with team abbreviations as keys and playoff probability as values
@@ -102,41 +242,70 @@ class PlayoffPredictionModel:
                 'division': division
             }
         
-        # Get remaining schedule (82 total games in season)
-        remaining_games = {}
-        for team_abbrev, record in team_records.items():
-            games_played = record['games_played']
-            remaining_games[team_abbrev] = max(0, 82 - games_played)
+        # Get remaining schedule
+        remaining_games = self.get_remaining_schedule()
+        
+        if not remaining_games:
+            # Fallback: estimate remaining games if schedule unavailable
+            remaining_games = []
+            for team_abbrev, record in team_records.items():
+                games_played = record['games_played']
+                remaining = max(0, 82 - games_played)
+                # Create placeholder games (simplified)
+                for i in range(remaining):
+                    remaining_games.append({
+                        'away_team': team_abbrev,
+                        'home_team': 'OPP',  # Placeholder
+                        'date': '2025-12-31',
+                        'game_id': None
+                    })
+        
+        # Pre-predict all remaining games (cache predictions)
+        print(f"Predicting {len(remaining_games)} remaining games...")
+        game_predictions = {}
+        for game in remaining_games:
+            away = game['away_team']
+            home = game['home_team']
+            if away == 'OPP' or home == 'OPP':
+                continue  # Skip placeholder games
+            
+            game_key = f"{away}@{home}_{game['date']}"
+            if game_key not in game_predictions:
+                pred = self.predict_game_outcome(away, home, game['date'], game.get('game_id'))
+                game_predictions[game_key] = pred
+        
+        print(f"Cached {len(game_predictions)} game predictions")
         
         # Simulate remaining season
         playoff_counts = {team: 0 for team in team_records.keys()}
         
         for sim in range(num_simulations):
-            # Create simulated final standings
-            sim_records = {}
-            for team_abbrev, record in team_records.items():
-                sim_points = record['points']
-                remaining = remaining_games[team_abbrev]
+            # Start with current points
+            sim_points = {team: record['points'] for team, record in team_records.items()}
+            
+            # Simulate each remaining game
+            for game in remaining_games:
+                away = game['away_team']
+                home = game['home_team']
                 
-                # Simulate remaining games based on team strength
-                team_strength = self._estimate_team_strength(team_abbrev)
+                if away == 'OPP' or home == 'OPP' or away not in sim_points or home not in sim_points:
+                    continue
                 
-                # Estimate points from remaining games
-                # Average NHL team gets ~0.55 points per game
-                # Adjust based on team strength
-                expected_points_per_game = 0.55 + (team_strength - 0.5) * 0.3
-                sim_points += remaining * expected_points_per_game * 2  # Convert to points
+                game_key = f"{away}@{home}_{game['date']}"
+                pred = game_predictions.get(game_key)
                 
-                sim_records[team_abbrev] = {
-                    'points': sim_points,
-                    'conference': record['conference']
-                }
+                if pred:
+                    winner, away_pts, home_pts = self.simulate_game(
+                        away, home, pred['away_prob'], pred['home_prob']
+                    )
+                    sim_points[away] += away_pts
+                    sim_points[home] += home_pts
             
             # Determine playoff teams (top 8 in each conference)
-            eastern_teams = [(team, data['points']) for team, data in sim_records.items() 
-                            if data['conference'] in ['Eastern', 'EASTERN']]
-            western_teams = [(team, data['points']) for team, data in sim_records.items() 
-                            if data['conference'] in ['Western', 'WESTERN']]
+            eastern_teams = [(team, sim_points[team]) for team, data in team_records.items() 
+                            if data['conference'] in ['Eastern', 'EASTERN'] and team in sim_points]
+            western_teams = [(team, sim_points[team]) for team, data in team_records.items() 
+                            if data['conference'] in ['Western', 'WESTERN'] and team in sim_points]
             
             # Sort by points (descending)
             eastern_teams.sort(key=lambda x: x[1], reverse=True)
@@ -150,6 +319,14 @@ class PlayoffPredictionModel:
         
         # Calculate probabilities
         playoff_probs = {}
+        remaining_game_counts = {}
+        for game in remaining_games:
+            away = game['away_team']
+            home = game['home_team']
+            if away != 'OPP' and home != 'OPP':
+                remaining_game_counts[away] = remaining_game_counts.get(away, 0) + 1
+                remaining_game_counts[home] = remaining_game_counts.get(home, 0) + 1
+        
         for team, count in playoff_counts.items():
             prob = count / num_simulations
             record = team_records.get(team, {})
@@ -157,7 +334,7 @@ class PlayoffPredictionModel:
                 'playoff_probability': prob,
                 'current_points': record.get('points', 0),
                 'games_played': record.get('games_played', 0),
-                'remaining_games': remaining_games.get(team, 0),
+                'remaining_games': remaining_game_counts.get(team, 0),
                 'conference': record.get('conference', ''),
                 'wins': record.get('wins', 0),
                 'losses': record.get('losses', 0),
