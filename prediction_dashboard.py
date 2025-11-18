@@ -90,26 +90,57 @@ def get_live_prediction(game_id):
         if not live_metrics:
             return None
         
+        # Get team names from game data if live_metrics doesn't have them
+        away_team = live_metrics.get('away_team', '')
+        home_team = live_metrics.get('home_team', '')
+        
+        if not away_team or not home_team:
+            # Try to get from API
+            try:
+                boxscore = api.get_game_boxscore(game_id)
+                if boxscore:
+                    away_team = (boxscore.get('awayTeam', {}) or {}).get('abbrev', '')
+                    home_team = (boxscore.get('homeTeam', {}) or {}).get('abbrev', '')
+                    # Update live_metrics with team names
+                    if away_team:
+                        live_metrics['away_team'] = away_team
+                    if home_team:
+                        live_metrics['home_team'] = home_team
+            except Exception as e:
+                print(f"Error getting team names from boxscore: {e}")
+        
         prediction = predictor.predict_live_game(live_metrics)
         if not prediction:
             return None
         
+        # Ensure we have team names
+        final_away_team = prediction.get('away_team') or away_team or ''
+        final_home_team = prediction.get('home_team') or home_team or ''
+        
+        # Calculate predicted winner
+        if final_away_team and final_home_team:
+            predicted_winner = final_home_team if prediction['home_prob'] > prediction['away_prob'] else final_away_team
+        else:
+            predicted_winner = ''
+        
         return {
-            'away_team': prediction['away_team'],
-            'home_team': prediction['home_team'],
+            'away_team': final_away_team,
+            'home_team': final_home_team,
             'away_score': prediction['away_score'],
             'home_score': prediction['home_score'],
             'current_period': prediction['current_period'],
             'time_remaining': prediction['time_remaining'],
             'away_prob': prediction['away_prob'] * 100,
             'home_prob': prediction['home_prob'] * 100,
-            'predicted_winner': prediction['home_team'] if prediction['home_prob'] > prediction['away_prob'] else prediction['away_team'],
+            'predicted_winner': predicted_winner,
             'confidence': prediction['confidence'] * 100,
             'momentum': prediction['momentum'],
             'live_metrics': prediction['live_metrics']
         }
     except Exception as e:
         print(f"Error getting live prediction: {e}")
+        import traceback
+        traceback.print_exc()
         return None
 
 

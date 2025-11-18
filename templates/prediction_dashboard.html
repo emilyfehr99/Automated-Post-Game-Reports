@@ -477,6 +477,18 @@
                     return;
                 }
 
+                // Debug: log the raw API response
+                console.log('API Response:', data);
+                if (data.games && data.games.length > 0) {
+                    console.log('First game data:', JSON.stringify(data.games[0], null, 2));
+                    if (data.games[0].pregame_prediction) {
+                        console.log('Pre-game prediction:', JSON.stringify(data.games[0].pregame_prediction, null, 2));
+                    }
+                    if (data.games[0].live_prediction) {
+                        console.log('Live prediction:', JSON.stringify(data.games[0].live_prediction, null, 2));
+                    }
+                }
+
                 displayGames(data.games);
                 updateLastUpdated(data.last_updated);
                 
