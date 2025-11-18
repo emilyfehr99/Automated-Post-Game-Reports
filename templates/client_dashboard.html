@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Dashboard - StrideSync Hockey</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='company_style.css') }}">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="StrideSync Hockey" class="logo-image">
+                <span class="logo-text">StrideSync Hockey</span>
+            </div>
+            <div class="header-right">
+                <span class="welcome-text">Welcome, {{ user_name }}</span>
+                <a href="{{ url_for('logout') }}" class="btn-secondary">Logout</a>
+                <button class="menu-toggle" id="menuToggle">☰</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Player Profile Banner -->
+    <div class="profile-banner">
+        <div class="profile-content">
+            <div class="profile-picture">
+                <div class="profile-avatar">AA</div>
+            </div>
+            <div class="profile-info">
+                <h1 class="player-name">{{ user_name }}</h1>
+                <p class="player-details">Northern Manitoba Blizzard • Center • #97</p>
+                <div class="player-stats">
+                    <div class="stat-item">
+                        <span class="stat-icon">🏒</span>
+                        <span class="stat-value" id="goals">2</span>
+                        <span class="stat-label">Goals</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-icon">➡️</span>
+                        <span class="stat-value" id="assists">22</span>
+                        <span class="stat-label">Assists</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-icon">➕</span>
+                        <span class="stat-value" id="points">24</span>
+                        <span class="stat-label">Points</span>
+                    </div>
+                    <div class="stat-item">
+                        <span class="stat-icon">⏱️</span>
+                        <span class="stat-value" id="toi">18:34</span>
+                        <span class="stat-label">TOI</span>
+                    </div>
+                </div>
+            </div>
+            <div class="session-info">
+                <div class="session-box">
+                    <p class="session-label">Last Session</p>
+                    <p class="session-date" id="lastSession">March 15, 2024</p>
+                    <span class="status-badge completed" id="lastStatus">Completed</span>
+                </div>
+                <div class="session-box">
+                    <p class="session-label">Next Session</p>
+                    <p class="session-date" id="nextSession">March 18, 2024</p>
+                    <span class="status-badge scheduled" id="nextStatus">Scheduled</span>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Main Dashboard Content -->
+    <div class="dashboard-container">
+        <!-- Left Column - Biomechanics Analysis -->
+        <div class="dashboard-left">
+            <section class="dashboard-section">
+                <div class="section-header">
+                    <span class="section-icon">🏃</span>
+                    <h2>Biomechanics Analysis</h2>
+                </div>
+                
+                <div class="biomechanics-chart-container">
+                    <canvas id="biomechanicsChart"></canvas>
+                </div>
+                
+                <div class="key-metrics">
+                    <div class="metric-item">
+                        <div class="metric-header">
+                            <span class="metric-name">Knee Flexion</span>
+                            <span class="metric-value" id="kneeFlexion">85°</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill green" style="width: 85%"></div>
+                        </div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-header">
+                            <span class="metric-name">Hip Extension</span>
+                            <span class="metric-value" id="hipExtension">72°</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill light-blue" style="width: 72%"></div>
+                        </div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-header">
+                            <span class="metric-name">Ankle Dorsiflexion</span>
+                            <span class="metric-value" id="ankleDorsiflexion">68°</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill orange" style="width: 68%"></div>
+                        </div>
+                    </div>
+                    <div class="metric-item">
+                        <div class="metric-header">
+                            <span class="metric-name">Stance Width</span>
+                            <span class="metric-value" id="stanceWidth">24"</span>
+                        </div>
+                        <div class="progress-bar">
+                            <div class="progress-fill dark-blue" style="width: 96%"></div>
+                        </div>
+                    </div>
+                </div>
+            </section>
+        </div>
+
+        <!-- Right Column -->
+        <div class="dashboard-right">
+            <!-- Performance Trends -->
+            <section class="dashboard-section">
+                <div class="section-header">
+                    <span class="section-icon">📈</span>
+                    <h2>Performance Trends</h2>
+                </div>
+                <div class="trends-list">
+                    <div class="trend-item positive">
+                        <span class="trend-label">Speed</span>
+                        <span class="trend-value" id="speedTrend">+8%</span>
+                    </div>
+                    <div class="trend-item positive">
+                        <span class="trend-label">Agility</span>
+                        <span class="trend-value" id="agilityTrend">+12%</span>
+                    </div>
+                    <div class="trend-item negative">
+                        <span class="trend-label">Recovery</span>
+                        <span class="trend-value" id="recoveryTrend">-3%</span>
+                    </div>
+                </div>
+            </section>
+
+            <!-- Quick Stats -->
+            <section class="dashboard-section">
+                <div class="section-header">
+                    <span class="section-icon">⚡</span>
+                    <h2>Quick Stats</h2>
+                </div>
+                <div class="quick-stats">
+                    <div class="quick-stat-item">
+                        <span class="quick-stat-label">Last Session</span>
+                        <span class="quick-stat-value" id="lastSessionScore">92/100</span>
+                    </div>
+                    <div class="quick-stat-item">
+                        <span class="quick-stat-label">This Week</span>
+                        <span class="quick-stat-value" id="sessionsThisWeek">3 sessions</span>
+                    </div>
+                    <div class="quick-stat-item">
+                        <span class="quick-stat-label">Goal Progress</span>
+                        <span class="quick-stat-value" id="goalProgress">78%</span>
+                    </div>
+                </div>
+            </section>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='company_script.js') }}"></script>
+    <script>
+        // Load dashboard data
+        fetch('/api/dashboard-data')
+            .then(response => response.json())
+            .then(data => {
+                // Update profile stats
+                document.getElementById('goals').textContent = data.goals;
+                document.getElementById('assists').textContent = data.assists;
+                document.getElementById('points').textContent = data.points;
+                document.getElementById('toi').textContent = data.toi;
+                document.getElementById('lastSession').textContent = data.last_session;
+                document.getElementById('nextSession').textContent = data.next_session;
+                
+                // Update biomechanics
+                document.getElementById('kneeFlexion').textContent = data.biomechanics.knee_flexion + '°';
+                document.getElementById('hipExtension').textContent = data.biomechanics.hip_extension + '°';
+                document.getElementById('ankleDorsiflexion').textContent = data.biomechanics.ankle_dorsiflexion + '°';
+                document.getElementById('stanceWidth').textContent = data.biomechanics.stance_width + '"';
+                
+                // Update progress bars
+                document.querySelector('#kneeFlexion').parentElement.nextElementSibling.querySelector('.progress-fill').style.width = data.biomechanics.knee_flexion + '%';
+                document.querySelector('#hipExtension').parentElement.nextElementSibling.querySelector('.progress-fill').style.width = data.biomechanics.hip_extension + '%';
+                document.querySelector('#ankleDorsiflexion').parentElement.nextElementSibling.querySelector('.progress-fill').style.width = data.biomechanics.ankle_dorsiflexion + '%';
+                document.querySelector('#stanceWidth').parentElement.nextElementSibling.querySelector('.progress-fill').style.width = (data.biomechanics.stance_width / 25 * 100) + '%';
+                
+                // Update trends
+                document.getElementById('speedTrend').textContent = (data.performance_trends.speed.positive ? '+' : '') + data.performance_trends.speed.change + '%';
+                document.getElementById('agilityTrend').textContent = (data.performance_trends.agility.positive ? '+' : '') + data.performance_trends.agility.change + '%';
+                document.getElementById('recoveryTrend').textContent = (data.performance_trends.recovery.positive ? '+' : '') + data.performance_trends.recovery.change + '%';
+                
+                // Update quick stats
+                document.getElementById('lastSessionScore').textContent = data.quick_stats.last_session_score + '/' + data.quick_stats.max_score;
+                document.getElementById('sessionsThisWeek').textContent = data.quick_stats.sessions_this_week + ' sessions';
+                document.getElementById('goalProgress').textContent = data.quick_stats.goal_progress + '%';
+                
+                // Create radar chart
+                const ctx = document.getElementById('biomechanicsChart').getContext('2d');
+                new Chart(ctx, {
+                    type: 'radar',
+                    data: {
+                        labels: ['Knee Flexion', 'Hip Extension', 'Ankle Dorsiflexion', 'Stance Width', 'Shoulder Angle', 'Elbow Angle', 'Spine Angle', 'Balance'],
+                        datasets: [{
+                            label: 'Current',
+                            data: [
+                                data.biomechanics.knee_flexion,
+                                data.biomechanics.hip_extension,
+                                data.biomechanics.ankle_dorsiflexion,
+                                (data.biomechanics.stance_width / 25 * 100),
+                                75, 80, 70, 85
+                            ],
+                            borderColor: '#2563eb',
+                            backgroundColor: 'rgba(37, 99, 235, 0.2)',
+                            borderWidth: 2
+                        }, {
+                            label: 'Previous',
+                            data: [78, 68, 65, 88, 72, 75, 68, 80],
+                            borderColor: '#f97316',
+                            backgroundColor: 'rgba(249, 115, 22, 0.1)',
+                            borderWidth: 2
+                        }]
+                    },
+                    options: {
+                        scales: {
+                            r: {
+                                beginAtZero: true,
+                                max: 100,
+                                ticks: {
+                                    stepSize: 20
+                                }
+                            }
+                        },
+                        plugins: {
+                            legend: {
+                                display: true,
+                                position: 'bottom'
+                            }
+                        }
+                    }
+                });
+            })
+            .catch(error => console.error('Error loading dashboard data:', error));
+    </script>
+</body>
+</html>
+

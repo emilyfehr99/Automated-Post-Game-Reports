@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Careers - StrideSync Hockey</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='company_style.css') }}">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="StrideSync Hockey" class="logo-image">
+                <span class="logo-text">StrideSync Hockey</span>
+            </div>
+            <nav class="main-nav">
+                <a href="{{ url_for('index') }}#home">Home</a>
+                <div class="nav-dropdown">
+                    <a href="{{ url_for('index') }}#services" class="dropdown-toggle">Services <span class="dropdown-arrow">▼</span></a>
+                    <div class="dropdown-menu">
+                        <a href="{{ url_for('service', service_name='remote-training') }}">Remote Training</a>
+                        <a href="{{ url_for('service', service_name='performance-tracking') }}">Performance Tracking</a>
+                        <a href="{{ url_for('service', service_name='assessments') }}">Assessments</a>
+                    </div>
+                </div>
+                <a href="{{ url_for('index') }}#about">About</a>
+                <a href="{{ url_for('careers') }}">Careers</a>
+                <a href="{{ url_for('resources') }}">Resources</a>
+                <a href="{{ url_for('index') }}#contact">Contact</a>
+            </nav>
+            <div class="header-right">
+                <a href="{{ url_for('login') }}" class="btn-secondary">Client Portal</a>
+                <button class="menu-toggle" id="menuToggle">☰</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Careers Hero -->
+    <section class="service-hero">
+        <div class="container">
+            <div class="service-hero-content">
+                <div class="service-icon-large">🚀</div>
+                <h1>Join Our Team</h1>
+                <p class="service-description-large">Build the future of hockey performance with cutting-edge technology and data science</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Why Work Here -->
+    <section class="careers-why-section">
+        <div class="container">
+            <h2 class="section-title">Why StrideSync?</h2>
+            <div class="careers-grid">
+                <div class="career-benefit-card">
+                    <div class="benefit-icon">💡</div>
+                    <h3>Innovation First</h3>
+                    <p>Work with cutting-edge technology and push the boundaries of sports science</p>
+                </div>
+                <div class="career-benefit-card">
+                    <div class="benefit-icon">🌍</div>
+                    <h3>Remote Friendly</h3>
+                    <p>Flexible work arrangements with remote and hybrid options</p>
+                </div>
+                <div class="career-benefit-card">
+                    <div class="benefit-icon">📈</div>
+                    <h3>Growth Opportunities</h3>
+                    <p>Continuous learning and professional development programs</p>
+                </div>
+                <div class="career-benefit-card">
+                    <div class="benefit-icon">🤝</div>
+                    <h3>Collaborative Culture</h3>
+                    <p>Work with passionate experts in sports science and technology</p>
+                </div>
+                <div class="career-benefit-card">
+                    <div class="benefit-icon">⚡</div>
+                    <h3>Impact</h3>
+                    <p>Make a real difference in athletes' performance and careers</p>
+                </div>
+                <div class="career-benefit-card">
+                    <div class="benefit-icon">🎯</div>
+                    <h3>Mission-Driven</h3>
+                    <p>Be part of revolutionizing hockey performance through data</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Open Positions -->
+    <section class="careers-positions-section">
+        <div class="container">
+            <h2 class="section-title">Open Positions</h2>
+            <div class="positions-list">
+                <div class="position-card">
+                    <div class="position-header">
+                        <div>
+                            <h3>Senior Biomechanics Analyst</h3>
+                            <p class="position-location">Remote • Full-time</p>
+                        </div>
+                        <span class="position-type">Full-time</span>
+                    </div>
+                    <p class="position-description">Lead biomechanical analysis projects, develop analysis protocols, and work directly with elite athletes to optimize performance.</p>
+                    <div class="position-tags">
+                        <span class="tag">Biomechanics</span>
+                        <span class="tag">Data Analysis</span>
+                        <span class="tag">Sports Science</span>
+                    </div>
+                    <a href="#contact" class="btn-primary">Apply Now</a>
+                </div>
+                <div class="position-card">
+                    <div class="position-header">
+                        <div>
+                            <h3>Software Engineer</h3>
+                            <p class="position-location">Remote • Full-time</p>
+                        </div>
+                        <span class="position-type">Full-time</span>
+                    </div>
+                    <p class="position-description">Build and maintain our performance tracking platform, develop APIs, and create tools for data visualization.</p>
+                    <div class="position-tags">
+                        <span class="tag">Python</span>
+                        <span class="tag">React</span>
+                        <span class="tag">API Development</span>
+                    </div>
+                    <a href="#contact" class="btn-primary">Apply Now</a>
+                </div>
+                <div class="position-card">
+                    <div class="position-header">
+                        <div>
+                            <h3>Performance Coach</h3>
+                            <p class="position-location">St. Catharines, ON • Full-time</p>
+                        </div>
+                        <span class="position-type">Full-time</span>
+                    </div>
+                    <p class="position-description">Work directly with athletes, implement training programs based on biomechanical data, and provide personalized coaching.</p>
+                    <div class="position-tags">
+                        <span class="tag">Coaching</span>
+                        <span class="tag">Training</span>
+                        <span class="tag">Athlete Development</span>
+                    </div>
+                    <a href="#contact" class="btn-primary">Apply Now</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- CTA Section -->
+    <section class="service-cta-section">
+        <div class="container">
+            <div class="service-cta-content">
+                <h2>Don't See a Fit?</h2>
+                <p>We're always looking for talented individuals. Send us your resume and let's start a conversation.</p>
+                <div class="service-cta-buttons">
+                    <a href="{{ url_for('index') }}#contact" class="btn-primary btn-large">Contact Us</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <img src="{{ url_for('static', filename='logo.png') }}" alt="StrideSync Hockey" class="logo-image">
+                        <span class="logo-text">StrideSync Hockey</span>
+                    </div>
+                    <p>Elite hockey performance through data-driven biomechanics analysis.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="{{ url_for('index') }}#home">Home</a></li>
+                        <li><a href="{{ url_for('index') }}#services">Services</a></li>
+                        <li><a href="{{ url_for('index') }}#about">About</a></li>
+                        <li><a href="{{ url_for('careers') }}">Careers</a></li>
+                        <li><a href="{{ url_for('resources') }}">Resources</a></li>
+                        <li><a href="{{ url_for('index') }}#contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Services</h4>
+                    <ul>
+                        <li><a href="{{ url_for('service', service_name='remote-training') }}">Remote Training</a></li>
+                        <li><a href="{{ url_for('service', service_name='performance-tracking') }}">Performance Tracking</a></li>
+                        <li><a href="{{ url_for('service', service_name='assessments') }}">Assessments</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <ul>
+                        <li>43 Church Street</li>
+                        <li>St Catharines, ON L2R 7E1</li>
+                        <li>Phone: (780) 555-0123</li>
+                        <li>Email: info@stridesync.com</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 StrideSync Hockey. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='company_script.js') }}"></script>
+</body>
+</html>
+
