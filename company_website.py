@@ -7,14 +7,21 @@ from flask import Flask, render_template, request, redirect, url_for, session, j
 from functools import wraps
 import os
 from datetime import datetime
+import urllib.parse
+import socket
+import subprocess
+import threading
+import time
 
 app = Flask(__name__)
 app.secret_key = os.environ.get('SECRET_KEY', 'your-secret-key-change-in-production')
+app.config['STRIDESYNC_DASHBOARD_URL'] = os.environ.get('STRIDESYNC_DASHBOARD_URL', 'http://localhost:8080/')
 
 # Simple user database (in production, use a real database)
 USERS = {
-    'client1@example.com': {'password': 'password123', 'name': 'Alexander Andre', 'role': 'client'},
+    'demo@stridesync.com': {'password': 'Str1deDemo!', 'name': 'StrideSync Demo', 'role': 'client'},
     'admin@example.com': {'password': 'admin123', 'name': 'Admin User', 'role': 'admin'},
+    'alexander@stridesync.com': {'password': 'password123', 'name': 'Alexander Andre', 'role': 'client'},
 }
 
 def login_required(f):
@@ -31,6 +38,52 @@ def index():
     """Landing/About page"""
     return render_template('company_index.html')
 
+def check_dashboard_running(url):
+    """Check if dashboard is accessible"""
+    try:
+        # Try to connect to the port
+        parsed = urllib.parse.urlparse(url)
+        host = parsed.hostname or 'localhost'
+        port = parsed.port or 8080
+        sock = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        sock.settimeout(1)
+        result = sock.connect_ex((host, port))
+        sock.close()
+        return result == 0
+    except:
+        return False
+
+def start_dashboard_background():
+    """Start the dashboard in the background"""
+    dashboard_dir = os.path.join(os.path.dirname(__file__), 'biomechanical_dashboard')
+    run_script = os.path.join(dashboard_dir, 'run.py')
+    
+    if not os.path.exists(run_script):
+        return False
+    
+    try:
+        # Kill any existing dashboard processes first
+        subprocess.run(['pkill', '-f', 'biomechanical_dashboard'], stderr=subprocess.DEVNULL)
+        subprocess.run(['pkill', '-f', 'run.py'], stderr=subprocess.DEVNULL)
+        time.sleep(2)  # Wait for processes to fully terminate
+        
+        # Start dashboard in background with environment variable to help with MediaPipe
+        env = os.environ.copy()
+        env['GLOG_minloglevel'] = '2'  # Reduce MediaPipe logging
+        
+        subprocess.Popen(
+            ['python3', run_script, '--port', '8080'],
+            cwd=dashboard_dir,
+            stdout=subprocess.DEVNULL,
+            stderr=subprocess.DEVNULL,
+            start_new_session=True,
+            env=env
+        )
+        return True
+    except Exception as e:
+        print(f"Error starting dashboard: {e}")
+        return False
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     """Login page"""
@@ -42,11 +95,20 @@ def login():
             session['user_email'] = email
             session['user_name'] = USERS[email]['name']
             session['user_role'] = USERS[email]['role']
+            
+            # Redirect to the client portal dashboard
             return redirect(url_for('dashboard'))
         else:
             return render_template('login.html', error='Invalid email or password')
     
     return render_template('login.html')
+
+@app.route('/dashboard-start')
+@login_required
+def dashboard_start():
+    """Page with instructions to start the dashboard"""
+    user_name = session.get('user_name', 'User')
+    return render_template('dashboard_start.html', user_name=user_name)
 
 @app.route('/logout')
 def logout():
@@ -54,12 +116,19 @@ def logout():
     session.clear()
     return redirect(url_for('index'))
 
+@app.route('/client-about')
+@login_required
+def client_about():
+    """Client portal About page"""
+    user_name = session.get('user_name', 'User')
+    return render_template('client_about.html', user_name=user_name)
+
 @app.route('/dashboard')
 @login_required
 def dashboard():
-    """Client dashboard"""
+    """Client dashboard - original portal"""
     user_name = session.get('user_name', 'User')
-    return render_template('client_dashboard.html', user_name=user_name)
+    return render_template('original_client_portal.html', user_name=user_name)
 
 @app.route('/service/<service_name>')
 def service(service_name):

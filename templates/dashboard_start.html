@@ -1,0 +1,71 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Start Dashboard - StrideSync Hockey</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='company_style.css') }}">
+    <style>
+        .dashboard-start-container {
+            max-width: 800px;
+            margin: 100px auto;
+            padding: 40px;
+            background: white;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.1);
+        }
+        .instructions {
+            background: #f8f9fa;
+            padding: 20px;
+            border-radius: 8px;
+            margin: 20px 0;
+            border-left: 4px solid #0066cc;
+        }
+        .code-block {
+            background: #1e1e1e;
+            color: #d4d4d4;
+            padding: 15px;
+            border-radius: 6px;
+            font-family: 'Courier New', monospace;
+            margin: 10px 0;
+            overflow-x: auto;
+        }
+        .btn-primary {
+            display: inline-block;
+            padding: 12px 24px;
+            background: #0066cc;
+            color: white;
+            text-decoration: none;
+            border-radius: 6px;
+            margin-top: 20px;
+        }
+        .btn-primary:hover {
+            background: #0052a3;
+        }
+    </style>
+</head>
+<body>
+    <div class="dashboard-start-container">
+        <h1>🚀 Start StrideSync Dashboard</h1>
+        <p>Welcome, {{ user_name }}! To access your dashboard, please start the StrideSync application.</p>
+        
+        <div class="instructions">
+            <h3>📋 Instructions:</h3>
+            <ol>
+                <li>Open a terminal window</li>
+                <li>Navigate to the dashboard directory:
+                    <div class="code-block">cd /Users/emilyfehr8/CascadeProjects/biomechanical_dashboard</div>
+                </li>
+                <li>Start the dashboard:
+                    <div class="code-block">python3 run.py --port 8080</div>
+                </li>
+                <li>Once started, click the button below to access your dashboard</li>
+            </ol>
+        </div>
+        
+        <a href="http://localhost:8080" class="btn-primary" target="_blank">Open Dashboard</a>
+        <a href="{{ url_for('logout') }}" style="margin-left: 10px; color: #666;">Logout</a>
+    </div>
+</body>
+</html>
+

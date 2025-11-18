@@ -1,0 +1,144 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - StrideSync Hockey</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='company_style.css') }}">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="StrideSync Hockey" class="logo-image">
+                <span class="logo-text">StrideSync Hockey</span>
+            </div>
+            <nav class="main-nav">
+                <a href="{{ url_for('client_about') }}">About</a>
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            </nav>
+            <div class="header-right">
+                <span class="welcome-text">Welcome, {{ user_name }}</span>
+                <a href="{{ url_for('logout') }}" class="btn-secondary">Logout</a>
+                <button class="menu-toggle" id="menuToggle">☰</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Main Container -->
+    <div class="main-container">
+        <div class="content-wrapper">
+            <!-- Left Column -->
+            <div class="content-left">
+                <!-- About StrideSync Hockey Section -->
+                <section class="about-section">
+                    <div class="section-header">
+                        <div class="icon-circle white">
+                            <span>i</span>
+                        </div>
+                        <div>
+                            <h1>About StrideSync Hockey</h1>
+                            <p class="subtitle">Revolutionizing hockey performance through data-driven biomechanics analysis</p>
+                        </div>
+                    </div>
+                </section>
+
+                <!-- Our Mission Section -->
+                <section class="mission-section">
+                    <div class="section-header blue-bar">
+                        <span class="section-icon">🚀</span>
+                        <h2>Our Mission</h2>
+                    </div>
+                    <div class="section-content">
+                        <p>At StrideSync, we aim to challenge traditional methods compared to following normalized processes & systems. Hockey has long been behind the curve when it comes to using science, data, and research. We aim to shrink this gap for the purpose of creating elite impactful hockey players. We take shape as a company like a consulting firm. This style prioritizes constant evaluation of our own leadership, employees, along with identifying how we can improve so keeping an eye on trends, new research, and much more. Like our clients, we're in pursuit of excellence and mastery.</p>
+                    </div>
+                </section>
+
+                <!-- Our Principles Section -->
+                <section class="principles-section">
+                    <h2 class="section-title">Our Principles</h2>
+                    <div class="principles-list">
+                        <div class="principle-item">
+                            <div class="principle-number">1</div>
+                            <div class="principle-text">Objective > Subjective</div>
+                        </div>
+                        <div class="principle-item">
+                            <div class="principle-number">2</div>
+                            <div class="principle-text">Objective Data + Efficiency + Optimization = StrideSync</div>
+                        </div>
+                        <div class="principle-item">
+                            <div class="principle-number">3</div>
+                            <div class="principle-text">Precision over Tradition</div>
+                        </div>
+                    </div>
+                </section>
+            </div>
+
+            <!-- Right Column - Sidebar -->
+            <div class="sidebar">
+                <!-- Why Choose StrideSync Section -->
+                <section class="why-choose-section">
+                    <div class="section-header blue-bar">
+                        <span class="section-icon">⭐</span>
+                        <h2>Why Choose StrideSync</h2>
+                    </div>
+                    <ul class="benefits-list">
+                        <li>
+                            <span class="checkmark">✓</span>
+                            <span>Proven track record with players at all levels</span>
+                        </li>
+                        <li>
+                            <span class="checkmark">✓</span>
+                            <span>State-of-the-art biomechanical analysis</span>
+                        </li>
+                        <li>
+                            <span class="checkmark">✓</span>
+                            <span>Personalized approach to every player</span>
+                        </li>
+                        <li>
+                            <span class="checkmark">✓</span>
+                            <span>Continuous innovation and technology updates</span>
+                        </li>
+                        <li>
+                            <span class="checkmark">✓</span>
+                            <span>Expert team of sports scientists</span>
+                        </li>
+                        <li>
+                            <span class="checkmark">✓</span>
+                            <span>Comprehensive injury prevention focus</span>
+                        </li>
+                    </ul>
+                </section>
+
+                <!-- Location Section -->
+                <section class="location-section">
+                    <div class="section-header blue-bar">
+                        <span class="section-icon">📍</span>
+                        <h2>Location</h2>
+                    </div>
+                    <div class="location-content">
+                        <div class="location-name">StrideSync Hockey Training Center</div>
+                        <p>43 Church Street</p>
+                        <p>St Catharines, ON L2R 7E1</p>
+                        <p>Canada</p>
+                        <div class="contact-info">
+                            <p>
+                                <span class="contact-icon">📞</span>
+                                <span>(780) 555-0123</span>
+                            </p>
+                            <p>
+                                <span class="contact-icon">✉️</span>
+                                <span>info@stridesync.com</span>
+                            </p>
+                        </div>
+                    </div>
+                </section>
+            </div>
+        </div>
+    </div>
+
+    <script src="{{ url_for('static', filename='company_script.js') }}"></script>
+</body>
+</html>
+

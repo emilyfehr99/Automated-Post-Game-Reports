@@ -15,6 +15,10 @@
                 <img src="{{ url_for('static', filename='logo.png') }}" alt="StrideSync Hockey" class="logo-image">
                 <span class="logo-text">StrideSync Hockey</span>
             </div>
+            <nav class="main-nav">
+                <a href="{{ url_for('client_about') }}">About</a>
+                <a href="{{ url_for('dashboard') }}">Dashboard</a>
+            </nav>
             <div class="header-right">
                 <span class="welcome-text">Welcome, {{ user_name }}</span>
                 <a href="{{ url_for('logout') }}" class="btn-secondary">Logout</a>
@@ -27,7 +31,10 @@
     <div class="profile-banner">
         <div class="profile-content">
             <div class="profile-picture">
-                <div class="profile-avatar">AA</div>
+                {% if user_name == 'Alexander Andre' %}
+                <img src="{{ url_for('static', filename='alexander_andre.png') }}" alt="Alexander Andre" class="profile-image" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                {% endif %}
+                <div class="profile-avatar" {% if user_name == 'Alexander Andre' %}style="display: none;"{% endif %}>AA</div>
             </div>
             <div class="profile-info">
                 <h1 class="player-name">{{ user_name }}</h1>
