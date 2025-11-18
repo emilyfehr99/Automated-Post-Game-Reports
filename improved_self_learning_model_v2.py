@@ -686,13 +686,13 @@ class ImprovedSelfLearningModelV2:
                 standings = response.json()
                 if standings and 'standings' in standings:
                     for team_data in standings['standings']:
-                    team_abbrev_obj = team_data.get('teamAbbrev', {})
-                    if isinstance(team_abbrev_obj, dict):
-                        abbrev = team_abbrev_obj.get('default', '')
-                    else:
-                        abbrev = str(team_abbrev_obj) if team_abbrev_obj else ''
-                    
-                    if abbrev.upper() == team_key:
+                        team_abbrev_obj = team_data.get('teamAbbrev', {})
+                        if isinstance(team_abbrev_obj, dict):
+                            abbrev = team_abbrev_obj.get('default', '')
+                        else:
+                            abbrev = str(team_abbrev_obj) if team_abbrev_obj else ''
+                        
+                        if abbrev.upper() == team_key:
                         # Use standings data to estimate performance
                         wins = team_data.get('wins', 0)
                         losses = team_data.get('losses', 0)
