@@ -23,7 +23,6 @@ window.openSidebarNow = openSidebarNow;
 // Close sidebar when clicking overlay
 document.addEventListener('DOMContentLoaded', function() {
     const overlay = document.getElementById('sidebarOverlay');
-    const sidebarClose = document.getElementById('sidebarClose');
     const sidebarToggle = document.getElementById('sidebarToggle');
     
     if (sidebarToggle) {
@@ -35,10 +34,6 @@ document.addEventListener('DOMContentLoaded', function() {
     
     if (overlay) {
         overlay.addEventListener('click', closeSidebar);
-    }
-    
-    if (sidebarClose) {
-        sidebarClose.addEventListener('click', closeSidebar);
     }
     
     // Handle navigation links

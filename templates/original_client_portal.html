@@ -46,11 +46,10 @@
         <!-- Sidebar -->
         <div class="sidebar" id="sidebar">
             <div class="sidebar-header">
-                <img src="{{ url_for('static', filename='logo.png') }}" alt="StrideSync Logo" class="sidebar-logo">
+                <div class="sidebar-logo-circle">
+                    <img src="{{ url_for('static', filename='logo.png') }}" alt="StrideSync Logo" class="sidebar-logo">
+                </div>
                 <h5>StrideSync Hockey</h5>
-                <button class="btn-close" id="sidebarClose">
-                    <i class="fas fa-times"></i>
-                </button>
             </div>
             <div class="sidebar-content">
                 <ul class="nav flex-column">
@@ -88,9 +87,6 @@
                         <!-- About StrideSync Hockey Section (Blue Background) -->
                         <section class="about-header-section">
                             <div class="about-header-content">
-                                <div class="icon-circle-white">
-                                    <span>i</span>
-                                </div>
                                 <div class="about-header-text">
                                     <h1>About StrideSync Hockey</h1>
                                     <p class="subtitle">Revolutionizing hockey performance through data-driven biomechanics analysis</p>
@@ -523,9 +519,6 @@
                     <!-- Resources Header Section (Blue Background) -->
                     <section class="about-header-section">
                         <div class="about-header-content">
-                            <div class="icon-circle-white">
-                                <i class="fas fa-book"></i>
-                            </div>
                             <div class="about-header-text">
                                 <h1>Resources</h1>
                                 <p class="subtitle">Training materials, guides, and tools to enhance your performance</p>
@@ -651,9 +644,9 @@
                                 <div class="resource-item-small">
                                     <i class="fas fa-trophy"></i>
                                     <span>Goal Setting Tool</span>
-                                </div>
                             </div>
                         </div>
+                    </div>
                     </section>
                 </div>
             </div>
