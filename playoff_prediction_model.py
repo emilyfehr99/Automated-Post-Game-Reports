@@ -118,6 +118,7 @@ class PlayoffPredictionModel:
     def predict_game_outcome(self, away_team: str, home_team: str, game_date: str, game_id: Optional[str] = None) -> Dict:
         """
         Predict a single game using the full prediction model
+        Incorporates recent form from post-game reports to adjust probabilities
         Returns dict with 'away_prob', 'home_prob', and 'predicted_winner'
         """
         try:
@@ -153,22 +154,61 @@ class PlayoffPredictionModel:
                     away_prob = 0.5
                     home_prob = 0.5
                 
+                # Apply recent form adjustments to probabilities
+                # This uses data from post-game reports to reflect current team strength
+                away_form = self.get_recent_team_form(away_team, num_games=10)
+                home_form = self.get_recent_team_form(home_team, num_games=10)
+                
+                # Calculate form difference (how much better one team is playing recently)
+                form_diff = away_form['form_score'] - home_form['form_score']
+                
+                # Apply form adjustment (max 10% swing based on recent form)
+                form_adjustment_strength = 0.10
+                form_adjustment = form_diff * form_adjustment_strength
+                
+                # Adjust probabilities: better recent form increases win probability
+                away_prob_adjusted = away_prob + form_adjustment
+                home_prob_adjusted = home_prob - form_adjustment
+                
+                # Normalize to ensure they sum to 1.0
+                total_adjusted = away_prob_adjusted + home_prob_adjusted
+                if total_adjusted > 0:
+                    away_prob_final = away_prob_adjusted / total_adjusted
+                    home_prob_final = home_prob_adjusted / total_adjusted
+                else:
+                    away_prob_final = 0.5
+                    home_prob_final = 0.5
+                
+                # Clamp to valid range
+                away_prob_final = max(0.1, min(0.9, away_prob_final))
+                home_prob_final = max(0.1, min(0.9, home_prob_final))
+                
+                # Renormalize after clamping
+                total_final = away_prob_final + home_prob_final
+                if total_final > 0:
+                    away_prob_final = away_prob_final / total_final
+                    home_prob_final = home_prob_final / total_final
+                
                 # Calculate confidence based on how far from 50/50
-                # Confidence = distance from 0.5, scaled to 0-1, then to percentage
-                max_prob = max(away_prob, home_prob)
+                max_prob = max(away_prob_final, home_prob_final)
                 confidence = abs(max_prob - 0.5) * 2  # 0 to 1 scale
                 confidence_pct = confidence * 100  # Convert to percentage
                 
-                predicted_winner = home_team if home_prob > away_prob else away_team
+                predicted_winner = home_team if home_prob_final > away_prob_final else away_team
                 
                 return {
-                    'away_prob': away_prob,
-                    'home_prob': home_prob,
+                    'away_prob': away_prob_final,
+                    'home_prob': home_prob_final,
                     'predicted_winner': predicted_winner,
-                    'confidence': confidence_pct
+                    'confidence': confidence_pct,
+                    'form_adjustment': form_adjustment,
+                    'away_form_score': away_form['form_score'],
+                    'home_form_score': home_form['form_score']
                 }
         except Exception as e:
             print(f"Error predicting {away_team} @ {home_team}: {e}")
+            import traceback
+            traceback.print_exc()
         
         # Fallback to 50/50 if prediction fails
         return {
@@ -406,27 +446,192 @@ class PlayoffPredictionModel:
                 remaining_game_counts[away] = remaining_game_counts.get(away, 0) + 1
                 remaining_game_counts[home] = remaining_game_counts.get(home, 0) + 1
         
-        # Debug: show playoff counts
-        print(f"\nPlayoff counts (sample):")
+        # Get recent form for all teams to adjust probabilities
+        print("\nCalculating recent form for all teams...")
+        team_forms = {}
+        for team in team_records.keys():
+            form = self.get_recent_team_form(team, num_games=10)
+            team_forms[team] = form
+            if form['recent_games'] > 0:
+                print(f"  {team}: {form['recent_wins']}/{form['recent_games']} wins ({form['win_pct']*100:.1f}%), form_score={form['form_score']:.3f}")
+        
+        # Debug: show playoff counts before form adjustment
+        print(f"\nPlayoff counts (before form adjustment):")
         sample_counts = sorted(playoff_counts.items(), key=lambda x: x[1], reverse=True)[:10]
         for team, count in sample_counts:
             print(f"  {team}: {count}/{num_simulations} ({count/num_simulations*100:.1f}%)")
         
+        # Apply recent form adjustments to probabilities
+        # Teams with better recent form get a boost, teams with worse form get a penalty
+        form_adjustment_strength = 0.15  # Maximum 15% adjustment based on recent form
+        
         for team, count in playoff_counts.items():
-            prob = count / num_simulations
+            base_prob = count / num_simulations
+            form = team_forms.get(team, {'form_score': 0.5})
+            
+            # Calculate adjustment: form_score of 0.5 = no change, >0.5 = boost, <0.5 = penalty
+            # Scale from -1 to +1, then multiply by adjustment strength
+            form_adjustment = (form['form_score'] - 0.5) * 2  # -1 to +1
+            adjusted_prob = base_prob + (form_adjustment * form_adjustment_strength)
+            
+            # Clamp probability to valid range [0, 1]
+            adjusted_prob = max(0.0, min(1.0, adjusted_prob))
+            
             record = team_records.get(team, {})
             playoff_probs[team] = {
-                'playoff_probability': prob,
+                'playoff_probability': adjusted_prob,
                 'current_points': record.get('points', 0),
                 'games_played': record.get('games_played', 0),
                 'remaining_games': remaining_game_counts.get(team, 0),
                 'conference': record.get('conference', ''),
                 'wins': record.get('wins', 0),
                 'losses': record.get('losses', 0),
-                'ot_losses': record.get('ot_losses', 0)
+                'ot_losses': record.get('ot_losses', 0),
+                'recent_form': {
+                    'form_score': form['form_score'],
+                    'recent_wins': form['recent_wins'],
+                    'recent_games': form['recent_games'],
+                    'win_pct': form.get('win_pct', 0.0)
+                },
+                'base_probability': base_prob,
+                'form_adjustment': form_adjustment * form_adjustment_strength
             }
         
+        # Debug: show adjusted probabilities
+        print(f"\nAdjusted playoff probabilities (sample):")
+        sample_probs = sorted(playoff_probs.items(), key=lambda x: x[1]['playoff_probability'], reverse=True)[:10]
+        for team, data in sample_probs:
+            base = data['base_probability']
+            adjusted = data['playoff_probability']
+            form_adj = data['form_adjustment']
+            print(f"  {team}: {base*100:.1f}% -> {adjusted*100:.1f}% (form adj: {form_adj*100:+.1f}%)")
+        
         return playoff_probs
+    
+    def get_recent_team_form(self, team_abbrev: str, num_games: int = 10) -> Dict:
+        """
+        Get recent team form from completed games using NHL API
+        Returns recent performance metrics to adjust playoff probabilities
+        """
+        try:
+            import requests
+            # Get team's recent games from NHL API
+            # First, get team ID from abbreviation
+            team_id_map = self._get_team_id_map()
+            team_id = team_id_map.get(team_abbrev.upper())
+            
+            if not team_id:
+                return {'form_score': 0.5, 'recent_wins': 0, 'recent_games': 0, 'xg_trend': 0.0}
+            
+            # Get recent completed games for this team
+            recent_games = []
+            today = datetime.now(pytz.timezone('US/Central'))
+            
+            # Look back 30 days to find recent games
+            for days_back in range(30):
+                date = today - timedelta(days=days_back)
+                date_str = date.strftime('%Y-%m-%d')
+                
+                try:
+                    schedule = self.api.get_game_schedule(date_str)
+                    if schedule and 'gameWeek' in schedule:
+                        for day in schedule.get('gameWeek', []):
+                            if day.get('date') != date_str:
+                                continue
+                            for game in day.get('games', []):
+                                game_state = game.get('gameState', '')
+                                # Only completed games
+                                if game_state not in ['OFF', 'FINAL']:
+                                    continue
+                                
+                                away_team_obj = game.get('awayTeam', {})
+                                home_team_obj = game.get('homeTeam', {})
+                                
+                                away_id = away_team_obj.get('id') if isinstance(away_team_obj, dict) else None
+                                home_id = home_team_obj.get('id') if isinstance(home_team_obj, dict) else None
+                                
+                                # Check if this team played in this game
+                                if away_id == team_id or home_id == team_id:
+                                    # Get game result
+                                    away_score = away_team_obj.get('score', 0) if isinstance(away_team_obj, dict) else 0
+                                    home_score = home_team_obj.get('score', 0) if isinstance(home_team_obj, dict) else 0
+                                    
+                                    # Determine if team won
+                                    team_won = (away_id == team_id and away_score > home_score) or \
+                                              (home_id == team_id and home_score > away_score)
+                                    
+                                    recent_games.append({
+                                        'date': date_str,
+                                        'won': team_won,
+                                        'team_score': away_score if away_id == team_id else home_score,
+                                        'opp_score': home_score if away_id == team_id else away_score,
+                                        'was_home': home_id == team_id
+                                    })
+                                    
+                                    if len(recent_games) >= num_games:
+                                        break
+                except Exception as e:
+                    continue
+                
+                if len(recent_games) >= num_games:
+                    break
+            
+            if len(recent_games) == 0:
+                return {'form_score': 0.5, 'recent_wins': 0, 'recent_games': 0, 'xg_trend': 0.0}
+            
+            # Calculate recent form metrics
+            recent_wins = sum(1 for g in recent_games if g['won'])
+            win_pct = recent_wins / len(recent_games)
+            
+            # Get xG trends from team stats if available
+            xg_trend = 0.0
+            if self.team_stats and 'teams' in self.team_stats:
+                team_data = self.team_stats['teams'].get(team_abbrev.upper(), {})
+                if team_data:
+                    # Compare recent xG to season average
+                    recent_xg = team_data.get('xg_avg', 0)
+                    # NHL average is around 2.8, so normalize
+                    xg_trend = (recent_xg - 2.8) / 1.0  # Normalize around league average
+            
+            # Calculate form score (0-1 scale, 0.5 = average)
+            # Win percentage contributes 70%, xG trend contributes 30%
+            form_score = (win_pct * 0.7) + (0.5 + min(0.2, max(-0.2, xg_trend * 0.1)) * 0.3)
+            form_score = max(0.0, min(1.0, form_score))
+            
+            return {
+                'form_score': form_score,
+                'recent_wins': recent_wins,
+                'recent_games': len(recent_games),
+                'win_pct': win_pct,
+                'xg_trend': xg_trend
+            }
+        except Exception as e:
+            print(f"Error getting recent form for {team_abbrev}: {e}")
+            return {'form_score': 0.5, 'recent_wins': 0, 'recent_games': 0, 'xg_trend': 0.0}
+    
+    def _get_team_id_map(self) -> Dict[str, int]:
+        """Get mapping of team abbreviations to team IDs"""
+        try:
+            import requests
+            url = 'https://api-web.nhle.com/v1/standings/now'
+            response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
+            if response.status_code == 200:
+                data = response.json()
+                team_map = {}
+                for team_data in data.get('standings', []):
+                    team_abbrev_obj = team_data.get('teamAbbrev', {})
+                    if isinstance(team_abbrev_obj, dict):
+                        team_abbrev = team_abbrev_obj.get('default', '')
+                    else:
+                        team_abbrev = str(team_abbrev_obj) if team_abbrev_obj else ''
+                    
+                    team_id = team_data.get('teamId')
+                    if team_abbrev and team_id:
+                        team_map[team_abbrev.upper()] = team_id
+                return team_map
+        except Exception as e:
+            print(f"Error getting team ID map: {e}")
+        return {}
     
     def _estimate_team_strength(self, team_abbrev: str) -> float:
         """Estimate team strength (0-1 scale) based on current stats"""
