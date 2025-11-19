@@ -240,12 +240,21 @@ class PlayoffPredictionModel:
             away_prob_norm = 0.5
             home_prob_norm = 0.5
         
-        # Add some variance to prevent deterministic outcomes
-        # Even strong favorites can lose sometimes
-        variance = 0.05  # 5% chance of upset regardless of prediction
+        # Add more variance to prevent deterministic outcomes
+        # Even strong favorites can lose sometimes - increase variance for more realistic simulations
+        variance = 0.12  # 12% chance of upset regardless of prediction (increased from 5%)
         if random.random() < variance:
             # Upset: flip the probabilities
             away_prob_norm, home_prob_norm = home_prob_norm, away_prob_norm
+        
+        # Add additional randomness based on probability spread
+        # If probabilities are very lopsided, add more variance
+        prob_spread = abs(away_prob_norm - home_prob_norm)
+        if prob_spread > 0.3:  # If one team is heavily favored
+            # Add extra variance (5-15% chance of additional upset)
+            extra_variance = 0.05 + (prob_spread - 0.3) * 0.2
+            if random.random() < extra_variance:
+                away_prob_norm, home_prob_norm = home_prob_norm, away_prob_norm
         
         # Determine winner (with OT probability ~20% of games)
         if rand < away_prob_norm:
@@ -463,19 +472,61 @@ class PlayoffPredictionModel:
         
         # Apply recent form adjustments to probabilities
         # Teams with better recent form get a boost, teams with worse form get a penalty
-        form_adjustment_strength = 0.15  # Maximum 15% adjustment based on recent form
+        # Use stronger adjustment and also factor in remaining games
+        num_remaining_games_total = len(games_to_predict)
+        remaining_games_factor = min(1.0, num_remaining_games_total / 200.0)  # Scale based on games left
+        
+        # Stronger form adjustment - up to 30% for teams with many games remaining
+        base_form_adjustment_strength = 0.25  # Base 25% adjustment
+        form_adjustment_strength = base_form_adjustment_strength * remaining_games_factor
+        
+        print(f"\nApplying form adjustments (strength: {form_adjustment_strength*100:.1f}%, remaining games factor: {remaining_games_factor:.2f})")
         
         for team, count in playoff_counts.items():
             base_prob = count / num_simulations
             form = team_forms.get(team, {'form_score': 0.5})
+            remaining_games = remaining_game_counts.get(team, 0)
             
             # Calculate adjustment: form_score of 0.5 = no change, >0.5 = boost, <0.5 = penalty
             # Scale from -1 to +1, then multiply by adjustment strength
             form_adjustment = (form['form_score'] - 0.5) * 2  # -1 to +1
-            adjusted_prob = base_prob + (form_adjustment * form_adjustment_strength)
+            
+            # Apply stronger adjustment for teams with more remaining games
+            # Teams with many games left have more opportunity to change their fate
+            remaining_games_weight = min(1.0, remaining_games / 20.0)  # Max weight at 20+ games
+            effective_adjustment = form_adjustment * form_adjustment_strength * (0.5 + 0.5 * remaining_games_weight)
+            
+            adjusted_prob = base_prob + effective_adjustment
+            
+            # Add additional uncertainty based on remaining games
+            # More games remaining = more uncertainty = probabilities spread out more
+            if remaining_games > 10:
+                # For teams with many games left, add more variance
+                uncertainty_factor = min(0.15, remaining_games / 100.0)
+                # Pull probabilities toward 50% slightly (adds uncertainty)
+                if base_prob > 0.7:
+                    adjusted_prob = adjusted_prob * (1.0 - uncertainty_factor) + 0.5 * uncertainty_factor
+                elif base_prob < 0.3:
+                    adjusted_prob = adjusted_prob * (1.0 - uncertainty_factor) + 0.5 * uncertainty_factor
             
             # Clamp probability to valid range [0, 1]
             adjusted_prob = max(0.0, min(1.0, adjusted_prob))
+            
+            # Additional adjustment: if base prob is 100%, force it down based on form and remaining games
+            if base_prob >= 0.99 and remaining_games > 5:
+                # Even teams at 100% should have some uncertainty if they have games left
+                # Pull them down based on form and remaining games
+                uncertainty_reduction = min(0.20, remaining_games / 50.0)  # Up to 20% reduction
+                if form['form_score'] < 0.5:  # Poor recent form
+                    uncertainty_reduction += 0.10  # Additional 10% reduction for poor form
+                adjusted_prob = max(0.70, base_prob - uncertainty_reduction)
+            
+            # Similar adjustment for teams at 0% - give them hope if they have games left
+            if base_prob <= 0.01 and remaining_games > 10:
+                uncertainty_boost = min(0.15, remaining_games / 80.0)  # Up to 15% boost
+                if form['form_score'] > 0.6:  # Good recent form
+                    uncertainty_boost += 0.10  # Additional 10% boost for good form
+                adjusted_prob = min(0.30, base_prob + uncertainty_boost)
             
             record = team_records.get(team, {})
             playoff_probs[team] = {
@@ -494,7 +545,7 @@ class PlayoffPredictionModel:
                     'win_pct': form.get('win_pct', 0.0)
                 },
                 'base_probability': base_prob,
-                'form_adjustment': form_adjustment * form_adjustment_strength
+                'form_adjustment': effective_adjustment
             }
         
         # Debug: show adjusted probabilities
