@@ -176,7 +176,7 @@ class PlayoffPredictionModel:
                     if total_base > 0:
                         base_away_prob = base_away_prob / total_base
                         base_home_prob = base_home_prob / total_base
-                else:
+                    else:
                         base_away_prob = 0.5
                         base_home_prob = 0.5
                 else:
@@ -197,47 +197,47 @@ class PlayoffPredictionModel:
             # Blend with base prediction (10% weight)
             away_prob_final = away_prob_combined * 0.90 + base_away_prob * 0.10
             home_prob_final = 1.0 - away_prob_final
-                
-                # Normalize to ensure they sum to 1.0
+            
+            # Normalize to ensure they sum to 1.0
             total_final = away_prob_final + home_prob_final
             if total_final > 0:
                 away_prob_final = away_prob_final / total_final
                 home_prob_final = home_prob_final / total_final
-                else:
-                    away_prob_final = 0.5
-                    home_prob_final = 0.5
-                
+            else:
+                away_prob_final = 0.5
+                home_prob_final = 0.5
+            
             # Clamp to valid range (5%-95% to prevent extremes)
             away_prob_final = max(0.05, min(0.95, away_prob_final))
             home_prob_final = max(0.05, min(0.95, home_prob_final))
-                
-                # Renormalize after clamping
-                total_final = away_prob_final + home_prob_final
-                if total_final > 0:
-                    away_prob_final = away_prob_final / total_final
-                    home_prob_final = home_prob_final / total_final
-                
-                # Calculate confidence based on how far from 50/50
-                max_prob = max(away_prob_final, home_prob_final)
-                confidence = abs(max_prob - 0.5) * 2  # 0 to 1 scale
-                confidence_pct = confidence * 100  # Convert to percentage
-                
-                predicted_winner = home_team if home_prob_final > away_prob_final else away_team
-                
-                return {
-                    'away_prob': away_prob_final,
-                    'home_prob': home_prob_final,
-                    'predicted_winner': predicted_winner,
-                    'confidence': confidence_pct,
+            
+            # Renormalize after clamping
+            total_final = away_prob_final + home_prob_final
+            if total_final > 0:
+                away_prob_final = away_prob_final / total_final
+                home_prob_final = home_prob_final / total_final
+            
+            # Calculate confidence based on how far from 50/50
+            max_prob = max(away_prob_final, home_prob_final)
+            confidence = abs(max_prob - 0.5) * 2  # 0 to 1 scale
+            confidence_pct = confidence * 100  # Convert to percentage
+            
+            predicted_winner = home_team if home_prob_final > away_prob_final else away_team
+            
+            return {
+                'away_prob': away_prob_final,
+                'home_prob': home_prob_final,
+                'predicted_winner': predicted_winner,
+                'confidence': confidence_pct,
                 'away_strength': away_strength,
                 'home_strength': home_strength,
                 'strength_diff': strength_diff,
-                    'form_adjustment': form_adjustment,
-                    'away_form_score': away_form['form_score'],
+                'form_adjustment': form_adjustment,
+                'away_form_score': away_form['form_score'],
                 'home_form_score': home_form['form_score'],
                 'base_away_prob': base_away_prob,
                 'base_home_prob': base_home_prob
-                }
+            }
         except Exception as e:
             print(f"Error predicting {away_team} @ {home_team}: {e}")
             import traceback
@@ -538,26 +538,54 @@ class PlayoffPredictionModel:
             if strength_data['games_played'] > 0:
                 print(f"  {team}: strength={strength_data['strength_score']:.3f} (off={strength_data['offensive_strength']:.3f}, def={strength_data['defensive_strength']:.3f}, adv={strength_data['advanced_strength']:.3f}), games={strength_data['games_played']}")
         
-        # Calculate strength-based probabilities (before simulations)
-        # Teams with higher strength should have higher playoff probability
-        # This is the PRIMARY factor (70% weight)
+        # Calculate strength-based probabilities (PRIMARY FACTOR - 70% weight)
+        # Teams with higher strength scores get higher playoff probabilities
+        # This is DATA-DRIVEN, not standings-driven
         strength_probs = {}
         if team_strengths:
-            # Normalize strength scores to probabilities
-            # Use percentile ranking: top teams get higher probabilities
-            strength_scores = [(team, data['strength_score']) for team, data in team_strengths.items()]
-            strength_scores.sort(key=lambda x: x[1], reverse=True)
+            # Separate by conference for proper ranking
+            eastern_strengths = []
+            western_strengths = []
             
-            # Convert strength ranking to base probability
-            # Top 8 teams in each conference get higher probabilities
-            for i, (team, strength) in enumerate(strength_scores):
-                # Rank-based probability (top teams get higher prob)
-                # But also factor in actual strength score
-                rank_prob = max(0.05, min(0.95, 0.95 - (i * 0.02)))  # Top team: 95%, decreases by 2% per rank
-                strength_prob = 0.3 + (strength * 0.4)  # Strength contributes 30-70% range
+            for team, data in team_strengths.items():
+                record = team_records.get(team, {})
+                conference = record.get('conference', '')
+                strength_score = data['strength_score']
                 
-                # Blend rank and strength (60% strength, 40% rank)
-                strength_probs[team] = strength_prob * 0.6 + rank_prob * 0.4
+                if 'east' in conference.lower():
+                    eastern_strengths.append((team, strength_score))
+                elif 'west' in conference.lower():
+                    western_strengths.append((team, strength_score))
+            
+            # Sort by strength score (not standings)
+            eastern_strengths.sort(key=lambda x: x[1], reverse=True)
+            western_strengths.sort(key=lambda x: x[1], reverse=True)
+            
+            # Convert strength scores to probabilities within each conference
+            # Use actual strength scores, not rank-based
+            def strength_to_prob(strength_score, conference_rank, total_teams):
+                """Convert strength score to playoff probability"""
+                # Base probability from strength score (0-1 strength -> 0.1-0.9 prob range)
+                strength_based = 0.1 + (strength_score * 0.8)  # Strength score directly maps to 10%-90%
+                
+                # Slight adjustment based on conference position (but minimal - only 10% of final)
+                # This accounts for remaining schedule difficulty
+                position_factor = 1.0 - ((conference_rank / total_teams) * 0.1)  # Max 10% adjustment
+                
+                return strength_based * position_factor
+            
+            # Calculate probabilities for Eastern Conference
+            for i, (team, strength) in enumerate(eastern_strengths):
+                strength_probs[team] = strength_to_prob(strength, i, len(eastern_strengths))
+            
+            # Calculate probabilities for Western Conference
+            for i, (team, strength) in enumerate(western_strengths):
+                strength_probs[team] = strength_to_prob(strength, i, len(western_strengths))
+            
+            # Ensure all teams have a probability
+            for team in team_records.keys():
+                if team not in strength_probs:
+                    strength_probs[team] = 0.5
         
         # Apply recent form adjustments to probabilities (SECONDARY FACTOR - 20% weight)
         # Teams with better recent form get a boost, teams with worse form get a penalty
@@ -570,29 +598,54 @@ class PlayoffPredictionModel:
         print(f"\nApplying form adjustments (strength: {form_adjustment_strength*100:.1f}%, remaining games factor: {remaining_games_factor:.2f})")
         
         for team, count in playoff_counts.items():
-            # BASE PROBABILITY from simulations (includes standings as starting point)
-            base_prob = count / num_simulations
+            # BASE PROBABILITY from simulations (includes standings as starting point only)
+            # This is MINIMAL factor (10% weight) - standings only matter as starting point
+            simulation_prob = count / num_simulations
             
             # Get team strength probability (PRIMARY FACTOR - 70% weight)
+            # This is calculated from comprehensive metrics, not standings
             strength_prob = strength_probs.get(team, 0.5)
             
             # Get recent form (SECONDARY FACTOR - 20% weight)
             form = team_forms.get(team, {'form_score': 0.5})
             remaining_games = remaining_game_counts.get(team, 0)
             
-            # Calculate form adjustment: form_score of 0.5 = no change, >0.5 = boost, <0.5 = penalty
-            form_adjustment = (form['form_score'] - 0.5) * 2  # -1 to +1
+            # Calculate form-based probability adjustment
+            # form_score of 0.5 = average, >0.5 = better form, <0.5 = worse form
+            form_adjustment = (form['form_score'] - 0.5) * 2  # -1 to +1 scale
             
-            # Apply form adjustment (20% weight)
+            # Apply form adjustment based on remaining games
+            # More games remaining = form matters more
             remaining_games_weight = min(1.0, remaining_games / 20.0)  # Max weight at 20+ games
-            effective_form_adjustment = form_adjustment * form_adjustment_strength * (0.5 + 0.5 * remaining_games_weight)
+            effective_form_adjustment = form_adjustment * 0.20 * (0.5 + 0.5 * remaining_games_weight)
             
-            # COMBINE: 70% strength + 20% form + 10% simulation base (which includes standings)
-            # The simulation base already includes standings influence, so we're reducing it to 10%
+            # Calculate standings-based probability (MINIMAL - 10% weight)
+            # Only use current position relative to playoff line
+            record = team_records.get(team, {})
+            current_points = record.get('points', 0)
+            conference = record.get('conference', '')
+            
+            # Calculate standings probability based on position
+            # Get teams in same conference, sorted by points
+            conf_teams = [(t, team_records[t]['points']) for t, d in team_records.items() 
+                         if d.get('conference', '') == conference]
+            conf_teams.sort(key=lambda x: x[1], reverse=True)
+            
+            # Find this team's position
+            team_position = next((i for i, (t, _) in enumerate(conf_teams) if t == team), 8)
+            
+            # Top 8 teams get higher standings prob, but this is only 10% weight
+            if team_position < 8:
+                standings_prob = 0.6 + (0.3 * (1.0 - team_position / 8.0))  # Top teams: 0.6-0.9
+            else:
+                standings_prob = max(0.1, 0.6 - (0.5 * ((team_position - 7) / 8.0)))  # Lower teams: 0.1-0.6
+            
+            # COMBINE ALL FACTORS: 70% strength + 20% form + 10% standings
+            # This ensures probabilities reflect team quality, not just current standings
             adjusted_prob = (
-                strength_prob * 0.70 +  # PRIMARY: Team strength (data-driven)
-                (base_prob + effective_form_adjustment) * 0.20 +  # SECONDARY: Form-adjusted simulation
-                base_prob * 0.10  # MINIMAL: Standings influence (through simulation base)
+                strength_prob * 0.70 +  # PRIMARY: Comprehensive team strength (data-driven)
+                (strength_prob + effective_form_adjustment) * 0.20 +  # SECONDARY: Form adjustment
+                standings_prob * 0.10  # MINIMAL: Current standings position (starting point only)
             )
             
             # Add additional uncertainty based on remaining games
@@ -601,9 +654,9 @@ class PlayoffPredictionModel:
                 # For teams with many games left, add more variance
                 uncertainty_factor = min(0.15, remaining_games / 100.0)
                 # Pull probabilities toward 50% slightly (adds uncertainty)
-                if base_prob > 0.7:
+                if adjusted_prob > 0.7:
                     adjusted_prob = adjusted_prob * (1.0 - uncertainty_factor) + 0.5 * uncertainty_factor
-                elif base_prob < 0.3:
+                elif adjusted_prob < 0.3:
                     adjusted_prob = adjusted_prob * (1.0 - uncertainty_factor) + 0.5 * uncertainty_factor
             
             # Apply season-based probability cap
@@ -622,21 +675,21 @@ class PlayoffPredictionModel:
                 uncertainty_pull = 0.10  # 10% pull toward 50%
                 adjusted_prob = adjusted_prob * (1.0 - uncertainty_pull) + 0.5 * uncertainty_pull
             
-            # Additional adjustment: if base prob is 100%, force it down based on form and remaining games
-            if base_prob >= 0.99 and remaining_games > 5:
-                # Even teams at 100% should have some uncertainty if they have games left
+            # Additional adjustment: if strength prob is very high, add uncertainty based on form and remaining games
+            if strength_prob >= 0.85 and remaining_games > 5:
+                # Even strong teams should have some uncertainty if they have games left
                 # Pull them down based on form and remaining games
-                uncertainty_reduction = min(0.25, remaining_games / 40.0)  # Up to 25% reduction
+                uncertainty_reduction = min(0.20, remaining_games / 50.0)  # Up to 20% reduction
                 if form['form_score'] < 0.5:  # Poor recent form
                     uncertainty_reduction += 0.10  # Additional 10% reduction for poor form
-                adjusted_prob = max(0.65, min(adjusted_prob, base_prob - uncertainty_reduction))
+                adjusted_prob = max(0.60, min(adjusted_prob, adjusted_prob - uncertainty_reduction))
             
-            # Similar adjustment for teams at 0% - give them hope if they have games left
-            if base_prob <= 0.01 and remaining_games > 10:
+            # Similar adjustment for teams with very low strength - give them hope if they have games left
+            if strength_prob <= 0.15 and remaining_games > 10:
                 uncertainty_boost = min(0.20, remaining_games / 60.0)  # Up to 20% boost
                 if form['form_score'] > 0.6:  # Good recent form
                     uncertainty_boost += 0.10  # Additional 10% boost for good form
-                adjusted_prob = min(0.35, max(adjusted_prob, base_prob + uncertainty_boost))
+                adjusted_prob = min(0.40, max(adjusted_prob, adjusted_prob + uncertainty_boost))
             
             # Final clamp to valid range [0, 1]
             adjusted_prob = max(0.0, min(1.0, adjusted_prob))
@@ -651,26 +704,37 @@ class PlayoffPredictionModel:
                 'wins': record.get('wins', 0),
                 'losses': record.get('losses', 0),
                 'ot_losses': record.get('ot_losses', 0),
+                'team_strength': {
+                    'strength_score': strength_data.get('strength_score', 0.5),
+                    'offensive_strength': strength_data.get('offensive_strength', 0.5),
+                    'defensive_strength': strength_data.get('defensive_strength', 0.5),
+                    'advanced_strength': strength_data.get('advanced_strength', 0.5),
+                    'games_played': strength_data.get('games_played', 0)
+                },
                 'recent_form': {
                     'form_score': form['form_score'],
                     'recent_wins': form['recent_wins'],
                     'recent_games': form['recent_games'],
                     'win_pct': form.get('win_pct', 0.0)
                 },
-                'base_probability': base_prob,
+                'simulation_probability': simulation_prob,
                 'strength_probability': strength_prob,
+                'standings_probability': standings_prob,
                 'form_adjustment': effective_form_adjustment
             }
         
-        # Debug: show adjusted probabilities
-        print(f"\nFinal playoff probabilities (data-driven):")
+        # Debug: show adjusted probabilities with breakdown
+        print(f"\nFinal playoff probabilities (DATA-DRIVEN - sample):")
         sample_probs = sorted(playoff_probs.items(), key=lambda x: x[1]['playoff_probability'], reverse=True)[:10]
         for team, data in sample_probs:
-            base = data['base_probability']
-            strength = data.get('strength_probability', 0.5)
-            form_adj = data['form_adjustment']
-            adjusted = data['playoff_probability']
-            print(f"  {team}: sim={base*100:.1f}%, strength={strength*100:.1f}%, form={form_adj*100:+.1f}% -> final={adjusted*100:.1f}%")
+            strength_prob = data.get('strength_probability', 0.5)
+            standings_prob = data.get('standings_probability', 0.5)
+            simulation_prob = data.get('simulation_probability', 0.5)
+            form_adj = data.get('form_adjustment', 0.0)
+            final = data['playoff_probability']
+            strength_score = data.get('team_strength', {}).get('strength_score', 0.5)
+            print(f"  {team}: {final*100:.1f}% (strength={strength_score:.3f}, str_prob={strength_prob*100:.1f}%, "
+                  f"standings={standings_prob*100:.1f}%, sim={simulation_prob*100:.1f}%, form={form_adj*100:+.1f}%)")
         
         return playoff_probs
     
