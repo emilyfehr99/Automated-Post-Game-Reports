@@ -7,6 +7,7 @@ import os
 import sys
 from datetime import datetime
 from pathlib import Path
+import pytz
 from nhl_api_client import NHLAPIClient
 from twitter_poster import TwitterPoster
 from twitter_config import TEAM_HASHTAGS, TWITTER_API_KEY
@@ -506,6 +507,11 @@ class GitHubActionsRunner:
         
         newly_completed = []
         
+        # Get today's date to filter out old games
+        central_tz = pytz.timezone('US/Central')
+        central_now = datetime.now(central_tz)
+        today = central_now.strftime('%Y-%m-%d')
+        
         # Check for completed games
         for game in games:
             game_id = str(game.get('id'))
@@ -513,10 +519,18 @@ class GitHubActionsRunner:
             away_team = game.get('awayTeam', {}).get('abbrev', 'UNK')
             home_team = game.get('homeTeam', {}).get('abbrev', 'UNK')
             
-            print(f"   {away_team} @ {home_team}: {game_state}")
+            # Get game date from schedule
+            game_date = game.get('startTimeUTC', '')[:10] if game.get('startTimeUTC') else ''
             
-            # Check if completed and not processed
-            if game_state in ['FINAL', 'OFF'] and game_id not in self.processed_games:
+            print(f"   {away_team} @ {home_team}: {game_state}" + (f" (Date: {game_date})" if game_date else ""))
+            
+            # Only process games that:
+            # 1. Are completed (FINAL or OFF)
+            # 2. Haven't been processed before
+            # 3. Are from today (to avoid re-processing yesterday's games that were already posted)
+            is_today = game_date == today or not game_date  # If no date, include it (better safe than sorry)
+            
+            if game_state in ['FINAL', 'OFF'] and game_id not in self.processed_games and is_today:
                 print(f"      ✅ NEW COMPLETED GAME!")
                 newly_completed.append({
                     'id': game_id,

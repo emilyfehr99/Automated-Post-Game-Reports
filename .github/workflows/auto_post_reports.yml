@@ -76,6 +76,8 @@ jobs:
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "GitHub Actions Bot"
         # Force add files that are in .gitignore but need to be tracked
+        # Create empty file if it doesn't exist to ensure it gets tracked
+        touch processed_games.json || true
         git add -f processed_games.json season_2025_2026_team_stats.json win_probability_predictions_v2.json || true
         git diff --quiet && git diff --staged --quiet || git commit -m "Update processed games, team stats, and model learning data [skip ci]"
         git push || true
