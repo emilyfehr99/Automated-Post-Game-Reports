@@ -150,6 +150,7 @@ class GitHubActionsRunner:
         print(f"📅 Checking games from: {yesterday} and {today}")
         
         all_games = []
+        games_by_date = {}  # Track which date each game belongs to
         
         # Check both yesterday and today for completed games
         for date_to_check in [yesterday, today]:
@@ -159,13 +160,18 @@ class GitHubActionsRunner:
                     for day in schedule['gameWeek']:
                         # Include games from both yesterday and today
                         if day.get('date') == date_to_check and 'games' in day:
-                            all_games.extend(day['games'])
+                            for game in day['games']:
+                                all_games.append(game)
+                                # Store the date for this game
+                                games_by_date[str(game.get('id'))] = date_to_check
                             print(f"   Found {len(day['games'])} games on {date_to_check}")
             except Exception as e:
                 print(f"❌ Error fetching schedule for {date_to_check}: {e}")
                 import traceback
                 traceback.print_exc()
         
+        # Store games_by_date for later use
+        self.games_by_date = games_by_date
         return all_games
     
     def generate_and_post_game(self, game_id, away_team, home_team):
@@ -512,6 +518,10 @@ class GitHubActionsRunner:
         central_now = datetime.now(central_tz)
         today = central_now.strftime('%Y-%m-%d')
         
+        # Initialize games_by_date dict if not set
+        if not hasattr(self, 'games_by_date'):
+            self.games_by_date = {}
+        
         # Check for completed games
         for game in games:
             game_id = str(game.get('id'))
@@ -519,8 +529,8 @@ class GitHubActionsRunner:
             away_team = game.get('awayTeam', {}).get('abbrev', 'UNK')
             home_team = game.get('homeTeam', {}).get('abbrev', 'UNK')
             
-            # Get game date from schedule
-            game_date = game.get('startTimeUTC', '')[:10] if game.get('startTimeUTC') else ''
+            # Get game date from schedule (we stored this when fetching games)
+            game_date = self.games_by_date.get(game_id, '')
             
             print(f"   {away_team} @ {home_team}: {game_state}" + (f" (Date: {game_date})" if game_date else ""))
             
@@ -528,9 +538,13 @@ class GitHubActionsRunner:
             # 1. Are completed (FINAL or OFF)
             # 2. Haven't been processed before
             # 3. Are from today (to avoid re-processing yesterday's games that were already posted)
-            is_today = game_date == today or not game_date  # If no date, include it (better safe than sorry)
+            # If game is already processed, skip it regardless of date
+            is_today = game_date == today
+            is_already_processed = game_id in self.processed_games
             
-            if game_state in ['FINAL', 'OFF'] and game_id not in self.processed_games and is_today:
+            if is_already_processed:
+                print(f"      ⏭️  Already processed, skipping")
+            elif game_state in ['FINAL', 'OFF'] and is_today:
                 print(f"      ✅ NEW COMPLETED GAME!")
                 newly_completed.append({
                     'id': game_id,
