@@ -32,22 +32,36 @@ class GitHubActionsRunner:
         
     def load_processed_games(self):
         """Load previously processed game IDs"""
+        file_path = str(self.processed_games_file.absolute())
+        print(f"🔍 Looking for processed_games.json at: {file_path}")
         if self.processed_games_file.exists():
             try:
                 with open(self.processed_games_file, 'r') as f:
                     data = json.load(f)
-                    return set(data.get('games', []))
+                    games = set(data.get('games', []))
+                    print(f"✅ Loaded {len(games)} processed games from file")
+                    if games:
+                        print(f"   Games: {sorted(list(games))[:10]}...")  # Show first 10
+                    return games
             except Exception as e:
                 print(f"⚠️  Could not load processed games: {e}")
+                import traceback
+                traceback.print_exc()
+        else:
+            print(f"⚠️  processed_games.json not found at {file_path}")
         return set()
     
     def save_processed_games(self):
         """Save processed game IDs"""
         try:
+            file_path = str(self.processed_games_file.absolute())
             with open(self.processed_games_file, 'w') as f:
                 json.dump({'games': list(self.processed_games)}, f, indent=2)
+            print(f"💾 Saved {len(self.processed_games)} processed games to {file_path}")
         except Exception as e:
             print(f"⚠️  Could not save processed games: {e}")
+            import traceback
+            traceback.print_exc()
     
     def load_team_stats(self):
         """Load current team stats"""
