@@ -1,13 +1,15 @@
 name: "CodeQL Security Analysis"
 
+# Disable this workflow - CodeQL is causing conflicts with default setup
+# Uncomment below to re-enable if default CodeQL is disabled in GitHub settings
 on:
-  push:
-    branches: [ "main" ]
-  pull_request:
-    branches: [ "main" ]
-  schedule:
-    - cron: '0 0 * * 0' # Weekly on Sunday at midnight UTC
-  workflow_dispatch:
+  workflow_dispatch:  # Only manual runs for now
+  # push:
+  #   branches: [ "main" ]
+  # pull_request:
+  #   branches: [ "main" ]
+  # schedule:
+  #   - cron: '0 0 * * 0' # Weekly on Sunday at midnight UTC
 
 jobs:
   analyze:
