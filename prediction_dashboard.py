@@ -76,8 +76,43 @@ def get_playoff_model():
 
 
 def get_pregame_prediction(away_team, home_team, game_date, game_id):
-    """Get pre-game prediction"""
+    """Get pre-game prediction - first try daily workflow predictions, then generate on-the-fly"""
     try:
+        # First, try to get prediction from daily workflow (stored in win_probability_predictions_v2.json)
+        try:
+            model = get_model()
+            predictions = model.model_data.get("predictions", [])
+            
+            # Look for today's prediction for this game
+            # Match by date, away_team, home_team, and no actual_winner (pre-game predictions)
+            for pred in predictions:
+                if (pred.get("date") == game_date and 
+                    pred.get("away_team", "").upper() == away_team.upper() and
+                    pred.get("home_team", "").upper() == home_team.upper() and
+                    not pred.get("actual_winner")):  # Pre-game predictions don't have actual_winner
+                    
+                    away_prob = pred.get("predicted_away_win_prob", 0.5)
+                    home_prob = pred.get("predicted_home_win_prob", 0.5)
+                    confidence = pred.get("prediction_confidence", abs(home_prob - away_prob))
+                    
+                    # Ensure probabilities are in decimal format (0-1)
+                    if away_prob > 1.0:
+                        away_prob = away_prob / 100.0
+                    if home_prob > 1.0:
+                        home_prob = home_prob / 100.0
+                    if confidence > 1.0:
+                        confidence = confidence / 100.0
+                    
+                    return {
+                        'away_prob': away_prob * 100,
+                        'home_prob': home_prob * 100,
+                        'predicted_winner': home_team if home_prob > away_prob else away_team,
+                        'confidence': confidence * 100 if confidence <= 1.0 else confidence
+                    }
+        except Exception as e:
+            print(f"Error loading daily workflow prediction: {e}")
+        
+        # Fallback: generate prediction on-the-fly
         result = predict_game_for_date(get_model(), get_corr(), away_team, home_team, game_date, 
                                      game_id=game_id, lineup_service=get_lineup())
         # Use confidence from prediction if available, otherwise calculate
