@@ -63,8 +63,8 @@ class LiveInGamePredictor:
                 away_team = boxscore.get('awayTeam', {})
                 home_team = boxscore.get('homeTeam', {})
             else:
-            away_team = teams.get('away', {})
-            home_team = teams.get('home', {})
+                away_team = teams.get('away', {})
+                home_team = teams.get('home', {})
             
             # Get team IDs and abbreviations
             away_team_id = away_team.get('team', {}).get('id') or away_team.get('id')
