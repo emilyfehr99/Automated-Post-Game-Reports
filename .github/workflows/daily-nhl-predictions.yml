@@ -71,24 +71,41 @@ jobs:
         run: |
           python3 prediction_interface.py
 
-      - name: Commit edge data changes
+      - name: Commit predictions and edge data changes
         run: |
           git config user.email "action@github.com"
           git config user.name "github-actions[bot]"
+          
+          # Track files to commit
+          FILES_TO_COMMIT=""
+          
+          # Add nhl_edge_data.json if it exists
           if [ -f "nhl_edge_data.json" ]; then
             echo "📦 Force adding nhl_edge_data.json (overriding .gitignore)..."
-            # Force add to override .gitignore - the -f flag forces git to add ignored files
             git add --force nhl_edge_data.json
-            echo "✅ File added successfully"
-            # Check if there are changes to commit
-            if ! git diff --staged --quiet; then
-              echo "📝 Committing updated edge data..."
-              git commit -m "Update NHL Edge data - $(date -u +'%Y-%m-%d')"
-            else
-              echo "ℹ️  No changes to commit (file is up to date)"
-            fi
+            FILES_TO_COMMIT="$FILES_TO_COMMIT nhl_edge_data.json"
+            echo "✅ nhl_edge_data.json added"
           else
-            echo "nhl_edge_data.json not found, skipping commit"
+            echo "⚠️  nhl_edge_data.json not found"
+          fi
+          
+          # Add win_probability_predictions_v2.json if it exists
+          if [ -f "win_probability_predictions_v2.json" ]; then
+            echo "📦 Adding win_probability_predictions_v2.json..."
+            git add --force win_probability_predictions_v2.json
+            FILES_TO_COMMIT="$FILES_TO_COMMIT win_probability_predictions_v2.json"
+            echo "✅ win_probability_predictions_v2.json added"
+          else
+            echo "⚠️  win_probability_predictions_v2.json not found"
+          fi
+          
+          # Commit if there are changes
+          if ! git diff --staged --quiet; then
+            echo "📝 Committing updated predictions and edge data..."
+            git commit -m "Update daily NHL predictions and edge data - $(date -u +'%Y-%m-%d')"
+            echo "✅ Committed:$FILES_TO_COMMIT"
+          else
+            echo "ℹ️  No changes to commit (files are up to date)"
           fi
       - name: Push edge data changes
         if: always()
