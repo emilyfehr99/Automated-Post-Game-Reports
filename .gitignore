@@ -52,3 +52,6 @@ stride_analysis_app/
 
 # Keep nhl_edge_data.json for daily predictions workflow
 !nhl_edge_data.json
+
+# Keep win_probability_predictions_v2.json for dashboard predictions
+!win_probability_predictions_v2.json
