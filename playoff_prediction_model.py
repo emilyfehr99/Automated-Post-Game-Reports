@@ -327,6 +327,32 @@ class PlayoffPredictionModel:
                 'division': division
             }
         
+        # Calculate season progress to cap probabilities appropriately
+        # NHL teams play 82 games per season
+        NHL_GAMES_PER_SEASON = 82
+        avg_games_played = sum(record['games_played'] for record in team_records.values()) / len(team_records) if team_records else 0
+        season_progress = avg_games_played / NHL_GAMES_PER_SEASON  # 0.0 to 1.0
+        
+        print(f"\nSeason progress: {avg_games_played:.1f} games played ({(season_progress*100):.1f}% of season)")
+        
+        # Calculate max probability cap based on season progress
+        # Early season (< 20 games): max 60%
+        # Mid season (20-50 games): max 80%
+        # Late season (50-70 games): max 95%
+        # Very late season (> 70 games): max 99%
+        if avg_games_played < 20:
+            max_probability_cap = 0.60
+            print(f"Early season detected - capping probabilities at {max_probability_cap*100:.0f}%")
+        elif avg_games_played < 50:
+            max_probability_cap = 0.80
+            print(f"Mid season detected - capping probabilities at {max_probability_cap*100:.0f}%")
+        elif avg_games_played < 70:
+            max_probability_cap = 0.95
+            print(f"Late season detected - capping probabilities at {max_probability_cap*100:.0f}%")
+        else:
+            max_probability_cap = 0.99
+            print(f"Very late season detected - capping probabilities at {max_probability_cap*100:.0f}%")
+        
         # Get remaining schedule
         remaining_games = self.get_remaining_schedule()
         print(f"Found {len(remaining_games)} remaining games in schedule")
@@ -509,24 +535,40 @@ class PlayoffPredictionModel:
                 elif base_prob < 0.3:
                     adjusted_prob = adjusted_prob * (1.0 - uncertainty_factor) + 0.5 * uncertainty_factor
             
-            # Clamp probability to valid range [0, 1]
-            adjusted_prob = max(0.0, min(1.0, adjusted_prob))
+            # Apply season-based probability cap
+            # Early in season, no team should be at 100%
+            adjusted_prob = min(adjusted_prob, max_probability_cap)
+            
+            # Additional early-season adjustments
+            if season_progress < 0.25:  # First quarter of season (< 20 games)
+                # Pull all probabilities toward 50% more aggressively
+                uncertainty_pull = 0.20  # 20% pull toward 50%
+                adjusted_prob = adjusted_prob * (1.0 - uncertainty_pull) + 0.5 * uncertainty_pull
+                # Cap even lower for early season
+                adjusted_prob = min(adjusted_prob, 0.65)
+            elif season_progress < 0.50:  # First half of season (< 41 games)
+                # Moderate pull toward 50%
+                uncertainty_pull = 0.10  # 10% pull toward 50%
+                adjusted_prob = adjusted_prob * (1.0 - uncertainty_pull) + 0.5 * uncertainty_pull
             
             # Additional adjustment: if base prob is 100%, force it down based on form and remaining games
             if base_prob >= 0.99 and remaining_games > 5:
                 # Even teams at 100% should have some uncertainty if they have games left
                 # Pull them down based on form and remaining games
-                uncertainty_reduction = min(0.20, remaining_games / 50.0)  # Up to 20% reduction
+                uncertainty_reduction = min(0.25, remaining_games / 40.0)  # Up to 25% reduction
                 if form['form_score'] < 0.5:  # Poor recent form
                     uncertainty_reduction += 0.10  # Additional 10% reduction for poor form
-                adjusted_prob = max(0.70, base_prob - uncertainty_reduction)
+                adjusted_prob = max(0.65, min(adjusted_prob, base_prob - uncertainty_reduction))
             
             # Similar adjustment for teams at 0% - give them hope if they have games left
             if base_prob <= 0.01 and remaining_games > 10:
-                uncertainty_boost = min(0.15, remaining_games / 80.0)  # Up to 15% boost
+                uncertainty_boost = min(0.20, remaining_games / 60.0)  # Up to 20% boost
                 if form['form_score'] > 0.6:  # Good recent form
                     uncertainty_boost += 0.10  # Additional 10% boost for good form
-                adjusted_prob = min(0.30, base_prob + uncertainty_boost)
+                adjusted_prob = min(0.35, max(adjusted_prob, base_prob + uncertainty_boost))
+            
+            # Final clamp to valid range [0, 1]
+            adjusted_prob = max(0.0, min(1.0, adjusted_prob))
             
             record = team_records.get(team, {})
             playoff_probs[team] = {
