@@ -872,7 +872,6 @@
             const adv = data.advanced_metrics || {};
             const zone = data.zone_metrics || {};
             const movement = data.movement_metrics || {};
-            const passMetrics = adv.pass_metrics || {};
             const teamStats = data.team_stats || {};
             const clutch = data.clutch_metrics || {};
             const goalies = data.goalie_stats || {};
@@ -1216,51 +1215,6 @@
                                     <td class="team-col">Longitudinal Movement (avg)</td>
                                     <td>${movement.away_longitudinal || 0}</td>
                                     <td>${movement.home_longitudinal || 0}</td>
-                                </tr>
-                            </tbody>
-                        </table>
-                    </div>
-                `;
-            }
-            
-            // Pass Metrics Section
-            if (passMetrics.away) {
-                html += `
-                    <div class="report-section">
-                        <h3>Pass Metrics</h3>
-                        <table class="stats-table">
-                            <thead>
-                                <tr>
-                                    <th>Metric</th>
-                                    <th style="text-align: center;">
-                                        <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
-                                            <img src="${awayLogo}" alt="${data.away_team}" style="width: 24px; height: 24px; object-fit: contain;">
-                                            <span>${data.away_team}</span>
-                                        </div>
-                                    </th>
-                                    <th style="text-align: center;">
-                                        <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
-                                            <img src="${homeLogo}" alt="${data.home_team}" style="width: 24px; height: 24px; object-fit: contain;">
-                                            <span>${data.home_team}</span>
-                                        </div>
-                                    </th>
-                                </tr>
-                            </thead>
-                            <tbody>
-                                <tr>
-                                    <td class="team-col">East-West Passes</td>
-                                    <td>${passMetrics.away.east_west || 0}</td>
-                                    <td>${passMetrics.home.east_west || 0}</td>
-                                </tr>
-                                <tr>
-                                    <td class="team-col">North-South Passes</td>
-                                    <td>${passMetrics.away.north_south || 0}</td>
-                                    <td>${passMetrics.home.north_south || 0}</td>
-                                </tr>
-                                <tr>
-                                    <td class="team-col">Behind Net Passes</td>
-                                    <td>${passMetrics.away.behind_net || 0}</td>
-                                    <td>${passMetrics.home.behind_net || 0}</td>
                                 </tr>
                             </tbody>
                         </table>

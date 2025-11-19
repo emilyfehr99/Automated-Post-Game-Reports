@@ -242,14 +242,6 @@ def get_live_prediction(game_id):
                 'away_takeaways': live_metrics.get('away_takeaways', 0),
                 'home_takeaways': live_metrics.get('home_takeaways', 0),
             },
-            'pass_metrics': {
-                'away_east_west': live_metrics.get('away_pass_east_west', 0),
-                'away_north_south': live_metrics.get('away_pass_north_south', 0),
-                'away_behind_net': live_metrics.get('away_pass_behind_net', 0),
-                'home_east_west': live_metrics.get('home_pass_east_west', 0),
-                'home_north_south': live_metrics.get('home_pass_north_south', 0),
-                'home_behind_net': live_metrics.get('home_pass_behind_net', 0),
-            },
             'clutch_metrics': {
                 'away_third_period_goals': live_metrics.get('away_third_period_goals', 0),
                 'home_third_period_goals': live_metrics.get('home_third_period_goals', 0),
@@ -713,10 +705,6 @@ def get_live_game_report(game_id):
                 home_pp_goals = sum(home_period_stats.get('pp_goals', [0]))
                 home_pp_attempts = sum(home_period_stats.get('pp_attempts', [0]))
                 
-                # Get pass metrics
-                away_ew, away_ns, away_bn = report_gen._calculate_pass_metrics(game_data, away_id, 'away')
-                home_ew, home_ns, home_bn = report_gen._calculate_pass_metrics(game_data, home_id, 'home')
-                
                 # Calculate clutch metrics
                 away_period_goals, _, _ = report_gen._calculate_goals_by_period(game_data, away_id)
                 home_period_goals, _, _ = report_gen._calculate_goals_by_period(game_data, home_id)
@@ -761,11 +749,6 @@ def get_live_game_report(game_id):
                 report_data['period_stats'] = {
                     'away': away_period_stats,
                     'home': home_period_stats
-                }
-                
-                report_data['advanced_metrics']['pass_metrics'] = {
-                    'away': {'east_west': away_ew, 'north_south': away_ns, 'behind_net': away_bn},
-                    'home': {'east_west': home_ew, 'north_south': home_ns, 'behind_net': home_bn}
                 }
                 
                 report_data['team_stats'] = {

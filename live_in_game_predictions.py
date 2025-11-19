@@ -213,17 +213,6 @@ class LiveInGamePredictor:
                     live_metrics['away_power_play_pct'] = (away_pp_goals / away_pp_attempts * 100) if away_pp_attempts > 0 else 0.0
                     live_metrics['home_power_play_pct'] = (home_pp_goals / home_pp_attempts * 100) if home_pp_attempts > 0 else 0.0
                     
-                    # Calculate pass metrics
-                    away_ew, away_ns, away_bn = self.report_generator._calculate_pass_metrics(game_data, away_team_id, 'away')
-                    home_ew, home_ns, home_bn = self.report_generator._calculate_pass_metrics(game_data, home_team_id, 'home')
-                    
-                    live_metrics['away_pass_east_west'] = away_ew
-                    live_metrics['away_pass_north_south'] = away_ns
-                    live_metrics['away_pass_behind_net'] = away_bn
-                    live_metrics['home_pass_east_west'] = home_ew
-                    live_metrics['home_pass_north_south'] = home_ns
-                    live_metrics['home_pass_behind_net'] = home_bn
-                    
                     # Calculate clutch metrics
                     away_period_goals, _, _ = self.report_generator._calculate_goals_by_period(game_data, away_team_id)
                     home_period_goals, _, _ = self.report_generator._calculate_goals_by_period(game_data, home_team_id)
