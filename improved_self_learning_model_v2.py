@@ -182,23 +182,29 @@ class ImprovedSelfLearningModelV2:
 
     @staticmethod
     def _apply_calibration_points(prob: float, points: List[Tuple[float, float]]) -> float:
+        """Apply calibration with bounds to prevent extreme predictions"""
         if not points:
             return prob
         points = sorted(points, key=lambda x: x[0])
         if prob <= points[0][0]:
-            return max(0.0, min(1.0, points[0][1]))
-        if prob >= points[-1][0]:
-            return max(0.0, min(1.0, points[-1][1]))
-        for i in range(1, len(points)):
-            x0, y0 = points[i - 1]
-            x1, y1 = points[i]
-            if x0 <= prob <= x1:
-                if x1 == x0:
-                    return max(0.0, min(1.0, y1))
-                t = (prob - x0) / (x1 - x0)
-                calibrated = y0 + t * (y1 - y0)
-                return max(0.0, min(1.0, calibrated))
-        return prob
+            calibrated = points[0][1]
+        elif prob >= points[-1][0]:
+            calibrated = points[-1][1]
+        else:
+            for i in range(1, len(points)):
+                x0, y0 = points[i - 1]
+                x1, y1 = points[i]
+                if x0 <= prob <= x1:
+                    if x1 == x0:
+                        calibrated = y1
+                    else:
+                        t = (prob - x0) / (x1 - x0)
+                        calibrated = y0 + t * (y1 - y0)
+                    break
+            else:
+                calibrated = prob
+        # Apply bounds: keep between 5% and 95% to prevent extreme predictions
+        return max(0.05, min(0.95, calibrated))
 
     def _determine_upset(self, predicted_side: Optional[str], actual_side: Optional[str],
                           prediction_confidence: Optional[float], prediction_margin: Optional[float],
@@ -372,28 +378,123 @@ class ImprovedSelfLearningModelV2:
     
     def load_team_stats(self) -> Dict:
         """Load current season team performance statistics"""
+        # All 32 NHL teams (ARI moved to UTA in 2024)
+        all_nhl_teams = [
+            'ANA', 'BOS', 'BUF', 'CGY', 'CAR', 'CHI', 'COL',
+            'CBJ', 'DAL', 'DET', 'EDM', 'FLA', 'LAK', 'MIN', 'MTL',
+            'NSH', 'NJD', 'NYI', 'NYR', 'OTT', 'PHI', 'PIT', 'SJS',
+            'SEA', 'STL', 'TBL', 'TOR', 'UTA', 'VAN', 'VGK', 'WSH', 'WPG'
+        ]
+        
+        def create_venue_data():
+            return {
+                "games": [], "xg": [], "hdc": [], "shots": [], "goals": [], "gs": [],
+                "opp_xg": [], "opp_goals": [],
+                "last_goalie": None,
+                "opponents": [],
+                "corsi_pct": [], "power_play_pct": [], "penalty_kill_pct": [], "faceoff_pct": [],
+                "hits": [], "blocked_shots": [], "giveaways": [], "takeaways": [], "penalty_minutes": [],
+                # Advanced movement and zone metrics
+                "lateral": [], "longitudinal": [],
+                "nzt": [], "nztsa": [], "ozs": [], "nzs": [], "dzs": [],
+                "fc": [], "rush": [],
+                # Clutch indicators
+                "clutch_score": [],
+                # Goals and shots (for/against) - explicit tracking
+                "goals_for": [], "goals_against": [],
+                "shots_for": [], "shots_against": [],
+                "xG_for": [], "xG_against": [],
+                "hdc_for": [], "hdc_against": [],
+                # Opponent metrics (for compatibility)
+                "opp_xg": [], "opp_goals": []
+            }
+        
+        stats = {}
+        # Initialize all 32 teams with empty data
+        for team in all_nhl_teams:
+            stats[team] = {"home": create_venue_data(), "away": create_venue_data()}
+        
         if self.team_stats_file.exists():
             try:
                 with open(self.team_stats_file, 'r') as f:
                     data = json.load(f)
                     if isinstance(data, dict):
                         if 'teams' in data:
-                            stats = data.get('teams', {})
-                            if stats:
-                                logger.info(f"Loaded team stats for {len(stats)} teams")
-                            else:
-                                logger.warning(f"Team stats file exists but 'teams' dict is empty")
-                            return stats
-                        if data:
-                            logger.info(f"Loaded team stats with {len(data)} teams")
+                            file_stats = data.get('teams', {})
+                            # Merge file data into initialized stats
+                            for team, venues in file_stats.items():
+                                if team in stats:
+                                    # Ensure all new fields exist (migrate old data structure)
+                                    for venue in ['home', 'away']:
+                                        if venue in venues:
+                                            # Add all missing fields from create_venue_data
+                                            new_fields = {
+                                                'lateral': [], 'longitudinal': [],
+                                                'nzt': [], 'nztsa': [], 'ozs': [], 'nzs': [], 'dzs': [],
+                                                'fc': [], 'rush': [],
+                                                'clutch_score': [],
+                                                'goals_for': [], 'goals_against': [],
+                                                'shots_for': [], 'shots_against': [],
+                                                'xG_for': [], 'xG_against': [],
+                                                'hdc_for': [], 'hdc_against': [],
+                                                'pp_goals': [], 'pp_attempts': [],
+                                                'pp_pct': [],  # Team report naming
+                                                'faceoff_wins': [], 'faceoff_total': [],
+                                                'fo_pct': [],  # Team report naming
+                                                'blocks': [], 'pim': [],  # Team report naming
+                                                'third_period_goals': [],
+                                                'one_goal_game': [],
+                                                'scored_first': [],
+                                                'opponent_scored_first': [],
+                                                'period_shots': [], 'period_corsi_pct': [],
+                                                'period_pp_goals': [], 'period_pp_attempts': [],
+                                                'period_pim': [], 'period_hits': [],
+                                                'period_fo_pct': [], 'period_blocks': [],
+                                                'period_giveaways': [], 'period_takeaways': [],
+                                                'period_gs': [], 'period_xg': [],
+                                                'period_nzt': [], 'period_nztsa': [],
+                                                'period_ozs': [], 'period_nzs': [],
+                                                'period_dzs': [], 'period_fc': [],
+                                                'period_rush': []
+                                            }
+                                            for key, default_value in new_fields.items():
+                                                if key not in venues[venue]:
+                                                    venues[venue][key] = default_value
+                                            # Migrate existing data to new structure
+                                            if 'goals' in venues[venue] and not venues[venue].get('goals_for'):
+                                                # Populate goals_for/goals_against from goals/opp_goals
+                                                goals = venues[venue].get('goals', [])
+                                                opp_goals = venues[venue].get('opp_goals', [])
+                                                venues[venue]['goals_for'] = goals.copy()
+                                                venues[venue]['goals_against'] = opp_goals.copy()
+                                            if 'shots' in venues[venue] and not venues[venue].get('shots_for'):
+                                                # Need to calculate shots_against from opponent data
+                                                shots = venues[venue].get('shots', [])
+                                                venues[venue]['shots_for'] = shots.copy()
+                                                # shots_against will be populated when rebuilding
+                                            if 'xg' in venues[venue] and not venues[venue].get('xG_for'):
+                                                xg = venues[venue].get('xg', [])
+                                                opp_xg = venues[venue].get('opp_xg', [])
+                                                venues[venue]['xG_for'] = xg.copy()
+                                                venues[venue]['xG_against'] = opp_xg.copy()
+                                            if 'hdc' in venues[venue] and not venues[venue].get('hdc_for'):
+                                                hdc = venues[venue].get('hdc', [])
+                                                venues[venue]['hdc_for'] = hdc.copy()
+                                                # hdc_against will be populated when rebuilding
+                                    stats[team] = venues
+                            logger.info(f"Loaded team stats for {len([t for t in stats if stats[t]['home']['games'] or stats[t]['away']['games']])} teams with data")
                         else:
-                            logger.warning(f"Team stats file exists but is empty")
-                        return data
+                            # Direct team dict
+                            for team, venues in data.items():
+                                if team in stats:
+                                    stats[team] = venues
+                            logger.info(f"Loaded team stats with {len([t for t in stats if stats[t]['home']['games'] or stats[t]['away']['games']])} teams with data")
             except Exception as e:
                 logger.error(f"Error loading team stats: {e}")
         else:
-            logger.warning(f"Team stats file not found: {self.team_stats_file}")
-        return {}
+            logger.warning(f"Team stats file not found: {self.team_stats_file}, initialized all 32 teams")
+        
+        return stats
     
     def load_historical_stats(self) -> Dict:
         """Load historical seasons team performance statistics"""
@@ -454,7 +555,7 @@ class ImprovedSelfLearningModelV2:
                 clipped_weights[key] /= total
         
         return clipped_weights
-
+    
     def _build_goalie_history(self) -> Dict[str, List[Tuple[str, str]]]:
         """Build per-team goalie start history from stored predictions/metrics_used."""
         hist: Dict[str, List[Tuple[str, str]]] = {}
@@ -738,7 +839,7 @@ class ImprovedSelfLearningModelV2:
             'games_played': 0, 'recent_form': 0.5, 'head_to_head': 0.5,
             'rest_days_advantage': 0.0, 'goalie_performance': 0.5, 'confidence': 0.1
         }
-
+    
     def _calculate_sos(self, team: str, venue: str, window: int = 5) -> float:
         """Compute a simple strength-of-schedule index from recent opponents.
 
@@ -777,7 +878,7 @@ class ImprovedSelfLearningModelV2:
             return float(max(0.4, min(0.6, norm)))
         except Exception:
             return 0.5
-    
+        
     def _calculate_recent_form(self, team: str, venue: str, window: int = 10) -> float:
         """Calculate venue-aware recent form from completed predictions (last 7-10 games).
         
@@ -1062,7 +1163,19 @@ class ImprovedSelfLearningModelV2:
             if n == 0:
                 return 0.5
             window = min(5, n)
-            recent = [(float(opp_xg[-i]), float(opp_g[-i])) for i in range(1, window+1)]
+            recent = []
+            for i in range(1, window+1):
+                try:
+                    xg_val = float(opp_xg[-i]) if opp_xg[-i] is not None else 0.0
+                    ga_val = float(opp_g[-i]) if opp_g[-i] is not None else 0.0
+                    if xg_val > 0 or ga_val > 0:  # Only include valid data
+                        recent.append((xg_val, ga_val))
+                except (ValueError, TypeError, IndexError):
+                    continue
+            
+            if len(recent) == 0:
+                return 0.5  # No valid data, return neutral
+            
             gsax_vals = [xg - ga for xg, ga in recent]
             gsax_avg = sum(gsax_vals) / len(gsax_vals)
             perf = 0.55 + max(-3.0, min(3.0, gsax_avg)) * (0.40 / 6.0)
@@ -1425,7 +1538,7 @@ class ImprovedSelfLearningModelV2:
         away_prob += noise
         home_prob -= noise
         
-        # Ensure probabilities stay within reasonable bounds
+        # Ensure probabilities stay within reasonable bounds (as percentages)
         away_prob = max(10, min(90, away_prob))
         home_prob = max(10, min(90, home_prob))
         
@@ -1434,12 +1547,17 @@ class ImprovedSelfLearningModelV2:
         away_prob = (away_prob / total) * 100
         home_prob = (home_prob / total) * 100
         
+        # Convert to decimal (0-1) for internal consistency with ensemble_predict
+        # But store as percentage for display
+        away_prob_decimal = away_prob / 100.0
+        home_prob_decimal = home_prob / 100.0
+        
         # Calculate confidence in prediction (keep as decimal 0-1)
         prediction_confidence = avg_confidence
         
         return {
-            'away_prob': away_prob,
-            'home_prob': home_prob,
+            'away_prob': away_prob_decimal,  # Return as decimal for blending
+            'home_prob': home_prob_decimal,   # Return as decimal for blending
             'away_score': away_score,
             'home_score': home_score,
             'away_perf': away_perf,
@@ -1712,6 +1830,18 @@ class ImprovedSelfLearningModelV2:
             prediction["correlation_correct"] = None
             prediction["was_upset"] = False
         
+        # Ensure probabilities are within bounds before storing
+        predicted_away_prob = max(0.05, min(0.95, predicted_away_prob))
+        predicted_home_prob = max(0.05, min(0.95, predicted_home_prob))
+        # Normalize to sum to 1.0
+        total = predicted_away_prob + predicted_home_prob
+        predicted_away_prob = predicted_away_prob / total
+        predicted_home_prob = predicted_home_prob / total
+        
+        # Update prediction dict with bounded values
+        prediction["predicted_away_win_prob"] = predicted_away_prob
+        prediction["predicted_home_win_prob"] = predicted_home_prob
+        
         self.model_data["predictions"].append(prediction)
         logger.info(
             f"Added prediction for {away_team} @ {home_team}: "
@@ -1792,14 +1922,63 @@ class ImprovedSelfLearningModelV2:
         home_score = prediction.get("actual_home_score", 0)
         
         # Initialize team stats if needed with comprehensive metrics
+        # Match ALL metrics from team_report_generator.py aggregate_team_stats
         def create_venue_data():
             return {
-                "games": [], "xg": [], "hdc": [], "shots": [], "goals": [], "gs": [],
+                "games": [],
+                # Goals and shots (for/against)
+                "goals": [], "goals_for": [], "goals_against": [],
+                "shots": [], "shots_for": [], "shots_against": [],
+                # Expected goals and high-danger chances (for/against)
+                "xg": [], "xG_for": [], "xG_against": [],
+                "hdc": [], "hdc_for": [], "hdc_against": [],
+                # Game score
+                "gs": [],
+                # Opponent metrics (for compatibility)
                 "opp_xg": [], "opp_goals": [],
+                # Goalie
                 "last_goalie": None,
                 "opponents": [],
-                "corsi_pct": [], "power_play_pct": [], "penalty_kill_pct": [], "faceoff_pct": [],
-                "hits": [], "blocked_shots": [], "giveaways": [], "takeaways": [], "penalty_minutes": []
+                # Advanced stats (match team_report_generator naming exactly)
+                "corsi_pct": [], "pp_pct": [], "fo_pct": [],  # Team report uses pp_pct and fo_pct
+                "power_play_pct": [], "penalty_kill_pct": [], "faceoff_pct": [],  # Keep for compatibility
+                # Power play details (separate from percentage)
+                "pp_goals": [], "pp_attempts": [],
+                # Faceoff details (separate from percentage)
+                "faceoff_wins": [], "faceoff_total": [],
+                # Physical play (match team_report_generator naming)
+                "hits": [], "blocks": [], "giveaways": [], "takeaways": [], "pim": [],
+                "blocked_shots": [], "penalty_minutes": [],  # Keep for compatibility
+                # Advanced movement and zone metrics
+                "lateral": [], "longitudinal": [],
+                "nzt": [], "nztsa": [], "ozs": [], "nzs": [], "dzs": [],
+                "fc": [], "rush": [],
+                # Clutch indicators (detailed)
+                "clutch_score": [],
+                "third_period_goals": [],
+                "one_goal_game": [],  # Boolean per game
+                "scored_first": [],  # Boolean per game
+                "opponent_scored_first": [],  # Boolean per game
+                # Period-by-period metrics (arrays of [p1, p2, p3] per game)
+                "period_shots": [],  # [[p1_shots, p2_shots, p3_shots], ...]
+                "period_corsi_pct": [],  # [[p1_corsi, p2_corsi, p3_corsi], ...]
+                "period_pp_goals": [],  # [[p1_pp_goals, p2_pp_goals, p3_pp_goals], ...]
+                "period_pp_attempts": [],  # [[p1_pp_attempts, p2_pp_attempts, p3_pp_attempts], ...]
+                "period_pim": [],  # [[p1_pim, p2_pim, p3_pim], ...]
+                "period_hits": [],  # [[p1_hits, p2_hits, p3_hits], ...]
+                "period_fo_pct": [],  # [[p1_fo, p2_fo, p3_fo], ...]
+                "period_blocks": [],  # [[p1_blocks, p2_blocks, p3_blocks], ...]
+                "period_giveaways": [],  # [[p1_gv, p2_gv, p3_gv], ...]
+                "period_takeaways": [],  # [[p1_tk, p2_tk, p3_tk], ...]
+                "period_gs": [],  # [[p1_gs, p2_gs, p3_gs], ...]
+                "period_xg": [],  # [[p1_xg, p2_xg, p3_xg], ...]
+                "period_nzt": [],  # [[p1_nzt, p2_nzt, p3_nzt], ...]
+                "period_nztsa": [],  # [[p1_nztsa, p2_nztsa, p3_nztsa], ...]
+                "period_ozs": [],  # [[p1_ozs, p2_ozs, p3_ozs], ...]
+                "period_nzs": [],  # [[p1_nzs, p2_nzs, p3_nzs], ...]
+                "period_dzs": [],  # [[p1_dzs, p2_dzs, p3_dzs], ...]
+                "period_fc": [],  # [[p1_fc, p2_fc, p3_fc], ...]
+                "period_rush": []  # [[p1_rush, p2_rush, p3_rush], ...]
             }
         
         if away_team not in self.team_stats:
@@ -1814,48 +1993,236 @@ class ImprovedSelfLearningModelV2:
         # Update away team stats with comprehensive metrics
         away_data = self.team_stats[away_team]["away"]
         away_data["games"].append(date)
+        
+        # Goals (for/against)
         away_data["goals"].append(away_score)
-        away_data["xg"].append(metrics.get("away_xg", 0.0))
-        away_data["hdc"].append(metrics.get("away_hdc", 0))
-        away_data["shots"].append(metrics.get("away_shots", 0))
+        away_data["goals_for"].append(away_score)
+        away_data["goals_against"].append(home_score)
+        
+        # Shots (for/against)
+        away_shots = metrics.get("away_shots", 0)
+        home_shots = metrics.get("home_shots", 0)
+        away_data["shots"].append(away_shots)
+        away_data["shots_for"].append(away_shots)
+        away_data["shots_against"].append(home_shots)
+        
+        # Expected goals (for/against)
+        away_xg = metrics.get("away_xg", 0.0)
+        home_xg = metrics.get("home_xg", 0.0)
+        away_data["xg"].append(away_xg)
+        away_data["xG_for"].append(away_xg)
+        away_data["xG_against"].append(home_xg)
+        away_data["opp_xg"].append(home_xg)  # For compatibility
+        
+        # High-danger chances (for/against)
+        away_hdc = metrics.get("away_hdc", 0)
+        home_hdc = metrics.get("home_hdc", 0)
+        away_data["hdc"].append(away_hdc)
+        away_data["hdc_for"].append(away_hdc)
+        away_data["hdc_against"].append(home_hdc)
+        
+        # Game score
         away_data["gs"].append(metrics.get("away_gs", 0.0))
-        away_data["opp_xg"].append(metrics.get("home_xg", 0.0))
+        
+        # Opponent metrics (for compatibility)
         away_data["opp_goals"].append(home_score)
         away_data["opponents"].append(home_team)
         if metrics.get("away_goalie"):
             away_data["last_goalie"] = metrics.get("away_goalie")
         away_data["corsi_pct"].append(metrics.get("away_corsi_pct", 50.0))
-        away_data["power_play_pct"].append(metrics.get("away_power_play_pct", 0.0))
+        
+        # Power play (store both naming conventions)
+        away_pp_pct = metrics.get("away_power_play_pct", 0.0)
+        away_data["power_play_pct"].append(away_pp_pct)
+        away_data["pp_pct"].append(away_pp_pct)  # Team report naming
         away_data["penalty_kill_pct"].append(metrics.get("away_penalty_kill_pct", 80.0))
-        away_data["faceoff_pct"].append(metrics.get("away_faceoff_pct", 50.0))
-        away_data["hits"].append(metrics.get("away_hits", 0))
-        away_data["blocked_shots"].append(metrics.get("away_blocked_shots", 0))
+        
+        # Faceoff (store both naming conventions)
+        away_fo_pct = metrics.get("away_faceoff_pct", 50.0)
+        away_data["faceoff_pct"].append(away_fo_pct)
+        away_data["fo_pct"].append(away_fo_pct)  # Team report naming
+        
+        # Power play details
+        away_data["pp_goals"].append(metrics.get("away_pp_goals", 0))
+        away_data["pp_attempts"].append(metrics.get("away_pp_attempts", 0))
+        
+        # Faceoff details
+        away_data["faceoff_wins"].append(metrics.get("away_faceoff_wins", 0))
+        away_data["faceoff_total"].append(metrics.get("away_faceoff_total", 0))
+        
+        # Physical play (store both naming conventions)
+        away_hits = metrics.get("away_hits", 0)
+        away_blocks = metrics.get("away_blocked_shots", 0)
+        away_pim = metrics.get("away_penalty_minutes", 0)
+        
+        away_data["hits"].append(away_hits)
+        away_data["blocked_shots"].append(away_blocks)
+        away_data["blocks"].append(away_blocks)  # Team report naming
         away_data["giveaways"].append(metrics.get("away_giveaways", 0))
         away_data["takeaways"].append(metrics.get("away_takeaways", 0))
-        away_data["penalty_minutes"].append(metrics.get("away_penalty_minutes", 0))
+        away_data["penalty_minutes"].append(away_pim)
+        away_data["pim"].append(away_pim)  # Team report naming
+        
+        # Advanced movement metrics
+        away_data["lateral"].append(metrics.get("away_lateral", 0.0))
+        away_data["longitudinal"].append(metrics.get("away_longitudinal", 0.0))
+        
+        # Zone start metrics
+        away_data["nzt"].append(metrics.get("away_nzt", 0))
+        away_data["nztsa"].append(metrics.get("away_nztsa", 0))
+        away_data["ozs"].append(metrics.get("away_ozs", 0))
+        away_data["nzs"].append(metrics.get("away_nzs", 0))
+        away_data["dzs"].append(metrics.get("away_dzs", 0))
+        
+        # Shot type metrics
+        away_data["fc"].append(metrics.get("away_fc", 0))
+        away_data["rush"].append(metrics.get("away_rush", 0))
+        
+        # Clutch score and detailed clutch metrics
+        clutch_score = self._calculate_clutch_score(prediction, "away")
+        away_data["clutch_score"].append(clutch_score)
+        away_data["third_period_goals"].append(metrics.get("away_third_period_goals", 0))
+        away_data["one_goal_game"].append(metrics.get("away_one_goal_game", False))
+        away_data["scored_first"].append(metrics.get("away_scored_first", False))
+        away_data["opponent_scored_first"].append(metrics.get("away_opponent_scored_first", False))
+        
+        # Period-by-period metrics
+        away_data["period_shots"].append(metrics.get("away_period_shots", [0, 0, 0]))
+        away_data["period_corsi_pct"].append(metrics.get("away_period_corsi_pct", [50.0, 50.0, 50.0]))
+        away_data["period_pp_goals"].append(metrics.get("away_period_pp_goals", [0, 0, 0]))
+        away_data["period_pp_attempts"].append(metrics.get("away_period_pp_attempts", [0, 0, 0]))
+        away_data["period_pim"].append(metrics.get("away_period_pim", [0, 0, 0]))
+        away_data["period_hits"].append(metrics.get("away_period_hits", [0, 0, 0]))
+        away_data["period_fo_pct"].append(metrics.get("away_period_fo_pct", [50.0, 50.0, 50.0]))
+        away_data["period_blocks"].append(metrics.get("away_period_blocks", [0, 0, 0]))
+        away_data["period_giveaways"].append(metrics.get("away_period_giveaways", [0, 0, 0]))
+        away_data["period_takeaways"].append(metrics.get("away_period_takeaways", [0, 0, 0]))
+        away_data["period_gs"].append(metrics.get("away_period_gs", [0.0, 0.0, 0.0]))
+        away_data["period_xg"].append(metrics.get("away_period_xg", [0.0, 0.0, 0.0]))
+        away_data["period_nzt"].append(metrics.get("away_period_nzt", [0, 0, 0]))
+        away_data["period_nztsa"].append(metrics.get("away_period_nztsa", [0, 0, 0]))
+        away_data["period_ozs"].append(metrics.get("away_period_ozs", [0, 0, 0]))
+        away_data["period_nzs"].append(metrics.get("away_period_nzs", [0, 0, 0]))
+        away_data["period_dzs"].append(metrics.get("away_period_dzs", [0, 0, 0]))
+        away_data["period_fc"].append(metrics.get("away_period_fc", [0, 0, 0]))
+        away_data["period_rush"].append(metrics.get("away_period_rush", [0, 0, 0]))
         
         # Update home team stats with comprehensive metrics
         home_data = self.team_stats[home_team]["home"]
         home_data["games"].append(date)
+        
+        # Goals (for/against)
         home_data["goals"].append(home_score)
-        home_data["xg"].append(metrics.get("home_xg", 0.0))
-        home_data["hdc"].append(metrics.get("home_hdc", 0))
-        home_data["shots"].append(metrics.get("home_shots", 0))
+        home_data["goals_for"].append(home_score)
+        home_data["goals_against"].append(away_score)
+        
+        # Shots (for/against)
+        home_shots = metrics.get("home_shots", 0)
+        away_shots = metrics.get("away_shots", 0)
+        home_data["shots"].append(home_shots)
+        home_data["shots_for"].append(home_shots)
+        home_data["shots_against"].append(away_shots)
+        
+        # Expected goals (for/against)
+        home_xg = metrics.get("home_xg", 0.0)
+        away_xg = metrics.get("away_xg", 0.0)
+        home_data["xg"].append(home_xg)
+        home_data["xG_for"].append(home_xg)
+        home_data["xG_against"].append(away_xg)
+        home_data["opp_xg"].append(float(away_xg) if away_xg is not None else 0.0)  # For compatibility
+        
+        # High-danger chances (for/against)
+        home_hdc = metrics.get("home_hdc", 0)
+        away_hdc = metrics.get("away_hdc", 0)
+        home_data["hdc"].append(home_hdc)
+        home_data["hdc_for"].append(home_hdc)
+        home_data["hdc_against"].append(away_hdc)
+        
+        # Game score
         home_data["gs"].append(metrics.get("home_gs", 0.0))
-        home_data["opp_xg"].append(metrics.get("away_xg", 0.0))
-        home_data["opp_goals"].append(away_score)
+        
+        # Opponent metrics (for compatibility)
+        home_data["opp_goals"].append(float(away_score) if away_score is not None else 0.0)
         home_data["opponents"].append(away_team)
         if metrics.get("home_goalie"):
             home_data["last_goalie"] = metrics.get("home_goalie")
         home_data["corsi_pct"].append(metrics.get("home_corsi_pct", 50.0))
-        home_data["power_play_pct"].append(metrics.get("home_power_play_pct", 0.0))
+        
+        # Power play (store both naming conventions)
+        home_pp_pct = metrics.get("home_power_play_pct", 0.0)
+        home_data["power_play_pct"].append(home_pp_pct)
+        home_data["pp_pct"].append(home_pp_pct)  # Team report naming
         home_data["penalty_kill_pct"].append(metrics.get("home_penalty_kill_pct", 80.0))
-        home_data["faceoff_pct"].append(metrics.get("home_faceoff_pct", 50.0))
-        home_data["hits"].append(metrics.get("home_hits", 0))
-        home_data["blocked_shots"].append(metrics.get("home_blocked_shots", 0))
+        
+        # Faceoff (store both naming conventions)
+        home_fo_pct = metrics.get("home_faceoff_pct", 50.0)
+        home_data["faceoff_pct"].append(home_fo_pct)
+        home_data["fo_pct"].append(home_fo_pct)  # Team report naming
+        
+        # Power play details
+        home_data["pp_goals"].append(metrics.get("home_pp_goals", 0))
+        home_data["pp_attempts"].append(metrics.get("home_pp_attempts", 0))
+        
+        # Faceoff details
+        home_data["faceoff_wins"].append(metrics.get("home_faceoff_wins", 0))
+        home_data["faceoff_total"].append(metrics.get("home_faceoff_total", 0))
+        
+        # Physical play (store both naming conventions)
+        home_hits = metrics.get("home_hits", 0)
+        home_blocks = metrics.get("home_blocked_shots", 0)
+        home_pim = metrics.get("home_penalty_minutes", 0)
+        
+        home_data["hits"].append(home_hits)
+        home_data["blocked_shots"].append(home_blocks)
+        home_data["blocks"].append(home_blocks)  # Team report naming
         home_data["giveaways"].append(metrics.get("home_giveaways", 0))
         home_data["takeaways"].append(metrics.get("home_takeaways", 0))
-        home_data["penalty_minutes"].append(metrics.get("home_penalty_minutes", 0))
+        home_data["penalty_minutes"].append(home_pim)
+        home_data["pim"].append(home_pim)  # Team report naming
+        
+        # Advanced movement metrics
+        home_data["lateral"].append(metrics.get("home_lateral", 0.0))
+        home_data["longitudinal"].append(metrics.get("home_longitudinal", 0.0))
+        
+        # Zone start metrics
+        home_data["nzt"].append(metrics.get("home_nzt", 0))
+        home_data["nztsa"].append(metrics.get("home_nztsa", 0))
+        home_data["ozs"].append(metrics.get("home_ozs", 0))
+        home_data["nzs"].append(metrics.get("home_nzs", 0))
+        home_data["dzs"].append(metrics.get("home_dzs", 0))
+        
+        # Shot type metrics
+        home_data["fc"].append(metrics.get("home_fc", 0))
+        home_data["rush"].append(metrics.get("home_rush", 0))
+        
+        # Clutch score and detailed clutch metrics
+        clutch_score = self._calculate_clutch_score(prediction, "home")
+        home_data["clutch_score"].append(clutch_score)
+        home_data["third_period_goals"].append(metrics.get("home_third_period_goals", 0))
+        home_data["one_goal_game"].append(metrics.get("home_one_goal_game", False))
+        home_data["scored_first"].append(metrics.get("home_scored_first", False))
+        home_data["opponent_scored_first"].append(metrics.get("home_opponent_scored_first", False))
+        
+        # Period-by-period metrics
+        home_data["period_shots"].append(metrics.get("home_period_shots", [0, 0, 0]))
+        home_data["period_corsi_pct"].append(metrics.get("home_period_corsi_pct", [50.0, 50.0, 50.0]))
+        home_data["period_pp_goals"].append(metrics.get("home_period_pp_goals", [0, 0, 0]))
+        home_data["period_pp_attempts"].append(metrics.get("home_period_pp_attempts", [0, 0, 0]))
+        home_data["period_pim"].append(metrics.get("home_period_pim", [0, 0, 0]))
+        home_data["period_hits"].append(metrics.get("home_period_hits", [0, 0, 0]))
+        home_data["period_fo_pct"].append(metrics.get("home_period_fo_pct", [50.0, 50.0, 50.0]))
+        home_data["period_blocks"].append(metrics.get("home_period_blocks", [0, 0, 0]))
+        home_data["period_giveaways"].append(metrics.get("home_period_giveaways", [0, 0, 0]))
+        home_data["period_takeaways"].append(metrics.get("home_period_takeaways", [0, 0, 0]))
+        home_data["period_gs"].append(metrics.get("home_period_gs", [0.0, 0.0, 0.0]))
+        home_data["period_xg"].append(metrics.get("home_period_xg", [0.0, 0.0, 0.0]))
+        home_data["period_nzt"].append(metrics.get("home_period_nzt", [0, 0, 0]))
+        home_data["period_nztsa"].append(metrics.get("home_period_nztsa", [0, 0, 0]))
+        home_data["period_ozs"].append(metrics.get("home_period_ozs", [0, 0, 0]))
+        home_data["period_nzs"].append(metrics.get("home_period_nzs", [0, 0, 0]))
+        home_data["period_dzs"].append(metrics.get("home_period_dzs", [0, 0, 0]))
+        home_data["period_fc"].append(metrics.get("home_period_fc", [0, 0, 0]))
+        home_data["period_rush"].append(metrics.get("home_period_rush", [0, 0, 0]))
         
         # Update per-goalie GSAX aggregates if goalie names provided
         try:
@@ -1885,10 +2252,83 @@ class ImprovedSelfLearningModelV2:
             tld[home_team] = date
         except Exception:
             pass
-
+    
+    def _calculate_clutch_score(self, prediction: Dict, team_side: str) -> float:
+        """Calculate clutch score based on game context (comebacks, one-goal games, etc.)
+        
+        Clutch score factors:
+        - Comeback wins (trailing after 2 periods)
+        - One-goal game wins
+        - Scoring first and winning
+        - Opponent scoring first but still winning
+        - Third period goals
+        
+        Returns a score from 0.0 to 1.0 where higher = more clutch performance
+        """
+        try:
+            away_team = prediction.get("away_team", "")
+            home_team = prediction.get("home_team", "")
+            actual_winner = prediction.get("actual_winner", "")
+            away_score = prediction.get("actual_away_score", 0) or 0
+            home_score = prediction.get("actual_home_score", 0) or 0
+            
+            # Determine if this team won
+            team_won = False
+            if team_side == "away" and actual_winner == "away":
+                team_won = True
+            elif team_side == "home" and actual_winner == "home":
+                team_won = True
+            
+            if not team_won:
+                return 0.0  # No clutch points for losses
+            
+            score = 0.0
+            
+            # One-goal game win (+0.3)
+            if abs(away_score - home_score) == 1:
+                score += 0.3
+            
+            # Comeback win (would need period scores - simplified for now)
+            # If we have period data, check if trailing after 2 periods
+            # For now, assume close games are more clutch
+            if abs(away_score - home_score) <= 2:
+                score += 0.2
+            
+            # Scoring first and winning (+0.2)
+            # Would need first goal data - simplified
+            score += 0.1  # Placeholder
+            
+            # Third period performance (+0.2)
+            # Would need period-by-period data
+            score += 0.1  # Placeholder
+            
+            return min(1.0, score)
+        except Exception:
+            return 0.0
+        
         # Keep only last 20 games to prevent memory bloat
-        all_metric_keys = ["games", "xg", "hdc", "shots", "goals", "gs", "corsi_pct", "power_play_pct", 
-                          "faceoff_pct", "hits", "blocked_shots", "giveaways", "takeaways", "penalty_minutes"]
+        all_metric_keys = [
+            "games", 
+            "goals", "goals_for", "goals_against",
+            "shots", "shots_for", "shots_against",
+            "xg", "xG_for", "xG_against", "opp_xg",
+            "hdc", "hdc_for", "hdc_against",
+            "gs",
+            "corsi_pct", "power_play_pct", "pp_pct", "penalty_kill_pct", "faceoff_pct", "fo_pct",
+            "pp_goals", "pp_attempts",
+            "faceoff_wins", "faceoff_total",
+            "hits", "blocks", "blocked_shots", "giveaways", "takeaways", "pim", "penalty_minutes",
+            "lateral", "longitudinal",
+            "nzt", "nztsa", "ozs", "nzs", "dzs",
+            "fc", "rush",
+            "clutch_score", "third_period_goals", "one_goal_game",
+            "scored_first", "opponent_scored_first",
+            "period_shots", "period_corsi_pct", "period_pp_goals", "period_pp_attempts",
+            "period_pim", "period_hits", "period_fo_pct", "period_blocks",
+            "period_giveaways", "period_takeaways", "period_gs", "period_xg",
+            "period_nzt", "period_nztsa", "period_ozs", "period_nzs", "period_dzs",
+            "period_fc", "period_rush"
+        ]
         for team in [away_team, home_team]:
             for venue in ["home", "away"]:
                 for key in all_metric_keys:
@@ -2031,9 +2471,16 @@ class ImprovedSelfLearningModelV2:
     def recalculate_performance_from_scratch(self):
         """Recalculate model performance from all predictions (ensures accuracy after bulk updates)"""
         predictions = self.model_data.get("predictions", [])
-        completed = [p for p in predictions if p.get("actual_winner")]
+        # Filter for completed games - check multiple possible formats
+        completed = []
+        for p in predictions:
+            actual_winner = p.get("actual_winner")
+            # Accept if actual_winner exists and is not None/empty
+            if actual_winner and actual_winner not in ("", None):
+                completed.append(p)
         
         total_games = len(completed)
+        logger.info(f"Recalculating performance from {total_games} completed games (out of {len(predictions)} total predictions)")
         correct_predictions = 0
         
         for pred in completed:
