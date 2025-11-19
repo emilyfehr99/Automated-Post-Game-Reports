@@ -28,9 +28,9 @@ jobs:
         current_day=$(date +%u)  # 1=Monday, 7=Sunday
         
         # Check if weekday (1-5) and time is between 7pm (19) and 3am (03)
-        # 7pm-11:59pm = hours 19-23, 12am-3am = hours 00-02
+        # 7pm-11:59pm = hours 19-23, 12am-3am = hours 00-03
         if [ "$current_day" -ge 1 ] && [ "$current_day" -le 5 ]; then
-          if [ "$current_hour" -ge 19 ] || [ "$current_hour" -le 2 ]; then
+          if [ "$current_hour" -ge 19 ] || [ "$current_hour" -le 3 ]; then
             echo "✅ RUNNING: Weekday and within 7pm-3am CT window (hour: $current_hour, day: $current_day)"
             echo "should_run=true" >> $GITHUB_OUTPUT
           else
