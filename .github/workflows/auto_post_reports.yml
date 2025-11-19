@@ -73,6 +73,25 @@ jobs:
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
+    - name: Pull latest changes (ensure we have latest processed_games.json)
+      if: steps.time_check.outputs.should_run == 'true'
+      run: |
+        git config --local user.email "github-actions[bot]@users.noreply.github.com"
+        git config --local user.name "GitHub Actions Bot"
+        # Pull latest to get any updates to processed_games.json from previous runs
+        git pull --rebase origin main || git pull origin main || true
+        # Ensure processed_games.json exists
+        if [ ! -f processed_games.json ]; then
+          echo '{"games": []}' > processed_games.json
+          git add -f processed_games.json
+        fi
+        echo "📋 Current processed_games.json status:"
+        if [ -f processed_games.json ]; then
+          cat processed_games.json || echo "  (file exists but could not read)"
+        else
+          echo "  (file does not exist)"
+        fi
+    
     - name: Check for completed games and post
       if: steps.time_check.outputs.should_run == 'true'
       env:
@@ -88,10 +107,32 @@ jobs:
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "GitHub Actions Bot"
+        
+        # Pull latest changes to avoid conflicts (in case another run committed)
+        git pull --rebase origin main || git pull origin main || true
+        
+        # Ensure processed_games.json exists (create empty if missing)
+        if [ ! -f processed_games.json ]; then
+          echo '{"games": []}' > processed_games.json
+        fi
+        
         # Force add files that are in .gitignore but need to be tracked
-        # Create empty file if it doesn't exist to ensure it gets tracked
-        touch processed_games.json || true
-        git add -f processed_games.json season_2025_2026_team_stats.json win_probability_predictions_v2.json || true
-        git diff --quiet && git diff --staged --quiet || git commit -m "Update processed games, team stats, and model learning data [skip ci]"
-        git push || true
+        git add -f processed_games.json season_2025_2026_team_stats.json win_probability_predictions_v2.json
+        
+        # Check if there are changes to commit
+        if ! git diff --staged --quiet; then
+          echo "📝 Committing updated tracking files..."
+          git commit -m "Update processed games, team stats, and model learning data [skip ci]"
+          git push origin main
+          echo "✅ Successfully committed and pushed tracking files"
+        else
+          echo "ℹ️  No changes to commit (files are up to date)"
+        fi
+        
+        # Verify the file is tracked in git
+        if git ls-files --error-unmatch processed_games.json > /dev/null 2>&1; then
+          echo "✅ processed_games.json is tracked in git"
+        else
+          echo "⚠️  WARNING: processed_games.json is not tracked in git!"
+        fi
 
