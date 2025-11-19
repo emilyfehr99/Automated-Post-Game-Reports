@@ -2,11 +2,12 @@ name: Auto Post NHL Reports
 
 on:
   schedule:
-    # Run every 15 minutes on weekdays from 7pm-3am CT (Mon-Fri 1:00-9:00 UTC, accounting for DST)
-    # CT is UTC-6 (CST) or UTC-5 (CDT), so 7pm CT = 1am UTC (CST) or 12am UTC (CDT)
-    # 3am CT = 9am UTC (CST) or 8am UTC (CDT)
-    # Using 0-9 UTC covers both, and 1-5 for weekdays (Mon-Fri)
-    - cron: '*/15 0-9 * * 1-5'  # Every 15 min, 0-9 UTC, Mon-Fri
+    # Run every 15 minutes:
+    # - Weekdays (Mon-Fri): 7pm-3am CT
+    # - Weekends (Sat-Sun): 11am-3am CT
+    # CT is UTC-6 (CST) or UTC-5 (CDT)
+    # Using 0-9 UTC covers 3am CT, and we'll check times in the workflow
+    - cron: '*/15 0-9,16-23 * * *'  # Every 15 min, 0-9 UTC (covers 3am CT) and 16-23 UTC (covers 11am-11pm CT), all days
   workflow_dispatch:  # Allow manual triggering from Actions tab
 
 jobs:
@@ -19,7 +20,7 @@ jobs:
     - name: Checkout repository
       uses: actions/checkout@v3
     
-    - name: Check if we should run (weekdays 7pm-3am CT)
+    - name: Check if we should run (weekdays 7pm-3am CT, weekends 11am-3am CT)
       id: time_check
       run: |
         # Get current time in Central Time
@@ -27,18 +28,28 @@ jobs:
         current_hour=$(date +%H)
         current_day=$(date +%u)  # 1=Monday, 7=Sunday
         
-        # Check if weekday (1-5) and time is between 7pm (19) and 3am (03)
-        # 7pm-11:59pm = hours 19-23, 12am-3am = hours 00-03
+        # Weekday (Mon-Fri): 7pm-3am CT (hours 19-23 or 0-3)
+        # Weekend (Sat-Sun): 11am-3am CT (hours 11-23 or 0-3)
         if [ "$current_day" -ge 1 ] && [ "$current_day" -le 5 ]; then
+          # Weekday: 7pm-3am CT
           if [ "$current_hour" -ge 19 ] || [ "$current_hour" -le 3 ]; then
             echo "✅ RUNNING: Weekday and within 7pm-3am CT window (hour: $current_hour, day: $current_day)"
             echo "should_run=true" >> $GITHUB_OUTPUT
           else
-            echo "⏸️  SKIPPING: Outside 7pm-3am CT window (current hour: $current_hour)"
+            echo "⏸️  SKIPPING: Weekday but outside 7pm-3am CT window (current hour: $current_hour)"
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          fi
+        elif [ "$current_day" -eq 6 ] || [ "$current_day" -eq 7 ]; then
+          # Weekend: 11am-3am CT
+          if [ "$current_hour" -ge 11 ] || [ "$current_hour" -le 3 ]; then
+            echo "✅ RUNNING: Weekend and within 11am-3am CT window (hour: $current_hour, day: $current_day)"
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          else
+            echo "⏸️  SKIPPING: Weekend but outside 11am-3am CT window (current hour: $current_hour)"
             echo "should_run=false" >> $GITHUB_OUTPUT
           fi
         else
-          echo "⏸️  SKIPPING: Not a weekday (day: $current_day, 1=Mon, 7=Sun)"
+          echo "⏸️  SKIPPING: Invalid day (day: $current_day)"
           echo "should_run=false" >> $GITHUB_OUTPUT
         fi
     
