@@ -870,6 +870,11 @@
         function formatLiveReport(data) {
             const stats = data.stats || {};
             const adv = data.advanced_metrics || {};
+            const zone = data.zone_metrics || {};
+            const movement = data.movement_metrics || {};
+            const passMetrics = adv.pass_metrics || {};
+            const teamStats = data.team_stats || {};
+            const clutch = data.clutch_metrics || {};
             const goalies = data.goalie_stats || {};
             const scoring = data.scoring_summary || [];
             const awayLogo = getTeamLogoUrl(data.away_team);
@@ -977,8 +982,29 @@
                                         <tr>
                                             <td class="team-col">Expected Goals (xG)</td>
                                             <td style="text-align: center; color: #888;">—</td>
-                                            <td style="text-align: center; font-weight: 600;">${adv.away_xg}</td>
+                                            <td style="text-align: center; font-weight: 600;">${adv.away_xg || 0}</td>
                                         </tr>
+                                        ${adv.away_hdc !== undefined ? `
+                                        <tr>
+                                            <td class="team-col">High-Danger Chances (HDC)</td>
+                                            <td style="text-align: center; color: #888;">—</td>
+                                            <td style="text-align: center; font-weight: 600;">${adv.away_hdc || 0}</td>
+                                        </tr>
+                                        ` : ''}
+                                        ${adv.away_gs !== undefined ? `
+                                        <tr>
+                                            <td class="team-col">Game Score (GS)</td>
+                                            <td style="text-align: center; color: #888;">—</td>
+                                            <td style="text-align: center; font-weight: 600;">${adv.away_gs || 0}</td>
+                                        </tr>
+                                        ` : ''}
+                                        ${teamStats.away_corsi_pct !== undefined ? `
+                                        <tr>
+                                            <td class="team-col">Corsi %</td>
+                                            <td style="text-align: center; color: #888;">—</td>
+                                            <td style="text-align: center; font-weight: 600;">${teamStats.away_corsi_pct || 50.0}%</td>
+                                        </tr>
+                                        ` : ''}
                                         ${adv.away_gs_by_period && adv.away_gs_by_period.length > 0 ? `
                                             <tr>
                                                 <td class="team-col" rowspan="3" style="vertical-align: middle;">Game Score</td>
@@ -1031,8 +1057,29 @@
                                         <tr>
                                             <td class="team-col">Expected Goals (xG)</td>
                                             <td style="text-align: center; color: #888;">—</td>
-                                            <td style="text-align: center; font-weight: 600;">${adv.home_xg}</td>
+                                            <td style="text-align: center; font-weight: 600;">${adv.home_xg || 0}</td>
                                         </tr>
+                                        ${adv.home_hdc !== undefined ? `
+                                        <tr>
+                                            <td class="team-col">High-Danger Chances (HDC)</td>
+                                            <td style="text-align: center; color: #888;">—</td>
+                                            <td style="text-align: center; font-weight: 600;">${adv.home_hdc || 0}</td>
+                                        </tr>
+                                        ` : ''}
+                                        ${adv.home_gs !== undefined ? `
+                                        <tr>
+                                            <td class="team-col">Game Score (GS)</td>
+                                            <td style="text-align: center; color: #888;">—</td>
+                                            <td style="text-align: center; font-weight: 600;">${adv.home_gs || 0}</td>
+                                        </tr>
+                                        ` : ''}
+                                        ${teamStats.home_corsi_pct !== undefined ? `
+                                        <tr>
+                                            <td class="team-col">Corsi %</td>
+                                            <td style="text-align: center; color: #888;">—</td>
+                                            <td style="text-align: center; font-weight: 600;">${teamStats.home_corsi_pct || 50.0}%</td>
+                                        </tr>
+                                        ` : ''}
                                         ${adv.home_gs_by_period && adv.home_gs_by_period.length > 0 ? `
                                             <tr>
                                                 <td class="team-col" rowspan="3" style="vertical-align: middle;">Game Score</td>
@@ -1067,6 +1114,200 @@
                                 </table>
                             </div>
                         </div>
+                    </div>
+                `;
+            }
+            
+            // Zone Metrics Section
+            if (zone.away_nzt !== undefined) {
+                html += `
+                    <div class="report-section">
+                        <h3>Zone Metrics</h3>
+                        <table class="stats-table">
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th style="text-align: center;">
+                                        <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+                                            <img src="${awayLogo}" alt="${data.away_team}" style="width: 24px; height: 24px; object-fit: contain;">
+                                            <span>${data.away_team}</span>
+                                        </div>
+                                    </th>
+                                    <th style="text-align: center;">
+                                        <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+                                            <img src="${homeLogo}" alt="${data.home_team}" style="width: 24px; height: 24px; object-fit: contain;">
+                                            <span>${data.home_team}</span>
+                                        </div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="team-col">Neutral Zone Turnovers (NZT)</td>
+                                    <td>${zone.away_nzt || 0}</td>
+                                    <td>${zone.home_nzt || 0}</td>
+                                </tr>
+                                <tr>
+                                    <td class="team-col">NZT to Shots (NZTSA)</td>
+                                    <td>${zone.away_nztsa || 0}</td>
+                                    <td>${zone.home_nztsa || 0}</td>
+                                </tr>
+                                <tr>
+                                    <td class="team-col">Offensive Zone Shots (OZS)</td>
+                                    <td>${zone.away_ozs || 0}</td>
+                                    <td>${zone.home_ozs || 0}</td>
+                                </tr>
+                                <tr>
+                                    <td class="team-col">Neutral Zone Shots (NZS)</td>
+                                    <td>${zone.away_nzs || 0}</td>
+                                    <td>${zone.home_nzs || 0}</td>
+                                </tr>
+                                <tr>
+                                    <td class="team-col">Defensive Zone Shots (DZS)</td>
+                                    <td>${zone.away_dzs || 0}</td>
+                                    <td>${zone.home_dzs || 0}</td>
+                                </tr>
+                                <tr>
+                                    <td class="team-col">Forecheck/Cycle Shots (FC)</td>
+                                    <td>${zone.away_fc || 0}</td>
+                                    <td>${zone.home_fc || 0}</td>
+                                </tr>
+                                <tr>
+                                    <td class="team-col">Rush Shots</td>
+                                    <td>${zone.away_rush || 0}</td>
+                                    <td>${zone.home_rush || 0}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+            
+            // Movement Metrics Section
+            if (movement.away_lateral !== undefined) {
+                html += `
+                    <div class="report-section">
+                        <h3>Movement Metrics</h3>
+                        <table class="stats-table">
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th style="text-align: center;">
+                                        <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+                                            <img src="${awayLogo}" alt="${data.away_team}" style="width: 24px; height: 24px; object-fit: contain;">
+                                            <span>${data.away_team}</span>
+                                        </div>
+                                    </th>
+                                    <th style="text-align: center;">
+                                        <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+                                            <img src="${homeLogo}" alt="${data.home_team}" style="width: 24px; height: 24px; object-fit: contain;">
+                                            <span>${data.home_team}</span>
+                                        </div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="team-col">Lateral Movement (avg)</td>
+                                    <td>${movement.away_lateral || 0}</td>
+                                    <td>${movement.home_lateral || 0}</td>
+                                </tr>
+                                <tr>
+                                    <td class="team-col">Longitudinal Movement (avg)</td>
+                                    <td>${movement.away_longitudinal || 0}</td>
+                                    <td>${movement.home_longitudinal || 0}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+            
+            // Pass Metrics Section
+            if (passMetrics.away) {
+                html += `
+                    <div class="report-section">
+                        <h3>Pass Metrics</h3>
+                        <table class="stats-table">
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th style="text-align: center;">
+                                        <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+                                            <img src="${awayLogo}" alt="${data.away_team}" style="width: 24px; height: 24px; object-fit: contain;">
+                                            <span>${data.away_team}</span>
+                                        </div>
+                                    </th>
+                                    <th style="text-align: center;">
+                                        <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+                                            <img src="${homeLogo}" alt="${data.home_team}" style="width: 24px; height: 24px; object-fit: contain;">
+                                            <span>${data.home_team}</span>
+                                        </div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="team-col">East-West Passes</td>
+                                    <td>${passMetrics.away.east_west || 0}</td>
+                                    <td>${passMetrics.home.east_west || 0}</td>
+                                </tr>
+                                <tr>
+                                    <td class="team-col">North-South Passes</td>
+                                    <td>${passMetrics.away.north_south || 0}</td>
+                                    <td>${passMetrics.home.north_south || 0}</td>
+                                </tr>
+                                <tr>
+                                    <td class="team-col">Behind Net Passes</td>
+                                    <td>${passMetrics.away.behind_net || 0}</td>
+                                    <td>${passMetrics.home.behind_net || 0}</td>
+                                </tr>
+                            </tbody>
+                        </table>
+                    </div>
+                `;
+            }
+            
+            // Clutch Metrics Section
+            if (clutch.away_third_period_goals !== undefined) {
+                html += `
+                    <div class="report-section">
+                        <h3>Clutch Metrics</h3>
+                        <table class="stats-table">
+                            <thead>
+                                <tr>
+                                    <th>Metric</th>
+                                    <th style="text-align: center;">
+                                        <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+                                            <img src="${awayLogo}" alt="${data.away_team}" style="width: 24px; height: 24px; object-fit: contain;">
+                                            <span>${data.away_team}</span>
+                                        </div>
+                                    </th>
+                                    <th style="text-align: center;">
+                                        <div style="display: flex; align-items: center; gap: 8px; justify-content: center;">
+                                            <img src="${homeLogo}" alt="${data.home_team}" style="width: 24px; height: 24px; object-fit: contain;">
+                                            <span>${data.home_team}</span>
+                                        </div>
+                                    </th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                <tr>
+                                    <td class="team-col">Third Period Goals</td>
+                                    <td>${clutch.away_third_period_goals || 0}</td>
+                                    <td>${clutch.home_third_period_goals || 0}</td>
+                                </tr>
+                                <tr>
+                                    <td class="team-col">Scored First</td>
+                                    <td>${clutch.away_scored_first ? '✓' : '✗'}</td>
+                                    <td>${clutch.home_scored_first ? '✓' : '✗'}</td>
+                                </tr>
+                                <tr>
+                                    <td class="team-col">One-Goal Game</td>
+                                    <td colspan="2" style="text-align: center;">${clutch.one_goal_game ? 'Yes' : 'No'}</td>
+                                </tr>
+                            </tbody>
+                        </table>
                     </div>
                 `;
             }

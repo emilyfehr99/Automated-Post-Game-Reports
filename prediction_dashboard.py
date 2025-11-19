@@ -169,6 +169,9 @@ def get_live_prediction(game_id):
         else:
             predicted_winner = ''
         
+        # Extract all comprehensive metrics from live_metrics
+        live_metrics = prediction.get('live_metrics', {})
+        
         return {
             'away_team': final_away_team,
             'home_team': final_home_team,
@@ -181,7 +184,79 @@ def get_live_prediction(game_id):
             'predicted_winner': predicted_winner,
             'confidence': prediction['confidence'] * 100,
             'momentum': prediction['momentum'],
-            'live_metrics': prediction['live_metrics']
+            'live_metrics': live_metrics,
+            # Comprehensive metrics - all from post-game reports
+            'advanced_metrics': {
+                'away_xg': live_metrics.get('away_xg', 0.0),
+                'home_xg': live_metrics.get('home_xg', 0.0),
+                'away_hdc': live_metrics.get('away_hdc', 0),
+                'home_hdc': live_metrics.get('home_hdc', 0),
+                'away_gs': live_metrics.get('away_gs', 0.0),
+                'home_gs': live_metrics.get('home_gs', 0.0),
+                'away_gs_by_period': live_metrics.get('away_gs_by_period', [0.0, 0.0, 0.0]),
+                'home_gs_by_period': live_metrics.get('home_gs_by_period', [0.0, 0.0, 0.0]),
+                'away_xg_by_period': live_metrics.get('away_xg_by_period', [0.0, 0.0, 0.0]),
+                'home_xg_by_period': live_metrics.get('home_xg_by_period', [0.0, 0.0, 0.0]),
+            },
+            'zone_metrics': {
+                'away_nzt': live_metrics.get('away_nzt', 0),
+                'away_nztsa': live_metrics.get('away_nztsa', 0),
+                'away_ozs': live_metrics.get('away_ozs', 0),
+                'away_nzs': live_metrics.get('away_nzs', 0),
+                'away_dzs': live_metrics.get('away_dzs', 0),
+                'away_fc': live_metrics.get('away_fc', 0),
+                'away_rush': live_metrics.get('away_rush', 0),
+                'home_nzt': live_metrics.get('home_nzt', 0),
+                'home_nztsa': live_metrics.get('home_nztsa', 0),
+                'home_ozs': live_metrics.get('home_ozs', 0),
+                'home_nzs': live_metrics.get('home_nzs', 0),
+                'home_dzs': live_metrics.get('home_dzs', 0),
+                'home_fc': live_metrics.get('home_fc', 0),
+                'home_rush': live_metrics.get('home_rush', 0),
+            },
+            'movement_metrics': {
+                'away_lateral': live_metrics.get('away_lateral', 0.0),
+                'away_longitudinal': live_metrics.get('away_longitudinal', 0.0),
+                'home_lateral': live_metrics.get('home_lateral', 0.0),
+                'home_longitudinal': live_metrics.get('home_longitudinal', 0.0),
+            },
+            'period_stats': {
+                'away': live_metrics.get('away_period_stats', {}),
+                'home': live_metrics.get('home_period_stats', {}),
+            },
+            'team_stats': {
+                'away_corsi_pct': live_metrics.get('away_corsi_pct', 50.0),
+                'home_corsi_pct': live_metrics.get('home_corsi_pct', 50.0),
+                'away_faceoff_pct': live_metrics.get('away_faceoff_pct', 50.0),
+                'home_faceoff_pct': live_metrics.get('home_faceoff_pct', 50.0),
+                'away_faceoff_wins': live_metrics.get('away_faceoff_wins', 0),
+                'away_faceoff_total': live_metrics.get('away_faceoff_total', 0),
+                'home_faceoff_wins': live_metrics.get('home_faceoff_wins', 0),
+                'home_faceoff_total': live_metrics.get('home_faceoff_total', 0),
+                'away_power_play_pct': live_metrics.get('away_power_play_pct', 0.0),
+                'home_power_play_pct': live_metrics.get('home_power_play_pct', 0.0),
+                'away_blocked_shots': live_metrics.get('away_blocked_shots', 0),
+                'home_blocked_shots': live_metrics.get('home_blocked_shots', 0),
+                'away_giveaways': live_metrics.get('away_giveaways', 0),
+                'home_giveaways': live_metrics.get('home_giveaways', 0),
+                'away_takeaways': live_metrics.get('away_takeaways', 0),
+                'home_takeaways': live_metrics.get('home_takeaways', 0),
+            },
+            'pass_metrics': {
+                'away_east_west': live_metrics.get('away_pass_east_west', 0),
+                'away_north_south': live_metrics.get('away_pass_north_south', 0),
+                'away_behind_net': live_metrics.get('away_pass_behind_net', 0),
+                'home_east_west': live_metrics.get('home_pass_east_west', 0),
+                'home_north_south': live_metrics.get('home_pass_north_south', 0),
+                'home_behind_net': live_metrics.get('home_pass_behind_net', 0),
+            },
+            'clutch_metrics': {
+                'away_third_period_goals': live_metrics.get('away_third_period_goals', 0),
+                'home_third_period_goals': live_metrics.get('home_third_period_goals', 0),
+                'one_goal_game': live_metrics.get('one_goal_game', False),
+                'away_scored_first': live_metrics.get('away_scored_first', False),
+                'home_scored_first': live_metrics.get('home_scored_first', False),
+            }
         }
     except Exception as e:
         print(f"Error getting live prediction: {e}")
@@ -605,32 +680,121 @@ def get_live_game_report(game_id):
                 away_gs_periods, away_xg_periods = report_gen._calculate_period_metrics(game_data, away_id, 'away')
                 home_gs_periods, home_xg_periods = report_gen._calculate_period_metrics(game_data, home_id, 'home')
                 
+                # Calculate HDC
+                away_hdc, home_hdc = report_gen._calculate_hdc_from_plays(game_data)
+                
+                # Calculate zone metrics
+                away_zone_metrics = report_gen._calculate_zone_metrics(game_data, away_id, 'away')
+                home_zone_metrics = report_gen._calculate_zone_metrics(game_data, home_id, 'home')
+                
+                # Calculate movement metrics
+                from advanced_metrics_analyzer import AdvancedMetricsAnalyzer
+                analyzer = AdvancedMetricsAnalyzer(game_data.get('play_by_play', {}))
+                away_movement = analyzer.calculate_pre_shot_movement_metrics(away_id)
+                home_movement = analyzer.calculate_pre_shot_movement_metrics(home_id)
+                
+                # Get period stats
+                away_period_stats = report_gen._calculate_real_period_stats(game_data, away_id, 'away')
+                home_period_stats = report_gen._calculate_real_period_stats(game_data, home_id, 'home')
+                
+                # Calculate Corsi percentage
+                away_corsi_pct = sum(away_period_stats.get('corsi_pct', [50.0])) / max(1, len(away_period_stats.get('corsi_pct', [50.0])))
+                home_corsi_pct = sum(home_period_stats.get('corsi_pct', [50.0])) / max(1, len(home_period_stats.get('corsi_pct', [50.0])))
+                
+                # Calculate faceoff percentage
+                away_fo_wins = sum(away_period_stats.get('faceoff_wins', [0]))
+                away_fo_total = sum(away_period_stats.get('faceoff_total', [0]))
+                home_fo_wins = sum(home_period_stats.get('faceoff_wins', [0]))
+                home_fo_total = sum(home_period_stats.get('faceoff_total', [0]))
+                
+                # Power play percentage
+                away_pp_goals = sum(away_period_stats.get('pp_goals', [0]))
+                away_pp_attempts = sum(away_period_stats.get('pp_attempts', [0]))
+                home_pp_goals = sum(home_period_stats.get('pp_goals', [0]))
+                home_pp_attempts = sum(home_period_stats.get('pp_attempts', [0]))
+                
+                # Get pass metrics
+                away_ew, away_ns, away_bn = report_gen._calculate_pass_metrics(game_data, away_id, 'away')
+                home_ew, home_ns, home_bn = report_gen._calculate_pass_metrics(game_data, home_id, 'home')
+                
+                # Calculate clutch metrics
+                away_period_goals, _, _ = report_gen._calculate_goals_by_period(game_data, away_id)
+                home_period_goals, _, _ = report_gen._calculate_goals_by_period(game_data, home_id)
+                
                 report_data['advanced_metrics'] = {
                     'away_xg': round(away_xg, 2),
                     'home_xg': round(home_xg, 2),
+                    'away_hdc': away_hdc,
+                    'home_hdc': home_hdc,
+                    'away_gs': round(sum(away_gs_periods), 2) if away_gs_periods else 0.0,
+                    'home_gs': round(sum(home_gs_periods), 2) if home_gs_periods else 0.0,
                     'away_gs_by_period': [round(g, 2) for g in away_gs_periods],
                     'home_gs_by_period': [round(g, 2) for g in home_gs_periods],
                     'away_xg_by_period': [round(x, 2) for x in away_xg_periods],
                     'home_xg_by_period': [round(x, 2) for x in home_xg_periods]
                 }
                 
-                # Get period stats
-                away_period_stats = report_gen._calculate_real_period_stats(game_data, away_id, 'away')
-                home_period_stats = report_gen._calculate_real_period_stats(game_data, home_id, 'home')
+                report_data['zone_metrics'] = {
+                    'away_nzt': sum(away_zone_metrics.get('nz_turnovers', [0, 0, 0])),
+                    'away_nztsa': sum(away_zone_metrics.get('nz_turnovers_to_shots', [0, 0, 0])),
+                    'away_ozs': sum(away_zone_metrics.get('oz_originating_shots', [0, 0, 0])),
+                    'away_nzs': sum(away_zone_metrics.get('nz_originating_shots', [0, 0, 0])),
+                    'away_dzs': sum(away_zone_metrics.get('dz_originating_shots', [0, 0, 0])),
+                    'away_fc': sum(away_zone_metrics.get('fc_cycle_sog', [0, 0, 0])),
+                    'away_rush': sum(away_zone_metrics.get('rush_sog', [0, 0, 0])),
+                    'home_nzt': sum(home_zone_metrics.get('nz_turnovers', [0, 0, 0])),
+                    'home_nztsa': sum(home_zone_metrics.get('nz_turnovers_to_shots', [0, 0, 0])),
+                    'home_ozs': sum(home_zone_metrics.get('oz_originating_shots', [0, 0, 0])),
+                    'home_nzs': sum(home_zone_metrics.get('nz_originating_shots', [0, 0, 0])),
+                    'home_dzs': sum(home_zone_metrics.get('dz_originating_shots', [0, 0, 0])),
+                    'home_fc': sum(home_zone_metrics.get('fc_cycle_sog', [0, 0, 0])),
+                    'home_rush': sum(home_zone_metrics.get('rush_sog', [0, 0, 0])),
+                }
+                
+                report_data['movement_metrics'] = {
+                    'away_lateral': round(away_movement['lateral_movement'].get('avg_delta_y', 0.0), 2),
+                    'away_longitudinal': round(away_movement['longitudinal_movement'].get('avg_delta_x', 0.0), 2),
+                    'home_lateral': round(home_movement['lateral_movement'].get('avg_delta_y', 0.0), 2),
+                    'home_longitudinal': round(home_movement['longitudinal_movement'].get('avg_delta_x', 0.0), 2),
+                }
                 
                 report_data['period_stats'] = {
                     'away': away_period_stats,
                     'home': home_period_stats
                 }
                 
-                # Get pass metrics
-                away_ew, away_ns, away_bn = report_gen._calculate_pass_metrics(game_data, away_id, 'away')
-                home_ew, home_ns, home_bn = report_gen._calculate_pass_metrics(game_data, home_id, 'home')
-                
                 report_data['advanced_metrics']['pass_metrics'] = {
                     'away': {'east_west': away_ew, 'north_south': away_ns, 'behind_net': away_bn},
                     'home': {'east_west': home_ew, 'north_south': home_ns, 'behind_net': home_bn}
                 }
+                
+                report_data['team_stats'] = {
+                    'away_corsi_pct': round(away_corsi_pct, 1),
+                    'home_corsi_pct': round(home_corsi_pct, 1),
+                    'away_faceoff_pct': round((away_fo_wins / away_fo_total * 100) if away_fo_total > 0 else 50.0, 1),
+                    'home_faceoff_pct': round((home_fo_wins / home_fo_total * 100) if home_fo_total > 0 else 50.0, 1),
+                    'away_power_play_pct': round((away_pp_goals / away_pp_attempts * 100) if away_pp_attempts > 0 else 0.0, 1),
+                    'home_power_play_pct': round((home_pp_goals / home_pp_attempts * 100) if home_pp_attempts > 0 else 0.0, 1),
+                }
+                
+                report_data['clutch_metrics'] = {
+                    'away_third_period_goals': away_period_goals[2] if len(away_period_goals) > 2 else 0,
+                    'home_third_period_goals': home_period_goals[2] if len(home_period_goals) > 2 else 0,
+                    'one_goal_game': abs(away_score - home_score) == 1,
+                    'away_scored_first': False,  # Will be calculated below
+                    'home_scored_first': False,
+                }
+                
+                # Who scored first
+                pbp = game_data.get('play_by_play', {})
+                plays = pbp.get('plays', []) or pbp.get('events', []) or []
+                for play in plays:
+                    if play.get('typeDescKey') == 'goal':
+                        details = play.get('details', {})
+                        first_goal_scorer = details.get('eventOwnerTeamId')
+                        report_data['clutch_metrics']['away_scored_first'] = (first_goal_scorer == away_id)
+                        report_data['clutch_metrics']['home_scored_first'] = (first_goal_scorer == home_id)
+                        break
         
         except Exception as e:
             print(f"Error calculating advanced metrics: {e}")
