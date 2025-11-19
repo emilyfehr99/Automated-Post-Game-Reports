@@ -49,3 +49,6 @@ stride_analysis_app/
 
 # Keep logo.png for dashboard
 !static/logo.png
+
+# Keep nhl_edge_data.json for daily predictions workflow
+!nhl_edge_data.json

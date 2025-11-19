@@ -75,8 +75,21 @@ jobs:
         run: |
           git config user.email "action@github.com"
           git config user.name "github-actions[bot]"
-          git add nhl_edge_data.json
-          git diff --cached --quiet || git commit -m "Update NHL Edge data - $(date -u +'%Y-%m-%d')"
+          if [ -f "nhl_edge_data.json" ]; then
+            echo "📦 Force adding nhl_edge_data.json (overriding .gitignore)..."
+            # Force add to override .gitignore - the -f flag forces git to add ignored files
+            git add --force nhl_edge_data.json
+            echo "✅ File added successfully"
+            # Check if there are changes to commit
+            if ! git diff --staged --quiet; then
+              echo "📝 Committing updated edge data..."
+              git commit -m "Update NHL Edge data - $(date -u +'%Y-%m-%d')"
+            else
+              echo "ℹ️  No changes to commit (file is up to date)"
+            fi
+          else
+            echo "nhl_edge_data.json not found, skipping commit"
+          fi
       - name: Push edge data changes
         if: always()
         run: |
