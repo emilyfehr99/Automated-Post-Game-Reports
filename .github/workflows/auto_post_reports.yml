@@ -2,11 +2,11 @@ name: Auto Post NHL Reports
 
 on:
   schedule:
-    # Run every 10 minutes on weekdays from 7pm-3am CT (Mon-Fri 1:00-9:00 UTC, accounting for DST)
+    # Run every 15 minutes on weekdays from 7pm-3am CT (Mon-Fri 1:00-9:00 UTC, accounting for DST)
     # CT is UTC-6 (CST) or UTC-5 (CDT), so 7pm CT = 1am UTC (CST) or 12am UTC (CDT)
     # 3am CT = 9am UTC (CST) or 8am UTC (CDT)
     # Using 0-9 UTC covers both, and 1-5 for weekdays (Mon-Fri)
-    - cron: '*/10 0-9 * * 1-5'  # Every 10 min, 0-9 UTC, Mon-Fri
+    - cron: '*/15 0-9 * * 1-5'  # Every 15 min, 0-9 UTC, Mon-Fri
   workflow_dispatch:  # Allow manual triggering from Actions tab
 
 jobs:
