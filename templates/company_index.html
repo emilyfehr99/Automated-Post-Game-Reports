@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StrideSync Hockey - Revolutionizing Performance Through Data-Driven Biomechanics</title>
+    <meta name="description" content="Elite hockey performance training through advanced biomechanical analysis. Transform your game with data-driven insights.">
+    <link rel="stylesheet" href="{{ url_for('static', filename='company_style.css') }}">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="StrideSync Hockey" class="logo-image">
+                <span class="logo-text">StrideSync Hockey</span>
+            </div>
+            <nav class="main-nav">
+                <a href="#home">Home</a>
+                <div class="nav-dropdown">
+                    <a href="#services" class="dropdown-toggle">Services <span class="dropdown-arrow">▼</span></a>
+                    <div class="dropdown-menu">
+                        <a href="{{ url_for('service', service_name='remote-training') }}">Remote Training</a>
+                        <a href="{{ url_for('service', service_name='performance-tracking') }}">Performance Tracking</a>
+                        <a href="{{ url_for('service', service_name='assessments') }}">Assessments</a>
+                    </div>
+                </div>
+                <a href="#about">About</a>
+                <a href="{{ url_for('careers') }}">Careers</a>
+                <a href="{{ url_for('resources') }}">Resources</a>
+                <a href="#contact">Contact</a>
+            </nav>
+            <div class="header-right">
+                <a href="{{ url_for('login') }}" class="btn-secondary">Client Portal</a>
+                <button class="menu-toggle" id="menuToggle">☰</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section id="home" class="hero-section">
+        <div class="hero-shapes">
+            <div class="floating-shape shape-1"></div>
+            <div class="floating-shape shape-2"></div>
+            <div class="floating-shape shape-3"></div>
+        </div>
+        <div class="hero-content">
+            <h1 class="hero-title">Elite Hockey Performance Through Science</h1>
+            <p class="hero-subtitle">Revolutionizing hockey training with data-driven biomechanical analysis and cutting-edge technology</p>
+            <div class="hero-buttons">
+                <a href="#contact" class="btn-primary btn-large">Get Started</a>
+                <a href="#services" class="btn-outline btn-large">Our Services</a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Services Section -->
+    <section id="services" class="services-section">
+        <div class="container">
+            <div class="section-intro">
+                <h2 class="section-title">Our Services</h2>
+                <p class="section-description">Comprehensive performance solutions tailored to players at every level</p>
+            </div>
+            <div class="services-grid">
+                <a href="{{ url_for('service', service_name='remote-training') }}" class="service-card-link">
+                    <div class="service-card">
+                        <div class="service-icon">💻</div>
+                        <h3>Remote Training</h3>
+                        <p>Professional biomechanical analysis and training programs delivered remotely. Get expert coaching and personalized programs from anywhere in the world.</p>
+                        <ul class="service-features">
+                            <li>Virtual consultations</li>
+                            <li>Remote video analysis</li>
+                            <li>Online training programs</li>
+                        </ul>
+                        <span class="service-link-text">Learn More →</span>
+                    </div>
+                </a>
+                <a href="{{ url_for('service', service_name='performance-tracking') }}" class="service-card-link">
+                    <div class="service-card">
+                        <div class="service-icon">📊</div>
+                        <h3>Performance Tracking</h3>
+                        <p>Real-time performance metrics and progress tracking. Monitor speed, agility, power, and recovery with precision analytics.</p>
+                        <ul class="service-features">
+                            <li>Speed & acceleration</li>
+                            <li>Agility metrics</li>
+                            <li>Recovery monitoring</li>
+                        </ul>
+                        <span class="service-link-text">Learn More →</span>
+                    </div>
+                </a>
+                <a href="{{ url_for('service', service_name='assessments') }}" class="service-card-link">
+                    <div class="service-card">
+                        <div class="service-icon">🔍</div>
+                        <h3>Assessments</h3>
+                        <p>Comprehensive biomechanical and performance assessments. Identify strengths, weaknesses, and areas for improvement with detailed analysis.</p>
+                        <ul class="service-features">
+                            <li>Full biomechanical scan</li>
+                            <li>Performance evaluation</li>
+                            <li>Detailed reporting</li>
+                        </ul>
+                        <span class="service-link-text">Learn More →</span>
+                    </div>
+                </a>
+            </div>
+        </div>
+    </section>
+
+    <!-- Features Section -->
+    <section class="features-section">
+        <div class="container">
+            <div class="features-content">
+                <div class="features-text">
+                    <h2>Why StrideSync?</h2>
+                    <p class="features-intro">We combine cutting-edge technology with sports science expertise to deliver results that matter.</p>
+                    <div class="features-list">
+                        <div class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <div>
+                                <h4>State-of-the-Art Technology</h4>
+                                <p>Advanced motion capture systems and AI-powered analysis</p>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <div>
+                                <h4>Expert Team</h4>
+                                <p>Sports scientists, biomechanics specialists, and performance coaches</p>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <div>
+                                <h4>Proven Results</h4>
+                                <p>Track record of success with players at all levels, from youth to professional</p>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <div>
+                                <h4>Personalized Approach</h4>
+                                <p>Every program is tailored to your unique biomechanics and goals</p>
+                            </div>
+                        </div>
+                        <div class="feature-item">
+                            <span class="feature-check">✓</span>
+                            <div>
+                                <h4>Continuous Innovation</h4>
+                                <p>Always evolving with the latest research and technology</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="features-visual">
+                    <div class="stats-card">
+                        <div class="stat-number">500+</div>
+                        <div class="stat-label">Players Trained</div>
+                    </div>
+                    <div class="stats-card">
+                        <div class="stat-number">95%</div>
+                        <div class="stat-label">Performance Improvement</div>
+                    </div>
+                    <div class="stats-card">
+                        <div class="stat-number">50+</div>
+                        <div class="stat-label">Teams Served</div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- About Section -->
+    <section id="about" class="about-section-full">
+        <div class="container">
+            <div class="about-content">
+                <div class="about-text">
+                    <h2>About StrideSync Hockey</h2>
+                    <p class="about-intro">Revolutionizing hockey performance through data-driven biomechanics analysis</p>
+                    <p>At StrideSync, we challenge traditional training methods by bringing science, data, and research to the forefront of hockey development. Hockey has long lagged behind other sports in leveraging technology and biomechanical analysis. We're closing that gap to create elite, impactful players.</p>
+                    <p>We operate as a consulting firm, prioritizing constant evaluation of our leadership, team, and methodologies. We stay ahead of trends, integrate new research, and continuously improve. Like our clients, we're in pursuit of excellence and mastery.</p>
+                </div>
+                <div class="principles-box">
+                    <h3>Our Core Principles</h3>
+                    <div class="principles-grid">
+                        <div class="principle-card">
+                            <div class="principle-number">1</div>
+                            <h4>Objective > Subjective</h4>
+                            <p>Data-driven decisions over gut feelings</p>
+                        </div>
+                        <div class="principle-card">
+                            <div class="principle-number">2</div>
+                            <h4>Data + Efficiency + Optimization</h4>
+                            <p>The StrideSync formula for success</p>
+                        </div>
+                        <div class="principle-card">
+                            <div class="principle-number">3</div>
+                            <h4>Precision over Tradition</h4>
+                            <p>Science-backed methods, not outdated practices</p>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Testimonials Section -->
+    <section class="testimonials-section">
+        <div class="container">
+            <h2 class="section-title">What Our Clients Say</h2>
+            <div class="testimonials-grid">
+                <div class="testimonial-card">
+                    <div class="testimonial-content">
+                        <p class="testimonial-text">"StrideSync transformed my skating. The biomechanical analysis identified issues I didn't even know I had. My speed increased by 15% in just 3 months."</p>
+                    </div>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">JD</div>
+                        <div>
+                            <div class="author-name">John Davis</div>
+                            <div class="author-role">Professional Player</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-content">
+                        <p class="testimonial-text">"The personalized dashboard keeps me motivated. I can see my progress in real-time and understand exactly what I need to work on."</p>
+                    </div>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">SM</div>
+                        <div>
+                            <div class="author-name">Sarah Martinez</div>
+                            <div class="author-role">College Athlete</div>
+                        </div>
+                    </div>
+                </div>
+                <div class="testimonial-card">
+                    <div class="testimonial-content">
+                        <p class="testimonial-text">"As a coach, StrideSync gives me data I can actually use. The team reports help me identify which players need specific attention."</p>
+                    </div>
+                    <div class="testimonial-author">
+                        <div class="author-avatar">MC</div>
+                        <div>
+                            <div class="author-name">Mike Chen</div>
+                            <div class="author-role">Head Coach</div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Contact Section -->
+    <section id="contact" class="contact-section">
+        <div class="container">
+            <div class="contact-content">
+                <div class="contact-info">
+                    <h2>Get In Touch</h2>
+                    <p>Ready to take your game to the next level? Contact us to learn more about our services or schedule a consultation.</p>
+                    <div class="contact-details">
+                        <div class="contact-item">
+                            <span class="contact-icon">📍</span>
+                            <div>
+                                <strong>StrideSync Hockey Training Center</strong>
+                                <p>43 Church Street<br>St Catharines, ON L2R 7E1<br>Canada</p>
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <span class="contact-icon">📞</span>
+                            <div>
+                                <strong>Phone</strong>
+                                <p>(780) 555-0123</p>
+                            </div>
+                        </div>
+                        <div class="contact-item">
+                            <span class="contact-icon">✉️</span>
+                            <div>
+                                <strong>Email</strong>
+                                <p>info@stridesync.com</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                <div class="contact-form-container">
+                    <form class="contact-form" method="POST" action="{{ url_for('contact') }}">
+                        <div class="form-group">
+                            <label for="name">Name</label>
+                            <input type="text" id="name" name="name" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="email">Email</label>
+                            <input type="email" id="email" name="email" required>
+                        </div>
+                        <div class="form-group">
+                            <label for="phone">Phone (Optional)</label>
+                            <input type="tel" id="phone" name="phone">
+                        </div>
+                        <div class="form-group">
+                            <label for="message">Message</label>
+                            <textarea id="message" name="message" rows="5" required></textarea>
+                        </div>
+                        <button type="submit" class="btn-primary btn-full">Send Message</button>
+                    </form>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                <div class="footer-logo">
+                    <img src="{{ url_for('static', filename='logo.png') }}" alt="StrideSync Hockey" class="logo-image">
+                    <span class="logo-text">StrideSync Hockey</span>
+                </div>
+                    <p>Elite hockey performance through data-driven biomechanics analysis.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="#home">Home</a></li>
+                        <li><a href="#services">Services</a></li>
+                        <li><a href="#about">About</a></li>
+                        <li><a href="{{ url_for('careers') }}">Careers</a></li>
+                        <li><a href="{{ url_for('resources') }}">Resources</a></li>
+                        <li><a href="#contact">Contact</a></li>
+                        <li><a href="{{ url_for('login') }}">Client Portal</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Services</h4>
+                    <ul>
+                        <li><a href="{{ url_for('service', service_name='remote-training') }}">Remote Training</a></li>
+                        <li><a href="{{ url_for('service', service_name='performance-tracking') }}">Performance Tracking</a></li>
+                        <li><a href="{{ url_for('service', service_name='assessments') }}">Assessments</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <ul>
+                        <li>43 Church Street</li>
+                        <li>St Catharines, ON L2R 7E1</li>
+                        <li>Phone: (780) 555-0123</li>
+                        <li>Email: info@stridesync.com</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 StrideSync Hockey. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='company_script.js') }}"></script>
+</body>
+</html>

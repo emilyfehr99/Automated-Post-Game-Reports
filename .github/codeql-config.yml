@@ -1,0 +1,10 @@
+name: "CodeQL config - Python and JavaScript only"
+paths-ignore:
+  - "**/*.c"
+  - "**/*.cpp"
+  - "**/*.h"
+  - "**/*.hpp"
+  - "**/*.cc"
+  - "**/*.cxx"
+  - "**/*.hxx"
+

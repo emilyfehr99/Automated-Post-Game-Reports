@@ -1,0 +1,32 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Thank You - StrideSync Hockey</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='company_style.css') }}">
+</head>
+<body>
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="StrideSync Hockey" class="logo-image">
+                <span class="logo-text">StrideSync Hockey</span>
+            </div>
+            <div class="header-right">
+                <a href="{{ url_for('index') }}" class="btn-secondary">Home</a>
+            </div>
+        </div>
+    </header>
+
+    <div class="success-container">
+        <div class="success-card">
+            <div class="success-icon">✓</div>
+            <h1>Thank You, {{ name }}!</h1>
+            <p>We've received your message and will get back to you within 24 hours.</p>
+            <a href="{{ url_for('index') }}" class="btn-primary">Return to Home</a>
+        </div>
+    </div>
+</body>
+</html>
+

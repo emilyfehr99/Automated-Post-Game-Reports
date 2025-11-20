@@ -1,194 +1,93 @@
-# 🏒 NHL Post-Game Report Generator
+# StrideSync Dashboard
 
-A comprehensive Python application that generates beautiful, detailed PDF post-game reports for NHL games using the official NHL API and advanced data visualization.
+A comprehensive company website and client portal dashboard for StrideSync Hockey, featuring biomechanics analysis, performance tracking, and player management.
 
-## ✨ Features
+## Features
 
-- **Real-time NHL Data**: Fetches live game data from the official NHL API
-- **Comprehensive Reports**: Includes scores, player stats, team comparisons, and more
-- **Beautiful Visualizations**: Charts and graphs for shots, scoring by period, and team performance
-- **Professional PDF Output**: Clean, organized reports using ReportLab
-- **Stanley Cup Finals Focus**: Specifically designed for high-stakes playoff games
-- **Fallback Support**: Includes sample data for demonstration purposes
+### Company Website
+- Modern landing page with hero section
+- Services showcase with individual service pages
+- About Us section
+- Testimonials
+- Contact form
+- Careers page
+- Resources page
 
-## 📋 Requirements
+### Client Portal Dashboard
+- **Player Profile**: View player stats, team info, and session status
+- **Biomechanics Analysis**: Interactive radar chart showing key biomechanical metrics
+- **Quick Stats**: Overview of recent performance metrics
+- **Player Wellness Survey**: Track sleep quality, energy levels, and recovery
+- **Performance Alerts**: Important notifications about performance metrics
+- **Session History**: View past training sessions with details
+- **Injury Prediction**: Risk assessment based on biomechanics data
+- **Skeleton Overlay Analysis**: Before/after skeleton video comparison with movement selector
+- **Resources Page**: Training guides, video library, and tools
+- **About Us Page**: Company information and location
 
-- Python 3.8+
-- Internet connection for NHL API access
-- Required Python packages (see requirements.txt)
+## Setup
 
-## 🚀 Quick Start
-
-### 1. Install Dependencies
-
+1. Install dependencies:
 ```bash
-pip install -r requirements.txt
+pip install flask flask-socketio
 ```
 
-### 2. Run the Generator
+2. Add your logo file:
+   - Place `logo.png` in the `static/` directory
+   - The logo is currently ignored by `.gitignore` (add with `git add -f static/logo.png` if needed)
 
+3. Run the application:
 ```bash
-python main.py
+python3 company_website.py
 ```
 
-The application will:
-1. Search for recent Florida Panthers vs Edmonton Oilers games
-2. Fetch comprehensive game data from the NHL API
-3. Generate a detailed PDF report
-4. Save the report with a timestamp
+4. Access the website:
+   - Company website: http://localhost:5001
+   - Client portal login: http://localhost:5001/login
+   - Default credentials: `alexander@stridesync.com` / `password123`
 
-## 📊 Report Contents
-
-Each generated report includes:
-
-### Game Summary
-- Final score with period-by-period breakdown
-- Game date, venue, and type
-- Team information
-
-### Team Statistics
-- Goals, shots, power play conversion
-- Penalty minutes, hits, faceoffs
-- Blocked shots, giveaways, takeaways
-
-### Scoring Summary
-- Complete play-by-play scoring
-- Goal scorers and assists
-- Period and time information
-
-### Player Performance
-- Top goal scorers
-- Leading assist providers
-- Individual player statistics
-
-### Goalie Analysis
-- Shots against and saves
-- Save percentage
-- Time on ice
-
-### Game Analysis
-- Game flow analysis
-- Key moments breakdown
-- Special teams performance
-
-### Visualizations
-- Shots on goal comparison
-- Scoring by period charts
-- Team performance graphs
-
-## 🔧 Configuration
-
-### NHL API Endpoints
-
-The application uses the official NHL API:
-- Base URL: `https://api-web.nhle.com/v1`
-- No API key required
-- Rate limiting may apply
-
-### Customization
-
-You can modify the report generation by editing:
-- `pdf_report_generator.py` - Report layout and styling
-- `nhl_api_client.py` - API endpoints and data fetching
-- `main.py` - Main execution logic
-
-## 📁 File Structure
+## Project Structure
 
 ```
-nhl_postgame_reports/
-├── main.py                    # Main execution script
-├── nhl_api_client.py         # NHL API client
-├── pdf_report_generator.py   # PDF report generator
-├── requirements.txt          # Python dependencies
-├── README.md                # This file
-└── outputs/                 # Generated PDF reports
+├── company_website.py          # Main Flask application
+├── templates/
+│   ├── company_index.html      # Company landing page
+│   ├── login.html              # Client portal login
+│   ├── original_client_portal.html  # Main client dashboard
+│   ├── client_about.html       # Client portal About page
+│   ├── service_page.html       # Individual service pages
+│   ├── careers.html            # Careers page
+│   ├── resources.html          # Resources page
+│   └── contact_success.html    # Contact form success page
+├── static/
+│   ├── company_style.css       # Company website styles
+│   ├── company_script.js       # Company website JavaScript
+│   ├── client_portal_styles.css # Client portal styles
+│   ├── client_portal_script.js  # Client portal JavaScript
+│   └── logo.png                # Company logo (add manually)
+└── README.md                   # This file
 ```
 
-## 🎯 Example Usage
+## Color Scheme
 
-### Generate Report for Specific Teams
+- Primary Blue: `#2563eb`
+- Dark Blue: `#1e40af`
+- White: `#ffffff`
+- Gray: `#6b7280`
+- Green: `#10b981`
 
-```python
-from nhl_api_client import NHLAPIClient
-from pdf_report_generator import PostGameReportGenerator
+## Technologies Used
 
-# Initialize clients
-nhl_client = NHLAPIClient()
-generator = PostGameReportGenerator()
+- Flask (Python web framework)
+- Bootstrap 5
+- Chart.js (for biomechanics radar chart)
+- Font Awesome (icons)
+- HTML5/CSS3/JavaScript
 
-# Find recent game
-game_id = nhl_client.find_recent_game('FLA', 'EDM', days_back=30)
+## Notes
 
-if game_id:
-    # Get game data
-    game_data = nhl_client.get_comprehensive_game_data(game_id)
-    
-    # Generate report
-    generator.generate_report(game_data, 'panthers_oilers_report.pdf')
-```
-
-### Custom Team Search
-
-```python
-# Search for any team matchup
-game_id = nhl_client.find_recent_game('BOS', 'TOR', days_back=60)
-
-# Get team information
-team_info = nhl_client.get_team_info(13)  # Florida Panthers
-roster = nhl_client.get_team_roster(13)
-```
-
-## 🎨 Report Styling
-
-The PDF reports feature:
-- Professional color scheme (NHL team colors)
-- Clean typography with Helvetica fonts
-- Organized tables with alternating row colors
-- Consistent spacing and layout
-- High-quality charts and graphs
-
-## 🔍 Troubleshooting
-
-### Common Issues
-
-1. **No games found**: The NHL API may not have recent data for specific matchups
-2. **API errors**: Check internet connection and NHL API status
-3. **Chart generation errors**: Ensure matplotlib and seaborn are properly installed
-
-### Fallback Mode
-
-If the NHL API is unavailable, the application will:
-1. Generate a sample report with realistic mock data
-2. Demonstrate all report features
-3. Provide a template for future customization
-
-## 📈 Future Enhancements
-
-- **Historical Reports**: Generate reports for past games
-- **Player Comparison**: Side-by-side player statistics
-- **Advanced Analytics**: Expected goals, possession metrics
-- **Custom Templates**: User-defined report layouts
-- **Batch Processing**: Generate multiple reports at once
-
-## 🤝 Contributing
-
-Contributions are welcome! Areas for improvement:
-- Additional statistical categories
-- Enhanced visualizations
-- More team-specific customization
-- Performance optimizations
-
-## 📄 License
-
-This project is open source and available under the MIT License.
-
-## 🙏 Acknowledgments
-
-- NHL for providing the official API
-- ReportLab for PDF generation capabilities
-- Matplotlib and Seaborn for data visualization
-- The hockey analytics community for inspiration
-
----
-
-**Note**: This application is for educational and personal use. Please respect the NHL's terms of service and API usage guidelines.
+- The client portal uses session-based authentication
+- The dashboard is designed for a specific client (Alexander Andre) but can be customized
+- All styling follows a consistent blue/white theme
+- The sidebar menu opens from the right side
+- Performance data is currently static but can be connected to a backend API

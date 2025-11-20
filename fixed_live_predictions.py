@@ -1,0 +1,294 @@
+#!/usr/bin/env python3
+"""
+Fixed Live In-Game NHL Predictions
+Uses the correct data structure to get real-time game data
+"""
+
+import json
+import requests
+import time
+from datetime import datetime, timedelta
+import pytz
+from pathlib import Path
+from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
+from nhl_api_client import NHLAPIClient
+
+class FixedLivePredictor:
+    def __init__(self):
+        self.api = NHLAPIClient()
+        self.model = ImprovedSelfLearningModelV2()
+        self.ct_tz = pytz.timezone('US/Central')
+        
+    def get_live_games(self):
+        """Get all currently active NHL games"""
+        try:
+            today = datetime.now(self.ct_tz).strftime('%Y-%m-%d')
+            schedule = self.api.get_game_schedule(today)
+            
+            if not schedule or 'gameWeek' not in schedule:
+                return []
+                
+            games = []
+            for day in schedule['gameWeek']:
+                if 'games' in day:
+                    games.extend(day['games'])
+            
+            live_games = []
+            for game in games:
+                game_state = game.get('gameState', '')
+                if game_state in ['LIVE', 'CRIT']:
+                    live_games.append(game)
+                    
+            return live_games
+        except Exception as e:
+            print(f"❌ Error getting live games: {e}")
+            return []
+    
+    def get_live_game_data(self, game_id):
+        """Get comprehensive live game data using correct data structure"""
+        try:
+            game_data = self.api.get_comprehensive_game_data(game_id)
+            if not game_data:
+                return None
+                
+            # Extract live game state using correct structure
+            boxscore = game_data.get('game_center', {}).get('boxscore', {})
+            
+            # Get team data from correct location
+            away_team = boxscore.get('awayTeam', {})
+            home_team = boxscore.get('homeTeam', {})
+            
+            # Get current score
+            away_score = away_team.get('score', 0)
+            home_score = home_team.get('score', 0)
+            
+            # Get shots on goal
+            away_shots = away_team.get('sog', 0)
+            home_shots = home_team.get('sog', 0)
+            
+            # Get period and time info
+            period_info = boxscore.get('periodDescriptor', {})
+            current_period = period_info.get('number', 1)
+            
+            # Get clock info
+            clock = boxscore.get('clock', {})
+            time_remaining = clock.get('timeRemaining', '20:00')
+            
+            # Get game state
+            game_state = boxscore.get('gameState', '')
+            
+            live_metrics = {
+                'away_team': away_team.get('abbrev', ''),
+                'home_team': home_team.get('abbrev', ''),
+                'away_score': away_score,
+                'home_score': home_score,
+                'current_period': current_period,
+                'time_remaining': time_remaining,
+                'away_shots': away_shots,
+                'home_shots': home_shots,
+                'game_state': game_state,
+                'game_id': game_id
+            }
+            
+            return live_metrics
+        except Exception as e:
+            print(f"❌ Error getting live game data for {game_id}: {e}")
+            return None
+    
+    def calculate_live_momentum(self, live_metrics):
+        """Calculate momentum factors based on live game data"""
+        try:
+            away_score = live_metrics['away_score']
+            home_score = live_metrics['home_score']
+            current_period = live_metrics['current_period']
+            time_remaining = live_metrics['time_remaining']
+            away_shots = live_metrics['away_shots']
+            home_shots = live_metrics['home_shots']
+            
+            # Score differential impact (stronger in later periods)
+            score_diff = away_score - home_score
+            period_multiplier = 0.1 + (current_period - 1) * 0.05  # More impact in later periods
+            score_impact = score_diff * period_multiplier
+            
+            # Time pressure (less time = more impact)
+            try:
+                time_parts = time_remaining.split(':')
+                minutes = int(time_parts[0])
+                seconds = int(time_parts[1])
+                total_seconds = minutes * 60 + seconds
+                time_pressure = max(0, (1200 - total_seconds) / 1200)  # 0-1 scale
+            except:
+                time_pressure = 0.5  # Default if time parsing fails
+            
+            # Shot differential impact
+            shot_diff = (away_shots - home_shots) * 0.02  # 2% per shot difference
+            
+            # Calculate total momentum
+            total_momentum = score_impact + shot_diff
+            
+            return {
+                'score_impact': score_impact,
+                'time_pressure': time_pressure,
+                'shot_impact': shot_diff,
+                'total_momentum': total_momentum
+            }
+        except Exception as e:
+            print(f"❌ Error calculating momentum: {e}")
+            return {
+                'score_impact': 0,
+                'time_pressure': 0.5,
+                'shot_impact': 0,
+                'total_momentum': 0
+            }
+    
+    def predict_live_game(self, live_metrics):
+        """Make live in-game prediction using real-time data"""
+        try:
+            away_team = live_metrics['away_team']
+            home_team = live_metrics['home_team']
+            
+            # Get base prediction from historical data
+            base_prediction = self.model.ensemble_predict(away_team, home_team)
+            away_prob = base_prediction['away_prob']
+            home_prob = base_prediction['home_prob']
+            
+            # Calculate live momentum factors
+            momentum = self.calculate_live_momentum(live_metrics)
+            
+            # Apply live adjustments
+            away_prob += momentum['total_momentum']
+            home_prob -= momentum['total_momentum']
+            
+            # Apply time pressure (later periods = more certain)
+            time_pressure = momentum['time_pressure']
+            if live_metrics['away_score'] > live_metrics['home_score']:
+                away_prob += time_pressure * 0.1
+                home_prob -= time_pressure * 0.1
+            elif live_metrics['home_score'] > live_metrics['away_score']:
+                home_prob += time_pressure * 0.1
+                away_prob -= time_pressure * 0.1
+            
+            # Normalize probabilities
+            total = away_prob + home_prob
+            away_prob = max(0.01, min(0.99, away_prob / total))
+            home_prob = max(0.01, min(0.99, home_prob / total))
+            
+            # Calculate confidence based on game state
+            confidence = 0.5 + (live_metrics['current_period'] - 1) * 0.1
+            confidence = min(0.95, confidence)
+            
+            return {
+                'away_team': away_team,
+                'home_team': home_team,
+                'away_score': live_metrics['away_score'],
+                'home_score': live_metrics['home_score'],
+                'current_period': live_metrics['current_period'],
+                'time_remaining': live_metrics['time_remaining'],
+                'away_prob': away_prob,
+                'home_prob': home_prob,
+                'confidence': confidence,
+                'momentum': momentum,
+                'live_metrics': live_metrics
+            }
+            
+        except Exception as e:
+            print(f"❌ Error making live prediction: {e}")
+            return None
+    
+    def format_live_prediction(self, prediction):
+        """Format live in-game prediction for display"""
+        if not prediction:
+            return "❌ Could not generate live prediction"
+            
+        away_team = prediction['away_team']
+        home_team = prediction['home_team']
+        away_score = prediction['away_score']
+        home_score = prediction['home_score']
+        current_period = prediction['current_period']
+        time_remaining = prediction['time_remaining']
+        away_prob = prediction['away_prob']
+        home_prob = prediction['home_prob']
+        confidence = prediction['confidence']
+        momentum = prediction['momentum']
+        
+        # Determine favorite
+        if away_prob > home_prob:
+            favorite = f"{away_team} (+{(away_prob - home_prob) * 100:.1f}%)"
+        else:
+            favorite = f"{home_team} (+{(home_prob - away_prob) * 100:.1f}%)"
+        
+        return f"""
+🏒 LIVE IN-GAME PREDICTION
+{'=' * 50}
+📊 {away_team} @ {home_team}
+🎯 LIVE SCORE: {away_team} {away_score} - {home_score} {home_team}
+⏰ Period {current_period} - {time_remaining} remaining
+
+🎯 LIVE PREDICTION:
+   {away_team}: {away_prob * 100:.1f}%
+   {home_team}: {home_prob * 100:.1f}%
+   ⭐ Favorite: {favorite}
+
+📈 LIVE MOMENTUM:
+   Score Impact: {momentum['score_impact'] * 100:+.1f}%
+   Shot Impact: {momentum['shot_impact'] * 100:+.1f}%
+   Time Pressure: {momentum['time_pressure'] * 100:.1f}%
+
+📊 LIVE METRICS:
+   Shots: {away_team} {prediction['live_metrics']['away_shots']} - {prediction['live_metrics']['home_shots']} {home_team}
+   Game State: {prediction['live_metrics']['game_state']}
+
+📈 Confidence: {confidence * 100:.1f}%
+🔄 Updated: {datetime.now(self.ct_tz).strftime('%H:%M:%S CT')}
+"""
+    
+    def run_live_predictions(self, update_interval=30):
+        """Run live in-game predictions with automatic updates"""
+        print("🏒 LIVE IN-GAME NHL PREDICTIONS")
+        print("=" * 60)
+        print(f"🔄 Update interval: {update_interval} seconds")
+        print("Press Ctrl+C to stop")
+        print()
+        
+        try:
+            while True:
+                live_games = self.get_live_games()
+                
+                if not live_games:
+                    print(f"⏰ {datetime.now(self.ct_tz).strftime('%H:%M:%S CT')} - No live games")
+                else:
+                    print(f"⏰ {datetime.now(self.ct_tz).strftime('%H:%M:%S CT')} - {len(live_games)} live games")
+                    print()
+                    
+                    for game in live_games:
+                        game_id = game.get('id')
+                        live_metrics = self.get_live_game_data(game_id)
+                        
+                        if live_metrics:
+                            prediction = self.predict_live_game(live_metrics)
+                            if prediction:
+                                print(self.format_live_prediction(prediction))
+                                print()
+                
+                print(f"⏳ Waiting {update_interval} seconds for next update...")
+                time.sleep(update_interval)
+                print()
+                
+        except KeyboardInterrupt:
+            print("\n🛑 Live predictions stopped")
+        except Exception as e:
+            print(f"\n❌ Error in live predictions: {e}")
+
+def main():
+    predictor = FixedLivePredictor()
+    
+    print("🏒 LIVE IN-GAME NHL PREDICTIONS")
+    print("=" * 60)
+    print("Starting automatic live predictions...")
+    print()
+    
+    # Run live predictions with 30-second updates
+    predictor.run_live_predictions(30)
+
+if __name__ == "__main__":
+    main()

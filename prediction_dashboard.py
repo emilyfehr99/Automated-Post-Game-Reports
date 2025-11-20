@@ -1,0 +1,1372 @@
+#!/usr/bin/env python3
+"""
+Fast Mini Site for Viewing Pre-Game and In-Game Predictions
+"""
+
+from flask import Flask, render_template, jsonify, send_file
+from datetime import datetime, timedelta
+import pytz
+import os
+from nhl_api_client import NHLAPIClient
+from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
+from correlation_model import CorrelationModel
+from lineup_service import LineupService
+from live_in_game_predictions import LiveInGamePredictor
+from run_predictions_for_date import predict_game_for_date
+from pdf_report_generator import PostGameReportGenerator
+from playoff_prediction_model import PlayoffPredictionModel
+
+app = Flask(__name__)
+app.config['JSONIFY_PRETTYPRINT_REGULAR'] = True
+
+# Initialize lightweight components immediately
+api = NHLAPIClient()
+ct_tz = pytz.timezone('US/Central')
+
+# Lazy-load heavy components (only initialize when needed)
+_model = None
+_corr = None
+_lineup = None
+_live_predictor = None
+_report_generator = None
+_playoff_model = None
+
+def get_model():
+    """Lazy-load the prediction model"""
+    global _model
+    if _model is None:
+        _model = ImprovedSelfLearningModelV2()
+        _model.deterministic = True
+    return _model
+
+def get_corr():
+    """Lazy-load the correlation model"""
+    global _corr
+    if _corr is None:
+        _corr = CorrelationModel()
+    return _corr
+
+def get_lineup():
+    """Lazy-load the lineup service"""
+    global _lineup
+    if _lineup is None:
+        _lineup = LineupService()
+    return _lineup
+
+def get_live_predictor():
+    """Lazy-load the live predictor"""
+    global _live_predictor
+    if _live_predictor is None:
+        _live_predictor = LiveInGamePredictor()
+    return _live_predictor
+
+def get_report_generator():
+    """Lazy-load the report generator"""
+    global _report_generator
+    if _report_generator is None:
+        _report_generator = PostGameReportGenerator()
+    return _report_generator
+
+def get_playoff_model():
+    """Lazy-load the playoff prediction model"""
+    global _playoff_model
+    if _playoff_model is None:
+        _playoff_model = PlayoffPredictionModel()
+    return _playoff_model
+
+
+def get_pregame_prediction(away_team, home_team, game_date, game_id):
+    """Get pre-game prediction - first try daily workflow predictions, then generate on-the-fly"""
+    try:
+        # First, try to get prediction from daily workflow (stored in win_probability_predictions_v2.json)
+        try:
+            model = get_model()
+            predictions = model.model_data.get("predictions", [])
+            
+            # Look for today's prediction for this game
+            # Match by date, away_team, home_team, and no actual_winner (pre-game predictions)
+            for pred in predictions:
+                if (pred.get("date") == game_date and 
+                    pred.get("away_team", "").upper() == away_team.upper() and
+                    pred.get("home_team", "").upper() == home_team.upper() and
+                    not pred.get("actual_winner")):  # Pre-game predictions don't have actual_winner
+                    
+                    away_prob = pred.get("predicted_away_win_prob", 0.5)
+                    home_prob = pred.get("predicted_home_win_prob", 0.5)
+                    confidence = pred.get("prediction_confidence", abs(home_prob - away_prob))
+                    
+                    # Ensure probabilities are in decimal format (0-1)
+                    if away_prob > 1.0:
+                        away_prob = away_prob / 100.0
+                    if home_prob > 1.0:
+                        home_prob = home_prob / 100.0
+                    if confidence > 1.0:
+                        confidence = confidence / 100.0
+                    
+                    return {
+                        'away_prob': away_prob * 100,
+                        'home_prob': home_prob * 100,
+                        'predicted_winner': home_team if home_prob > away_prob else away_team,
+                        'confidence': confidence * 100 if confidence <= 1.0 else confidence
+                    }
+        except Exception as e:
+            print(f"Error loading daily workflow prediction: {e}")
+        
+        # Fallback: generate prediction on-the-fly
+        result = predict_game_for_date(get_model(), get_corr(), away_team, home_team, game_date, 
+                                     game_id=game_id, lineup_service=get_lineup())
+        # Use confidence from prediction if available, otherwise calculate
+        confidence = result.get('confidence', abs(result['home_prob'] - result['away_prob']) * 100)
+        return {
+            'away_prob': result['away_prob'] * 100,
+            'home_prob': result['home_prob'] * 100,
+            'predicted_winner': home_team if result['home_prob'] > result['away_prob'] else away_team,
+            'confidence': confidence
+        }
+    except Exception as e:
+        print(f"Error getting pre-game prediction: {e}")
+        return None
+
+
+def get_live_prediction(game_id):
+    """Get live in-game prediction"""
+    try:
+        predictor = get_live_predictor()
+        live_metrics = predictor.get_live_game_data(game_id)
+        if not live_metrics:
+            return None
+        
+        # Get team names from game data if live_metrics doesn't have them
+        away_team = live_metrics.get('away_team', '')
+        home_team = live_metrics.get('home_team', '')
+        
+        if not away_team or not home_team:
+            # Try to get from API
+            try:
+                boxscore = api.get_game_boxscore(game_id)
+                if boxscore:
+                    away_team = (boxscore.get('awayTeam', {}) or {}).get('abbrev', '')
+                    home_team = (boxscore.get('homeTeam', {}) or {}).get('abbrev', '')
+                    # Update live_metrics with team names
+                    if away_team:
+                        live_metrics['away_team'] = away_team
+                    if home_team:
+                        live_metrics['home_team'] = home_team
+            except Exception as e:
+                print(f"Error getting team names from boxscore: {e}")
+        
+        prediction = predictor.predict_live_game(live_metrics)
+        if not prediction:
+            return None
+        
+        # Ensure we have team names
+        final_away_team = prediction.get('away_team') or away_team or ''
+        final_home_team = prediction.get('home_team') or home_team or ''
+        
+        # Calculate predicted winner
+        if final_away_team and final_home_team:
+            predicted_winner = final_home_team if prediction['home_prob'] > prediction['away_prob'] else final_away_team
+        else:
+            predicted_winner = ''
+        
+        # Extract all comprehensive metrics from live_metrics
+        live_metrics = prediction.get('live_metrics', {})
+        
+        return {
+            'away_team': final_away_team,
+            'home_team': final_home_team,
+            'away_score': prediction['away_score'],
+            'home_score': prediction['home_score'],
+            'current_period': prediction['current_period'],
+            'time_remaining': prediction['time_remaining'],
+            'away_prob': prediction['away_prob'] * 100,
+            'home_prob': prediction['home_prob'] * 100,
+            'predicted_winner': predicted_winner,
+            'confidence': prediction['confidence'] * 100,
+            'momentum': prediction['momentum'],
+            'live_metrics': live_metrics,
+            # Comprehensive metrics - all from post-game reports
+            'advanced_metrics': {
+                'away_xg': live_metrics.get('away_xg', 0.0),
+                'home_xg': live_metrics.get('home_xg', 0.0),
+                'away_hdc': live_metrics.get('away_hdc', 0),
+                'home_hdc': live_metrics.get('home_hdc', 0),
+                'away_gs': live_metrics.get('away_gs', 0.0),
+                'home_gs': live_metrics.get('home_gs', 0.0),
+                'away_gs_by_period': live_metrics.get('away_gs_by_period', [0.0, 0.0, 0.0]),
+                'home_gs_by_period': live_metrics.get('home_gs_by_period', [0.0, 0.0, 0.0]),
+                'away_xg_by_period': live_metrics.get('away_xg_by_period', [0.0, 0.0, 0.0]),
+                'home_xg_by_period': live_metrics.get('home_xg_by_period', [0.0, 0.0, 0.0]),
+            },
+            'zone_metrics': {
+                'away_nzt': live_metrics.get('away_nzt', 0),
+                'away_nztsa': live_metrics.get('away_nztsa', 0),
+                'away_ozs': live_metrics.get('away_ozs', 0),
+                'away_nzs': live_metrics.get('away_nzs', 0),
+                'away_dzs': live_metrics.get('away_dzs', 0),
+                'away_fc': live_metrics.get('away_fc', 0),
+                'away_rush': live_metrics.get('away_rush', 0),
+                'home_nzt': live_metrics.get('home_nzt', 0),
+                'home_nztsa': live_metrics.get('home_nztsa', 0),
+                'home_ozs': live_metrics.get('home_ozs', 0),
+                'home_nzs': live_metrics.get('home_nzs', 0),
+                'home_dzs': live_metrics.get('home_dzs', 0),
+                'home_fc': live_metrics.get('home_fc', 0),
+                'home_rush': live_metrics.get('home_rush', 0),
+            },
+            'movement_metrics': {
+                'away_lateral': live_metrics.get('away_lateral', 0.0),
+                'away_longitudinal': live_metrics.get('away_longitudinal', 0.0),
+                'home_lateral': live_metrics.get('home_lateral', 0.0),
+                'home_longitudinal': live_metrics.get('home_longitudinal', 0.0),
+            },
+            'period_stats': {
+                'away': live_metrics.get('away_period_stats', {}),
+                'home': live_metrics.get('home_period_stats', {}),
+            },
+            'team_stats': {
+                'away_corsi_pct': live_metrics.get('away_corsi_pct', 50.0),
+                'home_corsi_pct': live_metrics.get('home_corsi_pct', 50.0),
+                'away_faceoff_pct': live_metrics.get('away_faceoff_pct', 50.0),
+                'home_faceoff_pct': live_metrics.get('home_faceoff_pct', 50.0),
+                'away_faceoff_wins': live_metrics.get('away_faceoff_wins', 0),
+                'away_faceoff_total': live_metrics.get('away_faceoff_total', 0),
+                'home_faceoff_wins': live_metrics.get('home_faceoff_wins', 0),
+                'home_faceoff_total': live_metrics.get('home_faceoff_total', 0),
+                'away_power_play_pct': live_metrics.get('away_power_play_pct', 0.0),
+                'home_power_play_pct': live_metrics.get('home_power_play_pct', 0.0),
+                'away_blocked_shots': live_metrics.get('away_blocked_shots', 0),
+                'home_blocked_shots': live_metrics.get('home_blocked_shots', 0),
+                'away_giveaways': live_metrics.get('away_giveaways', 0),
+                'home_giveaways': live_metrics.get('home_giveaways', 0),
+                'away_takeaways': live_metrics.get('away_takeaways', 0),
+                'home_takeaways': live_metrics.get('home_takeaways', 0),
+            },
+            'clutch_metrics': {
+                'away_third_period_goals': live_metrics.get('away_third_period_goals', 0),
+                'home_third_period_goals': live_metrics.get('home_third_period_goals', 0),
+                'one_goal_game': live_metrics.get('one_goal_game', False),
+                'away_scored_first': live_metrics.get('away_scored_first', False),
+                'home_scored_first': live_metrics.get('home_scored_first', False),
+            }
+        }
+    except Exception as e:
+        print(f"Error getting live prediction: {e}")
+        import traceback
+        traceback.print_exc()
+        return None
+
+
+@app.route('/')
+def index():
+    """Main dashboard page"""
+    return render_template('prediction_dashboard.html')
+
+@app.route('/health')
+def health():
+    """Health check endpoint for faster startup"""
+    return jsonify({'status': 'ok', 'service': 'nhl-prediction-dashboard'}), 200
+
+
+@app.route('/api/games')
+def get_games():
+    """Get all games for today with predictions"""
+    try:
+        today = datetime.now(ct_tz).strftime('%Y-%m-%d')
+        schedule = api.get_game_schedule(today)
+        
+        if not schedule or 'gameWeek' not in schedule:
+            return jsonify({'games': [], 'date': today})
+        
+        games = []
+        for day in schedule['gameWeek']:
+            if day.get('date') != today:
+                continue
+            
+            for game in day.get('games', []):
+                away_team = (game.get('awayTeam', {}) or {}).get('abbrev', '')
+                home_team = (game.get('homeTeam', {}) or {}).get('abbrev', '')
+                game_id = str(game.get('id', ''))
+                game_state = game.get('gameState', 'PREVIEW')
+                start_time = game.get('startTimeUTC', '')
+                
+                if not away_team or not home_team:
+                    continue
+                
+                game_data = {
+                    'game_id': game_id,
+                    'away_team': away_team,
+                    'home_team': home_team,
+                    'game_state': game_state,
+                    'start_time': start_time,
+                    'date': today,
+                    'is_live': game_state in ['LIVE', 'CRIT'],
+                    'is_final': game_state in ['FINAL', 'OFF'],
+                    'pregame_prediction': None,
+                    'live_prediction': None
+                }
+                
+                # Get pre-game prediction
+                pregame = get_pregame_prediction(away_team, home_team, today, game_id)
+                if pregame:
+                    game_data['pregame_prediction'] = pregame
+                
+                # Get scores for finished games too
+                if game_data['is_live'] or game_data['is_final']:
+                    # Try multiple sources for scores - comprehensive game data is most reliable
+                    scores_found = False
+                    try:
+                        # First try comprehensive game data (most reliable for live games)
+                        comprehensive_data = api.get_comprehensive_game_data(game_id)
+                        if comprehensive_data:
+                            boxscore = comprehensive_data.get('game_center', {}).get('boxscore', {})
+                            if not boxscore:
+                                boxscore = comprehensive_data.get('boxscore', {})
+                            
+                            if boxscore:
+                                # Try multiple paths in comprehensive data
+                                away_team_data = boxscore.get('awayTeam', {})
+                                home_team_data = boxscore.get('homeTeam', {})
+                                
+                                # Also try teams.away / teams.home structure
+                                if not away_team_data:
+                                    teams = boxscore.get('teams', {})
+                                    away_team_data = teams.get('away', {})
+                                    home_team_data = teams.get('home', {})
+                                
+                                # Try to extract scores - try multiple paths
+                                away_score = None
+                                home_score = None
+                                
+                                # Path 1: Direct score field
+                                if 'score' in away_team_data:
+                                    away_score = away_team_data['score']
+                                if 'score' in home_team_data:
+                                    home_score = home_team_data['score']
+                                
+                                # Path 2: Direct goals field
+                                if away_score is None and 'goals' in away_team_data:
+                                    away_score = away_team_data['goals']
+                                if home_score is None and 'goals' in home_team_data:
+                                    home_score = home_team_data['goals']
+                                
+                                # Path 3: teamStats.teamSkaterStats.goals
+                                if away_score is None:
+                                    team_stats = away_team_data.get('teamStats', {})
+                                    if team_stats:
+                                        skater_stats = team_stats.get('teamSkaterStats', {})
+                                        if skater_stats and 'goals' in skater_stats:
+                                            away_score = skater_stats['goals']
+                                
+                                if home_score is None:
+                                    team_stats = home_team_data.get('teamStats', {})
+                                    if team_stats:
+                                        skater_stats = team_stats.get('teamSkaterStats', {})
+                                        if skater_stats and 'goals' in skater_stats:
+                                            home_score = skater_stats['goals']
+                                
+                                # If we found both scores, use them
+                                if away_score is not None and home_score is not None:
+                                    scores_found = True
+                                    game_data['away_score'] = away_score
+                                    game_data['home_score'] = home_score
+                                    
+                                    # Get period info
+                                    period_desc = boxscore.get('periodDescriptor', {})
+                                    if not period_desc:
+                                        period_desc = boxscore.get('periodInfo', {})
+                                    
+                                    if game_data['is_final']:
+                                        period_num = period_desc.get('number') or period_desc.get('currentPeriod') or 3
+                                        if period_num > 3:
+                                            game_data['current_period'] = f"Final/OT"
+                                        else:
+                                            game_data['current_period'] = "Final"
+                                        game_data['time_remaining'] = "0:00"
+                                    else:
+                                        current_period = period_desc.get('number') or period_desc.get('currentPeriod') or 1
+                                        clock = boxscore.get('clock', {})
+                                        if not clock:
+                                            clock = boxscore.get('periodInfo', {})
+                                        time_remaining = clock.get('timeRemaining') or clock.get('timeInPeriod') or '20:00'
+                                        game_data['current_period'] = current_period
+                                        game_data['time_remaining'] = time_remaining
+                        
+                        # Fallback: try get_game_boxscore if comprehensive didn't work
+                        if not scores_found:
+                            boxscore_data = api.get_game_boxscore(game_id)
+                            if boxscore_data:
+                                away_team_data = boxscore_data.get('awayTeam', {})
+                                home_team_data = boxscore_data.get('homeTeam', {})
+                                
+                                away_score = None
+                                if 'score' in away_team_data:
+                                    away_score = away_team_data['score']
+                                elif 'goals' in away_team_data:
+                                    away_score = away_team_data['goals']
+                                else:
+                                    team_stats = away_team_data.get('teamStats', {}).get('teamSkaterStats', {})
+                                    if team_stats and 'goals' in team_stats:
+                                        away_score = team_stats['goals']
+                                
+                                home_score = None
+                                if 'score' in home_team_data:
+                                    home_score = home_team_data['score']
+                                elif 'goals' in home_team_data:
+                                    home_score = home_team_data['goals']
+                                else:
+                                    team_stats = home_team_data.get('teamStats', {}).get('teamSkaterStats', {})
+                                    if team_stats and 'goals' in team_stats:
+                                        home_score = team_stats['goals']
+                                
+                                if away_score is not None and home_score is not None:
+                                    scores_found = True
+                                    game_data['away_score'] = away_score
+                                    game_data['home_score'] = home_score
+                                    
+                                    # Get period info
+                                    period_desc = boxscore_data.get('periodDescriptor', {})
+                                    if not period_desc:
+                                        period_desc = boxscore_data.get('periodInfo', {})
+                                    
+                                    if game_data['is_final']:
+                                        period_num = period_desc.get('number') or period_desc.get('currentPeriod') or 3
+                                        if period_num > 3:
+                                            game_data['current_period'] = f"Final/OT"
+                                        else:
+                                            game_data['current_period'] = "Final"
+                                        game_data['time_remaining'] = "0:00"
+                                    else:
+                                        current_period = period_desc.get('number') or period_desc.get('currentPeriod') or 1
+                                        clock = boxscore_data.get('clock', {})
+                                        if not clock:
+                                            clock = boxscore_data.get('periodInfo', {})
+                                        time_remaining = clock.get('timeRemaining') or clock.get('timeInPeriod') or '20:00'
+                                        game_data['current_period'] = current_period
+                                        game_data['time_remaining'] = time_remaining
+                    except Exception as e:
+                        print(f"Error getting live scores for game {game_id}: {e}")
+                        import traceback
+                        traceback.print_exc()
+                    
+                    # Get live prediction (only for live games, not finished)
+                    if game_data['is_live']:
+                        live = get_live_prediction(game_id)
+                        if live:
+                            # Ensure team names are set from game data if missing
+                            if not live.get('away_team') and away_team:
+                                live['away_team'] = away_team
+                            if not live.get('home_team') and home_team:
+                                live['home_team'] = home_team
+                            # Recalculate predicted_winner if we now have team names
+                            if live.get('away_team') and live.get('home_team') and not live.get('predicted_winner'):
+                                live['predicted_winner'] = live['home_team'] if live['home_prob'] > live['away_prob'] else live['away_team']
+                            
+                            game_data['live_prediction'] = live
+                            
+                            # Use scores from live prediction as last resort if we still don't have scores
+                            if not scores_found:
+                                live_away_score = live.get('away_score')
+                                live_home_score = live.get('home_score')
+                                if live_away_score is not None and live_home_score is not None:
+                                    game_data['away_score'] = live_away_score
+                                    game_data['home_score'] = live_home_score
+                                    if 'current_period' not in game_data:
+                                        game_data['current_period'] = live.get('current_period', 1)
+                                    if 'time_remaining' not in game_data:
+                                        game_data['time_remaining'] = live.get('time_remaining', '20:00')
+                
+                games.append(game_data)
+        
+        return jsonify({
+            'games': games,
+            'date': today,
+            'last_updated': datetime.now(ct_tz).isoformat()
+        })
+    
+    except Exception as e:
+        print(f"Error getting games: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/game/<game_id>')
+def get_game(game_id):
+    """Get specific game prediction (for live updates)"""
+    try:
+        # Get game info
+        today = datetime.now(ct_tz).strftime('%Y-%m-%d')
+        schedule = api.get_game_schedule(today)
+        
+        game_info = None
+        for day in schedule.get('gameWeek', []):
+            for game in day.get('games', []):
+                if str(game.get('id', '')) == game_id:
+                    game_info = game
+                    break
+            if game_info:
+                break
+        
+        if not game_info:
+            return jsonify({'error': 'Game not found'}), 404
+        
+        away_team = (game_info.get('awayTeam', {}) or {}).get('abbrev', '')
+        home_team = (game_info.get('homeTeam', {}) or {}).get('abbrev', '')
+        game_state = game_info.get('gameState', 'PREVIEW')
+        
+        result = {
+            'game_id': game_id,
+            'away_team': away_team,
+            'home_team': home_team,
+            'game_state': game_state,
+            'is_live': game_state in ['LIVE', 'CRIT'],
+            'pregame_prediction': None,
+            'live_prediction': None
+        }
+        
+        # Get pre-game prediction
+        pregame = get_pregame_prediction(away_team, home_team, today, game_id)
+        if pregame:
+            result['pregame_prediction'] = pregame
+        
+        # Get live prediction if live
+        if result['is_live']:
+            live = get_live_prediction(game_id)
+            if live:
+                result['live_prediction'] = live
+        
+        return jsonify(result)
+    
+    except Exception as e:
+        print(f"Error getting game: {e}")
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/static/rink.jpg')
+def serve_rink_image():
+    """Serve the rink image for shot charts"""
+    try:
+        rink_path = os.path.join(os.path.dirname(os.path.abspath(__file__)), 'F300E016-E2BD-450A-B624-5BADF3853AC0.jpeg')
+        if not os.path.exists(rink_path):
+            rink_path = os.path.join(os.getcwd(), 'F300E016-E2BD-450A-B624-5BADF3853AC0.jpeg')
+        if os.path.exists(rink_path):
+            return send_file(rink_path, mimetype='image/jpeg')
+        else:
+            return jsonify({'error': 'Rink image not found'}), 404
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+
+@app.route('/api/debug/<game_id>')
+def debug_game_data(game_id):
+    """Debug endpoint to see actual API structure"""
+    try:
+        boxscore = api.get_game_boxscore(game_id)
+        comp_data = api.get_comprehensive_game_data(game_id)
+        
+        debug_info = {
+            'boxscore_exists': boxscore is not None,
+            'comp_data_exists': comp_data is not None,
+        }
+        
+        if boxscore:
+            debug_info['boxscore_keys'] = list(boxscore.keys())[:20]
+            away_team = boxscore.get('awayTeam', {})
+            home_team = boxscore.get('homeTeam', {})
+            debug_info['awayTeam'] = {
+                'keys': list(away_team.keys())[:15],
+                'score': away_team.get('score'),
+                'goals': away_team.get('goals'),
+                'has_teamStats': bool(away_team.get('teamStats')),
+                'teamStats_keys': list(away_team.get('teamStats', {}).keys())[:10] if away_team.get('teamStats') else [],
+                'teamSkaterStats_keys': list(away_team.get('teamStats', {}).get('teamSkaterStats', {}).keys())[:15] if away_team.get('teamStats', {}).get('teamSkaterStats') else [],
+            }
+            debug_info['homeTeam'] = {
+                'keys': list(home_team.keys())[:15],
+                'score': home_team.get('score'),
+                'goals': home_team.get('goals'),
+                'has_teamStats': bool(home_team.get('teamStats')),
+            }
+        
+        if comp_data:
+            comp_boxscore = comp_data.get('boxscore', {})
+            debug_info['comp_boxscore'] = {
+                'keys': list(comp_boxscore.keys())[:15] if comp_boxscore else [],
+                'awayTeam_score': comp_boxscore.get('awayTeam', {}).get('score') if comp_boxscore else None,
+            }
+        
+        return jsonify(debug_info)
+    except Exception as e:
+        import traceback
+        return jsonify({'error': str(e), 'traceback': traceback.format_exc()}), 500
+
+
+@app.route('/api/game/<game_id>/report')
+def get_live_game_report(game_id):
+    """Get detailed live game report with comprehensive stats"""
+    try:
+        # Get comprehensive game data
+        game_data = api.get_comprehensive_game_data(game_id)
+        if not game_data:
+            return jsonify({'error': 'Could not fetch game data'}), 404
+        
+        # Extract basic game info - boxscore is at top level
+        boxscore = game_data.get('boxscore', {})
+        if not boxscore:
+            return jsonify({'error': 'No boxscore data available'}), 404
+        
+        # NHL API boxscore structure: {awayTeam: {...}, homeTeam: {...}, ...}
+        away_team = boxscore.get('awayTeam', {})
+        home_team = boxscore.get('homeTeam', {})
+        
+        away_abbrev = away_team.get('abbrev', '') or away_team.get('abbreviation', '')
+        home_abbrev = home_team.get('abbrev', '') or home_team.get('abbreviation', '')
+        away_id = away_team.get('id')
+        home_id = home_team.get('id')
+        
+        # Get current scores - try multiple paths
+        away_score = (
+            away_team.get('score') or 
+            away_team.get('goals') or
+            away_team.get('teamStats', {}).get('teamSkaterStats', {}).get('goals') or
+            0
+        )
+        home_score = (
+            home_team.get('score') or 
+            home_team.get('goals') or
+            home_team.get('teamStats', {}).get('teamSkaterStats', {}).get('goals') or
+            0
+        )
+        
+        # Get period info
+        period_descriptor = boxscore.get('periodDescriptor', {})
+        current_period = period_descriptor.get('number', 1)
+        period_type = period_descriptor.get('periodType', 'REG')
+        
+        clock = boxscore.get('clock', {})
+        time_remaining = clock.get('timeRemaining', '20:00')
+        
+        # Calculate advanced metrics using report generator methods
+        report_data = {
+            'game_id': game_id,
+            'away_team': away_abbrev,
+            'home_team': home_abbrev,
+            'away_id': away_id,
+            'home_id': home_id,
+            'away_score': away_score,
+            'home_score': home_score,
+            'current_period': current_period,
+            'period_type': period_type,
+            'time_remaining': time_remaining,
+            'game_state': boxscore.get('gameState', 'LIVE'),
+            'stats': {},
+            'period_stats': {},
+            'player_stats': {},
+            'advanced_metrics': {}
+        }
+        
+        try:
+            # Calculate xG and other advanced metrics
+            if game_data.get('play_by_play') and away_id and home_id:
+                report_gen = get_report_generator()
+                away_xg, home_xg = report_gen._calculate_xg_from_plays(game_data)
+                away_gs_periods, away_xg_periods = report_gen._calculate_period_metrics(game_data, away_id, 'away')
+                home_gs_periods, home_xg_periods = report_gen._calculate_period_metrics(game_data, home_id, 'home')
+                
+                # Calculate HDC
+                away_hdc, home_hdc = report_gen._calculate_hdc_from_plays(game_data)
+                
+                # Calculate zone metrics
+                away_zone_metrics = report_gen._calculate_zone_metrics(game_data, away_id, 'away')
+                home_zone_metrics = report_gen._calculate_zone_metrics(game_data, home_id, 'home')
+                
+                # Calculate movement metrics
+                from advanced_metrics_analyzer import AdvancedMetricsAnalyzer
+                analyzer = AdvancedMetricsAnalyzer(game_data.get('play_by_play', {}))
+                away_movement = analyzer.calculate_pre_shot_movement_metrics(away_id)
+                home_movement = analyzer.calculate_pre_shot_movement_metrics(home_id)
+                
+                # Get period stats
+                away_period_stats = report_gen._calculate_real_period_stats(game_data, away_id, 'away')
+                home_period_stats = report_gen._calculate_real_period_stats(game_data, home_id, 'home')
+                
+                # Calculate Corsi percentage
+                away_corsi_pct = sum(away_period_stats.get('corsi_pct', [50.0])) / max(1, len(away_period_stats.get('corsi_pct', [50.0])))
+                home_corsi_pct = sum(home_period_stats.get('corsi_pct', [50.0])) / max(1, len(home_period_stats.get('corsi_pct', [50.0])))
+                
+                # Calculate faceoff percentage
+                away_fo_wins = sum(away_period_stats.get('faceoff_wins', [0]))
+                away_fo_total = sum(away_period_stats.get('faceoff_total', [0]))
+                home_fo_wins = sum(home_period_stats.get('faceoff_wins', [0]))
+                home_fo_total = sum(home_period_stats.get('faceoff_total', [0]))
+                
+                # Power play percentage
+                away_pp_goals = sum(away_period_stats.get('pp_goals', [0]))
+                away_pp_attempts = sum(away_period_stats.get('pp_attempts', [0]))
+                home_pp_goals = sum(home_period_stats.get('pp_goals', [0]))
+                home_pp_attempts = sum(home_period_stats.get('pp_attempts', [0]))
+                
+                # Calculate clutch metrics
+                away_period_goals, _, _ = report_gen._calculate_goals_by_period(game_data, away_id)
+                home_period_goals, _, _ = report_gen._calculate_goals_by_period(game_data, home_id)
+                
+                report_data['advanced_metrics'] = {
+                    'away_xg': round(away_xg, 2),
+                    'home_xg': round(home_xg, 2),
+                    'away_hdc': away_hdc,
+                    'home_hdc': home_hdc,
+                    'away_gs': round(sum(away_gs_periods), 2) if away_gs_periods else 0.0,
+                    'home_gs': round(sum(home_gs_periods), 2) if home_gs_periods else 0.0,
+                    'away_gs_by_period': [round(g, 2) for g in away_gs_periods],
+                    'home_gs_by_period': [round(g, 2) for g in home_gs_periods],
+                    'away_xg_by_period': [round(x, 2) for x in away_xg_periods],
+                    'home_xg_by_period': [round(x, 2) for x in home_xg_periods]
+                }
+                
+                report_data['zone_metrics'] = {
+                    'away_nzt': sum(away_zone_metrics.get('nz_turnovers', [0, 0, 0])),
+                    'away_nztsa': sum(away_zone_metrics.get('nz_turnovers_to_shots', [0, 0, 0])),
+                    'away_ozs': sum(away_zone_metrics.get('oz_originating_shots', [0, 0, 0])),
+                    'away_nzs': sum(away_zone_metrics.get('nz_originating_shots', [0, 0, 0])),
+                    'away_dzs': sum(away_zone_metrics.get('dz_originating_shots', [0, 0, 0])),
+                    'away_fc': sum(away_zone_metrics.get('fc_cycle_sog', [0, 0, 0])),
+                    'away_rush': sum(away_zone_metrics.get('rush_sog', [0, 0, 0])),
+                    'home_nzt': sum(home_zone_metrics.get('nz_turnovers', [0, 0, 0])),
+                    'home_nztsa': sum(home_zone_metrics.get('nz_turnovers_to_shots', [0, 0, 0])),
+                    'home_ozs': sum(home_zone_metrics.get('oz_originating_shots', [0, 0, 0])),
+                    'home_nzs': sum(home_zone_metrics.get('nz_originating_shots', [0, 0, 0])),
+                    'home_dzs': sum(home_zone_metrics.get('dz_originating_shots', [0, 0, 0])),
+                    'home_fc': sum(home_zone_metrics.get('fc_cycle_sog', [0, 0, 0])),
+                    'home_rush': sum(home_zone_metrics.get('rush_sog', [0, 0, 0])),
+                }
+                
+                report_data['movement_metrics'] = {
+                    'away_lateral': round(away_movement['lateral_movement'].get('avg_delta_y', 0.0), 2),
+                    'away_longitudinal': round(away_movement['longitudinal_movement'].get('avg_delta_x', 0.0), 2),
+                    'home_lateral': round(home_movement['lateral_movement'].get('avg_delta_y', 0.0), 2),
+                    'home_longitudinal': round(home_movement['longitudinal_movement'].get('avg_delta_x', 0.0), 2),
+                }
+                
+                report_data['period_stats'] = {
+                    'away': away_period_stats,
+                    'home': home_period_stats
+                }
+                
+                report_data['team_stats'] = {
+                    'away_corsi_pct': round(away_corsi_pct, 1),
+                    'home_corsi_pct': round(home_corsi_pct, 1),
+                    'away_faceoff_pct': round((away_fo_wins / away_fo_total * 100) if away_fo_total > 0 else 50.0, 1),
+                    'home_faceoff_pct': round((home_fo_wins / home_fo_total * 100) if home_fo_total > 0 else 50.0, 1),
+                    'away_power_play_pct': round((away_pp_goals / away_pp_attempts * 100) if away_pp_attempts > 0 else 0.0, 1),
+                    'home_power_play_pct': round((home_pp_goals / home_pp_attempts * 100) if home_pp_attempts > 0 else 0.0, 1),
+                }
+                
+                report_data['clutch_metrics'] = {
+                    'away_third_period_goals': away_period_goals[2] if len(away_period_goals) > 2 else 0,
+                    'home_third_period_goals': home_period_goals[2] if len(home_period_goals) > 2 else 0,
+                    'one_goal_game': abs(away_score - home_score) == 1,
+                    'away_scored_first': False,  # Will be calculated below
+                    'home_scored_first': False,
+                }
+                
+                # Who scored first
+                pbp = game_data.get('play_by_play', {})
+                plays = pbp.get('plays', []) or pbp.get('events', []) or []
+                for play in plays:
+                    if play.get('typeDescKey') == 'goal':
+                        details = play.get('details', {})
+                        first_goal_scorer = details.get('eventOwnerTeamId')
+                        report_data['clutch_metrics']['away_scored_first'] = (first_goal_scorer == away_id)
+                        report_data['clutch_metrics']['home_scored_first'] = (first_goal_scorer == home_id)
+                        break
+        
+        except Exception as e:
+            print(f"Error calculating advanced metrics: {e}")
+        
+        # Extract team stats - use report generator's method which handles all cases
+        try:
+            # First try direct boxscore extraction
+            away_team_stats = {}
+            home_team_stats = {}
+            
+            # Path 1: teamStats.teamSkaterStats (most common NHL API structure)
+            if away_team.get('teamStats', {}).get('teamSkaterStats'):
+                away_team_stats = away_team.get('teamStats', {}).get('teamSkaterStats', {})
+            elif away_team.get('teamStats'):
+                away_team_stats = away_team.get('teamStats', {})
+            
+            if home_team.get('teamStats', {}).get('teamSkaterStats'):
+                home_team_stats = home_team.get('teamStats', {}).get('teamSkaterStats', {})
+            elif home_team.get('teamStats'):
+                home_team_stats = home_team.get('teamStats', {})
+            
+            # Always try to use report generator's method to calculate from play-by-play
+            # This is more accurate than boxscore stats for faceoffs and power plays
+            try:
+                # Use report generator's method which calculates from play-by-play
+                report_gen = get_report_generator()
+                away_stats_pbp = report_gen._calculate_team_stats_from_play_by_play(game_data, 'awayTeam')
+                home_stats_pbp = report_gen._calculate_team_stats_from_play_by_play(game_data, 'homeTeam')
+                
+                # Calculate total faceoffs from play-by-play (count ALL faceoff events, not per-team)
+                total_faceoffs = 0
+                try:
+                    pbp = game_data.get('play_by_play', {})
+                    plays = []
+                    if isinstance(pbp, dict):
+                        plays = pbp.get('plays', []) or pbp.get('events', []) or []
+                    elif isinstance(pbp, list):
+                        plays = pbp
+                    
+                    for play in plays:
+                        play_type = play.get('typeDescKey', '') or play.get('type', '')
+                        if play_type == 'faceoff':
+                            total_faceoffs += 1
+                except Exception as e:
+                    print(f"Error counting total faceoffs: {e}")
+                    # Fallback: use sum of wins (each faceoff has one winner)
+                    total_faceoffs = (away_stats_pbp.get('faceoffWins', 0) if away_stats_pbp else 0) + \
+                                    (home_stats_pbp.get('faceoffWins', 0) if home_stats_pbp else 0)
+                
+                if away_stats_pbp:
+                    # Merge play-by-play stats with boxscore stats (play-by-play takes precedence for faceoffs/PP)
+                    away_team_stats = {
+                        'shots': away_team_stats.get('shots') or away_team_stats.get('sog') or away_stats_pbp.get('shotsOnGoal', 0),
+                        'hits': away_team_stats.get('hits') or away_stats_pbp.get('hits', 0),
+                        'pim': away_team_stats.get('pim') or away_stats_pbp.get('penaltyMinutes', 0),
+                        'faceOffWins': away_stats_pbp.get('faceoffWins', 0),
+                        'faceOffTaken': total_faceoffs,  # Use total faceoffs for both teams
+                        'powerPlayGoals': away_stats_pbp.get('powerPlayGoals', 0),
+                        'powerPlayOpportunities': away_stats_pbp.get('powerPlayOpportunities', 0),
+                        'blocked': away_team_stats.get('blocked') or away_team_stats.get('blockedShots') or away_stats_pbp.get('blockedShots', 0),
+                        'giveaways': away_team_stats.get('giveaways') or away_stats_pbp.get('giveaways', 0),
+                        'takeaways': away_team_stats.get('takeaways') or away_stats_pbp.get('takeaways', 0)
+                    }
+                
+                if home_stats_pbp:
+                    # Merge play-by-play stats with boxscore stats
+                    home_team_stats = {
+                        'shots': home_team_stats.get('shots') or home_team_stats.get('sog') or home_stats_pbp.get('shotsOnGoal', 0),
+                        'hits': home_team_stats.get('hits') or home_stats_pbp.get('hits', 0),
+                        'pim': home_team_stats.get('pim') or home_stats_pbp.get('penaltyMinutes', 0),
+                        'faceOffWins': home_stats_pbp.get('faceoffWins', 0),
+                        'faceOffTaken': total_faceoffs,  # Use total faceoffs for both teams
+                        'powerPlayGoals': home_stats_pbp.get('powerPlayGoals', 0),
+                        'powerPlayOpportunities': home_stats_pbp.get('powerPlayOpportunities', 0),
+                        'blocked': home_team_stats.get('blocked') or home_team_stats.get('blockedShots') or home_stats_pbp.get('blockedShots', 0),
+                        'giveaways': home_team_stats.get('giveaways') or home_stats_pbp.get('giveaways', 0),
+                        'takeaways': home_team_stats.get('takeaways') or home_stats_pbp.get('takeaways', 0)
+                    }
+            except Exception as e:
+                print(f"Error calculating stats from play-by-play: {e}")
+                import traceback
+                traceback.print_exc()
+                # Final fallback: calculate from player data
+                try:
+                    player_by_game = boxscore.get('playerByGameStats', {})
+                    if player_by_game:
+                        away_players = player_by_game.get('away', {})
+                        home_players = player_by_game.get('home', {})
+                        
+                        def calc_team_from_players(players):
+                            stats = {
+                                'shots': 0, 'hits': 0, 'pim': 0,
+                                'faceOffWins': 0, 'faceOffTaken': 0,
+                                'powerPlayGoals': 0, 'powerPlayOpportunities': 0,
+                                'blocked': 0, 'giveaways': 0, 'takeaways': 0
+                            }
+                            for pos_group in ['forwards', 'defense', 'goalies']:
+                                if pos_group in players:
+                                    for player in players[pos_group]:
+                                        stats['shots'] += player.get('shots', 0) or player.get('sog', 0)
+                                        stats['hits'] += player.get('hits', 0)
+                                        stats['pim'] += player.get('pim', 0) or player.get('penaltyMinutes', 0)
+                                        stats['blocked'] += player.get('blockedShots', 0) or player.get('blocked', 0)
+                                        stats['giveaways'] += player.get('giveaways', 0)
+                                        stats['takeaways'] += player.get('takeaways', 0)
+                                        stats['powerPlayGoals'] += player.get('powerPlayGoals', 0)
+                                        fo_wins = player.get('faceoffWins', 0) or player.get('faceOffWins', 0)
+                                        fo_taken = player.get('faceoffTaken', 0) or player.get('faceOffTaken', 0)
+                                        stats['faceOffWins'] += fo_wins
+                                        stats['faceOffTaken'] += fo_taken
+                            return stats
+                        
+                        if not away_team_stats and away_players:
+                            away_team_stats = calc_team_from_players(away_players)
+                        if not home_team_stats and home_players:
+                            home_team_stats = calc_team_from_players(home_players)
+                except Exception as e2:
+                    print(f"Error calculating stats from players: {e2}")
+            
+            # Calculate faceoff totals - use actual totals from stats
+            away_fo_wins = away_team_stats.get('faceOffWins') or away_team_stats.get('faceoffWins') or 0
+            home_fo_wins = home_team_stats.get('faceOffWins') or home_team_stats.get('faceoffWins') or 0
+            away_fo_taken = away_team_stats.get('faceOffTaken') or away_team_stats.get('faceoffTaken') or 0
+            home_fo_taken = home_team_stats.get('faceOffTaken') or home_team_stats.get('faceoffTaken') or 0
+            
+            # Faceoff totals should be the same for both teams (total faceoffs in game)
+            # Both teams participate in the same faceoffs, so totals should be equal
+            # Use the maximum of the two totals, or calculate from wins if both are 0
+            if away_fo_taken > 0 or home_fo_taken > 0:
+                # Use the maximum (they should be the same, but use max as safety)
+                total_faceoffs = max(away_fo_taken, home_fo_taken)
+                away_fo_total = total_faceoffs
+                home_fo_total = total_faceoffs
+            else:
+                # No totals available - calculate from wins
+                # Total faceoffs = away wins + home wins (each faceoff has one winner)
+                total_faceoffs = away_fo_wins + home_fo_wins
+                if total_faceoffs > 0:
+                    # Both teams take the same total number of faceoffs
+                    away_fo_total = total_faceoffs
+                    home_fo_total = total_faceoffs
+                else:
+                    away_fo_total = 0
+                    home_fo_total = 0
+            
+            report_data['stats'] = {
+                'away': {
+                    'shots': away_team_stats.get('shots') or away_team_stats.get('sog') or 0,
+                    'hits': away_team_stats.get('hits') or 0,
+                    'pim': away_team_stats.get('pim') or 0,
+                    'faceoff_wins': away_fo_wins,
+                    'faceoff_total': away_fo_total,
+                    'power_play_goals': away_team_stats.get('powerPlayGoals') or away_team_stats.get('ppGoals') or 0,
+                    'power_play_opportunities': away_team_stats.get('powerPlayOpportunities') or away_team_stats.get('ppOpportunities') or 0,
+                    'blocked_shots': away_team_stats.get('blocked') or away_team_stats.get('blockedShots') or 0,
+                    'giveaways': away_team_stats.get('giveaways') or 0,
+                    'takeaways': away_team_stats.get('takeaways') or 0
+                },
+                'home': {
+                    'shots': home_team_stats.get('shots') or home_team_stats.get('sog') or 0,
+                    'hits': home_team_stats.get('hits') or 0,
+                    'pim': home_team_stats.get('pim') or 0,
+                    'faceoff_wins': home_fo_wins,
+                    'faceoff_total': home_fo_total,
+                    'power_play_goals': home_team_stats.get('powerPlayGoals') or home_team_stats.get('ppGoals') or 0,
+                    'power_play_opportunities': home_team_stats.get('powerPlayOpportunities') or home_team_stats.get('ppOpportunities') or 0,
+                    'blocked_shots': home_team_stats.get('blocked') or home_team_stats.get('blockedShots') or 0,
+                    'giveaways': home_team_stats.get('giveaways') or 0,
+                    'takeaways': home_team_stats.get('takeaways') or 0
+                }
+            }
+            
+            # Calculate percentages - only if we have valid data
+            # For faceoffs: percentage = wins / total faceoffs taken by that team
+            away_fo_pct = 0.0
+            home_fo_pct = 0.0
+            if report_data['stats']['away']['faceoff_total'] > 0:
+                away_fo_pct = (report_data['stats']['away']['faceoff_wins'] / 
+                              report_data['stats']['away']['faceoff_total']) * 100
+            if report_data['stats']['home']['faceoff_total'] > 0:
+                home_fo_pct = (report_data['stats']['home']['faceoff_wins'] / 
+                              report_data['stats']['home']['faceoff_total']) * 100
+            
+            report_data['stats']['away']['faceoff_pct'] = round(away_fo_pct, 1) if away_fo_pct > 0 else 0.0
+            report_data['stats']['home']['faceoff_pct'] = round(home_fo_pct, 1) if home_fo_pct > 0 else 0.0
+            
+            # For power play: percentage = (goals / opportunities) * 100
+            away_pp_goals = report_data['stats']['away']['power_play_goals']
+            home_pp_goals = report_data['stats']['home']['power_play_goals']
+            away_pp_opps = report_data['stats']['away']['power_play_opportunities']
+            home_pp_opps = report_data['stats']['home']['power_play_opportunities']
+            
+            # Calculate percentage: (goals / opportunities) * 100
+            if away_pp_opps > 0:
+                away_pp_pct = (away_pp_goals / away_pp_opps) * 100
+            else:
+                away_pp_pct = 0.0
+            
+            if home_pp_opps > 0:
+                home_pp_pct = (home_pp_goals / home_pp_opps) * 100
+            else:
+                home_pp_pct = 0.0
+            
+            report_data['stats']['away']['power_play_pct'] = round(away_pp_pct, 1)
+            report_data['stats']['home']['power_play_pct'] = round(home_pp_pct, 1)
+            
+        except Exception as e:
+            print(f"Error extracting team stats: {e}")
+        
+        # Get goalie stats
+        try:
+            away_goalies = away_team.get('goalies', [])
+            home_goalies = home_team.get('goalies', [])
+            
+            report_data['goalie_stats'] = {
+                'away': [],
+                'home': []
+            }
+            
+            for goalie in away_goalies:
+                goalie_data = goalie.get('playerStats', {})
+                report_data['goalie_stats']['away'].append({
+                    'name': goalie.get('name', {}).get('default', 'Unknown'),
+                    'saves': goalie_data.get('saves', 0),
+                    'shots_against': goalie_data.get('shotsAgainst', 0),
+                    'save_pct': round((goalie_data.get('saves', 0) / max(1, goalie_data.get('shotsAgainst', 1))) * 100, 2),
+                    'toi': goalie_data.get('timeOnIce', '0:00')
+                })
+            
+            for goalie in home_goalies:
+                goalie_data = goalie.get('playerStats', {})
+                report_data['goalie_stats']['home'].append({
+                    'name': goalie.get('name', {}).get('default', 'Unknown'),
+                    'saves': goalie_data.get('saves', 0),
+                    'shots_against': goalie_data.get('shotsAgainst', 0),
+                    'save_pct': round((goalie_data.get('saves', 0) / max(1, goalie_data.get('shotsAgainst', 1))) * 100, 2),
+                    'toi': goalie_data.get('timeOnIce', '0:00')
+                })
+        
+        except Exception as e:
+            print(f"Error extracting goalie stats: {e}")
+        
+        # Create player roster map for name lookups
+        player_roster_map = {}
+        try:
+            pbp = game_data.get('play_by_play', {})
+            if pbp and 'rosterSpots' in pbp:
+                for player in pbp['rosterSpots']:
+                    player_id = str(player.get('playerId') or player.get('id') or player.get('personId', ''))
+                    if player_id:
+                        # Build name from firstName/lastName
+                        first_name = ''
+                        last_name = ''
+                        if player.get('firstName'):
+                            if isinstance(player['firstName'], dict):
+                                first_name = player['firstName'].get('default', '')
+                            else:
+                                first_name = str(player['firstName'])
+                        if player.get('lastName'):
+                            if isinstance(player['lastName'], dict):
+                                last_name = player['lastName'].get('default', '')
+                            else:
+                                last_name = str(player['lastName'])
+                        
+                        full_name = f"{first_name} {last_name}".strip()
+                        if full_name:
+                            player_roster_map[player_id] = full_name
+        except Exception as e:
+            print(f"Error creating player roster map: {e}")
+        
+        # Get scoring summary
+        try:
+            scoring_plays = []
+            pbp = game_data.get('play_by_play', {})
+            
+            # Try different play-by-play structures
+            plays = []
+            if isinstance(pbp, dict):
+                plays = pbp.get('plays', []) or pbp.get('events', []) or []
+            elif isinstance(pbp, list):
+                plays = pbp
+            
+            for play in plays:
+                # Check if it's a goal - try multiple keys
+                is_goal = (
+                    play.get('typeDescKey') == 'goal' or 
+                    play.get('type') == 'goal' or
+                    play.get('eventTypeId') == 'GOAL' or
+                    play.get('result', {}).get('eventTypeId') == 'GOAL'
+                )
+                
+                if is_goal:
+                    # Extract period info
+                    period_desc = play.get('periodDescriptor') or play.get('period') or {}
+                    period_num = period_desc.get('number') if isinstance(period_desc, dict) else (period_desc if isinstance(period_desc, int) else play.get('period', 1))
+                    
+                    # Extract time
+                    time_str = play.get('timeInPeriod') or play.get('timeRemaining') or play.get('time', '')
+                    
+                    # Extract details first
+                    details = play.get('details', {})
+                    
+                    # Extract team - try multiple paths
+                    team_id = (
+                        details.get('eventOwnerTeamId') or
+                        play.get('team', {}).get('id') or
+                        play.get('teamId') or
+                        play.get('eventOwnerTeam', {}).get('id') or
+                        details.get('scoringTeamId')
+                    )
+                    
+                    # Convert to int for comparison if needed
+                    if team_id:
+                        try:
+                            team_id = int(team_id)
+                        except:
+                            pass
+                    
+                    # Extract scorer - try multiple paths
+                    scorer_name = 'Unknown'
+                    
+                    # Try scoringPlayerName (most common) - NHL API structure
+                    if details.get('scoringPlayerName'):
+                        scorer_name_obj = details['scoringPlayerName']
+                        if isinstance(scorer_name_obj, dict):
+                            # Try all possible name fields
+                            scorer_name = (
+                                scorer_name_obj.get('default') or 
+                                scorer_name_obj.get('fullName') or 
+                                (scorer_name_obj.get('firstName', '') + ' ' + scorer_name_obj.get('lastName', '')).strip() or
+                                scorer_name_obj.get('lastName') or
+                                'Unknown'
+                            )
+                        else:
+                            scorer_name = str(scorer_name_obj) if scorer_name_obj else 'Unknown'
+                    
+                    # Look up player name from roster map using player ID
+                    if scorer_name == 'Unknown' or scorer_name.startswith('Player #'):
+                        player_id = str(details.get('scoringPlayerId') or details.get('playerId') or '')
+                        if player_id and player_id in player_roster_map:
+                            scorer_name = player_roster_map[player_id]
+                        elif player_id:
+                            scorer_name = f"Player #{player_id}"
+                    # Try other possible fields
+                    if scorer_name == 'Unknown' and details.get('scorer'):
+                        scorer_obj = details['scorer']
+                        if isinstance(scorer_obj, dict):
+                            scorer_name = scorer_obj.get('fullName') or scorer_obj.get('name', {}).get('default', 'Unknown') if isinstance(scorer_obj.get('name'), dict) else 'Unknown'
+                        else:
+                            scorer_name = str(scorer_obj)
+                    elif play.get('player', {}).get('fullName'):
+                        scorer_name = play['player']['fullName']
+                    
+                    # Extract assists - NHL API uses assist1PlayerName and assist2PlayerName
+                    assists = []
+                    assist1 = details.get('assist1PlayerName')
+                    assist2 = details.get('assist2PlayerName')
+                    
+                    # Also try assistDetails array
+                    assist_details = details.get('assistDetails', [])
+                    
+                    # Process assist1 - try name first, then lookup by ID
+                    if assist1:
+                        assist_name = ''
+                        if isinstance(assist1, dict):
+                            assist_name = (
+                                assist1.get('default') or 
+                                assist1.get('fullName') or 
+                                (assist1.get('firstName', '') + ' ' + assist1.get('lastName', '')).strip() or
+                                assist1.get('lastName') or
+                                ''
+                            )
+                        else:
+                            assist_name = str(assist1) if assist1 else ''
+                        
+                        # If no name, try looking up by assist1PlayerId
+                        if not assist_name or assist_name == 'Unknown':
+                            assist_id = str(details.get('assist1PlayerId') or '')
+                            if assist_id and assist_id in player_roster_map:
+                                assist_name = player_roster_map[assist_id]
+                        
+                        if assist_name and assist_name != 'Unknown' and assist_name.strip() and not assist_name.startswith('Player #'):
+                            assists.append(assist_name)
+                    
+                    # Process assist2 - try name first, then lookup by ID
+                    if assist2:
+                        assist_name = ''
+                        if isinstance(assist2, dict):
+                            assist_name = (
+                                assist2.get('default') or 
+                                assist2.get('fullName') or 
+                                (assist2.get('firstName', '') + ' ' + assist2.get('lastName', '')).strip() or
+                                assist2.get('lastName') or
+                                ''
+                            )
+                        else:
+                            assist_name = str(assist2) if assist2 else ''
+                        
+                        # If no name, try looking up by assist2PlayerId
+                        if not assist_name or assist_name == 'Unknown':
+                            assist_id = str(details.get('assist2PlayerId') or '')
+                            if assist_id and assist_id in player_roster_map:
+                                assist_name = player_roster_map[assist_id]
+                        
+                        if assist_name and assist_name != 'Unknown' and assist_name.strip() and not assist_name.startswith('Player #'):
+                            assists.append(assist_name)
+                    
+                    # Extract shot type
+                    shot_type = details.get('shotType', 'wrist').title() or 'Wrist'
+                    
+                    # Calculate xG for this goal
+                    play_index = -1
+                    try:
+                        play_index = plays.index(play)
+                    except:
+                        pass
+                    
+                    xg_value = 0.0
+                    try:
+                        # Get previous events for context (rebounds, rushes)
+                        if play_index >= 0:
+                            previous_events = plays[max(0, play_index-10):play_index]
+                        else:
+                            previous_events = []
+                        report_gen = get_report_generator()
+                        xg_value = report_gen._calculate_shot_xg(details, 'goal', play, previous_events)
+                    except Exception as e:
+                        print(f"Error calculating xG: {e}")
+                        xg_value = 0.0
+                    
+                    # Get coordinates for shot chart
+                    x_coord = details.get('xCoord', 0)
+                    y_coord = details.get('yCoord', 0)
+                    
+                    # Calculate longitudinal (north-south) and lateral (east-west) movement
+                    # Get previous shot/play coordinates to calculate movement
+                    longitudinal_movement = 0
+                    lateral_movement = 0
+                    try:
+                        if play_index > 0:
+                            prev_play = plays[play_index - 1]
+                            prev_details = prev_play.get('details', {})
+                            prev_x = prev_details.get('xCoord', 0)
+                            prev_y = prev_details.get('yCoord', 0)
+                            if prev_x and prev_y and x_coord and y_coord:
+                                # Lateral = X movement (east-west)
+                                lateral_movement = abs(x_coord - prev_x)
+                                # Longitudinal = Y movement (north-south)
+                                longitudinal_movement = abs(y_coord - prev_y)
+                    except:
+                        pass
+                    
+                    # Process assistDetails array if available
+                    for assist in assist_details:
+                        if isinstance(assist, dict):
+                            assist_name = assist.get('playerName', {})
+                            if isinstance(assist_name, dict):
+                                assist_name = assist_name.get('default') or assist_name.get('fullName', '')
+                            else:
+                                assist_name = assist.get('playerName') or assist.get('fullName', '')
+                        else:
+                            assist_name = str(assist)
+                        if assist_name and assist_name != 'Unknown' and assist_name not in assists:
+                            assists.append(assist_name)
+                    
+                    # Also try looking up assists by ID if we have IDs but no names
+                    assist1_id = details.get('assist1PlayerId')
+                    assist2_id = details.get('assist2PlayerId')
+                    if assist1_id and str(assist1_id) in player_roster_map:
+                        assist_name = player_roster_map[str(assist1_id)]
+                        if assist_name and assist_name not in assists:
+                            assists.append(assist_name)
+                    if assist2_id and str(assist2_id) in player_roster_map:
+                        assist_name = player_roster_map[str(assist2_id)]
+                        if assist_name and assist_name not in assists:
+                            assists.append(assist_name)
+                    
+                    # Determine team abbreviation - ensure proper comparison
+                    team_abbrev = away_abbrev
+                    is_away_goal = False
+                    if team_id:
+                        # Convert both to strings for comparison
+                        team_id_str = str(team_id)
+                        away_id_str = str(away_id)
+                        home_id_str = str(home_id)
+                        
+                        if team_id_str == away_id_str:
+                            team_abbrev = away_abbrev
+                            is_away_goal = True
+                        elif team_id_str == home_id_str:
+                            team_abbrev = home_abbrev
+                            is_away_goal = False
+                        else:
+                            # Fallback: use coordinates to determine team
+                            if x_coord and x_coord < 0:
+                                team_abbrev = away_abbrev
+                                is_away_goal = True
+                            else:
+                                team_abbrev = home_abbrev
+                                is_away_goal = False
+                    else:
+                        # Fallback: use coordinates to determine team
+                        if x_coord and x_coord < 0:
+                            team_abbrev = away_abbrev
+                            is_away_goal = True
+                        else:
+                            team_abbrev = home_abbrev
+                            is_away_goal = False
+                    
+                    # Apply coordinate flipping logic like post-game reports
+                    # Away team: Always left side (negative X), Home team: Always right side (positive X)
+                    plot_x = x_coord
+                    plot_y = y_coord
+                    if is_away_goal:
+                        # Away team goals - force to left side
+                        if x_coord > 0:  # If goal is on right side, flip to left
+                            plot_x = -x_coord
+                            plot_y = -y_coord
+                    else:
+                        # Home team goals - force to right side
+                        if x_coord < 0:  # If goal is on left side, flip to right
+                            plot_x = -x_coord
+                            plot_y = -y_coord
+                    
+                    # Get team color for this goal
+                    report_gen = get_report_generator()
+                    team_color = report_gen._get_team_color(team_abbrev)
+                    
+                    scoring_plays.append({
+                        'period': period_num,
+                        'time': time_str,
+                        'team': team_abbrev,
+                        'scorer': scorer_name,
+                        'assists': ', '.join(assists) if assists else 'Unassisted',
+                        'xg': round(xg_value, 3),
+                        'shot_type': shot_type,
+                        'x_coord': plot_x,  # Use flipped coordinates for plotting
+                        'y_coord': plot_y,
+                        'team_id': team_id,  # Store original team_id for reference
+                        'is_away': is_away_goal,
+                        'team_color': team_color,  # Store team color for plotting
+                        'longitudinal_movement': round(longitudinal_movement, 1) if longitudinal_movement else 0,
+                        'lateral_movement': round(lateral_movement, 1) if lateral_movement else 0
+                    })
+            
+            report_data['scoring_summary'] = scoring_plays
+        
+        except Exception as e:
+            print(f"Error extracting scoring summary: {e}")
+            import traceback
+            traceback.print_exc()
+        
+        return jsonify(report_data)
+    
+    except Exception as e:
+        print(f"Error getting live game report: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/playoffs')
+def playoffs():
+    """Playoff predictions page"""
+    return render_template('playoff_predictions.html')
+
+@app.route('/api/playoffs/probabilities')
+def get_playoff_probabilities():
+    """Get playoff probabilities for all teams"""
+    try:
+        playoff_model = get_playoff_model()
+        # Reduced simulations for faster response (1000 is still statistically significant)
+        probabilities = playoff_model.calculate_playoff_probabilities(num_simulations=1000)
+        
+        return jsonify({
+            'success': True,
+            'probabilities': probabilities,
+            'generated_at': datetime.now(ct_tz).isoformat()
+        })
+    except Exception as e:
+        print(f"Error calculating playoff probabilities: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify({'error': str(e)}), 500
+
+if __name__ == '__main__':
+    import os
+    port = int(os.environ.get('PORT', 8080))
+    debug = os.environ.get('FLASK_DEBUG', 'False').lower() == 'true'
+    print("🏒 Starting Prediction Dashboard...")
+    print(f"📊 Access at: http://localhost:{port}")
+    app.run(debug=debug, host='0.0.0.0', port=port, threaded=True)
+

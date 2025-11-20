@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Resources - StrideSync Hockey</title>
+    <link rel="stylesheet" href="{{ url_for('static', filename='company_style.css') }}">
+</head>
+<body>
+    <!-- Header -->
+    <header class="header">
+        <div class="header-content">
+            <div class="logo">
+                <img src="{{ url_for('static', filename='logo.png') }}" alt="StrideSync Hockey" class="logo-image">
+                <span class="logo-text">StrideSync Hockey</span>
+            </div>
+            <nav class="main-nav">
+                <a href="{{ url_for('index') }}#home">Home</a>
+                <div class="nav-dropdown">
+                    <a href="{{ url_for('index') }}#services" class="dropdown-toggle">Services <span class="dropdown-arrow">▼</span></a>
+                    <div class="dropdown-menu">
+                        <a href="{{ url_for('service', service_name='remote-training') }}">Remote Training</a>
+                        <a href="{{ url_for('service', service_name='performance-tracking') }}">Performance Tracking</a>
+                        <a href="{{ url_for('service', service_name='assessments') }}">Assessments</a>
+                    </div>
+                </div>
+                <a href="{{ url_for('index') }}#about">About</a>
+                <a href="{{ url_for('careers') }}">Careers</a>
+                <a href="{{ url_for('resources') }}">Resources</a>
+                <a href="{{ url_for('index') }}#contact">Contact</a>
+            </nav>
+            <div class="header-right">
+                <a href="{{ url_for('login') }}" class="btn-secondary">Client Portal</a>
+                <button class="menu-toggle" id="menuToggle">☰</button>
+            </div>
+        </div>
+    </header>
+
+    <!-- Resources Hero -->
+    <section class="service-hero">
+        <div class="container">
+            <div class="service-hero-content">
+                <div class="service-icon-large">📚</div>
+                <h1>Resources</h1>
+                <p class="service-description-large">Educational content, research insights, and tools to help you understand hockey performance</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Resource Categories -->
+    <section class="resources-section">
+        <div class="container">
+            <div class="resources-grid">
+                <div class="resource-category-card">
+                    <div class="resource-icon">📖</div>
+                    <h3>Research Papers</h3>
+                    <p>Access our latest research on biomechanics, performance optimization, and injury prevention in hockey.</p>
+                    <ul class="resource-list">
+                        <li>Biomechanical Analysis Methods</li>
+                        <li>Performance Metrics Studies</li>
+                        <li>Injury Prevention Research</li>
+                        <li>Training Optimization</li>
+                    </ul>
+                    <a href="#contact" class="btn-outline">Request Access</a>
+                </div>
+                <div class="resource-category-card">
+                    <div class="resource-icon">🎥</div>
+                    <h3>Video Library</h3>
+                    <p>Educational videos covering training techniques, biomechanics fundamentals, and performance analysis.</p>
+                    <ul class="resource-list">
+                        <li>Training Technique Videos</li>
+                        <li>Biomechanics Explained</li>
+                        <li>Case Studies</li>
+                        <li>Webinar Recordings</li>
+                    </ul>
+                    <a href="#contact" class="btn-outline">View Library</a>
+                </div>
+                <div class="resource-category-card">
+                    <div class="resource-icon">📊</div>
+                    <h3>Tools & Calculators</h3>
+                    <p>Interactive tools to analyze performance metrics and calculate training parameters.</p>
+                    <ul class="resource-list">
+                        <li>Performance Calculator</li>
+                        <li>Training Load Analyzer</li>
+                        <li>Recovery Assessment</li>
+                        <li>Goal Setting Tools</li>
+                    </ul>
+                    <a href="#contact" class="btn-outline">Access Tools</a>
+                </div>
+                <div class="resource-category-card">
+                    <div class="resource-icon">📰</div>
+                    <h3>Blog & Articles</h3>
+                    <p>Latest insights, tips, and updates from our team of experts.</p>
+                    <ul class="resource-list">
+                        <li>Training Tips</li>
+                        <li>Industry News</li>
+                        <li>Success Stories</li>
+                        <li>Expert Interviews</li>
+                    </ul>
+                    <a href="#contact" class="btn-outline">Read Articles</a>
+                </div>
+                <div class="resource-category-card">
+                    <div class="resource-icon">📋</div>
+                    <h3>Guides & Templates</h3>
+                    <p>Downloadable guides, templates, and checklists for training and assessment.</p>
+                    <ul class="resource-list">
+                        <li>Training Program Templates</li>
+                        <li>Assessment Checklists</li>
+                        <li>Nutrition Guides</li>
+                        <li>Recovery Protocols</li>
+                    </ul>
+                    <a href="#contact" class="btn-outline">Download</a>
+                </div>
+                <div class="resource-category-card">
+                    <div class="resource-icon">🎓</div>
+                    <h3>Educational Courses</h3>
+                    <p>Comprehensive courses on biomechanics, performance analysis, and training methodology.</p>
+                    <ul class="resource-list">
+                        <li>Biomechanics Fundamentals</li>
+                        <li>Data Analysis Course</li>
+                        <li>Coaching Certification</li>
+                        <li>Advanced Techniques</li>
+                    </ul>
+                    <a href="#contact" class="btn-outline">Learn More</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Featured Resource -->
+    <section class="featured-resource-section">
+        <div class="container">
+            <div class="featured-resource-card">
+                <div class="featured-content">
+                    <span class="featured-badge">Featured</span>
+                    <h2>The Complete Guide to Hockey Biomechanics</h2>
+                    <p>Comprehensive guide covering everything from basic movement patterns to advanced performance optimization techniques. Perfect for coaches, athletes, and sports scientists.</p>
+                    <div class="featured-meta">
+                        <span>📄 45 pages</span>
+                        <span>⏱️ 2 hour read</span>
+                        <span>⭐ 4.9/5 rating</span>
+                    </div>
+                    <a href="#contact" class="btn-primary btn-large">Download Free Guide</a>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <div class="footer-content">
+                <div class="footer-section">
+                    <div class="footer-logo">
+                        <img src="{{ url_for('static', filename='logo.png') }}" alt="StrideSync Hockey" class="logo-image">
+                        <span class="logo-text">StrideSync Hockey</span>
+                    </div>
+                    <p>Elite hockey performance through data-driven biomechanics analysis.</p>
+                </div>
+                <div class="footer-section">
+                    <h4>Quick Links</h4>
+                    <ul>
+                        <li><a href="{{ url_for('index') }}#home">Home</a></li>
+                        <li><a href="{{ url_for('index') }}#services">Services</a></li>
+                        <li><a href="{{ url_for('index') }}#about">About</a></li>
+                        <li><a href="{{ url_for('careers') }}">Careers</a></li>
+                        <li><a href="{{ url_for('resources') }}">Resources</a></li>
+                        <li><a href="{{ url_for('index') }}#contact">Contact</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Services</h4>
+                    <ul>
+                        <li><a href="{{ url_for('service', service_name='remote-training') }}">Remote Training</a></li>
+                        <li><a href="{{ url_for('service', service_name='performance-tracking') }}">Performance Tracking</a></li>
+                        <li><a href="{{ url_for('service', service_name='assessments') }}">Assessments</a></li>
+                    </ul>
+                </div>
+                <div class="footer-section">
+                    <h4>Contact</h4>
+                    <ul>
+                        <li>43 Church Street</li>
+                        <li>St Catharines, ON L2R 7E1</li>
+                        <li>Phone: (780) 555-0123</li>
+                        <li>Email: info@stridesync.com</li>
+                    </ul>
+                </div>
+            </div>
+            <div class="footer-bottom">
+                <p>&copy; 2024 StrideSync Hockey. All rights reserved.</p>
+            </div>
+        </div>
+    </footer>
+
+    <script src="{{ url_for('static', filename='company_script.js') }}"></script>
+</body>
+</html>
+

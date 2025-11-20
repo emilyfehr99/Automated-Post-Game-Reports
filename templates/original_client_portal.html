@@ -1,0 +1,659 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>StrideSync Hockey - Player Dashboard</title>
+    <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+    <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css" rel="stylesheet">
+    <link href="https://fonts.googleapis.com/css2?family=Russo+One&display=swap" rel="stylesheet">
+    <link href="{{ url_for('static', filename='client_portal_styles.css') }}" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+</head>
+<body>
+    <!-- Navigation -->
+    <nav class="navbar navbar-expand-lg navbar-dark bg-dark">
+        <div class="container-fluid">
+            <div class="navbar-brand d-flex align-items-center">
+                <div class="logo-circle">
+                    <img src="{{ url_for('static', filename='logo.png') }}" alt="StrideSync Logo" class="logo me-3">
+                </div>
+                <span class="brand-text">StrideSync Hockey</span>
+            </div>
+            <div class="navbar-nav ms-auto">
+                <span class="navbar-text me-3">
+                    <i class="fas fa-user-circle me-2"></i>
+                    Welcome, {{ user_name }}
+                </span>
+                <button class="btn btn-outline-light btn-sm">
+                    <i class="fas fa-cog me-1"></i>Settings
+                </button>
+            </div>
+        </div>
+    </nav>
+
+    <div class="container-fluid mt-4">
+        <!-- Sidebar Toggle Button - Right Side -->
+        <div class="menu-button-container">
+            <button class="btn btn-primary" id="sidebarToggle" title="Menu">
+                <i class="fas fa-bars"></i>
+                </button>
+        </div>
+
+        <!-- Sidebar Overlay -->
+        <div class="sidebar-overlay" id="sidebarOverlay"></div>
+        
+        <!-- Sidebar -->
+        <div class="sidebar" id="sidebar">
+            <div class="sidebar-header">
+                <div class="sidebar-logo-circle">
+                    <img src="{{ url_for('static', filename='logo.png') }}" alt="StrideSync Logo" class="sidebar-logo">
+                </div>
+                <h5>StrideSync Hockey</h5>
+            </div>
+            <div class="sidebar-content">
+                <ul class="nav flex-column">
+                    <li class="nav-item">
+                        <a class="nav-link active" href="#dashboard" data-page="dashboard">
+                            <i class="fas fa-tachometer-alt me-2"></i>Dashboard
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#about" data-page="about">
+                            <i class="fas fa-info-circle me-2"></i>About Us
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="#resources" data-page="resources">
+                            <i class="fas fa-book me-2"></i>Resources
+                        </a>
+                    </li>
+                    <li class="nav-item">
+                        <a class="nav-link" href="{{ url_for('index') }}" target="_blank">
+                            <i class="fas fa-globe me-2"></i>Company Site
+                        </a>
+                    </li>
+                </ul>
+            </div>
+        </div>
+
+        <!-- Main Content Area -->
+        <div class="main-content" id="mainContent">
+           <!-- About Us Page - Matching Image Layout -->
+            <div class="page-content" id="about-page" style="display: none;">
+                <div class="content-wrapper-about">
+                    <!-- Left Column -->
+                    <div class="content-left-about">
+                        <!-- About StrideSync Hockey Section (Blue Background) -->
+                        <section class="about-header-section">
+                            <div class="about-header-content">
+                                <div class="about-header-text">
+                                    <h1>About StrideSync Hockey</h1>
+                                    <p class="subtitle">Revolutionizing hockey performance through data-driven biomechanics analysis</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Our Mission Section (White Background) -->
+                        <section class="mission-section-white">
+                            <div class="section-header-blue">
+                                <i class="fas fa-rocket section-icon"></i>
+                                <h2>Our Mission</h2>
+                            </div>
+                            <div class="section-content-white">
+                                <p>At StrideSync, we aim to challenge traditional methods compared to following normalized processes & systems. Hockey has long been behind the curve when it comes to using science, data, and research. We aim to shrink this gap for the purpose of creating elite impactful hockey players. We take shape as a company like a consulting firm. This style prioritizes constant evaluation of our own leadership, employees, along with identifying how we can improve so keeping an eye on trends, new research, and much more. Like our clients, we're in pursuit of excellence and mastery.</p>
+                                    </div>
+                        </section>
+
+                        <!-- Our Principles Section (White Background) -->
+                        <section class="principles-section-white">
+                            <h2 class="principles-title">Our Principles</h2>
+                            <div class="principles-list-simple">
+                                <div class="principle-item-simple">
+                                    <div class="principle-number-blue">1</div>
+                                    <div class="principle-text-simple">Objective > Subjective</div>
+                                    </div>
+                                <div class="principle-item-simple">
+                                    <div class="principle-number-blue">2</div>
+                                    <div class="principle-text-simple">Objective Data + Efficiency + Optimization = StrideSync</div>
+                                </div>
+                                <div class="principle-item-simple">
+                                    <div class="principle-number-blue">3</div>
+                                    <div class="principle-text-simple">Precision over Tradition</div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+
+                    <!-- Right Column - Sidebar -->
+                    <div class="content-right-about">
+                        <!-- Why Choose StrideSync Section -->
+                        <section class="why-choose-section-sidebar">
+                            <div class="section-header-blue">
+                                <i class="fas fa-star section-icon"></i>
+                                <h2>Why Choose StrideSync</h2>
+                            </div>
+                            <ul class="benefits-list-sidebar">
+                                <li>
+                                    <span class="checkmark-green">✓</span>
+                                    <span>Proven track record with players at all levels</span>
+                                </li>
+                                <li>
+                                    <span class="checkmark-green">✓</span>
+                                    <span>State-of-the-art biomechanical analysis</span>
+                                </li>
+                                <li>
+                                    <span class="checkmark-green">✓</span>
+                                    <span>Personalized approach to every player</span>
+                                </li>
+                                <li>
+                                    <span class="checkmark-green">✓</span>
+                                    <span>Continuous innovation and technology updates</span>
+                                </li>
+                                <li>
+                                    <span class="checkmark-green">✓</span>
+                                    <span>Expert team of sports scientists</span>
+                                </li>
+                                <li>
+                                    <span class="checkmark-green">✓</span>
+                                    <span>Comprehensive injury prevention focus</span>
+                                </li>
+                                </ul>
+                        </section>
+
+                        <!-- Location Section -->
+                        <section class="location-section-sidebar">
+                            <div class="section-header-blue">
+                                <i class="fas fa-map-marker-alt section-icon"></i>
+                                <h2>Location</h2>
+                            </div>
+                            <div class="location-content-sidebar">
+                                <p class="location-name"><strong>StrideSync Hockey Training Center</strong></p>
+                                <p>43 Church Street</p>
+                                <p>St Catharines, ON L2R 7E1</p>
+                                <p>Canada</p>
+                                <div class="contact-info-sidebar">
+                                    <p>
+                                        <span class="contact-icon">📞</span>
+                                        <span>(780) 555-0123</span>
+                                    </p>
+                                    <p>
+                                        <span class="contact-icon">✉️</span>
+                                        <span>info@stridesync.com</span>
+                                    </p>
+                        </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Dashboard Page -->
+            <div class="page-content active" id="dashboard-page" style="display: block !important;">
+                <!-- Player Header Banner (Blue) -->
+                <div class="player-header-banner">
+                    <div class="player-info-banner">
+                        <div class="player-photo-container">
+                            {% if user_name == 'Alexander Andre' %}
+                            <img src="{{ url_for('static', filename='alexander_andre.png') }}" alt="{{ user_name }}" class="player-photo-banner" onerror="this.style.display='none'; this.nextElementSibling.style.display='flex';">
+                            {% endif %}
+                            <div class="player-photo-placeholder" {% if user_name == 'Alexander Andre' %}style="display: none;"{% endif %}>
+                                <div class="player-initials">{{ user_name.split()[0][0] }}{{ user_name.split()[-1][0] if user_name.split()|length > 1 else '' }}</div>
+                            </div>
+                        </div>
+                        <div class="player-details-banner">
+                            <h1>{{ user_name }}</h1>
+                            <p class="player-meta-banner">Northern Manitoba Blizzard • Center • #97</p>
+                            <div class="player-stats-banner">
+                                <span class="stat-item-banner"><i class="fas fa-hockey-puck"></i> 2 Goals</span>
+                                <span class="stat-item-banner"><i class="fas fa-share"></i> 22 Assists</span>
+                                <span class="stat-item-banner"><i class="fas fa-plus"></i> 24 Points</span>
+                                <span class="stat-item-banner"><i class="fas fa-clock"></i> 18:34 TOI</span>
+                            </div>
+                        </div>
+                    </div>
+                    <div class="session-status-banner">
+                        <div class="session-box-banner">
+                            <p class="session-label-banner">Last Session</p>
+                            <p class="session-date-banner">March 15, 2024</p>
+                            <span class="badge-completed">Completed</span>
+                </div>
+                        <div class="session-box-banner">
+                            <p class="session-label-banner">Next Session</p>
+                            <p class="session-date-banner">March 18, 2024</p>
+                            <span class="badge-scheduled">Scheduled</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Main Dashboard Content -->
+                <div class="dashboard-content-wrapper">
+                    <!-- Left Column -->
+                    <div class="dashboard-left-column">
+                        <!-- Biomechanics Analysis Section -->
+                        <section class="biomechanics-section">
+                            <div class="section-header-blue-dashboard">
+                                <i class="fas fa-running section-icon-dashboard"></i>
+                                <h2>Biomechanics Analysis</h2>
+                            </div>
+                            <div class="biomechanics-content">
+                                <div class="biomechanics-layout">
+                                    <div class="biomechanics-chart-container">
+                                        <canvas id="biomechanicsChart"></canvas>
+        </div>
+
+                                    <div class="key-metrics-container">
+                                        <h5>Key Metrics</h5>
+                                <div class="metric-item-dashboard">
+                                    <div class="metric-header-dashboard">
+                                        <span class="metric-name-dashboard">Knee Flexion</span>
+                                        <span class="metric-value-dashboard">85°</span>
+                                    </div>
+                                    <div class="progress-bar-dashboard">
+                                        <div class="progress-fill-green" style="width: 85%"></div>
+                                    </div>
+                                </div>
+                                <div class="metric-item-dashboard">
+                                    <div class="metric-header-dashboard">
+                                        <span class="metric-name-dashboard">Hip Extension</span>
+                                        <span class="metric-value-dashboard">72°</span>
+                                    </div>
+                                    <div class="progress-bar-dashboard">
+                                        <div class="progress-fill-light-blue" style="width: 72%"></div>
+                                    </div>
+                                </div>
+                                <div class="metric-item-dashboard">
+                                    <div class="metric-header-dashboard">
+                                        <span class="metric-name-dashboard">Ankle Dorsiflexion</span>
+                                        <span class="metric-value-dashboard">68°</span>
+                                    </div>
+                                    <div class="progress-bar-dashboard">
+                                        <div class="progress-fill-orange" style="width: 68%"></div>
+                                    </div>
+                                </div>
+                                <div class="metric-item-dashboard">
+                                    <div class="metric-header-dashboard">
+                                        <span class="metric-name-dashboard">Stance Width</span>
+                                        <span class="metric-value-dashboard">24"</span>
+                                    </div>
+                                    <div class="progress-bar-dashboard">
+                                        <div class="progress-fill-dark-blue" style="width: 96%"></div>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </div>
+                        </section>
+
+                        <!-- Skeleton Overlay Section -->
+                        <section class="skeleton-overlay-section">
+                            <div class="section-header-blue-dashboard">
+                                <i class="fas fa-user-md section-icon-dashboard"></i>
+                                <h2>Skeleton Overlay Analysis</h2>
+                            </div>
+                            <div class="skeleton-overlay-content">
+                                <div class="movement-selector-container">
+                                    <label for="movement-selector" class="movement-selector-label">Select Movement:</label>
+                                    <select id="movement-selector" class="movement-selector">
+                                        <option value="skating-forward">Skating Forward</option>
+                                        <option value="skating-backward">Skating Backward</option>
+                                        <option value="turning-left">Turning Left</option>
+                                        <option value="turning-right">Turning Right</option>
+                                        <option value="stopping">Stopping</option>
+                                        <option value="acceleration">Acceleration</option>
+                                        <option value="deceleration">Deceleration</option>
+                                    </select>
+                                </div>
+                                <div class="skeleton-video-container">
+                                    <div class="skeleton-video-box">
+                                        <div class="skeleton-video-header">Before</div>
+                                        <div class="skeleton-video-placeholder">
+                                            <i class="fas fa-video skeleton-placeholder-icon"></i>
+                                            <p class="skeleton-placeholder-text">Skeleton video will appear here</p>
+                </div>
+                    </div>
+                                    <div class="skeleton-video-box">
+                                        <div class="skeleton-video-header">After</div>
+                                        <div class="skeleton-video-placeholder">
+                                            <i class="fas fa-video skeleton-placeholder-icon"></i>
+                                            <p class="skeleton-placeholder-text">Skeleton video will appear here</p>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Injury Prediction Section -->
+                        <section class="injury-prediction-section">
+                            <div class="section-header-blue-dashboard">
+                                <i class="fas fa-shield-alt section-icon-dashboard"></i>
+                                <h2>Injury Prediction</h2>
+                    </div>
+                            <div class="injury-prediction-content">
+                                <div class="injury-risk-value">
+                                    <span class="risk-label">Risk Level</span>
+                                    <span class="risk-value">Low</span>
+                                        </div>
+                                <div class="injury-prediction-details">
+                                    <p>Based on your recent biomechanics data, your injury risk is currently low. Continue following your training program.</p>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Session History Section -->
+                        <section class="session-history-section">
+                            <div class="section-header-blue-dashboard">
+                                <i class="fas fa-history section-icon-dashboard"></i>
+                                <h2>Session History</h2>
+                                        </div>
+                            <div class="session-history-content">
+                                <div class="session-history-item">
+                                    <div class="session-date-small">
+                                        <span class="session-day">15</span>
+                                        <span class="session-month">MAR</span>
+                                            </div>
+                                    <div class="session-details">
+                                        <h6>Biomechanics Assessment</h6>
+                                        <p>Full body analysis focusing on skating mechanics</p>
+                                        <div class="session-badges">
+                                            <span class="session-badge">45 min</span>
+                                            <span class="session-badge score">92/100</span>
+                                        </div>
+                                    </div>
+                                        </div>
+                                <div class="session-history-item">
+                                    <div class="session-date-small">
+                                        <span class="session-day">12</span>
+                                        <span class="session-month">MAR</span>
+                                            </div>
+                                    <div class="session-details">
+                                        <h6>Speed & Agility Training</h6>
+                                        <p>Focus on acceleration and change of direction</p>
+                                        <div class="session-badges">
+                                            <span class="session-badge">60 min</span>
+                                            <span class="session-badge score">88/100</span>
+                                        </div>
+                                    </div>
+                                        </div>
+                                <div class="session-history-item">
+                                    <div class="session-date-small">
+                                        <span class="session-day">08</span>
+                                        <span class="session-month">MAR</span>
+                                            </div>
+                                    <div class="session-details">
+                                        <h6>Recovery & Mobility</h6>
+                                        <p>Active recovery with focus on hip and ankle mobility</p>
+                                        <div class="session-badges">
+                                            <span class="session-badge">30 min</span>
+                                            <span class="session-badge score">95/100</span>
+                                        </div>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                </div>
+
+                    <!-- Right Column -->
+                    <div class="dashboard-right-column">
+                        <!-- Performance Trends -->
+                        <section class="trends-section">
+                            <div class="section-header-blue-dashboard">
+                                <i class="fas fa-chart-line section-icon-dashboard"></i>
+                                <h2>Performance Trends</h2>
+                    </div>
+                            <div class="trends-content">
+                                <div class="trend-item-positive">
+                                    <span class="trend-label-dashboard">Speed</span>
+                                    <span class="trend-value-dashboard">+8%</span>
+                                </div>
+                                <div class="trend-item-positive">
+                                    <span class="trend-label-dashboard">Agility</span>
+                                    <span class="trend-value-dashboard">+12%</span>
+                                    </div>
+                                <div class="trend-item-negative">
+                                    <span class="trend-label-dashboard">Recovery</span>
+                                    <span class="trend-value-dashboard">-3%</span>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Quick Stats -->
+                        <section class="quick-stats-section">
+                            <div class="section-header-blue-dashboard">
+                                <i class="fas fa-bolt section-icon-dashboard"></i>
+                                <h2>Quick Stats</h2>
+                                </div>
+                            <div class="quick-stats-content">
+                                <div class="quick-stat-item-inline">
+                                    <span class="quick-stat-label">Last Session</span>
+                                    <span class="quick-stat-value">92/100</span>
+                                </div>
+                                <div class="quick-stat-item-inline">
+                                    <span class="quick-stat-label">This Week</span>
+                                    <span class="quick-stat-value">3 sessions</span>
+                                    </div>
+                                <div class="quick-stat-item-inline">
+                                    <span class="quick-stat-label">Goal Progress</span>
+                                    <span class="quick-stat-value">78%</span>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Player Wellness Survey Section -->
+                        <section class="wellness-survey-section">
+                            <div class="section-header-blue-dashboard">
+                                <i class="fas fa-heartbeat section-icon-dashboard"></i>
+                                <h2>Player Wellness Survey</h2>
+                            </div>
+                            <div class="wellness-survey-content">
+                                <div class="wellness-status">
+                                    <span class="wellness-label">Overall Wellness</span>
+                                    <span class="wellness-value">Good</span>
+                                </div>
+                                <div class="wellness-metrics">
+                                    <div class="wellness-metric-item">
+                                        <span class="wellness-metric-label">Sleep Quality</span>
+                                        <span class="wellness-metric-value">8/10</span>
+                                    </div>
+                                    <div class="wellness-metric-item">
+                                        <span class="wellness-metric-label">Energy Level</span>
+                                        <span class="wellness-metric-value">7/10</span>
+                                    </div>
+                                    <div class="wellness-metric-item">
+                                        <span class="wellness-metric-label">Recovery</span>
+                                        <span class="wellness-metric-value">9/10</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+
+                        <!-- Performance Alerts Section -->
+                        <section class="performance-alerts-section">
+                            <div class="section-header-blue-dashboard">
+                                <i class="fas fa-bell section-icon-dashboard"></i>
+                                <h2>Performance Alerts</h2>
+                            </div>
+                            <div class="performance-alerts-content">
+                                <div class="alert-item alert-warning">
+                                    <div class="alert-icon">
+                                        <i class="fas fa-exclamation-triangle"></i>
+                                    </div>
+                                    <div class="alert-content">
+                                        <h6 class="alert-title">Recovery Time Needed</h6>
+                                        <p class="alert-message">Your recovery metric has decreased by 3%. Consider scheduling a rest day.</p>
+                                        <span class="alert-time">2 hours ago</span>
+                                    </div>
+                                </div>
+                                <div class="alert-item alert-info">
+                                    <div class="alert-icon">
+                                        <i class="fas fa-info-circle"></i>
+                                    </div>
+                                    <div class="alert-content">
+                                        <h6 class="alert-title">New Session Available</h6>
+                                        <p class="alert-message">Your next biomechanics assessment is scheduled for March 18, 2024.</p>
+                                        <span class="alert-time">1 day ago</span>
+                                    </div>
+                                </div>
+                                <div class="alert-item alert-success">
+                                    <div class="alert-icon">
+                                        <i class="fas fa-check-circle"></i>
+                                    </div>
+                                    <div class="alert-content">
+                                        <h6 class="alert-title">Goal Milestone Reached</h6>
+                                        <p class="alert-message">Congratulations! You've reached 78% of your speed improvement goal.</p>
+                                        <span class="alert-time">3 days ago</span>
+                                    </div>
+                                </div>
+                            </div>
+                        </section>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Resources Page -->
+        <div class="page-content" id="resources-page" style="display: none;">
+            <div class="content-wrapper-about">
+                <!-- Left Column -->
+                <div class="content-left-about">
+                    <!-- Resources Header Section (Blue Background) -->
+                    <section class="about-header-section">
+                        <div class="about-header-content">
+                            <div class="about-header-text">
+                                <h1>Resources</h1>
+                                <p class="subtitle">Training materials, guides, and tools to enhance your performance</p>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Training Guides Section -->
+                    <section class="mission-section-white">
+                        <div class="section-header-blue">
+                            <i class="fas fa-file-alt section-icon"></i>
+                            <h2>Training Guides</h2>
+                        </div>
+                        <div class="section-content-white">
+                            <div class="resource-list">
+                                <div class="resource-item">
+                                    <i class="fas fa-download resource-icon"></i>
+                                    <div class="resource-details">
+                                        <h6>Biomechanics Training Guide</h6>
+                                        <p>Comprehensive guide to understanding and improving your biomechanics</p>
+                                    </div>
+                                </div>
+                                <div class="resource-item">
+                                    <i class="fas fa-download resource-icon"></i>
+                                    <div class="resource-details">
+                                        <h6>Recovery Protocols</h6>
+                                        <p>Best practices for post-training recovery and injury prevention</p>
+                                    </div>
+                                </div>
+                                <div class="resource-item">
+                                    <i class="fas fa-download resource-icon"></i>
+                                    <div class="resource-details">
+                                        <h6>Nutrition Guidelines</h6>
+                                        <p>Fueling strategies for optimal performance and recovery</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+
+                    <!-- Video Library Section -->
+                    <section class="principles-section-white">
+                        <div class="section-header-blue">
+                            <i class="fas fa-video section-icon"></i>
+                            <h2>Video Library</h2>
+                        </div>
+                        <div class="section-content-white">
+                            <div class="resource-list">
+                                <div class="resource-item">
+                                    <i class="fas fa-play-circle resource-icon"></i>
+                                    <div class="resource-details">
+                                        <h6>Skating Technique Breakdown</h6>
+                                        <p>Detailed analysis of proper skating form and mechanics</p>
+                                    </div>
+                                </div>
+                                <div class="resource-item">
+                                    <i class="fas fa-play-circle resource-icon"></i>
+                                    <div class="resource-details">
+                                        <h6>Strength Training Exercises</h6>
+                                        <p>Hockey-specific strength and conditioning routines</p>
+                                    </div>
+                                </div>
+                                <div class="resource-item">
+                                    <i class="fas fa-play-circle resource-icon"></i>
+                                    <div class="resource-details">
+                                        <h6>Mobility & Flexibility</h6>
+                                        <p>Exercises to improve range of motion and prevent injuries</p>
+                                    </div>
+                                </div>
+                            </div>
+                        </div>
+                    </section>
+                </div>
+
+                <!-- Right Column -->
+                <div class="content-right-about">
+                    <!-- Quick Links Section -->
+                    <section class="why-choose-section-sidebar">
+                        <div class="section-header-blue">
+                            <i class="fas fa-link section-icon"></i>
+                            <h2>Quick Links</h2>
+                        </div>
+                        <ul class="benefits-list-sidebar">
+                            <li>
+                                <span class="checkmark-green">✓</span>
+                                <span>Schedule Your Next Session</span>
+                            </li>
+                            <li>
+                                <span class="checkmark-green">✓</span>
+                                <span>View Your Performance Reports</span>
+                            </li>
+                            <li>
+                                <span class="checkmark-green">✓</span>
+                                <span>Download Training Plans</span>
+                            </li>
+                            <li>
+                                <span class="checkmark-green">✓</span>
+                                <span>Access Video Analysis</span>
+                            </li>
+                            <li>
+                                <span class="checkmark-green">✓</span>
+                                <span>Contact Your Coach</span>
+                            </li>
+                        </ul>
+                    </section>
+
+                    <!-- Tools & Calculators Section -->
+                    <section class="location-section-sidebar">
+                        <div class="section-header-blue">
+                            <i class="fas fa-calculator section-icon"></i>
+                            <h2>Tools & Calculators</h2>
+                        </div>
+                        <div class="location-content-sidebar">
+                            <div class="resource-list-vertical">
+                                <div class="resource-item-small">
+                                    <i class="fas fa-chart-line"></i>
+                                    <span>Performance Calculator</span>
+                                </div>
+                                <div class="resource-item-small">
+                                    <i class="fas fa-heartbeat"></i>
+                                    <span>Recovery Tracker</span>
+                                </div>
+                                <div class="resource-item-small">
+                                    <i class="fas fa-trophy"></i>
+                                    <span>Goal Setting Tool</span>
+                            </div>
+                        </div>
+                    </div>
+                    </section>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+    <script src="{{ url_for('static', filename='client_portal_script.js') }}"></script>
+</body>
+</html>
