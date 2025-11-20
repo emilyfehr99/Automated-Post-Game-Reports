@@ -2,7 +2,7 @@ import React, { useEffect, useState, useMemo } from 'react';
 import { nhlApi } from '../api/nhl';
 import { backendApi } from '../api/backend';
 import { motion } from 'framer-motion';
-import { Trophy, TrendingUp, TrendingDown, Minus } from 'lucide-react';
+import { Trophy, TrendingUp, TrendingDown, Minus, Activity } from 'lucide-react';
 import clsx from 'clsx';
 
 const PlayoffPredictions = () => {
@@ -57,7 +57,6 @@ const PlayoffPredictions = () => {
         }
 
         // Recent form (20% weight)
-        // Recent form (20% weight)
         const wins = team.l10Wins || 0;
         const formProb = (wins / 10) * 100;
 
@@ -95,9 +94,7 @@ const PlayoffPredictions = () => {
 
     // Calculate trend
     const getTrend = (team) => {
-        // Use l10Wins directly from the API response
         const wins = team.l10Wins || 0;
-
         if (wins >= 7) return 'up';
         if (wins <= 3) return 'down';
         return 'neutral';
@@ -132,142 +129,137 @@ const PlayoffPredictions = () => {
 
     if (loading) {
         return (
-            <div className="min-h-screen bg-void pt-24 px-6">
-                <div className="max-w-7xl mx-auto">
-                    <div className="flex items-center justify-center h-64">
-                        <div className="h-8 w-8 rounded-full border-t-2 border-b-2 border-accent-cyan animate-spin"></div>
-                    </div>
+            <div className="flex items-center justify-center h-[60vh]">
+                <div className="relative">
+                    <div className="h-16 w-16 rounded-full border-t-2 border-b-2 border-accent-primary animate-spin"></div>
+                    <div className="absolute inset-0 h-16 w-16 rounded-full border-r-2 border-l-2 border-accent-secondary animate-spin-reverse opacity-50"></div>
                 </div>
             </div>
         );
     }
 
     return (
-        <div className="min-h-screen bg-void pt-24 px-6 pb-12">
-            <div className="max-w-7xl mx-auto">
-                {/* Header */}
-                <motion.div
-                    initial={{ opacity: 0, y: -20 }}
-                    animate={{ opacity: 1, y: 0 }}
-                    className="mb-8"
-                >
-                    <h1 className="text-5xl font-bold mb-4 bg-gradient-to-r from-accent-cyan via-accent-magenta to-accent-cyan bg-clip-text text-transparent">
-                        Playoff Race
+        <div className="space-y-12 pb-12">
+            {/* Header */}
+            <div className="relative rounded-3xl overflow-hidden bg-gradient-to-r from-bg-secondary to-bg-primary border border-white/5 p-8 md:p-12 shadow-2xl">
+                <div className="absolute top-0 right-0 w-96 h-96 bg-accent-primary/10 rounded-full blur-3xl -translate-y-1/2 translate-x-1/3"></div>
+
+                <div className="relative z-10">
+                    <h1 className="text-5xl md:text-7xl font-display font-black text-white tracking-tighter mb-4">
+                        PLAYOFF <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-primary to-accent-secondary">RACE</span>
                     </h1>
-                    <p className="text-gray-400 text-lg">
-                        AI-powered playoff probability predictions based on standings, form, and advanced metrics
+                    <p className="text-text-muted font-mono text-lg max-w-2xl">
+                        AI-powered playoff probability predictions combining standings, recent form, and advanced analytics.
                     </p>
-                </motion.div>
-
-                {/* Divisions */}
-                {Object.entries(teamsByDivision).map(([division, teams], divIndex) => (
-                    <motion.div
-                        key={division}
-                        initial={{ opacity: 0, y: 20 }}
-                        animate={{ opacity: 1, y: 0 }}
-                        transition={{ delay: divIndex * 0.1 }}
-                        className="mb-12"
-                    >
-                        <h2 className="text-2xl font-bold text-white mb-6 flex items-center gap-3">
-                            <Trophy className="text-accent-cyan" size={24} />
-                            {division}
-                        </h2>
-
-                        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                            {teams.map((team, index) => {
-                                const probColor = team.playoffProb > 70 ? 'text-green-400' :
-                                    team.playoffProb > 40 ? 'text-yellow-400' :
-                                        'text-red-400';
-
-                                const TrendIcon = team.trend === 'up' ? TrendingUp :
-                                    team.trend === 'down' ? TrendingDown :
-                                        Minus;
-
-                                const trendColor = team.trend === 'up' ? 'text-green-400' :
-                                    team.trend === 'down' ? 'text-red-400' :
-                                        'text-gray-400';
-
-                                return (
-                                    <motion.div
-                                        key={team.teamAbbrev?.default}
-                                        initial={{ opacity: 0, scale: 0.9 }}
-                                        animate={{ opacity: 1, scale: 1 }}
-                                        transition={{ delay: divIndex * 0.1 + index * 0.05 }}
-                                        className={clsx(
-                                            "glass-panel p-6 rounded-xl border transition-all hover:scale-105",
-                                            team.playoffProb > 70 ? "border-green-400/30" :
-                                                team.playoffProb > 40 ? "border-yellow-400/30" :
-                                                    "border-red-400/30"
-                                        )}
-                                    >
-                                        {/* Team Header */}
-                                        <div className="flex items-center gap-3 mb-4">
-                                            <img
-                                                src={team.teamLogo}
-                                                alt={team.teamName?.default}
-                                                className="w-12 h-12"
-                                            />
-                                            <div className="flex-1">
-                                                <h3 className="font-bold text-white text-sm">{team.teamName?.default}</h3>
-                                                <p className="text-xs text-gray-400">
-                                                    {team.wins}-{team.losses}-{team.otLosses} • {team.points} PTS • #{team.divisionRank}
-                                                </p>
-                                            </div>
-                                        </div>
-
-                                        {/* Playoff Probability */}
-                                        <div className="text-center mb-4">
-                                            <div className={clsx("text-4xl font-bold font-mono", probColor)}>
-                                                {team.playoffProb}%
-                                            </div>
-                                            <div className="text-xs text-gray-500 uppercase tracking-wider">
-                                                Playoff Chance
-                                            </div>
-                                        </div>
-
-                                        {/* Trend */}
-                                        <div className="flex items-center justify-center gap-2 mb-4">
-                                            <TrendIcon className={trendColor} size={16} />
-                                            <span className="text-xs text-gray-400">
-                                                L10: {team.l10Wins ?? 0}-{team.l10Losses ?? 0}-{team.l10OtLosses ?? 0}
-                                            </span>
-                                        </div>
-
-                                        {/* Key Metrics */}
-                                        {team.metrics && (
-                                            <div className="grid grid-cols-3 gap-2 text-xs">
-                                                <div className="text-center">
-                                                    <div className="text-gray-500">GS</div>
-                                                    <div className="text-white font-mono">{team.metrics.gs || '-'}</div>
-                                                </div>
-                                                <div className="text-center">
-                                                    <div className="text-gray-500">xG</div>
-                                                    <div className="text-white font-mono">{team.metrics.xg || '-'}</div>
-                                                </div>
-                                                <div className="text-center">
-                                                    <div className="text-gray-500">CF%</div>
-                                                    <div className="text-white font-mono">{team.metrics.corsi_pct || '-'}</div>
-                                                </div>
-                                            </div>
-                                        )}
-                                    </motion.div>
-                                );
-                            })}
-                        </div>
-                    </motion.div>
-                ))}
-
-                {/* Footer */}
-                <motion.div
-                    initial={{ opacity: 0 }}
-                    animate={{ opacity: 1 }}
-                    transition={{ delay: 0.5 }}
-                    className="mt-12 text-center text-gray-500 text-sm"
-                >
-                    <p>🤖 Probabilities calculated using standings (50%), recent form (20%), advanced metrics (20%), and games remaining (10%)</p>
-                    <p className="mt-2">Probabilities range from 1% to 95% - no guarantees in hockey!</p>
-                </motion.div>
+                </div>
             </div>
+
+            {/* Divisions */}
+            {Object.entries(teamsByDivision).map(([division, teams], divIndex) => (
+                <motion.div
+                    key={division}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    transition={{ delay: divIndex * 0.1 }}
+                    className="space-y-6"
+                >
+                    <div className="flex items-center gap-3">
+                        <Trophy className="w-6 h-6 text-accent-primary" />
+                        <h2 className="text-2xl font-display font-bold text-white tracking-wide">
+                            {division.toUpperCase()}
+                        </h2>
+                        <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent" />
+                    </div>
+
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                        {teams.map((team, index) => {
+                            const probColor = team.playoffProb > 70 ? 'text-success' :
+                                team.playoffProb > 40 ? 'text-warning' :
+                                    'text-danger';
+
+                            const TrendIcon = team.trend === 'up' ? TrendingUp :
+                                team.trend === 'down' ? TrendingDown :
+                                    Minus;
+
+                            const trendColor = team.trend === 'up' ? 'text-success' :
+                                team.trend === 'down' ? 'text-danger' :
+                                    'text-text-muted';
+
+                            return (
+                                <motion.div
+                                    key={team.teamAbbrev?.default}
+                                    initial={{ opacity: 0, scale: 0.9 }}
+                                    animate={{ opacity: 1, scale: 1 }}
+                                    transition={{ delay: divIndex * 0.1 + index * 0.05 }}
+                                    className={clsx(
+                                        "glass-card p-6 rounded-xl relative group hover:border-accent-primary/30 transition-all duration-300",
+                                        team.playoffProb > 80 && "border-success/30 bg-success/5"
+                                    )}
+                                >
+                                    {/* Team Header */}
+                                    <div className="flex items-center gap-4 mb-6">
+                                        <img
+                                            src={team.teamLogo}
+                                            alt={team.teamName?.default}
+                                            className="w-16 h-16 object-contain drop-shadow-lg group-hover:scale-110 transition-transform"
+                                        />
+                                        <div className="flex-1 min-w-0">
+                                            <h3 className="font-display font-bold text-white text-lg truncate">{team.teamName?.default}</h3>
+                                            <div className="flex items-center gap-2 mt-1">
+                                                <span className="px-2 py-0.5 rounded bg-white/5 text-xs font-mono text-text-muted">
+                                                    {team.wins}-{team.losses}-{team.otLosses}
+                                                </span>
+                                                <span className="text-xs font-mono text-accent-primary">
+                                                    {team.points} PTS
+                                                </span>
+                                            </div>
+                                        </div>
+                                    </div>
+
+                                    {/* Playoff Probability */}
+                                    <div className="text-center mb-6 relative">
+                                        <div className="absolute inset-0 bg-white/5 blur-xl rounded-full opacity-0 group-hover:opacity-100 transition-opacity"></div>
+                                        <div className={clsx("text-5xl font-display font-bold relative z-10", probColor)}>
+                                            {team.playoffProb}%
+                                        </div>
+                                        <div className="text-xs text-text-muted font-mono uppercase tracking-wider mt-1">
+                                            Playoff Chance
+                                        </div>
+                                    </div>
+
+                                    {/* Metrics Grid */}
+                                    <div className="grid grid-cols-4 gap-2 pt-4 border-t border-white/5">
+                                        <div className="text-center">
+                                            <div className="text-[10px] text-text-muted font-mono mb-1">TREND</div>
+                                            <div className="flex justify-center">
+                                                <TrendIcon className={trendColor} size={16} />
+                                            </div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="text-[10px] text-text-muted font-mono mb-1">L10</div>
+                                            <div className="text-sm font-bold text-white">
+                                                {team.l10Wins || 0}-{team.l10Losses !== undefined ? team.l10Losses : (10 - (team.l10Wins || 0))}
+                                            </div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="text-[10px] text-text-muted font-mono mb-1">xG</div>
+                                            <div className="text-sm font-bold text-white">
+                                                {team.metrics?.xg ? parseFloat(team.metrics.xg).toFixed(1) : '-'}
+                                            </div>
+                                        </div>
+                                        <div className="text-center">
+                                            <div className="text-[10px] text-text-muted font-mono mb-1">CF%</div>
+                                            <div className="text-sm font-bold text-white">
+                                                {team.metrics?.corsi_pct ? parseFloat(team.metrics.corsi_pct).toFixed(1) : '-'}
+                                            </div>
+                                        </div>
+                                    </div>
+                                </motion.div>
+                            );
+                        })}
+                    </div>
+                </motion.div>
+            ))}
         </div>
     );
 };

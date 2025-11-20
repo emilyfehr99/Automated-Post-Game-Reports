@@ -1,104 +1,176 @@
-@import "tailwindcss";
-@import '@fontsource/oswald/400.css';
-@import '@fontsource/oswald/500.css';
-@import '@fontsource/oswald/700.css';
-@import '@fontsource/jetbrains-mono/400.css';
-@import '@fontsource/jetbrains-mono/700.css';
+/* NHL Analytics - Premium Design System */
+@import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap');
 
-@theme {
-  --font-sans: 'Oswald', sans-serif;
-  --font-mono: 'JetBrains Mono', monospace;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
 
-  --color-void: #050505;
-
-  --color-glass-100: rgba(255, 255, 255, 0.05);
-  --color-glass-200: rgba(255, 255, 255, 0.1);
-  --color-glass-300: rgba(255, 255, 255, 0.15);
-
-  --color-accent-cyan: #00f2ff;
-  --color-accent-magenta: #ff0055;
-  --color-accent-lime: #ccff00;
-
-  --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
-  --animate-glow: glow 2s ease-in-out infinite alternate;
-
-  @keyframes glow {
-    0% {
-      box-shadow: 0 0 5px rgba(0, 242, 255, 0.2);
-    }
-
-    100% {
-      box-shadow: 0 0 20px rgba(0, 242, 255, 0.6), 0 0 10px rgba(0, 242, 255, 0.4);
-    }
+@layer base {
+  :root {
+    --color-primary: #0EA5E9;
+    --color-primary-dark: #0284C7;
+    --color-primary-light: #38BDF8;
+    --color-accent-purple: #8B5CF6;
+    --color-accent-pink: #EC4899;
+    --color-accent-cyan: #06B6D4;
+    --color-accent-lime: #84CC16;
+    --color-accent-magenta: #EC4899;
+    --color-success: #10B981;
+    --color-warning: #F59E0B;
+    --color-error: #EF4444;
+    --color-bg-primary: #0F172A;
+    --color-bg-secondary: #1E293B;
+    --color-bg-tertiary: #334155;
+    --color-void: #020617;
+    --glass-bg: rgba(30, 41, 59, 0.7);
+    --glass-border: rgba(148, 163, 184, 0.1);
+    --color-text-primary: #F8FAFC;
+    --color-text-secondary: #CBD5E1;
+    --color-text-tertiary: #94A3B8;
   }
 
-  --background-image-grid-pattern: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(255 255 255 / 0.05)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
+  * {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+  }
+
+  html {
+    font-size: 16px;
+    scroll-behavior: smooth;
+    -webkit-font-smoothing: antialiased;
+    -moz-osx-font-smoothing: grayscale;
+  }
+
+  body {
+    font-family: 'Inter', system-ui, -apple-system, sans-serif;
+    @apply bg-gradient-to-br from-slate-900 via-slate-800 to-slate-900 text-slate-50;
+    min-height: 100vh;
+    background-attachment: fixed;
+  }
+
+  h1,
+  h2,
+  h3,
+  h4,
+  h5,
+  h6 {
+    @apply font-bold tracking-tight;
+  }
 }
 
-:root {
-  color-scheme: dark;
+@layer components {
+
+  /* Glass Morphism Cards */
+  .glass-card {
+    @apply bg-slate-800/70 backdrop-blur-xl border border-white/10 rounded-2xl transition-all duration-300;
+  }
+
+  .glass-card:hover {
+    @apply -translate-y-1 shadow-2xl shadow-sky-500/20 border-sky-500/30;
+  }
+
+  .glass-panel {
+    @apply bg-slate-800/50 backdrop-blur-md border border-white/5 rounded-xl;
+  }
+
+  /* Premium Buttons */
+  .btn-primary {
+    @apply px-6 py-3 bg-gradient-to-r from-sky-500 to-blue-600 text-white font-semibold rounded-xl hover:from-sky-600 hover:to-blue-700 transition-all duration-200 shadow-lg shadow-sky-500/30 active:scale-95;
+  }
+
+  .btn-secondary {
+    @apply px-6 py-3 bg-slate-700/50 text-white font-semibold rounded-xl border border-white/10 hover:bg-slate-600/50 hover:border-white/20 transition-all duration-200 active:scale-95;
+  }
+
+  /* Stats Card */
+  .stats-card {
+    @apply glass-panel p-6 hover:bg-slate-700/50 transition-colors;
+  }
+
+  /* Text Gradients */
+  .text-gradient-primary {
+    @apply bg-gradient-to-r from-sky-400 to-blue-600 bg-clip-text text-transparent;
+  }
+
+  .text-gradient-accent {
+    @apply bg-gradient-to-r from-purple-400 to-pink-600 bg-clip-text text-transparent;
+  }
+
+  /* Text Glows */
+  .text-glow-cyan {
+    text-shadow: 0 0 20px rgba(6, 182, 212, 0.5);
+  }
+
+  .text-glow-magenta {
+    text-shadow: 0 0 20px rgba(236, 72, 153, 0.5);
+  }
 }
 
-body {
-  background-color: var(--color-void);
-  color: white;
-  font-family: var(--font-sans);
-  -webkit-font-smoothing: antialiased;
-  overflow-x: hidden;
-  background-image:
-    radial-gradient(circle at 50% 0%, rgba(0, 242, 255, 0.03) 0%, transparent 50%),
-    radial-gradient(circle at 80% 20%, rgba(255, 0, 85, 0.03) 0%, transparent 30%);
+@layer utilities {
+
+  /* Custom Animations */
+  .animate-fadeIn {
+    animation: fadeIn 0.6s ease-out;
+  }
+
+  .animate-slideUp {
+    animation: slideUp 0.5s ease-out;
+  }
+
+  .animate-spin-reverse {
+    animation: spin-reverse 1s linear infinite;
+  }
+}
+
+/* Keyframe Animations */
+@keyframes fadeIn {
+  from {
+    opacity: 0;
+    transform: translateY(20px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes slideUp {
+  from {
+    opacity: 0;
+    transform: translateY(40px);
+  }
+
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@keyframes spin-reverse {
+  from {
+    transform: rotate(360deg);
+  }
+
+  to {
+    transform: rotate(0deg);
+  }
 }
 
 /* Custom Scrollbar */
 ::-webkit-scrollbar {
-  width: 6px;
-  height: 6px;
+  width: 10px;
 }
 
 ::-webkit-scrollbar-track {
-  background-color: var(--color-void);
+  @apply bg-slate-800;
 }
 
 ::-webkit-scrollbar-thumb {
-  background-color: #27272a;
-  /* zinc-800 */
-  border-radius: 9999px;
+  @apply bg-gradient-to-b from-sky-500 to-purple-600 rounded-md;
 }
 
 ::-webkit-scrollbar-thumb:hover {
-  background-color: #52525b;
-  /* zinc-600 */
-}
-
-/* Glass Utilities */
-.glass-panel {
-  background-color: var(--color-glass-100);
-  backdrop-filter: blur(12px);
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
-}
-
-.glass-card {
-  background-color: var(--color-glass-100);
-  backdrop-filter: blur(4px);
-  border: 1px solid rgba(255, 255, 255, 0.05);
-  transition: all 300ms;
-}
-
-.glass-card:hover {
-  background-color: var(--color-glass-200);
-  border-color: rgba(255, 255, 255, 0.2);
-}
-
-.text-glow {
-  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
-}
-
-.text-glow-cyan {
-  text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
-}
-
-.text-glow-magenta {
-  text-shadow: 0 0 10px rgba(255, 0, 85, 0.5);
+  @apply from-sky-400 to-purple-500;
 }

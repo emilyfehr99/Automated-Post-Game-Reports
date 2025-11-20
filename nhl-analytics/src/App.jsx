@@ -14,15 +14,17 @@ function App() {
     <Router>
       <div className="min-h-screen bg-void">
         <Navbar />
-        <Routes>
-          <Route path="/" element={<Home />} />
-          <Route path="/team/:id" element={<TeamDetails />} />
-          <Route path="/player/:id" element={<PlayerDetails />} />
-          <Route path="/metrics" element={<Metrics />} />
-          <Route path="/game/:id" element={<GameDetails />} />
-          <Route path="/todays-action" element={<TodaysAction />} />
-          <Route path="/playoff-race" element={<PlayoffPredictions />} />
-        </Routes>
+        <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-24 pb-12">
+          <Routes>
+            <Route path="/" element={<Home />} />
+            <Route path="/team/:id" element={<TeamDetails />} />
+            <Route path="/player/:id" element={<PlayerDetails />} />
+            <Route path="/metrics" element={<Metrics />} />
+            <Route path="/game/:id" element={<GameDetails />} />
+            <Route path="/todays-action" element={<TodaysAction />} />
+            <Route path="/playoff-race" element={<PlayoffPredictions />} />
+          </Routes>
+        </main>
       </div>
     </Router>
   );

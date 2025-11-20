@@ -75,6 +75,15 @@ export const backendApi = {
     },
 
     /**
+     * Get live game data including advanced metrics
+     */
+    async getLiveGame(gameId) {
+        const response = await fetch(`${BACKEND_URL}/api/live-game/${gameId}`);
+        if (!response.ok) throw new Error(`Failed to fetch live game data for ${gameId}`);
+        return response.json();
+    },
+
+    /**
      * Get historical stats
      */
     async getHistoricalStats() {

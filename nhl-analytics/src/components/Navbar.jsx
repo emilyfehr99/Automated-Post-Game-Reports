@@ -1,25 +1,27 @@
 import React from 'react';
 import { Link, useLocation } from 'react-router-dom';
-import { Activity, Calendar, Trophy, Target } from 'lucide-react';
+import { Activity, Trophy, BarChart2, Home } from 'lucide-react';
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
 
 const NavItem = ({ to, icon: Icon, label, active }) => (
     <Link to={to} className="relative group">
         <div className={clsx(
-            "flex items-center gap-2 px-4 py-2 rounded-full transition-all duration-300",
-            active ? "text-white bg-white/10" : "text-gray-400 hover:text-white hover:bg-white/5"
+            "flex items-center gap-2 px-4 py-2 rounded-lg transition-all duration-300",
+            active
+                ? "text-white bg-white/10 shadow-lg shadow-white/5"
+                : "text-text-secondary hover:text-white hover:bg-white/5"
         )}>
             <Icon size={18} className={clsx(
                 "transition-colors duration-300",
-                active ? "text-accent-cyan" : "group-hover:text-accent-cyan"
+                active ? "text-accent-primary" : "group-hover:text-accent-primary"
             )} />
-            <span className="font-sans tracking-wider text-sm uppercase font-medium">{label}</span>
+            <span className="font-display tracking-wider text-sm font-medium uppercase">{label}</span>
         </div>
         {active && (
             <motion.div
-                layoutId="navbar-glow"
-                className="absolute inset-0 rounded-full bg-accent-cyan/5 blur-md -z-10"
+                layoutId="navbar-indicator"
+                className="absolute bottom-0 left-0 right-0 h-0.5 bg-accent-primary shadow-[0_0_10px_var(--color-accent-primary)]"
                 transition={{ type: "spring", bounce: 0.2, duration: 0.6 }}
             />
         )}
@@ -33,26 +35,35 @@ const Navbar = () => {
         <motion.nav
             initial={{ y: -100 }}
             animate={{ y: 0 }}
-            className="fixed top-0 left-0 right-0 z-50 flex justify-center pt-6 px-4"
+            className="flex justify-center pt-4 px-4 pointer-events-none"
         >
-            <div className="glass-panel rounded-full px-6 py-3 flex items-center gap-8">
-                <Link to="/" className="flex items-center gap-2 mr-4 group">
+            <div className="glass-panel rounded-2xl px-4 py-2 flex items-center gap-4 pointer-events-auto bg-bg-secondary/90 backdrop-blur-xl border-white/10 shadow-2xl">
+                <Link to="/" className="flex items-center gap-3 px-4 py-1 mr-2 group border-r border-white/10">
                     <div className="relative">
-                        <Activity className="h-6 w-6 text-accent-cyan group-hover:animate-pulse-slow" />
-                        <div className="absolute inset-0 bg-accent-cyan/20 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity" />
+                        <div className="absolute inset-0 bg-accent-primary/20 blur-lg rounded-full opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                        <Activity className="h-6 w-6 text-accent-primary transform group-hover:scale-110 transition-transform duration-300" />
                     </div>
-                    <span className="font-sans font-bold text-xl tracking-widest text-white group-hover:text-glow-cyan transition-all">
-                        PUCK<span className="text-accent-cyan">ANALYTICS</span>
-                    </span>
+                    <div className="flex flex-col leading-none">
+                        <span className="font-display font-bold text-lg tracking-tight text-white group-hover:text-accent-primary transition-colors">
+                            NHL
+                        </span>
+                        <span className="font-mono text-[10px] tracking-widest text-text-secondary font-semibold">
+                            ANALYTICS
+                        </span>
+                    </div>
                 </Link>
 
-                <div className="h-6 w-px bg-white/10" />
+                <div className="flex items-center gap-1">
+                    <NavItem to="/" icon={Home} label="Dashboard" active={location.pathname === '/'} />
+                    <NavItem to="/metrics" icon={BarChart2} label="Metrics" active={location.pathname === '/metrics'} />
+                    <NavItem to="/playoff-race" icon={Trophy} label="Playoffs" active={location.pathname === '/playoff-race'} />
+                </div>
 
-                <div className="flex items-center gap-2">
-                    <NavItem to="/" icon={Calendar} label="Dashboard" active={location.pathname === '/'} />
-                    <NavItem to="/todays-action" icon={Target} label="Today's Action" active={location.pathname === '/todays-action'} />
-                    <NavItem to="/playoff-race" icon={Trophy} label="Playoff Race" active={location.pathname === '/playoff-race'} />
-                    <NavItem to="/metrics" icon={Activity} label="Metrics" active={location.pathname === '/metrics'} />
+                <div className="ml-2 pl-4 border-l border-white/10">
+                    <div className="flex items-center gap-2 px-3 py-1.5 rounded-full bg-bg-tertiary/50 border border-white/5">
+                        <div className="w-2 h-2 rounded-full bg-green-500 animate-pulse shadow-[0_0_8px_rgba(34,197,94,0.5)]" />
+                        <span className="text-[10px] font-mono text-text-muted font-medium">LIVE</span>
+                    </div>
                 </div>
             </div>
         </motion.nav>
