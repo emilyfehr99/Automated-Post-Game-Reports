@@ -78,75 +78,146 @@ const TEAM_COLORS = {
 
 const getTeamColor = (abbr) => TEAM_COLORS[abbr] || '#FFFFFF';
 
-const PreGameHeatmap = ({ preGameData, homeTeam, awayTeam }) => (
-    <section className="glass-card p-6">
-        <div className="flex items-center gap-3 mb-6">
-            <Target className="w-6 h-6 text-accent-cyan" />
-            <h3 className="text-xl font-display font-bold">PRE-GAME INTEL: SHOT HEATMAP (L10 GAMES)</h3>
-        </div>
-        <div className="max-w-3xl mx-auto">
-            <div className="relative aspect-[200/85] bg-white/5 rounded-xl border border-white/10 overflow-hidden">
-                <img src="/rink.jpeg" alt="Rink" className="absolute inset-0 w-full h-full object-fill" />
+const PreGameHeatmap = ({ preGameData, homeTeam, awayTeam }) => {
+    const [hoveredPoint, setHoveredPoint] = React.useState(null);
+    const [tooltipPos, setTooltipPos] = React.useState({ x: 0, y: 0 });
 
-                {/* Team Logos on Ice */}
-                <div className="absolute left-[15%] top-1/2 -translate-y-1/2 z-10">
-                    <img src={awayTeam.logo} alt={awayTeam.abbrev} className="w-16 h-16 opacity-20" />
-                </div>
-                <div className="absolute right-[15%] top-1/2 -translate-y-1/2 z-10">
-                    <img src={homeTeam.logo} alt={homeTeam.abbrev} className="w-16 h-16 opacity-20" />
-                </div>
+    const handlePointHover = (point, event, team) => {
+        const rect = event.currentTarget.getBoundingClientRect();
+        setTooltipPos({
+            x: event.clientX - rect.left,
+            y: event.clientY - rect.top
+        });
+        setHoveredPoint({ ...point, team });
+    };
 
-                {/* Home Team Points */}
-                {preGameData.heatmaps.home?.goals_for?.map((point, i) => (
-                    <div
-                        key={`home-goal-${i}`}
-                        className="absolute w-3 h-3 rounded-full border border-white shadow-lg z-20 transform -translate-x-1/2 -translate-y-1/2"
-                        style={{
-                            backgroundColor: getTeamColor(homeTeam.abbrev),
-                            left: `${(point.x + 100) / 2}%`,
-                            top: `${(42.5 - point.y) / 0.85}%`
-                        }}
-                    />
-                ))}
-                {preGameData.heatmaps.home?.shots_for?.map((point, i) => (
-                    <div
-                        key={`home-shot-${i}`}
-                        className="absolute w-1.5 h-1.5 rounded-full opacity-60 blur-[0.5px] transform -translate-x-1/2 -translate-y-1/2"
-                        style={{
-                            backgroundColor: getTeamColor(homeTeam.abbrev),
-                            left: `${(point.x + 100) / 2}%`,
-                            top: `${(42.5 - point.y) / 0.85}%`
-                        }}
-                    />
-                ))}
+    const clearHover = () => {
+        setHoveredPoint(null);
+    };
 
-                {/* Away Team Points */}
-                {preGameData.heatmaps.away?.goals_for?.map((point, i) => (
-                    <div
-                        key={`away-goal-${i}`}
-                        className="absolute w-3 h-3 rounded-full border border-white shadow-lg z-20 transform -translate-x-1/2 -translate-y-1/2"
-                        style={{
-                            backgroundColor: getTeamColor(awayTeam.abbrev),
-                            left: `${(point.x + 100) / 2}%`,
-                            top: `${(42.5 - point.y) / 0.85}%`
-                        }}
-                    />
-                ))}
-                {preGameData.heatmaps.away?.shots_for?.map((point, i) => (
-                    <div
-                        key={`away-shot-${i}`}
-                        className="absolute w-1.5 h-1.5 rounded-full opacity-60 blur-[0.5px] transform -translate-x-1/2 -translate-y-1/2"
-                        style={{
-                            backgroundColor: getTeamColor(awayTeam.abbrev),
-                            left: `${(point.x + 100) / 2}%`,
-                            top: `${(42.5 - point.y) / 0.85}%`
-                        }}
-                    />
-                ))}
+    return (
+        <section className="glass-card p-6">
+            <div className="flex items-center gap-3 mb-6">
+                <Target className="w-6 h-6 text-accent-cyan" />
+                <h3 className="text-xl font-display font-bold">PRE-GAME INTEL: SHOT HEATMAP (L10 GAMES)</h3>
             </div>
-        </div>
-    </section>
-);
+            <div className="max-w-3xl mx-auto">
+                <div className="relative aspect-[200/85] bg-white/5 rounded-xl border border-white/10 overflow-hidden">
+                    <img src="/rink.jpeg" alt="Rink" className="absolute inset-0 w-full h-full object-fill" />
+
+                    {/* Team Logos on Ice */}
+                    <div className="absolute left-[15%] top-1/2 -translate-y-1/2 z-10">
+                        <img src={awayTeam.logo} alt={awayTeam.abbrev} className="w-16 h-16 opacity-20" />
+                    </div>
+                    <div className="absolute right-[15%] top-1/2 -translate-y-1/2 z-10">
+                        <img src={homeTeam.logo} alt={homeTeam.abbrev} className="w-16 h-16 opacity-20" />
+                    </div>
+
+                    {/* Home Team Points */}
+                    {preGameData.heatmaps.home?.goals_for?.map((point, i) => (
+                        <div
+                            key={`home-goal-${i}`}
+                            className="absolute w-3 h-3 rounded-full border border-white shadow-lg z-20 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-150 transition-transform"
+                            style={{
+                                backgroundColor: getTeamColor(homeTeam.abbrev),
+                                left: `${(point.x + 100) / 2}%`,
+                                top: `${(42.5 - point.y) / 0.85}%`
+                            }}
+                            onMouseEnter={(e) => handlePointHover(point, e, homeTeam.abbrev)}
+                            onMouseLeave={clearHover}
+                        />
+                    ))}
+                    {preGameData.heatmaps.home?.shots_for?.map((point, i) => (
+                        <div
+                            key={`home-shot-${i}`}
+                            className="absolute w-1.5 h-1.5 rounded-full opacity-60 blur-[0.5px] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-150 hover:opacity-100 transition-all"
+                            style={{
+                                backgroundColor: getTeamColor(homeTeam.abbrev),
+                                left: `${(point.x + 100) / 2}%`,
+                                top: `${(42.5 - point.y) / 0.85}%`
+                            }}
+                            onMouseEnter={(e) => handlePointHover(point, e, homeTeam.abbrev)}
+                            onMouseLeave={clearHover}
+                        />
+                    ))}
+
+                    {/* Away Team Points */}
+                    {preGameData.heatmaps.away?.goals_for?.map((point, i) => (
+                        <div
+                            key={`away-goal-${i}`}
+                            className="absolute w-3 h-3 rounded-full border border-white shadow-lg z-20 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-150 transition-transform"
+                            style={{
+                                backgroundColor: getTeamColor(awayTeam.abbrev),
+                                left: `${(point.x + 100) / 2}%`,
+                                top: `${(42.5 - point.y) / 0.85}%`
+                            }}
+                            onMouseEnter={(e) => handlePointHover(point, e, awayTeam.abbrev)}
+                            onMouseLeave={clearHover}
+                        />
+                    ))}
+                    {preGameData.heatmaps.away?.shots_for?.map((point, i) => (
+                        <div
+                            key={`away-shot-${i}`}
+                            className="absolute w-1.5 h-1.5 rounded-full opacity-60 blur-[0.5px] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-150 hover:opacity-100 transition-all"
+                            style={{
+                                backgroundColor: getTeamColor(awayTeam.abbrev),
+                                left: `${(point.x + 100) / 2}%`,
+                                top: `${(42.5 - point.y) / 0.85}%`
+                            }}
+                            onMouseEnter={(e) => handlePointHover(point, e, awayTeam.abbrev)}
+                            onMouseLeave={clearHover}
+                        />
+                    ))}
+
+                    {/* Tooltip */}
+                    {hoveredPoint && (
+                        <div
+                            className="absolute z-50 bg-black/95 border border-white/20 rounded-lg p-3 shadow-2xl backdrop-blur-md min-w-[200px]"
+                            style={{
+                                left: `${tooltipPos.x + 10}px`,
+                                top: `${tooltipPos.y - 10}px`,
+                                pointerEvents: 'none'
+                            }}
+                        >
+                            <div className="text-xs font-mono space-y-1">
+                                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
+                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getTeamColor(hoveredPoint.team) }}></div>
+                                    <span className="font-bold text-white">{hoveredPoint.team}</span>
+                                </div>
+                                {hoveredPoint.shooter && (
+                                    <div className="text-text-muted">
+                                        <span className="text-white font-semibold">{hoveredPoint.shooter}</span>
+                                    </div>
+                                )}
+                                {hoveredPoint.xg !== undefined && (
+                                    <div>
+                                        <span className="text-accent-cyan">xG:</span>
+                                        <span className="text-white ml-2">{(hoveredPoint.xg || 0).toFixed(2)}</span>
+                                    </div>
+                                )}
+                                {hoveredPoint.shotType && (
+                                    <div>
+                                        <span className="text-accent-magenta">Shot Type:</span>
+                                        <span className="text-white ml-2 capitalize">{hoveredPoint.shotType}</span>
+                                    </div>
+                                )}
+                                {hoveredPoint.movement && (
+                                    <div>
+                                        <span className="text-accent-lime">Movement:</span>
+                                        <span className="text-white ml-2 capitalize">{hoveredPoint.movement}</span>
+                                    </div>
+                                )}
+                                <div className="text-[10px] text-text-muted mt-2 pt-2 border-t border-white/10">
+                                    Position: ({hoveredPoint.x?.toFixed(1)}, {hoveredPoint.y?.toFixed(1)})
+                                </div>
+                            </div>
+                        </div>
+                    )}
+                </div>
+            </div>
+        </section>
+    );
+};
 
 const GameDetailsContent = () => {
     const { id } = useParams();
