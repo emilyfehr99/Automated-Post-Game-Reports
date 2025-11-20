@@ -81,13 +81,36 @@ const getTeamColor = (abbr) => TEAM_COLORS[abbr] || '#FFFFFF';
 const PreGameHeatmap = ({ preGameData, homeTeam, awayTeam }) => {
     const [hoveredPoint, setHoveredPoint] = React.useState(null);
     const [tooltipPos, setTooltipPos] = React.useState({ x: 0, y: 0 });
+    const containerRef = React.useRef(null);
 
     const handlePointHover = (point, event, team) => {
-        const rect = event.currentTarget.getBoundingClientRect();
-        setTooltipPos({
-            x: event.clientX - rect.left,
-            y: event.clientY - rect.top
-        });
+        if (!containerRef.current) return;
+
+        const container = containerRef.current;
+        const rect = container.getBoundingClientRect();
+        const mouseX = event.clientX - rect.left;
+        const mouseY = event.clientY - rect.top;
+
+        // Tooltip dimensions (approximate)
+        const tooltipWidth = 220;
+        const tooltipHeight = 120;
+
+        // Calculate position with boundary detection
+        let left = mouseX + 10;
+        let top = mouseY - 10;
+
+        // Keep tooltip within container bounds
+        if (left + tooltipWidth > rect.width) {
+            left = mouseX - tooltipWidth - 10;
+        }
+        if (top + tooltipHeight > rect.height) {
+            top = rect.height - tooltipHeight - 10;
+        }
+        if (top < 0) {
+            top = 10;
+        }
+
+        setTooltipPos({ x: left, y: top });
         setHoveredPoint({ ...point, team });
     };
 
@@ -102,7 +125,7 @@ const PreGameHeatmap = ({ preGameData, homeTeam, awayTeam }) => {
                 <h3 className="text-xl font-display font-bold">PRE-GAME INTEL: SHOT HEATMAP (L10 GAMES)</h3>
             </div>
             <div className="max-w-3xl mx-auto">
-                <div className="relative aspect-[200/85] bg-white/5 rounded-xl border border-white/10 overflow-hidden">
+                <div ref={containerRef} className="relative aspect-[200/85] bg-white/5 rounded-xl border border-white/10 overflow-hidden">
                     <img src="/rink.jpeg" alt="Rink" className="absolute inset-0 w-full h-full object-fill" />
 
                     {/* Team Logos on Ice */}
@@ -113,7 +136,7 @@ const PreGameHeatmap = ({ preGameData, homeTeam, awayTeam }) => {
                         <img src={homeTeam.logo} alt={homeTeam.abbrev} className="w-16 h-16 opacity-20" />
                     </div>
 
-                    {/* Home Team Points */}
+                    {/* Home Team Points (Right Side) */}
                     {preGameData.heatmaps.home?.goals_for?.map((point, i) => (
                         <div
                             key={`home-goal-${i}`}
@@ -141,41 +164,49 @@ const PreGameHeatmap = ({ preGameData, homeTeam, awayTeam }) => {
                         />
                     ))}
 
-                    {/* Away Team Points */}
-                    {preGameData.heatmaps.away?.goals_for?.map((point, i) => (
-                        <div
-                            key={`away-goal-${i}`}
-                            className="absolute w-3 h-3 rounded-full border border-white shadow-lg z-20 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-150 transition-transform"
-                            style={{
-                                backgroundColor: getTeamColor(awayTeam.abbrev),
-                                left: `${(point.x + 100) / 2}%`,
-                                top: `${(42.5 - point.y) / 0.85}%`
-                            }}
-                            onMouseEnter={(e) => handlePointHover(point, e, awayTeam.abbrev)}
-                            onMouseLeave={clearHover}
-                        />
-                    ))}
-                    {preGameData.heatmaps.away?.shots_for?.map((point, i) => (
-                        <div
-                            key={`away-shot-${i}`}
-                            className="absolute w-1.5 h-1.5 rounded-full opacity-60 blur-[0.5px] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-150 hover:opacity-100 transition-all"
-                            style={{
-                                backgroundColor: getTeamColor(awayTeam.abbrev),
-                                left: `${(point.x + 100) / 2}%`,
-                                top: `${(42.5 - point.y) / 0.85}%`
-                            }}
-                            onMouseEnter={(e) => handlePointHover(point, e, awayTeam.abbrev)}
-                            onMouseLeave={clearHover}
-                        />
-                    ))}
+                    {/* Away Team Points (Left Side - Flipped) */}
+                    {preGameData.heatmaps.away?.goals_for?.map((point, i) => {
+                        // Flip x coordinate to left side: if point.x is positive (right), make it negative (left)
+                        const flippedX = -point.x;
+                        return (
+                            <div
+                                key={`away-goal-${i}`}
+                                className="absolute w-3 h-3 rounded-full border border-white shadow-lg z-20 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-150 transition-transform"
+                                style={{
+                                    backgroundColor: getTeamColor(awayTeam.abbrev),
+                                    left: `${(flippedX + 100) / 2}%`,
+                                    top: `${(42.5 - point.y) / 0.85}%`
+                                }}
+                                onMouseEnter={(e) => handlePointHover(point, e, awayTeam.abbrev)}
+                                onMouseLeave={clearHover}
+                            />
+                        );
+                    })}
+                    {preGameData.heatmaps.away?.shots_for?.map((point, i) => {
+                        // Flip x coordinate to left side
+                        const flippedX = -point.x;
+                        return (
+                            <div
+                                key={`away-shot-${i}`}
+                                className="absolute w-1.5 h-1.5 rounded-full opacity-60 blur-[0.5px] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-150 hover:opacity-100 transition-all"
+                                style={{
+                                    backgroundColor: getTeamColor(awayTeam.abbrev),
+                                    left: `${(flippedX + 100) / 2}%`,
+                                    top: `${(42.5 - point.y) / 0.85}%`
+                                }}
+                                onMouseEnter={(e) => handlePointHover(point, e, awayTeam.abbrev)}
+                                onMouseLeave={clearHover}
+                            />
+                        );
+                    })}
 
                     {/* Tooltip */}
                     {hoveredPoint && (
                         <div
-                            className="absolute z-50 bg-black/95 border border-white/20 rounded-lg p-3 shadow-2xl backdrop-blur-md min-w-[200px]"
+                            className="absolute z-50 bg-black/95 border border-white/20 rounded-lg p-3 shadow-2xl backdrop-blur-md min-w-[200px] max-w-[250px]"
                             style={{
-                                left: `${tooltipPos.x + 10}px`,
-                                top: `${tooltipPos.y - 10}px`,
+                                left: `${tooltipPos.x}px`,
+                                top: `${tooltipPos.y}px`,
                                 pointerEvents: 'none'
                             }}
                         >
