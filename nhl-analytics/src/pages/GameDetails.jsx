@@ -164,41 +164,33 @@ const PreGameHeatmap = ({ preGameData, homeTeam, awayTeam }) => {
                         />
                     ))}
 
-                    {/* Away Team Points (Left Side - Flipped) */}
-                    {preGameData.heatmaps.away?.goals_for?.map((point, i) => {
-                        // Flip x coordinate to left side: if point.x is positive (right), make it negative (left)
-                        const flippedX = -point.x;
-                        return (
-                            <div
-                                key={`away-goal-${i}`}
-                                className="absolute w-3 h-3 rounded-full border border-white shadow-lg z-20 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-150 transition-transform"
-                                style={{
-                                    backgroundColor: getTeamColor(awayTeam.abbrev),
-                                    left: `${(flippedX + 100) / 2}%`,
-                                    top: `${(42.5 - point.y) / 0.85}%`
-                                }}
-                                onMouseEnter={(e) => handlePointHover(point, e, awayTeam.abbrev)}
-                                onMouseLeave={clearHover}
-                            />
-                        );
-                    })}
-                    {preGameData.heatmaps.away?.shots_for?.map((point, i) => {
-                        // Flip x coordinate to left side
-                        const flippedX = -point.x;
-                        return (
-                            <div
-                                key={`away-shot-${i}`}
-                                className="absolute w-1.5 h-1.5 rounded-full opacity-60 blur-[0.5px] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-150 hover:opacity-100 transition-all"
-                                style={{
-                                    backgroundColor: getTeamColor(awayTeam.abbrev),
-                                    left: `${(flippedX + 100) / 2}%`,
-                                    top: `${(42.5 - point.y) / 0.85}%`
-                                }}
-                                onMouseEnter={(e) => handlePointHover(point, e, awayTeam.abbrev)}
-                                onMouseLeave={clearHover}
-                            />
-                        );
-                    })}
+                    {/* Away Team Points (Left Side) */}
+                    {preGameData.heatmaps.away?.goals_for?.map((point, i) => (
+                        <div
+                            key={`away-goal-${i}`}
+                            className="absolute w-3 h-3 rounded-full border border-white shadow-lg z-20 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-150 transition-transform"
+                            style={{
+                                backgroundColor: getTeamColor(awayTeam.abbrev),
+                                left: `${(point.x + 100) / 2}%`,
+                                top: `${(42.5 - point.y) / 0.85}%`
+                            }}
+                            onMouseEnter={(e) => handlePointHover(point, e, awayTeam.abbrev)}
+                            onMouseLeave={clearHover}
+                        />
+                    ))}
+                    {preGameData.heatmaps.away?.shots_for?.map((point, i) => (
+                        <div
+                            key={`away-shot-${i}`}
+                            className="absolute w-1.5 h-1.5 rounded-full opacity-60 blur-[0.5px] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-150 hover:opacity-100 transition-all"
+                            style={{
+                                backgroundColor: getTeamColor(awayTeam.abbrev),
+                                left: `${(point.x + 100) / 2}%`,
+                                top: `${(42.5 - point.y) / 0.85}%`
+                            }}
+                            onMouseEnter={(e) => handlePointHover(point, e, awayTeam.abbrev)}
+                            onMouseLeave={clearHover}
+                        />
+                    ))}
 
                     {/* Tooltip */}
                     {hoveredPoint && (
