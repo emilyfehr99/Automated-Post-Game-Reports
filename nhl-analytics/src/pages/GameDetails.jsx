@@ -207,9 +207,6 @@ const PreGameHeatmap = ({ preGameData, homeTeam, awayTeam }) => {
                                         <span className="text-white ml-2 capitalize">{hoveredPoint.movement}</span>
                                     </div>
                                 )}
-                                <div className="text-[10px] text-text-muted mt-2 pt-2 border-t border-white/10">
-                                    Position: ({hoveredPoint.x?.toFixed(1)}, {hoveredPoint.y?.toFixed(1)})
-                                </div>
                             </div>
                         </div>
                     )}
