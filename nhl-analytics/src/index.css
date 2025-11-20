@@ -1,0 +1,104 @@
+@import "tailwindcss";
+@import '@fontsource/oswald/400.css';
+@import '@fontsource/oswald/500.css';
+@import '@fontsource/oswald/700.css';
+@import '@fontsource/jetbrains-mono/400.css';
+@import '@fontsource/jetbrains-mono/700.css';
+
+@theme {
+  --font-sans: 'Oswald', sans-serif;
+  --font-mono: 'JetBrains Mono', monospace;
+
+  --color-void: #050505;
+
+  --color-glass-100: rgba(255, 255, 255, 0.05);
+  --color-glass-200: rgba(255, 255, 255, 0.1);
+  --color-glass-300: rgba(255, 255, 255, 0.15);
+
+  --color-accent-cyan: #00f2ff;
+  --color-accent-magenta: #ff0055;
+  --color-accent-lime: #ccff00;
+
+  --animate-pulse-slow: pulse 4s cubic-bezier(0.4, 0, 0.6, 1) infinite;
+  --animate-glow: glow 2s ease-in-out infinite alternate;
+
+  @keyframes glow {
+    0% {
+      box-shadow: 0 0 5px rgba(0, 242, 255, 0.2);
+    }
+
+    100% {
+      box-shadow: 0 0 20px rgba(0, 242, 255, 0.6), 0 0 10px rgba(0, 242, 255, 0.4);
+    }
+  }
+
+  --background-image-grid-pattern: url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 32 32' width='32' height='32' fill='none' stroke='rgb(255 255 255 / 0.05)'%3e%3cpath d='M0 .5H31.5V32'/%3e%3c/svg%3e");
+}
+
+:root {
+  color-scheme: dark;
+}
+
+body {
+  background-color: var(--color-void);
+  color: white;
+  font-family: var(--font-sans);
+  -webkit-font-smoothing: antialiased;
+  overflow-x: hidden;
+  background-image:
+    radial-gradient(circle at 50% 0%, rgba(0, 242, 255, 0.03) 0%, transparent 50%),
+    radial-gradient(circle at 80% 20%, rgba(255, 0, 85, 0.03) 0%, transparent 30%);
+}
+
+/* Custom Scrollbar */
+::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+
+::-webkit-scrollbar-track {
+  background-color: var(--color-void);
+}
+
+::-webkit-scrollbar-thumb {
+  background-color: #27272a;
+  /* zinc-800 */
+  border-radius: 9999px;
+}
+
+::-webkit-scrollbar-thumb:hover {
+  background-color: #52525b;
+  /* zinc-600 */
+}
+
+/* Glass Utilities */
+.glass-panel {
+  background-color: var(--color-glass-100);
+  backdrop-filter: blur(12px);
+  border: 1px solid rgba(255, 255, 255, 0.1);
+  box-shadow: 0 20px 25px -5px rgba(0, 0, 0, 0.1), 0 10px 10px -5px rgba(0, 0, 0, 0.04);
+}
+
+.glass-card {
+  background-color: var(--color-glass-100);
+  backdrop-filter: blur(4px);
+  border: 1px solid rgba(255, 255, 255, 0.05);
+  transition: all 300ms;
+}
+
+.glass-card:hover {
+  background-color: var(--color-glass-200);
+  border-color: rgba(255, 255, 255, 0.2);
+}
+
+.text-glow {
+  text-shadow: 0 0 10px rgba(255, 255, 255, 0.3);
+}
+
+.text-glow-cyan {
+  text-shadow: 0 0 10px rgba(0, 242, 255, 0.5);
+}
+
+.text-glow-magenta {
+  text-shadow: 0 0 10px rgba(255, 0, 85, 0.5);
+}
