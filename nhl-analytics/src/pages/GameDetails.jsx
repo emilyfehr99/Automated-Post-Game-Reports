@@ -600,34 +600,123 @@ const GameDetailsContent = () => {
                 );
             case 'rosters':
                 return (
-                    <section className="glass-card p-6">
-                        <div className="flex items-center gap-3 mb-6">
-                            <Users className="w-6 h-6 text-color-success" />
-                            <h3 className="text-xl font-display font-bold">TOP PERFORMERS</h3>
+                    <section className="space-y-6">
+                        {/* Away Team Roster */}
+                        <div className="glass-card p-6">
+                            <div className="flex items-center gap-3 mb-6">
+                                <Users className="w-6 h-6 text-accent-primary" />
+                                <h3 className="text-xl font-display font-bold">{awayTeam.name.default} ROSTER</h3>
+                            </div>
+                            <div className="space-y-4">
+                                {liveData?.boxscore?.playerByGameStats?.awayTeam?.forwards?.length > 0 ||
+                                    liveData?.boxscore?.playerByGameStats?.awayTeam?.defense?.length > 0 ? (
+                                    <>
+                                        {/* Forwards */}
+                                        {liveData?.boxscore?.playerByGameStats?.awayTeam?.forwards?.length > 0 && (
+                                            <div>
+                                                <h4 className="text-sm font-display font-bold text-text-muted mb-2">FORWARDS</h4>
+                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                                    {liveData.boxscore.playerByGameStats.awayTeam.forwards.map((player, idx) => (
+                                                        <div key={idx} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                                                            <div className="font-mono text-sm text-white">#{player.sweaterNumber} {player.name.default}</div>
+                                                            <div className="text-xs text-text-muted">{player.position}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {/* Defense */}
+                                        {liveData?.boxscore?.playerByGameStats?.awayTeam?.defense?.length > 0 && (
+                                            <div>
+                                                <h4 className="text-sm font-display font-bold text-text-muted mb-2">DEFENSE</h4>
+                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                                    {liveData.boxscore.playerByGameStats.awayTeam.defense.map((player, idx) => (
+                                                        <div key={idx} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                                                            <div className="font-mono text-sm text-white">#{player.sweaterNumber} {player.name.default}</div>
+                                                            <div className="text-xs text-text-muted">{player.position}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {/* Goalies */}
+                                        {liveData?.boxscore?.playerByGameStats?.awayTeam?.goalies?.length > 0 && (
+                                            <div>
+                                                <h4 className="text-sm font-display font-bold text-text-muted mb-2">GOALIES</h4>
+                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                                    {liveData.boxscore.playerByGameStats.awayTeam.goalies.map((player, idx) => (
+                                                        <div key={idx} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                                                            <div className="font-mono text-sm text-white">#{player.sweaterNumber} {player.name.default}</div>
+                                                            <div className="text-xs text-text-muted">{player.position}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <div className="text-center text-text-muted py-4">No roster data available</div>
+                                )}
+                            </div>
                         </div>
-                        <div className="space-y-4">
-                            {liveData?.top_players?.map((player, idx) => (
-                                <div key={idx} className="flex items-center gap-4 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
-                                    <div className="font-display font-bold text-2xl text-white/20 w-8 text-center">
-                                        {idx + 1}
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="font-bold text-white">{player.player}</div>
-                                        <div className="text-xs font-mono text-text-muted flex gap-2">
-                                            <span>{player.team}</span>
-                                            <span>•</span>
-                                            <span>{player.position}</span>
-                                        </div>
-                                    </div>
-                                    <div className="text-right">
-                                        <div className="font-mono font-bold text-color-success">{player.game_score?.toFixed(1)} GS</div>
-                                        <div className="text-xs font-mono text-text-muted">{player.xg?.toFixed(2)} xG</div>
-                                    </div>
-                                </div>
-                            ))}
-                            {!liveData?.top_players && (
-                                <div className="text-center text-text-muted py-4">No player data available</div>
-                            )}
+
+                        {/* Home Team Roster */}
+                        <div className="glass-card p-6">
+                            <div className="flex items-center gap-3 mb-6">
+                                <Users className="w-6 h-6 text-accent-secondary" />
+                                <h3 className="text-xl font-display font-bold">{homeTeam.name.default} ROSTER</h3>
+                            </div>
+                            <div className="space-y-4">
+                                {liveData?.boxscore?.playerByGameStats?.homeTeam?.forwards?.length > 0 ||
+                                    liveData?.boxscore?.playerByGameStats?.homeTeam?.defense?.length > 0 ? (
+                                    <>
+                                        {/* Forwards */}
+                                        {liveData?.boxscore?.playerByGameStats?.homeTeam?.forwards?.length > 0 && (
+                                            <div>
+                                                <h4 className="text-sm font-display font-bold text-text-muted mb-2">FORWARDS</h4>
+                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                                    {liveData.boxscore.playerByGameStats.homeTeam.forwards.map((player, idx) => (
+                                                        <div key={idx} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                                                            <div className="font-mono text-sm text-white">#{player.sweaterNumber} {player.name.default}</div>
+                                                            <div className="text-xs text-text-muted">{player.position}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {/* Defense */}
+                                        {liveData?.boxscore?.playerByGameStats?.homeTeam?.defense?.length > 0 && (
+                                            <div>
+                                                <h4 className="text-sm font-display font-bold text-text-muted mb-2">DEFENSE</h4>
+                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                                    {liveData.boxscore.playerByGameStats.homeTeam.defense.map((player, idx) => (
+                                                        <div key={idx} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                                                            <div className="font-mono text-sm text-white">#{player.sweaterNumber} {player.name.default}</div>
+                                                            <div className="text-xs text-text-muted">{player.position}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                        {/* Goalies */}
+                                        {liveData?.boxscore?.playerByGameStats?.homeTeam?.goalies?.length > 0 && (
+                                            <div>
+                                                <h4 className="text-sm font-display font-bold text-text-muted mb-2">GOALIES</h4>
+                                                <div className="grid grid-cols-2 md:grid-cols-3 gap-2">
+                                                    {liveData.boxscore.playerByGameStats.homeTeam.goalies.map((player, idx) => (
+                                                        <div key={idx} className="p-2 rounded-lg bg-white/5 hover:bg-white/10 transition-colors">
+                                                            <div className="font-mono text-sm text-white">#{player.sweaterNumber} {player.name.default}</div>
+                                                            <div className="text-xs text-text-muted">{player.position}</div>
+                                                        </div>
+                                                    ))}
+                                                </div>
+                                            </div>
+                                        )}
+                                    </>
+                                ) : (
+                                    <div className="text-center text-text-muted py-4">No roster data available</div>
+                                )}
+                            </div>
                         </div>
                     </section>
                 );
