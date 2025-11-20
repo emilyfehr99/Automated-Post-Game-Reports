@@ -28,7 +28,7 @@ const MetricCard = ({ title, icon: Icon, children, className }) => (
 );
 
 // Helper for comparison rows
-const ComparisonRow = ({ label, awayVal, homeVal, format = (v) => v }) => {
+const ComparisonRow = ({ label, awayVal, homeVal, format = (v) => v, awayTeam, homeTeam }) => {
     const awayNum = parseFloat(awayVal) || 0;
     const homeNum = parseFloat(homeVal) || 0;
     const total = awayNum + homeNum;
@@ -37,13 +37,19 @@ const ComparisonRow = ({ label, awayVal, homeVal, format = (v) => v }) => {
     return (
         <div className="mb-4">
             <div className="flex justify-between text-sm font-mono mb-2">
-                <span className={clsx(awayNum > homeNum ? "text-accent-primary font-bold" : "text-text-muted")}>
-                    {format(awayVal)}
-                </span>
+                <div className="flex items-center gap-2">
+                    {awayTeam && <img src={awayTeam.logo} alt={awayTeam.abbrev} className="w-4 h-4 opacity-60" />}
+                    <span className={clsx(awayNum > homeNum ? "text-accent-primary font-bold" : "text-text-muted")}>
+                        {format(awayVal)}
+                    </span>
+                </div>
                 <span className="text-text-secondary uppercase text-xs tracking-wider">{label}</span>
-                <span className={clsx(homeNum > awayNum ? "text-accent-secondary font-bold" : "text-text-muted")}>
-                    {format(homeVal)}
-                </span>
+                <div className="flex items-center gap-2">
+                    <span className={clsx(homeNum > awayNum ? "text-accent-secondary font-bold" : "text-text-muted")}>
+                        {format(homeVal)}
+                    </span>
+                    {homeTeam && <img src={homeTeam.logo} alt={homeTeam.abbrev} className="w-4 h-4 opacity-60" />}
+                </div>
             </div>
             <div className="h-1.5 bg-white/5 rounded-full overflow-hidden flex">
                 <div
@@ -80,7 +86,15 @@ const PreGameHeatmap = ({ preGameData, homeTeam, awayTeam }) => (
         </div>
         <div className="max-w-3xl mx-auto">
             <div className="relative aspect-[200/85] bg-white/5 rounded-xl border border-white/10 overflow-hidden">
-                <img src="/rink.jpeg" alt="Rink" className="absolute inset-0 w-full h-full object-fill opacity-50" />
+                <img src="/rink.jpeg" alt="Rink" className="absolute inset-0 w-full h-full object-fill" />
+
+                {/* Team Logos on Ice */}
+                <div className="absolute left-[15%] top-1/2 -translate-y-1/2 z-10">
+                    <img src={awayTeam.logo} alt={awayTeam.abbrev} className="w-16 h-16 opacity-20" />
+                </div>
+                <div className="absolute right-[15%] top-1/2 -translate-y-1/2 z-10">
+                    <img src={homeTeam.logo} alt={homeTeam.abbrev} className="w-16 h-16 opacity-20" />
+                </div>
 
                 {/* Home Team Points */}
                 {preGameData.heatmaps.home?.goals_for?.map((point, i) => (
@@ -129,25 +143,6 @@ const PreGameHeatmap = ({ preGameData, homeTeam, awayTeam }) => (
                         }}
                     />
                 ))}
-
-                <div className="absolute bottom-2 left-2 flex gap-4 bg-black/80 p-2 rounded-lg backdrop-blur-md border border-white/10 z-30 scale-90 origin-bottom-left">
-                    <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full border border-white" style={{ backgroundColor: getTeamColor(awayTeam.abbrev) }}></div>
-                        <span className="text-[10px] font-mono text-white">{awayTeam.abbrev} G</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full opacity-60" style={{ backgroundColor: getTeamColor(awayTeam.abbrev) }}></div>
-                        <span className="text-[10px] font-mono text-white">{awayTeam.abbrev} S</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-2.5 h-2.5 rounded-full border border-white" style={{ backgroundColor: getTeamColor(homeTeam.abbrev) }}></div>
-                        <span className="text-[10px] font-mono text-white">{homeTeam.abbrev} G</span>
-                    </div>
-                    <div className="flex items-center gap-2">
-                        <div className="w-1.5 h-1.5 rounded-full opacity-60" style={{ backgroundColor: getTeamColor(homeTeam.abbrev) }}></div>
-                        <span className="text-[10px] font-mono text-white">{homeTeam.abbrev} S</span>
-                    </div>
-                </div>
             </div>
         </div>
     </section>
@@ -272,42 +267,42 @@ const GameDetailsContent = () => {
                     return (
                         <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <MetricCard title="OFFENSE" icon={Zap}>
-                                <ComparisonRow
+                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                     label="GOALS/GP"
                                     awayVal={preGameData.metrics.away?.goals}
                                     homeVal={preGameData.metrics.home?.goals}
                                     format={v => parseFloat(v || 0).toFixed(2)}
                                 />
-                                <ComparisonRow
+                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                     label="xGOALS/GP"
                                     awayVal={preGameData.metrics.away?.xg}
                                     homeVal={preGameData.metrics.home?.xg}
                                     format={v => parseFloat(v || 0).toFixed(2)}
                                 />
-                                <ComparisonRow
+                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                     label="SHOTS/GP"
                                     awayVal={preGameData.metrics.away?.shots}
                                     homeVal={preGameData.metrics.home?.shots}
                                     format={v => parseFloat(v || 0).toFixed(1)}
                                 />
-                                <ComparisonRow
+                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                     label="POWER PLAY"
                                     awayVal={preGameData.metrics.away?.pp_pct}
                                     homeVal={preGameData.metrics.home?.pp_pct}
                                     format={v => v + '%'}
                                 />
-                                <ComparisonRow
+                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                     label="OFF ZONE SHOTS"
                                     awayVal={preGameData.metrics.away?.ozs}
                                     homeVal={preGameData.metrics.home?.ozs}
                                 />
-                                <ComparisonRow
+                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                     label="HIGH DANGER"
                                     awayVal={preGameData.metrics.away?.hdc}
                                     homeVal={preGameData.metrics.home?.hdc}
                                     format={v => parseFloat(v || 0).toFixed(1)}
                                 />
-                                <ComparisonRow
+                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                     label="RUSH CHANCES"
                                     awayVal={preGameData.metrics.away?.rush}
                                     homeVal={preGameData.metrics.home?.rush}
@@ -315,37 +310,37 @@ const GameDetailsContent = () => {
                             </MetricCard>
 
                             <MetricCard title="DEFENSE" icon={Shield}>
-                                <ComparisonRow
+                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                     label="GA/GP"
                                     awayVal={preGameData.metrics.away?.ga_gp}
                                     homeVal={preGameData.metrics.home?.ga_gp}
                                     format={v => parseFloat(v || 0).toFixed(2)}
                                 />
-                                <ComparisonRow
+                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                     label="PENALTY KILL"
                                     awayVal={preGameData.metrics.away?.pk_pct}
                                     homeVal={preGameData.metrics.home?.pk_pct}
                                     format={v => v + '%'}
                                 />
-                                <ComparisonRow
+                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                     label="CORSI %"
                                     awayVal={preGameData.metrics.away?.corsi_pct}
                                     homeVal={preGameData.metrics.home?.corsi_pct}
                                     format={v => v + '%'}
                                 />
-                                <ComparisonRow
+                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                     label="HD AGAINST"
                                     awayVal={preGameData.metrics.away?.hdca}
                                     homeVal={preGameData.metrics.home?.hdca}
                                     format={v => parseFloat(v || 0).toFixed(1)}
                                 />
-                                <ComparisonRow
+                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                     label="BLOCKS/GP"
                                     awayVal={preGameData.metrics.away?.blocks}
                                     homeVal={preGameData.metrics.home?.blocks}
                                     format={v => parseFloat(v || 0).toFixed(1)}
                                 />
-                                <ComparisonRow
+                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                     label="TAKEAWAYS"
                                     awayVal={preGameData.metrics.away?.takeaways}
                                     homeVal={preGameData.metrics.home?.takeaways}
@@ -356,19 +351,19 @@ const GameDetailsContent = () => {
                             <MetricCard title="TRANSITION & POSSESSION" icon={Activity} className="md:col-span-2">
                                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                     <div>
-                                        <ComparisonRow
+                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                             label="FACEOFF %"
                                             awayVal={preGameData.metrics.away?.fo_pct}
                                             homeVal={preGameData.metrics.home?.fo_pct}
                                             format={v => v + '%'}
                                         />
-                                        <ComparisonRow
+                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                             label="GIVEAWAYS"
                                             awayVal={preGameData.metrics.away?.giveaways}
                                             homeVal={preGameData.metrics.home?.giveaways}
                                             format={v => parseFloat(v || 0).toFixed(1)}
                                         />
-                                        <ComparisonRow
+                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                             label="HITS/GP"
                                             awayVal={preGameData.metrics.away?.hits}
                                             homeVal={preGameData.metrics.home?.hits}
@@ -376,19 +371,19 @@ const GameDetailsContent = () => {
                                         />
                                     </div>
                                     <div>
-                                        <ComparisonRow
+                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                             label="LATERAL MOVEMENT"
                                             awayVal={preGameData.metrics.away?.lat}
                                             homeVal={preGameData.metrics.home?.lat}
                                             format={v => parseFloat(v || 0).toFixed(1)}
                                         />
-                                        <ComparisonRow
+                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                             label="N-S MOVEMENT"
                                             awayVal={preGameData.metrics.away?.long_movement}
                                             homeVal={preGameData.metrics.home?.long_movement}
                                             format={v => parseFloat(v || 0).toFixed(1)}
                                         />
-                                        <ComparisonRow
+                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                             label="NZ TURNOVERS"
                                             awayVal={preGameData.metrics.away?.nzts}
                                             homeVal={preGameData.metrics.home?.nzts}
@@ -410,31 +405,31 @@ const GameDetailsContent = () => {
 
                             <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <MetricCard title="OFFENSE" icon={Zap}>
-                                    <ComparisonRow
+                                    <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                         label="GOALS/GP"
                                         awayVal={preGameData.metrics.away?.goals}
                                         homeVal={preGameData.metrics.home?.goals}
                                         format={v => parseFloat(v || 0).toFixed(2)}
                                     />
-                                    <ComparisonRow
+                                    <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                         label="xGOALS/GP"
                                         awayVal={preGameData.metrics.away?.xg}
                                         homeVal={preGameData.metrics.home?.xg}
                                         format={v => parseFloat(v || 0).toFixed(2)}
                                     />
-                                    <ComparisonRow
+                                    <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                         label="SHOTS/GP"
                                         awayVal={preGameData.metrics.away?.shots}
                                         homeVal={preGameData.metrics.home?.shots}
                                         format={v => parseFloat(v || 0).toFixed(1)}
                                     />
-                                    <ComparisonRow
+                                    <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                         label="POWER PLAY"
                                         awayVal={preGameData.metrics.away?.pp_pct}
                                         homeVal={preGameData.metrics.home?.pp_pct}
                                         format={v => v + '%'}
                                     />
-                                    <ComparisonRow
+                                    <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                         label="OFF ZONE SHOTS"
                                         awayVal={preGameData.metrics.away?.ozs}
                                         homeVal={preGameData.metrics.home?.ozs}
@@ -442,31 +437,31 @@ const GameDetailsContent = () => {
                                 </MetricCard>
 
                                 <MetricCard title="DEFENSE" icon={Shield}>
-                                    <ComparisonRow
+                                    <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                         label="GA/GP"
                                         awayVal={preGameData.metrics.away?.ga_gp}
                                         homeVal={preGameData.metrics.home?.ga_gp}
                                         format={v => parseFloat(v || 0).toFixed(2)}
                                     />
-                                    <ComparisonRow
+                                    <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                         label="PENALTY KILL"
                                         awayVal={preGameData.metrics.away?.pk_pct}
                                         homeVal={preGameData.metrics.home?.pk_pct}
                                         format={v => v + '%'}
                                     />
-                                    <ComparisonRow
+                                    <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                         label="CORSI %"
                                         awayVal={preGameData.metrics.away?.corsi_pct}
                                         homeVal={preGameData.metrics.home?.corsi_pct}
                                         format={v => v + '%'}
                                     />
-                                    <ComparisonRow
+                                    <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                         label="HD AGAINST"
                                         awayVal={preGameData.metrics.away?.hdca}
                                         homeVal={preGameData.metrics.home?.hdca}
                                         format={v => parseFloat(v || 0).toFixed(1)}
                                     />
-                                    <ComparisonRow
+                                    <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                         label="BLOCKS/GP"
                                         awayVal={preGameData.metrics.away?.blocks}
                                         homeVal={preGameData.metrics.home?.blocks}
@@ -505,18 +500,18 @@ const GameDetailsContent = () => {
                 return (
                     <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
                         <MetricCard title="SHOT QUALITY" icon={Crosshair}>
-                            <ComparisonRow
+                            <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                 label="EXPECTED GOALS (xG)"
                                 awayVal={liveData?.advanced_metrics?.xg?.away_total}
                                 homeVal={liveData?.advanced_metrics?.xg?.home_total}
                                 format={(v) => parseFloat(v || 0).toFixed(2)}
                             />
-                            <ComparisonRow
+                            <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                 label="HIGH DANGER CHANCES"
                                 awayVal={liveData?.advanced_metrics?.shot_quality?.high_danger_shots?.away}
                                 homeVal={liveData?.advanced_metrics?.shot_quality?.high_danger_shots?.home}
                             />
-                            <ComparisonRow
+                            <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                 label="SHOOTING %"
                                 awayVal={liveData?.advanced_metrics?.shot_quality?.shooting_percentage?.away}
                                 homeVal={liveData?.advanced_metrics?.shot_quality?.shooting_percentage?.home}
@@ -525,17 +520,17 @@ const GameDetailsContent = () => {
                         </MetricCard>
 
                         <MetricCard title="PRESSURE" icon={Zap}>
-                            <ComparisonRow
+                            <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                 label="OFFENSIVE ZONE SHOTS"
                                 awayVal={liveData?.advanced_metrics?.pressure?.oz_shots?.away}
                                 homeVal={liveData?.advanced_metrics?.pressure?.oz_shots?.home}
                             />
-                            <ComparisonRow
+                            <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                 label="SUSTAINED PRESSURE"
                                 awayVal={liveData?.advanced_metrics?.pressure?.sustained_pressure?.away}
                                 homeVal={liveData?.advanced_metrics?.pressure?.sustained_pressure?.home}
                             />
-                            <ComparisonRow
+                            <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                 label="RUSH CHANCES"
                                 awayVal={liveData?.advanced_metrics?.pressure?.rush_shots?.away}
                                 homeVal={liveData?.advanced_metrics?.pressure?.rush_shots?.home}
@@ -543,17 +538,17 @@ const GameDetailsContent = () => {
                         </MetricCard>
 
                         <MetricCard title="DEFENSE" icon={Shield}>
-                            <ComparisonRow
+                            <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                 label="BLOCKED SHOTS"
                                 awayVal={liveData?.advanced_metrics?.defense?.blocked_shots?.away}
                                 homeVal={liveData?.advanced_metrics?.defense?.blocked_shots?.home}
                             />
-                            <ComparisonRow
+                            <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                 label="TAKEAWAYS"
                                 awayVal={liveData?.advanced_metrics?.defense?.takeaways?.away}
                                 homeVal={liveData?.advanced_metrics?.defense?.takeaways?.home}
                             />
-                            <ComparisonRow
+                            <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                 label="GIVEAWAYS"
                                 awayVal={liveData?.advanced_metrics?.defense?.giveaways?.away}
                                 homeVal={liveData?.advanced_metrics?.defense?.giveaways?.home}
@@ -561,13 +556,13 @@ const GameDetailsContent = () => {
                         </MetricCard>
 
                         <MetricCard title="MOVEMENT" icon={Activity}>
-                            <ComparisonRow
+                            <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                 label="LATERAL MOVEMENT"
                                 awayVal={liveData?.advanced_metrics?.movement?.lateral_movement?.away}
                                 homeVal={liveData?.advanced_metrics?.movement?.lateral_movement?.home}
                                 format={(v) => parseFloat(v || 0).toFixed(1)}
                             />
-                            <ComparisonRow
+                            <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                 label="N-S MOVEMENT"
                                 awayVal={liveData?.advanced_metrics?.movement?.longitudinal_movement?.away}
                                 homeVal={liveData?.advanced_metrics?.movement?.longitudinal_movement?.home}

@@ -169,6 +169,7 @@ const Metrics = () => {
         { key: 'gs', label: 'GS', align: 'center', advanced: true, tooltip: 'Game Score' },
         { key: 'xg', label: 'xG', align: 'center', advanced: true, tooltip: 'Expected Goals' },
         { key: 'hdc', label: 'HDC', align: 'center', advanced: true, tooltip: 'High Danger Chances' },
+        { key: 'hdca', label: 'HDCA', align: 'center', advanced: true, tooltip: 'High Danger Chances Against' },
 
         // Zone Metrics
         { key: 'ozs', label: 'OZS', align: 'center', advanced: true, tooltip: 'Offensive Zone Shots' },
@@ -190,6 +191,7 @@ const Metrics = () => {
         // Shooting
         { key: 'shots', label: 'SOG', align: 'center', advanced: true, tooltip: 'Shots on Goal' },
         { key: 'goals', label: 'G/G', align: 'center', advanced: true, tooltip: 'Goals per Game' },
+        { key: 'ga_gp', label: 'GA/GP', align: 'center', advanced: true, tooltip: 'Goals Against per Game' },
 
         // Possession
         { key: 'corsi_pct', label: 'CF%', align: 'center', advanced: true, tooltip: 'Corsi For %' },
@@ -319,6 +321,9 @@ const Metrics = () => {
                                     <td className="p-4 text-center text-text-muted" title="High Danger Chances">
                                         {loadingAdvanced ? '...' : displayMetric(team.hdc)}
                                     </td>
+                                    <td className="p-4 text-center text-text-muted" title="High Danger Chances Against">
+                                        {loadingAdvanced ? '...' : displayMetric(team.hdca)}
+                                    </td>
 
                                     {/* Zone Metrics */}
                                     <td className="p-4 text-center text-text-muted" title="Offensive Zone Shots">
@@ -361,6 +366,9 @@ const Metrics = () => {
                                     </td>
                                     <td className="p-4 text-center text-text-muted" title="Goals per Game">
                                         {loadingAdvanced ? '...' : displayMetric(team.goals)}
+                                    </td>
+                                    <td className="p-4 text-center text-text-muted" title="Goals Against per Game">
+                                        {loadingAdvanced ? '...' : displayMetric(team.ga_gp)}
                                     </td>
 
                                     {/* Possession */}
