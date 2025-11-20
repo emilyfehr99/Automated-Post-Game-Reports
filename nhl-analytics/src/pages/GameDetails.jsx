@@ -72,6 +72,85 @@ const TEAM_COLORS = {
 
 const getTeamColor = (abbr) => TEAM_COLORS[abbr] || '#FFFFFF';
 
+const PreGameHeatmap = ({ preGameData, homeTeam, awayTeam }) => (
+    <section className="glass-card p-8">
+        <div className="flex items-center gap-3 mb-6">
+            <Target className="w-6 h-6 text-accent-cyan" />
+            <h3 className="text-xl font-display font-bold">PRE-GAME INTEL: SHOT HEATMAP (L10 GAMES)</h3>
+        </div>
+        <div className="relative aspect-[2/1] bg-white/5 rounded-xl border border-white/10">
+            <img src="/rink.jpeg" alt="Rink" className="absolute inset-0 w-full h-full object-contain opacity-50" />
+
+            {/* Home Team Points */}
+            {preGameData.heatmaps.home?.goals_for?.map((point, i) => (
+                <div
+                    key={`home-goal-${i}`}
+                    className="absolute w-4 h-4 rounded-full border-2 border-white shadow-lg z-20 transform -translate-x-1/2 -translate-y-1/2"
+                    style={{
+                        backgroundColor: getTeamColor(homeTeam.abbrev),
+                        left: `${(point.x + 100) / 2}%`,
+                        top: `${(point.y + 42.5) / 0.85}%`
+                    }}
+                />
+            ))}
+            {preGameData.heatmaps.home?.shots_for?.map((point, i) => (
+                <div
+                    key={`home-shot-${i}`}
+                    className="absolute w-2 h-2 rounded-full opacity-60 blur-[1px] transform -translate-x-1/2 -translate-y-1/2"
+                    style={{
+                        backgroundColor: getTeamColor(homeTeam.abbrev),
+                        left: `${(point.x + 100) / 2}%`,
+                        top: `${(point.y + 42.5) / 0.85}%`
+                    }}
+                />
+            ))}
+
+            {/* Away Team Points */}
+            {preGameData.heatmaps.away?.goals_for?.map((point, i) => (
+                <div
+                    key={`away-goal-${i}`}
+                    className="absolute w-4 h-4 rounded-full border-2 border-white shadow-lg z-20 transform -translate-x-1/2 -translate-y-1/2"
+                    style={{
+                        backgroundColor: getTeamColor(awayTeam.abbrev),
+                        left: `${(point.x + 100) / 2}%`,
+                        top: `${(point.y + 42.5) / 0.85}%`
+                    }}
+                />
+            ))}
+            {preGameData.heatmaps.away?.shots_for?.map((point, i) => (
+                <div
+                    key={`away-shot-${i}`}
+                    className="absolute w-2 h-2 rounded-full opacity-60 blur-[1px] transform -translate-x-1/2 -translate-y-1/2"
+                    style={{
+                        backgroundColor: getTeamColor(awayTeam.abbrev),
+                        left: `${(point.x + 100) / 2}%`,
+                        top: `${(point.y + 42.5) / 0.85}%`
+                    }}
+                />
+            ))}
+
+            <div className="absolute bottom-4 left-4 flex gap-6 bg-black/80 p-3 rounded-lg backdrop-blur-md border border-white/10 z-30">
+                <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full border border-white" style={{ backgroundColor: getTeamColor(awayTeam.abbrev) }}></div>
+                    <span className="text-xs font-mono text-white">{awayTeam.abbrev} GOALS</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full opacity-60" style={{ backgroundColor: getTeamColor(awayTeam.abbrev) }}></div>
+                    <span className="text-xs font-mono text-white">{awayTeam.abbrev} SHOTS</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="w-3 h-3 rounded-full border border-white" style={{ backgroundColor: getTeamColor(homeTeam.abbrev) }}></div>
+                    <span className="text-xs font-mono text-white">{homeTeam.abbrev} GOALS</span>
+                </div>
+                <div className="flex items-center gap-2">
+                    <div className="w-2 h-2 rounded-full opacity-60" style={{ backgroundColor: getTeamColor(homeTeam.abbrev) }}></div>
+                    <span className="text-xs font-mono text-white">{homeTeam.abbrev} SHOTS</span>
+                </div>
+            </div>
+        </div>
+    </section>
+);
+
 const GameDetailsContent = () => {
     const { id } = useParams();
     const [gameData, setGameData] = useState(null);
@@ -181,86 +260,13 @@ const GameDetailsContent = () => {
             switch (activeTab) {
                 case 'visuals':
                     return (
-                        <section className="glass-card p-8">
-                            <div className="flex items-center gap-3 mb-6">
-                                <Target className="w-6 h-6 text-accent-cyan" />
-                                <h3 className="text-xl font-display font-bold">PRE-GAME INTEL: SHOT HEATMAP (L10 GAMES)</h3>
-                            </div>
-                            <div className="relative aspect-[2/1] bg-white/5 rounded-xl border border-white/10">
-                                <img src="/rink.jpeg" alt="Rink" className="absolute inset-0 w-full h-full object-contain opacity-50" />
-
-                                {/* Home Team Points */}
-                                {preGameData.heatmaps.home?.goals_for?.map((point, i) => (
-                                    <div
-                                        key={`home-goal-${i}`}
-                                        className="absolute w-4 h-4 rounded-full border-2 border-white shadow-lg z-20 transform -translate-x-1/2 -translate-y-1/2"
-                                        style={{
-                                            backgroundColor: getTeamColor(homeTeam.abbrev),
-                                            left: `${(point.x + 100) / 2}%`,
-                                            top: `${(point.y + 42.5) / 0.85}%`
-                                        }}
-                                    />
-                                ))}
-                                {preGameData.heatmaps.home?.shots_for?.map((point, i) => (
-                                    <div
-                                        key={`home-shot-${i}`}
-                                        className="absolute w-2 h-2 rounded-full opacity-60 blur-[1px] transform -translate-x-1/2 -translate-y-1/2"
-                                        style={{
-                                            backgroundColor: getTeamColor(homeTeam.abbrev),
-                                            left: `${(point.x + 100) / 2}%`,
-                                            top: `${(point.y + 42.5) / 0.85}%`
-                                        }}
-                                    />
-                                ))}
-
-                                {/* Away Team Points */}
-                                {preGameData.heatmaps.away?.goals_for?.map((point, i) => (
-                                    <div
-                                        key={`away-goal-${i}`}
-                                        className="absolute w-4 h-4 rounded-full border-2 border-white shadow-lg z-20 transform -translate-x-1/2 -translate-y-1/2"
-                                        style={{
-                                            backgroundColor: getTeamColor(awayTeam.abbrev),
-                                            left: `${(point.x + 100) / 2}%`,
-                                            top: `${(point.y + 42.5) / 0.85}%`
-                                        }}
-                                    />
-                                ))}
-                                {preGameData.heatmaps.away?.shots_for?.map((point, i) => (
-                                    <div
-                                        key={`away-shot-${i}`}
-                                        className="absolute w-2 h-2 rounded-full opacity-60 blur-[1px] transform -translate-x-1/2 -translate-y-1/2"
-                                        style={{
-                                            backgroundColor: getTeamColor(awayTeam.abbrev),
-                                            left: `${(point.x + 100) / 2}%`,
-                                            top: `${(point.y + 42.5) / 0.85}%`
-                                        }}
-                                    />
-                                ))}
-
-                                <div className="absolute bottom-4 left-4 flex gap-6 bg-black/80 p-3 rounded-lg backdrop-blur-md border border-white/10 z-30">
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full border border-white" style={{ backgroundColor: getTeamColor(awayTeam.abbrev) }}></div>
-                                        <span className="text-xs font-mono text-white">{awayTeam.abbrev} GOALS</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 rounded-full opacity-60" style={{ backgroundColor: getTeamColor(awayTeam.abbrev) }}></div>
-                                        <span className="text-xs font-mono text-white">{awayTeam.abbrev} SHOTS</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-3 h-3 rounded-full border border-white" style={{ backgroundColor: getTeamColor(homeTeam.abbrev) }}></div>
-                                        <span className="text-xs font-mono text-white">{homeTeam.abbrev} GOALS</span>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        <div className="w-2 h-2 rounded-full opacity-60" style={{ backgroundColor: getTeamColor(homeTeam.abbrev) }}></div>
-                                        <span className="text-xs font-mono text-white">{homeTeam.abbrev} SHOTS</span>
-                                    </div>
-                                </div>
-                            </div>
-                        </section>
+                        <PreGameHeatmap
+                            preGameData={preGameData}
+                            homeTeam={homeTeam}
+                            awayTeam={awayTeam}
+                        />
                     );
                 case 'advanced':
-                case 'overview': // Show metrics in overview for pre-game
-                default:
                     return (
                         <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
                             <MetricCard title="OFFENSE" icon={Zap}>
@@ -389,6 +395,84 @@ const GameDetailsContent = () => {
                                 </div>
                             </MetricCard>
                         </section>
+                    );
+                case 'overview': // Show metrics AND heatmap in overview for pre-game
+                default:
+                    return (
+                        <div className="space-y-8">
+                            <PreGameHeatmap
+                                preGameData={preGameData}
+                                homeTeam={homeTeam}
+                                awayTeam={awayTeam}
+                            />
+
+                            <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                <MetricCard title="OFFENSE" icon={Zap}>
+                                    <ComparisonRow
+                                        label="GOALS/GP"
+                                        awayVal={preGameData.metrics.away?.goals}
+                                        homeVal={preGameData.metrics.home?.goals}
+                                        format={v => parseFloat(v || 0).toFixed(2)}
+                                    />
+                                    <ComparisonRow
+                                        label="xGOALS/GP"
+                                        awayVal={preGameData.metrics.away?.xg}
+                                        homeVal={preGameData.metrics.home?.xg}
+                                        format={v => parseFloat(v || 0).toFixed(2)}
+                                    />
+                                    <ComparisonRow
+                                        label="SHOTS/GP"
+                                        awayVal={preGameData.metrics.away?.shots}
+                                        homeVal={preGameData.metrics.home?.shots}
+                                        format={v => parseFloat(v || 0).toFixed(1)}
+                                    />
+                                    <ComparisonRow
+                                        label="POWER PLAY"
+                                        awayVal={preGameData.metrics.away?.pp_pct}
+                                        homeVal={preGameData.metrics.home?.pp_pct}
+                                        format={v => v + '%'}
+                                    />
+                                    <ComparisonRow
+                                        label="OFF ZONE SHOTS"
+                                        awayVal={preGameData.metrics.away?.ozs}
+                                        homeVal={preGameData.metrics.home?.ozs}
+                                    />
+                                </MetricCard>
+
+                                <MetricCard title="DEFENSE" icon={Shield}>
+                                    <ComparisonRow
+                                        label="GA/GP"
+                                        awayVal={preGameData.metrics.away?.ga_gp}
+                                        homeVal={preGameData.metrics.home?.ga_gp}
+                                        format={v => parseFloat(v || 0).toFixed(2)}
+                                    />
+                                    <ComparisonRow
+                                        label="PENALTY KILL"
+                                        awayVal={preGameData.metrics.away?.pk_pct}
+                                        homeVal={preGameData.metrics.home?.pk_pct}
+                                        format={v => v + '%'}
+                                    />
+                                    <ComparisonRow
+                                        label="CORSI %"
+                                        awayVal={preGameData.metrics.away?.corsi_pct}
+                                        homeVal={preGameData.metrics.home?.corsi_pct}
+                                        format={v => v + '%'}
+                                    />
+                                    <ComparisonRow
+                                        label="HD AGAINST"
+                                        awayVal={preGameData.metrics.away?.hdca}
+                                        homeVal={preGameData.metrics.home?.hdca}
+                                        format={v => parseFloat(v || 0).toFixed(1)}
+                                    />
+                                    <ComparisonRow
+                                        label="BLOCKS/GP"
+                                        awayVal={preGameData.metrics.away?.blocks}
+                                        homeVal={preGameData.metrics.home?.blocks}
+                                        format={v => parseFloat(v || 0).toFixed(1)}
+                                    />
+                                </MetricCard>
+                            </section>
+                        </div>
                     );
             }
         }
