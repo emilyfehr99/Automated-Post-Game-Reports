@@ -349,10 +349,10 @@ const Metrics = () => {
 
                                     {/* Movement */}
                                     <td className="p-4 text-center text-text-muted" title="Lateral Movement">
-                                        {loadingAdvanced ? '...' : displayMetric(team.lateral)}
+                                        {loadingAdvanced ? '...' : displayMetric(team.lat)}
                                     </td>
                                     <td className="p-4 text-center text-text-muted" title="Longitudinal Movement">
-                                        {loadingAdvanced ? '...' : displayMetric(team.longitudinal)}
+                                        {loadingAdvanced ? '...' : displayMetric(team.long_movement)}
                                     </td>
 
                                     {/* Shooting */}

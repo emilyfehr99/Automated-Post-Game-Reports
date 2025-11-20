@@ -197,6 +197,9 @@ def get_team_metrics():
         
         home_fo_pct = avg(home_stats.get('faceoff_pct', []))
         away_fo_pct = avg(away_stats.get('faceoff_pct', []))
+
+        home_ga = avg(home_stats.get('goals_against', []))
+        away_ga = avg(away_stats.get('goals_against', []))
         
         # Average home and away stats
         metrics[team_abbrev] = {
@@ -220,6 +223,7 @@ def get_team_metrics():
             'hdca': round((home_hdca + away_hdca) / 2, 1),
             'shots': round((home_shots + away_shots) / 2, 1),
             'goals': round((home_goals + away_goals) / 2, 2),
+            'ga_gp': round((home_ga + away_ga) / 2, 2),
             
             # Possession metrics
             'corsi_pct': round((home_corsi + away_corsi) / 2, 1),
