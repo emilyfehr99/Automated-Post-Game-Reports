@@ -184,8 +184,8 @@ const Metrics = () => {
         { key: 'nztsa', label: 'NZTSA', align: 'center', advanced: true, tooltip: 'NZ Turnovers to Shots Against' },
 
         // Movement
-        { key: 'lateral', label: 'LAT', align: 'center', advanced: true, tooltip: 'Lateral Movement' },
-        { key: 'longitudinal', label: 'LONG', align: 'center', advanced: true, tooltip: 'Longitudinal Movement' },
+        { key: 'lat', label: 'LAT', align: 'center', advanced: true, tooltip: 'Lateral Movement' },
+        { key: 'long_movement', label: 'LONG', align: 'center', advanced: true, tooltip: 'Longitudinal Movement' },
 
         // Shooting
         { key: 'shots', label: 'SOG', align: 'center', advanced: true, tooltip: 'Shots on Goal' },

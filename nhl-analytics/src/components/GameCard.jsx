@@ -18,16 +18,18 @@ const GameCard = ({ game, prediction, awayMetrics, homeMetrics }) => {
     const showProb = prediction && (awayProbRaw > 0 || homeProbRaw > 0);
 
     return (
-        <Link to={`/game/${game?.id}`} className="block h-full">
+        <div className="block h-full relative group">
+            <Link to={`/game/${game?.id}`} className="absolute inset-0 z-10" />
+
             <motion.div
                 whileHover={{ y: -4, scale: 1.01 }}
-                className="glass-card h-full relative overflow-hidden group border border-white/5 hover:border-primary/30 transition-all duration-300"
+                className="glass-card h-full relative overflow-hidden border border-white/5 hover:border-primary/30 transition-all duration-300 flex flex-col"
             >
                 {/* Background Gradient Glow */}
-                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent-purple/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500" />
+                <div className="absolute inset-0 bg-gradient-to-br from-primary/5 to-accent-purple/5 opacity-0 group-hover:opacity-100 transition-opacity duration-500 pointer-events-none" />
 
                 {/* Status Badge */}
-                <div className="absolute top-3 right-3 z-10">
+                <div className="absolute top-3 right-3 z-20 pointer-events-none">
                     {isLive ? (
                         <div className="flex items-center gap-2 px-3 py-1 rounded-full bg-accent-magenta/20 border border-accent-magenta/50 backdrop-blur-md">
                             <span className="relative flex h-2 w-2">
@@ -49,9 +51,9 @@ const GameCard = ({ game, prediction, awayMetrics, homeMetrics }) => {
                     )}
                 </div>
 
-                <div className="p-6 flex flex-col h-full justify-between relative z-0">
+                <div className="p-6 flex flex-col h-full justify-between relative z-0 pointer-events-none">
                     {/* Teams Row */}
-                    <div className="flex items-center justify-between mb-6 mt-2">
+                    <div className="flex items-center justify-between mb-6 mt-8">
                         {/* Away Team */}
                         <div className="flex flex-col items-center gap-3 flex-1">
                             <div className="relative">
@@ -142,7 +144,7 @@ const GameCard = ({ game, prediction, awayMetrics, homeMetrics }) => {
                     )}
                 </div>
             </motion.div>
-        </Link>
+        </div>
     );
 };
 

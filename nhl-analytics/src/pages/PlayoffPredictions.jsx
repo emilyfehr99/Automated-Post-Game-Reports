@@ -182,7 +182,7 @@ const PlayoffPredictions = () => {
                                     Minus;
 
                             const trendColor = team.trend === 'up' ? 'text-success' :
-                                team.trend === 'down' ? 'text-danger' :
+                                team.trend === 'down' ? 'text-red-500' :
                                     'text-text-muted';
 
                             return (

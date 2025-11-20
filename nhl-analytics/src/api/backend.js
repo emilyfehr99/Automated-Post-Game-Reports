@@ -84,6 +84,15 @@ export const backendApi = {
     },
 
     /**
+     * Get team heatmap data
+     */
+    async getTeamHeatmap(teamAbbr) {
+        const response = await fetch(`${BACKEND_URL}/api/team-heatmap/${teamAbbr}`);
+        if (!response.ok) throw new Error('Failed to fetch team heatmap');
+        return response.json();
+    },
+
+    /**
      * Get historical stats
      */
     async getHistoricalStats() {

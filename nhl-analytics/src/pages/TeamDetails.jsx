@@ -220,46 +220,130 @@ const TeamDetails = () => {
                     </div>
 
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
+                        {/* Core & Shooting */}
                         <MetricCard
-                            label="NEUTRAL ZONE SHOTS"
-                            value={teamMetrics.nzs?.toFixed(1) || '-'}
-                            subLabel="Per game"
-                            icon={TrendingUp}
-                            colorClass="text-accent-primary"
-                            percentile={calculatePercentile(teamMetrics.nzs, 'nzs', true)}
-                            rank={calculateRank(teamMetrics.nzs, 'nzs', true)}
+                            label="GAME SCORE"
+                            value={teamMetrics.gs?.toFixed(1) || '-'}
+                            subLabel="Avg per game"
+                            icon={Activity}
+                            percentile={calculatePercentile(teamMetrics.gs, 'gs', true)}
+                            rank={calculateRank(teamMetrics.gs, 'gs', true)}
                         />
                         <MetricCard
-                            label="NZ SHOTS AGAINST"
-                            value={teamMetrics.nztsa?.toFixed(1) || '-'}
+                            label="xGOALS"
+                            value={teamMetrics.xg?.toFixed(2) || '-'}
                             subLabel="Per game"
-                            icon={Shield}
-                            colorClass="text-accent-secondary"
-                            percentile={calculatePercentile(teamMetrics.nztsa, 'nztsa', false)}
-                            rank={calculateRank(teamMetrics.nztsa, 'nztsa', false)}
+                            icon={Crosshair}
+                            percentile={calculatePercentile(teamMetrics.xg, 'xg', true)}
+                            rank={calculateRank(teamMetrics.xg, 'xg', true)}
+                        />
+                        <MetricCard
+                            label="GOALS/GP"
+                            value={teamMetrics.goals?.toFixed(2) || '-'}
+                            subLabel="Per game"
+                            icon={Goal}
+                            percentile={calculatePercentile(teamMetrics.goals, 'goals', true)}
+                            rank={calculateRank(teamMetrics.goals, 'goals', true)}
+                        />
+                        <MetricCard
+                            label="SHOTS/GP"
+                            value={teamMetrics.shots?.toFixed(1) || '-'}
+                            subLabel="Per game"
+                            icon={Target}
+                            percentile={calculatePercentile(teamMetrics.shots, 'shots', true)}
+                            rank={calculateRank(teamMetrics.shots, 'shots', true)}
+                        />
+                        <MetricCard
+                            label="CORSI %"
+                            value={teamMetrics.corsi_pct ? teamMetrics.corsi_pct + '%' : '-'}
+                            subLabel="Possession"
+                            icon={Activity}
+                            percentile={calculatePercentile(teamMetrics.corsi_pct, 'corsi_pct', true)}
+                            rank={calculateRank(teamMetrics.corsi_pct, 'corsi_pct', true)}
                         />
                         <MetricCard
                             label="HIGH DANGER"
                             value={teamMetrics.hdc?.toFixed(1) || '-'}
-                            subLabel="Per game"
-                            icon={Crosshair}
+                            subLabel="Chances/GP"
+                            icon={Zap}
                             colorClass="text-color-success"
                             percentile={calculatePercentile(teamMetrics.hdc, 'hdc', true)}
                             rank={calculateRank(teamMetrics.hdc, 'hdc', true)}
                         />
+
+                        {/* Defense & Zone */}
                         <MetricCard
                             label="HD AGAINST"
                             value={teamMetrics.hdca?.toFixed(1) || '-'}
-                            subLabel="Per game"
+                            subLabel="Chances/GP"
                             icon={Shield}
                             colorClass="text-color-danger"
                             percentile={calculatePercentile(teamMetrics.hdca, 'hdca', false)}
                             rank={calculateRank(teamMetrics.hdca, 'hdca', false)}
                         />
                         <MetricCard
-                            label="LATERAL MOVEMENT"
+                            label="OFF ZONE SHOTS"
+                            value={teamMetrics.ozs?.toFixed(0) || '-'}
+                            subLabel="Per game"
+                            icon={TrendingUp}
+                            percentile={calculatePercentile(teamMetrics.ozs, 'ozs', true)}
+                            rank={calculateRank(teamMetrics.ozs, 'ozs', true)}
+                        />
+                        <MetricCard
+                            label="NEUTRAL ZONE"
+                            value={teamMetrics.nzs?.toFixed(0) || '-'}
+                            subLabel="Shots/GP"
+                            icon={Activity}
+                            percentile={calculatePercentile(teamMetrics.nzs, 'nzs', true)}
+                            rank={calculateRank(teamMetrics.nzs, 'nzs', true)}
+                        />
+                        <MetricCard
+                            label="DEF ZONE SHOTS"
+                            value={teamMetrics.dzs?.toFixed(0) || '-'}
+                            subLabel="Per game"
+                            icon={Shield}
+                            percentile={calculatePercentile(teamMetrics.dzs, 'dzs', false)}
+                            rank={calculateRank(teamMetrics.dzs, 'dzs', false)}
+                        />
+                        <MetricCard
+                            label="NZ TURNOVERS"
+                            value={teamMetrics.nzts?.toFixed(1) || '-'}
+                            subLabel="Per game"
+                            icon={Activity}
+                            percentile={calculatePercentile(teamMetrics.nzts, 'nzts', false)}
+                            rank={calculateRank(teamMetrics.nzts, 'nzts', false)}
+                        />
+                        <MetricCard
+                            label="NZ SHOTS AGAINST"
+                            value={teamMetrics.nztsa?.toFixed(1) || '-'}
+                            subLabel="From Turnovers"
+                            icon={Shield}
+                            colorClass="text-accent-secondary"
+                            percentile={calculatePercentile(teamMetrics.nztsa, 'nztsa', false)}
+                            rank={calculateRank(teamMetrics.nztsa, 'nztsa', false)}
+                        />
+
+                        {/* Playstyle & Movement */}
+                        <MetricCard
+                            label="RUSH CHANCES"
+                            value={teamMetrics.rush?.toFixed(1) || '-'}
+                            subLabel="Per game"
+                            icon={Zap}
+                            percentile={calculatePercentile(teamMetrics.rush, 'rush', true)}
+                            rank={calculateRank(teamMetrics.rush, 'rush', true)}
+                        />
+                        <MetricCard
+                            label="FORECHECK"
+                            value={teamMetrics.fc?.toFixed(1) || '-'}
+                            subLabel="Shots/GP"
+                            icon={Target}
+                            percentile={calculatePercentile(teamMetrics.fc, 'fc', true)}
+                            rank={calculateRank(teamMetrics.fc, 'fc', true)}
+                        />
+                        <MetricCard
+                            label="LATERAL MOVE"
                             value={teamMetrics.lat?.toFixed(1) || '-'}
-                            subLabel="Feet per play"
+                            subLabel="Feet/Play"
                             icon={Activity}
                             colorClass="text-accent-orange"
                             percentile={calculatePercentile(teamMetrics.lat, 'lat', true)}
@@ -268,11 +352,77 @@ const TeamDetails = () => {
                         <MetricCard
                             label="N-S MOVEMENT"
                             value={teamMetrics.long_movement?.toFixed(1) || '-'}
-                            subLabel="Feet per play"
+                            subLabel="Feet/Play"
                             icon={Zap}
                             colorClass="text-blue-400"
                             percentile={calculatePercentile(teamMetrics.long_movement, 'long_movement', true)}
                             rank={calculateRank(teamMetrics.long_movement, 'long_movement', true)}
+                        />
+                        <MetricCard
+                            label="POWER PLAY"
+                            value={teamMetrics.pp_pct ? teamMetrics.pp_pct + '%' : '-'}
+                            subLabel="Success %"
+                            icon={Zap}
+                            percentile={calculatePercentile(teamMetrics.pp_pct, 'pp_pct', true)}
+                            rank={calculateRank(teamMetrics.pp_pct, 'pp_pct', true)}
+                        />
+                        <MetricCard
+                            label="PENALTY KILL"
+                            value={teamMetrics.pk_pct ? teamMetrics.pk_pct + '%' : '-'}
+                            subLabel="Success %"
+                            icon={Shield}
+                            percentile={calculatePercentile(teamMetrics.pk_pct, 'pk_pct', true)}
+                            rank={calculateRank(teamMetrics.pk_pct, 'pk_pct', true)}
+                        />
+
+                        {/* Physical & Other */}
+                        <MetricCard
+                            label="HITS"
+                            value={teamMetrics.hits?.toFixed(1) || '-'}
+                            subLabel="Per game"
+                            icon={Users}
+                            percentile={calculatePercentile(teamMetrics.hits, 'hits', true)}
+                            rank={calculateRank(teamMetrics.hits, 'hits', true)}
+                        />
+                        <MetricCard
+                            label="BLOCKS"
+                            value={teamMetrics.blocks?.toFixed(1) || '-'}
+                            subLabel="Per game"
+                            icon={Shield}
+                            percentile={calculatePercentile(teamMetrics.blocks, 'blocks', true)}
+                            rank={calculateRank(teamMetrics.blocks, 'blocks', true)}
+                        />
+                        <MetricCard
+                            label="GIVEAWAYS"
+                            value={teamMetrics.giveaways?.toFixed(1) || '-'}
+                            subLabel="Per game"
+                            icon={Activity}
+                            percentile={calculatePercentile(teamMetrics.giveaways, 'giveaways', false)}
+                            rank={calculateRank(teamMetrics.giveaways, 'giveaways', false)}
+                        />
+                        <MetricCard
+                            label="TAKEAWAYS"
+                            value={teamMetrics.takeaways?.toFixed(1) || '-'}
+                            subLabel="Per game"
+                            icon={Activity}
+                            percentile={calculatePercentile(teamMetrics.takeaways, 'takeaways', true)}
+                            rank={calculateRank(teamMetrics.takeaways, 'takeaways', true)}
+                        />
+                        <MetricCard
+                            label="FACEOFF %"
+                            value={teamMetrics.fo_pct ? teamMetrics.fo_pct + '%' : '-'}
+                            subLabel="Win %"
+                            icon={Users}
+                            percentile={calculatePercentile(teamMetrics.fo_pct, 'fo_pct', true)}
+                            rank={calculateRank(teamMetrics.fo_pct, 'fo_pct', true)}
+                        />
+                        <MetricCard
+                            label="PIM"
+                            value={teamMetrics.pim?.toFixed(1) || '-'}
+                            subLabel="Mins/Game"
+                            icon={Shield}
+                            percentile={calculatePercentile(teamMetrics.pim, 'pim', false)}
+                            rank={calculateRank(teamMetrics.pim, 'pim', false)}
                         />
                     </div>
                 </section>
