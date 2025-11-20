@@ -73,78 +73,80 @@ const TEAM_COLORS = {
 const getTeamColor = (abbr) => TEAM_COLORS[abbr] || '#FFFFFF';
 
 const PreGameHeatmap = ({ preGameData, homeTeam, awayTeam }) => (
-    <section className="glass-card p-8">
+    <section className="glass-card p-6">
         <div className="flex items-center gap-3 mb-6">
             <Target className="w-6 h-6 text-accent-cyan" />
             <h3 className="text-xl font-display font-bold">PRE-GAME INTEL: SHOT HEATMAP (L10 GAMES)</h3>
         </div>
-        <div className="relative aspect-[2/1] bg-white/5 rounded-xl border border-white/10">
-            <img src="/rink.jpeg" alt="Rink" className="absolute inset-0 w-full h-full object-contain opacity-50" />
+        <div className="max-w-3xl mx-auto">
+            <div className="relative aspect-[200/85] bg-white/5 rounded-xl border border-white/10 overflow-hidden">
+                <img src="/rink.jpeg" alt="Rink" className="absolute inset-0 w-full h-full object-fill opacity-50" />
 
-            {/* Home Team Points */}
-            {preGameData.heatmaps.home?.goals_for?.map((point, i) => (
-                <div
-                    key={`home-goal-${i}`}
-                    className="absolute w-4 h-4 rounded-full border-2 border-white shadow-lg z-20 transform -translate-x-1/2 -translate-y-1/2"
-                    style={{
-                        backgroundColor: getTeamColor(homeTeam.abbrev),
-                        left: `${(point.x + 100) / 2}%`,
-                        top: `${(point.y + 42.5) / 0.85}%`
-                    }}
-                />
-            ))}
-            {preGameData.heatmaps.home?.shots_for?.map((point, i) => (
-                <div
-                    key={`home-shot-${i}`}
-                    className="absolute w-2 h-2 rounded-full opacity-60 blur-[1px] transform -translate-x-1/2 -translate-y-1/2"
-                    style={{
-                        backgroundColor: getTeamColor(homeTeam.abbrev),
-                        left: `${(point.x + 100) / 2}%`,
-                        top: `${(point.y + 42.5) / 0.85}%`
-                    }}
-                />
-            ))}
+                {/* Home Team Points */}
+                {preGameData.heatmaps.home?.goals_for?.map((point, i) => (
+                    <div
+                        key={`home-goal-${i}`}
+                        className="absolute w-3 h-3 rounded-full border border-white shadow-lg z-20 transform -translate-x-1/2 -translate-y-1/2"
+                        style={{
+                            backgroundColor: getTeamColor(homeTeam.abbrev),
+                            left: `${(point.x + 100) / 2}%`,
+                            top: `${(42.5 - point.y) / 0.85}%`
+                        }}
+                    />
+                ))}
+                {preGameData.heatmaps.home?.shots_for?.map((point, i) => (
+                    <div
+                        key={`home-shot-${i}`}
+                        className="absolute w-1.5 h-1.5 rounded-full opacity-60 blur-[0.5px] transform -translate-x-1/2 -translate-y-1/2"
+                        style={{
+                            backgroundColor: getTeamColor(homeTeam.abbrev),
+                            left: `${(point.x + 100) / 2}%`,
+                            top: `${(42.5 - point.y) / 0.85}%`
+                        }}
+                    />
+                ))}
 
-            {/* Away Team Points */}
-            {preGameData.heatmaps.away?.goals_for?.map((point, i) => (
-                <div
-                    key={`away-goal-${i}`}
-                    className="absolute w-4 h-4 rounded-full border-2 border-white shadow-lg z-20 transform -translate-x-1/2 -translate-y-1/2"
-                    style={{
-                        backgroundColor: getTeamColor(awayTeam.abbrev),
-                        left: `${(point.x + 100) / 2}%`,
-                        top: `${(point.y + 42.5) / 0.85}%`
-                    }}
-                />
-            ))}
-            {preGameData.heatmaps.away?.shots_for?.map((point, i) => (
-                <div
-                    key={`away-shot-${i}`}
-                    className="absolute w-2 h-2 rounded-full opacity-60 blur-[1px] transform -translate-x-1/2 -translate-y-1/2"
-                    style={{
-                        backgroundColor: getTeamColor(awayTeam.abbrev),
-                        left: `${(point.x + 100) / 2}%`,
-                        top: `${(point.y + 42.5) / 0.85}%`
-                    }}
-                />
-            ))}
+                {/* Away Team Points */}
+                {preGameData.heatmaps.away?.goals_for?.map((point, i) => (
+                    <div
+                        key={`away-goal-${i}`}
+                        className="absolute w-3 h-3 rounded-full border border-white shadow-lg z-20 transform -translate-x-1/2 -translate-y-1/2"
+                        style={{
+                            backgroundColor: getTeamColor(awayTeam.abbrev),
+                            left: `${(point.x + 100) / 2}%`,
+                            top: `${(42.5 - point.y) / 0.85}%`
+                        }}
+                    />
+                ))}
+                {preGameData.heatmaps.away?.shots_for?.map((point, i) => (
+                    <div
+                        key={`away-shot-${i}`}
+                        className="absolute w-1.5 h-1.5 rounded-full opacity-60 blur-[0.5px] transform -translate-x-1/2 -translate-y-1/2"
+                        style={{
+                            backgroundColor: getTeamColor(awayTeam.abbrev),
+                            left: `${(point.x + 100) / 2}%`,
+                            top: `${(42.5 - point.y) / 0.85}%`
+                        }}
+                    />
+                ))}
 
-            <div className="absolute bottom-4 left-4 flex gap-6 bg-black/80 p-3 rounded-lg backdrop-blur-md border border-white/10 z-30">
-                <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full border border-white" style={{ backgroundColor: getTeamColor(awayTeam.abbrev) }}></div>
-                    <span className="text-xs font-mono text-white">{awayTeam.abbrev} GOALS</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full opacity-60" style={{ backgroundColor: getTeamColor(awayTeam.abbrev) }}></div>
-                    <span className="text-xs font-mono text-white">{awayTeam.abbrev} SHOTS</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <div className="w-3 h-3 rounded-full border border-white" style={{ backgroundColor: getTeamColor(homeTeam.abbrev) }}></div>
-                    <span className="text-xs font-mono text-white">{homeTeam.abbrev} GOALS</span>
-                </div>
-                <div className="flex items-center gap-2">
-                    <div className="w-2 h-2 rounded-full opacity-60" style={{ backgroundColor: getTeamColor(homeTeam.abbrev) }}></div>
-                    <span className="text-xs font-mono text-white">{homeTeam.abbrev} SHOTS</span>
+                <div className="absolute bottom-2 left-2 flex gap-4 bg-black/80 p-2 rounded-lg backdrop-blur-md border border-white/10 z-30 scale-90 origin-bottom-left">
+                    <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full border border-white" style={{ backgroundColor: getTeamColor(awayTeam.abbrev) }}></div>
+                        <span className="text-[10px] font-mono text-white">{awayTeam.abbrev} G</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full opacity-60" style={{ backgroundColor: getTeamColor(awayTeam.abbrev) }}></div>
+                        <span className="text-[10px] font-mono text-white">{awayTeam.abbrev} S</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-2.5 h-2.5 rounded-full border border-white" style={{ backgroundColor: getTeamColor(homeTeam.abbrev) }}></div>
+                        <span className="text-[10px] font-mono text-white">{homeTeam.abbrev} G</span>
+                    </div>
+                    <div className="flex items-center gap-2">
+                        <div className="w-1.5 h-1.5 rounded-full opacity-60" style={{ backgroundColor: getTeamColor(homeTeam.abbrev) }}></div>
+                        <span className="text-[10px] font-mono text-white">{homeTeam.abbrev} S</span>
+                    </div>
                 </div>
             </div>
         </div>
