@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { nhlApi } from '../api/nhl';
-import { Users, ArrowLeft, Shield, Crosshair, Goal, Activity, TrendingUp, Zap } from 'lucide-react';
+import { Users, ArrowLeft, Shield, Crosshair, Goal, Activity, TrendingUp, Zap, Target } from 'lucide-react';
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
 

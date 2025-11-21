@@ -166,6 +166,7 @@ class LiveInGamePredictor:
                 'current_period': current_period,
                 'time_remaining': time_remaining,
                 'game_id': game_id,
+                'game_state': boxscore.get('gameState', 'LIVE'),
                 # Basic stats
                 'away_shots': away_stats.get('shots', 0) or away_stats.get('sog', 0),
                 'home_shots': home_stats.get('shots', 0) or home_stats.get('sog', 0),
