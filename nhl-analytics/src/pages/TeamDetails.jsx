@@ -1,7 +1,7 @@
 import React, { useEffect, useState } from 'react';
 import { useParams, Link } from 'react-router-dom';
 import { nhlApi } from '../api/nhl';
-import { Users, ArrowLeft, Shield, Crosshair, Goal, Activity, TrendingUp, Zap, Target } from 'lucide-react';
+import { Users, ArrowLeft, Shield, Crosshair, Goal, Activity, TrendingUp, Zap } from 'lucide-react';
 import { motion } from 'framer-motion';
 import clsx from 'clsx';
 
@@ -249,7 +249,7 @@ const TeamDetails = () => {
                             label="SHOTS/GP"
                             value={teamMetrics.shots?.toFixed(1) || '-'}
                             subLabel="Per game"
-                            icon={Target}
+                            icon={Activity}
                             percentile={calculatePercentile(teamMetrics.shots, 'shots', true)}
                             rank={calculateRank(teamMetrics.shots, 'shots', true)}
                         />
@@ -336,7 +336,7 @@ const TeamDetails = () => {
                             label="FORECHECK"
                             value={teamMetrics.fc?.toFixed(1) || '-'}
                             subLabel="Shots/GP"
-                            icon={Target}
+                            icon={Activity}
                             percentile={calculatePercentile(teamMetrics.fc, 'fc', true)}
                             rank={calculateRank(teamMetrics.fc, 'fc', true)}
                         />

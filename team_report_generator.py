@@ -709,8 +709,10 @@ class TeamReportGenerator(PostGameReportGenerator):
             line_thickness = 12  # Thicker line (was 7, now 12)
             draw.rectangle([line_start_x, line_y, line_start_x + line_width, line_y + line_thickness], fill=primary_color_rgb)
             
-            # Save to temporary file (same format as parent class) - use absolute path
-            modified_header_path = os.path.join(script_dir, f"temp_header_{team_abbrev}_{os.getpid()}.png")
+            # Save to temporary file (stored outside repo) and track for cleanup
+            import tempfile
+            fd, modified_header_path = tempfile.mkstemp(prefix=f"temp_header_{team_abbrev}_", suffix=".png")
+            os.close(fd)
             header_img.save(modified_header_path)
             
             # Create ReportLab Image object (exactly same as parent class)
@@ -2475,9 +2477,10 @@ class TeamReportGenerator(PostGameReportGenerator):
         
         # Create minimalist icon + number display flowables
         class MinimalistMetric(Flowable):
-            def __init__(self, icon_image_path, number, label, icon_color):
+            def __init__(self, icon_image_path, number, label, icon_color, icon_text=None):
                 Flowable.__init__(self)
                 self.icon_image_path = icon_image_path
+                self.icon_text = icon_text
                 self.number = number
                 self.label = label
                 self.icon_color = icon_color  # Keep for potential future use
@@ -2498,9 +2501,10 @@ class TeamReportGenerator(PostGameReportGenerator):
                 # Text (numbers and labels) moved up by 1.3 cm total (1.0 cm + 0.3 cm)
                 text_shift_up = 1.3 * 72 / 2.54
                 
-                # Load and draw icon image
+                # Load and draw icon image (or emoji fallback)
+                icon_drawn = False
                 try:
-                    if os.path.exists(self.icon_image_path):
+                    if self.icon_image_path and os.path.exists(self.icon_image_path):
                         # Draw image on canvas
                         icon_size = 0.3 * inch  # Size of icon on PDF
                         self.canv.drawImage(self.icon_image_path, 
@@ -2509,14 +2513,23 @@ class TeamReportGenerator(PostGameReportGenerator):
                                           width=icon_size, 
                                           height=icon_size,
                                           mask='auto')
+                        icon_drawn = True
+                except Exception:
+                    icon_drawn = False
+                
+                if not icon_drawn:
+                    if self.icon_text:
+                        # Draw emoji fallback
+                        self.canv.setFillColor(colors.black)
+                        try:
+                            self.canv.setFont("Helvetica-Bold", 18)
+                        except:
+                            pass
+                        self.canv.drawCentredString(center_x, icon_y - 0.12*inch, self.icon_text)
                     else:
-                        # Fallback if image not found
+                        # Fallback: draw simple circle in team color
                         self.canv.setFillColor(self.icon_color)
                         self.canv.circle(center_x, icon_y, 0.08*inch, fill=1)
-                except Exception as e:
-                    # Fallback: draw simple circle in team color
-                    self.canv.setFillColor(self.icon_color)
-                    self.canv.circle(center_x, icon_y, 0.08*inch, fill=1)
                 
                 # Draw large number - moved up by 1.0 cm (less than icons)
                 # Try to use Russo One font, fallback to Helvetica-Bold if not available
@@ -2546,7 +2559,7 @@ class TeamReportGenerator(PostGameReportGenerator):
                 
                 self.canv.restoreState()
         
-        # Icon image paths - now in project directory
+        # Icon image paths - default to bundled PNG assets
         script_dir = os.path.dirname(os.path.abspath(__file__))
         icon_paths = {
             'streak': os.path.join(script_dir, 'fire_1f525.png'),
@@ -2557,9 +2570,9 @@ class TeamReportGenerator(PostGameReportGenerator):
         # Use team color for all three metrics (or can use variations)
         # For now, use team color for all icons
         metrics_list = [
-            MinimalistMetric(icon_paths['streak'], streak_text, "STREAK", team_color),
-            MinimalistMetric(icon_paths['comeback'], comeback_wins, "COMEBACKS", team_color),
-            MinimalistMetric(icon_paths['score_first'], f"{scored_first_pct:.0f}%", "SCORE 1ST", team_color)
+            MinimalistMetric(icon_paths['streak'], streak_text, "STREAK", team_color, icon_text="🔥"),
+            MinimalistMetric(icon_paths['comeback'], comeback_wins, "COMEBACKS", team_color, icon_text="⬆️"),
+            MinimalistMetric(icon_paths['score_first'], f"{scored_first_pct:.0f}%", "SCORE 1ST", team_color, icon_text="🎯")
         ]
         
         # Position under clutch box (same left position, shifted down)
@@ -2637,6 +2650,9 @@ class TeamReportGenerator(PostGameReportGenerator):
         temp_dir = tempfile.gettempdir()
         temp_filepath = os.path.join(temp_dir, output_filename)
         
+        # Track temporary artifacts (e.g., header images) for cleanup
+        temp_files_to_cleanup = []
+
         # Create PDF with same styling as postgame reports
         doc = BaseDocTemplate(temp_filepath, pagesize=letter, 
                               rightMargin=72, leftMargin=72, 
@@ -2650,6 +2666,8 @@ class TeamReportGenerator(PostGameReportGenerator):
             story.append(Spacer(1, -40))  # Negative spacer to pull header to top
             story.append(header_image)
             story.append(Spacer(1, 14))  # Space after header
+            if hasattr(header_image, 'temp_path'):
+                temp_files_to_cleanup.append(header_image.temp_path)
         
         # Add sections
         story.extend(self.create_team_summary_section(team_abbrev, stats))
@@ -2707,8 +2725,27 @@ class TeamReportGenerator(PostGameReportGenerator):
             frame = Frame(0, 18, 612, 756, leftPadding=0, bottomPadding=0, rightPadding=0, topPadding=0)
             page_template = BackgroundPageTemplate('background', [frame], background_path)
             doc.addPageTemplates([page_template])
-        
-        doc.build(story)
+
+        try:
+            doc.build(story)
+        finally:
+            # Remove any temporary header images created for this report
+            for temp_file in temp_files_to_cleanup:
+                if temp_file and os.path.exists(temp_file):
+                    try:
+                        os.remove(temp_file)
+                    except Exception:
+                        pass
+            # Clean up any lingering header temps in this directory
+            try:
+                script_dir = os.path.dirname(__file__)
+                for fname in os.listdir(script_dir):
+                    if fname.startswith('temp_header_') and fname.endswith('.png'):
+                        fpath = os.path.join(script_dir, fname)
+                        if os.path.isfile(fpath):
+                            os.remove(fpath)
+            except Exception:
+                pass
         
         # Optionally open in Preview on macOS
         if open_in_preview:
