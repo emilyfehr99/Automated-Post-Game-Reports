@@ -4,11 +4,11 @@ import React, { useState } from 'react';
  * ShotChart Component
  * Displays a hockey rink with shots and goals plotted
  * 
- * @param {Array} shotsData - Array of shot objects with {x, y, type, team, period, time}
+ * @param {Array} shots - Array of shot objects with {x, y, type, team, shotType, xg, period}
  * @param {String} awayTeam - Away team abbreviation
  * @param {String} homeTeam - Home team abbreviation
  */
-const ShotChart = ({ shotsData = [], awayTeam, homeTeam }) => {
+const ShotChart = ({ shots = [], awayTeam, homeTeam }) => {
     const [tooltip, setTooltip] = useState(null);
 
     // Rink dimensions (NHL standard in feet)
@@ -33,9 +33,15 @@ const ShotChart = ({ shotsData = [], awayTeam, homeTeam }) => {
             'CHI': '#CF0A2C', 'STL': '#002F87', 'MIN': '#154734', 'WPG': '#041E42',
             'NSH': '#FFB81C', 'COL': '#6F263D', 'DAL': '#006847', 'ARI': '#8C2633',
             'VGK': '#B4975A', 'SEA': '#001628', 'CGY': '#C8102E', 'EDM': '#041E42',
-            'VAN': '#00205B', 'ANA': '#F47A38', 'LAK': '#111111', 'SJS': '#006D75'
+            'VAN': '#00205B', 'ANA': '#F47A38', 'LAK': '#111111', 'SJS': '#006D75',
+            'UTA': '#71AFE5'
         };
         return colors[team] || '#888888';
+    };
+
+    // Get team logo URL
+    const getTeamLogo = (team) => {
+        return `https://assets.nhle.com/logos/nhl/svg/${team}_light.svg`;
     };
 
     // Handle mouse enter on shot/goal
@@ -56,10 +62,10 @@ const ShotChart = ({ shotsData = [], awayTeam, homeTeam }) => {
     };
 
     // Separate shots and goals by team
-    const awayShots = shotsData.filter(s => s.team === awayTeam && s.type !== 'GOAL');
-    const awayGoals = shotsData.filter(s => s.team === awayTeam && s.type === 'GOAL');
-    const homeShots = shotsData.filter(s => s.team === homeTeam && s.type !== 'GOAL');
-    const homeGoals = shotsData.filter(s => s.team === homeTeam && s.type === 'GOAL');
+    const awayShots = shots.filter(s => s.team === awayTeam && s.type !== 'GOAL');
+    const awayGoals = shots.filter(s => s.team === awayTeam && s.type === 'GOAL');
+    const homeShots = shots.filter(s => s.team === homeTeam && s.type !== 'GOAL');
+    const homeGoals = shots.filter(s => s.team === homeTeam && s.type === 'GOAL');
 
     const awayColor = getTeamColor(awayTeam);
     const homeColor = getTeamColor(homeTeam);
@@ -80,6 +86,24 @@ const ShotChart = ({ shotsData = [], awayTeam, homeTeam }) => {
                     className="absolute inset-0 w-full h-full"
                     preserveAspectRatio="xMidYMid meet"
                 >
+                    {/* Team Logos */}
+                    <image
+                        href={getTeamLogo(awayTeam)}
+                        x="20"
+                        y={SVG_HEIGHT / 2 - 50}
+                        width="100"
+                        height="100"
+                        opacity="0.25"
+                    />
+                    <image
+                        href={getTeamLogo(homeTeam)}
+                        x={SVG_WIDTH - 120}
+                        y={SVG_HEIGHT / 2 - 50}
+                        width="100"
+                        height="100"
+                        opacity="0.25"
+                    />
+
                     {/* Away Team Shots */}
                     {awayShots.map((shot, idx) => (
                         <circle

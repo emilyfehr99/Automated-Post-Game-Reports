@@ -100,7 +100,7 @@ const GameCard = ({ game, prediction, awayMetrics, homeMetrics }) => {
                         </div>
                     </div>
 
-                    {/* Predictions Bar */}
+                    {/* Predictions Bar - Pre-game */}
                     {showProb && !isLive && !isFinal && (
                         <div className="mt-auto">
                             <div className="flex justify-between text-xs font-mono mb-2 px-1">
@@ -121,6 +121,27 @@ const GameCard = ({ game, prediction, awayMetrics, homeMetrics }) => {
                                 >
                                     <div className="absolute inset-0 bg-white/20 animate-pulse" />
                                 </div>
+                            </div>
+                        </div>
+                    )}
+
+                    {/* Likelihood of Winning - Finished Games */}
+                    {showProb && isFinal && (
+                        <div className="mt-auto">
+                            <div className="flex justify-between text-xs font-mono mb-2 px-1">
+                                <span className="text-accent-cyan font-bold">{awayProb}%</span>
+                                <span className="text-gray-400">LIKELIHOOD OF WINNING</span>
+                                <span className="text-accent-magenta font-bold">{homeProb}%</span>
+                            </div>
+                            <div className="h-2 bg-white/5 rounded-full overflow-hidden flex">
+                                <div
+                                    className="h-full bg-accent-cyan"
+                                    style={{ width: `${awayProb}%` }}
+                                />
+                                <div
+                                    className="h-full bg-accent-magenta"
+                                    style={{ width: `${homeProb}%` }}
+                                />
                             </div>
                         </div>
                     )}

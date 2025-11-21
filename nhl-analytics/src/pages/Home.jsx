@@ -16,7 +16,12 @@ const Home = () => {
     useEffect(() => {
         const fetchData = async () => {
             try {
-                const today = new Date().toISOString().split('T')[0];
+                // Use local date to avoid UTC rollover issues
+                const date = new Date();
+                const year = date.getFullYear();
+                const month = String(date.getMonth() + 1).padStart(2, '0');
+                const day = String(date.getDate()).padStart(2, '0');
+                const today = `${year}-${month}-${day}`;
                 const [standingsResult, scheduleResult, predictionsResult, metricsResult] = await Promise.allSettled([
                     nhlApi.getStandings(today),
                     nhlApi.getSchedule(today),
@@ -47,6 +52,30 @@ const Home = () => {
                         const key = `${pred.away_team}_${pred.home_team}`;
                         predMap[key] = pred;
                     });
+
+                    // For finished games, fetch live data to get final probabilities
+                    const finishedGames = fetchedGames.filter(g => g.gameState === 'FINAL' || g.gameState === 'OFF');
+                    const liveDataPromises = finishedGames.map(game =>
+                        backendApi.getLiveGame(game.id).catch(() => null)
+                    );
+
+                    const liveDataResults = await Promise.all(liveDataPromises);
+
+                    // Update predictions with live data for finished games
+                    finishedGames.forEach((game, idx) => {
+                        const liveData = liveDataResults[idx];
+                        if (liveData) {
+                            const key = `${game.awayTeam.abbrev}_${game.homeTeam.abbrev}`;
+                            predMap[key] = {
+                                ...predMap[key],
+                                predicted_away_win_prob: liveData.away_prob,
+                                predicted_home_win_prob: liveData.home_prob,
+                                calibrated_away_prob: liveData.away_prob,
+                                calibrated_home_prob: liveData.home_prob
+                            };
+                        }
+                    });
+
                     setPredictions(predMap);
                 } else {
                     console.warn('Predictions fetch failed:', predictionsResult.reason);

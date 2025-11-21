@@ -7,6 +7,7 @@ Uses real-time game data, scores, and metrics to make predictions that change as
 import json
 import requests
 import time
+import math
 from datetime import datetime, timedelta
 import pytz
 from pathlib import Path
@@ -14,6 +15,65 @@ from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
 from nhl_api_client import NHLAPIClient
 from pdf_report_generator import PostGameReportGenerator
 from advanced_metrics_analyzer import AdvancedMetricsAnalyzer
+
+def sigmoid(x):
+    """Sigmoid function for probability conversion"""
+    return 1 / (1 + math.exp(-x))
+
+def calculate_likelihood_of_winning(away_metrics, home_metrics):
+    """
+    Calculate likelihood of winning using the weighted formula based on metric differences.
+    
+    Formula:
+    - Calculate metric differences (Away - Home)
+    - Apply weighted score
+    - Convert to probabilities using sigmoid
+    
+    Returns: (away_probability, home_probability) as percentages
+    """
+    # Extract metrics with defaults
+    away_gs = away_metrics.get('gs', away_metrics.get('away_gs', 0))
+    home_gs = home_metrics.get('gs', home_metrics.get('home_gs', 0))
+    away_pp = away_metrics.get('power_play_pct', away_metrics.get('away_power_play_pct', 0))
+    home_pp = home_metrics.get('power_play_pct', home_metrics.get('home_power_play_pct', 0))
+    away_corsi = away_metrics.get('corsi_pct', away_metrics.get('away_corsi_pct', 0))
+    home_corsi = home_metrics.get('corsi_pct', home_metrics.get('home_corsi_pct', 0))
+    away_hits = away_metrics.get('hits', away_metrics.get('away_hits', 0))
+    home_hits = home_metrics.get('hits', home_metrics.get('home_hits', 0))
+    away_hdc = away_metrics.get('hdc', away_metrics.get('away_hdc', 0))
+    home_hdc = home_metrics.get('hdc', home_metrics.get('home_hdc', 0))
+    away_xg = away_metrics.get('xg', away_metrics.get('away_xg', 0))
+    home_xg = home_metrics.get('xg', home_metrics.get('home_xg', 0))
+    away_pim = away_metrics.get('pim', away_metrics.get('away_pim', 0))
+    home_pim = home_metrics.get('pim', home_metrics.get('home_pim', 0))
+    away_shots = away_metrics.get('shots', away_metrics.get('away_shots', 0))
+    home_shots = home_metrics.get('shots', home_metrics.get('home_shots', 0))
+    
+    # Calculate differences (Away - Home)
+    gs_diff = away_gs - home_gs
+    power_play_diff = away_pp - home_pp
+    corsi_diff = away_corsi - home_corsi
+    hits_diff = away_hits - home_hits
+    hdc_diff = away_hdc - home_hdc
+    xg_diff = away_xg - home_xg
+    pim_diff = away_pim - home_pim
+    shots_diff = away_shots - home_shots
+    
+    # Calculate weighted score
+    score = (0.6504 * (gs_diff * 0.1) +
+             0.3933 * (power_play_diff * 0.01) +
+             (-0.3598) * (corsi_diff * 0.01) +
+             (-0.2434) * (hits_diff * 0.01) +
+             0.0747 * (hdc_diff * 0.05) +
+             (-0.0545) * (xg_diff * 0.2) +
+             0.0173 * (pim_diff * 0.01) +
+             (-0.0158) * (shots_diff * 0.02))
+    
+    # Convert to probabilities using sigmoid
+    away_probability = sigmoid(score) * 100
+    home_probability = (1 - sigmoid(score)) * 100
+    
+    return away_probability, home_probability
 
 class LiveInGamePredictor:
     def __init__(self):
@@ -154,6 +214,9 @@ class LiveInGamePredictor:
                     away_zone_metrics = self.report_generator._calculate_zone_metrics(game_data, away_team_id, 'away')
                     home_zone_metrics = self.report_generator._calculate_zone_metrics(game_data, home_team_id, 'home')
                     
+                    live_metrics['away_zone_metrics'] = away_zone_metrics
+                    live_metrics['home_zone_metrics'] = home_zone_metrics
+                    
                     live_metrics['away_nzt'] = sum(away_zone_metrics.get('nz_turnovers', [0, 0, 0]))
                     live_metrics['away_nztsa'] = sum(away_zone_metrics.get('nz_turnovers_to_shots', [0, 0, 0]))
                     live_metrics['away_ozs'] = sum(away_zone_metrics.get('oz_originating_shots', [0, 0, 0]))
@@ -217,6 +280,9 @@ class LiveInGamePredictor:
                     away_period_goals, _, _ = self.report_generator._calculate_goals_by_period(game_data, away_team_id)
                     home_period_goals, _, _ = self.report_generator._calculate_goals_by_period(game_data, home_team_id)
                     
+                    live_metrics['away_period_goals'] = away_period_goals
+                    live_metrics['home_period_goals'] = home_period_goals
+                    
                     live_metrics['away_third_period_goals'] = away_period_goals[2] if len(away_period_goals) > 2 else 0
                     live_metrics['home_third_period_goals'] = home_period_goals[2] if len(home_period_goals) > 2 else 0
                     
@@ -235,6 +301,57 @@ class LiveInGamePredictor:
                     
                     live_metrics['away_scored_first'] = (first_goal_scorer == away_team_id)
                     live_metrics['home_scored_first'] = (first_goal_scorer == home_team_id)
+
+                    # Add boxscore for roster data
+                    live_metrics['boxscore'] = boxscore
+
+                    # Extract shots data for heatmap with coordinate normalization
+                    shots_data = []
+                    for play in plays:
+                        type_desc = play.get('typeDescKey', '')
+                        if type_desc in ['shot-on-goal', 'goal', 'missed-shot', 'blocked-shot']:
+                            details = play.get('details', {})
+                            x = details.get('xCoord')
+                            y = details.get('yCoord')
+                            
+                            if x is not None and y is not None:
+                                team_id = details.get('eventOwnerTeamId')
+                                is_home = (team_id == home_team_id)
+                                period_num = play.get('periodDescriptor', {}).get('number', 1)
+                                
+                                # Normalize coordinates so home team always shoots right, away team always shoots left
+                                # Simple approach: ensure home team x > 0, away team x < 0
+                                normalized_x = x
+                                normalized_y = y
+                                
+                                if is_home:
+                                    # Home team should always shoot towards positive x (right side)
+                                    if x < 0:  # If shot is on left side, flip it to right
+                                        normalized_x = -x
+                                        normalized_y = -y
+                                else:
+                                    # Away team should always shoot towards negative x (left side)
+                                    if x > 0:  # If shot is on right side, flip it to left
+                                        normalized_x = -x
+                                        normalized_y = -y
+                                
+                                # Determine shot type
+                                shot_type = 'SHOT'
+                                if type_desc == 'goal':
+                                    shot_type = 'GOAL'
+                                
+                                shots_data.append({
+                                    'x': normalized_x,
+                                    'y': normalized_y,
+                                    'team': home_abbrev if is_home else away_abbrev,
+                                    'type': shot_type,
+                                    'event': type_desc,
+                                    'shotType': details.get('shotType', 'Wrist'),
+                                    'shooter': details.get('scoringPlayerId') or details.get('shootingPlayerId'),
+                                    'period': period_num,
+                                    'xg': details.get('xGoal', 0.0)
+                                })
+                    live_metrics['shots_data'] = shots_data
                     
                 except Exception as e:
                     print(f"⚠️  Error calculating advanced metrics: {e}")
@@ -323,36 +440,45 @@ class LiveInGamePredictor:
         try:
             away_team = live_metrics['away_team']
             home_team = live_metrics['home_team']
+            game_state = live_metrics.get('game_state', 'LIVE')
             
-            # Get base prediction from historical data
-            base_prediction = self.model.ensemble_predict(away_team, home_team)
-            away_prob = base_prediction['away_prob']
-            home_prob = base_prediction['home_prob']
-            
-            # Calculate live momentum factors
-            momentum = self.calculate_live_momentum(live_metrics)
-            
-            # Apply live adjustments
-            away_prob += momentum['total_momentum']
-            home_prob -= momentum['total_momentum']
-            
-            # Apply time pressure (later periods = more certain)
-            time_pressure = momentum['time_pressure']
-            if live_metrics['away_score'] > live_metrics['home_score']:
-                away_prob += time_pressure * 0.1
-                home_prob -= time_pressure * 0.1
-            elif live_metrics['home_score'] > live_metrics['away_score']:
-                home_prob += time_pressure * 0.1
-                away_prob -= time_pressure * 0.1
-            
-            # Normalize probabilities
-            total = away_prob + home_prob
-            away_prob = max(0.01, min(0.99, away_prob / total))
-            home_prob = max(0.01, min(0.99, home_prob / total))
-            
-            # Calculate confidence based on game state
-            confidence = 0.5 + (live_metrics['current_period'] - 1) * 0.1
-            confidence = min(0.95, confidence)
+            # For finished games, use the likelihood of winning formula
+            if game_state in ['FINAL', 'OFF']:
+                away_prob_pct, home_prob_pct = calculate_likelihood_of_winning(live_metrics, live_metrics)
+                away_prob = away_prob_pct / 100  # Convert to decimal
+                home_prob = home_prob_pct / 100
+                confidence = 0.95  # High confidence for finished games
+            else:
+                # For live games, use ML model with momentum adjustments
+                # Get base prediction from historical data
+                base_prediction = self.model.ensemble_predict(away_team, home_team)
+                away_prob = base_prediction['away_prob']
+                home_prob = base_prediction['home_prob']
+                
+                # Calculate live momentum factors
+                momentum = self.calculate_live_momentum(live_metrics)
+                
+                # Apply live adjustments
+                away_prob += momentum['total_momentum']
+                home_prob -= momentum['total_momentum']
+                
+                # Apply time pressure (later periods = more certain)
+                time_pressure = momentum['time_pressure']
+                if live_metrics['away_score'] > live_metrics['home_score']:
+                    away_prob += time_pressure * 0.1
+                    home_prob -= time_pressure * 0.1
+                elif live_metrics['home_score'] > live_metrics['away_score']:
+                    home_prob += time_pressure * 0.1
+                    away_prob -= time_pressure * 0.1
+                
+                # Normalize probabilities
+                total = away_prob + home_prob
+                away_prob = max(0.01, min(0.99, away_prob / total))
+                home_prob = max(0.01, min(0.99, home_prob / total))
+                
+                # Calculate confidence based on game state
+                confidence = 0.5 + (live_metrics['current_period'] - 1) * 0.1
+                confidence = min(0.95, confidence)
             
             return {
                 'away_team': away_team,
@@ -364,12 +490,14 @@ class LiveInGamePredictor:
                 'away_prob': away_prob,
                 'home_prob': home_prob,
                 'confidence': confidence,
-                'momentum': momentum,
+                'momentum': live_metrics.get('momentum', {}),
                 'live_metrics': live_metrics
             }
             
         except Exception as e:
             print(f"❌ Error making live prediction: {e}")
+            import traceback
+            traceback.print_exc()
             return None
     
     def format_live_prediction(self, prediction):
