@@ -321,19 +321,21 @@ class LiveInGamePredictor:
                                 period_num = play.get('periodDescriptor', {}).get('number', 1)
                                 
                                 # Normalize coordinates so home team always shoots right, away team always shoots left
-                                # Simple approach: ensure home team x > 0, away team x < 0
+                                # Robust approach: enforce side based on team
                                 normalized_x = x
                                 normalized_y = y
                                 
                                 if is_home:
                                     # Home team should always shoot towards positive x (right side)
-                                    if x < 0:  # If shot is on left side, flip it to right
-                                        normalized_x = -x
+                                    normalized_x = abs(x)
+                                    # If we flipped x (original was negative), flip y to maintain relative position
+                                    if x < 0:
                                         normalized_y = -y
                                 else:
                                     # Away team should always shoot towards negative x (left side)
-                                    if x > 0:  # If shot is on right side, flip it to left
-                                        normalized_x = -x
+                                    normalized_x = -abs(x)
+                                    # If we flipped x (original was positive), flip y to maintain relative position
+                                    if x > 0:
                                         normalized_y = -y
                                 
                                 # Determine shot type

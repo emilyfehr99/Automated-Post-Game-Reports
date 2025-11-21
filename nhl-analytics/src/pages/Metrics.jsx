@@ -16,9 +16,12 @@ const SortIcon = ({ column, sortConfig }) => {
 };
 
 const Metrics = () => {
+    const [viewMode, setViewMode] = useState('teams'); // 'teams' or 'players'
     const [data, setData] = useState([]);
+    const [playerData, setPlayerData] = useState([]);
     const [loading, setLoading] = useState(true);
     const [loadingAdvanced, setLoadingAdvanced] = useState(false);
+    const [loadingPlayers, setLoadingPlayers] = useState(false);
     const [advancedMetrics, setAdvancedMetrics] = useState({});
     const [sortConfig, setSortConfig] = useState({ key: 'points', direction: 'descending' });
     const [filter, setFilter] = useState('');
@@ -78,6 +81,23 @@ const Metrics = () => {
 
         fetchData();
     }, []);
+
+    // Fetch player stats when switching to players view
+    useEffect(() => {
+        if (viewMode === 'players' && playerData.length === 0) {
+            const fetchPlayerStats = async () => {
+                setLoadingPlayers(true);
+                try {
+                    const players = await backendApi.getPlayerStats();
+                    setPlayerData(players);
+                } catch (error) {
+                    console.error('Failed to fetch player stats:', error);
+                }
+                setLoadingPlayers(false);
+            };
+            fetchPlayerStats();
+        }
+    }, [viewMode]);
 
     const handleSort = (key) => {
         setSortConfig((prev) => ({
@@ -226,15 +246,31 @@ const Metrics = () => {
                             LEAGUE <span className="text-transparent bg-clip-text bg-gradient-to-r from-accent-primary to-success">METRICS</span>
                         </h1>
                         <p className="text-text-muted font-mono text-lg max-w-2xl">
-                            Comprehensive team statistics, advanced analytics, and performance trends.
+                            {viewMode === 'teams' ? 'Comprehensive team statistics, advanced analytics, and performance trends.' : 'Individual player statistics, advanced metrics, and performance data.'}
                         </p>
+
+                        {/* Toggle between Teams and Players */}
+                        <div className="flex gap-2 mt-6">
+                            <button
+                                onClick={() => setViewMode('teams')}
+                                className={`px-6 py-2 rounded-lg font-display font-bold transition-all ${viewMode === 'teams' ? 'bg-accent-primary text-bg-primary' : 'bg-white/10 text-text-muted hover:bg-white/20'}`}
+                            >
+                                TEAMS
+                            </button>
+                            <button
+                                onClick={() => setViewMode('players')}
+                                className={`px-6 py-2 rounded-lg font-display font-bold transition-all ${viewMode === 'players' ? 'bg-accent-primary text-bg-primary' : 'bg-white/10 text-text-muted hover:bg-white/20'}`}
+                            >
+                                PLAYERS
+                            </button>
+                        </div>
                     </div>
 
                     <div className="relative w-full md:w-72">
                         <Search className="absolute left-4 top-1/2 -translate-y-1/2 text-accent-primary" size={20} />
                         <input
                             type="text"
-                            placeholder="Search teams..."
+                            placeholder={viewMode === 'teams' ? 'Search teams...' : 'Search players...'}
                             value={filter}
                             onChange={(e) => setFilter(e.target.value)}
                             className="w-full bg-white/5 border border-white/10 rounded-xl py-3 pl-12 pr-4 text-white font-mono text-sm focus:outline-none focus:border-accent-primary/50 focus:bg-white/10 transition-all placeholder:text-text-muted"

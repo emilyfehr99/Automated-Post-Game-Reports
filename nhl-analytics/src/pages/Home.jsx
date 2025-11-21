@@ -53,16 +53,18 @@ const Home = () => {
                         predMap[key] = pred;
                     });
 
-                    // For finished games, fetch live data to get final probabilities
-                    const finishedGames = fetchedGames.filter(g => g.gameState === 'FINAL' || g.gameState === 'OFF');
-                    const liveDataPromises = finishedGames.map(game =>
+                    // For finished and live games, fetch live data to get probabilities
+                    const liveOrFinishedGames = fetchedGames.filter(g =>
+                        ['FINAL', 'OFF', 'LIVE', 'CRIT'].includes(g.gameState)
+                    );
+                    const liveDataPromises = liveOrFinishedGames.map(game =>
                         backendApi.getLiveGame(game.id).catch(() => null)
                     );
 
                     const liveDataResults = await Promise.all(liveDataPromises);
 
-                    // Update predictions with live data for finished games
-                    finishedGames.forEach((game, idx) => {
+                    // Update predictions with live data for finished/live games
+                    liveOrFinishedGames.forEach((game, idx) => {
                         const liveData = liveDataResults[idx];
                         if (liveData) {
                             const key = `${game.awayTeam.abbrev}_${game.homeTeam.abbrev}`;
@@ -76,6 +78,8 @@ const Home = () => {
                         }
                     });
 
+                    console.log('Predictions map:', predMap);
+                    console.log('Sample prediction:', Object.values(predMap)[0]);
                     setPredictions(predMap);
                 } else {
                     console.warn('Predictions fetch failed:', predictionsResult.reason);

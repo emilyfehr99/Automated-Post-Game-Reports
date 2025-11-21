@@ -77,7 +77,8 @@ const ShotChart = ({ shots = [], awayTeam, homeTeam }) => {
                 <img
                     src="/rink.jpeg"
                     alt="Hockey Rink"
-                    className="absolute inset-0 w-full h-full object-cover opacity-60"
+                    className="absolute inset-0 w-full h-full object-cover opacity-60 border-0"
+                    style={{ border: 'none', outline: 'none' }}
                 />
 
                 {/* SVG Overlay for Shots */}

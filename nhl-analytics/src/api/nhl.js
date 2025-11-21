@@ -78,5 +78,18 @@ export const nhlApi = {
             console.error('Error fetching game center data:', error);
             throw error;
         }
+    },
+
+    async getPlayerStats(season = '20242025', gameType = 2, limit = 100) {
+        try {
+            // Fetch skater stats leaders
+            // gameType: 2 = regular season, 3 = playoffs
+            const response = await fetch(`${BASE_URL}/skater-stats-leaders/${season}/${gameType}?limit=${limit}`);
+            if (!response.ok) throw new Error('Failed to fetch player stats');
+            return await response.json();
+        } catch (error) {
+            console.error('Error fetching player stats:', error);
+            throw error;
+        }
     }
 };

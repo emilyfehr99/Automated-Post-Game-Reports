@@ -8,14 +8,22 @@ const GameCard = ({ game, prediction, awayMetrics, homeMetrics }) => {
     const isFinal = game.gameState === 'FINAL' || game.gameState === 'OFF';
 
     // Handle both decimal (0.47) and percentage (47) formats
-    const awayProbRaw = prediction?.predicted_away_win_prob || prediction?.calibrated_away_prob || 0;
-    const homeProbRaw = prediction?.predicted_home_win_prob || prediction?.calibrated_home_prob || 0;
+    // API returns away_win_prob/home_win_prob OR predicted_away_win_prob/predicted_home_win_prob
+    const awayProbRaw = prediction?.away_win_prob || prediction?.predicted_away_win_prob || prediction?.calibrated_away_prob || 0;
+    const homeProbRaw = prediction?.home_win_prob || prediction?.predicted_home_win_prob || prediction?.calibrated_home_prob || 0;
 
     // If value is > 1, it's already a percentage; otherwise multiply by 100
     const awayProb = awayProbRaw > 1 ? awayProbRaw.toFixed(1) : (awayProbRaw * 100).toFixed(1);
     const homeProb = homeProbRaw > 1 ? homeProbRaw.toFixed(1) : (homeProbRaw * 100).toFixed(1);
 
     const showProb = prediction && (awayProbRaw > 0 || homeProbRaw > 0);
+
+    console.log(`GameCard for ${game?.awayTeam?.abbrev} vs ${game?.homeTeam?.abbrev}:`, {
+        prediction,
+        showProb,
+        awayProb,
+        homeProb
+    });
 
     return (
         <div className="block h-full relative group">
@@ -61,7 +69,7 @@ const GameCard = ({ game, prediction, awayMetrics, homeMetrics }) => {
                                 <img
                                     src={game?.awayTeam?.logo || ''}
                                     alt={game?.awayTeam?.abbrev || 'Away'}
-                                    className="w-20 h-20 object-contain drop-shadow-2xl relative z-10 transform group-hover:scale-110 transition-transform duration-300"
+                                    className="w-28 h-28 object-contain drop-shadow-2xl relative z-10 transform group-hover:scale-110 transition-transform duration-300"
                                 />
                             </div>
                             <div className="text-center">
@@ -86,7 +94,7 @@ const GameCard = ({ game, prediction, awayMetrics, homeMetrics }) => {
                                 <img
                                     src={game?.homeTeam?.logo || ''}
                                     alt={game?.homeTeam?.abbrev || 'Home'}
-                                    className="w-20 h-20 object-contain drop-shadow-2xl relative z-10 transform group-hover:scale-110 transition-transform duration-300"
+                                    className="w-28 h-28 object-contain drop-shadow-2xl relative z-10 transform group-hover:scale-110 transition-transform duration-300"
                                 />
                             </div>
                             <div className="text-center">
@@ -125,21 +133,21 @@ const GameCard = ({ game, prediction, awayMetrics, homeMetrics }) => {
                         </div>
                     )}
 
-                    {/* Likelihood of Winning - Finished Games */}
-                    {showProb && isFinal && (
+                    {/* Likelihood of Winning - Live & Finished Games */}
+                    {showProb && (isFinal || isLive) && (
                         <div className="mt-auto">
                             <div className="flex justify-between text-xs font-mono mb-2 px-1">
                                 <span className="text-accent-cyan font-bold">{awayProb}%</span>
-                                <span className="text-gray-400">LIKELIHOOD OF WINNING</span>
+                                <span className="text-gray-400">{isLive ? 'LIVE WIN PROBABILITY' : 'LIKELIHOOD OF WINNING'}</span>
                                 <span className="text-accent-magenta font-bold">{homeProb}%</span>
                             </div>
                             <div className="h-2 bg-white/5 rounded-full overflow-hidden flex">
                                 <div
-                                    className="h-full bg-accent-cyan"
+                                    className="h-full bg-accent-cyan transition-all duration-500"
                                     style={{ width: `${awayProb}%` }}
                                 />
                                 <div
-                                    className="h-full bg-accent-magenta"
+                                    className="h-full bg-accent-magenta transition-all duration-500"
                                     style={{ width: `${homeProb}%` }}
                                 />
                             </div>

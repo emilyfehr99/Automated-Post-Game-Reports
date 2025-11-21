@@ -117,5 +117,14 @@ export const backendApi = {
         const response = await fetch(`${BACKEND_URL}/api/health`);
         if (!response.ok) throw new Error('Backend health check failed');
         return response.json();
+    },
+
+    /**
+     * Get player stats from MoneyPuck
+     */
+    async getPlayerStats(season = '2025', type = 'regular', situation = 'all') {
+        const response = await fetch(`${BACKEND_URL}/api/player-stats?season=${season}&type=${type}&situation=${situation}`);
+        if (!response.ok) throw new Error('Failed to fetch player stats');
+        return response.json();
     }
 };
