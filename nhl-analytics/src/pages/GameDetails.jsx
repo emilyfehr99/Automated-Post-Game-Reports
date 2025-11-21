@@ -1,4 +1,5 @@
 import React, { useEffect, useState } from 'react';
+import { createPortal } from 'react-dom';
 import { useParams, Link } from 'react-router-dom';
 import { nhlApi } from '../api/nhl';
 import { backendApi } from '../api/backend';
@@ -79,33 +80,70 @@ const TEAM_COLORS = {
 
 const getTeamColor = (abbr) => TEAM_COLORS[abbr] || '#FFFFFF';
 
+const METRICS_CONFIG = [
+    { key: 'rank', liveKey: 'rank', label: 'RANK' },
+    { key: 'gp', liveKey: 'games_played', label: 'GP' },
+    { key: 'l10', liveKey: 'l10', label: 'L10' },
+    { key: 'streak', liveKey: 'streak', label: 'STREAK' },
+    { key: 'gf', liveKey: 'goals_for', label: 'GOALS FOR' },
+    { key: 'ga', liveKey: 'goals_against', label: 'GOALS AGAINST' },
+    { key: 'w', liveKey: 'wins', label: 'WINS' },
+    { key: 'l', liveKey: 'losses', label: 'LOSSES' },
+    { key: 'otl', liveKey: 'ot_losses', label: 'OT LOSSES' },
+    { key: 'pts', liveKey: 'points', label: 'POINTS' },
+    { key: 'pPct', liveKey: 'point_pct', label: 'POINT %', format: (v) => parseFloat(v || 0).toFixed(3) },
+    { key: 'diff', liveKey: 'goal_diff', label: 'GOAL DIFF' },
+    { key: 'gs', liveKey: 'game_score', label: 'GAME SCORE', format: (v) => parseFloat(v || 0).toFixed(1) },
+    { key: 'xg', liveKey: 'xg', label: 'EXPECTED GOALS', format: (v) => parseFloat(v || 0).toFixed(2) },
+    { key: 'hdc', liveKey: 'hdc', label: 'HIGH DANGER CHANCES' },
+    { key: 'hdca', liveKey: 'hdca', label: 'HD CHANCES AGAINST' },
+    { key: 'ozs', liveKey: 'ozs', label: 'OFF ZONE SHOTS' },
+    { key: 'nzs', liveKey: 'nzs', label: 'NEUTRAL ZONE SHOTS' },
+    { key: 'dzs', liveKey: 'dzs', label: 'DEF ZONE SHOTS' },
+    { key: 'fc', liveKey: 'fc', label: 'FORECHECK SHOTS' },
+    { key: 'rush', liveKey: 'rush', label: 'RUSH SHOTS' },
+    { key: 'nzts', liveKey: 'nzts', label: 'NEUTRAL ZONE TURNOVERS' },
+    { key: 'nztsa', liveKey: 'nztsa', label: 'NZ TURNOVERS/SA' },
+    { key: 'lat', liveKey: 'lateral', label: 'LATERAL MOVEMENT', format: (v) => parseFloat(v || 0).toFixed(1) },
+    { key: 'long_movement', liveKey: 'longitudinal', label: 'N-S MOVEMENT', format: (v) => parseFloat(v || 0).toFixed(1) },
+    { key: 'shots', liveKey: 'shots', label: 'SHOTS ON GOAL' },
+    { key: 'goals', liveKey: 'goals', label: 'GOALS', format: (v) => parseFloat(v || 0).toFixed(0) },
+    { key: 'ga_gp', liveKey: 'ga_gp', label: 'GOALS AGAINST/GP', format: (v) => parseFloat(v || 0).toFixed(2) },
+    { key: 'corsi_pct', liveKey: 'corsi_pct', label: 'CORSI %', format: (v) => v + '%' },
+    { key: 'hits', liveKey: 'hits', label: 'HITS' },
+    { key: 'blocks', liveKey: 'blocked_shots', label: 'BLOCKED SHOTS' },
+    { key: 'giveaways', liveKey: 'giveaways', label: 'GIVEAWAYS' },
+    { key: 'takeaways', liveKey: 'takeaways', label: 'TAKEAWAYS' },
+    { key: 'pim', liveKey: 'pim', label: 'PIM' },
+    { key: 'pp_pct', liveKey: 'pp_pct', label: 'POWER PLAY %', format: (v) => v + '%' },
+    { key: 'pk_pct', liveKey: 'pk_pct', label: 'PENALTY KILL %', format: (v) => v + '%' },
+    { key: 'fo_pct', liveKey: 'fo_pct', label: 'FACEOFF %', format: (v) => v + '%' },
+];
+
 const PreGameHeatmap = ({ preGameData, homeTeam, awayTeam }) => {
     const [hoveredPoint, setHoveredPoint] = React.useState(null);
     const [tooltipPos, setTooltipPos] = React.useState({ x: 0, y: 0 });
     const containerRef = React.useRef(null);
 
     const handlePointHover = (point, event, team) => {
-        if (!containerRef.current) return;
-
-        const container = containerRef.current;
-        const rect = container.getBoundingClientRect();
-        const mouseX = event.clientX - rect.left;
-        const mouseY = event.clientY - rect.top;
+        // Calculate position relative to viewport
+        const mouseX = event.clientX;
+        const mouseY = event.clientY;
 
         // Tooltip dimensions (approximate)
         const tooltipWidth = 220;
         const tooltipHeight = 120;
 
         // Calculate position with boundary detection
-        let left = mouseX + 10;
+        let left = mouseX + 15;
         let top = mouseY - 10;
 
-        // Keep tooltip within container bounds
-        if (left + tooltipWidth > rect.width) {
-            left = mouseX - tooltipWidth - 10;
+        // Keep tooltip within viewport bounds
+        if (left + tooltipWidth > window.innerWidth) {
+            left = mouseX - tooltipWidth - 15;
         }
-        if (top + tooltipHeight > rect.height) {
-            top = rect.height - tooltipHeight - 10;
+        if (top + tooltipHeight > window.innerHeight) {
+            top = window.innerHeight - tooltipHeight - 10;
         }
         if (top < 0) {
             top = 10;
@@ -144,7 +182,7 @@ const PreGameHeatmap = ({ preGameData, homeTeam, awayTeam }) => {
                             className="absolute w-3 h-3 rounded-full border border-white shadow-lg z-20 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-150 transition-transform"
                             style={{
                                 backgroundColor: getTeamColor(homeTeam.abbrev),
-                                left: `${(point.x + 100) / 2}%`,
+                                left: `${(Math.abs(point.x) + 100) / 2}%`,
                                 top: `${(42.5 - point.y) / 0.85}%`
                             }}
                             onMouseEnter={(e) => handlePointHover(point, e, homeTeam.abbrev)}
@@ -157,7 +195,7 @@ const PreGameHeatmap = ({ preGameData, homeTeam, awayTeam }) => {
                             className="absolute w-1.5 h-1.5 rounded-full opacity-60 blur-[0.5px] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-150 hover:opacity-100 transition-all"
                             style={{
                                 backgroundColor: getTeamColor(homeTeam.abbrev),
-                                left: `${(point.x + 100) / 2}%`,
+                                left: `${(Math.abs(point.x) + 100) / 2}%`,
                                 top: `${(42.5 - point.y) / 0.85}%`
                             }}
                             onMouseEnter={(e) => handlePointHover(point, e, homeTeam.abbrev)}
@@ -172,7 +210,7 @@ const PreGameHeatmap = ({ preGameData, homeTeam, awayTeam }) => {
                             className="absolute w-3 h-3 rounded-full border border-white shadow-lg z-20 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-150 transition-transform"
                             style={{
                                 backgroundColor: getTeamColor(awayTeam.abbrev),
-                                left: `${(point.x + 100) / 2}%`,
+                                left: `${(-Math.abs(point.x) + 100) / 2}%`,
                                 top: `${(42.5 - point.y) / 0.85}%`
                             }}
                             onMouseEnter={(e) => handlePointHover(point, e, awayTeam.abbrev)}
@@ -185,7 +223,7 @@ const PreGameHeatmap = ({ preGameData, homeTeam, awayTeam }) => {
                             className="absolute w-1.5 h-1.5 rounded-full opacity-60 blur-[0.5px] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-150 hover:opacity-100 transition-all"
                             style={{
                                 backgroundColor: getTeamColor(awayTeam.abbrev),
-                                left: `${(point.x + 100) / 2}%`,
+                                left: `${(-Math.abs(point.x) + 100) / 2}%`,
                                 top: `${(42.5 - point.y) / 0.85}%`
                             }}
                             onMouseEnter={(e) => handlePointHover(point, e, awayTeam.abbrev)}
@@ -194,13 +232,13 @@ const PreGameHeatmap = ({ preGameData, homeTeam, awayTeam }) => {
                     ))}
 
                     {/* Tooltip */}
-                    {hoveredPoint && (
+                    {/* Tooltip - Rendered via Portal */}
+                    {hoveredPoint && createPortal(
                         <div
-                            className="absolute z-50 bg-black/95 border border-white/20 rounded-lg p-3 shadow-2xl backdrop-blur-md min-w-[200px] max-w-[250px]"
+                            className="fixed z-[9999] bg-black/95 border border-white/20 rounded-lg p-3 shadow-2xl backdrop-blur-md min-w-[200px] max-w-[250px] pointer-events-none"
                             style={{
                                 left: `${tooltipPos.x}px`,
                                 top: `${tooltipPos.y}px`,
-                                pointerEvents: 'none'
                             }}
                         >
                             <div className="text-xs font-mono space-y-1">
@@ -232,7 +270,8 @@ const PreGameHeatmap = ({ preGameData, homeTeam, awayTeam }) => {
                                     </div>
                                 )}
                             </div>
-                        </div>
+                        </div>,
+                        document.body
                     )}
                 </div>
             </div>
@@ -629,69 +668,20 @@ const GameDetailsContent = () => {
                             />
 
                             <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <MetricCard title="OFFENSE" icon={Zap}>
-                                    <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                        label="GOALS/GP"
-                                        awayVal={preGameData.metrics.away?.goals}
-                                        homeVal={preGameData.metrics.home?.goals}
-                                        format={v => parseFloat(v || 0).toFixed(2)}
-                                    />
-                                    <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                        label="xGOALS/GP"
-                                        awayVal={preGameData.metrics.away?.xg}
-                                        homeVal={preGameData.metrics.home?.xg}
-                                        format={v => parseFloat(v || 0).toFixed(2)}
-                                    />
-                                    <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                        label="SHOTS/GP"
-                                        awayVal={preGameData.metrics.away?.shots}
-                                        homeVal={preGameData.metrics.home?.shots}
-                                        format={v => parseFloat(v || 0).toFixed(1)}
-                                    />
-                                    <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                        label="POWER PLAY"
-                                        awayVal={preGameData.metrics.away?.pp_pct}
-                                        homeVal={preGameData.metrics.home?.pp_pct}
-                                        format={v => v + '%'}
-                                    />
-                                    <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                        label="OFF ZONE SHOTS"
-                                        awayVal={preGameData.metrics.away?.ozs}
-                                        homeVal={preGameData.metrics.home?.ozs}
-                                    />
-                                </MetricCard>
-
-                                <MetricCard title="DEFENSE" icon={Shield}>
-                                    <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                        label="GA/GP"
-                                        awayVal={preGameData.metrics.away?.ga_gp}
-                                        homeVal={preGameData.metrics.home?.ga_gp}
-                                        format={v => parseFloat(v || 0).toFixed(2)}
-                                    />
-                                    <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                        label="PENALTY KILL"
-                                        awayVal={preGameData.metrics.away?.pk_pct}
-                                        homeVal={preGameData.metrics.home?.pk_pct}
-                                        format={v => v + '%'}
-                                    />
-                                    <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                        label="CORSI %"
-                                        awayVal={preGameData.metrics.away?.corsi_pct}
-                                        homeVal={preGameData.metrics.home?.corsi_pct}
-                                        format={v => v + '%'}
-                                    />
-                                    <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                        label="HD AGAINST"
-                                        awayVal={preGameData.metrics.away?.hdca}
-                                        homeVal={preGameData.metrics.home?.hdca}
-                                        format={v => parseFloat(v || 0).toFixed(1)}
-                                    />
-                                    <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                        label="BLOCKS/GP"
-                                        awayVal={preGameData.metrics.away?.blocks}
-                                        homeVal={preGameData.metrics.home?.blocks}
-                                        format={v => parseFloat(v || 0).toFixed(1)}
-                                    />
+                                <MetricCard title="ADVANCED METRICS" icon={Activity} className="md:col-span-2">
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+                                        {METRICS_CONFIG.map(metric => (
+                                            <ComparisonRow
+                                                key={metric.key}
+                                                awayTeam={awayTeam}
+                                                homeTeam={homeTeam}
+                                                label={metric.label}
+                                                awayVal={preGameData.metrics.away?.[metric.key]}
+                                                homeVal={preGameData.metrics.home?.[metric.key]}
+                                                format={metric.format}
+                                            />
+                                        ))}
+                                    </div>
                                 </MetricCard>
                             </section>
                         </div>
@@ -724,75 +714,20 @@ const GameDetailsContent = () => {
             case 'advanced':
                 return (
                     <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <MetricCard title="SHOT QUALITY" icon={Crosshair}>
-                            <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                label="EXPECTED GOALS (xG)"
-                                awayVal={liveData?.live_metrics?.away_xg}
-                                homeVal={liveData?.live_metrics?.home_xg}
-                                format={(v) => parseFloat(v || 0).toFixed(2)}
-                            />
-                            <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                label="HIGH DANGER CHANCES"
-                                awayVal={liveData?.live_metrics?.away_hdc}
-                                homeVal={liveData?.live_metrics?.home_hdc}
-                            />
-                            <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                label="SHOOTING %"
-                                awayVal={liveData?.live_metrics?.away_score && liveData?.live_metrics?.away_shots ? (liveData.live_metrics.away_score / liveData.live_metrics.away_shots * 100) : 0}
-                                homeVal={liveData?.live_metrics?.home_score && liveData?.live_metrics?.home_shots ? (liveData.live_metrics.home_score / liveData.live_metrics.home_shots * 100) : 0}
-                                format={(v) => parseFloat(v || 0).toFixed(1) + '%'}
-                            />
-                        </MetricCard>
-
-                        <MetricCard title="PRESSURE" icon={Zap}>
-                            <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                label="OFFENSIVE ZONE SHOTS"
-                                awayVal={liveData?.live_metrics?.away_ozs}
-                                homeVal={liveData?.live_metrics?.home_ozs}
-                            />
-                            <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                label="SUSTAINED PRESSURE"
-                                awayVal={liveData?.live_metrics?.away_fc}
-                                homeVal={liveData?.live_metrics?.home_fc}
-                            />
-                            <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                label="RUSH CHANCES"
-                                awayVal={liveData?.live_metrics?.away_rush}
-                                homeVal={liveData?.live_metrics?.home_rush}
-                            />
-                        </MetricCard>
-
-                        <MetricCard title="DEFENSE" icon={Shield}>
-                            <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                label="BLOCKED SHOTS"
-                                awayVal={liveData?.live_metrics?.away_blocked_shots}
-                                homeVal={liveData?.live_metrics?.home_blocked_shots}
-                            />
-                            <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                label="TAKEAWAYS"
-                                awayVal={liveData?.live_metrics?.away_takeaways}
-                                homeVal={liveData?.live_metrics?.home_takeaways}
-                            />
-                            <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                label="GIVEAWAYS"
-                                awayVal={liveData?.live_metrics?.away_giveaways}
-                                homeVal={liveData?.live_metrics?.home_giveaways}
-                            />
-                        </MetricCard>
-
-                        <MetricCard title="MOVEMENT" icon={Activity}>
-                            <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                label="LATERAL MOVEMENT"
-                                awayVal={liveData?.live_metrics?.away_lateral}
-                                homeVal={liveData?.live_metrics?.home_lateral}
-                                format={(v) => parseFloat(v || 0).toFixed(1)}
-                            />
-                            <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                label="N-S MOVEMENT"
-                                awayVal={liveData?.live_metrics?.away_longitudinal}
-                                homeVal={liveData?.live_metrics?.home_longitudinal}
-                                format={(v) => parseFloat(v || 0).toFixed(1)}
-                            />
+                        <MetricCard title="ADVANCED METRICS" icon={Activity} className="md:col-span-2">
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
+                                {METRICS_CONFIG.map(metric => (
+                                    <ComparisonRow
+                                        key={metric.key}
+                                        awayTeam={awayTeam}
+                                        homeTeam={homeTeam}
+                                        label={metric.label}
+                                        awayVal={liveData?.live_metrics?.[`away_${metric.liveKey}`]}
+                                        homeVal={liveData?.live_metrics?.[`home_${metric.liveKey}`]}
+                                        format={metric.format}
+                                    />
+                                ))}
+                            </div>
                         </MetricCard>
                     </section>
                 );

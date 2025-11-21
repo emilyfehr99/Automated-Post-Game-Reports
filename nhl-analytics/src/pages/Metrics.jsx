@@ -146,6 +146,35 @@ const Metrics = () => {
         );
     }, [data, advancedMetrics, sortConfig, filter]);
 
+    const sortedPlayerData = useMemo(() => {
+        let sortableItems = [...playerData];
+
+        if (sortConfig.key !== null) {
+            sortableItems.sort((a, b) => {
+                let aValue = a[sortConfig.key];
+                let bValue = b[sortConfig.key];
+
+                if (aValue === undefined || aValue === null || aValue === '-') aValue = -Infinity;
+                if (bValue === undefined || bValue === null || bValue === '-') bValue = -Infinity;
+
+                if (typeof aValue === 'string') aValue = aValue.toLowerCase();
+                if (typeof bValue === 'string') bValue = bValue.toLowerCase();
+
+                if (aValue < bValue) {
+                    return sortConfig.direction === 'ascending' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'ascending' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        return sortableItems.filter(item =>
+            item.name.toLowerCase().includes(filter.toLowerCase()) ||
+            item.team.toLowerCase().includes(filter.toLowerCase())
+        );
+    }, [playerData, sortConfig, filter]);
+
     const getHeatmapColor = (value, min, max, inverse = false) => {
         // Simple normalization for color coding
         // This is a simplified version; for production, use a proper scale
@@ -234,6 +263,29 @@ const Metrics = () => {
         { key: 'fo_pct', label: 'FO%', align: 'center', advanced: true, tooltip: 'Faceoff %' },
     ];
 
+    const playerColumns = [
+        { key: 'teamLogo', label: '', align: 'center' },
+        { key: 'name', label: 'PLAYER', align: 'left' },
+        { key: 'team', label: 'TEAM', align: 'center' },
+        { key: 'position', label: 'POS', align: 'center' },
+        { key: 'games_played', label: 'GP', align: 'center' },
+        { key: 'goals', label: 'G', align: 'center', highlight: true },
+        { key: 'assists', label: 'A', align: 'center' },
+        { key: 'points', label: 'PTS', align: 'center', highlight: true },
+        { key: 'shots', label: 'SOG', align: 'center' },
+        { key: 'icetime', label: 'TOI', align: 'center', format: (v) => Math.round(v / 60) + 'm' },
+        { key: 'game_score', label: 'GS', align: 'center', advanced: true, tooltip: 'Game Score' },
+        { key: 'xgoals', label: 'xG', align: 'center', advanced: true, tooltip: 'Expected Goals' },
+        { key: 'xgoals_pct', label: 'xG%', align: 'center', advanced: true, tooltip: 'Expected Goals %' },
+        { key: 'corsi_pct', label: 'CF%', align: 'center', advanced: true, tooltip: 'Corsi For %' },
+        { key: 'I_F_shotAttempts', label: 'iSA', align: 'center', advanced: true, tooltip: 'Individual Shot Attempts' },
+        { key: 'I_F_highDangerShots', label: 'iHDS', align: 'center', advanced: true, tooltip: 'Individual High Danger Shots' },
+        { key: 'I_F_highDangerxGoals', label: 'iHDxG', align: 'center', advanced: true, tooltip: 'Individual High Danger xGoals' },
+        { key: 'I_F_highDangerGoals', label: 'iHDG', align: 'center', advanced: true, tooltip: 'Individual High Danger Goals' },
+        { key: 'onIce_corsiPercentage', label: 'onCF%', align: 'center', advanced: true, tooltip: 'On-Ice Corsi For %' },
+        { key: 'onIce_xGoalsPercentage', label: 'onxG%', align: 'center', advanced: true, tooltip: 'On-Ice Expected Goals %' },
+    ];
+
     return (
         <div className="space-y-8">
             {/* Header */}
@@ -304,7 +356,7 @@ const Metrics = () => {
                     <table className="w-full text-sm">
                         <thead>
                             <tr className="bg-white/5 border-b border-white/10">
-                                {columns.map((col) => (
+                                {(viewMode === 'teams' ? columns : playerColumns).map((col) => (
                                     <th
                                         key={col.key}
                                         onClick={() => handleSort(col.key)}
@@ -313,6 +365,7 @@ const Metrics = () => {
                                             col.align === 'center' ? 'text-center' : 'text-left',
                                             sortConfig.key === col.key && "text-accent-primary bg-white/5"
                                         )}
+                                        title={col.tooltip}
                                     >
                                         <div className={clsx("flex items-center gap-1", col.align === 'center' && "justify-center")}>
                                             {col.label}
@@ -323,131 +376,179 @@ const Metrics = () => {
                             </tr>
                         </thead>
                         <tbody className="divide-y divide-white/5">
-                            {sortedData.map((team, index) => (
-                                <motion.tr
-                                    key={team.abbrev}
-                                    initial={{ opacity: 0, y: 10 }}
-                                    animate={{ opacity: 1, y: 0 }}
-                                    transition={{ delay: index * 0.02 }}
-                                    className="hover:bg-white/5 transition-colors group"
-                                >
-                                    <td className="p-4 text-center text-text-muted">{team.rank}</td>
-                                    <td className="p-4">
-                                        <Link to={`/team/${team.abbrev}`} className="flex items-center gap-3 group-hover:opacity-80 transition-opacity">
-                                            <img src={team.logo} alt={team.abbrev} className="w-6 h-6 opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all" />
-                                            <span className="font-sans font-bold text-white group-hover:text-accent-primary transition-colors">{team.name}</span>
-                                        </Link>
-                                    </td>
-                                    <td className="p-4 text-center text-text-muted">{team.gp}</td>
-                                    <td className="p-4 text-center text-white">{team.w}</td>
-                                    <td className="p-4 text-center text-text-muted">{team.l}</td>
-                                    <td className="p-4 text-center text-text-muted">{team.otl}</td>
-                                    <td className="p-4 text-center font-bold text-lg text-white bg-white/5">{team.pts}</td>
-                                    <td className="p-4 text-center text-text-muted">{team.pPct}</td>
-                                    <td className={clsx("p-4 text-center", getHeatmapColor(team.gf, stats.gf.min, stats.gf.max))}>{team.gf}</td>
-                                    <td className={clsx("p-4 text-center", getHeatmapColor(team.ga, stats.ga.min, stats.ga.max, true))}>{team.ga}</td>
-                                    <td className={clsx("p-4 text-center", team.diff > 0 ? "text-success" : team.diff < 0 ? "text-danger" : "text-text-muted")}>
-                                        {team.diff > 0 ? '+' : ''}{team.diff}
-                                    </td>
-                                    <td className="p-4 text-center text-text-muted">{team.l10}</td>
-                                    <td className="p-4 text-center text-white">{team.streak}</td>
+                            {viewMode === 'players' ? (
+                                sortedPlayerData.map((player, index) => (
+                                    <motion.tr
+                                        key={`${player.name}-${player.team}`}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: index * 0.005 }}
+                                        className="hover:bg-white/5 transition-colors group"
+                                    >
+                                        {/* Team Logo */}
+                                        <td className="p-4 text-center">
+                                            <div className="w-6 h-6 rounded-full" style={{ backgroundColor: getTeamColor(player.team) }} />
+                                        </td>
+                                        <td className="p-4 font-bold text-white">{player.name}</td>
+                                        <td className="p-4 text-center text-text-muted">{player.team}</td>
+                                        <td className="p-4 text-center text-text-muted">{player.position}</td>
+                                        <td className="p-4 text-center text-text-muted">{player.games_played}</td>
+                                        <td className="p-4 text-center text-accent-primary font-bold bg-white/5">{player.goals}</td>
+                                        <td className="p-4 text-center text-text-muted">{player.assists}</td>
+                                        <td className="p-4 text-center text-white font-bold">{player.points}</td>
+                                        <td className="p-4 text-center text-text-muted">{player.shots}</td>
+                                        <td className="p-4 text-center text-text-muted">{Math.round(player.icetime / 60)}m</td>
+                                        <td className="p-4 text-center text-accent-secondary">{displayMetric(player.game_score)}</td>
+                                        <td className="p-4 text-center text-text-muted">{displayMetric(player.xgoals)}</td>
+                                        <td className="p-4 text-center text-text-muted">{displayMetric(player.xgoals_pct)}%</td>
+                                        <td className="p-4 text-center text-text-muted">{displayMetric(player.corsi_pct)}%</td>
+                                        <td className="p-4 text-center text-text-muted">{displayMetric(player.I_F_shotAttempts)}</td>
+                                        <td className="p-4 text-center text-text-muted">{displayMetric(player.I_F_highDangerShots)}</td>
+                                        <td className="p-4 text-center text-text-muted">{displayMetric(player.I_F_highDangerxGoals)}</td>
+                                        <td className="p-4 text-center text-text-muted">{displayMetric(player.I_F_highDangerGoals)}</td>
+                                        <td className="p-4 text-center text-text-muted">{displayMetric(player.onIce_corsiPercentage)}%</td>
+                                        <td className="p-4 text-center text-text-muted">{displayMetric(player.onIce_xGoalsPercentage)}%</td>
+                                    </motion.tr>
+                                ))
+                            ) : (
+                                // Existing team rows remain unchanged
+                                sortedData.map((team, index) => (
+                                    <motion.tr
+                                        key={team.abbrev}
+                                        initial={{ opacity: 0, y: 10 }}
+                                        animate={{ opacity: 1, y: 0 }}
+                                        transition={{ delay: index * 0.02 }}
+                                        className="hover:bg-white/5 transition-colors group"
+                                    >
+                                        <td className="p-4 text-center text-text-muted">{team.rank}</td>
+                                        <td className="p-4">
+                                            <Link to={`/team/${team.abbrev}`} className="flex items-center gap-3 group-hover:opacity-80 transition-opacity">
+                                                <img src={team.logo} alt={team.abbrev} className="w-6 h-6 opacity-80 group-hover:opacity-100 group-hover:scale-110 transition-all" />
+                                                <span className="font-sans font-bold text-white group-hover:text-accent-primary transition-colors">{team.name}</span>
+                                            </Link>
+                                        </td>
+                                        <td className="p-4 text-center text-text-muted">{team.gp}</td>
+                                        <td className="p-4 text-center text-white">{team.w}</td>
+                                        <td className="p-4 text-center text-text-muted">{team.l}</td>
+                                        <td className="p-4 text-center text-text-muted">{team.otl}</td>
+                                        <td className="p-4 text-center font-bold text-lg text-white bg-white/5">{team.pts}</td>
+                                        <td className="p-4 text-center text-text-muted">{team.pPct}</td>
+                                        <td className={clsx("p-4 text-center", getHeatmapColor(team.gf, stats.gf.min, stats.gf.max))}>{team.gf}</td>
+                                        <td className={clsx("p-4 text-center", getHeatmapColor(team.ga, stats.ga.min, stats.ga.max, true))}>{team.ga}</td>
+                                        <td className={clsx("p-4 text-center", team.diff > 0 ? "text-success" : team.diff < 0 ? "text-danger" : "text-text-muted")}>
+                                            {team.diff > 0 ? '+' : ''}{team.diff}
+                                        </td>
+                                        <td className="p-4 text-center text-text-muted">{team.l10}</td>
+                                        <td className="p-4 text-center text-white">{team.streak}</td>
 
-                                    {/* Advanced Metrics - Core */}
-                                    <td className="p-4 text-center text-accent-primary bg-white/5" title="Game Score">
-                                        {loadingAdvanced ? '...' : displayMetric(team.gs)}
-                                    </td>
-                                    <td className="p-4 text-center text-text-muted" title="Expected Goals">
-                                        {loadingAdvanced ? '...' : displayMetric(team.xg)}
-                                    </td>
-                                    <td className="p-4 text-center text-text-muted" title="High Danger Chances">
-                                        {loadingAdvanced ? '...' : displayMetric(team.hdc)}
-                                    </td>
-                                    <td className="p-4 text-center text-text-muted" title="High Danger Chances Against">
-                                        {loadingAdvanced ? '...' : displayMetric(team.hdca)}
-                                    </td>
+                                        {/* Advanced Metrics - Core */}
+                                        <td className="p-4 text-center text-accent-primary bg-white/5" title="Game Score">
+                                            {loadingAdvanced ? '...' : displayMetric(team.gs)}
+                                        </td>
+                                        <td className="p-4 text-center text-text-muted" title="Expected Goals">
+                                            {loadingAdvanced ? '...' : displayMetric(team.xg)}
+                                        </td>
+                                        <td className="p-4 text-center text-text-muted" title="High Danger Chances">
+                                            {loadingAdvanced ? '...' : displayMetric(team.hdc)}
+                                        </td>
+                                        <td className="p-4 text-center text-text-muted" title="High Danger Chances Against">
+                                            {loadingAdvanced ? '...' : displayMetric(team.hdca)}
+                                        </td>
 
-                                    {/* Zone Metrics */}
-                                    <td className="p-4 text-center text-text-muted" title="Offensive Zone Shots">
-                                        {loadingAdvanced ? '...' : displayMetric(team.ozs)}
-                                    </td>
-                                    <td className="p-4 text-center text-text-muted" title="Neutral Zone Shots">
-                                        {loadingAdvanced ? '...' : displayMetric(team.nzs)}
-                                    </td>
-                                    <td className="p-4 text-center text-text-muted" title="Defensive Zone Shots">
-                                        {loadingAdvanced ? '...' : displayMetric(team.dzs)}
-                                    </td>
+                                        {/* Zone Metrics */}
+                                        <td className="p-4 text-center text-text-muted" title="Offensive Zone Shots">
+                                            {loadingAdvanced ? '...' : displayMetric(team.ozs)}
+                                        </td>
+                                        <td className="p-4 text-center text-text-muted" title="Neutral Zone Shots">
+                                            {loadingAdvanced ? '...' : displayMetric(team.nzs)}
+                                        </td>
+                                        <td className="p-4 text-center text-text-muted" title="Defensive Zone Shots">
+                                            {loadingAdvanced ? '...' : displayMetric(team.dzs)}
+                                        </td>
 
-                                    {/* Shot Generation */}
-                                    <td className="p-4 text-center text-text-muted" title="Forecheck/Cycle Shots">
-                                        {loadingAdvanced ? '...' : displayMetric(team.fc)}
-                                    </td>
-                                    <td className="p-4 text-center text-text-muted" title="Rush Shots">
-                                        {loadingAdvanced ? '...' : displayMetric(team.rush)}
-                                    </td>
+                                        {/* Shot Generation */}
+                                        <td className="p-4 text-center text-text-muted" title="Forecheck/Cycle Shots">
+                                            {loadingAdvanced ? '...' : displayMetric(team.fc)}
+                                        </td>
+                                        <td className="p-4 text-center text-text-muted" title="Rush Shots">
+                                            {loadingAdvanced ? '...' : displayMetric(team.rush)}
+                                        </td>
 
-                                    {/* Turnovers */}
-                                    <td className="p-4 text-center text-text-muted" title="Neutral Zone Turnovers">
-                                        {loadingAdvanced ? '...' : displayMetric(team.nzts)}
-                                    </td>
-                                    <td className="p-4 text-center text-text-muted" title="NZ Turnovers to Shots Against">
-                                        {loadingAdvanced ? '...' : displayMetric(team.nztsa)}
-                                    </td>
+                                        {/* Turnovers */}
+                                        <td className="p-4 text-center text-text-muted" title="Neutral Zone Turnovers">
+                                            {loadingAdvanced ? '...' : displayMetric(team.nzts)}
+                                        </td>
+                                        <td className="p-4 text-center text-text-muted" title="NZ Turnovers to Shots Against">
+                                            {loadingAdvanced ? '...' : displayMetric(team.nztsa)}
+                                        </td>
 
-                                    {/* Movement */}
-                                    <td className="p-4 text-center text-text-muted" title="Lateral Movement">
-                                        {loadingAdvanced ? '...' : displayMetric(team.lat)}
-                                    </td>
-                                    <td className="p-4 text-center text-text-muted" title="Longitudinal Movement">
-                                        {loadingAdvanced ? '...' : displayMetric(team.long_movement)}
-                                    </td>
+                                        {/* Movement */}
+                                        <td className="p-4 text-center text-text-muted" title="Lateral Movement">
+                                            {loadingAdvanced ? '...' : displayMetric(team.lat)}
+                                        </td>
+                                        <td className="p-4 text-center text-text-muted" title="Longitudinal Movement">
+                                            {loadingAdvanced ? '...' : displayMetric(team.long_movement)}
+                                        </td>
 
-                                    {/* Shooting */}
-                                    <td className="p-4 text-center text-text-muted" title="Shots on Goal">
-                                        {loadingAdvanced ? '...' : displayMetric(team.shots)}
-                                    </td>
-                                    <td className="p-4 text-center text-text-muted" title="Goals per Game">
-                                        {loadingAdvanced ? '...' : displayMetric(team.goals)}
-                                    </td>
-                                    <td className="p-4 text-center text-text-muted" title="Goals Against per Game">
-                                        {loadingAdvanced ? '...' : displayMetric(team.ga_gp)}
-                                    </td>
+                                        {/* Shooting */}
+                                        <td className="p-4 text-center text-text-muted" title="Shots on Goal">
+                                            {loadingAdvanced ? '...' : displayMetric(team.shots)}
+                                        </td>
+                                        <td className="p-4 text-center text-text-muted" title="Goals per Game">
+                                            {loadingAdvanced ? '...' : displayMetric(team.goals)}
+                                        </td>
+                                        <td className="p-4 text-center text-text-muted" title="Goals Against per Game">
+                                            {loadingAdvanced ? '...' : displayMetric(team.ga_gp)}
+                                        </td>
 
-                                    {/* Possession */}
-                                    <td className="p-4 text-center text-text-muted" title="Corsi For %">
-                                        {loadingAdvanced ? '...' : displayMetric(team.corsi_pct)}
-                                    </td>
+                                        {/* Possession */}
+                                        <td className="p-4 text-center text-text-muted" title="Corsi For %">
+                                            {loadingAdvanced ? '...' : displayMetric(team.corsi_pct)}
+                                        </td>
 
-                                    {/* Physical */}
-                                    <td className="p-4 text-center text-text-muted" title="Hits per Game">
-                                        {loadingAdvanced ? '...' : displayMetric(team.hits)}
-                                    </td>
-                                    <td className="p-4 text-center text-text-muted" title="Blocked Shots">
-                                        {loadingAdvanced ? '...' : displayMetric(team.blocks)}
-                                    </td>
-                                    <td className="p-4 text-center text-text-muted" title="Giveaways">
-                                        {loadingAdvanced ? '...' : displayMetric(team.giveaways)}
-                                    </td>
-                                    <td className="p-4 text-center text-text-muted" title="Takeaways">
-                                        {loadingAdvanced ? '...' : displayMetric(team.takeaways)}
-                                    </td>
-                                    <td className="p-4 text-center text-text-muted" title="Penalty Minutes">
-                                        {loadingAdvanced ? '...' : displayMetric(team.pim)}
-                                    </td>
+                                        {/* Physical */}
+                                        <td className="p-4 text-center text-text-muted" title="Hits per Game">
+                                            {loadingAdvanced ? '...' : displayMetric(team.hits)}
+                                        </td>
+                                        <td className="p-4 text-center text-text-muted" title="Blocked Shots">
+                                            {loadingAdvanced ? '...' : displayMetric(team.blocks)}
+                                        </td>
+                                        <td className="p-4 text-center text-text-muted" title="Giveaways">
+                                            {loadingAdvanced ? '...' : displayMetric(team.giveaways)}
+                                        </td>
+                                        <td className="p-4 text-center text-text-muted" title="Takeaways">
+                                            {loadingAdvanced ? '...' : displayMetric(team.takeaways)}
+                                        </td>
+                                        <td className="p-4 text-center text-text-muted" title="Penalty Minutes">
+                                            {loadingAdvanced ? '...' : displayMetric(team.pim)}
+                                        </td>
 
-                                    {/* Special Teams */}
-                                    <td className="p-4 text-center text-text-muted" title="Power Play %">
-                                        {loadingAdvanced ? '...' : displayMetric(team.pp_pct)}
-                                    </td>
-                                    <td className="p-4 text-center text-text-muted" title="Penalty Kill %">
-                                        {loadingAdvanced ? '...' : displayMetric(team.pk_pct)}
-                                    </td>
-                                    <td className="p-4 text-center text-text-muted" title="Faceoff %">
-                                        {loadingAdvanced ? '...' : displayMetric(team.fo_pct)}
-                                    </td>
-                                </motion.tr>
-                            ))}
+                                        {/* Special Teams */}
+                                        <td className="p-4 text-center text-text-muted" title="Power Play %">
+                                            {loadingAdvanced ? '...' : displayMetric(team.pp_pct)}
+                                        </td>
+                                        <td className="p-4 text-center text-text-muted" title="Penalty Kill %">
+                                            {loadingAdvanced ? '...' : displayMetric(team.pk_pct)}
+                                        </td>
+                                        <td className="p-4 text-center text-text-muted" title="Faceoff %">
+                                            {loadingAdvanced ? '...' : displayMetric(team.fo_pct)}
+                                        </td>
+                                    </motion.tr>
+                                ))
+                            )}
                         </tbody>
                     </table>
+                    {viewMode === 'players' && loadingPlayers && (
+                        <div className="p-8 text-center">
+                            <div className="inline-block h-8 w-8 rounded-full border-t-2 border-b-2 border-accent-primary animate-spin"></div>
+                            <p className="mt-2 text-text-muted">Loading player stats...</p>
+                        </div>
+                    )}
+                    {viewMode === 'players' && !loadingPlayers && sortedPlayerData.length === 0 && (
+                        <div className="p-8 text-center text-text-muted">
+                            No players found matching your search.
+                        </div>
+                    )}
                 </div>
             </div>
         </div>

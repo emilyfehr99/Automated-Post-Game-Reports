@@ -2,6 +2,9 @@ from flask import Flask, jsonify, request
 from flask_cors import CORS
 import json
 import os
+import csv
+import io
+import requests
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
@@ -30,10 +33,11 @@ CACHE_DURATION = timedelta(hours=1)  # Cache for 1 hour
 def load_json(filename):
     """Load JSON file from current directory"""
     try:
-        with open(filename, 'r') as f:
+        file_path = os.path.join(DATA_DIR, filename)
+        with open(file_path, 'r') as f:
             return json.load(f)
     except FileNotFoundError:
-        print(f"Warning: {filename} not found, returning empty dict")
+        print(f"Warning: {filename} not found at {file_path}, returning empty dict")
         return {}
     except json.JSONDecodeError as e:
         print(f"Error decoding {filename}: {e}")
@@ -42,7 +46,7 @@ def load_json(filename):
 def get_file_mtime(filename):
     """Get file modification time"""
     try:
-        return os.path.getmtime(filename)
+        return os.path.getmtime(os.path.join(DATA_DIR, filename))
     except:
         return None
 
@@ -241,7 +245,9 @@ def get_team_metrics():
             'fo_pct': round((home_fo_pct + away_fo_pct) / 2, 1),
             
             # Meta
-            'gamesProcessed': len(home_stats.get('games', [])) + len(away_stats.get('games', []))
+            'gamesProcessed': len(home_stats.get('games', [])) + len(away_stats.get('games', [])),
+            'l10': team_data.get('l10Wins', 0), # Fallback if not in data
+            'streak': team_data.get('streakCode', '') + str(team_data.get('streakCount', ''))
         }
     
     # Cache the results
@@ -272,6 +278,73 @@ def get_team_heatmap(team_abbr):
         # Get recent games (increased to 10)
         game_ids = client.get_team_recent_games(team_abbr, limit=10)
         
+        # Get roster for player name mapping
+        roster = client.get_team_roster(team_abbr)
+        player_names = {}
+        if roster:
+            for position in ['forwards', 'defensemen', 'goalies']:
+                for player in roster.get(position, []):
+                    player_names[player['id']] = f"{player['firstName']['default']} {player['lastName']['default']}"
+
+        def calculate_xg(x, y, shot_type):
+            """
+            Estimate xG based on location and shot type.
+            Coordinates are from center ice (0,0) to (100, 42.5).
+            Net is approx at x=89.
+            """
+            import math
+            
+            # Normalize to offensive zone coordinates (0-100)
+            # Abs(x) because we don't know which side they are shooting at, but shots are usually recorded relative to net
+            # Standardize: Net is at 89, 0
+            
+            # Distance to net
+            # If x is negative, it might be the other side, but usually API returns coordinates relative to rink center
+            # We'll assume offensive zone logic: closer to 89 is closer to net
+            
+            # Simple distance calculation from (89, 0)
+            # x is usually -100 to 100. 
+            
+            # Use absolute x to treat both sides symmetrically if needed, 
+            # but usually we care about distance to NEAREST net.
+            # Net locations are -89 and 89.
+            
+            dist_to_right_net = math.sqrt((89 - x)**2 + y**2)
+            dist_to_left_net = math.sqrt((-89 - x)**2 + y**2)
+            
+            distance = min(dist_to_right_net, dist_to_left_net)
+            
+            # Base probability based on distance
+            # Exponential decay: P = 0.4 * e^(-0.05 * distance)
+            # At 0ft: 0.4
+            # At 10ft: 0.24
+            # At 20ft: 0.14
+            # At 40ft: 0.05
+            prob = 0.4 * math.exp(-0.05 * distance)
+            
+            # Adjust for shot type
+            multipliers = {
+                'tip-in': 1.5,
+                'deflected': 1.3,
+                'slap': 0.8,  # Often further away
+                'snap': 1.0,
+                'wrist': 1.0,
+                'backhand': 0.9,
+                'wrap-around': 1.2
+            }
+            
+            shot_type_key = str(shot_type).lower() if shot_type else 'wrist'
+            mult = multipliers.get(shot_type_key, 1.0)
+            
+            # Bonus for central angle (closer to y=0)
+            angle_mult = 1.0
+            if abs(y) < 10:
+                angle_mult = 1.2
+            elif abs(y) > 20:
+                angle_mult = 0.8
+                
+            return min(0.99, prob * mult * angle_mult)
+
         shots_for = []
         goals_for = []
         shots_against = []
@@ -297,15 +370,39 @@ def get_team_heatmap(team_abbr):
                     continue
                 
                 is_for = (int(event_owner_id) == int(target_team_id)) if target_team_id else True
+                
+                # Resolve shooter name
+                shooter_id = details.get('shootingPlayerId') or details.get('scoringPlayerId')
+                shooter_name = details.get('shootingPlayerName') or details.get('scoringPlayerName')
+                
+                if not shooter_name and shooter_id:
+                    shooter_name = player_names.get(shooter_id)
+                
+                # Calculate xG
+                xg = calculate_xg(x, y, details.get('shotType'))
                     
                 if play.get('typeDescKey') == 'shot-on-goal':
-                    point = {'x': x, 'y': y}
+                    point = {
+                        'x': x, 
+                        'y': y,
+                        'shotType': details.get('shotType'),
+                        'shooterId': shooter_id,
+                        'shooter': shooter_name,
+                        'xg': round(xg, 3)
+                    }
                     if is_for:
                         shots_for.append(point)
                     else:
                         shots_against.append(point)
                 elif play.get('typeDescKey') == 'goal':
-                    point = {'x': x, 'y': y}
+                    point = {
+                        'x': x, 
+                        'y': y,
+                        'shotType': details.get('shotType'),
+                        'shooterId': shooter_id,
+                        'shooter': shooter_name,
+                        'xg': round(xg, 3)
+                    }
                     if is_for:
                         goals_for.append(point)
                     else:
@@ -527,6 +624,103 @@ def get_live_game_data(game_id):
     except Exception as e:
         print(f"Error in live-game endpoint: {e}")
         return jsonify({"error": str(e)}), 500
+
+@app.route('/api/lines/<team_abbrev>', methods=['GET'])
+def get_team_lines(team_abbrev):
+    """Get lines and pairings from MoneyPuck"""
+    try:
+        url = "https://moneypuck.com/moneypuck/playerData/seasonSummary/2025/regular/lines.csv"
+        response = requests.get(url, timeout=10)
+        if response.status_code != 200:
+            return jsonify({'error': 'Failed to fetch lines'}), 500
+        
+        lines_data = []
+        # Decode content to string
+        content = response.content.decode('utf-8')
+        csv_reader = csv.DictReader(io.StringIO(content))
+        
+        for row in csv_reader:
+            if row['team'] == team_abbrev.upper() and row['situation'] == '5on5':
+                # Parse players
+                players = row['name'].split('-')
+                
+                line_item = {
+                    'players': [{'name': p} for p in players],
+                    'position': row['position'], # 'line' or 'pairing'
+                    'icetime': float(row['icetime']),
+                    'games_played': int(row['games_played']),
+                    'xg_pct': float(row['xGoalsPercentage']) if row['xGoalsPercentage'] else 0.0,
+                    'goals_for': float(row['goalsFor']) if row['goalsFor'] else 0.0,
+                    'goals_against': float(row['goalsAgainst']) if row['goalsAgainst'] else 0.0
+                }
+                lines_data.append(line_item)
+        
+        # Sort by icetime descending
+        lines_data.sort(key=lambda x: x['icetime'], reverse=True)
+        
+        # Separate into forwards and defense
+        forwards = [l for l in lines_data if l['position'] == 'line'][:4]
+        defense = [l for l in lines_data if l['position'] == 'pairing'][:3]
+        
+        return jsonify({
+            'forwards': forwards,
+            'defense': defense
+        })
+        
+    except Exception as e:
+        print(f"Error fetching lines for {team_abbrev}: {e}")
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/player-stats', methods=['GET'])
+def get_player_stats():
+    """Get player stats from MoneyPuck"""
+    try:
+        season = request.args.get('season', '2025')
+        game_type = request.args.get('type', 'regular')
+        situation = request.args.get('situation', 'all')  # all, 5on5, etc
+        
+        url = f"https://moneypuck.com/moneypuck/playerData/seasonSummary/{season}/{game_type}/skaters.csv"
+        response = requests.get(url, timeout=15)
+        
+        if response.status_code != 200:
+            return jsonify({'error': 'Failed to fetch player stats'}), 500
+        
+        players_data = []
+        content = response.content.decode('utf-8')
+        csv_reader = csv.DictReader(io.StringIO(content))
+        
+        for row in csv_reader:
+            # Filter by situation if specified
+            if row['situation'] == situation:
+                player = {
+                    'name': row['name'],
+                    'team': row['team'],
+                    'position': row['position'],
+                    'games_played': int(row['games_played']) if row['games_played'] else 0,
+                    'icetime': float(row['icetime']) if row['icetime'] else 0,
+                    'goals': int(float(row['I_F_goals'])) if row['I_F_goals'] else 0,
+                    'assists': int(float(row['I_F_primaryAssists'])) + int(float(row['I_F_secondaryAssists'])) if row['I_F_primaryAssists'] and row['I_F_secondaryAssists'] else 0,
+                    'points': int(float(row['I_F_points'])) if row['I_F_points'] else 0,
+                    'shots': int(float(row['I_F_shotsOnGoal'])) if row['I_F_shotsOnGoal'] else 0,
+                    'game_score': round(float(row['gameScore']), 2) if row['gameScore'] else 0,
+                    'xgoals': round(float(row['I_F_xGoals']), 2) if row['I_F_xGoals'] else 0,
+                    'corsi_pct': round(float(row['onIce_corsiPercentage']) * 100, 1) if row['onIce_corsiPercentage'] else 0,
+                    'xgoals_pct': round(float(row['onIce_xGoalsPercentage']) * 100, 1) if row['onIce_xGoalsPercentage'] else 0,
+                    # New fields
+                    'I_F_shotAttempts': int(float(row['I_F_shotAttempts'])) if row.get('I_F_shotAttempts') else 0,
+                    'I_F_highDangerShots': int(float(row['I_F_highDangerShots'])) if row.get('I_F_highDangerShots') else 0,
+                    'I_F_highDangerxGoals': round(float(row['I_F_highDangerxGoals']), 2) if row.get('I_F_highDangerxGoals') else 0,
+                    'I_F_highDangerGoals': int(float(row['I_F_highDangerGoals'])) if row.get('I_F_highDangerGoals') else 0,
+                    'onIce_corsiPercentage': round(float(row['onIce_corsiPercentage']) * 100, 1) if row.get('onIce_corsiPercentage') else 0,
+                    'onIce_xGoalsPercentage': round(float(row['onIce_xGoalsPercentage']) * 100, 1) if row.get('onIce_xGoalsPercentage') else 0,
+                }
+                players_data.append(player)
+        
+        return jsonify(players_data)
+        
+    except Exception as e:
+        print(f"Error fetching player stats: {e}")
+        return jsonify({'error': str(e)}), 500
 
 if __name__ == '__main__':
     print("🏒 NHL Analytics API Server")

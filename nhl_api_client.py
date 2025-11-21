@@ -19,9 +19,9 @@ class NHLAPIClient:
             return response.json()
         return None
     
-    def get_team_roster(self, team_id):
-        """Get team roster by team ID"""
-        url = f"{self.base_url}/teams/{team_id}/roster"
+    def get_team_roster(self, team_abbr):
+        """Get team roster by team abbreviation"""
+        url = f"{self.base_url}/roster/{team_abbr}/current"
         response = self.session.get(url)
         if response.status_code == 200:
             return response.json()
