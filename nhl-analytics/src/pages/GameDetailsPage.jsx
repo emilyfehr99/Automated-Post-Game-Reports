@@ -1,5 +1,4 @@
 import React, { useEffect, useState } from 'react';
-import { createPortal } from 'react-dom';
 import { useParams, Link } from 'react-router-dom';
 import { nhlApi } from '../api/nhl';
 import { backendApi } from '../api/backend';
@@ -7,324 +6,180 @@ import { motion } from 'framer-motion';
 import { TrendingUp, Target, Zap, Activity, Shield, Crosshair, ArrowLeft, Clock, Users } from 'lucide-react';
 import clsx from 'clsx';
 
+// Team primary colors (hex)
+const TEAM_COLORS = {
+    'TBL': '#002868', 'NSH': '#FFB81C', 'EDM': '#041E42', 'FLA': '#C8102E',
+    'COL': '#6F263D', 'DAL': '#006847', 'BOS': '#FFB81C', 'TOR': '#00205B',
+    'MTL': '#AF1E2D', 'OTT': '#C8102E', 'BUF': '#002654', 'DET': '#CE1126',
+    'CAR': '#CC0000', 'WSH': '#C8102E', 'PIT': '#FFB81C', 'NYR': '#0038A8',
+    'NYI': '#00539B', 'NJD': '#CE1126', 'PHI': '#F74902', 'CBJ': '#002654',
+    'STL': '#002F87', 'MIN': '#154734', 'WPG': '#041E42', 'VGK': '#B4975A',
+    'SJS': '#006D75', 'LAK': '#111111', 'ANA': '#F47A38', 'CGY': '#C8102E',
+    'VAN': '#00205B', 'SEA': '#001628', 'UTA': '#000000', 'CHI': '#CF0A2C'
+};
+
 import ErrorBoundary from '../components/ErrorBoundary';
 import ShotChart from '../components/ShotChart';
 import PeriodStatsTable from '../components/PeriodStatsTable';
-import LinesPairings from '../components/LinesPairings';
 
-// Helper for metric cards
-const MetricCard = ({ title, icon: Icon, children, className }) => (
-    <motion.div
-        initial={{ opacity: 0, y: 20 }}
-        animate={{ opacity: 1, y: 0 }}
-        className={clsx("glass-card p-6", className)}
-    >
-        <div className="flex items-center gap-3 mb-4">
-            <div className="p-2 rounded-lg bg-white/5">
-                <Icon className="w-5 h-5 text-accent-primary" />
-            </div>
-            <h3 className="font-display font-bold text-lg tracking-wide">{title}</h3>
-        </div>
-        {children}
-    </motion.div>
-);
-
-// Helper for comparison rows
-const ComparisonRow = ({ label, awayVal, homeVal, format = (v) => v, awayTeam, homeTeam }) => {
-    const awayNum = parseFloat(awayVal) || 0;
-    const homeNum = parseFloat(homeVal) || 0;
-    const total = awayNum + homeNum;
-    const awayPct = total > 0 ? (awayNum / total) * 100 : 50;
-
-    return (
-        <div className="mb-4">
-            <div className="flex justify-between text-sm font-mono mb-2">
-                <div className="flex items-center gap-2">
-                    {awayTeam && <img src={awayTeam.logo} alt={awayTeam.abbrev} className="w-6 h-6 opacity-60" />}
-                    <span className={clsx(awayNum > homeNum ? "text-accent-primary font-bold" : "text-text-muted")}>
-                        {format(awayVal)}
-                    </span>
-                </div>
-                <span className="text-text-secondary uppercase text-xs tracking-wider">{label}</span>
-                <div className="flex items-center gap-2">
-                    <span className={clsx(homeNum > awayNum ? "text-accent-secondary font-bold" : "text-text-muted")}>
-                        {format(homeVal)}
-                    </span>
-                    {homeTeam && <img src={homeTeam.logo} alt={homeTeam.abbrev} className="w-6 h-6 opacity-60" />}
-                </div>
-            </div>
-            <div className="h-1.5 bg-white/5 rounded-full overflow-hidden flex">
-                <div
-                    className="h-full bg-accent-primary transition-all duration-500"
-                    style={{ width: `${awayPct}%` }}
-                />
-                <div
-                    className="h-full bg-accent-secondary transition-all duration-500"
-                    style={{ width: `${100 - awayPct}%` }}
-                />
-            </div>
-        </div>
+// Helper function to calculate Game Score
+const calculateGameScore = (stats) => {
+    const goals = stats.goals || 0;
+    const assists = stats.assists || 0;
+    const primaryAssists = stats.primaryAssists || 0;
+    const secondaryAssists = stats.secondaryAssists || 0;
+    const shots = stats.shots || 0;
+    const blockedShots = stats.blockedShots || 0;
+    const penaltiesDrawn = stats.penaltiesDrawn || 0;
+    const penalties = stats.pim || 0;
+    const faceoffWins = stats.faceoffWins || 0;
+    const faceoffTotal = (stats.faceoffWins || 0) + (stats.faceoffLosses || 0);
+    const plusMinus = stats.plusMinus || 0;
+    
+    // Simplified Game Score formula
+    // Game Score = 0.75×G + 0.7×A1 + 0.55×A2 + 0.075×SOG + 0.05×BLK + 0.15×PD - 0.15×PT + 0.01×FOW - 0.01×FOL + 0.15×GF - 0.15×GA
+    // Using plusMinus as proxy for GF-GA
+    const gameScore = (
+        0.75 * goals +
+        0.7 * primaryAssists +
+        0.55 * secondaryAssists +
+        0.075 * shots +
+        0.05 * blockedShots +
+        0.15 * penaltiesDrawn -
+        0.15 * (penalties / 2) + // Approximate penalties taken
+        0.01 * faceoffWins -
+        0.01 * (faceoffTotal - faceoffWins) +
+        0.15 * (plusMinus > 0 ? plusMinus : 0) -
+        0.15 * (plusMinus < 0 ? Math.abs(plusMinus) : 0)
     );
+    
+    return Math.round(gameScore * 10) / 10;
 };
 
-// Team Colors Mapping
-const TEAM_COLORS = {
-    ANA: '#F47A38', ARI: '#8C2633', BOS: '#FFB81C', BUF: '#FCB514', CGY: '#C8102E',
-    CAR: '#CC0000', CHI: '#CF0A2C', COL: '#6F263D', CBJ: '#002654', DAL: '#006847',
-    DET: '#CE1126', EDM: '#FF4C00', FLA: '#B9975B', LAK: '#111111', MIN: '#154734',
-    MTL: '#AF1E2D', NSH: '#FFB81C', NJD: '#CE1126', NYI: '#00539B', NYR: '#0038A8',
-    OTT: '#C52032', PHI: '#F74902', PIT: '#FCB514', SJS: '#006D75', SEA: '#99D9D9',
-    STL: '#002F87', TBL: '#002868', TOR: '#00205B', UTA: '#71AFE5', VAN: '#00205B',
-    VGK: '#B4975A', WPG: '#041E42', WSH: '#041E42'
-};
-
-const getTeamColor = (abbr) => TEAM_COLORS[abbr] || '#FFFFFF';
-
-const METRICS_CONFIG = [
-    { key: 'rank', liveKey: 'rank', label: 'RANK' },
-    { key: 'gp', liveKey: 'games_played', label: 'GP' },
-    { key: 'l10', liveKey: 'l10', label: 'L10' },
-    { key: 'streak', liveKey: 'streak', label: 'STREAK' },
-    { key: 'gf', liveKey: 'goals_for', label: 'GOALS FOR' },
-    { key: 'ga', liveKey: 'goals_against', label: 'GOALS AGAINST' },
-    { key: 'w', liveKey: 'wins', label: 'WINS' },
-    { key: 'l', liveKey: 'losses', label: 'LOSSES' },
-    { key: 'otl', liveKey: 'ot_losses', label: 'OT LOSSES' },
-    { key: 'pts', liveKey: 'points', label: 'POINTS' },
-    { key: 'pPct', liveKey: 'point_pct', label: 'POINT %', format: (v) => parseFloat(v || 0).toFixed(3) },
-    { key: 'diff', liveKey: 'goal_diff', label: 'GOAL DIFF' },
-    { key: 'gs', liveKey: 'game_score', label: 'GAME SCORE', format: (v) => parseFloat(v || 0).toFixed(1) },
-    { key: 'xg', liveKey: 'xg', label: 'EXPECTED GOALS', format: (v) => parseFloat(v || 0).toFixed(2) },
-    { key: 'hdc', liveKey: 'hdc', label: 'HIGH DANGER CHANCES' },
-    { key: 'hdca', liveKey: 'hdca', label: 'HD CHANCES AGAINST' },
-    { key: 'ozs', liveKey: 'ozs', label: 'OFF ZONE SHOTS' },
-    { key: 'nzs', liveKey: 'nzs', label: 'NEUTRAL ZONE SHOTS' },
-    { key: 'dzs', liveKey: 'dzs', label: 'DEF ZONE SHOTS' },
-    { key: 'fc', liveKey: 'fc', label: 'FORECHECK SHOTS' },
-    { key: 'rush', liveKey: 'rush', label: 'RUSH SHOTS' },
-    { key: 'nzts', liveKey: 'nzts', label: 'NEUTRAL ZONE TURNOVERS' },
-    { key: 'nztsa', liveKey: 'nztsa', label: 'NZ TURNOVERS/SA' },
-    { key: 'lat', liveKey: 'lateral', label: 'LATERAL MOVEMENT', format: (v) => parseFloat(v || 0).toFixed(1) },
-    { key: 'long_movement', liveKey: 'longitudinal', label: 'N-S MOVEMENT', format: (v) => parseFloat(v || 0).toFixed(1) },
-    { key: 'shots', liveKey: 'shots', label: 'SHOTS ON GOAL' },
-    { key: 'goals', liveKey: 'goals', label: 'GOALS', format: (v) => parseFloat(v || 0).toFixed(0) },
-    { key: 'ga_gp', liveKey: 'ga_gp', label: 'GOALS AGAINST/GP', format: (v) => parseFloat(v || 0).toFixed(2) },
-    { key: 'corsi_pct', liveKey: 'corsi_pct', label: 'CORSI %', format: (v) => v + '%' },
-    { key: 'hits', liveKey: 'hits', label: 'HITS' },
-    { key: 'blocks', liveKey: 'blocked_shots', label: 'BLOCKED SHOTS' },
-    { key: 'giveaways', liveKey: 'giveaways', label: 'GIVEAWAYS' },
-    { key: 'takeaways', liveKey: 'takeaways', label: 'TAKEAWAYS' },
-    { key: 'pim', liveKey: 'pim', label: 'PIM' },
-    { key: 'pp_pct', liveKey: 'pp_pct', label: 'POWER PLAY %', format: (v) => v + '%' },
-    { key: 'pk_pct', liveKey: 'pk_pct', label: 'PENALTY KILL %', format: (v) => v + '%' },
-    { key: 'fo_pct', liveKey: 'fo_pct', label: 'FACEOFF %', format: (v) => v + '%' },
-];
-
-const PreGameHeatmap = ({ preGameData, homeTeam, awayTeam }) => {
-    const [hoveredPoint, setHoveredPoint] = React.useState(null);
-    const [tooltipPos, setTooltipPos] = React.useState({ x: 0, y: 0 });
-    const containerRef = React.useRef(null);
-
-    const handlePointHover = (point, event, team) => {
-        // Calculate position relative to viewport
-        const mouseX = event.clientX;
-        const mouseY = event.clientY;
-
-        // Tooltip dimensions (approximate)
-        const tooltipWidth = 220;
-        const tooltipHeight = 120;
-
-        // Calculate position with boundary detection
-        let left = mouseX + 15;
-        let top = mouseY - 10;
-
-        // Keep tooltip within viewport bounds
-        if (left + tooltipWidth > window.innerWidth) {
-            left = mouseX - tooltipWidth - 15;
+// Extract top performers from boxscore (for completed/live games only)
+const extractTopPerformers = (boxscore) => {
+    const allPlayers = [];
+    
+    if (!boxscore) {
+        console.log('No boxscore provided');
+        return [];
+    }
+    
+    const awayTeam = boxscore.awayTeam;
+    const homeTeam = boxscore.homeTeam;
+    const playerByGameStats = boxscore.playerByGameStats || {};
+    
+    console.log('Extracting top performers from boxscore:', {
+        hasAwayTeam: !!awayTeam,
+        hasHomeTeam: !!homeTeam,
+        hasPlayerByGameStats: !!playerByGameStats,
+        playerByGameStatsKeys: Object.keys(playerByGameStats)
+    });
+    
+    // Process players from playerByGameStats (primary source)
+    const processPlayerGroup = (players, teamAbbrev) => {
+        if (!Array.isArray(players)) {
+            console.log(`Players not an array for ${teamAbbrev}:`, typeof players);
+            return;
         }
-        if (top + tooltipHeight > window.innerHeight) {
-            top = window.innerHeight - tooltipHeight - 10;
-        }
-        if (top < 0) {
-            top = 10;
-        }
-
-        setTooltipPos({ x: left, y: top });
-        setHoveredPoint({ ...point, team });
-    };
-
-    const clearHover = () => {
-        setHoveredPoint(null);
-    };
-
-    return (
-        <section className="glass-card p-6">
-            <div className="flex items-center gap-3 mb-6">
-                <Target className="w-6 h-6 text-accent-cyan" />
-                <h3 className="text-xl font-display font-bold">PRE-GAME INTEL: SHOT HEATMAP (L10 GAMES)</h3>
-            </div>
-            <div className="max-w-3xl mx-auto">
-                <div ref={containerRef} className="relative aspect-[200/85] bg-white/5 rounded-xl border border-white/10 overflow-hidden">
-                    <img src="/rink.jpeg" alt="Rink" className="absolute inset-0 w-full h-full object-fill" />
-
-                    {/* Team Logos on Ice */}
-                    <div className="absolute left-[15%] top-1/2 -translate-y-1/2 z-10">
-                        <img src={awayTeam.logo} alt={awayTeam.abbrev} className="w-16 h-16 opacity-20" />
-                    </div>
-                    <div className="absolute right-[15%] top-1/2 -translate-y-1/2 z-10">
-                        <img src={homeTeam.logo} alt={homeTeam.abbrev} className="w-16 h-16 opacity-20" />
-                    </div>
-
-                    {/* Home Team Points (Right Side) */}
-                    {preGameData.heatmaps.home?.goals_for?.map((point, i) => (
-                        <div
-                            key={`home-goal-${i}`}
-                            className="absolute w-3 h-3 rounded-full border border-white shadow-lg z-20 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-150 transition-transform"
-                            style={{
-                                backgroundColor: getTeamColor(homeTeam.abbrev),
-                                left: `${(Math.abs(point.x) + 100) / 2}%`,
-                                top: `${(42.5 - point.y) / 0.85}%`
-                            }}
-                            onMouseEnter={(e) => handlePointHover(point, e, homeTeam.abbrev)}
-                            onMouseLeave={clearHover}
-                        />
-                    ))}
-                    {preGameData.heatmaps.home?.shots_for?.map((point, i) => (
-                        <div
-                            key={`home-shot-${i}`}
-                            className="absolute w-1.5 h-1.5 rounded-full opacity-60 blur-[0.5px] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-150 hover:opacity-100 transition-all"
-                            style={{
-                                backgroundColor: getTeamColor(homeTeam.abbrev),
-                                left: `${(Math.abs(point.x) + 100) / 2}%`,
-                                top: `${(42.5 - point.y) / 0.85}%`
-                            }}
-                            onMouseEnter={(e) => handlePointHover(point, e, homeTeam.abbrev)}
-                            onMouseLeave={clearHover}
-                        />
-                    ))}
-
-                    {/* Away Team Points (Left Side) */}
-                    {preGameData.heatmaps.away?.goals_for?.map((point, i) => (
-                        <div
-                            key={`away-goal-${i}`}
-                            className="absolute w-3 h-3 rounded-full border border-white shadow-lg z-20 transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-150 transition-transform"
-                            style={{
-                                backgroundColor: getTeamColor(awayTeam.abbrev),
-                                left: `${(-Math.abs(point.x) + 100) / 2}%`,
-                                top: `${(42.5 - point.y) / 0.85}%`
-                            }}
-                            onMouseEnter={(e) => handlePointHover(point, e, awayTeam.abbrev)}
-                            onMouseLeave={clearHover}
-                        />
-                    ))}
-                    {preGameData.heatmaps.away?.shots_for?.map((point, i) => (
-                        <div
-                            key={`away-shot-${i}`}
-                            className="absolute w-1.5 h-1.5 rounded-full opacity-60 blur-[0.5px] transform -translate-x-1/2 -translate-y-1/2 cursor-pointer hover:scale-150 hover:opacity-100 transition-all"
-                            style={{
-                                backgroundColor: getTeamColor(awayTeam.abbrev),
-                                left: `${(-Math.abs(point.x) + 100) / 2}%`,
-                                top: `${(42.5 - point.y) / 0.85}%`
-                            }}
-                            onMouseEnter={(e) => handlePointHover(point, e, awayTeam.abbrev)}
-                            onMouseLeave={clearHover}
-                        />
-                    ))}
-
-                    {/* Tooltip */}
-                    {/* Tooltip - Rendered via Portal */}
-                    {hoveredPoint && createPortal(
-                        <div
-                            className="fixed z-[9999] bg-black/95 border border-white/20 rounded-lg p-3 shadow-2xl backdrop-blur-md min-w-[200px] max-w-[250px] pointer-events-none"
-                            style={{
-                                left: `${tooltipPos.x}px`,
-                                top: `${tooltipPos.y}px`,
-                            }}
-                        >
-                            <div className="text-xs font-mono space-y-1">
-                                <div className="flex items-center gap-2 mb-2 pb-2 border-b border-white/10">
-                                    <div className="w-3 h-3 rounded-full" style={{ backgroundColor: getTeamColor(hoveredPoint.team) }}></div>
-                                    <span className="font-bold text-white">{hoveredPoint.team}</span>
-                                </div>
-                                {hoveredPoint.shooter && (
-                                    <div className="text-text-muted">
-                                        <span className="text-white font-semibold">{hoveredPoint.shooter}</span>
-                                    </div>
-                                )}
-                                {hoveredPoint.xg !== undefined && (
-                                    <div>
-                                        <span className="text-accent-cyan">xG:</span>
-                                        <span className="text-white ml-2">{(hoveredPoint.xg || 0).toFixed(2)}</span>
-                                    </div>
-                                )}
-                                {hoveredPoint.shotType && (
-                                    <div>
-                                        <span className="text-accent-magenta">Shot Type:</span>
-                                        <span className="text-white ml-2 capitalize">{hoveredPoint.shotType}</span>
-                                    </div>
-                                )}
-                                {hoveredPoint.movement && (
-                                    <div>
-                                        <span className="text-accent-lime">Movement:</span>
-                                        <span className="text-white ml-2 capitalize">{hoveredPoint.movement}</span>
-                                    </div>
-                                )}
-                            </div>
-                        </div>,
-                        document.body
-                    )}
-                </div>
-            </div>
-        </section>
-    );
-};
-
-const constructPeriodStats = (metrics) => {
-    if (!metrics || !metrics.away_period_stats) return null;
-
-    const periods = [];
-    // Get max length of any stat array to determine periods
-    const maxLen = Math.max(
-        (metrics.away_period_stats.shots || []).length,
-        (metrics.home_period_stats.shots || []).length
-    );
-
-    for (let i = 0; i < maxLen; i++) {
-        periods.push({
-            period: i < 3 ? ['1st', '2nd', '3rd'][i] : (i === 3 ? 'OT' : 'SO'),
-            away_stats: {
-                goals: metrics.away_period_goals?.[i] || 0,
-                shots: metrics.away_period_stats.shots?.[i] || 0,
-                corsi: metrics.away_period_stats.corsi_pct?.[i] || 0,
-                xg: metrics.away_xg_by_period?.[i] || 0,
-                hits: metrics.away_period_stats.hits?.[i] || 0,
-                faceoff_pct: metrics.away_period_stats.fo_pct?.[i] || 0,
-                pim: metrics.away_period_stats.pim?.[i] || 0,
-                blocked_shots: metrics.away_period_stats.bs?.[i] || 0,
-                giveaways: metrics.away_period_stats.gv?.[i] || 0,
-                takeaways: metrics.away_period_stats.tk?.[i] || 0,
-                nzt: metrics.away_zone_metrics?.nz_turnovers?.[i] || 0,
-                ozs: metrics.away_zone_metrics?.oz_originating_shots?.[i] || 0,
-                rush: metrics.away_zone_metrics?.rush_sog?.[i] || 0
-            },
-            home_stats: {
-                goals: metrics.home_period_goals?.[i] || 0,
-                shots: metrics.home_period_stats.shots?.[i] || 0,
-                corsi: metrics.home_period_stats.corsi_pct?.[i] || 0,
-                xg: metrics.home_xg_by_period?.[i] || 0,
-                hits: metrics.home_period_stats.hits?.[i] || 0,
-                faceoff_pct: metrics.home_period_stats.fo_pct?.[i] || 0,
-                pim: metrics.home_period_stats.pim?.[i] || 0,
-                blocked_shots: metrics.home_period_stats.bs?.[i] || 0,
-                giveaways: metrics.home_period_stats.gv?.[i] || 0,
-                takeaways: metrics.home_period_stats.tk?.[i] || 0,
-                nzt: metrics.home_zone_metrics?.nz_turnovers?.[i] || 0,
-                ozs: metrics.home_zone_metrics?.oz_originating_shots?.[i] || 0,
-                rush: metrics.home_zone_metrics?.rush_sog?.[i] || 0
+        
+        console.log(`Processing ${players.length} players for ${teamAbbrev}`);
+        
+        players.forEach((player, idx) => {
+            try {
+                // Stats are directly on the player object, not in a nested 'stats' field
+                const stats = player.stats || player;
+                const gameScore = calculateGameScore(stats);
+                const gamesPlayed = 1;
+                
+                // Get name - could be object or string
+                let name = '';
+                const nameField = player.name;
+                if (typeof nameField === 'object' && nameField !== null) {
+                    name = nameField.default || '';
+                } else if (typeof nameField === 'string') {
+                    name = nameField;
+                }
+                
+                if (!name) {
+                    const firstName = player.firstName?.default || player.firstName || '';
+                    const lastName = player.lastName?.default || player.lastName || '';
+                    name = `${firstName} ${lastName}`.trim();
+                }
+                
+                // Get player ID and generate headshot URL
+                const playerId = player.playerId || player.id || player.playerID;
+                const headshot = playerId ? `https://assets.nhle.com/mugs/nhl/20242025/${playerId}.jpg` : null;
+                
+                // Include players with any stats (goals, assists, shots, or positive game score)
+                if (name && (stats.goals > 0 || stats.assists > 0 || stats.shots > 0 || stats.sog > 0 || stats.shotsOnGoal > 0 || gameScore > 0 || stats.hits > 0 || stats.blockedShots > 0)) {
+                    allPlayers.push({
+                        name: name,
+                        team: teamAbbrev,
+                        position: player.positionCode || player.position || '',
+                        sweaterNumber: player.sweaterNumber || player.jerseyNumber || '',
+                        playerId: playerId,
+                        headshot: headshot,
+                        gameScore: gameScore,
+                        gsPerGame: gameScore / gamesPlayed,
+                        goals: stats.goals || 0,
+                        assists: stats.assists || 0,
+                        points: (stats.goals || 0) + (stats.assists || 0),
+                        shots: stats.shots || stats.sog || stats.shotsOnGoal || 0
+                    });
+                }
+            } catch (e) {
+                console.error(`Error processing player ${idx} for ${teamAbbrev}:`, e, player);
             }
         });
+    };
+    
+    // Process away team players from playerByGameStats
+    const awayPlayerStats = playerByGameStats.awayTeam || {};
+    if (awayTeam?.abbrev) {
+        const awayForwards = awayPlayerStats.forwards || [];
+        const awayDefense = awayPlayerStats.defense || [];
+        const awayGoalies = awayPlayerStats.goalies || [];
+        
+        console.log(`Away team ${awayTeam.abbrev}:`, {
+            forwards: awayForwards.length,
+            defense: awayDefense.length,
+            goalies: awayGoalies.length
+        });
+        
+        processPlayerGroup(awayForwards, awayTeam.abbrev);
+        processPlayerGroup(awayDefense, awayTeam.abbrev);
+        processPlayerGroup(awayGoalies, awayTeam.abbrev);
     }
-    return periods;
+    
+    // Process home team players from playerByGameStats
+    const homePlayerStats = playerByGameStats.homeTeam || {};
+    if (homeTeam?.abbrev) {
+        const homeForwards = homePlayerStats.forwards || [];
+        const homeDefense = homePlayerStats.defense || [];
+        const homeGoalies = homePlayerStats.goalies || [];
+        
+        console.log(`Home team ${homeTeam.abbrev}:`, {
+            forwards: homeForwards.length,
+            defense: homeDefense.length,
+            goalies: homeGoalies.length
+        });
+        
+        processPlayerGroup(homeForwards, homeTeam.abbrev);
+        processPlayerGroup(homeDefense, homeTeam.abbrev);
+        processPlayerGroup(homeGoalies, homeTeam.abbrev);
+    }
+    
+    console.log(`Total players extracted: ${allPlayers.length}`);
+    
+    // Sort by GS/GP and return top 5
+    const sorted = allPlayers
+        .filter(p => p && (p.gsPerGame > 0 || p.points > 0 || p.goals > 0 || p.assists > 0))
+        .sort((a, b) => (b.gsPerGame || 0) - (a.gsPerGame || 0))
+        .slice(0, 5);
+    
+    console.log('Top 5 players:', sorted);
+    return sorted;
 };
 
 const GameDetailsContent = () => {
@@ -332,109 +187,266 @@ const GameDetailsContent = () => {
     const [gameData, setGameData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [liveData, setLiveData] = useState(null);
-    const [linesData, setLinesData] = useState({ away: null, home: null });
-    const [activeTab, setActiveTab] = useState('overview');
-    const [preGameData, setPreGameData] = useState({
-        heatmaps: { home: [], away: [] },
-        metrics: { home: {}, away: {} }
-    });
+    const [teamMetrics, setTeamMetrics] = useState({});
+    const [prediction, setPrediction] = useState(null);
+    const [awayHeatmap, setAwayHeatmap] = useState(null);
+    const [homeHeatmap, setHomeHeatmap] = useState(null);
+    const [shotsFromPbp, setShotsFromPbp] = useState([]);
+    const [topPerformers, setTopPerformers] = useState([]);
 
     useEffect(() => {
-        let mounted = true;
-
         const fetchGameData = async () => {
             try {
-                const data = await nhlApi.getGameCenter(id);
-                if (!mounted) return;
+                console.log('Fetching game data for ID:', id);
+                // First, fetch essential game data quickly
+                const data = await nhlApi.getGameCenter(id).catch(err => {
+                    console.error('Error fetching game center:', err);
+                    throw err;
+                });
+
+                console.log('Game data received:', data);
+                
+                if (!data) {
+                    console.error('No game data returned');
+                    setLoading(false);
+                    return;
+                }
+                
+                // Check if data structure is correct
+                if (!data.boxscore) {
+                    console.error('Game data missing boxscore:', data);
+                    setLoading(false);
+                    return;
+                }
+
+                // Set game data immediately so page can render
                 setGameData(data);
-
-                // If game is live or finished, fetch live data
-                if (data?.boxscore?.gameState === 'LIVE' ||
-                    data?.boxscore?.gameState === 'CRIT' ||
-                    data?.boxscore?.gameState === 'FINAL' ||
-                    data?.boxscore?.gameState === 'OFF') {
-                    backendApi.getLiveGame(id)
-                        .then(liveData => {
-                            if (mounted) setLiveData(liveData);
-                        })
-                        .catch(() => null);
-                }
-                // If game is scheduled/pre-game, fetch pre-game data
-                else if (data?.boxscore) {
-                    const { homeTeam, awayTeam } = data.boxscore;
-                    fetchPreGameData(homeTeam.abbrev, awayTeam.abbrev);
-                }
-            } catch (error) {
-                console.error('Failed to fetch game data:', error);
-            } finally {
-                if (mounted) setLoading(false);
-            }
-        };
-
-        const fetchPreGameData = async (homeAbbr, awayAbbr) => {
-            try {
-                const [homeHeatmap, awayHeatmap, allMetrics] = await Promise.all([
-                    backendApi.getTeamHeatmap(homeAbbr),
-                    backendApi.getTeamHeatmap(awayAbbr),
-                    backendApi.getTeamMetrics()
-                ]);
-
-                if (mounted) {
-                    setPreGameData({
-                        heatmaps: {
-                            home: homeHeatmap,
-                            away: awayHeatmap
-                        },
-                        metrics: {
-                            home: allMetrics[homeAbbr] || {},
-                            away: allMetrics[awayAbbr] || {}
+                setLoading(false); // Allow page to render while we fetch additional data
+                
+                // Fetch live data and other non-essential data in background
+                const gameState = data.boxscore.gameState;
+                const awayAbbr = data.boxscore.awayTeam?.abbrev;
+                const homeAbbr = data.boxscore.homeTeam?.abbrev;
+                
+                // Extract shots from play-by-play in background (non-blocking)
+                // This is a fallback - prefer liveData?.shots_data from backend which has proper names and xG
+                if (data?.playByPlay && data?.boxscore) {
+                    // Do this in background so it doesn't block page render
+                    setTimeout(() => {
+                        try {
+                            const plays = data.playByPlay.plays || data.playByPlay || [];
+                            const awayTeam = data.boxscore.awayTeam;
+                            const homeTeam = data.boxscore.homeTeam;
+                            const shots = [];
+                            
+                            // Create player name lookup from rosterSpots
+                            const playerNameMap = {};
+                            if (data.playByPlay.rosterSpots) {
+                                data.playByPlay.rosterSpots.forEach(player => {
+                                    const playerId = player.playerId;
+                                    const firstName = player.firstName?.default || player.firstName || '';
+                                    const lastName = player.lastName?.default || player.lastName || '';
+                                    if (playerId && (firstName || lastName)) {
+                                        playerNameMap[playerId] = `${firstName} ${lastName}`.trim();
+                                    }
+                                });
+                            }
+                            
+                            if (Array.isArray(plays)) {
+                                plays.forEach(play => {
+                                    const eventType = play.typeDescKey || play.typeDesc;
+                                    if (eventType && ['goal', 'shot-on-goal', 'missed-shot', 'blocked-shot'].includes(eventType)) {
+                                        const details = play.details || {};
+                                        const x = details.xCoord;
+                                        const y = details.yCoord;
+                                        
+                                        if (x !== null && x !== undefined && y !== null && y !== undefined) {
+                                            const teamId = details.eventOwnerTeamId;
+                                            const teamAbbrev = (teamId === awayTeam?.id) ? awayTeam.abbrev : 
+                                                             (teamId === homeTeam?.id) ? homeTeam.abbrev : 
+                                                             (details.eventOwnerTeamId ? 'UNK' : null);
+                                            
+                                            if (teamAbbrev) {
+                                                const playerId = details.shootingPlayerId || details.scoringPlayerId;
+                                                const shooterName = playerId ? (playerNameMap[playerId] || `Player #${playerId}`) : 'Unknown';
+                                                
+                                                shots.push({
+                                                    x: x,
+                                                    y: y,
+                                                    type: eventType === 'goal' ? 'GOAL' : 'SHOT',
+                                                    team: teamAbbrev,
+                                                    period: play.periodDescriptor?.number || play.period || 1,
+                                                    time: play.timeInPeriod || play.time || '00:00',
+                                                    shooter: shooterName,
+                                                    player_id: playerId,
+                                                    shotType: details.shotType || 'wrist',
+                                                    xg: null // Will be calculated by backend if available
+                                                });
+                                            }
+                                        }
+                                    }
+                                });
+                            }
+                            
+                            console.log(`Extracted ${shots.length} shots from play-by-play data`);
+                            setShotsFromPbp(shots);
+                        } catch (error) {
+                            console.error('Error extracting shots from play-by-play:', error);
+                            setShotsFromPbp([]);
                         }
+                    }, 0);
+                }
+                
+                // Fetch live data if game is live or completed (for period stats)
+                if (gameState === 'LIVE' || gameState === 'CRIT' || gameState === 'OFF' || gameState === 'FINAL') {
+                    backendApi.getLiveGame(id)
+                        .then(liveGameData => {
+                            console.log('Live game data received:', {
+                                hasPeriodStats: !!liveGameData?.period_stats,
+                                periodStatsLength: liveGameData?.period_stats?.length,
+                                hasLiveMetrics: !!liveGameData?.live_metrics,
+                                hasLiveMetricsPeriodStats: !!liveGameData?.live_metrics?.period_stats,
+                                liveMetricsPeriodStatsLength: liveGameData?.live_metrics?.period_stats?.length,
+                                liveMetricsKeys: liveGameData?.live_metrics ? Object.keys(liveGameData.live_metrics).slice(0, 20) : []
+                            });
+                            setLiveData(liveGameData);
+                        })
+                        .catch(err => console.error('Error fetching live data:', err));
+                }
+
+                // Fetch additional data in background (non-blocking)
+                if (awayAbbr && homeAbbr) {
+                    // Fetch team metrics and prediction in parallel (non-blocking)
+                    Promise.all([
+                        backendApi.getTeamMetrics().catch(() => ({})),
+                        backendApi.getGamePrediction(id).catch(() => null),
+                        // Fetch heatmap data for pre-game only (last 5 games)
+                        (gameState === 'FUT' || gameState === 'PREVIEW') 
+                            ? backendApi.getTeamHeatmap(awayAbbr).catch(() => null)
+                            : Promise.resolve(null),
+                        (gameState === 'FUT' || gameState === 'PREVIEW')
+                            ? backendApi.getTeamHeatmap(homeAbbr).catch(() => null)
+                            : Promise.resolve(null)
+                    ]).then(([metrics, gamePrediction, awayHeat, homeHeat]) => {
+                        setTeamMetrics(metrics || {});
+                        setPrediction(gamePrediction);
+                        setAwayHeatmap(awayHeat);
+                        setHomeHeatmap(homeHeat);
+                    }).catch(err => {
+                        console.error('Failed to fetch additional team data:', err);
+                        // Don't block page render if these fail
                     });
                 }
             } catch (error) {
-                console.error('Failed to fetch pre-game data:', error);
+                console.error('Failed to fetch game data:', error);
+                console.error('Error details:', error.message, error.stack);
+                setLoading(false);
+                // Set error state so we can show a better error message
+                setGameData(null);
             }
         };
 
         fetchGameData();
+        
+        // Poll for game state changes and live data every 30s
+        // Always poll to catch games transitioning from FUT -> LIVE -> FINAL
+        const interval = setInterval(() => {
+            // Always refresh game data to check for state changes
+            nhlApi.getGameCenter(id)
+                .then(updatedGameData => {
+                    if (updatedGameData) {
+                        const currentState = updatedGameData?.boxscore?.gameState;
+                        const previousState = gameData?.boxscore?.gameState;
+                        
+                        // Update game data to reflect state changes
+                        setGameData(updatedGameData);
+                        
+                        // If game is live, just became live, or completed, fetch live data
+                        if (currentState === 'LIVE' || currentState === 'CRIT' || currentState === 'OFF' || currentState === 'FINAL') {
+                            Promise.all([
+                                backendApi.getLiveGame(id).catch(() => null),
+                                (currentState === 'LIVE' || currentState === 'CRIT') 
+                                    ? backendApi.getTeamMetrics().catch(() => ({}))
+                                    : Promise.resolve({})
+                            ]).then(([live, metrics]) => {
+                                setLiveData(live);
+                                if (currentState === 'LIVE' || currentState === 'CRIT') {
+                                    setTeamMetrics(metrics);
+                                }
+                            }).catch(err => console.error('Live data polling error:', err));
+                        }
+                        
+                        // Log state transitions for debugging
+                        if (previousState && previousState !== currentState) {
+                            console.log(`Game state changed: ${previousState} -> ${currentState}`);
+                        }
+                    }
+                })
+                .catch(err => console.error('Game data polling error:', err));
+        }, 30000);
 
-        // Poll for updates every 30s
-        const interval = setInterval(fetchGameData, 30000);
-
-        return () => {
-            mounted = false;
-            clearInterval(interval);
-        };
-    }, [id]);
-
-    // Fetch lines when game data is available
+        return () => clearInterval(interval);
+    }, [id]); // Remove gameState from dependencies so we always poll
+    
+    // Extract top performers when gameData changes or when live data updates
     useEffect(() => {
         if (gameData?.boxscore) {
-            const awayAbbrev = gameData.boxscore.awayTeam?.abbrev;
-            const homeAbbrev = gameData.boxscore.homeTeam?.abbrev;
-
-            if (awayAbbrev && homeAbbrev) {
-                const fetchLines = async () => {
+            const gameState = gameData.boxscore.gameState;
+            const awayAbbr = gameData.boxscore.awayTeam?.abbrev;
+            const homeAbbr = gameData.boxscore.homeTeam?.abbrev;
+            
+            // For completed or live games, extract from current game
+            if (gameState === 'FINAL' || gameState === 'OFF' || gameState === 'LIVE' || gameState === 'CRIT') {
+                try {
+                    const performers = extractTopPerformers(gameData.boxscore);
+                    setTopPerformers(performers);
+                    console.log('Top performers extracted from current game:', performers);
+                } catch (error) {
+                    console.error('Error extracting top performers:', error);
+                    setTopPerformers([]);
+                }
+            } else {
+                // Pre-game - get top performers from recent games
+                const fetchRecentPerformers = async () => {
                     try {
-                        const [awayLinesResponse, homeLinesResponse] = await Promise.all([
-                            fetch(`${import.meta.env.MODE === 'production' ? 'https://nhl-analytics-api.onrender.com' : (import.meta.env.VITE_API_URL || 'http://localhost:5002')}/api/lines/${awayAbbrev}`),
-                            fetch(`${import.meta.env.MODE === 'production' ? 'https://nhl-analytics-api.onrender.com' : (import.meta.env.VITE_API_URL || 'http://localhost:5002')}/api/lines/${homeAbbrev}`)
-                        ]);
-
-                        const awayLines = await awayLinesResponse.json();
-                        const homeLines = await homeLinesResponse.json();
-
-                        if (!awayLines.error && !homeLines.error) {
-                            setLinesData({ away: awayLines, home: homeLines });
+                        if (awayAbbr && homeAbbr) {
+                            console.log('Fetching top performers for pre-game:', { awayAbbr, homeAbbr });
+                            
+                            const [awayPerformers, homePerformers] = await Promise.all([
+                                backendApi.getTeamTopPerformers(awayAbbr).catch((err) => {
+                                    console.error(`Error fetching away performers for ${awayAbbr}:`, err);
+                                    return [];
+                                }),
+                                backendApi.getTeamTopPerformers(homeAbbr).catch((err) => {
+                                    console.error(`Error fetching home performers for ${homeAbbr}:`, err);
+                                    return [];
+                                })
+                            ]);
+                            
+                            console.log('Away performers:', awayPerformers);
+                            console.log('Home performers:', homePerformers);
+                            
+                            // Combine and sort by GS/GP
+                            const allPerformers = [...(awayPerformers || []), ...(homePerformers || [])]
+                                .filter(p => p && (p.gsPerGame > 0 || p.points > 0))
+                                .sort((a, b) => (b.gsPerGame || 0) - (a.gsPerGame || 0))
+                                .slice(0, 5);
+                            
+                            console.log('Combined top performers:', allPerformers);
+                            setTopPerformers(allPerformers);
+                        } else {
+                            console.log('Missing team abbreviations:', { awayAbbr, homeAbbr });
                         }
-                    } catch (e) {
-                        console.error("Failed to fetch lines", e);
+                    } catch (error) {
+                        console.error('Error fetching recent top performers:', error);
+                        setTopPerformers([]);
                     }
                 };
-                fetchLines();
+                
+                fetchRecentPerformers();
             }
         }
-    }, [gameData?.boxscore?.awayTeam?.abbrev, gameData?.boxscore?.homeTeam?.abbrev]);
+    }, [gameData, liveData]); // Also update when liveData changes for live games
 
     if (loading) {
         return (
@@ -458,527 +470,107 @@ const GameDetailsContent = () => {
         );
     }
 
-    const boxscore = gameData?.boxscore || gameData?.game_center?.boxscore || {};
-    const { awayTeam, homeTeam, gameState, period, clock } = boxscore;
-
-    // Defensive check: if we don't have team data, show error
+    // Safely extract boxscore data
+    const boxscore = gameData?.boxscore || {};
+    const { awayTeam, homeTeam, gameState, period, clock, startTimeUTC } = boxscore;
+    const isLive = gameState === 'LIVE' || gameState === 'CRIT';
+    const isFinal = gameState === 'FINAL' || gameState === 'OFF';
+    
+    // Safety check - if we don't have essential data, show error
     if (!awayTeam || !homeTeam) {
+        console.error('Missing team data in boxscore:', boxscore);
         return (
             <div className="flex flex-col items-center justify-center h-[60vh] text-center">
                 <h2 className="text-2xl font-display font-bold mb-4">Game Data Incomplete</h2>
-                <p className="text-text-muted mb-4">Unable to load team information</p>
+                <p className="text-gray-400 mb-4">Unable to load team information.</p>
                 <Link to="/" className="px-6 py-2 rounded-lg bg-accent-primary text-bg-primary font-bold hover:bg-accent-secondary transition-colors">
                     Back to Dashboard
                 </Link>
             </div>
         );
     }
-
-    const isLive = gameState === 'LIVE' || gameState === 'CRIT';
-    const isFinal = gameState === 'FINAL' || gameState === 'OFF';
-
-
-    const renderTabContent = () => {
-        // PRE-GAME CONTENT
-        if (!isLive && !isFinal) {
-            switch (activeTab) {
-                case 'lines':
-                    return (
-                        <LinesPairings
-                            boxscore={gameData.boxscore}
-                            awayTeam={awayTeam}
-                            homeTeam={homeTeam}
-                            awayLines={linesData.away}
-                            homeLines={linesData.home}
-                        />
-                    );
-                case 'visuals':
-                    return (
-                        <PreGameHeatmap
-                            preGameData={preGameData}
-                            homeTeam={homeTeam}
-                            awayTeam={awayTeam}
-                        />
-                    );
-                case 'advanced':
-                    return (
-                        <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <MetricCard title="OFFENSE" icon={Zap}>
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="GAME SCORE"
-                                    awayVal={preGameData.metrics.away?.gs}
-                                    homeVal={preGameData.metrics.home?.gs}
-                                    format={v => parseFloat(v || 0).toFixed(1)}
-                                />
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="GOALS/GP"
-                                    awayVal={preGameData.metrics.away?.goals}
-                                    homeVal={preGameData.metrics.home?.goals}
-                                    format={v => parseFloat(v || 0).toFixed(2)}
-                                />
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="xGOALS/GP"
-                                    awayVal={preGameData.metrics.away?.xg}
-                                    homeVal={preGameData.metrics.home?.xg}
-                                    format={v => parseFloat(v || 0).toFixed(2)}
-                                />
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="SHOTS/GP"
-                                    awayVal={preGameData.metrics.away?.shots}
-                                    homeVal={preGameData.metrics.home?.shots}
-                                    format={v => parseFloat(v || 0).toFixed(1)}
-                                />
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="HIGH DANGER"
-                                    awayVal={preGameData.metrics.away?.hdc}
-                                    homeVal={preGameData.metrics.home?.hdc}
-                                    format={v => parseFloat(v || 0).toFixed(1)}
-                                />
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="OFF ZONE SHOTS"
-                                    awayVal={preGameData.metrics.away?.ozs}
-                                    homeVal={preGameData.metrics.home?.ozs}
-                                />
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="RUSH CHANCES"
-                                    awayVal={preGameData.metrics.away?.rush}
-                                    homeVal={preGameData.metrics.home?.rush}
-                                />
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="FORECHECK"
-                                    awayVal={preGameData.metrics.away?.fc}
-                                    homeVal={preGameData.metrics.home?.fc}
-                                />
-                            </MetricCard>
-
-                            <MetricCard title="DEFENSE" icon={Shield}>
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="GA/GP"
-                                    awayVal={preGameData.metrics.away?.ga_gp}
-                                    homeVal={preGameData.metrics.home?.ga_gp}
-                                    format={v => parseFloat(v || 0).toFixed(2)}
-                                />
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="PENALTY KILL"
-                                    awayVal={preGameData.metrics.away?.pk_pct}
-                                    homeVal={preGameData.metrics.home?.pk_pct}
-                                    format={v => v + '%'}
-                                />
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="CORSI %"
-                                    awayVal={preGameData.metrics.away?.corsi_pct}
-                                    homeVal={preGameData.metrics.home?.corsi_pct}
-                                    format={v => v + '%'}
-                                />
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="HD AGAINST"
-                                    awayVal={preGameData.metrics.away?.hdca}
-                                    homeVal={preGameData.metrics.home?.hdca}
-                                    format={v => parseFloat(v || 0).toFixed(1)}
-                                />
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="DEF ZONE SHOTS"
-                                    awayVal={preGameData.metrics.away?.dzs}
-                                    homeVal={preGameData.metrics.home?.dzs}
-                                />
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="BLOCKS/GP"
-                                    awayVal={preGameData.metrics.away?.blocks}
-                                    homeVal={preGameData.metrics.home?.blocks}
-                                    format={v => parseFloat(v || 0).toFixed(1)}
-                                />
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="TAKEAWAYS"
-                                    awayVal={preGameData.metrics.away?.takeaways}
-                                    homeVal={preGameData.metrics.home?.takeaways}
-                                    format={v => parseFloat(v || 0).toFixed(1)}
-                                />
-                            </MetricCard>
-
-                            <MetricCard title="TRANSITION & POSSESSION" icon={Activity} className="md:col-span-2">
-                                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                    <div>
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="FACEOFF %"
-                                            awayVal={preGameData.metrics.away?.fo_pct}
-                                            homeVal={preGameData.metrics.home?.fo_pct}
-                                            format={v => v + '%'}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="NZ TURNOVERS"
-                                            awayVal={preGameData.metrics.away?.nzts}
-                                            homeVal={preGameData.metrics.home?.nzts}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="NZTSA"
-                                            awayVal={preGameData.metrics.away?.nztsa}
-                                            homeVal={preGameData.metrics.home?.nztsa}
-                                            format={v => parseFloat(v || 0).toFixed(1)}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="GIVEAWAYS"
-                                            awayVal={preGameData.metrics.away?.giveaways}
-                                            homeVal={preGameData.metrics.home?.giveaways}
-                                            format={v => parseFloat(v || 0).toFixed(1)}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="HITS/GP"
-                                            awayVal={preGameData.metrics.away?.hits}
-                                            homeVal={preGameData.metrics.home?.hits}
-                                            format={v => parseFloat(v || 0).toFixed(1)}
-                                        />
-                                    </div>
-                                    <div>
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="LATERAL MOVEMENT"
-                                            awayVal={preGameData.metrics.away?.lat}
-                                            homeVal={preGameData.metrics.home?.lat}
-                                            format={v => parseFloat(v || 0).toFixed(1)}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="N-S MOVEMENT"
-                                            awayVal={preGameData.metrics.away?.long_movement}
-                                            homeVal={preGameData.metrics.home?.long_movement}
-                                            format={v => parseFloat(v || 0).toFixed(1)}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="NEUTRAL ZONE"
-                                            awayVal={preGameData.metrics.away?.nzs}
-                                            homeVal={preGameData.metrics.home?.nzs}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="POWER PLAY %"
-                                            awayVal={preGameData.metrics.away?.pp_pct}
-                                            homeVal={preGameData.metrics.home?.pp_pct}
-                                            format={v => v + '%'}
-                                        />
-                                    </div>
-                                </div>
-                            </MetricCard>
-                        </section>
-                    );
-                case 'overview':
-                default:
-                    return (
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            {/* Left Column - Metrics */}
-                            <div className="lg:col-span-2 space-y-6">
-                                <MetricCard title="OFFENSE (v3)" icon={Zap}>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="GAME SCORE"
-                                            awayVal={preGameData.metrics.away?.gs}
-                                            homeVal={preGameData.metrics.home?.gs}
-                                            format={v => parseFloat(v || 0).toFixed(1)}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="GOALS/GP"
-                                            awayVal={preGameData.metrics.away?.goals}
-                                            homeVal={preGameData.metrics.home?.goals}
-                                            format={v => parseFloat(v || 0).toFixed(2)}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="xGOALS/GP"
-                                            awayVal={preGameData.metrics.away?.xg}
-                                            homeVal={preGameData.metrics.home?.xg}
-                                            format={v => parseFloat(v || 0).toFixed(2)}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="SHOTS/GP"
-                                            awayVal={preGameData.metrics.away?.shots}
-                                            homeVal={preGameData.metrics.home?.shots}
-                                            format={v => parseFloat(v || 0).toFixed(1)}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="HIGH DANGER"
-                                            awayVal={preGameData.metrics.away?.hdc}
-                                            homeVal={preGameData.metrics.home?.hdc}
-                                            format={v => parseFloat(v || 0).toFixed(1)}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="OFF ZONE SHOTS"
-                                            awayVal={preGameData.metrics.away?.ozs}
-                                            homeVal={preGameData.metrics.home?.ozs}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="RUSH CHANCES"
-                                            awayVal={preGameData.metrics.away?.rush}
-                                            homeVal={preGameData.metrics.home?.rush}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="FORECHECK"
-                                            awayVal={preGameData.metrics.away?.fc}
-                                            homeVal={preGameData.metrics.home?.fc}
-                                        />
-                                    </div>
-                                </MetricCard>
-
-                                <MetricCard title="DEFENSE" icon={Shield}>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="GA/GP"
-                                            awayVal={preGameData.metrics.away?.ga_gp}
-                                            homeVal={preGameData.metrics.home?.ga_gp}
-                                            format={v => parseFloat(v || 0).toFixed(2)}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="PENALTY KILL"
-                                            awayVal={preGameData.metrics.away?.pk_pct}
-                                            homeVal={preGameData.metrics.home?.pk_pct}
-                                            format={v => v + '%'}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="CORSI %"
-                                            awayVal={preGameData.metrics.away?.corsi_pct}
-                                            homeVal={preGameData.metrics.home?.corsi_pct}
-                                            format={v => v + '%'}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="HD AGAINST"
-                                            awayVal={preGameData.metrics.away?.hdca}
-                                            homeVal={preGameData.metrics.home?.hdca}
-                                            format={v => parseFloat(v || 0).toFixed(1)}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="DEF ZONE SHOTS"
-                                            awayVal={preGameData.metrics.away?.dzs}
-                                            homeVal={preGameData.metrics.home?.dzs}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="BLOCKS/GP"
-                                            awayVal={preGameData.metrics.away?.blocks}
-                                            homeVal={preGameData.metrics.home?.blocks}
-                                            format={v => parseFloat(v || 0).toFixed(1)}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="TAKEAWAYS"
-                                            awayVal={preGameData.metrics.away?.takeaways}
-                                            homeVal={preGameData.metrics.home?.takeaways}
-                                            format={v => parseFloat(v || 0).toFixed(1)}
-                                        />
-                                    </div>
-                                </MetricCard>
-
-                                <MetricCard title="TRANSITION & POSSESSION" icon={Activity}>
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="FACEOFF %"
-                                            awayVal={preGameData.metrics.away?.fo_pct}
-                                            homeVal={preGameData.metrics.home?.fo_pct}
-                                            format={v => v + '%'}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="NZ TURNOVERS"
-                                            awayVal={preGameData.metrics.away?.nzts}
-                                            homeVal={preGameData.metrics.home?.nzts}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="NZTSA"
-                                            awayVal={preGameData.metrics.away?.nztsa}
-                                            homeVal={preGameData.metrics.home?.nztsa}
-                                            format={v => parseFloat(v || 0).toFixed(1)}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="GIVEAWAYS"
-                                            awayVal={preGameData.metrics.away?.giveaways}
-                                            homeVal={preGameData.metrics.home?.giveaways}
-                                            format={v => parseFloat(v || 0).toFixed(1)}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="HITS/GP"
-                                            awayVal={preGameData.metrics.away?.hits}
-                                            homeVal={preGameData.metrics.home?.hits}
-                                            format={v => parseFloat(v || 0).toFixed(1)}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="LATERAL MOVEMENT"
-                                            awayVal={preGameData.metrics.away?.lat}
-                                            homeVal={preGameData.metrics.home?.lat}
-                                            format={v => parseFloat(v || 0).toFixed(1)}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="N-S MOVEMENT"
-                                            awayVal={preGameData.metrics.away?.long_movement}
-                                            homeVal={preGameData.metrics.home?.long_movement}
-                                            format={v => parseFloat(v || 0).toFixed(1)}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="NEUTRAL ZONE"
-                                            awayVal={preGameData.metrics.away?.nzs}
-                                            homeVal={preGameData.metrics.home?.nzs}
-                                        />
-                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                            label="POWER PLAY %"
-                                            awayVal={preGameData.metrics.away?.pp_pct}
-                                            homeVal={preGameData.metrics.home?.pp_pct}
-                                            format={v => v + '%'}
-                                        />
-                                    </div>
-                                </MetricCard>
-                            </div>
-
-                            {/* Right Column - Heatmap */}
-                            <div className="space-y-6">
-                                <PreGameHeatmap
-                                    preGameData={preGameData}
-                                    homeTeam={homeTeam}
-                                    awayTeam={awayTeam}
-                                />
-                            </div>
-                        </div>
-                    );
-            }
+    
+    // Ensure topPerformers is always an array
+    const safeTopPerformers = Array.isArray(topPerformers) ? topPerformers : [];
+    
+    // Format game time from startTimeUTC if available
+    let gameTime = null;
+    if (startTimeUTC) {
+        try {
+            const date = new Date(startTimeUTC);
+            gameTime = date.toLocaleTimeString('en-US', { hour: 'numeric', minute: '2-digit', hour12: true });
+        } catch (e) {
+            gameTime = null;
         }
+    }
 
-        // LIVE/FINAL CONTENT
-        switch (activeTab) {
-            case 'visuals':
-                return (
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        <div className="lg:col-span-3">
-                            <section className="glass-card p-6">
-                                <div className="flex items-center gap-3 mb-6">
-                                    <Target className="w-6 h-6 text-accent-secondary" />
-                                    <h3 className="text-xl font-display font-bold">SHOT MAP</h3>
-                                </div>
-                                <div className="aspect-[2/1] bg-white/5 rounded-xl overflow-hidden relative">
-                                    <ShotChart
-                                        shots={liveData?.live_metrics?.shots_data || []}
-                                        homeTeam={homeTeam.abbrev}
-                                        awayTeam={awayTeam.abbrev}
-                                    />
-                                </div>
-                            </section>
-                        </div>
-                    </div>
-                );
-            case 'advanced':
-                return (
-                    <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <MetricCard title="ADVANCED METRICS" icon={Activity} className="md:col-span-2">
-                            <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
-                                {METRICS_CONFIG.map(metric => (
-                                    <ComparisonRow
-                                        key={metric.key}
-                                        awayTeam={awayTeam}
-                                        homeTeam={homeTeam}
-                                        label={metric.label}
-                                        awayVal={liveData?.live_metrics?.[`away_${metric.liveKey}`]}
-                                        homeVal={liveData?.live_metrics?.[`home_${metric.liveKey}`]}
-                                        format={metric.format}
-                                    />
-                                ))}
-                            </div>
-                        </MetricCard>
-                    </section>
-                );
-            case 'lines':
-                return (
-                    <LinesPairings
-                        boxscore={liveData?.live_metrics?.boxscore || gameData?.boxscore}
-                        awayTeam={awayTeam}
-                        homeTeam={homeTeam}
+    // Helper for metric cards
+    const MetricCard = ({ title, icon: Icon, children, className }) => (
+        <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className={clsx("glass-card p-6", className)}
+        >
+            <div className="flex items-center gap-3 mb-4">
+                <div className="p-2 rounded-lg bg-white/5">
+                    <Icon className="w-5 h-5 text-accent-primary" />
+                </div>
+                <h3 className="font-display font-bold text-lg tracking-wide">{title}</h3>
+            </div>
+            {children}
+        </motion.div>
+    );
+
+    // Helper for comparison rows with team colors - always show both team colors
+    const ComparisonRow = ({ label, awayVal, homeVal, format = (v) => v, inverse = false }) => {
+        const awayNum = parseFloat(awayVal) || 0;
+        const homeNum = parseFloat(homeVal) || 0;
+        const total = awayNum + homeNum;
+        const awayPct = total > 0 ? (awayNum / total) * 100 : 50;
+        
+        // Determine which team has the better value
+        // For inverse metrics (like HDCA), lower is better
+        const awayBetter = inverse ? (awayNum < homeNum) : (awayNum > homeNum);
+        const homeBetter = inverse ? (homeNum < awayNum) : (homeNum > awayNum);
+        
+        const awayColor = TEAM_COLORS[awayTeam?.abbrev] || '#00D4FF';
+        const homeColor = TEAM_COLORS[homeTeam?.abbrev] || '#FF00FF';
+
+        return (
+            <div className="mb-4">
+                <div className="flex justify-between text-sm font-mono mb-2">
+                    <span className={clsx(awayBetter ? "font-bold text-white" : "text-white")}>
+                        {format(awayVal)}
+                    </span>
+                    <span className="text-text-secondary uppercase text-xs tracking-wider">{label}</span>
+                    <span className={clsx(homeBetter ? "font-bold text-white" : "text-white")}>
+                        {format(homeVal)}
+                    </span>
+                </div>
+                <div className="h-1.5 bg-white/5 rounded-full overflow-hidden flex relative">
+                    <div
+                        className={clsx(
+                            "h-full transition-all duration-500",
+                            awayBetter && "shadow-[0_0_8px_2px_rgba(255,255,255,0.6)]"
+                        )}
+                        style={{ 
+                            width: `${awayPct}%`,
+                            backgroundColor: awayColor
+                        }}
                     />
-                );
-            case 'overview':
-            default:
-                return (
-                    <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                        {/* Left Column - Main Stats */}
-                        <div className="lg:col-span-2 space-y-8">
-                            {/* Period Stats Table */}
-                            <section>
-                                <div className="flex items-center gap-3 mb-6">
-                                    <Clock className="w-6 h-6 text-accent-primary" />
-                                    <h3 className="text-xl font-display font-bold">PERIOD PERFORMANCE</h3>
-                                </div>
-                                {liveData?.live_metrics ? (
-                                    <PeriodStatsTable
-                                        periodStats={constructPeriodStats(liveData.live_metrics)}
-                                        awayTeam={awayTeam}
-                                        homeTeam={homeTeam}
-                                    />
-                                ) : (
-                                    <div className="glass-card p-6 text-center text-text-muted">
-                                        No period stats available yet.
-                                    </div>
-                                )}
-                            </section>
-                        </div>
-
-                        {/* Right Column - Visuals & Players */}
-                        <div className="space-y-8">
-                            {/* Win Probability Card (Live & Finished Games) */}
-                            {(isFinal || isLive) && liveData && (
-                                <section className="glass-card p-6">
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <TrendingUp className="w-6 h-6 text-accent-primary" />
-                                        <h3 className="text-xl font-display font-bold">{isLive ? 'LIVE WIN PROBABILITY' : 'FINAL WIN PROBABILITY'}</h3>
-                                    </div>
-                                    <div className="space-y-4">
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <img src={awayTeam.logo} alt={awayTeam.abbrev} className="w-8 h-8" />
-                                                <span className="font-display font-bold">{awayTeam.abbrev}</span>
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="text-3xl font-display font-bold text-accent-primary">
-                                                    {((liveData.away_prob || 0) * 100).toFixed(1)}%
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="h-2 bg-white/5 rounded-full overflow-hidden flex">
-                                            <div
-                                                className="h-full transition-all duration-500"
-                                                style={{
-                                                    width: `${(liveData.away_prob || 0) * 100}%`,
-                                                    backgroundColor: getTeamColor(awayTeam.abbrev)
-                                                }}
-                                            />
-                                            <div
-                                                className="h-full transition-all duration-500"
-                                                style={{
-                                                    width: `${(liveData.home_prob || 0) * 100}%`,
-                                                    backgroundColor: getTeamColor(homeTeam.abbrev)
-                                                }}
-                                            />
-                                        </div>
-                                        <div className="flex items-center justify-between">
-                                            <div className="flex items-center gap-3">
-                                                <img src={homeTeam.logo} alt={homeTeam.abbrev} className="w-8 h-8" />
-                                                <span className="font-display font-bold">{homeTeam.abbrev}</span>
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="text-3xl font-display font-bold text-accent-secondary">
-                                                    {((liveData.home_prob || 0) * 100).toFixed(1)}%
-                                                </div>
-                                            </div>
-                                        </div>
-                                        <div className="text-center text-xs text-text-muted font-mono mt-4">
-                                            Model Confidence: {((liveData.confidence || 0) * 100).toFixed(1)}%
-                                        </div>
-                                    </div>
-                                </section>
-                            )}
-
-                            {/* Shot Chart Preview */}
-                            <section className="glass-card p-6">
-                                <div className="flex items-center gap-3 mb-6">
-                                    <Target className="w-6 h-6 text-accent-secondary" />
-                                    <h3 className="text-xl font-display font-bold">SHOT MAP</h3>
-                                </div>
-                                <div className="aspect-[2/1] bg-white/5 rounded-xl overflow-hidden relative">
-                                    <ShotChart
-                                        shots={liveData?.live_metrics?.shots_data || []}
-                                        homeTeam={homeTeam.abbrev}
-                                        awayTeam={awayTeam.abbrev}
-                                    />
-                                </div>
-                            </section>
-                        </div>
-                    </div>
-                );
-        }
+                    <div
+                        className={clsx(
+                            "h-full transition-all duration-500",
+                            homeBetter && "shadow-[0_0_8px_2px_rgba(255,255,255,0.6)]"
+                        )}
+                        style={{ 
+                            width: `${100 - awayPct}%`,
+                            backgroundColor: homeColor
+                        }}
+                    />
+                </div>
+            </div>
+        );
     };
 
     return (
@@ -1000,9 +592,9 @@ const GameDetailsContent = () => {
                     <div className="flex flex-col md:flex-row items-center justify-between gap-8">
                         {/* Away Team */}
                         <div className="flex flex-col items-center gap-4 flex-1">
-                            <img src={awayTeam.logo} alt={awayTeam.abbrev} className="w-32 h-32 md:w-40 md:h-40 object-contain drop-shadow-2xl" />
+                            <img src={awayTeam?.logo || ''} alt={awayTeam?.abbrev || 'AWAY'} className="w-24 h-24 md:w-32 md:h-32 object-contain drop-shadow-2xl" />
                             <div className="text-center">
-                                <h2 className="text-4xl md:text-5xl font-display font-bold tracking-tighter">{awayTeam.abbrev}</h2>
+                                <h2 className="text-4xl md:text-5xl font-display font-bold tracking-tighter">{awayTeam?.abbrev || 'AWAY'}</h2>
                                 <p className="text-text-muted font-mono mt-1">AWAY</p>
                             </div>
                         </div>
@@ -1011,147 +603,656 @@ const GameDetailsContent = () => {
                         <div className="flex flex-col items-center justify-center px-8 py-4 bg-white/5 rounded-2xl backdrop-blur-md border border-white/5 min-w-[200px]">
                             {isLive || isFinal ? (
                                 <div className="flex items-center gap-8">
-                                    <span className="text-6xl md:text-7xl font-display font-bold text-white team-gradient-text" style={{ '--team-primary': 'var(--color-accent-primary)' }}>{awayTeam.score}</span>
+                                    <span className="text-6xl md:text-7xl font-display font-bold text-white team-gradient-text" style={{ '--team-primary': 'var(--color-accent-primary)' }}>{awayTeam?.score ?? 0}</span>
                                     <div className="h-12 w-px bg-white/10"></div>
-                                    <span className="text-6xl md:text-7xl font-display font-bold text-white team-gradient-text" style={{ '--team-primary': 'var(--color-accent-secondary)' }}>{homeTeam.score}</span>
+                                    <span className="text-6xl md:text-7xl font-display font-bold text-white team-gradient-text" style={{ '--team-primary': 'var(--color-accent-secondary)' }}>{homeTeam?.score ?? 0}</span>
                                 </div>
                             ) : (
                                 <div className="text-4xl font-display font-bold text-text-muted">VS</div>
                             )}
 
-                            <div className="mt-4 flex flex-col items-center gap-2">
+                            {/* Arena Name */}
+                            {gameData?.boxscore?.venue?.default && (
+                                <div className="mt-2 text-sm font-mono text-text-muted">
+                                    {gameData.boxscore.venue.default}
+                                </div>
+                            )}
+
+                            <div className="mt-4 flex items-center gap-2">
                                 {isLive ? (
                                     <>
                                         <span className="relative flex h-2 w-2">
                                             <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-color-success opacity-75"></span>
                                             <span className="relative inline-flex rounded-full h-2 w-2 bg-color-success"></span>
                                         </span>
-                                        <span className="font-mono text-color-success font-bold">{period} - {clock?.timeRemaining || '00:00'}</span>
+                                        <span className="font-mono text-color-success font-bold">
+                                            {boxscore?.periodDescriptor?.number || period || '1'} - {clock?.timeRemaining || clock || '20:00'}
+                                        </span>
                                     </>
                                 ) : isFinal ? (
-                                    <span className="font-mono text-text-muted font-bold">FINAL</span>
+                                    <span className="font-mono text-text-muted">FINAL</span>
                                 ) : (
-                                    <div className="text-center">
-                                        <div className="font-mono text-primary font-bold text-sm">
-                                            {gameData?.boxscore?.startTimeUTC ? new Date(gameData.boxscore.startTimeUTC).toLocaleString('en-US', {
-                                                weekday: 'short',
-                                                month: 'short',
-                                                day: 'numeric',
-                                                hour: 'numeric',
-                                                minute: '2-digit'
-                                            }) : 'TBD'}
-                                        </div>
-                                        {gameData?.boxscore?.venue?.default && (
-                                            <div className="font-mono text-text-muted text-xs mt-1">
-                                                {gameData.boxscore.venue.default}
-                                            </div>
-                                        )}
-                                    </div>
+                                    <span className="font-mono text-text-muted">{gameTime || 'TBD'}</span>
                                 )}
                             </div>
                         </div>
 
                         {/* Home Team */}
                         <div className="flex flex-col items-center gap-4 flex-1">
-                            <img src={homeTeam.logo} alt={homeTeam.abbrev} className="w-32 h-32 md:w-40 md:h-40 object-contain drop-shadow-2xl" />
+                            <img src={homeTeam?.logo || ''} alt={homeTeam?.abbrev || 'HOME'} className="w-24 h-24 md:w-32 md:h-32 object-contain drop-shadow-2xl" />
                             <div className="text-center">
-                                <h2 className="text-4xl md:text-5xl font-display font-bold tracking-tighter">{homeTeam.abbrev}</h2>
+                                <h2 className="text-4xl md:text-5xl font-display font-bold tracking-tighter">{homeTeam?.abbrev || 'HOME'}</h2>
                                 <p className="text-text-muted font-mono mt-1">HOME</p>
                             </div>
                         </div>
                     </div>
 
-                    {/* Win Probability Bar */}
-                    {liveData?.prediction && (
-                        <div className="mt-12 max-w-3xl mx-auto">
-                            <div className="flex justify-between text-sm font-mono mb-3">
-                                <span className="text-accent-primary font-bold">
-                                    {(liveData.prediction.calibrated_away_prob * 100).toFixed(1)}% WIN PROB
-                                </span>
-                                <span className="text-accent-secondary font-bold">
-                                    {(liveData.prediction.calibrated_home_prob * 100).toFixed(1)}% WIN PROB
-                                </span>
-                            </div>
-                            <div className="h-3 bg-white/5 rounded-full overflow-hidden flex relative">
-                                <div
-                                    className="h-full bg-gradient-to-r from-accent-primary to-blue-500 relative"
-                                    style={{ width: `${liveData.prediction.calibrated_away_prob * 100}%` }}
-                                >
-                                    <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
-                                </div>
-                                <div
-                                    className="h-full bg-gradient-to-l from-accent-secondary to-purple-500 relative"
-                                    style={{ width: `${liveData.prediction.calibrated_home_prob * 100}%` }}
-                                >
-                                    <div className="absolute inset-0 bg-white/20 animate-pulse"></div>
-                                </div>
-
-                                {/* Center Marker */}
-                                <div className="absolute top-0 bottom-0 left-1/2 w-px bg-white/50 transform -translate-x-1/2 z-10"></div>
-                            </div>
-                        </div>
-                    )}
                 </div>
             </div>
 
-            {/* Navigation Tabs */}
-            <nav className="sticky top-0 z-40 bg-bg-primary/95 backdrop-blur-md border-b border-white/10 mb-8">
-                <div className="flex gap-4 overflow-x-auto py-4 px-6 scrollbar-hide">
-                    <button
-                        onClick={() => setActiveTab('overview')}
-                        className={clsx(
-                            "px-4 py-2 font-display font-bold text-sm transition-colors whitespace-nowrap",
-                            activeTab === 'overview' ? "text-accent-primary border-b-2 border-accent-primary" : "text-text-muted hover:text-white"
-                        )}
-                    >
-                        OVERVIEW
-                    </button>
+            {/* Content Sections */}
+            <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                {/* Left Column - Main Stats */}
+                <div className="lg:col-span-2 space-y-8">
+                    {/* Period Stats Table - Only show for LIVE or FINAL games */}
                     {(isLive || isFinal) && (
-                        <button
-                            onClick={() => setActiveTab('visuals')}
-                            className={clsx(
-                                "px-4 py-2 font-display font-bold text-sm transition-colors whitespace-nowrap",
-                                activeTab === 'visuals' ? "text-accent-primary border-b-2 border-accent-primary" : "text-text-muted hover:text-white"
-                            )}
-                        >
-                            VISUALS
-                        </button>
+                    <section>
+                        <div className="flex items-center gap-3 mb-6">
+                            <Clock className="w-6 h-6 text-accent-primary" />
+                            <h3 className="text-xl font-display font-bold">PERIOD PERFORMANCE</h3>
+                        </div>
+                            <PeriodStatsTable
+                                periodStats={
+                                    liveData?.period_stats || 
+                                    liveData?.live_metrics?.period_stats || 
+                                    (Array.isArray(liveData?.period_stats) ? liveData.period_stats : [])
+                                }
+                                awayTeam={awayTeam}
+                                homeTeam={homeTeam}
+                                currentPeriod={
+                                    // For FINAL/OFF games, always show all periods (set to 3)
+                                    isFinal ? 3 : (
+                                        liveData?.current_period || 
+                                        liveData?.live_metrics?.current_period || 
+                                        gameData?.boxscore?.periodDescriptor?.number || 
+                                        1
+                                    )
+                                }
+                            />
+                        </section>
                     )}
-                    <button
-                        onClick={() => setActiveTab('advanced')}
-                        className={clsx(
-                            "px-4 py-2 font-display font-bold text-sm transition-colors whitespace-nowrap",
-                            activeTab === 'advanced' ? "text-accent-primary border-b-2 border-accent-primary" : "text-text-muted hover:text-white"
-                        )}
-                    >
-                        ADVANCED
-                    </button>
-                    <button
-                        onClick={() => setActiveTab('lines')}
-                        className={clsx(
-                            "px-4 py-2 font-display font-bold text-sm transition-colors whitespace-nowrap",
-                            activeTab === 'lines' ? "text-accent-primary border-b-2 border-accent-primary" : "text-text-muted hover:text-white"
-                        )}
-                    >
-                        LINES
-                    </button>
-                </div>
-            </nav>
 
-            {/* Tab Content */}
-            <div className="min-h-[500px]">
-                {renderTabContent()}
+                    {/* Live Team Metrics - Show for LIVE games, updating live */}
+                    {isLive && liveData && (
+                        <section>
+                            <div className="flex items-center gap-3 mb-6">
+                                <Activity className="w-6 h-6 text-accent-primary" />
+                                <h3 className="text-xl font-display font-bold">LIVE TEAM METRICS</h3>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* LIVE CORE METRICS - Combined from LIVE CORE METRICS + SHOT QUALITY */}
+                                <MetricCard title="LIVE CORE METRICS" icon={Target}>
+                                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
+                                        <div className="flex items-center gap-2">
+                                            <img src={awayTeam?.logo} alt={awayTeam?.abbrev} className="w-6 h-6" />
+                                            <span className="text-accent-primary font-mono text-sm">{awayTeam?.abbrev}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <img src={homeTeam?.logo} alt={homeTeam?.abbrev} className="w-6 h-6" />
+                                            <span className="text-accent-secondary font-mono text-sm">{homeTeam?.abbrev}</span>
+                                        </div>
+                                    </div>
+                                    <ComparisonRow
+                                        label="EXPECTED GOALS (xG)"
+                                        awayVal={liveData?.live_metrics?.away_xg || liveData?.away_xg || liveData?.advanced_metrics?.xg?.away_total || teamMetrics[awayTeam?.abbrev]?.xg || 0}
+                                        homeVal={liveData?.live_metrics?.home_xg || liveData?.home_xg || liveData?.advanced_metrics?.xg?.home_total || teamMetrics[homeTeam?.abbrev]?.xg || 0}
+                                        format={(v) => parseFloat(v || 0).toFixed(2)}
+                                    />
+                                    <ComparisonRow
+                                        label="CORSI FOR %"
+                                        awayVal={liveData?.live_metrics?.away_corsi_pct || liveData?.away_corsi_pct || liveData?.advanced_metrics?.corsi?.away || teamMetrics[awayTeam?.abbrev]?.corsi_pct || 0}
+                                        homeVal={liveData?.live_metrics?.home_corsi_pct || liveData?.home_corsi_pct || liveData?.advanced_metrics?.corsi?.home || teamMetrics[homeTeam?.abbrev]?.corsi_pct || 0}
+                                        format={(v) => parseFloat(v || 0).toFixed(1) + '%'}
+                                    />
+                                    <ComparisonRow
+                                        label="HIGH DANGER CHANCES"
+                                        awayVal={liveData?.live_metrics?.away_hdc || liveData?.away_hdc || liveData?.advanced_metrics?.shot_quality?.high_danger_shots?.away || teamMetrics[awayTeam?.abbrev]?.hdc || 0}
+                                        homeVal={liveData?.live_metrics?.home_hdc || liveData?.home_hdc || liveData?.advanced_metrics?.shot_quality?.high_danger_shots?.home || teamMetrics[homeTeam?.abbrev]?.hdc || 0}
+                                        format={(v) => parseFloat(v || 0).toFixed(1)}
+                                    />
+                                    <ComparisonRow
+                                        label="SHOOTING %"
+                                        awayVal={(() => {
+                                            const shots = liveData?.live_metrics?.away_shots || liveData?.away_shots || 0;
+                                            const goals = liveData?.live_metrics?.away_score || liveData?.away_score || 0;
+                                            return shots > 0 ? (goals / shots * 100) : (liveData?.advanced_metrics?.shot_quality?.shooting_percentage?.away || 0);
+                                        })()}
+                                        homeVal={(() => {
+                                            const shots = liveData?.live_metrics?.home_shots || liveData?.home_shots || 0;
+                                            const goals = liveData?.live_metrics?.home_score || liveData?.home_score || 0;
+                                            return shots > 0 ? (goals / shots * 100) : (liveData?.advanced_metrics?.shot_quality?.shooting_percentage?.home || 0);
+                                        })()}
+                                        format={(v) => parseFloat(v || 0).toFixed(1) + '%'}
+                                    />
+                                    <ComparisonRow
+                                        label="GAME SCORE (GS)"
+                                        awayVal={liveData?.live_metrics?.away_gs || liveData?.away_gs || 0}
+                                        homeVal={liveData?.live_metrics?.home_gs || liveData?.home_gs || 0}
+                                        format={(v) => parseFloat(v || 0).toFixed(2)}
+                                    />
+                                </MetricCard>
+
+                                {/* LIVE PRESSURE - Combined from LIVE PRESSURE + PRESSURE */}
+                                <MetricCard title="LIVE PRESSURE" icon={Zap}>
+                                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
+                                        <div className="flex items-center gap-2">
+                                            <img src={awayTeam?.logo} alt={awayTeam?.abbrev} className="w-6 h-6" />
+                                            <span className="text-accent-primary font-mono text-sm">{awayTeam?.abbrev}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <img src={homeTeam?.logo} alt={homeTeam?.abbrev} className="w-6 h-6" />
+                                            <span className="text-accent-secondary font-mono text-sm">{homeTeam?.abbrev}</span>
+                                        </div>
+                                    </div>
+                                    <ComparisonRow
+                                        label="OFFENSIVE ZONE SHOTS"
+                                        awayVal={liveData?.live_metrics?.away_ozs || liveData?.away_ozs || liveData?.advanced_metrics?.pressure?.oz_shots?.away || 0}
+                                        homeVal={liveData?.live_metrics?.home_ozs || liveData?.home_ozs || liveData?.advanced_metrics?.pressure?.oz_shots?.home || 0}
+                                    />
+                                    <ComparisonRow
+                                        label="NEUTRAL ZONE SHOTS"
+                                        awayVal={liveData?.live_metrics?.away_nzs || liveData?.away_nzs || 0}
+                                        homeVal={liveData?.live_metrics?.home_nzs || liveData?.home_nzs || 0}
+                                    />
+                                    <ComparisonRow
+                                        label="DEFENSIVE ZONE SHOTS"
+                                        awayVal={liveData?.live_metrics?.away_dzs || liveData?.away_dzs || 0}
+                                        homeVal={liveData?.live_metrics?.home_dzs || liveData?.home_dzs || 0}
+                                    />
+                                    <ComparisonRow
+                                        label="SUSTAINED PRESSURE"
+                                        awayVal={liveData?.live_metrics?.away_fc || liveData?.away_fc || liveData?.advanced_metrics?.pressure?.sustained_pressure?.away || 0}
+                                        homeVal={liveData?.live_metrics?.home_fc || liveData?.home_fc || liveData?.advanced_metrics?.pressure?.sustained_pressure?.home || 0}
+                                    />
+                                    <ComparisonRow
+                                        label="RUSH CHANCES"
+                                        awayVal={liveData?.live_metrics?.away_rush || liveData?.away_rush || liveData?.advanced_metrics?.pressure?.rush_shots?.away || 0}
+                                        homeVal={liveData?.live_metrics?.home_rush || liveData?.home_rush || liveData?.advanced_metrics?.pressure?.rush_shots?.home || 0}
+                                    />
+                                    <ComparisonRow
+                                        label="SHOTS ON GOAL"
+                                        awayVal={liveData?.live_metrics?.away_shots || liveData?.away_shots || liveData?.advanced_metrics?.shots?.away || 0}
+                                        homeVal={liveData?.live_metrics?.home_shots || liveData?.home_shots || liveData?.advanced_metrics?.shots?.home || 0}
+                                        format={(v) => parseFloat(v || 0).toFixed(1)}
+                                    />
+                                </MetricCard>
+
+                                {/* DEFENSE */}
+                                <MetricCard title="DEFENSE" icon={Shield}>
+                                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
+                                        <div className="flex items-center gap-2">
+                                            <img src={awayTeam?.logo} alt={awayTeam?.abbrev} className="w-6 h-6" />
+                                            <span className="text-accent-primary font-mono text-sm">{awayTeam?.abbrev}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <img src={homeTeam?.logo} alt={homeTeam?.abbrev} className="w-6 h-6" />
+                                            <span className="text-accent-secondary font-mono text-sm">{homeTeam?.abbrev}</span>
+                                        </div>
+                                    </div>
+                                    <ComparisonRow
+                                        label="BLOCKED SHOTS"
+                                        awayVal={liveData?.live_metrics?.away_blocked_shots || liveData?.away_blocked_shots || liveData?.advanced_metrics?.defense?.blocked_shots?.away || 0}
+                                        homeVal={liveData?.live_metrics?.home_blocked_shots || liveData?.home_blocked_shots || liveData?.advanced_metrics?.defense?.blocked_shots?.home || 0}
+                                        format={(v) => parseFloat(v || 0).toFixed(0)}
+                                    />
+                                    <ComparisonRow
+                                        label="TAKEAWAYS"
+                                        awayVal={liveData?.live_metrics?.away_takeaways || liveData?.away_takeaways || liveData?.advanced_metrics?.defense?.takeaways?.away || 0}
+                                        homeVal={liveData?.live_metrics?.home_takeaways || liveData?.home_takeaways || liveData?.advanced_metrics?.defense?.takeaways?.home || 0}
+                                        format={(v) => parseFloat(v || 0).toFixed(0)}
+                                    />
+                                    <ComparisonRow
+                                        label="GIVEAWAYS"
+                                        awayVal={liveData?.live_metrics?.away_giveaways || liveData?.away_giveaways || liveData?.advanced_metrics?.defense?.giveaways?.away || 0}
+                                        homeVal={liveData?.live_metrics?.home_giveaways || liveData?.home_giveaways || liveData?.advanced_metrics?.defense?.giveaways?.home || 0}
+                                        format={(v) => parseFloat(v || 0).toFixed(0)}
+                                        inverse={true}
+                                    />
+                                    <ComparisonRow
+                                        label="NEUTRAL ZONE TURNOVERS"
+                                        awayVal={liveData?.live_metrics?.away_nzt || liveData?.away_nzt || 0}
+                                        homeVal={liveData?.live_metrics?.home_nzt || liveData?.home_nzt || 0}
+                                        format={(v) => parseFloat(v || 0).toFixed(0)}
+                                    />
+                            <ComparisonRow
+                                label="NZ TURNOVER SHOTS AGAINST"
+                                awayVal={liveData?.live_metrics?.away_nztsa || liveData?.away_nztsa || 0}
+                                homeVal={liveData?.live_metrics?.home_nztsa || liveData?.home_nztsa || 0}
+                                format={(v) => parseFloat(v || 0).toFixed(0)}
+                            />
+                                </MetricCard>
+
+                                {/* MOVEMENT */}
+                                <MetricCard title="MOVEMENT" icon={Activity}>
+                                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
+                                        <div className="flex items-center gap-2">
+                                            <img src={awayTeam?.logo} alt={awayTeam?.abbrev} className="w-6 h-6" />
+                                            <span className="text-accent-primary font-mono text-sm">{awayTeam?.abbrev}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <img src={homeTeam?.logo} alt={homeTeam?.abbrev} className="w-6 h-6" />
+                                            <span className="text-accent-secondary font-mono text-sm">{homeTeam?.abbrev}</span>
+                                        </div>
+                                    </div>
+                                    <ComparisonRow
+                                        label="LATERAL MOVEMENT"
+                                        awayVal={liveData?.live_metrics?.away_lateral || liveData?.away_lateral || liveData?.advanced_metrics?.movement?.lateral_movement?.away || 0}
+                                        homeVal={liveData?.live_metrics?.home_lateral || liveData?.home_lateral || liveData?.advanced_metrics?.movement?.lateral_movement?.home || 0}
+                                        format={(v) => parseFloat(v || 0).toFixed(1)}
+                                    />
+                                    <ComparisonRow
+                                        label="N-S MOVEMENT"
+                                        awayVal={liveData?.live_metrics?.away_longitudinal || liveData?.away_longitudinal || liveData?.advanced_metrics?.movement?.longitudinal_movement?.away || 0}
+                                        homeVal={liveData?.live_metrics?.home_longitudinal || liveData?.home_longitudinal || liveData?.advanced_metrics?.movement?.longitudinal_movement?.home || 0}
+                                        format={(v) => parseFloat(v || 0).toFixed(1)}
+                                    />
+                                </MetricCard>
+                            </div>
+                        </section>
+                    )}
+
+                    {/* Team Metrics Comparison - Show pre-game metrics for FUT games, actual game data for FINAL games */}
+                    {!isLive && (
+                        <section>
+                            <div className="flex items-center gap-3 mb-6">
+                                <TrendingUp className="w-6 h-6 text-accent-primary" />
+                                <h3 className="text-xl font-display font-bold">TEAM METRICS COMPARISON</h3>
+                            </div>
+                            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Core Metrics */}
+                                <MetricCard title="CORE METRICS" icon={Target}>
+                                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
+                                        <div className="flex items-center gap-2">
+                                            <img src={awayTeam?.logo} alt={awayTeam?.abbrev} className="w-6 h-6" />
+                                            <span className="text-accent-primary font-mono text-sm">{awayTeam?.abbrev}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <img src={homeTeam?.logo} alt={homeTeam?.abbrev} className="w-6 h-6" />
+                                            <span className="text-accent-secondary font-mono text-sm">{homeTeam?.abbrev}</span>
+                                        </div>
+                                    </div>
+                                    {(!isFinal && teamMetrics[awayTeam?.abbrev]?.gs === null) ? null : (
+                                        <ComparisonRow
+                                            label="GAME SCORE (GS)"
+                                            awayVal={isFinal ? (liveData?.live_metrics?.away_gs || 0) : (teamMetrics[awayTeam?.abbrev]?.gs ?? 0)}
+                                            homeVal={isFinal ? (liveData?.live_metrics?.home_gs || 0) : (teamMetrics[homeTeam?.abbrev]?.gs ?? 0)}
+                                            format={(v) => v === null || v === undefined ? 'N/A' : parseFloat(v || 0).toFixed(2)}
+                                        />
+                                    )}
+                                    <ComparisonRow
+                                        label="EXPECTED GOALS (xG)"
+                                        awayVal={isFinal ? (liveData?.live_metrics?.away_xg || liveData?.advanced_metrics?.xg?.away_total || 0) : (teamMetrics[awayTeam?.abbrev]?.xg || 0)}
+                                        homeVal={isFinal ? (liveData?.live_metrics?.home_xg || liveData?.advanced_metrics?.xg?.home_total || 0) : (teamMetrics[homeTeam?.abbrev]?.xg || 0)}
+                                        format={(v) => parseFloat(v || 0).toFixed(2)}
+                                    />
+                                    <ComparisonRow
+                                        label="HIGH DANGER CHANCES (HDC)"
+                                        awayVal={isFinal ? (liveData?.live_metrics?.away_hdc || liveData?.advanced_metrics?.shot_quality?.high_danger_shots?.away || 0) : (teamMetrics[awayTeam?.abbrev]?.hdc || 0)}
+                                        homeVal={isFinal ? (liveData?.live_metrics?.home_hdc || liveData?.advanced_metrics?.shot_quality?.high_danger_shots?.home || 0) : (teamMetrics[homeTeam?.abbrev]?.hdc || 0)}
+                                        format={(v) => parseFloat(v || 0).toFixed(1)}
+                                    />
+                                    <ComparisonRow
+                                        label="HIGH DANGER CHANCES AGAINST (HDCA)"
+                                        awayVal={isFinal ? (liveData?.live_metrics?.away_hdca || 0) : (teamMetrics[awayTeam?.abbrev]?.hdca || 0)}
+                                        homeVal={isFinal ? (liveData?.live_metrics?.home_hdca || 0) : (teamMetrics[homeTeam?.abbrev]?.hdca || 0)}
+                                        format={(v) => parseFloat(v || 0).toFixed(1)}
+                                        inverse={true}
+                                    />
+                                </MetricCard>
+
+                                {/* Zone Metrics */}
+                                <MetricCard title="ZONE METRICS" icon={Zap}>
+                                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
+                                        <div className="flex items-center gap-2">
+                                            <img src={awayTeam?.logo} alt={awayTeam?.abbrev} className="w-6 h-6" />
+                                            <span className="text-accent-primary font-mono text-sm">{awayTeam?.abbrev}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <img src={homeTeam?.logo} alt={homeTeam?.abbrev} className="w-6 h-6" />
+                                            <span className="text-accent-secondary font-mono text-sm">{homeTeam?.abbrev}</span>
+                                        </div>
+                                    </div>
+                                    {(!isFinal && teamMetrics[awayTeam?.abbrev]?.ozs === null) ? null : (
+                                        <ComparisonRow
+                                            label="OFFENSIVE ZONE SHOTS (OZS)"
+                                            awayVal={isFinal ? (liveData?.live_metrics?.away_ozs || 0) : (teamMetrics[awayTeam?.abbrev]?.ozs ?? 0)}
+                                            homeVal={isFinal ? (liveData?.live_metrics?.home_ozs || 0) : (teamMetrics[homeTeam?.abbrev]?.ozs ?? 0)}
+                                            format={(v) => parseFloat(v || 0).toFixed(2)}
+                                        />
+                                    )}
+                                    {(!isFinal && teamMetrics[awayTeam?.abbrev]?.nzs === null) ? null : (
+                                        <ComparisonRow
+                                            label="NEUTRAL ZONE SHOTS (NZS)"
+                                            awayVal={isFinal ? (liveData?.live_metrics?.away_nzs || 0) : (teamMetrics[awayTeam?.abbrev]?.nzs ?? 0)}
+                                            homeVal={isFinal ? (liveData?.live_metrics?.home_nzs || 0) : (teamMetrics[homeTeam?.abbrev]?.nzs ?? 0)}
+                                            format={(v) => parseFloat(v || 0).toFixed(2)}
+                                        />
+                                    )}
+                                    {(!isFinal && teamMetrics[awayTeam?.abbrev]?.dzs === null) ? null : (
+                                        <ComparisonRow
+                                            label="DEFENSIVE ZONE SHOTS (DZS)"
+                                            awayVal={isFinal ? (liveData?.live_metrics?.away_dzs || 0) : (teamMetrics[awayTeam?.abbrev]?.dzs ?? 0)}
+                                            homeVal={isFinal ? (liveData?.live_metrics?.home_dzs || 0) : (teamMetrics[homeTeam?.abbrev]?.dzs ?? 0)}
+                                            format={(v) => parseFloat(v || 0).toFixed(2)}
+                                        />
+                                    )}
+                                </MetricCard>
+
+                                {/* Shot Generation */}
+                                <MetricCard title="SHOT GENERATION" icon={Crosshair}>
+                                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
+                                        <div className="flex items-center gap-2">
+                                            <img src={awayTeam?.logo} alt={awayTeam?.abbrev} className="w-6 h-6" />
+                                            <span className="text-accent-primary font-mono text-sm">{awayTeam?.abbrev}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <img src={homeTeam?.logo} alt={homeTeam?.abbrev} className="w-6 h-6" />
+                                            <span className="text-accent-secondary font-mono text-sm">{homeTeam?.abbrev}</span>
+                                        </div>
+                                    </div>
+                                    {(!isFinal && teamMetrics[awayTeam?.abbrev]?.fc === null) ? null : (
+                                        <ComparisonRow
+                                            label="FORECHECK/CYCLE (FC)"
+                                            awayVal={isFinal ? (liveData?.live_metrics?.away_fc || 0) : (teamMetrics[awayTeam?.abbrev]?.fc ?? 0)}
+                                            homeVal={isFinal ? (liveData?.live_metrics?.home_fc || 0) : (teamMetrics[homeTeam?.abbrev]?.fc ?? 0)}
+                                            format={(v) => parseFloat(v || 0).toFixed(2)}
+                                        />
+                                    )}
+                                    {(!isFinal && teamMetrics[awayTeam?.abbrev]?.rush === null) ? null : (
+                                        <ComparisonRow
+                                            label="RUSH SHOTS"
+                                            awayVal={isFinal ? (liveData?.live_metrics?.away_rush || 0) : (teamMetrics[awayTeam?.abbrev]?.rush ?? 0)}
+                                            homeVal={isFinal ? (liveData?.live_metrics?.home_rush || 0) : (teamMetrics[homeTeam?.abbrev]?.rush ?? 0)}
+                                            format={(v) => parseFloat(v || 0).toFixed(2)}
+                                        />
+                                    )}
+                                    <ComparisonRow
+                                        label="SHOTS ON GOAL"
+                                        awayVal={isFinal ? (liveData?.live_metrics?.away_shots || liveData?.boxscore?.awayTeam?.sog || awayTeam?.sog || 0) : (teamMetrics[awayTeam?.abbrev]?.shots || 0)}
+                                        homeVal={isFinal ? (liveData?.live_metrics?.home_shots || liveData?.boxscore?.homeTeam?.sog || homeTeam?.sog || 0) : (teamMetrics[homeTeam?.abbrev]?.shots || 0)}
+                                        format={(v) => parseFloat(v || 0).toFixed(0)}
+                                    />
+                                </MetricCard>
+
+                                {/* Turnovers */}
+                                <MetricCard title="TURNOVERS" icon={Activity}>
+                                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
+                                        <div className="flex items-center gap-2">
+                                            <img src={awayTeam?.logo} alt={awayTeam?.abbrev} className="w-6 h-6" />
+                                            <span className="text-accent-primary font-mono text-sm">{awayTeam?.abbrev}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <img src={homeTeam?.logo} alt={homeTeam?.abbrev} className="w-6 h-6" />
+                                            <span className="text-accent-secondary font-mono text-sm">{homeTeam?.abbrev}</span>
+                                        </div>
+                                    </div>
+                                    {(!isFinal && teamMetrics[awayTeam?.abbrev]?.nzts === null) ? null : (
+                                        <ComparisonRow
+                                            label="NEUTRAL ZONE TURNOVERS (NZT)"
+                                            awayVal={isFinal ? (liveData?.live_metrics?.away_nzt || 0) : (teamMetrics[awayTeam?.abbrev]?.nzts ?? 0)}
+                                            homeVal={isFinal ? (liveData?.live_metrics?.home_nzt || 0) : (teamMetrics[homeTeam?.abbrev]?.nzts ?? 0)}
+                                            format={(v) => parseFloat(v || 0).toFixed(2)}
+                                        />
+                                    )}
+                                    {(!isFinal && teamMetrics[awayTeam?.abbrev]?.nztsa === null) ? null : (
+                                        <ComparisonRow
+                                            label="NZTSOGA"
+                                            awayVal={isFinal ? (liveData?.live_metrics?.away_nztsa || 0) : (teamMetrics[awayTeam?.abbrev]?.nztsa ?? 0)}
+                                            homeVal={isFinal ? (liveData?.live_metrics?.home_nztsa || 0) : (teamMetrics[homeTeam?.abbrev]?.nztsa ?? 0)}
+                                            format={(v) => parseFloat(v || 0).toFixed(1)}
+                                            inverse={true}
+                                        />
+                                    )}
+                                </MetricCard>
+
+                                {/* Movement */}
+                                <MetricCard title="MOVEMENT" icon={Activity}>
+                                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
+                                        <div className="flex items-center gap-2">
+                                            <img src={awayTeam?.logo} alt={awayTeam?.abbrev} className="w-6 h-6" />
+                                            <span className="text-accent-primary font-mono text-sm">{awayTeam?.abbrev}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <img src={homeTeam?.logo} alt={homeTeam?.abbrev} className="w-6 h-6" />
+                                            <span className="text-accent-secondary font-mono text-sm">{homeTeam?.abbrev}</span>
+                                        </div>
+                                    </div>
+                                    {(!isFinal && teamMetrics[awayTeam?.abbrev]?.lat === null) ? null : (
+                                        <ComparisonRow
+                                            label="LATERAL MOVEMENT (LAT)"
+                                            awayVal={isFinal ? (liveData?.live_metrics?.away_lateral || 0) : (teamMetrics[awayTeam?.abbrev]?.lat ?? 0)}
+                                            homeVal={isFinal ? (liveData?.live_metrics?.home_lateral || 0) : (teamMetrics[homeTeam?.abbrev]?.lat ?? 0)}
+                                            format={(v) => parseFloat(v || 0).toFixed(1)}
+                                        />
+                                    )}
+                                    {(!isFinal && teamMetrics[awayTeam?.abbrev]?.long_movement === null) ? null : (
+                                        <ComparisonRow
+                                            label="LONGITUDINAL MOVEMENT (LONG)"
+                                            awayVal={isFinal ? (liveData?.live_metrics?.away_longitudinal || 0) : (teamMetrics[awayTeam?.abbrev]?.long_movement ?? 0)}
+                                            homeVal={isFinal ? (liveData?.live_metrics?.home_longitudinal || 0) : (teamMetrics[homeTeam?.abbrev]?.long_movement ?? 0)}
+                                            format={(v) => parseFloat(v || 0).toFixed(1)}
+                                        />
+                                    )}
+                                </MetricCard>
+
+                                {/* Possession & Shooting */}
+                                <MetricCard title="POSSESSION & SHOOTING" icon={Target}>
+                                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
+                                        <div className="flex items-center gap-2">
+                                            <img src={awayTeam?.logo} alt={awayTeam?.abbrev} className="w-6 h-6" />
+                                            <span className="text-accent-primary font-mono text-sm">{awayTeam?.abbrev}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <img src={homeTeam?.logo} alt={homeTeam?.abbrev} className="w-6 h-6" />
+                                            <span className="text-accent-secondary font-mono text-sm">{homeTeam?.abbrev}</span>
+                                        </div>
+                                    </div>
+                                    <ComparisonRow
+                                        label="CORSI FOR % (CF%)"
+                                        awayVal={isFinal ? (liveData?.live_metrics?.away_corsi_pct || liveData?.advanced_metrics?.corsi?.away || 0) : (teamMetrics[awayTeam?.abbrev]?.corsi_pct || 0)}
+                                        homeVal={isFinal ? (liveData?.live_metrics?.home_corsi_pct || liveData?.advanced_metrics?.corsi?.home || 0) : (teamMetrics[homeTeam?.abbrev]?.corsi_pct || 0)}
+                                        format={(v) => parseFloat(v || 0).toFixed(1) + '%'}
+                                    />
+                                    <ComparisonRow
+                                        label={isFinal ? "GOALS" : "GOALS PER GAME"}
+                                        awayVal={isFinal ? (liveData?.live_metrics?.away_score || awayTeam?.score || 0) : (teamMetrics[awayTeam?.abbrev]?.goals_per_game || teamMetrics[awayTeam?.abbrev]?.goals || 0)}
+                                        homeVal={isFinal ? (liveData?.live_metrics?.home_score || homeTeam?.score || 0) : (teamMetrics[homeTeam?.abbrev]?.goals_per_game || teamMetrics[homeTeam?.abbrev]?.goals || 0)}
+                                        format={(v) => parseFloat(v || 0).toFixed(isFinal ? 0 : 2)}
+                                    />
+                                    <ComparisonRow
+                                        label={isFinal ? "GOALS AGAINST" : "GOALS AGAINST PER GAME"}
+                                        awayVal={isFinal ? (liveData?.live_metrics?.home_score || homeTeam?.score || 0) : (teamMetrics[awayTeam?.abbrev]?.goals_against_per_game || teamMetrics[awayTeam?.abbrev]?.ga_gp || 0)}
+                                        homeVal={isFinal ? (liveData?.live_metrics?.away_score || awayTeam?.score || 0) : (teamMetrics[homeTeam?.abbrev]?.goals_against_per_game || teamMetrics[homeTeam?.abbrev]?.ga_gp || 0)}
+                                        format={(v) => parseFloat(v || 0).toFixed(isFinal ? 0 : 2)}
+                                        inverse={true}
+                                    />
+                                </MetricCard>
+
+                                {/* Physical Play */}
+                                <MetricCard title="PHYSICAL PLAY" icon={Shield}>
+                                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
+                                        <div className="flex items-center gap-2">
+                                            <img src={awayTeam?.logo} alt={awayTeam?.abbrev} className="w-6 h-6" />
+                                            <span className="text-accent-primary font-mono text-sm">{awayTeam?.abbrev}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <img src={homeTeam?.logo} alt={homeTeam?.abbrev} className="w-6 h-6" />
+                                            <span className="text-accent-secondary font-mono text-sm">{homeTeam?.abbrev}</span>
+                                        </div>
+                                    </div>
+                                    <ComparisonRow
+                                        label={isFinal ? "HITS" : "HITS PER GAME"}
+                                        awayVal={isFinal ? (liveData?.live_metrics?.away_hits || 0) : (teamMetrics[awayTeam?.abbrev]?.hits_per_game || 0)}
+                                        homeVal={isFinal ? (liveData?.live_metrics?.home_hits || 0) : (teamMetrics[homeTeam?.abbrev]?.hits_per_game || 0)}
+                                        format={(v) => parseFloat(v || 0).toFixed(isFinal ? 0 : 2)}
+                                    />
+                                    <ComparisonRow
+                                        label="BLOCKED SHOTS"
+                                        awayVal={isFinal ? (liveData?.live_metrics?.away_blocked_shots || liveData?.advanced_metrics?.defense?.blocked_shots?.away || 0) : (teamMetrics[awayTeam?.abbrev]?.blocks_per_game || 0)}
+                                        homeVal={isFinal ? (liveData?.live_metrics?.home_blocked_shots || liveData?.advanced_metrics?.defense?.blocked_shots?.home || 0) : (teamMetrics[homeTeam?.abbrev]?.blocks_per_game || 0)}
+                                        format={(v) => parseFloat(v || 0).toFixed(isFinal ? 0 : 2)}
+                                    />
+                                    <ComparisonRow
+                                        label="GIVEAWAYS"
+                                        awayVal={isFinal ? (liveData?.live_metrics?.away_giveaways || 0) : (teamMetrics[awayTeam?.abbrev]?.giveaways_per_game || 0)}
+                                        homeVal={isFinal ? (liveData?.live_metrics?.home_giveaways || 0) : (teamMetrics[homeTeam?.abbrev]?.giveaways_per_game || 0)}
+                                        format={(v) => parseFloat(v || 0).toFixed(isFinal ? 0 : 2)}
+                                        inverse={true}
+                                    />
+                                    <ComparisonRow
+                                        label="TAKEAWAYS"
+                                        awayVal={isFinal ? (liveData?.live_metrics?.away_takeaways || 0) : (teamMetrics[awayTeam?.abbrev]?.takeaways_per_game || 0)}
+                                        homeVal={isFinal ? (liveData?.live_metrics?.home_takeaways || 0) : (teamMetrics[homeTeam?.abbrev]?.takeaways_per_game || 0)}
+                                        format={(v) => parseFloat(v || 0).toFixed(isFinal ? 0 : 2)}
+                                    />
+                                    <ComparisonRow
+                                        label="PENALTY MINUTES (PIM)"
+                                        awayVal={isFinal ? (liveData?.live_metrics?.away_pim || 0) : (teamMetrics[awayTeam?.abbrev]?.pim_per_game || 0)}
+                                        homeVal={isFinal ? (liveData?.live_metrics?.home_pim || 0) : (teamMetrics[homeTeam?.abbrev]?.pim_per_game || 0)}
+                                        format={(v) => parseFloat(v || 0).toFixed(isFinal ? 0 : 2)}
+                                    />
+                                </MetricCard>
+
+                                {/* Special Teams */}
+                                <MetricCard title="SPECIAL TEAMS" icon={Zap}>
+                                    <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
+                                        <div className="flex items-center gap-2">
+                                            <img src={awayTeam?.logo} alt={awayTeam?.abbrev} className="w-6 h-6" />
+                                            <span className="text-accent-primary font-mono text-sm">{awayTeam?.abbrev}</span>
+                                        </div>
+                                        <div className="flex items-center gap-2">
+                                            <img src={homeTeam?.logo} alt={homeTeam?.abbrev} className="w-6 h-6" />
+                                            <span className="text-accent-secondary font-mono text-sm">{homeTeam?.abbrev}</span>
+                                        </div>
+                                    </div>
+                                    <ComparisonRow
+                                        label="POWER PLAY % (PP%)"
+                                        awayVal={isFinal ? (liveData?.live_metrics?.away_power_play_pct ?? null) : (teamMetrics[awayTeam?.abbrev]?.pp_pct || 0)}
+                                        homeVal={isFinal ? (liveData?.live_metrics?.home_power_play_pct ?? null) : (teamMetrics[homeTeam?.abbrev]?.pp_pct || 0)}
+                                        format={(v) => v === null || v === undefined ? 'N/A' : parseFloat(v || 0).toFixed(1) + '%'}
+                                    />
+                                    <ComparisonRow
+                                        label="PENALTY KILL % (PK%)"
+                                        awayVal={isFinal ? (liveData?.live_metrics?.home_power_play_pct !== null && liveData?.live_metrics?.home_power_play_pct !== undefined ? (100 - liveData.live_metrics.home_power_play_pct) : null) : (teamMetrics[awayTeam?.abbrev]?.pk_pct || 0)}
+                                        homeVal={isFinal ? (liveData?.live_metrics?.away_power_play_pct !== null && liveData?.live_metrics?.away_power_play_pct !== undefined ? (100 - liveData.live_metrics.away_power_play_pct) : null) : (teamMetrics[homeTeam?.abbrev]?.pk_pct || 0)}
+                                        format={(v) => v === null || v === undefined ? 'N/A' : parseFloat(v || 0).toFixed(1) + '%'}
+                                    />
+                                    <ComparisonRow
+                                        label="FACEOFF % (FO%)"
+                                        awayVal={isFinal ? (liveData?.live_metrics?.away_faceoff_pct ?? null) : (teamMetrics[awayTeam?.abbrev]?.faceoff_pct || 0)}
+                                        homeVal={isFinal ? (liveData?.live_metrics?.home_faceoff_pct ?? null) : (teamMetrics[homeTeam?.abbrev]?.faceoff_pct || 0)}
+                                        format={(v) => v === null || v === undefined ? 'N/A' : parseFloat(v || 0).toFixed(1) + '%'}
+                                    />
+                                </MetricCard>
+                            </div>
+                        </section>
+                    )}
+                </div>
+
+                {/* Right Column - Visuals & Players */}
+                <div className="space-y-8">
+                    {/* Shot Chart */}
+                    <section className="glass-card p-6 relative">
+                        <div className="flex items-center gap-3 mb-6">
+                            <Target className="w-6 h-6 text-accent-secondary" />
+                            <h3 className="text-xl font-display font-bold">SHOT MAP</h3>
+                        </div>
+                        <div className="aspect-[2/1] rounded-xl overflow-visible relative">
+                            <ShotChart
+                                shotsData={liveData?.shots_data || shotsFromPbp || []}
+                                homeTeam={homeTeam?.abbrev || 'HOME'}
+                                awayTeam={awayTeam?.abbrev || 'AWAY'}
+                                awayHeatmap={awayHeatmap}
+                                homeHeatmap={homeHeatmap}
+                                gameState={gameState}
+                            />
+                        </div>
+                    </section>
+
+                    {/* Top Players */}
+                    <section className="glass-card p-6">
+                        <div className="flex items-center gap-3 mb-6">
+                            <Users className="w-6 h-6 text-color-success" />
+                            <h3 className="text-xl font-display font-bold">TOP PERFORMERS</h3>
+                        </div>
+                        <div className="space-y-4">
+                            {safeTopPerformers.length > 0 ? (
+                                safeTopPerformers.map((player, idx) => (
+                                <div key={idx} className="flex items-center gap-4 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
+                                    <div className="font-display font-bold text-2xl text-white/20 w-8 text-center">
+                                        {idx + 1}
+                                    </div>
+                                    <div className="w-12 h-12 rounded-full bg-white/10 border-2 border-white/20 flex items-center justify-center overflow-hidden">
+                                        <img 
+                                            src={`https://assets.nhle.com/logos/nhl/svg/${player?.team || 'NHL'}_light.svg`}
+                                            alt={player?.team || 'Team'}
+                                            className="w-10 h-10 object-contain"
+                                            onError={(e) => { e.target.style.display = 'none'; }}
+                                        />
+                                    </div>
+                                    <div className="flex-1">
+                                        <div className="font-bold text-white">
+                                            {player?.name || 'Unknown Player'}
+                                        </div>
+                                        <div className="text-xs font-mono text-text-muted flex gap-2">
+                                            <span>{player?.team || 'N/A'}</span>
+                                            <span>•</span>
+                                            <span>{player?.position || 'N/A'}</span>
+                                        </div>
+                                    </div>
+                                    <div className="text-right">
+                                        <div className="font-mono font-bold text-color-success">
+                                            {player?.gsPerGame ? player.gsPerGame.toFixed(2) : '0.00'} GS/GP
+                                        </div>
+                                        <div className="text-xs font-mono text-text-muted">
+                                            {player?.points || 0} P ({(player?.goals || 0)}G, {(player?.assists || 0)}A)
+                                        </div>
+                                    </div>
+                                </div>
+                                ))
+                            ) : (
+                                <div className="text-center text-text-muted py-4">No player data available</div>
+                            )}
+                        </div>
+                    </section>
+                </div>
             </div>
         </div>
     );
 };
 
 const GameDetails = () => {
-    return (
-        <ErrorBoundary>
-            <GameDetailsContent />
-        </ErrorBoundary>
-    );
+    try {
+        return (
+    <ErrorBoundary>
+        <GameDetailsContent />
+    </ErrorBoundary>
+);
+    } catch (error) {
+        console.error('Error in GameDetails wrapper:', error);
+        return (
+            <div className="flex flex-col items-center justify-center h-[60vh] text-center">
+                <h2 className="text-2xl font-display font-bold mb-4">Something went wrong</h2>
+                <p className="text-gray-400 mb-4">Unable to load game details.</p>
+                <button
+                    onClick={() => window.location.reload()}
+                    className="px-6 py-2 rounded-lg bg-accent-primary text-bg-primary font-bold hover:bg-accent-secondary transition-colors"
+                >
+                    Reload Page
+                </button>
+            </div>
+        );
+    }
 };
 
 export default GameDetails;
