@@ -416,13 +416,13 @@ const GameDetailsContent = () => {
             if (awayAbbrev && homeAbbrev) {
                 const fetchLines = async () => {
                     try {
-                        const [awayRes, homeRes] = await Promise.all([
-                            fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5002'}/api/lines/${awayAbbrev}`),
-                            fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5002'}/api/lines/${homeAbbrev}`)
+                        const [awayLinesResponse, homeLinesResponse] = await Promise.all([
+                            fetch(`${import.meta.env.MODE === 'production' ? 'https://nhl-analytics-api.onrender.com' : (import.meta.env.VITE_API_URL || 'http://localhost:5002')}/api/lines/${awayAbbrev}`),
+                            fetch(`${import.meta.env.MODE === 'production' ? 'https://nhl-analytics-api.onrender.com' : (import.meta.env.VITE_API_URL || 'http://localhost:5002')}/api/lines/${homeAbbrev}`)
                         ]);
 
-                        const awayLines = await awayRes.json();
-                        const homeLines = await homeRes.json();
+                        const awayLines = await awayLinesResponse.json();
+                        const homeLines = await homeLinesResponse.json();
 
                         if (!awayLines.error && !homeLines.error) {
                             setLinesData({ away: awayLines, home: homeLines });

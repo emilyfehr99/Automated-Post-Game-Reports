@@ -122,7 +122,7 @@ const TeamDetails = () => {
             try {
                 const [rosterData, metricsResponse] = await Promise.all([
                     nhlApi.getTeamDetails(id),
-                    fetch(`${import.meta.env.VITE_API_URL || 'http://localhost:5002'}/api/team-metrics`)
+                    fetch(`${import.meta.env.MODE === 'production' ? 'https://nhl-analytics-api.onrender.com' : (import.meta.env.VITE_API_URL || 'http://localhost:5002')}/api/team-metrics`)
                 ]);
 
                 setRoster(rosterData);
