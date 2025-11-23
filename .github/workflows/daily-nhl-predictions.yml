@@ -46,6 +46,7 @@ jobs:
           "
 
       - name: Scrape Edge data
+        working-directory: automated-post-game-reports
         run: |
           echo "🏒 SCRAPING NHL EDGE DATA"
           echo "Current directory: $(pwd)"
@@ -57,6 +58,7 @@ jobs:
           python3 daily_edge_data_scraper.py
 
       - name: Validate edge data exists
+        working-directory: automated-post-game-reports
         run: |
           if [ -f "nhl_edge_data.json" ]; then
             echo "✅ Edge data file created successfully"
@@ -66,10 +68,31 @@ jobs:
           fi
 
       - name: Run daily predictions
+        working-directory: automated-post-game-reports
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
           python3 prediction_interface.py
+
+      - name: Generate real team stats
+        working-directory: automated-post-game-reports
+        run: |
+          echo "📊 GENERATING REAL TEAM STATS"
+          echo "Current directory: $(pwd)"
+          echo "Running team stats generator..."
+          python3 generate_real_team_stats.py
+          echo "✅ Team stats generation complete"
+          
+          # Check if file was created (script saves to parent directory)
+          if [ -f "../season_2025_2026_team_stats.json" ]; then
+            echo "✅ Team stats file created in parent directory"
+            ls -lh ../season_2025_2026_team_stats.json
+          elif [ -f "season_2025_2026_team_stats.json" ]; then
+            echo "✅ Team stats file created in current directory"
+            ls -lh season_2025_2026_team_stats.json
+          else
+            echo "⚠️  Team stats file not found - checking for errors"
+          fi
 
       - name: Commit predictions and edge data changes
         run: |
@@ -79,30 +102,45 @@ jobs:
           # Track files to commit
           FILES_TO_COMMIT=""
           
-          # Add nhl_edge_data.json if it exists
-          if [ -f "nhl_edge_data.json" ]; then
+          # Add nhl_edge_data.json if it exists (in automated-post-game-reports/)
+          if [ -f "automated-post-game-reports/nhl_edge_data.json" ]; then
             echo "📦 Force adding nhl_edge_data.json (overriding .gitignore)..."
-            git add --force nhl_edge_data.json
+            git add --force automated-post-game-reports/nhl_edge_data.json
             FILES_TO_COMMIT="$FILES_TO_COMMIT nhl_edge_data.json"
             echo "✅ nhl_edge_data.json added"
           else
             echo "⚠️  nhl_edge_data.json not found"
           fi
           
-          # Add win_probability_predictions_v2.json if it exists
-          if [ -f "win_probability_predictions_v2.json" ]; then
+          # Add win_probability_predictions_v2.json if it exists (in automated-post-game-reports/)
+          if [ -f "automated-post-game-reports/win_probability_predictions_v2.json" ]; then
             echo "📦 Adding win_probability_predictions_v2.json..."
-            git add --force win_probability_predictions_v2.json
+            git add --force automated-post-game-reports/win_probability_predictions_v2.json
             FILES_TO_COMMIT="$FILES_TO_COMMIT win_probability_predictions_v2.json"
             echo "✅ win_probability_predictions_v2.json added"
           else
             echo "⚠️  win_probability_predictions_v2.json not found"
           fi
           
+          # Add season_2025_2026_team_stats.json if it exists (saved to repo root by script)
+          if [ -f "season_2025_2026_team_stats.json" ]; then
+            echo "📦 Adding season_2025_2026_team_stats.json..."
+            git add --force season_2025_2026_team_stats.json
+            FILES_TO_COMMIT="$FILES_TO_COMMIT season_2025_2026_team_stats.json"
+            echo "✅ season_2025_2026_team_stats.json added"
+          elif [ -f "automated-post-game-reports/season_2025_2026_team_stats.json" ]; then
+            echo "📦 Adding season_2025_2026_team_stats.json from automated-post-game-reports..."
+            git add --force automated-post-game-reports/season_2025_2026_team_stats.json
+            FILES_TO_COMMIT="$FILES_TO_COMMIT season_2025_2026_team_stats.json"
+            echo "✅ season_2025_2026_team_stats.json added"
+          else
+            echo "⚠️  season_2025_2026_team_stats.json not found"
+          fi
+          
           # Commit if there are changes
           if ! git diff --staged --quiet; then
-            echo "📝 Committing updated predictions and edge data..."
-            git commit -m "Update daily NHL predictions and edge data - $(date -u +'%Y-%m-%d')"
+            echo "📝 Committing updated predictions, edge data, and team stats..."
+            git commit -m "Update daily NHL predictions, edge data, and team stats - $(date -u +'%Y-%m-%d')"
             echo "✅ Committed:$FILES_TO_COMMIT"
           else
             echo "ℹ️  No changes to commit (files are up to date)"
