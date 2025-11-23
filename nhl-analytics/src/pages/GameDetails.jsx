@@ -788,12 +788,18 @@ const GameDetailsContent = () => {
                                         </div>
                                         <div className="h-2 bg-white/5 rounded-full overflow-hidden flex">
                                             <div
-                                                className="h-full bg-accent-primary transition-all duration-500"
-                                                style={{ width: `${(liveData.away_prob || 0) * 100}%` }}
+                                                className="h-full transition-all duration-500"
+                                                style={{
+                                                    width: `${(liveData.away_prob || 0) * 100}%`,
+                                                    backgroundColor: getTeamColor(awayTeam.abbrev)
+                                                }}
                                             />
                                             <div
-                                                className="h-full bg-accent-secondary transition-all duration-500"
-                                                style={{ width: `${(liveData.home_prob || 0) * 100}%` }}
+                                                className="h-full transition-all duration-500"
+                                                style={{
+                                                    width: `${(liveData.home_prob || 0) * 100}%`,
+                                                    backgroundColor: getTeamColor(homeTeam.abbrev)
+                                                }}
                                             />
                                         </div>
                                         <div className="flex items-center justify-between">
