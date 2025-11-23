@@ -1,4 +1,7 @@
-const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002'; // Backend server
+// Use Render backend in production, localhost in development
+const BACKEND_URL = import.meta.env.MODE === 'production'
+    ? 'https://nhl-analytics-api.onrender.com'
+    : (import.meta.env.VITE_API_URL || 'http://localhost:5002');
 const BASE_URL = `${BACKEND_URL}/api/nhl`; // NHL API proxy through backend
 
 export const nhlApi = {
