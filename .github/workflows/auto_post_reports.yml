@@ -69,14 +69,12 @@ jobs:
     
     - name: Install dependencies
       if: steps.time_check.outputs.should_run == 'true'
-      working-directory: automated-post-game-reports
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
     - name: Pull latest changes (ensure we have latest processed_games.json)
       if: steps.time_check.outputs.should_run == 'true'
-      working-directory: automated-post-game-reports
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "GitHub Actions Bot"
@@ -96,7 +94,6 @@ jobs:
     
     - name: Check for completed games and post
       if: steps.time_check.outputs.should_run == 'true'
-      working-directory: automated-post-game-reports
       env:
         TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
         TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
@@ -123,15 +120,13 @@ jobs:
         # Team stats is updated by daily predictions workflow at 6am CT, so we just commit it if it exists
         if [ -f "season_2025_2026_team_stats.json" ]; then
           git add -f season_2025_2026_team_stats.json
-        elif [ -f "automated-post-game-reports/season_2025_2026_team_stats.json" ]; then
-          git add -f automated-post-game-reports/season_2025_2026_team_stats.json
         fi
-        # Add other files from automated-post-game-reports directory
-        if [ -f "automated-post-game-reports/processed_games.json" ]; then
-          git add -f automated-post-game-reports/processed_games.json
+        # Add other files
+        if [ -f "processed_games.json" ]; then
+          git add -f processed_games.json
         fi
-        if [ -f "automated-post-game-reports/win_probability_predictions_v2.json" ]; then
-          git add -f automated-post-game-reports/win_probability_predictions_v2.json
+        if [ -f "win_probability_predictions_v2.json" ]; then
+          git add -f win_probability_predictions_v2.json
         fi
         
         # Check if there are changes to commit
