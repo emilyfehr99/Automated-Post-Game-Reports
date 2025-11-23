@@ -5,7 +5,7 @@ import Home from './pages/Home';
 import TeamDetails from './pages/TeamDetails';
 import PlayerDetails from './pages/PlayerDetails';
 import Metrics from './pages/Metrics';
-import GameDetails from './pages/GameDetails';
+import GameDetails from './pages/GameDetailsPage';
 import TodaysAction from './pages/TodaysAction';
 import PlayoffPredictions from './pages/PlayoffPredictions';
 
