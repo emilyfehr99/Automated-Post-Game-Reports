@@ -1,12 +1,13 @@
 services:
   - type: web
-    name: nhl-predictions-dashboard
+    name: nhl-analytics-api
     env: python
     buildCommand: pip install -r requirements.txt
-    startCommand: python3 prediction_dashboard.py
+    startCommand: python3 api_server.py
     envVars:
       - key: PYTHON_VERSION
         value: 3.12.3
-      - key: FLASK_DEBUG
-        value: false
-
+      - key: FLASK_ENV
+        value: production
+      - key: PORT
+        value: 5002

@@ -55,3 +55,6 @@ stride_analysis_app/
 
 # Keep win_probability_predictions_v2.json for dashboard predictions
 !win_probability_predictions_v2.json
+
+# Keep vercel.json for deployment configuration
+!nhl-analytics/vercel.json
