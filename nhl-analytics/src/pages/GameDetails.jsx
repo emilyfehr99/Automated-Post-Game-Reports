@@ -657,33 +657,138 @@ const GameDetailsContent = () => {
                             </MetricCard>
                         </section>
                     );
-                case 'overview': // Show metrics AND heatmap in overview for pre-game
+                case 'overview':
                 default:
                     return (
-                        <div className="space-y-8">
-                            <PreGameHeatmap
-                                preGameData={preGameData}
-                                homeTeam={homeTeam}
-                                awayTeam={awayTeam}
-                            />
-
-                            <section className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                                <MetricCard title="ADVANCED METRICS" icon={Activity} className="md:col-span-2">
-                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-12 gap-y-4">
-                                        {METRICS_CONFIG.map(metric => (
-                                            <ComparisonRow
-                                                key={metric.key}
-                                                awayTeam={awayTeam}
-                                                homeTeam={homeTeam}
-                                                label={metric.label}
-                                                awayVal={preGameData.metrics.away?.[metric.key]}
-                                                homeVal={preGameData.metrics.home?.[metric.key]}
-                                                format={metric.format}
-                                            />
-                                        ))}
+                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
+                            {/* Left Column - Metrics */}
+                            <div className="lg:col-span-2 space-y-6">
+                                <MetricCard title="OFFENSE" icon={Zap}>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
+                                            label="GAME SCORE"
+                                            awayVal={preGameData.metrics.away?.gs}
+                                            homeVal={preGameData.metrics.home?.gs}
+                                            format={v => parseFloat(v || 0).toFixed(1)}
+                                        />
+                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
+                                            label="xGOALS/GP"
+                                            awayVal={preGameData.metrics.away?.xg}
+                                            homeVal={preGameData.metrics.home?.xg}
+                                            format={v => parseFloat(v || 0).toFixed(2)}
+                                        />
+                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
+                                            label="HIGH DANGER"
+                                            awayVal={preGameData.metrics.away?.hdc}
+                                            homeVal={preGameData.metrics.home?.hdc}
+                                            format={v => parseFloat(v || 0).toFixed(1)}
+                                        />
+                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
+                                            label="RUSH CHANCES"
+                                            awayVal={preGameData.metrics.away?.rush}
+                                            homeVal={preGameData.metrics.home?.rush}
+                                        />
+                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
+                                            label="FORECHECK"
+                                            awayVal={preGameData.metrics.away?.fc}
+                                            homeVal={preGameData.metrics.home?.fc}
+                                        />
+                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
+                                            label="OFF ZONE SHOTS"
+                                            awayVal={preGameData.metrics.away?.ozs}
+                                            homeVal={preGameData.metrics.home?.ozs}
+                                        />
                                     </div>
                                 </MetricCard>
-                            </section>
+
+                                <MetricCard title="DEFENSE" icon={Shield}>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
+                                            label="GA/GP"
+                                            awayVal={preGameData.metrics.away?.ga_gp}
+                                            homeVal={preGameData.metrics.home?.ga_gp}
+                                            format={v => parseFloat(v || 0).toFixed(2)}
+                                        />
+                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
+                                            label="CORSI %"
+                                            awayVal={preGameData.metrics.away?.corsi_pct}
+                                            homeVal={preGameData.metrics.home?.corsi_pct}
+                                            format={v => v + '%'}
+                                        />
+                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
+                                            label="HD AGAINST"
+                                            awayVal={preGameData.metrics.away?.hdca}
+                                            homeVal={preGameData.metrics.home?.hdca}
+                                            format={v => parseFloat(v || 0).toFixed(1)}
+                                        />
+                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
+                                            label="DEF ZONE SHOTS"
+                                            awayVal={preGameData.metrics.away?.dzs}
+                                            homeVal={preGameData.metrics.home?.dzs}
+                                        />
+                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
+                                            label="BLOCKS/GP"
+                                            awayVal={preGameData.metrics.away?.blocks}
+                                            homeVal={preGameData.metrics.home?.blocks}
+                                            format={v => parseFloat(v || 0).toFixed(1)}
+                                        />
+                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
+                                            label="PENALTY KILL"
+                                            awayVal={preGameData.metrics.away?.pk_pct}
+                                            homeVal={preGameData.metrics.home?.pk_pct}
+                                            format={v => v + '%'}
+                                        />
+                                    </div>
+                                </MetricCard>
+
+                                <MetricCard title="TRANSITION" icon={Activity}>
+                                    <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
+                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
+                                            label="NEUTRAL ZONE"
+                                            awayVal={preGameData.metrics.away?.nzs}
+                                            homeVal={preGameData.metrics.home?.nzs}
+                                        />
+                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
+                                            label="NZ TURNOVERS"
+                                            awayVal={preGameData.metrics.away?.nzts}
+                                            homeVal={preGameData.metrics.home?.nzts}
+                                        />
+                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
+                                            label="NZTSA"
+                                            awayVal={preGameData.metrics.away?.nztsa}
+                                            homeVal={preGameData.metrics.home?.nztsa}
+                                            format={v => parseFloat(v || 0).toFixed(1)}
+                                        />
+                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
+                                            label="LATERAL MOVEMENT"
+                                            awayVal={preGameData.metrics.away?.lat}
+                                            homeVal={preGameData.metrics.home?.lat}
+                                            format={v => parseFloat(v || 0).toFixed(1)}
+                                        />
+                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
+                                            label="N-S MOVEMENT"
+                                            awayVal={preGameData.metrics.away?.long_movement}
+                                            homeVal={preGameData.metrics.home?.long_movement}
+                                            format={v => parseFloat(v || 0).toFixed(1)}
+                                        />
+                                        <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
+                                            label="FACEOFF %"
+                                            awayVal={preGameData.metrics.away?.fo_pct}
+                                            homeVal={preGameData.metrics.home?.fo_pct}
+                                            format={v => v + '%'}
+                                        />
+                                    </div>
+                                </MetricCard>
+                            </div>
+
+                            {/* Right Column - Heatmap */}
+                            <div className="space-y-6">
+                                <PreGameHeatmap
+                                    preGameData={preGameData}
+                                    homeTeam={homeTeam}
+                                    awayTeam={awayTeam}
+                                />
+                            </div>
                         </div>
                     );
             }
