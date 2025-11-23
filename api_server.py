@@ -10,7 +10,8 @@ from datetime import datetime, timedelta
 app = Flask(__name__)
 # Enable CORS for React frontend - allows Vercel deployment and localhost
 CORS(app, origins=[
-    "https://*.vercel.app",  # All Vercel deployments
+    "https://nhl-analytics.vercel.app",  # Production Vercel domain
+    "https://*.vercel.app",  # All Vercel preview deployments
     "http://localhost:5173",  # Local development
     "http://localhost:3000"   # Alternative local port
 ], supports_credentials=True)
