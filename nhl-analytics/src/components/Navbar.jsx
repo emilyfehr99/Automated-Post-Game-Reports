@@ -48,7 +48,7 @@ const Navbar = () => {
                             NHL
                         </span>
                         <span className="font-mono text-[10px] tracking-widest text-text-secondary font-semibold">
-                            ANALYTICS
+                            ANALYTICS v3
                         </span>
                     </div>
                 </Link>
