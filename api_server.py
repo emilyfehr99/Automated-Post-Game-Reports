@@ -8,7 +8,12 @@ import requests
 from datetime import datetime, timedelta
 
 app = Flask(__name__)
-CORS(app)  # Enable CORS for React frontend
+# Enable CORS for React frontend - allows Vercel deployment and localhost
+CORS(app, origins=[
+    "https://*.vercel.app",  # All Vercel deployments
+    "http://localhost:5173",  # Local development
+    "http://localhost:3000"   # Alternative local port
+], supports_credentials=True)
 
 # Base directory for data files
 DATA_DIR = os.path.dirname(os.path.abspath(__file__))
