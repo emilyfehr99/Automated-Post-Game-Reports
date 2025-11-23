@@ -1,6 +1,6 @@
 // Backend API client for pre-calculated metrics
 // Use Render backend in production, localhost in development
-const BASE_URL = import.meta.env.MODE === 'production'
+const BACKEND_URL = import.meta.env.MODE === 'production'
     ? 'https://nhl-analytics-api.onrender.com'
     : (import.meta.env.VITE_API_URL || 'http://localhost:5002');
 
