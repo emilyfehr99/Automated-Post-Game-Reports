@@ -663,7 +663,7 @@ const GameDetailsContent = () => {
                         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
                             {/* Left Column - Metrics */}
                             <div className="lg:col-span-2 space-y-6">
-                                <MetricCard title="OFFENSE" icon={Zap}>
+                                <MetricCard title="OFFENSE (v2)" icon={Zap}>
                                     <div className="grid grid-cols-1 md:grid-cols-2 gap-x-8 gap-y-4">
                                         <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
                                             label="GAME SCORE"
