@@ -1,5 +1,5 @@
-const BASE_URL = 'https://api-web.nhle.com/v1'; // NHL API
 const BACKEND_URL = import.meta.env.VITE_API_URL || 'http://localhost:5002'; // Backend server
+const BASE_URL = `${BACKEND_URL}/api/nhl`; // NHL API proxy through backend
 
 export const nhlApi = {
     async getStandings(date) {

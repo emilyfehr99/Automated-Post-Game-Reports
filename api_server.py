@@ -727,6 +727,43 @@ def get_player_stats():
         print(f"Error fetching player stats: {e}")
         return jsonify({'error': str(e)}), 500
 
+# NHL API Proxy endpoints to avoid CORS issues
+@app.route('/api/nhl/schedule/<date>', methods=['GET'])
+def proxy_nhl_schedule(date):
+    """Proxy NHL schedule API to avoid CORS"""
+    try:
+        url = f"https://api-web.nhle.com/v1/schedule/{date}"
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            return jsonify(response.json())
+        return jsonify({'error': 'Failed to fetch schedule'}), response.status_code
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/nhl/standings/<date>', methods=['GET'])
+def proxy_nhl_standings(date):
+    """Proxy NHL standings API to avoid CORS"""
+    try:
+        url = f"https://api-web.nhle.com/v1/standings/{date}"
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            return jsonify(response.json())
+        return jsonify({'error': 'Failed to fetch standings'}), response.status_code
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/nhl/gamecenter/<game_id>/<endpoint>', methods=['GET'])
+def proxy_nhl_gamecenter(game_id, endpoint):
+    """Proxy NHL game center API to avoid CORS"""
+    try:
+        url = f"https://api-web.nhle.com/v1/gamecenter/{game_id}/{endpoint}"
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            return jsonify(response.json())
+        return jsonify({'error': 'Failed to fetch game data'}), response.status_code
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 if __name__ == '__main__':
     print("🏒 NHL Analytics API Server")
     print("=" * 50)
