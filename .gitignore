@@ -44,8 +44,11 @@ hockey-practice-planner/
 hockey-practice-pro/
 nhl_postgame_reports/
 real_nhl_logos/
-src/
 stride_analysis_app/
+
+# Ignore src/ but NOT nhl-analytics/src
+src/
+!nhl-analytics/src/
 
 # Keep logo.png for dashboard
 !static/logo.png
