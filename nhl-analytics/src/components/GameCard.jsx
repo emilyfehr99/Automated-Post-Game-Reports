@@ -1,29 +1,50 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
+import { backendApi } from '../api/backend';
 import clsx from 'clsx';
 
+const TEAM_COLORS = {
+    ANA: '#F47A38', ARI: '#8C2633', BOS: '#FFB81C', BUF: '#FCB514', CGY: '#C8102E',
+    CAR: '#CC0000', CHI: '#CF0A2C', COL: '#6F263D', CBJ: '#002654', DAL: '#006847',
+    DET: '#CE1126', EDM: '#FF4C00', FLA: '#B9975B', LAK: '#111111', MIN: '#154734',
+    MTL: '#AF1E2D', NSH: '#FFB81C', NJD: '#CE1126', NYI: '#00539B', NYR: '#0038A8',
+    OTT: '#C52032', PHI: '#F74902', PIT: '#FCB514', SJS: '#006D75', SEA: '#99D9D9',
+    STL: '#002F87', TBL: '#002868', TOR: '#00205B', UTA: '#71AFE5', VAN: '#00205B',
+    VGK: '#B4975A', WPG: '#041E42', WSH: '#041E42'
+};
+
+const getTeamColor = (abbr) => TEAM_COLORS[abbr] || '#FFFFFF';
+
 const GameCard = ({ game, prediction, awayMetrics, homeMetrics }) => {
+    const [liveData, setLiveData] = useState(null);
     const isLive = game.gameState === 'LIVE' || game.gameState === 'CRIT';
     const isFinal = game.gameState === 'FINAL' || game.gameState === 'OFF';
 
+    useEffect(() => {
+        let mounted = true;
+        if (isLive || isFinal) {
+            backendApi.getLiveGame(game.id)
+                .then(data => {
+                    if (mounted) setLiveData(data);
+                })
+                .catch(err => console.error('Failed to fetch live game data for card:', err));
+        }
+        return () => { mounted = false; };
+    }, [game.id, isLive, isFinal]);
+
+    // Use live data if available, otherwise fall back to prediction
+    const displayData = liveData || prediction;
+
     // Handle both decimal (0.47) and percentage (47) formats
-    // API returns away_win_prob/home_win_prob OR predicted_away_win_prob/predicted_home_win_prob
-    const awayProbRaw = prediction?.away_win_prob || prediction?.predicted_away_win_prob || prediction?.calibrated_away_prob || 0;
-    const homeProbRaw = prediction?.home_win_prob || prediction?.predicted_home_win_prob || prediction?.calibrated_home_prob || 0;
+    const awayProbRaw = displayData?.away_prob || displayData?.away_win_prob || displayData?.predicted_away_win_prob || displayData?.calibrated_away_prob || 0;
+    const homeProbRaw = displayData?.home_prob || displayData?.home_win_prob || displayData?.predicted_home_win_prob || displayData?.calibrated_home_prob || 0;
 
     // If value is > 1, it's already a percentage; otherwise multiply by 100
     const awayProb = awayProbRaw > 1 ? awayProbRaw.toFixed(1) : (awayProbRaw * 100).toFixed(1);
     const homeProb = homeProbRaw > 1 ? homeProbRaw.toFixed(1) : (homeProbRaw * 100).toFixed(1);
 
-    const showProb = prediction && (awayProbRaw > 0 || homeProbRaw > 0);
-
-    console.log(`GameCard for ${game?.awayTeam?.abbrev} vs ${game?.homeTeam?.abbrev}:`, {
-        prediction,
-        showProb,
-        awayProb,
-        homeProb
-    });
+    const showProb = displayData && (parseFloat(awayProb) > 0 || parseFloat(homeProb) > 0);
 
     return (
         <div className="block h-full relative group">
@@ -108,47 +129,30 @@ const GameCard = ({ game, prediction, awayMetrics, homeMetrics }) => {
                         </div>
                     </div>
 
-                    {/* Predictions Bar - Pre-game */}
-                    {showProb && !isLive && !isFinal && (
+                    {/* Win Probability Bar - All States */}
+                    {showProb && (
                         <div className="mt-auto">
                             <div className="flex justify-between text-xs font-mono mb-2 px-1">
-                                <span className="text-accent-cyan font-bold">{awayProb}%</span>
-                                <span className="text-gray-500">WIN PROBABILITY</span>
-                                <span className="text-accent-magenta font-bold">{homeProb}%</span>
+                                <span className="font-bold" style={{ color: getTeamColor(game?.awayTeam?.abbrev) }}>{awayProb}%</span>
+                                <span className="text-gray-400">
+                                    {isLive ? 'LIVE WIN PROBABILITY' : (isFinal ? 'FINAL WIN PROBABILITY' : 'WIN PROBABILITY')}
+                                </span>
+                                <span className="font-bold" style={{ color: getTeamColor(game?.homeTeam?.abbrev) }}>{homeProb}%</span>
                             </div>
                             <div className="h-2 bg-white/5 rounded-full overflow-hidden flex">
                                 <div
-                                    className="h-full bg-gradient-to-r from-accent-cyan to-blue-500 relative"
-                                    style={{ width: `${awayProb}%` }}
-                                >
-                                    <div className="absolute inset-0 bg-white/20 animate-pulse" />
-                                </div>
-                                <div
-                                    className="h-full bg-gradient-to-l from-accent-magenta to-purple-500 relative"
-                                    style={{ width: `${homeProb}%` }}
-                                >
-                                    <div className="absolute inset-0 bg-white/20 animate-pulse" />
-                                </div>
-                            </div>
-                        </div>
-                    )}
-
-                    {/* Likelihood of Winning - Live & Finished Games */}
-                    {showProb && (isFinal || isLive) && (
-                        <div className="mt-auto">
-                            <div className="flex justify-between text-xs font-mono mb-2 px-1">
-                                <span className="text-accent-cyan font-bold">{awayProb}%</span>
-                                <span className="text-gray-400">{isLive ? 'LIVE WIN PROBABILITY' : 'LIKELIHOOD OF WINNING'}</span>
-                                <span className="text-accent-magenta font-bold">{homeProb}%</span>
-                            </div>
-                            <div className="h-2 bg-white/5 rounded-full overflow-hidden flex">
-                                <div
-                                    className="h-full bg-accent-cyan transition-all duration-500"
-                                    style={{ width: `${awayProb}%` }}
+                                    className="h-full transition-all duration-500"
+                                    style={{
+                                        width: `${awayProb}%`,
+                                        backgroundColor: getTeamColor(game?.awayTeam?.abbrev)
+                                    }}
                                 />
                                 <div
-                                    className="h-full bg-accent-magenta transition-all duration-500"
-                                    style={{ width: `${homeProb}%` }}
+                                    className="h-full transition-all duration-500"
+                                    style={{
+                                        width: `${homeProb}%`,
+                                        backgroundColor: getTeamColor(game?.homeTeam?.abbrev)
+                                    }}
                                 />
                             </div>
                         </div>
@@ -156,7 +160,7 @@ const GameCard = ({ game, prediction, awayMetrics, homeMetrics }) => {
 
                     {/* Live Game Stats Preview */}
                     {isLive && (
-                        <div className="mt-auto grid grid-cols-3 gap-2 text-center text-xs font-mono text-gray-400 bg-white/5 rounded-lg p-2">
+                        <div className="mt-4 grid grid-cols-3 gap-2 text-center text-xs font-mono text-gray-400 bg-white/5 rounded-lg p-2">
                             <div>
                                 <div className="text-white font-bold">{game?.period || '1st'}</div>
                                 <div className="text-[10px]">PER</div>
