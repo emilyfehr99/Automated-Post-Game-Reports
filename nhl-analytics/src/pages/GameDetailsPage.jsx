@@ -1094,241 +1094,53 @@ const GameDetailsContent = () => {
                 </div>
             </div>
 
-            {/* Sticky Navigation Bar */}
+            {/* Navigation Tabs */}
             <nav className="sticky top-0 z-40 bg-bg-primary/95 backdrop-blur-md border-b border-white/10 mb-8">
                 <div className="flex gap-4 overflow-x-auto py-4 px-6 scrollbar-hide">
-                    <a href="#overview" className="px-4 py-2 font-display font-bold text-sm text-text-muted hover:text-accent-primary transition-colors whitespace-nowrap">
+                    <button
+                        onClick={() => setActiveTab('overview')}
+                        className={clsx(
+                            "px-4 py-2 font-display font-bold text-sm transition-colors whitespace-nowrap",
+                            activeTab === 'overview' ? "text-accent-primary border-b-2 border-accent-primary" : "text-text-muted hover:text-white"
+                        )}
+                    >
                         OVERVIEW
-                    </a>
+                    </button>
                     {(isLive || isFinal) && (
-                        <a href="#stats" className="px-4 py-2 font-display font-bold text-sm text-text-muted hover:text-accent-primary transition-colors whitespace-nowrap">
-                            STATS
-                        </a>
+                        <button
+                            onClick={() => setActiveTab('visuals')}
+                            className={clsx(
+                                "px-4 py-2 font-display font-bold text-sm transition-colors whitespace-nowrap",
+                                activeTab === 'visuals' ? "text-accent-primary border-b-2 border-accent-primary" : "text-text-muted hover:text-white"
+                            )}
+                        >
+                            VISUALS
+                        </button>
                     )}
-                    <a href="#advanced" className="px-4 py-2 font-display font-bold text-sm text-text-muted hover:text-accent-primary transition-colors whitespace-nowrap">
+                    <button
+                        onClick={() => setActiveTab('advanced')}
+                        className={clsx(
+                            "px-4 py-2 font-display font-bold text-sm transition-colors whitespace-nowrap",
+                            activeTab === 'advanced' ? "text-accent-primary border-b-2 border-accent-primary" : "text-text-muted hover:text-white"
+                        )}
+                    >
                         ADVANCED
-                    </a>
-                    {(isLive || isFinal) && (
-                        <a href="#shot-map" className="px-4 py-2 font-display font-bold text-sm text-text-muted hover:text-accent-primary transition-colors whitespace-nowrap">
-                            SHOT MAP
-                        </a>
-                    )}
-                    <a href="#lines" className="px-4 py-2 font-display font-bold text-sm text-text-muted hover:text-accent-primary transition-colors whitespace-nowrap">
+                    </button>
+                    <button
+                        onClick={() => setActiveTab('lines')}
+                        className={clsx(
+                            "px-4 py-2 font-display font-bold text-sm transition-colors whitespace-nowrap",
+                            activeTab === 'lines' ? "text-accent-primary border-b-2 border-accent-primary" : "text-text-muted hover:text-white"
+                        )}
+                    >
                         LINES
-                    </a>
+                    </button>
                 </div>
             </nav>
 
-            {/* All Content Sections */}
-            <div className="space-y-12">
-                {/* OVERVIEW SECTION */}
-                <section id="overview">
-                    {!isLive && !isFinal ? (
-                        // Pre-game overview
-                        <div className="space-y-8">
-                            <PreGameHeatmap
-                                preGameData={preGameData}
-                                homeTeam={homeTeam}
-                                awayTeam={awayTeam}
-                            />
-                        </div>
-                    ) : (
-                        // Live/Final game overview
-                        <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-                            <div className="lg:col-span-2 space-y-8">
-                                <section>
-                                    <div className="flex items-center gap-3 mb-6">
-                                        <Clock className="w-6 h-6 text-accent-primary" />
-                                        <h3 className="text-xl font-display font-bold">PERIOD PERFORMANCE</h3>
-                                    </div>
-                                    {liveData?.live_metrics ? (
-                                        <PeriodStatsTable
-                                            periodStats={constructPeriodStats(liveData.live_metrics)}
-                                            awayTeam={awayTeam}
-                                            homeTeam={homeTeam}
-                                        />
-                                    ) : (
-                                        <div className="glass-card p-6 text-center text-text-muted">
-                                            No period stats available yet.
-                                        </div>
-                                    )}
-                                </section>
-                            </div>
-
-                            <div className="space-y-8">
-                                {(isFinal || isLive) && liveData && (
-                                    <section className="glass-card p-6">
-                                        <div className="flex items-center gap-3 mb-6">
-                                            <TrendingUp className="w-6 h-6 text-accent-primary" />
-                                            <h3 className="text-xl font-display font-bold">{isLive ? 'LIVE WIN PROBABILITY' : 'FINAL WIN PROBABILITY'}</h3>
-                                        </div>
-                                        <div className="space-y-4">
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <img src={awayTeam.logo} alt={awayTeam.abbrev} className="w-8 h-8" />
-                                                    <span className="font-display font-bold">{awayTeam.abbrev}</span>
-                                                </div>
-                                                <div className="text-right">
-                                                    <div className="text-3xl font-display font-bold text-accent-primary">
-                                                        {((liveData.away_prob || 0) * 100).toFixed(1)}%
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="h-2 bg-white/5 rounded-full overflow-hidden flex">
-                                                <div
-                                                    className="h-full bg-accent-primary transition-all duration-500"
-                                                    style={{ width: `${(liveData.away_prob || 0) * 100}%` }}
-                                                />
-                                                <div
-                                                    className="h-full bg-accent-secondary transition-all duration-500"
-                                                    style={{ width: `${(liveData.home_prob || 0) * 100}%` }}
-                                                />
-                                            </div>
-                                            <div className="flex items-center justify-between">
-                                                <div className="flex items-center gap-3">
-                                                    <img src={homeTeam.logo} alt={homeTeam.abbrev} className="w-8 h-8" />
-                                                    <span className="font-display font-bold">{homeTeam.abbrev}</span>
-                                                </div>
-                                                <div className="text-right">
-                                                    <div className="text-3xl font-display font-bold text-accent-secondary">
-                                                        {((liveData.home_prob || 0) * 100).toFixed(1)}%
-                                                    </div>
-                                                </div>
-                                            </div>
-                                            <div className="text-center text-xs text-text-muted font-mono mt-4">
-                                                Model Confidence: {((liveData.confidence || 0) * 100).toFixed(1)}%
-                                            </div>
-                                        </div>
-                                    </section>
-                                )}
-                            </div>
-                        </div>
-                    )}
-                </section>
-
-                {/* ADVANCED METRICS SECTION */}
-                <section id="advanced">
-                    <div className="flex items-center gap-3 mb-6">
-                        <Activity className="w-6 h-6 text-accent-primary" />
-                        <h2 className="text-2xl font-display font-bold">ADVANCED METRICS</h2>
-                    </div>
-                    {!isLive && !isFinal ? (
-                        // Pre-game advanced metrics
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <MetricCard title="OFFENSE" icon={Zap}>
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="GAME SCORE"
-                                    awayVal={preGameData.metrics.away?.gs}
-                                    homeVal={preGameData.metrics.home?.gs}
-                                    format={v => parseFloat(v || 0).toFixed(1)}
-                                />
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="GOALS/GP"
-                                    awayVal={preGameData.metrics.away?.goals}
-                                    homeVal={preGameData.metrics.home?.goals}
-                                    format={v => parseFloat(v || 0).toFixed(2)}
-                                />
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="xGOALS/GP"
-                                    awayVal={preGameData.metrics.away?.xg}
-                                    homeVal={preGameData.metrics.home?.xg}
-                                    format={v => parseFloat(v || 0).toFixed(2)}
-                                />
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="SHOTS/GP"
-                                    awayVal={preGameData.metrics.away?.shots}
-                                    homeVal={preGameData.metrics.home?.shots}
-                                    format={v => parseFloat(v || 0).toFixed(1)}
-                                />
-                            </MetricCard>
-
-                            <MetricCard title="DEFENSE" icon={Shield}>
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="GA/GP"
-                                    awayVal={preGameData.metrics.away?.ga_gp}
-                                    homeVal={preGameData.metrics.home?.ga_gp}
-                                    format={v => parseFloat(v || 0).toFixed(2)}
-                                />
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="PENALTY KILL"
-                                    awayVal={preGameData.metrics.away?.pk_pct}
-                                    homeVal={preGameData.metrics.home?.pk_pct}
-                                    format={v => v + '%'}
-                                />
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="CORSI %"
-                                    awayVal={preGameData.metrics.away?.corsi_pct}
-                                    homeVal={preGameData.metrics.home?.corsi_pct}
-                                    format={v => v + '%'}
-                                />
-                            </MetricCard>
-                        </div>
-                    ) : (
-                        // Live/Final advanced metrics
-                        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                            <MetricCard title="SHOT QUALITY" icon={Crosshair}>
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="EXPECTED GOALS (xG)"
-                                    awayVal={liveData?.live_metrics?.away_xg}
-                                    homeVal={liveData?.live_metrics?.home_xg}
-                                    format={(v) => parseFloat(v || 0).toFixed(2)}
-                                />
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="HIGH DANGER CHANCES"
-                                    awayVal={liveData?.live_metrics?.away_hdc}
-                                    homeVal={liveData?.live_metrics?.home_hdc}
-                                />
-                            </MetricCard>
-
-                            <MetricCard title="PRESSURE" icon={Zap}>
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="OFFENSIVE ZONE SHOTS"
-                                    awayVal={liveData?.live_metrics?.away_ozs}
-                                    homeVal={liveData?.live_metrics?.home_ozs}
-                                />
-                                <ComparisonRow awayTeam={awayTeam} homeTeam={homeTeam}
-                                    label="RUSH CHANCES"
-                                    awayVal={liveData?.live_metrics?.away_rush}
-                                    homeVal={liveData?.live_metrics?.home_rush}
-                                />
-                            </MetricCard>
-                        </div>
-                    )}
-                </section>
-
-                {/* SHOT MAP SECTION (Live/Final only) */}
-                {(isLive || isFinal) && (
-                    <section id="shot-map">
-                        <div className="flex items-center gap-3 mb-6">
-                            <Target className="w-6 h-6 text-accent-secondary" />
-                            <h2 className="text-2xl font-display font-bold">SHOT MAP</h2>
-                        </div>
-                        <div className="glass-card p-6">
-                            <div className="aspect-[2/1] bg-white/5 rounded-xl overflow-hidden relative">
-                                <ShotChart
-                                    shots={liveData?.live_metrics?.shots_data || []}
-                                    homeTeam={homeTeam.abbrev}
-                                    awayTeam={awayTeam.abbrev}
-                                />
-                            </div>
-                        </div>
-                    </section>
-                )}
-
-                {/* LINES & PAIRINGS SECTION */}
-                <section id="lines">
-                    <div className="flex items-center gap-3 mb-6">
-                        <Users className="w-6 h-6 text-accent-primary" />
-                        <h2 className="text-2xl font-display font-bold">LINES & PAIRINGS</h2>
-                    </div>
-                    <LinesPairings
-                        boxscore={gameData?.boxscore}
-                        awayTeam={awayTeam}
-                        homeTeam={homeTeam}
-                        awayLines={linesData.away}
-                        homeLines={linesData.home}
-                    />
-                </section>
+            {/* Tab Content */}
+            <div className="min-h-[500px]">
+                {renderTabContent()}
             </div>
         </div>
     );
