@@ -176,6 +176,19 @@ const ShotChart = ({ shotsData = [], awayTeam, homeTeam, awayHeatmap = null, hom
     const isPreGame = gameState === 'FUT' || gameState === 'PREVIEW';
     const hasLiveData = shotsData.length > 0;
 
+    // Debug logging
+    console.log('ShotChart Debug:', {
+        gameState,
+        isPreGame,
+        hasLiveData,
+        shotsDataLength: shotsData.length,
+        shotsDataSample: shotsData.slice(0, 2),
+        awayTeam,
+        homeTeam,
+        hasAwayHeatmap: !!awayHeatmap,
+        hasHomeHeatmap: !!homeHeatmap
+    });
+
     // For pre-game, use heatmap data (last 5 games)
     // For in-game/post-game, use live shots data
     let awayShots = [];
@@ -253,6 +266,15 @@ const ShotChart = ({ shotsData = [], awayTeam, homeTeam, awayHeatmap = null, hom
 
     const awayColor = getTeamColor(awayTeam);
     const homeColor = getTeamColor(homeTeam);
+
+    // Debug: Log final shot counts
+    console.log('ShotChart Final Counts:', {
+        awayShots: awayShots.length,
+        awayGoals: awayGoals.length,
+        homeShots: homeShots.length,
+        homeGoals: homeGoals.length,
+        totalShots: awayShots.length + homeShots.length + awayGoals.length + homeGoals.length
+    });
 
     return (
         <div className="relative w-full rounded-xl overflow-visible">
