@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { createPortal } from 'react-dom';
-import { getTeamLogo } from '../utils/teamLogos';
+import { getTeamLogo } from '../utils/teamLogos.jsx';
 
 /**
  * ShotChart Component
