@@ -53,13 +53,13 @@ const ShotChart = ({ shotsData = [], awayTeam, homeTeam, awayHeatmap = null, hom
     const handleMouseEnter = (event, shot) => {
         event.preventDefault();
         event.stopPropagation();
-        
+
         const elementRect = event.currentTarget.getBoundingClientRect();
-        
+
         // Calculate position relative to viewport (center of the element)
         let x = elementRect.left + (elementRect.width / 2);
         let y = elementRect.top;
-        
+
         // Constrain to viewport bounds to prevent horizontal scrolling
         // Use a safe approach that works even if window is not available
         if (typeof window !== 'undefined') {
@@ -68,39 +68,39 @@ const ShotChart = ({ shotsData = [], awayTeam, homeTeam, awayHeatmap = null, hom
             const padding = 10;
             const viewportWidth = window.innerWidth;
             const viewportHeight = window.innerHeight;
-            
+
             // Ensure tooltip doesn't go off the left or right edge
             if (x < tooltipWidth / 2 + padding) {
                 x = tooltipWidth / 2 + padding;
             } else if (x > viewportWidth - tooltipWidth / 2 - padding) {
                 x = viewportWidth - tooltipWidth / 2 - padding;
             }
-            
+
             // Ensure tooltip doesn't go off the top edge
             if (y < tooltipHeight + padding) {
                 y = tooltipHeight + padding;
             }
         }
-        
+
         // Get shooter name - prioritize 'shooter' field from backend (has proper names)
         // Backend should provide 'shooter' with player name, not ID
         let shooterName = shot.shooter || shot.shooterName || shot.player || 'Unknown';
-        
+
         // Only use player_id as fallback if shooter is not available
         if ((!shooterName || shooterName === 'Unknown') && shot.player_id) {
             shooterName = `Player #${shot.player_id}`;
         }
-        
+
         // If it's still a numeric ID (shouldn't happen if backend is working), format it
         if (typeof shooterName === 'number' || (typeof shooterName === 'string' && /^\d+$/.test(shooterName))) {
             shooterName = `Player #${shooterName}`;
         }
-        
+
         console.log('Shot data:', { shooter: shot.shooter, shooterName: shot.shooterName, player_id: shot.player_id, finalName: shooterName });
-        
+
         // Get shot type - normalize to title case
         const shotType = shot.shotType ? shot.shotType.charAt(0).toUpperCase() + shot.shotType.slice(1).toLowerCase() : 'Wrist';
-        
+
         // Get xG - handle different formats
         let xgValue = shot.xg;
         if (xgValue === undefined || xgValue === null) {
@@ -111,7 +111,7 @@ const ShotChart = ({ shotsData = [], awayTeam, homeTeam, awayHeatmap = null, hom
                 xgValue = null; // Will trigger fallback calculation
             }
         }
-        
+
         // If xG is 0, null, or NaN, calculate a simple distance-based xG as fallback
         // IMPORTANT: Coordinates are normalized (each team shoots from their own side)
         // Away team shoots from right (positive x), Home team shoots from left (negative x)
@@ -120,16 +120,16 @@ const ShotChart = ({ shotsData = [], awayTeam, homeTeam, awayHeatmap = null, hom
         if (xgValue === null || xgValue === undefined || isNaN(xgValue) || xgValue === 0) {
             const shotX = shot.x || 0;
             const shotY = shot.y || 0;
-            
+
             // Determine which goal based on normalized x coordinate
             // Positive x = shooting toward right goal (x=89 in raw coords)
             // Negative x = shooting toward left goal (x=-89 in raw coords)
             // After normalization, goal is at x=89 for positive shots, x=-89 for negative shots
             const goalX = shotX >= 0 ? 89 : -89;
-            
+
             // Calculate distance from the appropriate goal (not from center!)
             const distanceFromGoal = Math.sqrt((goalX - shotX) ** 2 + shotY ** 2);
-            
+
             // Simple xG model based on distance from goal
             // Closer shots have higher xG
             if (distanceFromGoal < 20) {
@@ -141,7 +141,7 @@ const ShotChart = ({ shotsData = [], awayTeam, homeTeam, awayHeatmap = null, hom
             } else {
                 xgValue = 0.02;
             }
-            
+
             // Apply angle adjustment (shots from wider angles have lower xG)
             const angleRatio = Math.abs(shotY) / Math.max(distanceFromGoal, 1);
             if (angleRatio > 0.6) {
@@ -149,10 +149,10 @@ const ShotChart = ({ shotsData = [], awayTeam, homeTeam, awayHeatmap = null, hom
             } else if (angleRatio < 0.3) {
                 xgValue *= 1.2; // Good angle (slot)
             }
-            
+
             xgValue = Math.max(0.01, Math.min(xgValue, 0.95));
         }
-        
+
         const tooltipData = {
             x: x,
             y: y,
@@ -161,7 +161,7 @@ const ShotChart = ({ shotsData = [], awayTeam, homeTeam, awayHeatmap = null, hom
             xg: xgValue,
             isGoal: shot.type === 'GOAL' || shot.type === 'goal' || shot.isGoal
         };
-        
+
         console.log('Setting tooltip:', tooltipData, 'Element rect:', elementRect);
         setTooltip(tooltipData);
     };
@@ -240,7 +240,7 @@ const ShotChart = ({ shotsData = [], awayTeam, homeTeam, awayHeatmap = null, hom
                 x: isAway ? Math.abs(shot.x || 0) : -Math.abs(shot.x || 0),
                 y: shot.y || 0
             };
-            
+
             if (shot.type === 'GOAL' || shot.type === 'goal') {
                 if (isAway) awayGoals.push(normalizedShot);
                 else homeGoals.push(normalizedShot);
