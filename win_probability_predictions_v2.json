@@ -99203,12 +99203,12 @@
         "corr_disagreement": 0.1782038702872314,
         "monte_carlo_flip_rate": 0.0
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "away",
+      "actual_winner_side": "away",
+      "actual_winner_team": "CGY",
+      "actual_away_score": 6,
+      "actual_home_score": 2,
+      "prediction_accuracy": 0.5,
       "timestamp": "2025-11-19T15:20:21.060572",
       "predicted_winner": "home",
       "predicted_winner_team": "BUF",
@@ -99232,7 +99232,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:48.657133"
     },
     {
       "game_id": 2025020317,
@@ -99253,12 +99254,12 @@
         "corr_disagreement": 0.09270598436885058,
         "monte_carlo_flip_rate": 0.8
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "home",
+      "actual_winner_side": "home",
+      "actual_winner_team": "MIN",
+      "actual_away_score": 3,
+      "actual_home_score": 4,
+      "prediction_accuracy": 0.4193548387096774,
       "timestamp": "2025-11-19T15:20:21.512715",
       "predicted_winner": "away",
       "predicted_winner_team": "CAR",
@@ -99282,7 +99283,8 @@
       "home_rest_value": 0.02,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:49.131887"
     },
     {
       "game_id": 2025020318,
@@ -99303,12 +99305,12 @@
         "corr_disagreement": 0.05997590720906665,
         "monte_carlo_flip_rate": 0.1
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "home",
+      "actual_winner_side": "home",
+      "actual_winner_team": "ANA",
+      "actual_away_score": 3,
+      "actual_home_score": 4,
+      "prediction_accuracy": 0.4193548387096774,
       "timestamp": "2025-11-19T15:20:21.963854",
       "predicted_winner": "away",
       "predicted_winner_team": "BOS",
@@ -99332,7 +99334,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:49.653680"
     },
     {
       "game_id": "2025020315",
@@ -100025,12 +100028,12 @@
         "corr_disagreement": 0.0016024488597947695,
         "monte_carlo_flip_rate": 0.575
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "away",
+      "actual_winner_side": "away",
+      "actual_winner_team": "CBJ",
+      "actual_away_score": 3,
+      "actual_home_score": 2,
+      "prediction_accuracy": 0.5806451612903226,
       "timestamp": "2025-11-20T13:44:16.496407",
       "predicted_winner": "away",
       "predicted_winner_team": "CBJ",
@@ -100054,7 +100057,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:44.316037"
     },
     {
       "game_id": 2025020320,
@@ -100075,12 +100079,12 @@
         "corr_disagreement": 0.3930262240783335,
         "monte_carlo_flip_rate": 0.05
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "away",
+      "actual_winner_side": "away",
+      "actual_winner_team": "WSH",
+      "actual_away_score": 8,
+      "actual_home_score": 4,
+      "prediction_accuracy": 0.5,
       "timestamp": "2025-11-20T13:44:16.573106",
       "predicted_winner": "home",
       "predicted_winner_team": "MTL",
@@ -100104,7 +100108,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:44.712790"
     },
     {
       "game_id": 2025020321,
@@ -100125,12 +100130,12 @@
         "corr_disagreement": 0.3511209820871878,
         "monte_carlo_flip_rate": 0.125
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "away",
+      "actual_winner_side": "away",
+      "actual_winner_team": "NYI",
+      "actual_away_score": 5,
+      "actual_home_score": 0,
+      "prediction_accuracy": 0.5,
       "timestamp": "2025-11-20T13:44:16.630644",
       "predicted_winner": "home",
       "predicted_winner_team": "DET",
@@ -100154,7 +100159,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:45.004290"
     },
     {
       "game_id": 2025020323,
@@ -100175,12 +100181,12 @@
         "corr_disagreement": 0.4466479715731143,
         "monte_carlo_flip_rate": 0.1
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "home",
+      "actual_winner_side": "home",
+      "actual_winner_team": "FLA",
+      "actual_away_score": 0,
+      "actual_home_score": 1,
+      "prediction_accuracy": 0.1428571428571429,
       "timestamp": "2025-11-20T13:44:16.688237",
       "predicted_winner": "away",
       "predicted_winner_team": "NJD",
@@ -100204,7 +100210,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:45.222976"
     },
     {
       "game_id": 2025020324,
@@ -100225,12 +100232,12 @@
         "corr_disagreement": 0.4138709916203716,
         "monte_carlo_flip_rate": 0.075
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "home",
+      "actual_winner_side": "home",
+      "actual_winner_team": "PHI",
+      "actual_away_score": 2,
+      "actual_home_score": 3,
+      "prediction_accuracy": 0.5,
       "timestamp": "2025-11-20T13:44:16.745058",
       "predicted_winner": "home",
       "predicted_winner_team": "PHI",
@@ -100254,7 +100261,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:45.558421"
     },
     {
       "game_id": 2025020322,
@@ -100275,12 +100283,12 @@
         "corr_disagreement": 0.025999527733194694,
         "monte_carlo_flip_rate": 0.275
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "home",
+      "actual_winner_side": "home",
+      "actual_winner_team": "TBL",
+      "actual_away_score": 1,
+      "actual_home_score": 2,
+      "prediction_accuracy": 0.4321620103248036,
       "timestamp": "2025-11-20T13:44:16.802938",
       "predicted_winner": "away",
       "predicted_winner_team": "EDM",
@@ -100304,7 +100312,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:46.086623"
     },
     {
       "game_id": 2025020325,
@@ -100325,12 +100334,12 @@
         "corr_disagreement": 0.07749362585193359,
         "monte_carlo_flip_rate": 0.275
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "away",
+      "actual_winner_side": "away",
+      "actual_winner_team": "SEA",
+      "actual_away_score": 3,
+      "actual_home_score": 2,
+      "prediction_accuracy": 0.5806451612903226,
       "timestamp": "2025-11-20T13:44:16.860372",
       "predicted_winner": "away",
       "predicted_winner_team": "SEA",
@@ -100354,7 +100363,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:46.248865"
     },
     {
       "game_id": 2025020326,
@@ -100375,12 +100385,12 @@
         "corr_disagreement": 0.47513742070538517,
         "monte_carlo_flip_rate": 0.0
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "home",
+      "actual_winner_side": "home",
+      "actual_winner_team": "COL",
+      "actual_away_score": 3,
+      "actual_home_score": 6,
+      "prediction_accuracy": 0.5,
       "timestamp": "2025-11-20T13:44:16.918786",
       "predicted_winner": "home",
       "predicted_winner_team": "COL",
@@ -100404,7 +100414,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:46.571591"
     },
     {
       "game_id": 2025020327,
@@ -100425,12 +100436,12 @@
         "corr_disagreement": 0.012646100303866092,
         "monte_carlo_flip_rate": 0.475
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "away",
+      "actual_winner_side": "away",
+      "actual_winner_team": "VGK",
+      "actual_away_score": 4,
+      "actual_home_score": 1,
+      "prediction_accuracy": 0.5650107439437326,
       "timestamp": "2025-11-20T13:44:16.976106",
       "predicted_winner": "away",
       "predicted_winner_team": "VGK",
@@ -100454,7 +100465,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:46.893202"
     },
     {
       "game_id": 2025020328,
@@ -100475,12 +100487,12 @@
         "corr_disagreement": 0.2782618409190545,
         "monte_carlo_flip_rate": 0.2
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "away",
+      "actual_winner_side": "away",
+      "actual_winner_team": "DAL",
+      "actual_away_score": 4,
+      "actual_home_score": 2,
+      "prediction_accuracy": 0.8814813871392567,
       "timestamp": "2025-11-20T13:44:17.034990",
       "predicted_winner": "away",
       "predicted_winner_team": "DAL",
@@ -100504,7 +100516,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:47.243092"
     },
     {
       "game_id": 2025020329,
@@ -100525,12 +100538,12 @@
         "corr_disagreement": 0.003952109583517938,
         "monte_carlo_flip_rate": 0.25
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "away",
+      "actual_winner_side": "away",
+      "actual_winner_team": "OTT",
+      "actual_away_score": 3,
+      "actual_home_score": 2,
+      "prediction_accuracy": 0.5099171472696755,
       "timestamp": "2025-11-20T13:44:17.093024",
       "predicted_winner": "away",
       "predicted_winner_team": "OTT",
@@ -100554,7 +100567,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:47.556500"
     },
     {
       "game_id": 2025020330,
@@ -100575,12 +100589,12 @@
         "corr_disagreement": 0.2294357232593176,
         "monte_carlo_flip_rate": 0.325
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "home",
+      "actual_winner_side": "home",
+      "actual_winner_team": "SJS",
+      "actual_away_score": 3,
+      "actual_home_score": 4,
+      "prediction_accuracy": 0.4193548387096774,
       "timestamp": "2025-11-20T13:44:17.150975",
       "predicted_winner": "away",
       "predicted_winner_team": "LAK",
@@ -100604,7 +100618,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:47.818385"
     },
     {
       "game_id": 2025020331,
@@ -100625,12 +100640,12 @@
         "corr_disagreement": 0.3031499962947848,
         "monte_carlo_flip_rate": 0.225
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "home",
+      "actual_winner_side": "home",
+      "actual_winner_team": "BUF",
+      "actual_away_score": 3,
+      "actual_home_score": 9,
+      "prediction_accuracy": 0.5,
       "timestamp": "2025-11-21T12:53:47.922044",
       "predicted_winner": "home",
       "predicted_winner_team": "BUF",
@@ -100654,7 +100669,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:42.775372"
     },
     {
       "game_id": 2025020332,
@@ -100675,12 +100691,12 @@
         "corr_disagreement": 0.17537828524764126,
         "monte_carlo_flip_rate": 0.45
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "away",
+      "actual_winner_side": "away",
+      "actual_winner_team": "MIN",
+      "actual_away_score": 5,
+      "actual_home_score": 0,
+      "prediction_accuracy": 0.5806451612903226,
       "timestamp": "2025-11-21T12:53:48.045981",
       "predicted_winner": "away",
       "predicted_winner_team": "MIN",
@@ -100704,7 +100720,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:43.104097"
     },
     {
       "game_id": 2025020333,
@@ -100725,12 +100742,12 @@
         "corr_disagreement": 0.12542685078905796,
         "monte_carlo_flip_rate": 0.425
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "away",
+      "actual_winner_side": "away",
+      "actual_winner_team": "CAR",
+      "actual_away_score": 4,
+      "actual_home_score": 3,
+      "prediction_accuracy": 0.5806451612903226,
       "timestamp": "2025-11-21T12:53:48.170547",
       "predicted_winner": "away",
       "predicted_winner_team": "CAR",
@@ -100754,7 +100771,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:43.427278"
     },
     {
       "game_id": 2025020334,
@@ -100775,12 +100793,12 @@
         "corr_disagreement": 0.4803626081646435,
         "monte_carlo_flip_rate": 0.275
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "away",
+      "actual_winner_side": "away",
+      "actual_winner_team": "BOS",
+      "actual_away_score": 2,
+      "actual_home_score": 1,
+      "prediction_accuracy": 0.5229549997343704,
       "timestamp": "2025-11-21T12:53:48.294563",
       "predicted_winner": "away",
       "predicted_winner_team": "BOS",
@@ -100804,7 +100822,8 @@
       "home_rest_value": -0.04,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:43.893067"
     },
     {
       "game_id": 2025020335,
@@ -100825,12 +100844,12 @@
         "corr_disagreement": 0.25756970053237704,
         "monte_carlo_flip_rate": 0.225
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "home",
+      "actual_winner_side": "home",
+      "actual_winner_team": "DET",
+      "actual_away_score": 3,
+      "actual_home_score": 4,
+      "prediction_accuracy": 0.5,
       "timestamp": "2025-11-22T12:47:40.328867",
       "predicted_winner": "home",
       "predicted_winner_team": "DET",
@@ -100854,7 +100873,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:38.673702"
     },
     {
       "game_id": 2025020336,
@@ -100875,12 +100895,12 @@
         "corr_disagreement": 0.0796006229265881,
         "monte_carlo_flip_rate": 0.55
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "away",
+      "actual_winner_side": "away",
+      "actual_winner_team": "STL",
+      "actual_away_score": 2,
+      "actual_home_score": 1,
+      "prediction_accuracy": 0.5806451612903226,
       "timestamp": "2025-11-22T12:47:40.456678",
       "predicted_winner": "away",
       "predicted_winner_team": "STL",
@@ -100904,7 +100924,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:38.871731"
     },
     {
       "game_id": 2025020337,
@@ -100925,12 +100946,12 @@
         "corr_disagreement": 0.1572349208913949,
         "monte_carlo_flip_rate": 0.15
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "home",
+      "actual_winner_side": "home",
+      "actual_winner_team": "MTL",
+      "actual_away_score": 2,
+      "actual_home_score": 5,
+      "prediction_accuracy": 0.5,
       "timestamp": "2025-11-22T12:47:40.584122",
       "predicted_winner": "home",
       "predicted_winner_team": "MTL",
@@ -100954,7 +100975,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:39.014034"
     },
     {
       "game_id": 2025020338,
@@ -100975,12 +100997,12 @@
         "corr_disagreement": 0.051180170113269696,
         "monte_carlo_flip_rate": 0.375
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "away",
+      "actual_winner_side": "away",
+      "actual_winner_team": "EDM",
+      "actual_away_score": 6,
+      "actual_home_score": 3,
+      "prediction_accuracy": 0.5486671500377721,
       "timestamp": "2025-11-22T12:47:40.711462",
       "predicted_winner": "away",
       "predicted_winner_team": "EDM",
@@ -101004,7 +101026,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:39.487759"
     },
     {
       "game_id": 2025020339,
@@ -101025,12 +101048,12 @@
         "corr_disagreement": 0.3599333014765349,
         "monte_carlo_flip_rate": 0.25
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "home",
+      "actual_winner_side": "home",
+      "actual_winner_team": "PHI",
+      "actual_away_score": 3,
+      "actual_home_score": 6,
+      "prediction_accuracy": 0.4963924204512672,
       "timestamp": "2025-11-22T12:47:40.838366",
       "predicted_winner": "away",
       "predicted_winner_team": "NJD",
@@ -101054,7 +101077,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:39.911352"
     },
     {
       "game_id": 2025020340,
@@ -101075,12 +101099,12 @@
         "corr_disagreement": 0.3427401754517948,
         "monte_carlo_flip_rate": 0.3
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "away",
+      "actual_winner_side": "away",
+      "actual_winner_team": "SEA",
+      "actual_away_score": 3,
+      "actual_home_score": 2,
+      "prediction_accuracy": 0.5806451612903226,
       "timestamp": "2025-11-22T12:47:40.966265",
       "predicted_winner": "away",
       "predicted_winner_team": "SEA",
@@ -101104,7 +101128,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:40.261670"
     },
     {
       "game_id": 2025020341,
@@ -101125,12 +101150,12 @@
         "corr_disagreement": 0.11176128313220829,
         "monte_carlo_flip_rate": 0.475
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "away",
+      "actual_winner_side": "away",
+      "actual_winner_team": "TBL",
+      "actual_away_score": 5,
+      "actual_home_score": 3,
+      "prediction_accuracy": 0.556796722115489,
       "timestamp": "2025-11-22T12:47:41.094547",
       "predicted_winner": "away",
       "predicted_winner_team": "TBL",
@@ -101154,7 +101179,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:40.655218"
     },
     {
       "game_id": 2025020342,
@@ -101175,12 +101201,12 @@
         "corr_disagreement": 0.04431846169614706,
         "monte_carlo_flip_rate": 0.6
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "away",
+      "actual_winner_side": "away",
+      "actual_winner_team": "OTT",
+      "actual_away_score": 3,
+      "actual_home_score": 2,
+      "prediction_accuracy": 0.5806451612903226,
       "timestamp": "2025-11-22T12:47:41.244085",
       "predicted_winner": "away",
       "predicted_winner_team": "OTT",
@@ -101204,7 +101230,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:40.905197"
     },
     {
       "game_id": 2025020343,
@@ -101225,12 +101252,12 @@
         "corr_disagreement": 0.2763235970925644,
         "monte_carlo_flip_rate": 0.275
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "away",
+      "actual_winner_side": "away",
+      "actual_winner_team": "COL",
+      "actual_away_score": 3,
+      "actual_home_score": 0,
+      "prediction_accuracy": 0.8571428571428571,
       "timestamp": "2025-11-22T12:47:41.371042",
       "predicted_winner": "away",
       "predicted_winner_team": "COL",
@@ -101254,7 +101281,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:41.371536"
     },
     {
       "game_id": 2025020344,
@@ -101275,12 +101303,12 @@
         "corr_disagreement": 0.17450664479202,
         "monte_carlo_flip_rate": 0.425
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "home",
+      "actual_winner_side": "home",
+      "actual_winner_team": "UTA",
+      "actual_away_score": 2,
+      "actual_home_score": 3,
+      "prediction_accuracy": 0.4535038429179902,
       "timestamp": "2025-11-22T12:47:41.497954",
       "predicted_winner": "away",
       "predicted_winner_team": "NYR",
@@ -101304,7 +101332,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:41.604587"
     },
     {
       "game_id": 2025020345,
@@ -101325,12 +101354,12 @@
         "corr_disagreement": 0.04891907053389333,
         "monte_carlo_flip_rate": 0.375
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "home",
+      "actual_winner_side": "home",
+      "actual_winner_team": "CGY",
+      "actual_away_score": 2,
+      "actual_home_score": 3,
+      "prediction_accuracy": 0.1428571428571429,
       "timestamp": "2025-11-22T12:47:41.624800",
       "predicted_winner": "away",
       "predicted_winner_team": "DAL",
@@ -101354,7 +101383,8 @@
       "home_rest_value": 0.02,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:41.911004"
     },
     {
       "game_id": 2025020346,
@@ -101375,12 +101405,12 @@
         "corr_disagreement": 0.11409344785330561,
         "monte_carlo_flip_rate": 0.225
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "home",
+      "actual_winner_side": "home",
+      "actual_winner_team": "ANA",
+      "actual_away_score": 3,
+      "actual_home_score": 4,
+      "prediction_accuracy": 0.5,
       "timestamp": "2025-11-22T12:47:41.752083",
       "predicted_winner": "home",
       "predicted_winner_team": "ANA",
@@ -101404,7 +101434,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:42.202586"
     },
     {
       "game_id": 2025020347,
@@ -101425,12 +101456,12 @@
         "corr_disagreement": 0.0035466518770693733,
         "monte_carlo_flip_rate": 0.55
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "home",
+      "actual_winner_side": "home",
+      "actual_winner_team": "BUF",
+      "actual_away_score": 1,
+      "actual_home_score": 4,
+      "prediction_accuracy": 0.4193548387096774,
       "timestamp": "2025-11-23T12:47:23.683008",
       "predicted_winner": "away",
       "predicted_winner_team": "CAR",
@@ -101454,7 +101485,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:37.570040"
     },
     {
       "game_id": 2025020348,
@@ -101475,12 +101507,12 @@
         "corr_disagreement": 0.08476111578904993,
         "monte_carlo_flip_rate": 0.35
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "away",
+      "actual_winner_side": "away",
+      "actual_winner_team": "MIN",
+      "actual_away_score": 3,
+      "actual_home_score": 0,
+      "prediction_accuracy": 0.5515755881835822,
       "timestamp": "2025-11-23T12:47:23.807346",
       "predicted_winner": "away",
       "predicted_winner_team": "MIN",
@@ -101504,7 +101536,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:37.745737"
     },
     {
       "game_id": 2025020349,
@@ -101525,12 +101558,12 @@
         "corr_disagreement": 0.472075166674668,
         "monte_carlo_flip_rate": 0.25
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "home",
+      "actual_winner_side": "home",
+      "actual_winner_team": "NYI",
+      "actual_away_score": 0,
+      "actual_home_score": 1,
+      "prediction_accuracy": 0.1428571428571429,
       "timestamp": "2025-11-23T12:47:23.931274",
       "predicted_winner": "away",
       "predicted_winner_team": "SEA",
@@ -101554,7 +101587,8 @@
       "home_rest_value": 0.02,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:37.923117"
     },
     {
       "game_id": 2025020350,
@@ -101575,12 +101609,12 @@
         "corr_disagreement": 0.22252054457544423,
         "monte_carlo_flip_rate": 0.15
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "away",
+      "actual_winner_side": "away",
+      "actual_winner_team": "COL",
+      "actual_away_score": 1,
+      "actual_home_score": 0,
+      "prediction_accuracy": 0.5806451612903226,
       "timestamp": "2025-11-23T12:47:24.057566",
       "predicted_winner": "away",
       "predicted_winner_team": "COL",
@@ -101604,7 +101638,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:38.133850"
     },
     {
       "game_id": 2025020351,
@@ -101625,12 +101660,12 @@
         "corr_disagreement": 0.15937273953228925,
         "monte_carlo_flip_rate": 0.325
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "home",
+      "actual_winner_side": "home",
+      "actual_winner_team": "SJS",
+      "actual_away_score": 1,
+      "actual_home_score": 3,
+      "prediction_accuracy": 0.4193548387096774,
       "timestamp": "2025-11-23T12:47:24.181506",
       "predicted_winner": "away",
       "predicted_winner_team": "BOS",
@@ -101654,7 +101689,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:38.276993"
     },
     {
       "game_id": 2025020352,
@@ -101675,12 +101711,12 @@
         "corr_disagreement": 0.23244034930404042,
         "monte_carlo_flip_rate": 0.55
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
-      "prediction_accuracy": null,
+      "actual_winner": "away",
+      "actual_winner_side": "away",
+      "actual_winner_team": "CGY",
+      "actual_away_score": 5,
+      "actual_home_score": 2,
+      "prediction_accuracy": 0.5672944184173184,
       "timestamp": "2025-11-23T12:47:24.305377",
       "predicted_winner": "away",
       "predicted_winner_team": "CGY",
@@ -101704,7 +101740,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:38.458425"
     },
     {
       "game_id": 2025020353,
@@ -102405,6 +102442,356 @@
       "correlation_predicted_winner": null,
       "correlation_correct": null,
       "was_upset": false
+    },
+    {
+      "game_id": 2025020353,
+      "date": "2025-11-24",
+      "away_team": "PHI",
+      "home_team": "TBL",
+      "predicted_away_win_prob": 0.589850639153197,
+      "predicted_home_win_prob": 0.410149360846803,
+      "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5,
+        "away_venue_win_pct": 0.42857142857142855,
+        "home_venue_win_pct": 0.5833333333333334,
+        "corr_disagreement": 0.3831488422935339,
+        "monte_carlo_flip_rate": 0.075
+      },
+      "actual_winner": null,
+      "actual_winner_side": null,
+      "actual_winner_team": null,
+      "actual_away_score": null,
+      "actual_home_score": null,
+      "prediction_accuracy": null,
+      "timestamp": "2025-11-24T15:00:51.241657",
+      "predicted_winner": "away",
+      "predicted_winner_team": "PHI",
+      "prediction_confidence": 0.589850639153197,
+      "prediction_margin": 0.17970127830639404,
+      "raw_away_prob": 0.6295969051320269,
+      "raw_home_prob": 0.37040309486797307,
+      "calibrated_away_prob": 0.589850639153197,
+      "calibrated_home_prob": 0.410149360846803,
+      "correlation_away_prob": 0.7445415578200871,
+      "correlation_home_prob": 0.25545844217991287,
+      "ensemble_away_prob": 0.3613927155265532,
+      "ensemble_home_prob": 0.6386072844734467,
+      "corr_disagreement": 0.48908311564017426,
+      "monte_carlo_flip_rate": 0.075,
+      "upset_probability": 0.34997739588874904,
+      "context_bucket": "neutral",
+      "away_back_to_back": false,
+      "home_back_to_back": false,
+      "away_rest_value": 0.0,
+      "home_rest_value": 0.0,
+      "correlation_predicted_winner": null,
+      "correlation_correct": null,
+      "was_upset": false
+    },
+    {
+      "game_id": 2025020354,
+      "date": "2025-11-24",
+      "away_team": "DET",
+      "home_team": "NJD",
+      "predicted_away_win_prob": 0.5853658536585366,
+      "predicted_home_win_prob": 0.41463414634146345,
+      "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5,
+        "away_venue_win_pct": 0.6,
+        "home_venue_win_pct": 0.875,
+        "corr_disagreement": 0.04918816268227655,
+        "monte_carlo_flip_rate": 0.275
+      },
+      "actual_winner": null,
+      "actual_winner_side": null,
+      "actual_winner_team": null,
+      "actual_away_score": null,
+      "actual_home_score": null,
+      "prediction_accuracy": null,
+      "timestamp": "2025-11-24T15:00:51.361951",
+      "predicted_winner": "away",
+      "predicted_winner_team": "DET",
+      "prediction_confidence": 0.5853658536585366,
+      "prediction_margin": 0.1707317073170731,
+      "raw_away_prob": 0.39086039645978643,
+      "raw_home_prob": 0.6091396035402136,
+      "calibrated_away_prob": 0.5853658536585366,
+      "calibrated_home_prob": 0.41463414634146345,
+      "correlation_away_prob": 0.37610394765510347,
+      "correlation_home_prob": 0.6238960523448965,
+      "ensemble_away_prob": 0.42529211033738,
+      "ensemble_home_prob": 0.57470788966262,
+      "corr_disagreement": 0.24779210468979307,
+      "monte_carlo_flip_rate": 0.275,
+      "upset_probability": 0.3761196399509153,
+      "context_bucket": "neutral",
+      "away_back_to_back": false,
+      "home_back_to_back": false,
+      "away_rest_value": 0.0,
+      "home_rest_value": 0.0,
+      "correlation_predicted_winner": null,
+      "correlation_correct": null,
+      "was_upset": false
+    },
+    {
+      "game_id": 2025020355,
+      "date": "2025-11-24",
+      "away_team": "STL",
+      "home_team": "NYR",
+      "predicted_away_win_prob": 0.7489276911276131,
+      "predicted_home_win_prob": 0.25107230887238685,
+      "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5,
+        "away_venue_win_pct": 0.45454545454545453,
+        "home_venue_win_pct": 0.1,
+        "corr_disagreement": 0.05192573543167034,
+        "monte_carlo_flip_rate": 0.1
+      },
+      "actual_winner": null,
+      "actual_winner_side": null,
+      "actual_winner_team": null,
+      "actual_away_score": null,
+      "actual_home_score": null,
+      "prediction_accuracy": null,
+      "timestamp": "2025-11-24T15:00:51.481873",
+      "predicted_winner": "away",
+      "predicted_winner_team": "STL",
+      "prediction_confidence": 0.7489276911276131,
+      "prediction_margin": 0.4978553822552263,
+      "raw_away_prob": 0.8122319227819033,
+      "raw_home_prob": 0.18776807721809674,
+      "calibrated_away_prob": 0.7489276911276131,
+      "calibrated_home_prob": 0.25107230887238685,
+      "correlation_away_prob": 0.8278096434114044,
+      "correlation_home_prob": 0.1721903565885956,
+      "ensemble_away_prob": 0.775883907979734,
+      "ensemble_home_prob": 0.22411609202026592,
+      "corr_disagreement": 0.6556192868228088,
+      "monte_carlo_flip_rate": 0.1,
+      "upset_probability": 0.3512488068233484,
+      "context_bucket": "neutral",
+      "away_back_to_back": false,
+      "home_back_to_back": false,
+      "away_rest_value": 0.0,
+      "home_rest_value": 0.0,
+      "correlation_predicted_winner": null,
+      "correlation_correct": null,
+      "was_upset": false
+    },
+    {
+      "game_id": 2025020356,
+      "date": "2025-11-24",
+      "away_team": "CBJ",
+      "home_team": "WSH",
+      "predicted_away_win_prob": 0.5853658536585366,
+      "predicted_home_win_prob": 0.41463414634146345,
+      "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5,
+        "away_venue_win_pct": 0.42857142857142855,
+        "home_venue_win_pct": 0.5,
+        "corr_disagreement": 0.19861315166751464,
+        "monte_carlo_flip_rate": 0.3
+      },
+      "actual_winner": null,
+      "actual_winner_side": null,
+      "actual_winner_team": null,
+      "actual_away_score": null,
+      "actual_home_score": null,
+      "prediction_accuracy": null,
+      "timestamp": "2025-11-24T15:00:51.603227",
+      "predicted_winner": "away",
+      "predicted_winner_team": "CBJ",
+      "prediction_confidence": 0.5853658536585366,
+      "prediction_margin": 0.1707317073170731,
+      "raw_away_prob": 0.5734477886043681,
+      "raw_home_prob": 0.42655221139563193,
+      "calibrated_away_prob": 0.5853658536585366,
+      "calibrated_home_prob": 0.41463414634146345,
+      "correlation_away_prob": 0.6330317341046224,
+      "correlation_home_prob": 0.36696826589537757,
+      "ensemble_away_prob": 0.4344185824371078,
+      "ensemble_home_prob": 0.5655814175628922,
+      "corr_disagreement": 0.26606346820924487,
+      "monte_carlo_flip_rate": 0.3,
+      "upset_probability": 0.3816862538254861,
+      "context_bucket": "neutral",
+      "away_back_to_back": false,
+      "home_back_to_back": false,
+      "away_rest_value": 0.0,
+      "home_rest_value": 0.0,
+      "correlation_predicted_winner": null,
+      "correlation_correct": null,
+      "was_upset": false
+    },
+    {
+      "game_id": 2025020357,
+      "date": "2025-11-24",
+      "away_team": "FLA",
+      "home_team": "NSH",
+      "predicted_away_win_prob": 0.5249223553544622,
+      "predicted_home_win_prob": 0.4750776446455378,
+      "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5,
+        "away_venue_win_pct": 0.3,
+        "home_venue_win_pct": 0.42857142857142855,
+        "corr_disagreement": 0.17250928226192427,
+        "monte_carlo_flip_rate": 0.15
+      },
+      "actual_winner": null,
+      "actual_winner_side": null,
+      "actual_winner_team": null,
+      "actual_away_score": null,
+      "actual_home_score": null,
+      "prediction_accuracy": null,
+      "timestamp": "2025-11-24T15:00:51.724239",
+      "predicted_winner": "away",
+      "predicted_winner_team": "FLA",
+      "prediction_confidence": 0.5249223553544622,
+      "prediction_margin": 0.04984471070892438,
+      "raw_away_prob": 0.29794205751035285,
+      "raw_home_prob": 0.7020579424896471,
+      "calibrated_away_prob": 0.5249223553544622,
+      "calibrated_home_prob": 0.4750776446455378,
+      "correlation_away_prob": 0.24618927283177558,
+      "correlation_home_prob": 0.7538107271682244,
+      "ensemble_away_prob": 0.41869855509369985,
+      "ensemble_home_prob": 0.5813014449063002,
+      "corr_disagreement": 0.5076214543364488,
+      "monte_carlo_flip_rate": 0.15,
+      "upset_probability": 0.36912965485204263,
+      "context_bucket": "neutral",
+      "away_back_to_back": false,
+      "home_back_to_back": false,
+      "away_rest_value": 0.0,
+      "home_rest_value": 0.0,
+      "correlation_predicted_winner": null,
+      "correlation_correct": null,
+      "was_upset": false
+    },
+    {
+      "game_id": 2025020358,
+      "date": "2025-11-24",
+      "away_team": "VGK",
+      "home_team": "UTA",
+      "predicted_away_win_prob": 0.511652223970402,
+      "predicted_home_win_prob": 0.488347776029598,
+      "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5,
+        "away_venue_win_pct": 0.5,
+        "home_venue_win_pct": 0.7272727272727273,
+        "corr_disagreement": 0.19426481799102654,
+        "monte_carlo_flip_rate": 0.025
+      },
+      "actual_winner": null,
+      "actual_winner_side": null,
+      "actual_winner_team": null,
+      "actual_away_score": null,
+      "actual_home_score": null,
+      "prediction_accuracy": null,
+      "timestamp": "2025-11-24T15:00:51.845572",
+      "predicted_winner": "away",
+      "predicted_winner_team": "VGK",
+      "prediction_confidence": 0.511652223970402,
+      "prediction_margin": 0.023304447940803996,
+      "raw_away_prob": 0.2568842665433415,
+      "raw_home_prob": 0.7431157334566585,
+      "calibrated_away_prob": 0.511652223970402,
+      "calibrated_home_prob": 0.488347776029598,
+      "correlation_away_prob": 0.19860482114603353,
+      "correlation_home_prob": 0.8013951788539665,
+      "ensemble_away_prob": 0.3928696391370601,
+      "ensemble_home_prob": 0.6071303608629399,
+      "corr_disagreement": 0.602790357707933,
+      "monte_carlo_flip_rate": 0.025,
+      "upset_probability": 0.3513893842142891,
+      "context_bucket": "neutral",
+      "away_back_to_back": false,
+      "home_back_to_back": false,
+      "away_rest_value": 0.0,
+      "home_rest_value": 0.0,
+      "correlation_predicted_winner": null,
+      "correlation_correct": null,
+      "was_upset": false
+    },
+    {
+      "game_id": 2025020359,
+      "date": "2025-11-24",
+      "away_team": "OTT",
+      "home_team": "LAK",
+      "predicted_away_win_prob": 0.6151514216921395,
+      "predicted_home_win_prob": 0.38484857830786046,
+      "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5,
+        "away_venue_win_pct": 0.5,
+        "home_venue_win_pct": 0.2222222222222222,
+        "corr_disagreement": 0.06740487409090112,
+        "monte_carlo_flip_rate": 0.25
+      },
+      "actual_winner": null,
+      "actual_winner_side": null,
+      "actual_winner_team": null,
+      "actual_away_score": null,
+      "actual_home_score": null,
+      "prediction_accuracy": null,
+      "timestamp": "2025-11-24T15:00:51.966164",
+      "predicted_winner": "away",
+      "predicted_winner_team": "OTT",
+      "prediction_confidence": 0.6151514216921395,
+      "prediction_margin": 0.2303028433842791,
+      "raw_away_prob": 0.655530207234443,
+      "raw_home_prob": 0.344469792765557,
+      "calibrated_away_prob": 0.6151514216921395,
+      "calibrated_home_prob": 0.38484857830786046,
+      "correlation_away_prob": 0.6353087450071727,
+      "correlation_home_prob": 0.3646912549928273,
+      "ensemble_away_prob": 0.7027136190980738,
+      "ensemble_home_prob": 0.29728638090192616,
+      "corr_disagreement": 0.27061749001434543,
+      "monte_carlo_flip_rate": 0.25,
+      "upset_probability": 0.37041848528498333,
+      "context_bucket": "neutral",
+      "away_back_to_back": false,
+      "home_back_to_back": false,
+      "away_rest_value": 0.0,
+      "home_rest_value": 0.0,
+      "correlation_predicted_winner": null,
+      "correlation_correct": null,
+      "was_upset": false
     }
   ],
   "model_weights": {
@@ -102445,10 +102832,10 @@
   },
   "last_updated": "2025-11-20T02:58:29.680932",
   "model_performance": {
-    "total_games": 343,
-    "correct_predictions": 166,
-    "accuracy": 0.4839650145772595,
-    "recent_accuracy": 0.5333333333333333
+    "total_games": 380,
+    "correct_predictions": 189,
+    "accuracy": 0.49736842105263157,
+    "recent_accuracy": 0.6333333333333333
   },
   "calibration_points": [
     [
@@ -102465,31 +102852,31 @@
     ],
     [
       0.29166666666666663,
-      0.5
+      0.52
     ],
     [
       0.375,
-      0.5806451612903226
+      0.5853658536585366
     ],
     [
       0.4583333333333333,
-      0.5806451612903226
+      0.5853658536585366
     ],
     [
       0.5416666666666666,
-      0.5806451612903226
+      0.5853658536585366
     ],
     [
       0.625,
-      0.5806451612903226
+      0.5853658536585366
     ],
     [
       0.7083333333333333,
-      0.8571428571428571
+      0.6666666666666666
     ],
     [
       0.7916666666666666,
-      0.8571428571428571
+      0.6666666666666666
     ],
     [
       0.875,
@@ -102501,11 +102888,11 @@
     ]
   ],
   "calibration_metadata": {
-    "updated_at": "2025-11-24T14:45:13.196702",
-    "sample_size": 343,
+    "updated_at": "2025-11-24T15:00:52.246990",
+    "sample_size": 380,
     "num_bins": 12,
     "bucket_samples": {
-      "neutral": 343
+      "neutral": 380
     }
   },
   "calibration_by_bucket": {
@@ -102524,31 +102911,31 @@
       ],
       [
         0.29166666666666663,
-        0.5
+        0.52
       ],
       [
         0.375,
-        0.5806451612903226
+        0.5853658536585366
       ],
       [
         0.4583333333333333,
-        0.5806451612903226
+        0.5853658536585366
       ],
       [
         0.5416666666666666,
-        0.5806451612903226
+        0.5853658536585366
       ],
       [
         0.625,
-        0.5806451612903226
+        0.5853658536585366
       ],
       [
         0.7083333333333333,
-        0.8571428571428571
+        0.6666666666666666
       ],
       [
         0.7916666666666666,
-        0.8571428571428571
+        0.6666666666666666
       ],
       [
         0.875,
@@ -104020,10 +104407,7 @@
           2.86,
           2.32,
           2.78,
-          3.14,
-          3.0532095394145817,
-          2.7624638030808506,
-          3.3820407974750006
+          3.14
         ],
         "corsi_pct": [
           47.24,
@@ -104107,10 +104491,7 @@
           2,
           2,
           4,
-          5,
-          1,
-          2,
-          3
+          5
         ],
         "shots": [
           23,
@@ -104122,9 +104503,6 @@
           26,
           28,
           27,
-          39,
-          35,
-          26,
           39
         ],
         "hits": [
@@ -104341,10 +104719,7 @@
           6,
           7,
           8,
-          9,
-          "2025-11-23",
-          "2025-11-21",
-          "2025-11-19"
+          9
         ],
         "lateral": [],
         "longitudinal": [],
@@ -104359,16 +104734,9 @@
           2,
           2,
           4,
-          5,
-          1,
-          2,
-          3
+          5
         ],
-        "goals_against": [
-          3,
-          1,
-          4
-        ],
+        "goals_against": [],
         "shots_for": [
           23,
           21,
@@ -104379,16 +104747,9 @@
           26,
           28,
           27,
-          39,
-          35,
-          26,
           39
         ],
-        "shots_against": [
-          31,
-          32,
-          33
-        ],
+        "shots_against": [],
         "xG_for": [
           3.78,
           2.49,
@@ -104399,16 +104760,9 @@
           2.86,
           2.32,
           2.78,
-          3.14,
-          3.0532095394145817,
-          2.7624638030808506,
-          3.3820407974750006
+          3.14
         ],
-        "xG_against": [
-          2.4218873029684995,
-          3.597999866927126,
-          3.570179329975
-        ],
+        "xG_against": [],
         "hdc_for": [
           11,
           6,
@@ -105817,9 +106171,7 @@
           2.58,
           1.61,
           2.91,
-          3.18,
-          2.914844511599999,
-          3.1970964584428763
+          3.18
         ],
         "corsi_pct": [
           52.37,
@@ -105917,9 +106269,7 @@
           2,
           2,
           0,
-          2,
-          5,
-          6
+          2
         ],
         "shots": [
           21,
@@ -105933,9 +106283,7 @@
           35,
           21,
           36,
-          40,
-          21,
-          35
+          40
         ],
         "hits": [
           43,
@@ -106187,9 +106535,7 @@
           8,
           9,
           10,
-          11,
-          "2025-11-23",
-          "2025-11-19"
+          11
         ],
         "lateral": [],
         "longitudinal": [],
@@ -106206,14 +106552,9 @@
           2,
           2,
           0,
-          2,
-          5,
-          6
-        ],
-        "goals_against": [
-          2,
           2
         ],
+        "goals_against": [],
         "shots_for": [
           21,
           22,
@@ -106226,14 +106567,9 @@
           35,
           21,
           36,
-          40,
-          21,
-          35
+          40
         ],
-        "shots_against": [
-          30,
-          30
-        ],
+        "shots_against": [],
         "xG_for": [
           2.44,
           2.49,
@@ -106246,14 +106582,9 @@
           2.58,
           1.61,
           2.91,
-          3.18,
-          2.914844511599999,
-          3.1970964584428763
+          3.18
         ],
-        "xG_against": [
-          2.96378907745,
-          2.4988841937875
-        ],
+        "xG_against": [],
         "hdc_for": [
           4,
           4,
@@ -106718,10 +107049,7 @@
           3.77,
           2.41,
           3.39,
-          4.41,
-          3.626361050125001,
-          2.103135513177857,
-          4.904544360536475
+          4.41
         ],
         "corsi_pct": [
           61.47,
@@ -106812,10 +107140,7 @@
           2,
           1,
           3,
-          5,
-          1,
-          4,
-          3
+          5
         ],
         "shots": [
           32,
@@ -106828,10 +107153,7 @@
           28,
           29,
           32,
-          47,
-          30,
-          28,
-          45
+          47
         ],
         "hits": [
           19,
@@ -107065,10 +107387,7 @@
           7,
           8,
           9,
-          10,
-          "2025-11-23",
-          "2025-11-21",
-          "2025-11-19"
+          10
         ],
         "lateral": [],
         "longitudinal": [],
@@ -107084,16 +107403,9 @@
           2,
           1,
           3,
-          5,
-          1,
-          4,
-          3
+          5
         ],
-        "goals_against": [
-          4,
-          3,
-          4
-        ],
+        "goals_against": [],
         "shots_for": [
           32,
           43,
@@ -107105,16 +107417,9 @@
           28,
           29,
           32,
-          47,
-          30,
-          28,
-          45
+          47
         ],
-        "shots_against": [
-          21,
-          28,
-          19
-        ],
+        "shots_against": [],
         "xG_for": [
           3.98,
           3.46,
@@ -107126,16 +107431,9 @@
           3.77,
           2.41,
           3.39,
-          4.41,
-          3.626361050125001,
-          2.103135513177857,
-          4.904544360536475
+          4.41
         ],
-        "xG_against": [
-          2.7776858944624996,
-          2.46143523018125,
-          2.18568860744
-        ],
+        "xG_against": [],
         "hdc_for": [
           6,
           8,
@@ -107661,8 +107959,7 @@
           4.59,
           3.21,
           2.03,
-          1.75,
-          2.2563495980000012
+          1.75
         ],
         "corsi_pct": [
           43.43,
@@ -107746,8 +108043,7 @@
           1,
           5,
           4,
-          5,
-          3
+          5
         ],
         "shots": [
           19,
@@ -107759,8 +108055,7 @@
           30,
           28,
           27,
-          20,
-          23
+          20
         ],
         "hits": [
           27,
@@ -107976,8 +108271,7 @@
           6,
           7,
           8,
-          9,
-          "2025-11-21"
+          9
         ],
         "lateral": [],
         "longitudinal": [],
@@ -107992,12 +108286,9 @@
           1,
           5,
           4,
-          5,
-          3
+          5
         ],
-        "goals_against": [
-          9
-        ],
+        "goals_against": [],
         "shots_for": [
           19,
           24,
@@ -108008,12 +108299,9 @@
           30,
           28,
           27,
-          20,
-          23
+          20
         ],
-        "shots_against": [
-          31
-        ],
+        "shots_against": [],
         "xG_for": [
           2.02,
           2.14,
@@ -108024,12 +108312,9 @@
           4.59,
           3.21,
           2.03,
-          1.75,
-          2.2563495980000012
+          1.75
         ],
-        "xG_against": [
-          3.587605939800002
-        ],
+        "xG_against": [],
         "hdc_for": [
           2,
           7,
@@ -108494,9 +108779,7 @@
           2.41,
           3.22,
           3.96,
-          3.12,
-          2.7336968756625,
-          2.315891924875
+          3.12
         ],
         "corsi_pct": [
           40.47,
@@ -108594,9 +108877,7 @@
           4,
           2,
           9,
-          5,
-          1,
-          3
+          5
         ],
         "shots": [
           23,
@@ -108610,9 +108891,7 @@
           26,
           38,
           34,
-          32,
-          26,
-          26
+          32
         ],
         "hits": [
           25,
@@ -108864,9 +109143,7 @@
           8,
           9,
           10,
-          11,
-          "2025-11-23",
-          "2025-11-22"
+          11
         ],
         "lateral": [],
         "longitudinal": [],
@@ -108883,14 +109160,9 @@
           4,
           2,
           9,
-          5,
-          1,
-          3
+          5
         ],
-        "goals_against": [
-          0,
-          0
-        ],
+        "goals_against": [],
         "shots_for": [
           23,
           37,
@@ -108903,14 +109175,9 @@
           26,
           38,
           34,
-          32,
-          26,
-          26
+          32
         ],
-        "shots_against": [
-          22,
-          35
-        ],
+        "shots_against": [],
         "xG_for": [
           2.24,
           2.55,
@@ -108923,14 +109190,9 @@
           2.41,
           3.22,
           3.96,
-          3.12,
-          2.7336968756625,
-          2.315891924875
+          3.12
         ],
-        "xG_against": [
-          2.2402632770743747,
-          3.594684055952001
-        ],
+        "xG_against": [],
         "hdc_for": [
           4,
           7,
@@ -109397,9 +109659,7 @@
           4.23,
           4.35,
           3.48,
-          3.44,
-          3.5928171087901273,
-          3.177059215347626
+          3.44
         ],
         "corsi_pct": [
           48.99,
@@ -109497,9 +109757,7 @@
           1,
           3,
           4,
-          2,
-          3,
-          3
+          2
         ],
         "shots": [
           22,
@@ -109513,9 +109771,7 @@
           43,
           32,
           22,
-          34,
-          34,
-          30
+          34
         ],
         "hits": [
           13,
@@ -109767,9 +110023,7 @@
           8,
           9,
           10,
-          11,
-          "2025-11-22",
-          "2025-11-20"
+          11
         ],
         "lateral": [],
         "longitudinal": [],
@@ -109786,14 +110040,9 @@
           1,
           3,
           4,
-          2,
-          3,
-          3
-        ],
-        "goals_against": [
-          4,
           2
         ],
+        "goals_against": [],
         "shots_for": [
           22,
           39,
@@ -109806,14 +110055,9 @@
           43,
           32,
           22,
-          34,
-          34,
-          30
+          34
         ],
-        "shots_against": [
-          33,
-          29
-        ],
+        "shots_against": [],
         "xG_for": [
           2.69,
           3.2,
@@ -109826,14 +110070,9 @@
           4.23,
           4.35,
           3.48,
-          3.44,
-          3.5928171087901273,
-          3.177059215347626
+          3.44
         ],
-        "xG_against": [
-          3.2213672427250017,
-          3.938442452302728
-        ],
+        "xG_against": [],
         "hdc_for": [
           10,
           6,
@@ -110390,9 +110629,7 @@
           2.15,
           1.62,
           2.26,
-          1.95,
-          3.975322222287501,
-          2.4685600944
+          1.95
         ],
         "corsi_pct": [
           41.87,
@@ -110469,9 +110706,7 @@
           1,
           3,
           5,
-          3,
-          2,
-          4
+          3
         ],
         "shots": [
           19,
@@ -110482,9 +110717,7 @@
           21,
           22,
           22,
-          33,
-          30,
-          24
+          33
         ],
         "hits": [
           17,
@@ -110682,9 +110915,7 @@
           5,
           6,
           7,
-          8,
-          "2025-11-22",
-          "2025-11-20"
+          8
         ],
         "lateral": [],
         "longitudinal": [],
@@ -110698,14 +110929,9 @@
           1,
           3,
           5,
-          3,
-          2,
-          4
+          3
         ],
-        "goals_against": [
-          3,
-          2
-        ],
+        "goals_against": [],
         "shots_for": [
           19,
           37,
@@ -110715,14 +110941,9 @@
           21,
           22,
           22,
-          33,
-          30,
-          24
+          33
         ],
-        "shots_against": [
-          33,
-          36
-        ],
+        "shots_against": [],
         "xG_for": [
           2.49,
           3.49,
@@ -110732,14 +110953,9 @@
           2.15,
           1.62,
           2.26,
-          1.95,
-          3.975322222287501,
-          2.4685600944
+          1.95
         ],
-        "xG_against": [
-          4.721903553157552,
-          4.990587393487499
-        ],
+        "xG_against": [],
         "hdc_for": [
           8,
           14,
@@ -112091,9 +112307,7 @@
           2.79,
           2.78,
           2.13,
-          4.4,
-          4.438664486816501,
-          3.302102391784501
+          4.4
         ],
         "corsi_pct": [
           51.68,
@@ -112219,9 +112433,7 @@
           3,
           2,
           3,
-          4,
-          6,
-          1
+          4
         ],
         "shots": [
           33,
@@ -112239,9 +112451,7 @@
           29,
           26,
           26,
-          30,
-          31,
-          25
+          30
         ],
         "hits": [
           20,
@@ -112565,9 +112775,7 @@
           12,
           13,
           14,
-          15,
-          "2025-11-22",
-          "2025-11-20"
+          15
         ],
         "lateral": [],
         "longitudinal": [],
@@ -112588,14 +112796,9 @@
           3,
           2,
           3,
-          4,
-          6,
-          1
+          4
         ],
-        "goals_against": [
-          3,
-          2
-        ],
+        "goals_against": [],
         "shots_for": [
           33,
           23,
@@ -112612,14 +112815,9 @@
           29,
           26,
           26,
-          30,
-          31,
-          25
+          30
         ],
-        "shots_against": [
-          38,
-          35
-        ],
+        "shots_against": [],
         "xG_for": [
           1.86,
           3.6,
@@ -112636,14 +112834,9 @@
           2.79,
           2.78,
           2.13,
-          4.4,
-          4.438664486816501,
-          3.302102391784501
+          4.4
         ],
-        "xG_against": [
-          4.694120132025001,
-          3.4170927322750004
-        ],
+        "xG_against": [],
         "hdc_for": [
           3,
           6,
@@ -113966,8 +114159,7 @@
           2.38,
           1.57,
           2.56,
-          3.73,
-          4.200660226012502
+          3.73
         ],
         "corsi_pct": [
           56.45,
@@ -114079,8 +114271,7 @@
           3,
           4,
           3,
-          5,
-          3
+          5
         ],
         "shots": [
           31,
@@ -114096,8 +114287,7 @@
           22,
           14,
           27,
-          26,
-          34
+          26
         ],
         "hits": [
           18,
@@ -114385,8 +114575,7 @@
           10,
           11,
           12,
-          13,
-          "2025-11-20"
+          13
         ],
         "lateral": [],
         "longitudinal": [],
@@ -114405,12 +114594,9 @@
           3,
           4,
           3,
-          5,
-          3
+          5
         ],
-        "goals_against": [
-          4
-        ],
+        "goals_against": [],
         "shots_for": [
           31,
           18,
@@ -114425,12 +114611,9 @@
           22,
           14,
           27,
-          26,
-          34
+          26
         ],
-        "shots_against": [
-          24
-        ],
+        "shots_against": [],
         "xG_for": [
           3.6,
           1.29,
@@ -114445,12 +114628,9 @@
           2.38,
           1.57,
           2.56,
-          3.73,
-          4.200660226012502
+          3.73
         ],
-        "xG_against": [
-          3.1258311231875004
-        ],
+        "xG_against": [],
         "hdc_for": [
           8,
           0,
@@ -115009,9 +115189,7 @@
           3.75,
           4.43,
           2.68,
-          3.52,
-          2.3325537895193498,
-          2.8032727801796513
+          3.52
         ],
         "corsi_pct": [
           36.64,
@@ -115088,8 +115266,6 @@
           3,
           1,
           3,
-          5,
-          3,
           5
         ],
         "shots": [
@@ -115101,9 +115277,7 @@
           32,
           31,
           24,
-          26,
-          30,
-          21
+          26
         ],
         "hits": [
           18,
@@ -115301,9 +115475,7 @@
           5,
           6,
           7,
-          8,
-          "2025-11-23",
-          "2025-11-21"
+          8
         ],
         "lateral": [],
         "longitudinal": [],
@@ -115317,14 +115489,9 @@
           3,
           1,
           3,
-          5,
-          3,
           5
         ],
-        "goals_against": [
-          0,
-          0
-        ],
+        "goals_against": [],
         "shots_for": [
           14,
           21,
@@ -115334,14 +115501,9 @@
           32,
           31,
           24,
-          26,
-          30,
-          21
+          26
         ],
-        "shots_against": [
-          32,
-          19
-        ],
+        "shots_against": [],
         "xG_for": [
           1.85,
           2.27,
@@ -115351,14 +115513,9 @@
           3.75,
           4.43,
           2.68,
-          3.52,
-          2.3325537895193498,
-          2.8032727801796513
+          3.52
         ],
-        "xG_against": [
-          2.9455940746637697,
-          1.9759866628375
-        ],
+        "xG_against": [],
         "hdc_for": [
           5,
           3,
@@ -117520,9 +117677,7 @@
           3.46,
           2.59,
           2.0,
-          3.6,
-          3.476279840040625,
-          2.812042459750001
+          3.6
         ],
         "corsi_pct": [
           52.1,
@@ -117627,9 +117782,7 @@
           4,
           2,
           4,
-          1,
-          3,
-          0
+          1
         ],
         "shots": [
           32,
@@ -117644,9 +117797,7 @@
           30,
           31,
           22,
-          33,
-          35,
-          32
+          33
         ],
         "hits": [
           17,
@@ -117916,9 +118067,7 @@
           9,
           10,
           11,
-          12,
-          "2025-11-22",
-          "2025-11-20"
+          12
         ],
         "lateral": [],
         "longitudinal": [],
@@ -117936,14 +118085,9 @@
           4,
           2,
           4,
-          1,
-          3,
-          0
-        ],
-        "goals_against": [
-          6,
           1
         ],
+        "goals_against": [],
         "shots_for": [
           32,
           31,
@@ -117957,14 +118101,9 @@
           30,
           31,
           22,
-          33,
-          35,
-          32
+          33
         ],
-        "shots_against": [
-          29,
-          24
-        ],
+        "shots_against": [],
         "xG_for": [
           2.75,
           3.69,
@@ -117978,14 +118117,9 @@
           3.46,
           2.59,
           2.0,
-          3.6,
-          3.476279840040625,
-          2.812042459750001
+          3.6
         ],
-        "xG_against": [
-          3.004910745387503,
-          2.39802235630734
-        ],
+        "xG_against": [],
         "hdc_for": [
           8,
           10,
@@ -118423,8 +118557,7 @@
           3.29,
           2.65,
           2.65,
-          2.11,
-          2.9273598039347752
+          2.11
         ],
         "corsi_pct": [
           39.15,
@@ -118529,8 +118662,7 @@
           2,
           3,
           5,
-          3,
-          5
+          3
         ],
         "shots": [
           22,
@@ -118545,8 +118677,7 @@
           28,
           23,
           26,
-          24,
-          26
+          24
         ],
         "hits": [
           17,
@@ -118816,8 +118947,7 @@
           9,
           10,
           11,
-          12,
-          "2025-11-20"
+          12
         ],
         "lateral": [],
         "longitudinal": [],
@@ -118835,12 +118965,9 @@
           2,
           3,
           5,
-          3,
-          5
+          3
         ],
-        "goals_against": [
-          0
-        ],
+        "goals_against": [],
         "shots_for": [
           22,
           29,
@@ -118854,12 +118981,9 @@
           28,
           23,
           26,
-          24,
-          26
+          24
         ],
-        "shots_against": [
-          29
-        ],
+        "shots_against": [],
         "xG_for": [
           1.84,
           2.4,
@@ -118873,12 +118997,9 @@
           3.29,
           2.65,
           2.65,
-          2.11,
-          2.9273598039347752
+          2.11
         ],
-        "xG_against": [
-          2.8993354325749996
-        ],
+        "xG_against": [],
         "hdc_for": [
           7,
           10,
@@ -119380,9 +119501,7 @@
           3.89,
           3.32,
           3.2,
-          3.59,
-          2.960156526396251,
-          2.04289531648235
+          3.59
         ],
         "corsi_pct": [
           49.3,
@@ -119487,9 +119606,7 @@
           2,
           4,
           3,
-          4,
-          2,
-          3
+          4
         ],
         "shots": [
           19,
@@ -119504,9 +119621,7 @@
           25,
           35,
           27,
-          26,
-          22,
-          19
+          26
         ],
         "hits": [
           34,
@@ -119776,9 +119891,7 @@
           9,
           10,
           11,
-          12,
-          "2025-11-22",
-          "2025-11-20"
+          12
         ],
         "lateral": [],
         "longitudinal": [],
@@ -119796,14 +119909,9 @@
           2,
           4,
           3,
-          4,
-          2,
-          3
+          4
         ],
-        "goals_against": [
-          3,
-          6
-        ],
+        "goals_against": [],
         "shots_for": [
           19,
           33,
@@ -119817,14 +119925,9 @@
           25,
           35,
           27,
-          26,
-          22,
-          19
+          26
         ],
-        "shots_against": [
-          34,
-          35
-        ],
+        "shots_against": [],
         "xG_for": [
           2.64,
           2.89,
@@ -119838,14 +119941,9 @@
           3.89,
           3.32,
           3.2,
-          3.59,
-          2.960156526396251,
-          2.04289531648235
+          3.59
         ],
-        "xG_against": [
-          2.92975232315,
-          4.582923770944997
-        ],
+        "xG_against": [],
         "hdc_for": [
           5,
           7,
@@ -120373,9 +120471,7 @@
           2.69,
           2.01,
           2.01,
-          2.0,
-          2.8147766331026447,
-          3.793914892400001
+          2.0
         ],
         "corsi_pct": [
           57.31,
@@ -120459,8 +120555,6 @@
           3,
           3,
           2,
-          3,
-          3,
           3
         ],
         "shots": [
@@ -120473,9 +120567,7 @@
           24,
           17,
           22,
-          14,
-          27,
-          25
+          14
         ],
         "hits": [
           37,
@@ -120691,9 +120783,7 @@
           6,
           7,
           8,
-          9,
-          "2025-11-22",
-          "2025-11-20"
+          9
         ],
         "lateral": [],
         "longitudinal": [],
@@ -120708,14 +120798,9 @@
           3,
           3,
           2,
-          3,
-          3,
           3
         ],
-        "goals_against": [
-          2,
-          2
-        ],
+        "goals_against": [],
         "shots_for": [
           34,
           28,
@@ -120726,14 +120811,9 @@
           24,
           17,
           22,
-          14,
-          27,
-          25
+          14
         ],
-        "shots_against": [
-          19,
-          25
-        ],
+        "shots_against": [],
         "xG_for": [
           3.41,
           2.48,
@@ -120744,14 +120824,9 @@
           2.69,
           2.01,
           2.01,
-          2.0,
-          2.8147766331026447,
-          3.793914892400001
+          2.0
         ],
-        "xG_against": [
-          2.142334705175,
-          2.0487940755999996
-        ],
+        "xG_against": [],
         "hdc_for": [
           5,
           8,
@@ -123946,10 +124021,7 @@
           2.08,
           1.82,
           2.7,
-          2.69,
-          2.9627720729264997,
-          2.31924502047805,
-          2.320395901699375
+          2.69
         ],
         "corsi_pct": [
           40.02,
@@ -124026,10 +124098,7 @@
           1,
           3,
           4,
-          1,
-          0,
-          3,
-          3
+          1
         ],
         "shots": [
           22,
@@ -124040,10 +124109,7 @@
           19,
           28,
           30,
-          31,
-          19,
-          21,
-          27
+          31
         ],
         "hits": [
           11,
@@ -124241,10 +124307,7 @@
           5,
           6,
           7,
-          8,
-          "2025-11-23",
-          "2025-11-22",
-          "2025-11-20"
+          8
         ],
         "lateral": [],
         "longitudinal": [],
@@ -124258,16 +124321,9 @@
           1,
           3,
           4,
-          1,
-          0,
-          3,
-          3
+          1
         ],
-        "goals_against": [
-          1,
-          2,
-          2
-        ],
+        "goals_against": [],
         "shots_for": [
           22,
           22,
@@ -124277,16 +124333,9 @@
           19,
           28,
           30,
-          31,
-          19,
-          21,
-          27
+          31
         ],
-        "shots_against": [
-          34,
-          32,
-          24
-        ],
+        "shots_against": [],
         "xG_for": [
           2.39,
           2.59,
@@ -124296,16 +124345,9 @@
           2.08,
           1.82,
           2.7,
-          2.69,
-          2.9627720729264997,
-          2.31924502047805,
-          2.320395901699375
+          2.69
         ],
-        "xG_against": [
-          4.6248391970625,
-          3.4369475339375013,
-          2.3056910263577506
-        ],
+        "xG_against": [],
         "hdc_for": [
           6,
           3,
@@ -124891,9 +124933,7 @@
           3.77,
           3.89,
           3.19,
-          1.71,
-          2.409294745275001,
-          2.907711108528625
+          1.71
         ],
         "corsi_pct": [
           53.97,
@@ -124970,9 +125010,7 @@
           3,
           2,
           1,
-          3,
-          2,
-          2
+          3
         ],
         "shots": [
           29,
@@ -124983,9 +125021,7 @@
           28,
           39,
           24,
-          17,
-          22,
-          29
+          17
         ],
         "hits": [
           18,
@@ -125183,9 +125219,7 @@
           5,
           6,
           7,
-          8,
-          "2025-11-22",
-          "2025-11-20"
+          8
         ],
         "lateral": [],
         "longitudinal": [],
@@ -125199,14 +125233,9 @@
           3,
           2,
           1,
-          3,
-          2,
-          2
-        ],
-        "goals_against": [
-          1,
           3
         ],
+        "goals_against": [],
         "shots_for": [
           29,
           28,
@@ -125216,14 +125245,9 @@
           28,
           39,
           24,
-          17,
-          22,
-          29
+          17
         ],
-        "shots_against": [
-          31,
-          28
-        ],
+        "shots_against": [],
         "xG_for": [
           2.91,
           3.44,
@@ -125233,14 +125257,9 @@
           3.77,
           3.89,
           3.19,
-          1.71,
-          2.409294745275001,
-          2.907711108528625
+          1.71
         ],
-        "xG_against": [
-          3.4393909947500014,
-          3.397296827277781
-        ],
+        "xG_against": [],
         "hdc_for": [
           5,
           10,
@@ -125764,8 +125783,7 @@
           3.74,
           3.15,
           2.67,
-          4.1,
-          1.9619272839601871
+          4.1
         ],
         "corsi_pct": [
           39.76,
@@ -125849,8 +125867,7 @@
           5,
           4,
           2,
-          6,
-          5
+          6
         ],
         "shots": [
           20,
@@ -125862,8 +125879,7 @@
           32,
           26,
           24,
-          27,
-          16
+          27
         ],
         "hits": [
           27,
@@ -126079,8 +126095,7 @@
           6,
           7,
           8,
-          9,
-          "2025-11-22"
+          9
         ],
         "lateral": [],
         "longitudinal": [],
@@ -126095,12 +126110,9 @@
           5,
           4,
           2,
-          6,
-          5
+          6
         ],
-        "goals_against": [
-          3
-        ],
+        "goals_against": [],
         "shots_for": [
           20,
           32,
@@ -126111,12 +126123,9 @@
           32,
           26,
           24,
-          27,
-          16
+          27
         ],
-        "shots_against": [
-          32
-        ],
+        "shots_against": [],
         "xG_for": [
           2.63,
           3.23,
@@ -126127,12 +126136,9 @@
           3.74,
           3.15,
           2.67,
-          4.1,
-          1.9619272839601871
+          4.1
         ],
-        "xG_against": [
-          4.3910199267165195
-        ],
+        "xG_against": [],
         "hdc_for": [
           10,
           12,
@@ -126779,8 +126785,7 @@
           3.51,
           4.11,
           2.64,
-          4.82,
-          1.6438552835064
+          4.82
         ],
         "corsi_pct": [
           52.27,
@@ -126843,8 +126848,7 @@
           3,
           3,
           5,
-          3,
-          2
+          3
         ],
         "shots": [
           33,
@@ -126853,8 +126857,7 @@
           34,
           36,
           27,
-          33,
-          26
+          33
         ],
         "hits": [
           28,
@@ -127016,8 +127019,7 @@
           3,
           4,
           5,
-          6,
-          "2025-11-22"
+          6
         ],
         "lateral": [],
         "longitudinal": [],
@@ -127029,12 +127031,9 @@
           3,
           3,
           5,
-          3,
-          2
+          3
         ],
-        "goals_against": [
-          5
-        ],
+        "goals_against": [],
         "shots_for": [
           33,
           23,
@@ -127042,12 +127041,9 @@
           34,
           36,
           27,
-          33,
-          26
+          33
         ],
-        "shots_against": [
-          29
-        ],
+        "shots_against": [],
         "xG_for": [
           4.28,
           2.17,
@@ -127055,12 +127051,9 @@
           3.51,
           4.11,
           2.64,
-          4.82,
-          1.6438552835064
+          4.82
         ],
-        "xG_against": [
-          2.874272344700001
-        ],
+        "xG_against": [],
         "hdc_for": [
           14,
           7,
@@ -129498,9 +129491,7 @@
           2.83,
           2.11,
           1.87,
-          4.0,
-          3.5636976330221777,
-          3.0814490193124993
+          4.0
         ],
         "corsi_pct": [
           56.18,
@@ -129570,9 +129561,7 @@
           4,
           0,
           1,
-          6,
-          3,
-          4
+          6
         ],
         "shots": [
           25,
@@ -129582,9 +129571,7 @@
           30,
           17,
           19,
-          35,
-          32,
-          33
+          35
         ],
         "hits": [
           15,
@@ -129764,9 +129751,7 @@
           4,
           5,
           6,
-          7,
-          "2025-11-22",
-          "2025-11-20"
+          7
         ],
         "lateral": [],
         "longitudinal": [],
@@ -129779,14 +129764,9 @@
           4,
           0,
           1,
-          6,
-          3,
-          4
+          6
         ],
-        "goals_against": [
-          4,
-          1
-        ],
+        "goals_against": [],
         "shots_for": [
           25,
           34,
@@ -129795,14 +129775,9 @@
           30,
           17,
           19,
-          35,
-          32,
-          33
+          35
         ],
-        "shots_against": [
-          33,
-          26
-        ],
+        "shots_against": [],
         "xG_for": [
           2.02,
           3.37,
@@ -129811,14 +129786,9 @@
           2.83,
           2.11,
           1.87,
-          4.0,
-          3.5636976330221777,
-          3.0814490193124993
+          4.0
         ],
-        "xG_against": [
-          3.3072609050225017,
-          3.1121491869999995
-        ],
+        "xG_against": [],
         "hdc_for": [
           6,
           7,
@@ -130403,8 +130373,7 @@
           3.03,
           3.04,
           2.52,
-          3.25,
-          3.6622052116874992
+          3.25
         ],
         "corsi_pct": [
           61.16,
@@ -130481,8 +130450,7 @@
           3,
           3,
           2,
-          4,
-          8
+          4
         ],
         "shots": [
           40,
@@ -130493,8 +130461,7 @@
           34,
           30,
           30,
-          28,
-          36
+          28
         ],
         "hits": [
           14,
@@ -130692,8 +130659,7 @@
           5,
           6,
           7,
-          8,
-          "2025-11-20"
+          8
         ],
         "lateral": [],
         "longitudinal": [],
@@ -130707,12 +130673,9 @@
           3,
           3,
           2,
-          4,
-          8
-        ],
-        "goals_against": [
           4
         ],
+        "goals_against": [],
         "shots_for": [
           40,
           29,
@@ -130722,12 +130685,9 @@
           34,
           30,
           30,
-          28,
-          36
-        ],
-        "shots_against": [
           28
         ],
+        "shots_against": [],
         "xG_for": [
           3.8,
           4.45,
@@ -130737,12 +130697,9 @@
           3.03,
           3.04,
           2.52,
-          3.25,
-          3.6622052116874992
+          3.25
         ],
-        "xG_against": [
-          3.1521742682249987
-        ],
+        "xG_against": [],
         "hdc_for": [
           14,
           11,
