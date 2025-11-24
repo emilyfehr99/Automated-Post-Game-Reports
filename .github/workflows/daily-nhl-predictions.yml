@@ -46,7 +46,6 @@ jobs:
           "
 
       - name: Scrape Edge data
-        working-directory: automated-post-game-reports
         run: |
           echo "🏒 SCRAPING NHL EDGE DATA"
           echo "Current directory: $(pwd)"
@@ -58,7 +57,6 @@ jobs:
           python3 daily_edge_data_scraper.py
 
       - name: Validate edge data exists
-        working-directory: automated-post-game-reports
         run: |
           if [ -f "nhl_edge_data.json" ]; then
             echo "✅ Edge data file created successfully"
@@ -68,14 +66,12 @@ jobs:
           fi
 
       - name: Run daily predictions
-        working-directory: automated-post-game-reports
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         run: |
           python3 prediction_interface.py
 
       - name: Generate real team stats
-        working-directory: automated-post-game-reports
         run: |
           echo "📊 GENERATING REAL TEAM STATS"
           echo "Current directory: $(pwd)"
@@ -102,20 +98,20 @@ jobs:
           # Track files to commit
           FILES_TO_COMMIT=""
           
-          # Add nhl_edge_data.json if it exists (in automated-post-game-reports/)
-          if [ -f "automated-post-game-reports/nhl_edge_data.json" ]; then
+          # Add nhl_edge_data.json if it exists (in repo root)
+          if [ -f "nhl_edge_data.json" ]; then
             echo "📦 Force adding nhl_edge_data.json (overriding .gitignore)..."
-            git add --force automated-post-game-reports/nhl_edge_data.json
+            git add --force nhl_edge_data.json
             FILES_TO_COMMIT="$FILES_TO_COMMIT nhl_edge_data.json"
             echo "✅ nhl_edge_data.json added"
           else
             echo "⚠️  nhl_edge_data.json not found"
           fi
           
-          # Add win_probability_predictions_v2.json if it exists (in automated-post-game-reports/)
-          if [ -f "automated-post-game-reports/win_probability_predictions_v2.json" ]; then
+          # Add win_probability_predictions_v2.json if it exists (in repo root)
+          if [ -f "win_probability_predictions_v2.json" ]; then
             echo "📦 Adding win_probability_predictions_v2.json..."
-            git add --force automated-post-game-reports/win_probability_predictions_v2.json
+            git add --force win_probability_predictions_v2.json
             FILES_TO_COMMIT="$FILES_TO_COMMIT win_probability_predictions_v2.json"
             echo "✅ win_probability_predictions_v2.json added"
           else
@@ -126,11 +122,6 @@ jobs:
           if [ -f "season_2025_2026_team_stats.json" ]; then
             echo "📦 Adding season_2025_2026_team_stats.json..."
             git add --force season_2025_2026_team_stats.json
-            FILES_TO_COMMIT="$FILES_TO_COMMIT season_2025_2026_team_stats.json"
-            echo "✅ season_2025_2026_team_stats.json added"
-          elif [ -f "automated-post-game-reports/season_2025_2026_team_stats.json" ]; then
-            echo "📦 Adding season_2025_2026_team_stats.json from automated-post-game-reports..."
-            git add --force automated-post-game-reports/season_2025_2026_team_stats.json
             FILES_TO_COMMIT="$FILES_TO_COMMIT season_2025_2026_team_stats.json"
             echo "✅ season_2025_2026_team_stats.json added"
           else
