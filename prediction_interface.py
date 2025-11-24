@@ -35,15 +35,15 @@ class PredictionInterface:
         central_now = datetime.now(central_tz)
         
         # Load existing predictions to see what we have
-        try:
-            with open('win_probability_predictions_v2.json', 'r') as f:
-                data = json.load(f)
-            existing_predictions = data.get('predictions', [])
-            existing_game_ids = set(pred.get('game_id') for pred in existing_predictions)
-        except:
-            existing_game_ids = set()
+        predictions_store = self.learning_model.model_data.get('predictions', [])
+        prediction_index = {}
+        for idx, pred in enumerate(predictions_store):
+            gid = str(pred.get('game_id') or '')
+            if gid:
+                prediction_index[gid] = idx
         
         games_added = 0
+        games_updated = 0
         
         # Check each of the last 7 days
         for days_back in range(1, 8):
@@ -62,8 +62,35 @@ class PredictionInterface:
                         home_team = game.get('homeTeam', {}).get('abbrev', 'UNK')
                         game_state = game.get('gameState', 'UNKNOWN')
                         
-                        # Check if we already have this game
-                        if game_id in existing_game_ids:
+                        # If we already have this game, update results if needed
+                        if game_id in prediction_index:
+                            existing_prediction = predictions_store[prediction_index[game_id]]
+                            if existing_prediction.get('actual_winner'):
+                                continue
+                            
+                            if game_state not in ['FINAL', 'OFF']:
+                                continue
+                            
+                            try:
+                                game_data = self.api.get_comprehensive_game_data(game_id)
+                                if not game_data or 'boxscore' not in game_data:
+                                    continue
+                                away_goals = int(game_data['boxscore']['awayTeam'].get('score', 0))
+                                home_goals = int(game_data['boxscore']['homeTeam'].get('score', 0))
+                            except Exception as e:
+                                print(f"  ❌ Error updating {away_team} @ {home_team}: {e}")
+                                continue
+                            
+                            if away_goals == home_goals:
+                                # Ignore ties/invalid data
+                                continue
+                            
+                            if self._update_prediction_result_entry(
+                                existing_prediction, away_team, home_team, away_goals, home_goals
+                            ):
+                                games_updated += 1
+                                winner_label = away_team if away_goals > home_goals else home_team
+                                print(f"  🔁 Updated result for {away_team} @ {home_team}: {winner_label} won")
                             continue
                         
                         # Only process completed games
@@ -466,7 +493,42 @@ class PredictionInterface:
         else:
             print("✅ No missing games found")
         
-        return games_added
+        if games_updated > 0:
+            self.learning_model.save_model_data()
+            print(f"🔁 Updated results for {games_updated} previously tracked game(s)")
+        
+        return games_added + games_updated
+
+    @staticmethod
+    def _normalize_probability_value(value):
+        if isinstance(value, (int, float)):
+            val = float(value)
+            if val > 1.0:
+                val = val / 100.0
+            return max(0.0, min(1.0, val))
+        return None
+    
+    def _update_prediction_result_entry(self, prediction, away_team, home_team, away_goals, home_goals):
+        if prediction is None:
+            return False
+        
+        if away_goals == home_goals:
+            return False
+        
+        actual_winner = "away" if away_goals > home_goals else "home"
+        prediction['actual_winner'] = actual_winner
+        prediction['actual_winner_side'] = actual_winner
+        prediction['actual_winner_team'] = away_team if actual_winner == "away" else home_team
+        prediction['actual_away_score'] = away_goals
+        prediction['actual_home_score'] = home_goals
+        prediction['result_updated_at'] = datetime.now().isoformat()
+        
+        away_prob = self._normalize_probability_value(prediction.get('predicted_away_win_prob'))
+        home_prob = self._normalize_probability_value(prediction.get('predicted_home_win_prob'))
+        if away_prob is not None and home_prob is not None:
+            prediction['prediction_accuracy'] = away_prob if actual_winner == "away" else home_prob
+        
+        return True
     
     def _compute_model_performance_fallback(self):
         """Compute performance from saved predictions if in-memory stats are empty."""
