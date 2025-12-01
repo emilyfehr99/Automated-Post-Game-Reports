@@ -1,5 +1,5 @@
 {
-  "scraped_at": "2025-11-30T12:50:36.291476",
+  "scraped_at": "2025-12-01T12:57:40.485067",
   "total_players": 773,
   "player_data": [
     {
@@ -670,13 +670,13 @@
       "Player": "Brayden McNabb",
       "Team": "VGK",
       "Pos": "D",
-      "GP": 19,
+      "GP": 25,
       "Top Speed": 19.8,
-      "Distance Skated": 55.19,
-      "Average Speed": 8.1,
+      "Distance Skated": 69.86,
+      "Average Speed": 7.85,
       "Bursts>20 per mile": 0.0,
-      "ES Dist. Skated": 49.94,
-      "ES Avg. Speed": 8.34
+      "ES Dist. Skated": 63.93,
+      "ES Avg. Speed": 8.05
     },
     {
       "": "",
@@ -709,25 +709,25 @@
       "Player": "Brian Dumoulin",
       "Team": "LAK",
       "Pos": "D",
-      "GP": 23,
+      "GP": 25,
       "Top Speed": 21.24,
-      "Distance Skated": 57.84,
-      "Average Speed": 7.76,
-      "Bursts>20 per mile": 0.14,
-      "ES Dist. Skated": 51.45,
-      "ES Avg. Speed": 7.84
+      "Distance Skated": 64.12,
+      "Average Speed": 7.79,
+      "Bursts>20 per mile": 0.12,
+      "ES Dist. Skated": 57.34,
+      "ES Avg. Speed": 7.87
     },
     {
       "": "",
       "Player": "Mattias Ekholm",
       "Team": "EDM",
       "Pos": "D",
-      "GP": 25,
+      "GP": 26,
       "Top Speed": 21.72,
-      "Distance Skated": 74.21,
-      "Average Speed": 8.7,
-      "Bursts>20 per mile": 0.11,
-      "ES Dist. Skated": 67.12,
+      "Distance Skated": 77.22,
+      "Average Speed": 8.68,
+      "Bursts>20 per mile": 0.1,
+      "ES Dist. Skated": 69.63,
       "ES Avg. Speed": 8.84
     },
     {
@@ -1034,13 +1034,13 @@
       "Player": "Kevin Hayes",
       "Team": "PIT",
       "Pos": "R",
-      "GP": 4,
-      "Top Speed": 20.52,
-      "Distance Skated": 7.84,
-      "Average Speed": 10.14,
-      "Bursts>20 per mile": 0.13,
-      "ES Dist. Skated": 7.66,
-      "ES Avg. Speed": 10.5
+      "GP": 9,
+      "Top Speed": 20.61,
+      "Distance Skated": 21.25,
+      "Average Speed": 10.15,
+      "Bursts>20 per mile": 0.24,
+      "ES Dist. Skated": 19.63,
+      "ES Avg. Speed": 10.33
     },
     {
       "": "",
@@ -1281,13 +1281,13 @@
       "Player": "Josh Manson",
       "Team": "COL",
       "Pos": "D",
-      "GP": 20,
+      "GP": 25,
       "Top Speed": 22.07,
-      "Distance Skated": 51.62,
-      "Average Speed": 8.54,
-      "Bursts>20 per mile": 0.29,
-      "ES Dist. Skated": 46.28,
-      "ES Avg. Speed": 8.75
+      "Distance Skated": 64.29,
+      "Average Speed": 8.59,
+      "Bursts>20 per mile": 0.36,
+      "ES Dist. Skated": 57.67,
+      "ES Avg. Speed": 8.8
     },
     {
       "": "",
@@ -1788,13 +1788,13 @@
       "Player": "Yanni Gourde",
       "Team": "TBL",
       "Pos": "C",
-      "GP": 19,
+      "GP": 25,
       "Top Speed": 21.84,
-      "Distance Skated": 52.24,
-      "Average Speed": 10.21,
-      "Bursts>20 per mile": 0.54,
-      "ES Dist. Skated": 44.59,
-      "ES Avg. Speed": 10.33
+      "Distance Skated": 69.36,
+      "Average Speed": 10.24,
+      "Bursts>20 per mile": 0.5,
+      "ES Dist. Skated": 59.8,
+      "ES Avg. Speed": 10.37
     },
     {
       "": "",
@@ -1879,13 +1879,13 @@
       "Player": "Mark Jankowski",
       "Team": "CAR",
       "Pos": "L",
-      "GP": 14,
-      "Top Speed": 20.36,
-      "Distance Skated": 24.23,
-      "Average Speed": 9.49,
+      "GP": 16,
+      "Top Speed": 20.94,
+      "Distance Skated": 27.98,
+      "Average Speed": 9.52,
       "Bursts>20 per mile": 0.21,
-      "ES Dist. Skated": 21.73,
-      "ES Avg. Speed": 9.6
+      "ES Dist. Skated": 25.16,
+      "ES Avg. Speed": 9.61
     },
     {
       "": "",
@@ -2087,12 +2087,12 @@
       "Player": "Shayne Gostisbehere",
       "Team": "CAR",
       "Pos": "D",
-      "GP": 14,
+      "GP": 16,
       "Top Speed": 21.52,
-      "Distance Skated": 37.85,
+      "Distance Skated": 44.12,
       "Average Speed": 8.62,
       "Bursts>20 per mile": 0.16,
-      "ES Dist. Skated": 30.94,
+      "ES Dist. Skated": 36.38,
       "ES Avg. Speed": 8.56
     },
     {
@@ -2425,13 +2425,13 @@
       "Player": "Anthony Duclair",
       "Team": "NYI",
       "Pos": "L",
-      "GP": 20,
+      "GP": 26,
       "Top Speed": 22.33,
-      "Distance Skated": 39.51,
-      "Average Speed": 9.0,
-      "Bursts>20 per mile": 0.68,
-      "ES Dist. Skated": 37.0,
-      "ES Avg. Speed": 9.11
+      "Distance Skated": 50.32,
+      "Average Speed": 9.05,
+      "Bursts>20 per mile": 0.6,
+      "ES Dist. Skated": 47.81,
+      "ES Avg. Speed": 9.14
     },
     {
       "": "",
@@ -2516,13 +2516,13 @@
       "Player": "Ryan Graves",
       "Team": "PIT",
       "Pos": "D",
-      "GP": 6,
+      "GP": 10,
       "Top Speed": 20.73,
-      "Distance Skated": 14.06,
-      "Average Speed": 8.47,
-      "Bursts>20 per mile": 0.07,
-      "ES Dist. Skated": 13.67,
-      "ES Avg. Speed": 8.49
+      "Distance Skated": 22.67,
+      "Average Speed": 8.58,
+      "Bursts>20 per mile": 0.13,
+      "ES Dist. Skated": 22.23,
+      "ES Avg. Speed": 8.61
     },
     {
       "": "",
@@ -2711,13 +2711,13 @@
       "Player": "Seth Jones",
       "Team": "FLA",
       "Pos": "D",
-      "GP": 22,
+      "GP": 24,
       "Top Speed": 21.6,
-      "Distance Skated": 74.87,
-      "Average Speed": 8.66,
-      "Bursts>20 per mile": 0.24,
-      "ES Dist. Skated": 56.75,
-      "ES Avg. Speed": 8.67
+      "Distance Skated": 81.69,
+      "Average Speed": 8.65,
+      "Bursts>20 per mile": 0.27,
+      "ES Dist. Skated": 62.3,
+      "ES Avg. Speed": 8.66
     },
     {
       "": "",
@@ -2828,13 +2828,13 @@
       "Player": "Ryan Pulock",
       "Team": "NYI",
       "Pos": "D",
-      "GP": 20,
-      "Top Speed": 21.43,
-      "Distance Skated": 56.45,
-      "Average Speed": 8.39,
-      "Bursts>20 per mile": 0.23,
-      "ES Dist. Skated": 49.36,
-      "ES Avg. Speed": 8.72
+      "GP": 26,
+      "Top Speed": 21.89,
+      "Distance Skated": 74.58,
+      "Average Speed": 8.45,
+      "Bursts>20 per mile": 0.21,
+      "ES Dist. Skated": 66.62,
+      "ES Avg. Speed": 8.76
     },
     {
       "": "",
@@ -2867,13 +2867,13 @@
       "Player": "Anthony Mantha",
       "Team": "PIT",
       "Pos": "R",
-      "GP": 20,
+      "GP": 24,
       "Top Speed": 22.02,
-      "Distance Skated": 48.31,
-      "Average Speed": 9.83,
-      "Bursts>20 per mile": 0.7,
-      "ES Dist. Skated": 45.13,
-      "ES Avg. Speed": 9.9
+      "Distance Skated": 58.72,
+      "Average Speed": 9.77,
+      "Bursts>20 per mile": 0.65,
+      "ES Dist. Skated": 54.58,
+      "ES Avg. Speed": 9.87
     },
     {
       "": "",
@@ -2893,13 +2893,13 @@
       "Player": "Dakota Mermis",
       "Team": "TOR",
       "Pos": "D",
-      "GP": 5,
-      "Top Speed": 20.18,
-      "Distance Skated": 9.03,
-      "Average Speed": 8.39,
+      "GP": 10,
+      "Top Speed": 20.47,
+      "Distance Skated": 17.92,
+      "Average Speed": 8.1,
       "Bursts>20 per mile": 0.11,
-      "ES Dist. Skated": 8.83,
-      "ES Avg. Speed": 8.45
+      "ES Dist. Skated": 17.21,
+      "ES Avg. Speed": 8.21
     },
     {
       "": "",
@@ -3244,13 +3244,13 @@
       "Player": "Brandon Montour",
       "Team": "SEA",
       "Pos": "D",
-      "GP": 15,
+      "GP": 20,
       "Top Speed": 22.72,
-      "Distance Skated": 51.3,
-      "Average Speed": 9.21,
-      "Bursts>20 per mile": 0.6,
-      "ES Dist. Skated": 47.11,
-      "ES Avg. Speed": 9.22
+      "Distance Skated": 67.91,
+      "Average Speed": 9.14,
+      "Bursts>20 per mile": 0.62,
+      "ES Dist. Skated": 61.5,
+      "ES Avg. Speed": 9.19
     },
     {
       "": "",
@@ -3413,13 +3413,13 @@
       "Player": "Michael Bunting",
       "Team": "NSH",
       "Pos": "L",
-      "GP": 20,
+      "GP": 25,
       "Top Speed": 22.12,
-      "Distance Skated": 44.49,
-      "Average Speed": 9.13,
-      "Bursts>20 per mile": 0.38,
-      "ES Dist. Skated": 38.5,
-      "ES Avg. Speed": 9.42
+      "Distance Skated": 56.34,
+      "Average Speed": 9.12,
+      "Bursts>20 per mile": 0.46,
+      "ES Dist. Skated": 48.54,
+      "ES Avg. Speed": 9.41
     },
     {
       "": "",
@@ -3439,13 +3439,13 @@
       "Player": "Dakota Joshua",
       "Team": "TOR",
       "Pos": "C",
-      "GP": 20,
-      "Top Speed": 21.18,
-      "Distance Skated": 39.94,
+      "GP": 24,
+      "Top Speed": 21.23,
+      "Distance Skated": 47.97,
       "Average Speed": 9.66,
       "Bursts>20 per mile": 0.23,
-      "ES Dist. Skated": 36.79,
-      "ES Avg. Speed": 9.79
+      "ES Dist. Skated": 44.06,
+      "ES Avg. Speed": 9.81
     },
     {
       "": "",
@@ -3764,13 +3764,13 @@
       "Player": "Keegan Kolesar",
       "Team": "VGK",
       "Pos": "R",
-      "GP": 21,
-      "Top Speed": 22.35,
-      "Distance Skated": 37.0,
-      "Average Speed": 9.83,
-      "Bursts>20 per mile": 0.86,
-      "ES Dist. Skated": 35.79,
-      "ES Avg. Speed": 9.82
+      "GP": 25,
+      "Top Speed": 22.38,
+      "Distance Skated": 42.5,
+      "Average Speed": 9.39,
+      "Bursts>20 per mile": 0.92,
+      "ES Dist. Skated": 40.96,
+      "ES Avg. Speed": 9.47
     },
     {
       "": "",
@@ -3790,13 +3790,13 @@
       "Player": "Travis Konecny",
       "Team": "PHI",
       "Pos": "R",
-      "GP": 19,
-      "Top Speed": 21.54,
-      "Distance Skated": 57.79,
-      "Average Speed": 9.49,
-      "Bursts>20 per mile": 0.45,
-      "ES Dist. Skated": 47.97,
-      "ES Avg. Speed": 9.68
+      "GP": 24,
+      "Top Speed": 22.06,
+      "Distance Skated": 72.23,
+      "Average Speed": 9.48,
+      "Bursts>20 per mile": 0.44,
+      "ES Dist. Skated": 59.95,
+      "ES Avg. Speed": 9.64
     },
     {
       "": "",
@@ -4232,13 +4232,13 @@
       "Player": "Niko Mikkola",
       "Team": "FLA",
       "Pos": "D",
-      "GP": 21,
+      "GP": 24,
       "Top Speed": 20.96,
-      "Distance Skated": 62.88,
-      "Average Speed": 9.26,
+      "Distance Skated": 72.68,
+      "Average Speed": 9.25,
       "Bursts>20 per mile": 0.22,
-      "ES Dist. Skated": 56.94,
-      "ES Avg. Speed": 9.4
+      "ES Dist. Skated": 66.25,
+      "ES Avg. Speed": 9.39
     },
     {
       "": "",
@@ -4596,13 +4596,13 @@
       "Player": "Andrew Peeke",
       "Team": "BOS",
       "Pos": "D",
-      "GP": 25,
+      "GP": 27,
       "Top Speed": 20.67,
-      "Distance Skated": 67.0,
-      "Average Speed": 8.12,
+      "Distance Skated": 73.68,
+      "Average Speed": 8.15,
       "Bursts>20 per mile": 0.07,
-      "ES Dist. Skated": 58.51,
-      "ES Avg. Speed": 8.4
+      "ES Dist. Skated": 64.42,
+      "ES Avg. Speed": 8.42
     },
     {
       "": "",
@@ -4765,13 +4765,13 @@
       "Player": "Jesper Bratt",
       "Team": "NJD",
       "Pos": "L",
-      "GP": 19,
+      "GP": 25,
       "Top Speed": 22.65,
-      "Distance Skated": 56.99,
-      "Average Speed": 9.97,
-      "Bursts>20 per mile": 0.54,
-      "ES Dist. Skated": 45.51,
-      "ES Avg. Speed": 10.35
+      "Distance Skated": 76.83,
+      "Average Speed": 9.95,
+      "Bursts>20 per mile": 0.6,
+      "ES Dist. Skated": 62.05,
+      "ES Avg. Speed": 10.33
     },
     {
       "": "",
@@ -5155,13 +5155,13 @@
       "Player": "Cody Glass",
       "Team": "NJD",
       "Pos": "C",
-      "GP": 10,
+      "GP": 14,
       "Top Speed": 21.15,
-      "Distance Skated": 20.39,
-      "Average Speed": 10.22,
-      "Bursts>20 per mile": 0.44,
-      "ES Dist. Skated": 18.63,
-      "ES Avg. Speed": 10.23
+      "Distance Skated": 28.5,
+      "Average Speed": 10.15,
+      "Bursts>20 per mile": 0.35,
+      "ES Dist. Skated": 26.6,
+      "ES Avg. Speed": 10.15
     },
     {
       "": "",
@@ -5350,13 +5350,13 @@
       "Player": "Miro Heiskanen",
       "Team": "DAL",
       "Pos": "D",
-      "GP": 24,
+      "GP": 26,
       "Top Speed": 22.45,
-      "Distance Skated": 86.44,
+      "Distance Skated": 93.66,
       "Average Speed": 8.35,
-      "Bursts>20 per mile": 0.31,
-      "ES Dist. Skated": 65.71,
-      "ES Avg. Speed": 8.55
+      "Bursts>20 per mile": 0.29,
+      "ES Dist. Skated": 71.29,
+      "ES Avg. Speed": 8.53
     },
     {
       "": "",
@@ -5675,13 +5675,13 @@
       "Player": "Mark Kastelic",
       "Team": "BOS",
       "Pos": "C",
-      "GP": 21,
+      "GP": 27,
       "Top Speed": 22.73,
-      "Distance Skated": 43.71,
-      "Average Speed": 9.37,
-      "Bursts>20 per mile": 1.12,
-      "ES Dist. Skated": 36.6,
-      "ES Avg. Speed": 9.66
+      "Distance Skated": 57.53,
+      "Average Speed": 9.32,
+      "Bursts>20 per mile": 1.04,
+      "ES Dist. Skated": 48.61,
+      "ES Avg. Speed": 9.61
     },
     {
       "": "",
@@ -5779,13 +5779,13 @@
       "Player": "Martin Feh\u00e9rv\u00e1ry",
       "Team": "WSH",
       "Pos": "D",
-      "GP": 21,
+      "GP": 26,
       "Top Speed": 21.23,
-      "Distance Skated": 53.38,
-      "Average Speed": 7.99,
-      "Bursts>20 per mile": 0.26,
-      "ES Dist. Skated": 47.67,
-      "ES Avg. Speed": 8.23
+      "Distance Skated": 62.92,
+      "Average Speed": 7.68,
+      "Bursts>20 per mile": 0.29,
+      "ES Dist. Skated": 56.47,
+      "ES Avg. Speed": 7.89
     },
     {
       "": "",
@@ -5857,13 +5857,13 @@
       "Player": "Evan Bouchard",
       "Team": "EDM",
       "Pos": "D",
-      "GP": 21,
+      "GP": 26,
       "Top Speed": 21.98,
-      "Distance Skated": 70.42,
-      "Average Speed": 8.52,
-      "Bursts>20 per mile": 0.36,
-      "ES Dist. Skated": 56.62,
-      "ES Avg. Speed": 8.61
+      "Distance Skated": 86.82,
+      "Average Speed": 8.43,
+      "Bursts>20 per mile": 0.32,
+      "ES Dist. Skated": 69.38,
+      "ES Avg. Speed": 8.53
     },
     {
       "": "",
@@ -6338,13 +6338,13 @@
       "Player": "Paul Cotter",
       "Team": "NJD",
       "Pos": "L",
-      "GP": 19,
+      "GP": 25,
       "Top Speed": 22.66,
-      "Distance Skated": 37.57,
-      "Average Speed": 9.68,
-      "Bursts>20 per mile": 1.25,
-      "ES Dist. Skated": 36.83,
-      "ES Avg. Speed": 9.68
+      "Distance Skated": 50.56,
+      "Average Speed": 9.81,
+      "Bursts>20 per mile": 1.33,
+      "ES Dist. Skated": 49.62,
+      "ES Avg. Speed": 9.82
     },
     {
       "": "",
@@ -6429,13 +6429,13 @@
       "Player": "Brayden Pachal",
       "Team": "CGY",
       "Pos": "D",
-      "GP": 14,
+      "GP": 19,
       "Top Speed": 21.1,
-      "Distance Skated": 26.44,
+      "Distance Skated": 36.06,
       "Average Speed": 8.4,
-      "Bursts>20 per mile": 0.23,
-      "ES Dist. Skated": 25.26,
-      "ES Avg. Speed": 8.48
+      "Bursts>20 per mile": 0.25,
+      "ES Dist. Skated": 34.59,
+      "ES Avg. Speed": 8.5
     },
     {
       "": "",
@@ -6520,13 +6520,13 @@
       "Player": "Peyton Krebs",
       "Team": "BUF",
       "Pos": "C",
-      "GP": 22,
+      "GP": 25,
       "Top Speed": 22.37,
-      "Distance Skated": 49.47,
-      "Average Speed": 9.82,
+      "Distance Skated": 55.31,
+      "Average Speed": 9.85,
       "Bursts>20 per mile": 0.87,
-      "ES Dist. Skated": 48.44,
-      "ES Avg. Speed": 9.82
+      "ES Dist. Skated": 54.28,
+      "ES Avg. Speed": 9.86
     },
     {
       "": "",
@@ -6611,13 +6611,13 @@
       "Player": "Trevor Zegras",
       "Team": "PHI",
       "Pos": "C",
-      "GP": 18,
+      "GP": 24,
       "Top Speed": 21.44,
-      "Distance Skated": 54.71,
-      "Average Speed": 9.9,
-      "Bursts>20 per mile": 0.37,
-      "ES Dist. Skated": 47.36,
-      "ES Avg. Speed": 10.05
+      "Distance Skated": 72.6,
+      "Average Speed": 9.89,
+      "Bursts>20 per mile": 0.36,
+      "ES Dist. Skated": 63.28,
+      "ES Avg. Speed": 10.02
     },
     {
       "": "",
@@ -6663,13 +6663,13 @@
       "Player": "Bobby Brink",
       "Team": "PHI",
       "Pos": "R",
-      "GP": 18,
+      "GP": 24,
       "Top Speed": 23.3,
-      "Distance Skated": 50.31,
-      "Average Speed": 10.13,
-      "Bursts>20 per mile": 0.52,
-      "ES Dist. Skated": 43.79,
-      "ES Avg. Speed": 10.2
+      "Distance Skated": 64.54,
+      "Average Speed": 10.18,
+      "Bursts>20 per mile": 0.51,
+      "ES Dist. Skated": 56.56,
+      "ES Avg. Speed": 10.28
     },
     {
       "": "",
@@ -7183,13 +7183,13 @@
       "Player": "Adam Edstrom",
       "Team": "NYR",
       "Pos": "C",
-      "GP": 20,
+      "GP": 24,
       "Top Speed": 23.8,
-      "Distance Skated": 31.57,
-      "Average Speed": 9.86,
-      "Bursts>20 per mile": 1.36,
-      "ES Dist. Skated": 31.44,
-      "ES Avg. Speed": 9.83
+      "Distance Skated": 37.22,
+      "Average Speed": 9.73,
+      "Bursts>20 per mile": 1.29,
+      "ES Dist. Skated": 37.02,
+      "ES Avg. Speed": 9.71
     },
     {
       "": "",
@@ -7222,13 +7222,13 @@
       "Player": "Louis Crevier",
       "Team": "CHI",
       "Pos": "D",
-      "GP": 18,
+      "GP": 24,
       "Top Speed": 22.26,
-      "Distance Skated": 34.31,
-      "Average Speed": 8.28,
-      "Bursts>20 per mile": 0.12,
-      "ES Dist. Skated": 29.69,
-      "ES Avg. Speed": 8.47
+      "Distance Skated": 45.9,
+      "Average Speed": 8.3,
+      "Bursts>20 per mile": 0.17,
+      "ES Dist. Skated": 40.03,
+      "ES Avg. Speed": 8.5
     },
     {
       "": "",
@@ -7430,13 +7430,13 @@
       "Player": "Seth Jarvis",
       "Team": "CAR",
       "Pos": "C",
-      "GP": 19,
+      "GP": 25,
       "Top Speed": 23.21,
-      "Distance Skated": 56.99,
-      "Average Speed": 9.71,
-      "Bursts>20 per mile": 0.75,
-      "ES Dist. Skated": 42.72,
-      "ES Avg. Speed": 9.95
+      "Distance Skated": 76.63,
+      "Average Speed": 9.69,
+      "Bursts>20 per mile": 0.78,
+      "ES Dist. Skated": 58.25,
+      "ES Avg. Speed": 9.96
     },
     {
       "": "",
@@ -7625,13 +7625,13 @@
       "Player": "Quinton Byfield",
       "Team": "LAK",
       "Pos": "R",
-      "GP": 20,
-      "Top Speed": 22.89,
-      "Distance Skated": 68.45,
-      "Average Speed": 10.3,
+      "GP": 25,
+      "Top Speed": 23.0,
+      "Distance Skated": 83.05,
+      "Average Speed": 9.85,
       "Bursts>20 per mile": 1.31,
-      "ES Dist. Skated": 52.31,
-      "ES Avg. Speed": 10.58
+      "ES Dist. Skated": 63.24,
+      "ES Avg. Speed": 10.08
     },
     {
       "": "",
@@ -7950,13 +7950,13 @@
       "Player": "Jeff Malott",
       "Team": "LAK",
       "Pos": "L",
-      "GP": 16,
+      "GP": 18,
       "Top Speed": 22.58,
-      "Distance Skated": 21.65,
+      "Distance Skated": 24.99,
       "Average Speed": 10.25,
-      "Bursts>20 per mile": 1.11,
-      "ES Dist. Skated": 21.64,
-      "ES Avg. Speed": 10.25
+      "Bursts>20 per mile": 1.08,
+      "ES Dist. Skated": 24.98,
+      "ES Avg. Speed": 10.26
     },
     {
       "": "",
@@ -8379,13 +8379,13 @@
       "Player": "Wyatt Johnston",
       "Team": "DAL",
       "Pos": "C",
-      "GP": 21,
+      "GP": 26,
       "Top Speed": 22.05,
-      "Distance Skated": 71.08,
-      "Average Speed": 9.68,
-      "Bursts>20 per mile": 0.37,
-      "ES Dist. Skated": 56.42,
-      "ES Avg. Speed": 9.89
+      "Distance Skated": 87.41,
+      "Average Speed": 9.73,
+      "Bursts>20 per mile": 0.39,
+      "ES Dist. Skated": 69.51,
+      "ES Avg. Speed": 9.95
     },
     {
       "": "",
@@ -8444,13 +8444,13 @@
       "Player": "Ville Koivunen",
       "Team": "PIT",
       "Pos": "R",
-      "GP": 11,
+      "GP": 14,
       "Top Speed": 20.99,
-      "Distance Skated": 22.62,
-      "Average Speed": 9.82,
-      "Bursts>20 per mile": 0.27,
-      "ES Dist. Skated": 21.57,
-      "ES Avg. Speed": 9.86
+      "Distance Skated": 28.73,
+      "Average Speed": 9.86,
+      "Bursts>20 per mile": 0.24,
+      "ES Dist. Skated": 26.91,
+      "ES Avg. Speed": 9.88
     },
     {
       "": "",
@@ -8496,13 +8496,13 @@
       "Player": "Oliver Kapanen",
       "Team": "MTL",
       "Pos": "C",
-      "GP": 22,
+      "GP": 24,
       "Top Speed": 22.07,
-      "Distance Skated": 45.13,
-      "Average Speed": 9.5,
-      "Bursts>20 per mile": 0.82,
-      "ES Dist. Skated": 39.34,
-      "ES Avg. Speed": 9.81
+      "Distance Skated": 49.82,
+      "Average Speed": 9.49,
+      "Bursts>20 per mile": 0.84,
+      "ES Dist. Skated": 43.45,
+      "ES Avg. Speed": 9.83
     },
     {
       "": "",
@@ -9107,13 +9107,13 @@
       "Player": "Sam Rinzel",
       "Team": "CHI",
       "Pos": "D",
-      "GP": 18,
+      "GP": 24,
       "Top Speed": 22.01,
-      "Distance Skated": 49.23,
-      "Average Speed": 9.02,
-      "Bursts>20 per mile": 0.08,
-      "ES Dist. Skated": 41.31,
-      "ES Avg. Speed": 9.06
+      "Distance Skated": 62.36,
+      "Average Speed": 9.07,
+      "Bursts>20 per mile": 0.13,
+      "ES Dist. Skated": 53.03,
+      "ES Avg. Speed": 9.08
     },
     {
       "": "",
@@ -9484,13 +9484,13 @@
       "Player": "Adam Fantilli",
       "Team": "CBJ",
       "Pos": "C",
-      "GP": 20,
+      "GP": 25,
       "Top Speed": 23.39,
-      "Distance Skated": 58.99,
-      "Average Speed": 10.31,
-      "Bursts>20 per mile": 0.78,
-      "ES Dist. Skated": 53.04,
-      "ES Avg. Speed": 10.42
+      "Distance Skated": 72.69,
+      "Average Speed": 9.81,
+      "Bursts>20 per mile": 0.89,
+      "ES Dist. Skated": 64.38,
+      "ES Avg. Speed": 9.94
     },
     {
       "": "",
@@ -9601,13 +9601,13 @@
       "Player": "Will Smith",
       "Team": "SJS",
       "Pos": "C",
-      "GP": 20,
-      "Top Speed": 21.71,
-      "Distance Skated": 56.49,
+      "GP": 26,
+      "Top Speed": 22.1,
+      "Distance Skated": 73.99,
       "Average Speed": 9.39,
-      "Bursts>20 per mile": 0.62,
-      "ES Dist. Skated": 46.03,
-      "ES Avg. Speed": 9.6
+      "Bursts>20 per mile": 0.64,
+      "ES Dist. Skated": 59.58,
+      "ES Avg. Speed": 9.61
     },
     {
       "": "",
@@ -9861,13 +9861,13 @@
       "Player": "Sam Morton",
       "Team": "CGY",
       "Pos": "C",
-      "GP": 1,
+      "GP": 3,
       "Top Speed": 20.75,
-      "Distance Skated": 1.81,
-      "Average Speed": 9.82,
-      "Bursts>20 per mile": 1.65,
-      "ES Dist. Skated": 1.58,
-      "ES Avg. Speed": 10.02
+      "Distance Skated": 4.71,
+      "Average Speed": 10.09,
+      "Bursts>20 per mile": 0.64,
+      "ES Dist. Skated": 4.11,
+      "ES Avg. Speed": 10.23
     },
     {
       "": "",
@@ -10086,13 +10086,13 @@
           "Player": "Josh Manson",
           "Team": "COL",
           "Pos": "D",
-          "GP": 20,
+          "GP": 25,
           "Top Speed": 22.07,
-          "Distance Skated": 51.62,
-          "Average Speed": 8.54,
-          "Bursts>20 per mile": 0.29,
-          "ES Dist. Skated": 46.28,
-          "ES Avg. Speed": 8.75
+          "Distance Skated": 64.29,
+          "Average Speed": 8.59,
+          "Bursts>20 per mile": 0.36,
+          "ES Dist. Skated": 57.67,
+          "ES Avg. Speed": 8.8
         },
         {
           "": "",
@@ -10355,17 +10355,17 @@
           "ES Avg. Speed": 9.01
         }
       ],
-      "total_distance": 965.9200000000001,
-      "avg_speed": 9.509565217391307,
+      "total_distance": 978.59,
+      "avg_speed": 9.511739130434785,
       "max_speed": 23.68,
-      "total_bursts": 17.28,
+      "total_bursts": 17.35,
       "player_count": 23,
-      "avg_distance": 41.996521739130436,
-      "avg_bursts": 0.751304347826087,
-      "speed_score": 0.9509565217391307,
+      "avg_distance": 42.547391304347826,
+      "avg_bursts": 0.7543478260869566,
+      "speed_score": 0.9511739130434785,
       "distance_score": 1.0,
-      "burst_score": 0.3756521739130435,
-      "edge_advantage": 0.8506086956521741
+      "burst_score": 0.3771739130434783,
+      "edge_advantage": 0.8510217391304349
     },
     "LAK": {
       "players": [
@@ -10413,13 +10413,13 @@
           "Player": "Brian Dumoulin",
           "Team": "LAK",
           "Pos": "D",
-          "GP": 23,
+          "GP": 25,
           "Top Speed": 21.24,
-          "Distance Skated": 57.84,
-          "Average Speed": 7.76,
-          "Bursts>20 per mile": 0.14,
-          "ES Dist. Skated": 51.45,
-          "ES Avg. Speed": 7.84
+          "Distance Skated": 64.12,
+          "Average Speed": 7.79,
+          "Bursts>20 per mile": 0.12,
+          "ES Dist. Skated": 57.34,
+          "ES Avg. Speed": 7.87
         },
         {
           "": "",
@@ -10569,13 +10569,13 @@
           "Player": "Quinton Byfield",
           "Team": "LAK",
           "Pos": "R",
-          "GP": 20,
-          "Top Speed": 22.89,
-          "Distance Skated": 68.45,
-          "Average Speed": 10.3,
+          "GP": 25,
+          "Top Speed": 23.0,
+          "Distance Skated": 83.05,
+          "Average Speed": 9.85,
           "Bursts>20 per mile": 1.31,
-          "ES Dist. Skated": 52.31,
-          "ES Avg. Speed": 10.58
+          "ES Dist. Skated": 63.24,
+          "ES Avg. Speed": 10.08
         },
         {
           "": "",
@@ -10595,13 +10595,13 @@
           "Player": "Jeff Malott",
           "Team": "LAK",
           "Pos": "L",
-          "GP": 16,
+          "GP": 18,
           "Top Speed": 22.58,
-          "Distance Skated": 21.65,
+          "Distance Skated": 24.99,
           "Average Speed": 10.25,
-          "Bursts>20 per mile": 1.11,
-          "ES Dist. Skated": 21.64,
-          "ES Avg. Speed": 10.25
+          "Bursts>20 per mile": 1.08,
+          "ES Dist. Skated": 24.98,
+          "ES Avg. Speed": 10.26
         },
         {
           "": "",
@@ -10643,17 +10643,17 @@
           "ES Avg. Speed": 9.24
         }
       ],
-      "total_distance": 965.3400000000001,
-      "avg_speed": 9.042857142857141,
-      "max_speed": 22.89,
-      "total_bursts": 8.83,
+      "total_distance": 989.5600000000001,
+      "avg_speed": 9.022857142857141,
+      "max_speed": 23.0,
+      "total_bursts": 8.78,
       "player_count": 21,
-      "avg_distance": 45.96857142857144,
-      "avg_bursts": 0.4204761904761905,
-      "speed_score": 0.9042857142857141,
+      "avg_distance": 47.121904761904766,
+      "avg_bursts": 0.4180952380952381,
+      "speed_score": 0.9022857142857141,
       "distance_score": 1.0,
-      "burst_score": 0.21023809523809525,
-      "edge_advantage": 0.7941904761904761
+      "burst_score": 0.20904761904761904,
+      "edge_advantage": 0.792952380952381
     },
     "WSH": {
       "players": [
@@ -10831,13 +10831,13 @@
           "Player": "Martin Feh\u00e9rv\u00e1ry",
           "Team": "WSH",
           "Pos": "D",
-          "GP": 21,
+          "GP": 26,
           "Top Speed": 21.23,
-          "Distance Skated": 53.38,
-          "Average Speed": 7.99,
-          "Bursts>20 per mile": 0.26,
-          "ES Dist. Skated": 47.67,
-          "ES Avg. Speed": 8.23
+          "Distance Skated": 62.92,
+          "Average Speed": 7.68,
+          "Bursts>20 per mile": 0.29,
+          "ES Dist. Skated": 56.47,
+          "ES Avg. Speed": 7.89
         },
         {
           "": "",
@@ -10944,17 +10944,17 @@
           "ES Avg. Speed": 8.76
         }
       ],
-      "total_distance": 955.69,
-      "avg_speed": 8.98090909090909,
+      "total_distance": 965.23,
+      "avg_speed": 8.966818181818182,
       "max_speed": 23.16,
-      "total_bursts": 13.860000000000001,
+      "total_bursts": 13.890000000000002,
       "player_count": 22,
-      "avg_distance": 43.44045454545455,
-      "avg_bursts": 0.63,
-      "speed_score": 0.898090909090909,
+      "avg_distance": 43.87409090909091,
+      "avg_bursts": 0.6313636363636365,
+      "speed_score": 0.8966818181818181,
       "distance_score": 1.0,
-      "burst_score": 0.315,
-      "edge_advantage": 0.8120454545454545
+      "burst_score": 0.31568181818181823,
+      "edge_advantage": 0.8114772727272727
     },
     "PIT": {
       "players": [
@@ -11015,13 +11015,13 @@
           "Player": "Kevin Hayes",
           "Team": "PIT",
           "Pos": "R",
-          "GP": 4,
-          "Top Speed": 20.52,
-          "Distance Skated": 7.84,
-          "Average Speed": 10.14,
-          "Bursts>20 per mile": 0.13,
-          "ES Dist. Skated": 7.66,
-          "ES Avg. Speed": 10.5
+          "GP": 9,
+          "Top Speed": 20.61,
+          "Distance Skated": 21.25,
+          "Average Speed": 10.15,
+          "Bursts>20 per mile": 0.24,
+          "ES Dist. Skated": 19.63,
+          "ES Avg. Speed": 10.33
         },
         {
           "": "",
@@ -11080,26 +11080,26 @@
           "Player": "Ryan Graves",
           "Team": "PIT",
           "Pos": "D",
-          "GP": 6,
+          "GP": 10,
           "Top Speed": 20.73,
-          "Distance Skated": 14.06,
-          "Average Speed": 8.47,
-          "Bursts>20 per mile": 0.07,
-          "ES Dist. Skated": 13.67,
-          "ES Avg. Speed": 8.49
+          "Distance Skated": 22.67,
+          "Average Speed": 8.58,
+          "Bursts>20 per mile": 0.13,
+          "ES Dist. Skated": 22.23,
+          "ES Avg. Speed": 8.61
         },
         {
           "": "",
           "Player": "Anthony Mantha",
           "Team": "PIT",
           "Pos": "R",
-          "GP": 20,
+          "GP": 24,
           "Top Speed": 22.02,
-          "Distance Skated": 48.31,
-          "Average Speed": 9.83,
-          "Bursts>20 per mile": 0.7,
-          "ES Dist. Skated": 45.13,
-          "ES Avg. Speed": 9.9
+          "Distance Skated": 58.72,
+          "Average Speed": 9.77,
+          "Bursts>20 per mile": 0.65,
+          "ES Dist. Skated": 54.58,
+          "ES Avg. Speed": 9.87
         },
         {
           "": "",
@@ -11275,13 +11275,13 @@
           "Player": "Ville Koivunen",
           "Team": "PIT",
           "Pos": "R",
-          "GP": 11,
+          "GP": 14,
           "Top Speed": 20.99,
-          "Distance Skated": 22.62,
-          "Average Speed": 9.82,
-          "Bursts>20 per mile": 0.27,
-          "ES Dist. Skated": 21.57,
-          "ES Avg. Speed": 9.86
+          "Distance Skated": 28.73,
+          "Average Speed": 9.86,
+          "Bursts>20 per mile": 0.24,
+          "ES Dist. Skated": 26.91,
+          "ES Avg. Speed": 9.88
         },
         {
           "": "",
@@ -11323,17 +11323,17 @@
           "ES Avg. Speed": 10.25
         }
       ],
-      "total_distance": 905.5199999999998,
-      "avg_speed": 9.293571428571427,
+      "total_distance": 944.06,
+      "avg_speed": 9.297142857142857,
       "max_speed": 23.39,
-      "total_bursts": 10.6,
+      "total_bursts": 10.689999999999998,
       "player_count": 28,
-      "avg_distance": 32.33999999999999,
-      "avg_bursts": 0.37857142857142856,
-      "speed_score": 0.9293571428571428,
+      "avg_distance": 33.71642857142857,
+      "avg_bursts": 0.38178571428571423,
+      "speed_score": 0.9297142857142857,
       "distance_score": 1.0,
-      "burst_score": 0.18928571428571428,
-      "edge_advantage": 0.8025357142857141
+      "burst_score": 0.19089285714285711,
+      "edge_advantage": 0.8030357142857143
     },
     "SJS": {
       "players": [
@@ -11602,13 +11602,13 @@
           "Player": "Will Smith",
           "Team": "SJS",
           "Pos": "C",
-          "GP": 20,
-          "Top Speed": 21.71,
-          "Distance Skated": 56.49,
+          "GP": 26,
+          "Top Speed": 22.1,
+          "Distance Skated": 73.99,
           "Average Speed": 9.39,
-          "Bursts>20 per mile": 0.62,
-          "ES Dist. Skated": 46.03,
-          "ES Avg. Speed": 9.6
+          "Bursts>20 per mile": 0.64,
+          "ES Dist. Skated": 59.58,
+          "ES Avg. Speed": 9.61
         },
         {
           "": "",
@@ -11663,17 +11663,17 @@
           "ES Avg. Speed": 10.23
         }
       ],
-      "total_distance": 972.35,
+      "total_distance": 989.85,
       "avg_speed": 9.091999999999999,
       "max_speed": 22.65,
-      "total_bursts": 10.94,
+      "total_bursts": 10.959999999999999,
       "player_count": 25,
-      "avg_distance": 38.894,
-      "avg_bursts": 0.4376,
+      "avg_distance": 39.594,
+      "avg_bursts": 0.43839999999999996,
       "speed_score": 0.9091999999999999,
       "distance_score": 1.0,
-      "burst_score": 0.2188,
-      "edge_advantage": 0.79836
+      "burst_score": 0.21919999999999998,
+      "edge_advantage": 0.7984399999999999
     },
     "FLA": {
       "players": [
@@ -11734,13 +11734,13 @@
           "Player": "Seth Jones",
           "Team": "FLA",
           "Pos": "D",
-          "GP": 22,
+          "GP": 24,
           "Top Speed": 21.6,
-          "Distance Skated": 74.87,
-          "Average Speed": 8.66,
-          "Bursts>20 per mile": 0.24,
-          "ES Dist. Skated": 56.75,
-          "ES Avg. Speed": 8.67
+          "Distance Skated": 81.69,
+          "Average Speed": 8.65,
+          "Bursts>20 per mile": 0.27,
+          "ES Dist. Skated": 62.3,
+          "ES Avg. Speed": 8.66
         },
         {
           "": "",
@@ -11825,13 +11825,13 @@
           "Player": "Niko Mikkola",
           "Team": "FLA",
           "Pos": "D",
-          "GP": 21,
+          "GP": 24,
           "Top Speed": 20.96,
-          "Distance Skated": 62.88,
-          "Average Speed": 9.26,
+          "Distance Skated": 72.68,
+          "Average Speed": 9.25,
           "Bursts>20 per mile": 0.22,
-          "ES Dist. Skated": 56.94,
-          "ES Avg. Speed": 9.4
+          "ES Dist. Skated": 66.25,
+          "ES Avg. Speed": 9.39
         },
         {
           "": "",
@@ -11977,17 +11977,17 @@
           "ES Avg. Speed": 8.64
         }
       ],
-      "total_distance": 952.65,
-      "avg_speed": 9.45217391304348,
+      "total_distance": 969.2699999999999,
+      "avg_speed": 9.451304347826087,
       "max_speed": 23.13,
-      "total_bursts": 11.549999999999999,
+      "total_bursts": 11.579999999999998,
       "player_count": 23,
-      "avg_distance": 41.4195652173913,
-      "avg_bursts": 0.5021739130434782,
-      "speed_score": 0.9452173913043479,
+      "avg_distance": 42.14217391304347,
+      "avg_bursts": 0.5034782608695652,
+      "speed_score": 0.9451304347826086,
       "distance_score": 1.0,
-      "burst_score": 0.2510869565217391,
-      "edge_advantage": 0.8228260869565218
+      "burst_score": 0.2517391304347826,
+      "edge_advantage": 0.8229130434782608
     },
     "CHI": {
       "players": [
@@ -12139,13 +12139,13 @@
           "Player": "Louis Crevier",
           "Team": "CHI",
           "Pos": "D",
-          "GP": 18,
+          "GP": 24,
           "Top Speed": 22.26,
-          "Distance Skated": 34.31,
-          "Average Speed": 8.28,
-          "Bursts>20 per mile": 0.12,
-          "ES Dist. Skated": 29.69,
-          "ES Avg. Speed": 8.47
+          "Distance Skated": 45.9,
+          "Average Speed": 8.3,
+          "Bursts>20 per mile": 0.17,
+          "ES Dist. Skated": 40.03,
+          "ES Avg. Speed": 8.5
         },
         {
           "": "",
@@ -12230,13 +12230,13 @@
           "Player": "Sam Rinzel",
           "Team": "CHI",
           "Pos": "D",
-          "GP": 18,
+          "GP": 24,
           "Top Speed": 22.01,
-          "Distance Skated": 49.23,
-          "Average Speed": 9.02,
-          "Bursts>20 per mile": 0.08,
-          "ES Dist. Skated": 41.31,
-          "ES Avg. Speed": 9.06
+          "Distance Skated": 62.36,
+          "Average Speed": 9.07,
+          "Bursts>20 per mile": 0.13,
+          "ES Dist. Skated": 53.03,
+          "ES Avg. Speed": 9.08
         },
         {
           "": "",
@@ -12278,17 +12278,17 @@
           "ES Avg. Speed": 8.73
         }
       ],
-      "total_distance": 902.0299999999999,
-      "avg_speed": 9.261818181818184,
+      "total_distance": 926.7499999999999,
+      "avg_speed": 9.264999999999999,
       "max_speed": 22.69,
-      "total_bursts": 9.930000000000001,
+      "total_bursts": 10.030000000000001,
       "player_count": 22,
-      "avg_distance": 41.00136363636363,
-      "avg_bursts": 0.4513636363636364,
-      "speed_score": 0.9261818181818183,
+      "avg_distance": 42.12499999999999,
+      "avg_bursts": 0.455909090909091,
+      "speed_score": 0.9264999999999999,
       "distance_score": 1.0,
-      "burst_score": 0.2256818181818182,
-      "edge_advantage": 0.8082272727272728
+      "burst_score": 0.2279545454545455,
+      "edge_advantage": 0.8088409090909091
     },
     "OTT": {
       "players": [
@@ -12650,25 +12650,25 @@
           "Player": "Mark Jankowski",
           "Team": "CAR",
           "Pos": "L",
-          "GP": 14,
-          "Top Speed": 20.36,
-          "Distance Skated": 24.23,
-          "Average Speed": 9.49,
+          "GP": 16,
+          "Top Speed": 20.94,
+          "Distance Skated": 27.98,
+          "Average Speed": 9.52,
           "Bursts>20 per mile": 0.21,
-          "ES Dist. Skated": 21.73,
-          "ES Avg. Speed": 9.6
+          "ES Dist. Skated": 25.16,
+          "ES Avg. Speed": 9.61
         },
         {
           "": "",
           "Player": "Shayne Gostisbehere",
           "Team": "CAR",
           "Pos": "D",
-          "GP": 14,
+          "GP": 16,
           "Top Speed": 21.52,
-          "Distance Skated": 37.85,
+          "Distance Skated": 44.12,
           "Average Speed": 8.62,
           "Bursts>20 per mile": 0.16,
-          "ES Dist. Skated": 30.94,
+          "ES Dist. Skated": 36.38,
           "ES Avg. Speed": 8.56
         },
         {
@@ -12832,13 +12832,13 @@
           "Player": "Seth Jarvis",
           "Team": "CAR",
           "Pos": "C",
-          "GP": 19,
+          "GP": 25,
           "Top Speed": 23.21,
-          "Distance Skated": 56.99,
-          "Average Speed": 9.71,
-          "Bursts>20 per mile": 0.75,
-          "ES Dist. Skated": 42.72,
-          "ES Avg. Speed": 9.95
+          "Distance Skated": 76.63,
+          "Average Speed": 9.69,
+          "Bursts>20 per mile": 0.78,
+          "ES Dist. Skated": 58.25,
+          "ES Avg. Speed": 9.96
         },
         {
           "": "",
@@ -12932,17 +12932,17 @@
           "ES Avg. Speed": 9.34
         }
       ],
-      "total_distance": 1019.6200000000001,
-      "avg_speed": 9.3376,
+      "total_distance": 1049.2800000000002,
+      "avg_speed": 9.338,
       "max_speed": 23.21,
-      "total_bursts": 12.370000000000001,
+      "total_bursts": 12.400000000000002,
       "player_count": 25,
-      "avg_distance": 40.784800000000004,
-      "avg_bursts": 0.4948,
-      "speed_score": 0.93376,
+      "avg_distance": 41.97120000000001,
+      "avg_bursts": 0.4960000000000001,
+      "speed_score": 0.9338,
       "distance_score": 1.0,
-      "burst_score": 0.2474,
-      "edge_advantage": 0.81636
+      "burst_score": 0.24800000000000005,
+      "edge_advantage": 0.8164999999999999
     },
     "WPG": {
       "players": [
@@ -13761,13 +13761,13 @@
           "Player": "Miro Heiskanen",
           "Team": "DAL",
           "Pos": "D",
-          "GP": 24,
+          "GP": 26,
           "Top Speed": 22.45,
-          "Distance Skated": 86.44,
+          "Distance Skated": 93.66,
           "Average Speed": 8.35,
-          "Bursts>20 per mile": 0.31,
-          "ES Dist. Skated": 65.71,
-          "ES Avg. Speed": 8.55
+          "Bursts>20 per mile": 0.29,
+          "ES Dist. Skated": 71.29,
+          "ES Avg. Speed": 8.53
         },
         {
           "": "",
@@ -13852,13 +13852,13 @@
           "Player": "Wyatt Johnston",
           "Team": "DAL",
           "Pos": "C",
-          "GP": 21,
+          "GP": 26,
           "Top Speed": 22.05,
-          "Distance Skated": 71.08,
-          "Average Speed": 9.68,
-          "Bursts>20 per mile": 0.37,
-          "ES Dist. Skated": 56.42,
-          "ES Avg. Speed": 9.89
+          "Distance Skated": 87.41,
+          "Average Speed": 9.73,
+          "Bursts>20 per mile": 0.39,
+          "ES Dist. Skated": 69.51,
+          "ES Avg. Speed": 9.95
         },
         {
           "": "",
@@ -13887,17 +13887,17 @@
           "ES Avg. Speed": 9.67
         }
       ],
-      "total_distance": 990.3900000000001,
-      "avg_speed": 9.265416666666665,
+      "total_distance": 1013.9399999999998,
+      "avg_speed": 9.2675,
       "max_speed": 23.61,
-      "total_bursts": 9.589999999999998,
+      "total_bursts": 9.59,
       "player_count": 24,
-      "avg_distance": 41.26625000000001,
-      "avg_bursts": 0.39958333333333323,
-      "speed_score": 0.9265416666666665,
+      "avg_distance": 42.247499999999995,
+      "avg_bursts": 0.39958333333333335,
+      "speed_score": 0.92675,
       "distance_score": 1.0,
-      "burst_score": 0.19979166666666662,
-      "edge_advantage": 0.8032291666666665
+      "burst_score": 0.19979166666666667,
+      "edge_advantage": 0.8033333333333332
     },
     "UTA": {
       "players": [
@@ -14794,13 +14794,13 @@
           "Player": "Adam Fantilli",
           "Team": "CBJ",
           "Pos": "C",
-          "GP": 20,
+          "GP": 25,
           "Top Speed": 23.39,
-          "Distance Skated": 58.99,
-          "Average Speed": 10.31,
-          "Bursts>20 per mile": 0.78,
-          "ES Dist. Skated": 53.04,
-          "ES Avg. Speed": 10.42
+          "Distance Skated": 72.69,
+          "Average Speed": 9.81,
+          "Bursts>20 per mile": 0.89,
+          "ES Dist. Skated": 64.38,
+          "ES Avg. Speed": 9.94
         },
         {
           "": "",
@@ -14816,17 +14816,17 @@
           "ES Avg. Speed": 9.86
         }
       ],
-      "total_distance": 1009.39,
-      "avg_speed": 9.2875,
+      "total_distance": 1023.09,
+      "avg_speed": 9.266666666666666,
       "max_speed": 23.39,
-      "total_bursts": 14.849999999999998,
+      "total_bursts": 14.959999999999999,
       "player_count": 24,
-      "avg_distance": 42.057916666666664,
-      "avg_bursts": 0.6187499999999999,
-      "speed_score": 0.92875,
+      "avg_distance": 42.628750000000004,
+      "avg_bursts": 0.6233333333333333,
+      "speed_score": 0.9266666666666665,
       "distance_score": 1.0,
-      "burst_score": 0.30937499999999996,
-      "edge_advantage": 0.82625
+      "burst_score": 0.31166666666666665,
+      "edge_advantage": 0.8256666666666665
     },
     "NJD": {
       "players": [
@@ -15004,13 +15004,13 @@
           "Player": "Jesper Bratt",
           "Team": "NJD",
           "Pos": "L",
-          "GP": 19,
+          "GP": 25,
           "Top Speed": 22.65,
-          "Distance Skated": 56.99,
-          "Average Speed": 9.97,
-          "Bursts>20 per mile": 0.54,
-          "ES Dist. Skated": 45.51,
-          "ES Avg. Speed": 10.35
+          "Distance Skated": 76.83,
+          "Average Speed": 9.95,
+          "Bursts>20 per mile": 0.6,
+          "ES Dist. Skated": 62.05,
+          "ES Avg. Speed": 10.33
         },
         {
           "": "",
@@ -15030,13 +15030,13 @@
           "Player": "Cody Glass",
           "Team": "NJD",
           "Pos": "C",
-          "GP": 10,
+          "GP": 14,
           "Top Speed": 21.15,
-          "Distance Skated": 20.39,
-          "Average Speed": 10.22,
-          "Bursts>20 per mile": 0.44,
-          "ES Dist. Skated": 18.63,
-          "ES Avg. Speed": 10.23
+          "Distance Skated": 28.5,
+          "Average Speed": 10.15,
+          "Bursts>20 per mile": 0.35,
+          "ES Dist. Skated": 26.6,
+          "ES Avg. Speed": 10.15
         },
         {
           "": "",
@@ -15056,13 +15056,13 @@
           "Player": "Paul Cotter",
           "Team": "NJD",
           "Pos": "L",
-          "GP": 19,
+          "GP": 25,
           "Top Speed": 22.66,
-          "Distance Skated": 37.57,
-          "Average Speed": 9.68,
-          "Bursts>20 per mile": 1.25,
-          "ES Dist. Skated": 36.83,
-          "ES Avg. Speed": 9.68
+          "Distance Skated": 50.56,
+          "Average Speed": 9.81,
+          "Bursts>20 per mile": 1.33,
+          "ES Dist. Skated": 49.62,
+          "ES Avg. Speed": 9.82
         },
         {
           "": "",
@@ -15182,17 +15182,17 @@
           "ES Avg. Speed": 10.25
         }
       ],
-      "total_distance": 960.6199999999999,
-      "avg_speed": 9.29925925925926,
+      "total_distance": 1001.5599999999997,
+      "avg_speed": 9.30074074074074,
       "max_speed": 23.23,
-      "total_bursts": 15.05,
+      "total_bursts": 15.100000000000001,
       "player_count": 27,
-      "avg_distance": 35.578518518518514,
-      "avg_bursts": 0.5574074074074075,
-      "speed_score": 0.929925925925926,
+      "avg_distance": 37.094814814814804,
+      "avg_bursts": 0.5592592592592593,
+      "speed_score": 0.9300740740740739,
       "distance_score": 1.0,
-      "burst_score": 0.27870370370370373,
-      "edge_advantage": 0.8207037037037038
+      "burst_score": 0.2796296296296297,
+      "edge_advantage": 0.8209629629629629
     },
     "CGY": {
       "players": [
@@ -15383,13 +15383,13 @@
           "Player": "Brayden Pachal",
           "Team": "CGY",
           "Pos": "D",
-          "GP": 14,
+          "GP": 19,
           "Top Speed": 21.1,
-          "Distance Skated": 26.44,
+          "Distance Skated": 36.06,
           "Average Speed": 8.4,
-          "Bursts>20 per mile": 0.23,
-          "ES Dist. Skated": 25.26,
-          "ES Avg. Speed": 8.48
+          "Bursts>20 per mile": 0.25,
+          "ES Dist. Skated": 34.59,
+          "ES Avg. Speed": 8.5
         },
         {
           "": "",
@@ -15500,13 +15500,13 @@
           "Player": "Sam Morton",
           "Team": "CGY",
           "Pos": "C",
-          "GP": 1,
+          "GP": 3,
           "Top Speed": 20.75,
-          "Distance Skated": 1.81,
-          "Average Speed": 9.82,
-          "Bursts>20 per mile": 1.65,
-          "ES Dist. Skated": 1.58,
-          "ES Avg. Speed": 10.02
+          "Distance Skated": 4.71,
+          "Average Speed": 10.09,
+          "Bursts>20 per mile": 0.64,
+          "ES Dist. Skated": 4.11,
+          "ES Avg. Speed": 10.23
         },
         {
           "": "",
@@ -15522,17 +15522,17 @@
           "ES Avg. Speed": 10.24
         }
       ],
-      "total_distance": 1047.11,
-      "avg_speed": 9.379999999999999,
+      "total_distance": 1059.63,
+      "avg_speed": 9.390799999999999,
       "max_speed": 22.87,
-      "total_bursts": 10.040000000000001,
+      "total_bursts": 9.05,
       "player_count": 25,
-      "avg_distance": 41.8844,
-      "avg_bursts": 0.4016,
-      "speed_score": 0.938,
+      "avg_distance": 42.385200000000005,
+      "avg_bursts": 0.36200000000000004,
+      "speed_score": 0.9390799999999999,
       "distance_score": 1.0,
-      "burst_score": 0.2008,
-      "edge_advantage": 0.8091599999999999
+      "burst_score": 0.18100000000000002,
+      "edge_advantage": 0.8057399999999999
     },
     "TBL": {
       "players": [
@@ -15580,13 +15580,13 @@
           "Player": "Yanni Gourde",
           "Team": "TBL",
           "Pos": "C",
-          "GP": 19,
+          "GP": 25,
           "Top Speed": 21.84,
-          "Distance Skated": 52.24,
-          "Average Speed": 10.21,
-          "Bursts>20 per mile": 0.54,
-          "ES Dist. Skated": 44.59,
-          "ES Avg. Speed": 10.33
+          "Distance Skated": 69.36,
+          "Average Speed": 10.24,
+          "Bursts>20 per mile": 0.5,
+          "ES Dist. Skated": 59.8,
+          "ES Avg. Speed": 10.37
         },
         {
           "": "",
@@ -15914,17 +15914,17 @@
           "ES Avg. Speed": 10.05
         }
       ],
-      "total_distance": 932.59,
-      "avg_speed": 9.324482758620688,
+      "total_distance": 949.7099999999999,
+      "avg_speed": 9.32551724137931,
       "max_speed": 23.71,
-      "total_bursts": 14.319999999999999,
+      "total_bursts": 14.28,
       "player_count": 29,
-      "avg_distance": 32.15827586206897,
-      "avg_bursts": 0.4937931034482758,
-      "speed_score": 0.9324482758620688,
+      "avg_distance": 32.74862068965517,
+      "avg_bursts": 0.49241379310344824,
+      "speed_score": 0.9325517241379311,
       "distance_score": 1.0,
-      "burst_score": 0.2468965517241379,
-      "edge_advantage": 0.815603448275862
+      "burst_score": 0.24620689655172412,
+      "edge_advantage": 0.8155172413793104
     },
     "NSH": {
       "players": [
@@ -16037,13 +16037,13 @@
           "Player": "Michael Bunting",
           "Team": "NSH",
           "Pos": "L",
-          "GP": 20,
+          "GP": 25,
           "Top Speed": 22.12,
-          "Distance Skated": 44.49,
-          "Average Speed": 9.13,
-          "Bursts>20 per mile": 0.38,
-          "ES Dist. Skated": 38.5,
-          "ES Avg. Speed": 9.42
+          "Distance Skated": 56.34,
+          "Average Speed": 9.12,
+          "Bursts>20 per mile": 0.46,
+          "ES Dist. Skated": 48.54,
+          "ES Avg. Speed": 9.41
         },
         {
           "": "",
@@ -16228,17 +16228,17 @@
           "ES Avg. Speed": 10.62
         }
       ],
-      "total_distance": 969.51,
-      "avg_speed": 9.341304347826087,
+      "total_distance": 981.3600000000001,
+      "avg_speed": 9.340869565217393,
       "max_speed": 23.39,
-      "total_bursts": 9.06,
+      "total_bursts": 9.14,
       "player_count": 23,
-      "avg_distance": 42.15260869565218,
-      "avg_bursts": 0.3939130434782609,
-      "speed_score": 0.9341304347826087,
+      "avg_distance": 42.66782608695653,
+      "avg_bursts": 0.3973913043478261,
+      "speed_score": 0.9340869565217392,
       "distance_score": 1.0,
-      "burst_score": 0.19695652173913045,
-      "edge_advantage": 0.8064565217391305
+      "burst_score": 0.19869565217391305,
+      "edge_advantage": 0.8067826086956522
     },
     "MIN": {
       "players": [
@@ -17083,13 +17083,13 @@
           "Player": "Brandon Montour",
           "Team": "SEA",
           "Pos": "D",
-          "GP": 15,
+          "GP": 20,
           "Top Speed": 22.72,
-          "Distance Skated": 51.3,
-          "Average Speed": 9.21,
-          "Bursts>20 per mile": 0.6,
-          "ES Dist. Skated": 47.11,
-          "ES Avg. Speed": 9.22
+          "Distance Skated": 67.91,
+          "Average Speed": 9.14,
+          "Bursts>20 per mile": 0.62,
+          "ES Dist. Skated": 61.5,
+          "ES Avg. Speed": 9.19
         },
         {
           "": "",
@@ -17287,17 +17287,17 @@
           "ES Avg. Speed": 10.4
         }
       ],
-      "total_distance": 938.18,
-      "avg_speed": 9.4425,
+      "total_distance": 954.7900000000001,
+      "avg_speed": 9.439583333333333,
       "max_speed": 22.72,
-      "total_bursts": 9.38,
+      "total_bursts": 9.4,
       "player_count": 24,
-      "avg_distance": 39.09083333333333,
-      "avg_bursts": 0.39083333333333337,
-      "speed_score": 0.94425,
+      "avg_distance": 39.78291666666667,
+      "avg_bursts": 0.39166666666666666,
+      "speed_score": 0.9439583333333333,
       "distance_score": 1.0,
-      "burst_score": 0.19541666666666668,
-      "edge_advantage": 0.8112083333333333
+      "burst_score": 0.19583333333333333,
+      "edge_advantage": 0.8111458333333333
     },
     "EDM": {
       "players": [
@@ -17319,12 +17319,12 @@
           "Player": "Mattias Ekholm",
           "Team": "EDM",
           "Pos": "D",
-          "GP": 25,
+          "GP": 26,
           "Top Speed": 21.72,
-          "Distance Skated": 74.21,
-          "Average Speed": 8.7,
-          "Bursts>20 per mile": 0.11,
-          "ES Dist. Skated": 67.12,
+          "Distance Skated": 77.22,
+          "Average Speed": 8.68,
+          "Bursts>20 per mile": 0.1,
+          "ES Dist. Skated": 69.63,
           "ES Avg. Speed": 8.84
         },
         {
@@ -17501,13 +17501,13 @@
           "Player": "Evan Bouchard",
           "Team": "EDM",
           "Pos": "D",
-          "GP": 21,
+          "GP": 26,
           "Top Speed": 21.98,
-          "Distance Skated": 70.42,
-          "Average Speed": 8.52,
-          "Bursts>20 per mile": 0.36,
-          "ES Dist. Skated": 56.62,
-          "ES Avg. Speed": 8.61
+          "Distance Skated": 86.82,
+          "Average Speed": 8.43,
+          "Bursts>20 per mile": 0.32,
+          "ES Dist. Skated": 69.38,
+          "ES Avg. Speed": 8.53
         },
         {
           "": "",
@@ -17601,17 +17601,17 @@
           "ES Avg. Speed": 9.43
         }
       ],
-      "total_distance": 1084.7499999999998,
-      "avg_speed": 9.346086956521738,
+      "total_distance": 1104.1599999999999,
+      "avg_speed": 9.341304347826085,
       "max_speed": 24.61,
-      "total_bursts": 14.299999999999999,
+      "total_bursts": 14.25,
       "player_count": 23,
-      "avg_distance": 47.16304347826086,
-      "avg_bursts": 0.6217391304347826,
-      "speed_score": 0.9346086956521737,
+      "avg_distance": 48.00695652173913,
+      "avg_bursts": 0.6195652173913043,
+      "speed_score": 0.9341304347826085,
       "distance_score": 1.0,
-      "burst_score": 0.3108695652173913,
-      "edge_advantage": 0.8294782608695651
+      "burst_score": 0.30978260869565216,
+      "edge_advantage": 0.8290217391304346
     },
     "NYI": {
       "players": [
@@ -17698,13 +17698,13 @@
           "Player": "Anthony Duclair",
           "Team": "NYI",
           "Pos": "L",
-          "GP": 20,
+          "GP": 26,
           "Top Speed": 22.33,
-          "Distance Skated": 39.51,
-          "Average Speed": 9.0,
-          "Bursts>20 per mile": 0.68,
-          "ES Dist. Skated": 37.0,
-          "ES Avg. Speed": 9.11
+          "Distance Skated": 50.32,
+          "Average Speed": 9.05,
+          "Bursts>20 per mile": 0.6,
+          "ES Dist. Skated": 47.81,
+          "ES Avg. Speed": 9.14
         },
         {
           "": "",
@@ -17737,13 +17737,13 @@
           "Player": "Ryan Pulock",
           "Team": "NYI",
           "Pos": "D",
-          "GP": 20,
-          "Top Speed": 21.43,
-          "Distance Skated": 56.45,
-          "Average Speed": 8.39,
-          "Bursts>20 per mile": 0.23,
-          "ES Dist. Skated": 49.36,
-          "ES Avg. Speed": 8.72
+          "GP": 26,
+          "Top Speed": 21.89,
+          "Distance Skated": 74.58,
+          "Average Speed": 8.45,
+          "Bursts>20 per mile": 0.21,
+          "ES Dist. Skated": 66.62,
+          "ES Avg. Speed": 8.76
         },
         {
           "": "",
@@ -17915,17 +17915,17 @@
           "ES Avg. Speed": 10.25
         }
       ],
-      "total_distance": 989.9200000000001,
-      "avg_speed": 9.17521739130435,
+      "total_distance": 1018.8600000000001,
+      "avg_speed": 9.180000000000001,
       "max_speed": 23.4,
-      "total_bursts": 13.370000000000003,
+      "total_bursts": 13.270000000000001,
       "player_count": 23,
-      "avg_distance": 43.040000000000006,
-      "avg_bursts": 0.5813043478260871,
-      "speed_score": 0.9175217391304351,
+      "avg_distance": 44.298260869565226,
+      "avg_bursts": 0.5769565217391305,
+      "speed_score": 0.9180000000000001,
       "distance_score": 1.0,
-      "burst_score": 0.29065217391304354,
-      "edge_advantage": 0.8168913043478262
+      "burst_score": 0.28847826086956524,
+      "edge_advantage": 0.8166956521739132
     },
     "TOR": {
       "players": [
@@ -18038,13 +18038,13 @@
           "Player": "Dakota Mermis",
           "Team": "TOR",
           "Pos": "D",
-          "GP": 5,
-          "Top Speed": 20.18,
-          "Distance Skated": 9.03,
-          "Average Speed": 8.39,
+          "GP": 10,
+          "Top Speed": 20.47,
+          "Distance Skated": 17.92,
+          "Average Speed": 8.1,
           "Bursts>20 per mile": 0.11,
-          "ES Dist. Skated": 8.83,
-          "ES Avg. Speed": 8.45
+          "ES Dist. Skated": 17.21,
+          "ES Avg. Speed": 8.21
         },
         {
           "": "",
@@ -18064,13 +18064,13 @@
           "Player": "Dakota Joshua",
           "Team": "TOR",
           "Pos": "C",
-          "GP": 20,
-          "Top Speed": 21.18,
-          "Distance Skated": 39.94,
+          "GP": 24,
+          "Top Speed": 21.23,
+          "Distance Skated": 47.97,
           "Average Speed": 9.66,
           "Bursts>20 per mile": 0.23,
-          "ES Dist. Skated": 36.79,
-          "ES Avg. Speed": 9.79
+          "ES Dist. Skated": 44.06,
+          "ES Avg. Speed": 9.81
         },
         {
           "": "",
@@ -18255,17 +18255,17 @@
           "ES Avg. Speed": 10.7
         }
       ],
-      "total_distance": 952.68,
-      "avg_speed": 9.280799999999997,
+      "total_distance": 969.5999999999999,
+      "avg_speed": 9.269199999999996,
       "max_speed": 23.48,
       "total_bursts": 11.31,
       "player_count": 25,
-      "avg_distance": 38.1072,
+      "avg_distance": 38.784,
       "avg_bursts": 0.4524,
-      "speed_score": 0.9280799999999998,
+      "speed_score": 0.9269199999999996,
       "distance_score": 1.0,
       "burst_score": 0.2262,
-      "edge_advantage": 0.8092799999999998
+      "edge_advantage": 0.8086999999999998
     },
     "STL": {
       "players": [
@@ -18588,13 +18588,13 @@
           "Player": "Brayden McNabb",
           "Team": "VGK",
           "Pos": "D",
-          "GP": 19,
+          "GP": 25,
           "Top Speed": 19.8,
-          "Distance Skated": 55.19,
-          "Average Speed": 8.1,
+          "Distance Skated": 69.86,
+          "Average Speed": 7.85,
           "Bursts>20 per mile": 0.0,
-          "ES Dist. Skated": 49.94,
-          "ES Avg. Speed": 8.34
+          "ES Dist. Skated": 63.93,
+          "ES Avg. Speed": 8.05
         },
         {
           "": "",
@@ -18744,13 +18744,13 @@
           "Player": "Keegan Kolesar",
           "Team": "VGK",
           "Pos": "R",
-          "GP": 21,
-          "Top Speed": 22.35,
-          "Distance Skated": 37.0,
-          "Average Speed": 9.83,
-          "Bursts>20 per mile": 0.86,
-          "ES Dist. Skated": 35.79,
-          "ES Avg. Speed": 9.82
+          "GP": 25,
+          "Top Speed": 22.38,
+          "Distance Skated": 42.5,
+          "Average Speed": 9.39,
+          "Bursts>20 per mile": 0.92,
+          "ES Dist. Skated": 40.96,
+          "ES Avg. Speed": 9.47
         },
         {
           "": "",
@@ -18870,17 +18870,17 @@
           "ES Avg. Speed": 9.38
         }
       ],
-      "total_distance": 939.83,
-      "avg_speed": 9.278636363636364,
+      "total_distance": 960.0000000000001,
+      "avg_speed": 9.247272727272728,
       "max_speed": 23.45,
-      "total_bursts": 10.610000000000001,
+      "total_bursts": 10.670000000000002,
       "player_count": 22,
-      "avg_distance": 42.719545454545454,
-      "avg_bursts": 0.48227272727272735,
-      "speed_score": 0.9278636363636364,
+      "avg_distance": 43.63636363636364,
+      "avg_bursts": 0.4850000000000001,
+      "speed_score": 0.9247272727272728,
       "distance_score": 1.0,
-      "burst_score": 0.24113636363636368,
-      "edge_advantage": 0.812159090909091
+      "burst_score": 0.24250000000000005,
+      "edge_advantage": 0.8108636363636363
     },
     "PHI": {
       "players": [
@@ -18967,13 +18967,13 @@
           "Player": "Travis Konecny",
           "Team": "PHI",
           "Pos": "R",
-          "GP": 19,
-          "Top Speed": 21.54,
-          "Distance Skated": 57.79,
-          "Average Speed": 9.49,
-          "Bursts>20 per mile": 0.45,
-          "ES Dist. Skated": 47.97,
-          "ES Avg. Speed": 9.68
+          "GP": 24,
+          "Top Speed": 22.06,
+          "Distance Skated": 72.23,
+          "Average Speed": 9.48,
+          "Bursts>20 per mile": 0.44,
+          "ES Dist. Skated": 59.95,
+          "ES Avg. Speed": 9.64
         },
         {
           "": "",
@@ -19058,13 +19058,13 @@
           "Player": "Trevor Zegras",
           "Team": "PHI",
           "Pos": "C",
-          "GP": 18,
+          "GP": 24,
           "Top Speed": 21.44,
-          "Distance Skated": 54.71,
-          "Average Speed": 9.9,
-          "Bursts>20 per mile": 0.37,
-          "ES Dist. Skated": 47.36,
-          "ES Avg. Speed": 10.05
+          "Distance Skated": 72.6,
+          "Average Speed": 9.89,
+          "Bursts>20 per mile": 0.36,
+          "ES Dist. Skated": 63.28,
+          "ES Avg. Speed": 10.02
         },
         {
           "": "",
@@ -19084,13 +19084,13 @@
           "Player": "Bobby Brink",
           "Team": "PHI",
           "Pos": "R",
-          "GP": 18,
+          "GP": 24,
           "Top Speed": 23.3,
-          "Distance Skated": 50.31,
-          "Average Speed": 10.13,
-          "Bursts>20 per mile": 0.52,
-          "ES Dist. Skated": 43.79,
-          "ES Avg. Speed": 10.2
+          "Distance Skated": 64.54,
+          "Average Speed": 10.18,
+          "Bursts>20 per mile": 0.51,
+          "ES Dist. Skated": 56.56,
+          "ES Avg. Speed": 10.28
         },
         {
           "": "",
@@ -19184,17 +19184,17 @@
           "ES Avg. Speed": 10.27
         }
       ],
-      "total_distance": 910.7100000000002,
-      "avg_speed": 9.430434782608696,
+      "total_distance": 957.2700000000001,
+      "avg_speed": 9.431739130434783,
       "max_speed": 23.3,
-      "total_bursts": 9.52,
+      "total_bursts": 9.49,
       "player_count": 23,
-      "avg_distance": 39.596086956521745,
-      "avg_bursts": 0.41391304347826086,
-      "speed_score": 0.9430434782608696,
+      "avg_distance": 41.6204347826087,
+      "avg_bursts": 0.4126086956521739,
+      "speed_score": 0.9431739130434783,
       "distance_score": 1.0,
-      "burst_score": 0.20695652173913043,
-      "edge_advantage": 0.8129130434782609
+      "burst_score": 0.20630434782608695,
+      "edge_advantage": 0.8128478260869565
     },
     "BUF": {
       "players": [
@@ -19385,13 +19385,13 @@
           "Player": "Peyton Krebs",
           "Team": "BUF",
           "Pos": "C",
-          "GP": 22,
+          "GP": 25,
           "Top Speed": 22.37,
-          "Distance Skated": 49.47,
-          "Average Speed": 9.82,
+          "Distance Skated": 55.31,
+          "Average Speed": 9.85,
           "Bursts>20 per mile": 0.87,
-          "ES Dist. Skated": 48.44,
-          "ES Avg. Speed": 9.82
+          "ES Dist. Skated": 54.28,
+          "ES Avg. Speed": 9.86
         },
         {
           "": "",
@@ -19550,17 +19550,17 @@
           "ES Avg. Speed": 8.78
         }
       ],
-      "total_distance": 975.9399999999999,
-      "avg_speed": 9.42222222222222,
+      "total_distance": 981.7799999999999,
+      "avg_speed": 9.423333333333332,
       "max_speed": 23.84,
       "total_bursts": 14.01,
       "player_count": 27,
-      "avg_distance": 36.14592592592592,
+      "avg_distance": 36.362222222222215,
       "avg_bursts": 0.5188888888888888,
-      "speed_score": 0.9422222222222221,
+      "speed_score": 0.9423333333333332,
       "distance_score": 1.0,
       "burst_score": 0.2594444444444444,
-      "edge_advantage": 0.823
+      "edge_advantage": 0.8230555555555554
     },
     "NYR": {
       "players": [
@@ -19764,13 +19764,13 @@
           "Player": "Adam Edstrom",
           "Team": "NYR",
           "Pos": "C",
-          "GP": 20,
+          "GP": 24,
           "Top Speed": 23.8,
-          "Distance Skated": 31.57,
-          "Average Speed": 9.86,
-          "Bursts>20 per mile": 1.36,
-          "ES Dist. Skated": 31.44,
-          "ES Avg. Speed": 9.83
+          "Distance Skated": 37.22,
+          "Average Speed": 9.73,
+          "Bursts>20 per mile": 1.29,
+          "ES Dist. Skated": 37.02,
+          "ES Avg. Speed": 9.71
         },
         {
           "": "",
@@ -19903,17 +19903,17 @@
           "ES Avg. Speed": 9.42
         }
       ],
-      "total_distance": 991.8100000000001,
-      "avg_speed": 9.235384615384614,
+      "total_distance": 997.4600000000002,
+      "avg_speed": 9.230384615384615,
       "max_speed": 23.8,
-      "total_bursts": 12.500000000000002,
+      "total_bursts": 12.430000000000001,
       "player_count": 26,
-      "avg_distance": 38.14653846153846,
-      "avg_bursts": 0.48076923076923084,
-      "speed_score": 0.9235384615384614,
+      "avg_distance": 38.36384615384616,
+      "avg_bursts": 0.4780769230769231,
+      "speed_score": 0.9230384615384615,
       "distance_score": 1.0,
-      "burst_score": 0.24038461538461542,
-      "edge_advantage": 0.8098461538461539
+      "burst_score": 0.23903846153846156,
+      "edge_advantage": 0.809326923076923
     },
     "MTL": {
       "players": [
@@ -20130,13 +20130,13 @@
           "Player": "Oliver Kapanen",
           "Team": "MTL",
           "Pos": "C",
-          "GP": 22,
+          "GP": 24,
           "Top Speed": 22.07,
-          "Distance Skated": 45.13,
-          "Average Speed": 9.5,
-          "Bursts>20 per mile": 0.82,
-          "ES Dist. Skated": 39.34,
-          "ES Avg. Speed": 9.81
+          "Distance Skated": 49.82,
+          "Average Speed": 9.49,
+          "Bursts>20 per mile": 0.84,
+          "ES Dist. Skated": 43.45,
+          "ES Avg. Speed": 9.83
         },
         {
           "": "",
@@ -20217,17 +20217,17 @@
           "ES Avg. Speed": 10.44
         }
       ],
-      "total_distance": 922.06,
-      "avg_speed": 9.252608695652174,
+      "total_distance": 926.75,
+      "avg_speed": 9.252173913043478,
       "max_speed": 23.42,
-      "total_bursts": 16.090000000000003,
+      "total_bursts": 16.110000000000003,
       "player_count": 23,
-      "avg_distance": 40.0895652173913,
-      "avg_bursts": 0.6995652173913045,
-      "speed_score": 0.9252608695652175,
+      "avg_distance": 40.29347826086956,
+      "avg_bursts": 0.7004347826086957,
+      "speed_score": 0.9252173913043478,
       "distance_score": 1.0,
-      "burst_score": 0.34978260869565225,
-      "edge_advantage": 0.8325869565217392
+      "burst_score": 0.35021739130434787,
+      "edge_advantage": 0.8326521739130434
     },
     "BOS": {
       "players": [
@@ -20353,13 +20353,13 @@
           "Player": "Andrew Peeke",
           "Team": "BOS",
           "Pos": "D",
-          "GP": 25,
+          "GP": 27,
           "Top Speed": 20.67,
-          "Distance Skated": 67.0,
-          "Average Speed": 8.12,
+          "Distance Skated": 73.68,
+          "Average Speed": 8.15,
           "Bursts>20 per mile": 0.07,
-          "ES Dist. Skated": 58.51,
-          "ES Avg. Speed": 8.4
+          "ES Dist. Skated": 64.42,
+          "ES Avg. Speed": 8.42
         },
         {
           "": "",
@@ -20444,13 +20444,13 @@
           "Player": "Mark Kastelic",
           "Team": "BOS",
           "Pos": "C",
-          "GP": 21,
+          "GP": 27,
           "Top Speed": 22.73,
-          "Distance Skated": 43.71,
-          "Average Speed": 9.37,
-          "Bursts>20 per mile": 1.12,
-          "ES Dist. Skated": 36.6,
-          "ES Avg. Speed": 9.66
+          "Distance Skated": 57.53,
+          "Average Speed": 9.32,
+          "Bursts>20 per mile": 1.04,
+          "ES Dist. Skated": 48.61,
+          "ES Avg. Speed": 9.61
         },
         {
           "": "",
@@ -20570,17 +20570,17 @@
           "ES Avg. Speed": 9.78
         }
       ],
-      "total_distance": 1039.5200000000002,
-      "avg_speed": 9.119615384615383,
+      "total_distance": 1060.0200000000002,
+      "avg_speed": 9.118846153846151,
       "max_speed": 23.84,
-      "total_bursts": 11.379999999999999,
+      "total_bursts": 11.3,
       "player_count": 26,
-      "avg_distance": 39.98153846153847,
-      "avg_bursts": 0.43769230769230766,
-      "speed_score": 0.9119615384615383,
+      "avg_distance": 40.77000000000001,
+      "avg_bursts": 0.4346153846153846,
+      "speed_score": 0.9118846153846152,
       "distance_score": 1.0,
-      "burst_score": 0.21884615384615383,
-      "edge_advantage": 0.79975
+      "burst_score": 0.2173076923076923,
+      "edge_advantage": 0.799403846153846
     }
   }
 }
