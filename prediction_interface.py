@@ -1212,7 +1212,7 @@ class PredictionInterface:
                 upset_val = 0.0
             
             # Calculate likeliest score using team performance data
-            # Use both offensive capability (goals scored) and account for opponent's defensive capability
+            # Use both offensive capability (goals scored) and defensive capability (goals allowed)
             try:
                 home_perf = self.learning_model.get_team_performance(home_team, venue="home")
                 away_perf = self.learning_model.get_team_performance(away_team, venue="away")
@@ -1221,44 +1221,82 @@ class PredictionInterface:
                 home_gf = float(home_perf.get("goals_avg", 3.0)) if home_perf else 3.0
                 away_gf = float(away_perf.get("goals_avg", 3.0)) if away_perf else 3.0
                 
-                # Try to get goals_against from team_stats directly for better prediction
-                try:
-                    home_team_key = home_team.upper()
-                    away_team_key = away_team.upper()
-                    if (home_team_key in self.learning_model.team_stats and 
-                        away_team_key in self.learning_model.team_stats):
-                        # Get opponent's goals_against (what they allow)
-                        home_venue_data = self.learning_model.team_stats[home_team_key].get("home", {})
-                        away_venue_data = self.learning_model.team_stats[away_team_key].get("away", {})
-                        
-                        # Calculate goals_against averages
-                        def safe_mean_ga(arr, default=3.0):
-                            if arr and len(arr) > 0:
-                                valid_values = [float(x) for x in arr if x is not None and not (isinstance(x, float) and np.isnan(x))]
-                                if valid_values:
-                                    return float(np.mean(valid_values))
-                            return default
-                        
-                        # What home team allows (opponent scores)
-                        home_ga = safe_mean_ga(home_venue_data.get('goals_against', []), 3.0)
-                        # What away team allows (opponent scores)  
-                        away_ga = safe_mean_ga(away_venue_data.get('goals_against', []), 3.0)
-                        
-                        # Predicted score = average of (team's goals scored, opponent's goals allowed)
-                        # This accounts for both offensive and defensive capabilities
-                        home_g = (home_gf + away_ga) / 2.0
-                        away_g = (away_gf + home_ga) / 2.0
-                    else:
-                        # Fallback to just goals scored
-                        home_g = home_gf
-                        away_g = away_gf
-                except Exception:
-                    # Fallback to just goals scored
-                    home_g = home_gf
-                    away_g = away_gf
+                # Calculate goals_against from team_stats
+                # Derive from historical game results if goals_against array isn't populated
+                def get_goals_against_avg(team_key, venue, team_goals_avg=3.0):
+                    """Get goals allowed average, deriving from historical games if needed"""
+                    if team_key not in self.learning_model.team_stats:
+                        # Use inverse relationship: teams that score more tend to allow more
+                        return max(2.5, min(3.5, team_goals_avg * 0.95))
                     
-            except Exception:
-                home_g = away_g = 3.0
+                    venue_data = self.learning_model.team_stats[team_key].get(venue, {})
+                    
+                    # First try: use goals_against array if populated
+                    ga_list = venue_data.get('goals_against', [])
+                    if ga_list and len(ga_list) > 0:
+                        valid_values = [float(x) for x in ga_list if x is not None and not (isinstance(x, float) and np.isnan(x))]
+                        if valid_values:
+                            return float(np.mean(valid_values))
+                    
+                    # Second try: derive from opponent goals in historical games
+                    opp_goals_list = venue_data.get('opp_goals', [])
+                    if opp_goals_list and len(opp_goals_list) > 0:
+                        valid_values = [float(x) for x in opp_goals_list if x is not None and not (isinstance(x, float) and np.isnan(x))]
+                        if valid_values:
+                            return float(np.mean(valid_values))
+                    
+                    # Third try: derive from historical predictions file
+                    try:
+                        predictions_file = os.path.join(os.path.dirname(__file__), 'win_probability_predictions_v2.json')
+                        if os.path.exists(predictions_file):
+                            with open(predictions_file, 'r') as f:
+                                all_predictions = json.load(f)
+                            
+                            # Find games where this team played at this venue
+                            ga_values = []
+                            for pred in all_predictions:
+                                if venue == "home" and pred.get('home_team') == team_key:
+                                    away_score = pred.get('metrics_used', {}).get('away_score')
+                                    if away_score is not None:
+                                        ga_values.append(float(away_score))
+                                elif venue == "away" and pred.get('away_team') == team_key:
+                                    home_score = pred.get('metrics_used', {}).get('home_score')
+                                    if home_score is not None:
+                                        ga_values.append(float(home_score))
+                            
+                            if ga_values and len(ga_values) >= 3:  # Need at least 3 games
+                                return float(np.mean(ga_values))
+                    except Exception:
+                        pass
+                    
+                    # Fourth try: use team-specific estimate based on goals scored
+                    # Teams that score more tend to play more open games (allow more)
+                    # But cap it between 2.5 and 3.5 for realism
+                    estimated_ga = team_goals_avg * 0.95  # Slight inverse correlation
+                    return max(2.5, min(3.5, estimated_ga))
+                
+                home_team_key = home_team.upper()
+                away_team_key = away_team.upper()
+                
+                # Get goals allowed averages (pass goals_avg for better fallback)
+                home_ga = get_goals_against_avg(home_team_key, "home", home_gf)
+                away_ga = get_goals_against_avg(away_team_key, "away", away_gf)
+                
+                # Predicted score = weighted average:
+                # 60% team's offensive capability, 40% opponent's defensive weakness
+                # This gives more weight to what the team actually scores
+                home_g = (home_gf * 0.6) + (away_ga * 0.4)
+                away_g = (away_gf * 0.6) + (home_ga * 0.4)
+                    
+            except Exception as e:
+                # Fallback: use just goals scored if calculation fails
+                try:
+                    home_perf = self.learning_model.get_team_performance(home_team, venue="home")
+                    away_perf = self.learning_model.get_team_performance(away_team, venue="away")
+                    home_g = float(home_perf.get("goals_avg", 3.0)) if home_perf else 3.0
+                    away_g = float(away_perf.get("goals_avg", 3.0)) if away_perf else 3.0
+                except Exception:
+                    home_g = away_g = 3.0
             
             # More nuanced rounding: round to nearest integer, but preserve differences
             # Use floor/ceiling logic to avoid always getting same scores
