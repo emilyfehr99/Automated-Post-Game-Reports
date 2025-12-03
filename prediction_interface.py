@@ -1184,14 +1184,70 @@ class PredictionInterface:
             away_prob = pred['predicted_away_win_prob'] * 100
             home_prob = pred['predicted_home_win_prob'] * 100
             favorite = pred['favorite']
-            spread = pred['spread']
             
-            prediction_text += f"**{i}. {away_team} @ {home_team}**\n"
+            # Calculate confidence (max probability)
+            confidence = max(away_prob, home_prob)
+            
+            # Get volatility (Monte Carlo flip-rate)
+            flip_rate = pred.get('monte_carlo_flip_rate', 0.0)
+            try:
+                flip_val = float(flip_rate) if flip_rate is not None else 0.0
+            except (TypeError, ValueError):
+                flip_val = 0.0
+            
+            # Volatility label
+            if flip_val < 0.20:
+                volatility_label = "LOW"
+            elif flip_val < 0.40:
+                volatility_label = "MED"
+            else:
+                volatility_label = "HIGH"
+            
+            # Get upset probability
+            upset_prob = pred.get('upset_probability', 0.0)
+            try:
+                upset_val = float(upset_prob) if upset_prob is not None else 0.0
+            except (TypeError, ValueError):
+                upset_val = 0.0
+            
+            # Calculate likeliest score using team performance data
+            try:
+                home_perf = self.learning_model.get_team_performance(home_team, venue="home")
+                away_perf = self.learning_model.get_team_performance(away_team, venue="away")
+                home_g = float(home_perf.get("goals_avg", 3.0)) if home_perf else 3.0
+                away_g = float(away_perf.get("goals_avg", 3.0)) if away_perf else 3.0
+            except Exception:
+                home_g = away_g = 3.0
+            
+            # Round to plausible hockey scoreline
+            home_goals = int(round(home_g))
+            away_goals = int(round(away_g))
+            if home_goals == away_goals:
+                # Nudge favorite to win by one
+                if favorite == home_team:
+                    home_goals = away_goals + 1
+                else:
+                    away_goals = home_goals + 1
+            
+            # Determine if OT/SO is likely based on closeness
+            fav_prob = home_prob if favorite == home_team else away_prob
+            if abs(home_goals - away_goals) == 1 and 50.0 <= fav_prob <= 58.0:
+                ot_so_str = "(OT/SO likely)"
+            else:
+                ot_so_str = "(regulation)"
+            
+            # Format score with favorite first
+            if favorite == home_team:
+                likely_score = f"{home_team} {home_goals}–{away_goals} {away_team} {ot_so_str}"
+            else:
+                likely_score = f"{away_team} {away_goals}–{home_goals} {home_team} {ot_so_str}"
+            
+            prediction_text += f"{away_team} @ {home_team}\n\n"
             prediction_text += f"🎯 {away_team} {away_prob:.1f}% | {home_team} {home_prob:.1f}%\n"
-            prediction_text += f"⭐ Favorite: {favorite} (+{spread:.1f}%)\n"
-            upset = pred.get('upset_probability')
-            if upset is not None:
-                prediction_text += f"⚠️ Upset Risk: {upset*100:.1f}%\n"
+            prediction_text += f"⭐ Favorite: {favorite} (confidence {confidence:.1f}%)\n"
+            prediction_text += f"🌪️ Volatility (flip-rate): {volatility_label} ({flip_val*100:.1f}%)\n"
+            prediction_text += f"⚠️ Upset Risk: {upset_val*100:.1f}%\n"
+            prediction_text += f"📐 Likeliest score: {likely_score}\n"
             prediction_text += "\n"
         
         # Ensure model performance is up-to-date (recalculate from scratch for accuracy)
