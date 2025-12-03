@@ -44,6 +44,7 @@ class PredictionInterface:
         
         games_added = 0
         games_updated = 0
+        stale_updates = 0
         
         # Check each of the last 7 days
         for days_back in range(1, 8):
@@ -493,11 +494,15 @@ class PredictionInterface:
         else:
             print("✅ No missing games found")
         
-        if games_updated > 0:
-            self.learning_model.save_model_data()
-            print(f"🔁 Updated results for {games_updated} previously tracked game(s)")
+        # Fallback: scan stored predictions for stale entries without results
+        stale_updates += self._repair_stale_predictions(predictions_store)
         
-        return games_added + games_updated
+        total_updates = games_updated + stale_updates
+        if total_updates > 0:
+            self.learning_model.save_model_data()
+            print(f"🔁 Updated results for {total_updates} previously tracked game(s)")
+        
+        return games_added + total_updates
 
     @staticmethod
     def _normalize_probability_value(value):
@@ -529,6 +534,56 @@ class PredictionInterface:
             prediction['prediction_accuracy'] = away_prob if actual_winner == "away" else home_prob
         
         return True
+
+    def _repair_stale_predictions(self, predictions_store):
+        """Backfill results for older predictions still missing outcomes."""
+        updates = 0
+        central_tz = pytz.timezone('US/Central')
+        central_now = datetime.now(central_tz).date()
+        
+        for pred in predictions_store:
+            if pred.get('actual_winner'):
+                continue
+            game_id = str(pred.get('game_id') or '')
+            if not game_id:
+                continue
+            pred_date_str = pred.get('date')
+            try:
+                pred_date = datetime.strptime(pred_date_str, '%Y-%m-%d').date() if pred_date_str else None
+            except Exception:
+                pred_date = None
+            # Skip very recent predictions (probably future games)
+            if pred_date and (central_now - pred_date).days < 1:
+                continue
+            
+            try:
+                game_data = self.api.get_comprehensive_game_data(game_id)
+            except Exception as exc:
+                print(f"  ⚠️  Unable to fetch stale game {game_id}: {exc}")
+                continue
+            
+            if not game_data or 'boxscore' not in game_data:
+                continue
+            game_state = game_data.get('gameState') or game_data.get('gameStateId') or ''
+            if game_state not in ['FINAL', 'OFF', '5', 'FINAL_OT', 'FINAL_SO']:
+                continue
+            
+            away_team = pred.get('away_team')
+            home_team = pred.get('home_team')
+            try:
+                away_goals = int(game_data['boxscore']['awayTeam'].get('score', 0))
+                home_goals = int(game_data['boxscore']['homeTeam'].get('score', 0))
+            except Exception:
+                continue
+            if away_goals == home_goals:
+                continue
+            
+            if self._update_prediction_result_entry(pred, away_team, home_team, away_goals, home_goals):
+                updates += 1
+                winner_label = away_team if away_goals > home_goals else home_team
+                print(f"  🔁 Backfilled stale result for {away_team} @ {home_team}: {winner_label} won")
+        
+        return updates
     
     def _compute_model_performance_fallback(self):
         """Compute performance from saved predictions if in-memory stats are empty."""
@@ -710,15 +765,32 @@ class PredictionInterface:
             try:
                 # Include situational features at prediction time
                 game_date = datetime.now().strftime('%Y-%m-%d')
+                # --- Situational / context features for this prediction ---
+                # Rest days and back-to-back flags
                 try:
-                    away_rest = self.learning_model._calculate_rest_days_advantage(pred['away_team'], 'away', game_date)
-                    home_rest = self.learning_model._calculate_rest_days_advantage(pred['home_team'], 'home', game_date)
+                    away_rest = self.learning_model._calculate_rest_days_advantage(
+                        pred['away_team'], 'away', game_date
+                    )
+                    home_rest = self.learning_model._calculate_rest_days_advantage(
+                        pred['home_team'], 'home', game_date
+                    )
                 except Exception:
                     away_rest = 0.0
                     home_rest = 0.0
+
+                # Derive consistent context bucket + B2B flags from rest advantage
+                context_bucket = self.learning_model.determine_context_bucket(away_rest, home_rest)
+                away_back_to_back = away_rest <= -0.5
+                home_back_to_back = home_rest <= -0.5
+
+                # Goalie performance signal (may be 0.0 if we don't have data yet)
                 try:
-                    away_goalie_perf = self.learning_model._goalie_performance_for_game(pred['away_team'], 'away', game_date)
-                    home_goalie_perf = self.learning_model._goalie_performance_for_game(pred['home_team'], 'home', game_date)
+                    away_goalie_perf = self.learning_model._goalie_performance_for_game(
+                        pred['away_team'], 'away', game_date
+                    )
+                    home_goalie_perf = self.learning_model._goalie_performance_for_game(
+                        pred['home_team'], 'home', game_date
+                    )
                 except Exception:
                     away_goalie_perf = 0.0
                     home_goalie_perf = 0.0
@@ -735,9 +807,14 @@ class PredictionInterface:
                     away_venue_win_pct = 0.5
                     home_venue_win_pct = 0.5
 
+                # Store all situational context in metrics_used so nothing silently
+                # drops on the floor in the training data.
                 metrics_used = {
                     "away_rest": away_rest,
                     "home_rest": home_rest,
+                    "context_bucket": context_bucket,
+                    "away_back_to_back": away_back_to_back,
+                    "home_back_to_back": home_back_to_back,
                     "away_goalie_perf": away_goalie_perf,
                     "home_goalie_perf": home_goalie_perf,
                     "away_sos": away_sos,
@@ -745,7 +822,7 @@ class PredictionInterface:
                     "away_venue_win_pct": away_venue_win_pct,
                     "home_venue_win_pct": home_venue_win_pct,
                     "corr_disagreement": pred.get('corr_disagreement'),
-                    "monte_carlo_flip_rate": pred.get('monte_carlo_flip_rate')
+                    "monte_carlo_flip_rate": pred.get('monte_carlo_flip_rate'),
                 }
                 self.learning_model.add_prediction(
                     game_id=pred.get('game_id', ''),
@@ -785,7 +862,7 @@ class PredictionInterface:
             home_team: Home team abbreviation
             game_id: Optional game ID for lineup confirmation
         """
-        # Build situational metrics for correlation model pre-game
+        # Build situational metrics for correlation model & learning model pre-game
         today_str = datetime.now().strftime('%Y-%m-%d')
         try:
             away_rest = self.learning_model._calculate_rest_days_advantage(away_team, 'away', today_str)
@@ -795,6 +872,10 @@ class PredictionInterface:
         context_bucket = self.learning_model.determine_context_bucket(away_rest, home_rest)
         away_b2b = away_rest <= -0.5
         home_b2b = home_rest <= -0.5
+        
+        # First-goal profile features (pre-game, by venue)
+        away_fg = self.learning_model.get_first_goal_profile(away_team, venue="away")
+        home_fg = self.learning_model.get_first_goal_profile(home_team, venue="home")
         
         # Check for confirmed goalies first, fallback to prediction
         away_goalie_confirmed = None
@@ -838,6 +919,13 @@ class PredictionInterface:
         away_recent_form = away_perf.get('recent_form', 0.5)
         home_recent_form = home_perf.get('recent_form', 0.5)
         
+        # --- Simple lineup / team-strength scaffolding ---
+        # Placeholder for future enhancement: use LineupService and player-level
+        # metrics to estimate how close each team is to full strength.
+        # For now, we assume full-strength (1.0) so the feature is wired but neutral.
+        away_lineup_strength = 1.0
+        home_lineup_strength = 1.0
+        
         # Get venue-specific win percentages (full season)
         try:
             away_venue_win_pct = self.learning_model._calculate_venue_win_percentage(away_team, 'away')
@@ -869,12 +957,25 @@ class PredictionInterface:
             'context_bucket': context_bucket,
             'away_back_to_back': away_b2b,
             'home_back_to_back': home_b2b,
+            # First-goal likelihood & impact (team/venue specific)
+            'away_prob_score_first': away_fg['scored_first_rate'],
+            'home_prob_score_first': home_fg['scored_first_rate'],
+            'away_first_goal_win_uplift': away_fg['first_goal_uplift'],
+            'home_first_goal_win_uplift': home_fg['first_goal_uplift'],
+            # Lineup/team-strength scaffolding (currently neutral = 1.0)
+            'away_lineup_strength': away_lineup_strength,
+            'home_lineup_strength': home_lineup_strength,
         }
         corr = self.corr_model.predict_from_metrics(metrics)
         ens = self.learning_model.ensemble_predict(away_team, home_team, game_date=today_str)
-        # 70/30 blend: correlation model (70%) + ensemble (30%)
+        # Blend: correlation model + ensemble.
+        # Fresh full-history backtest over all completed games shows the
+        # best overall accuracy and Brier using the ensemble alone, so we
+        # default to 0% correlation / 100% ensemble for live predictions.
+        corr_weight = 0.0
+        ens_weight = 1.0 - corr_weight
         if corr and all(k in corr for k in ('away_prob','home_prob')):
-            away_blend_raw = 0.7 * corr['away_prob'] + 0.3 * ens.get('away_prob', 0.5)
+            away_blend_raw = corr_weight * corr['away_prob'] + ens_weight * ens.get('away_prob', 0.5)
             home_blend_raw = 1.0 - away_blend_raw
             away_calibrated = self.learning_model.apply_calibration(away_blend_raw, context_bucket)
             home_calibrated = 1.0 - away_calibrated
@@ -891,12 +992,32 @@ class PredictionInterface:
             upset_probability = self.learning_model.predict_upset_probability(
                 [max(away_calibrated, home_calibrated), abs(away_blend_raw - home_blend_raw), corr_disagreement, flip_rate]
             )
+
+            # Variance-aware adjustment: shrink extreme probabilities toward 0.5
+            # when Monte Carlo flip_rate is high. This dampens fragile edges.
+            shrink_strength = 0.7  # how strongly flip_rate impacts shrink
+            shrink = max(0.0, min(1.0, 1.0 - shrink_strength * float(flip_rate)))
+            away_adj = 0.5 + (away_calibrated - 0.5) * shrink
+            home_adj = 1.0 - away_adj
+
+            # Team bias corrections (per team, per venue)
+            home_bias = self.learning_model.get_team_bias(home_team, venue="home")
+            away_bias = self.learning_model.get_team_bias(away_team, venue="away")
+            away_final = away_adj + away_bias
+            home_final = home_adj + home_bias
+            total_final = away_final + home_final
+            if total_final > 0:
+                away_final /= total_final
+                home_final /= total_final
+            else:
+                away_final = home_final = 0.5
+
             metrics["corr_disagreement"] = corr_disagreement
             metrics["monte_carlo_flip_rate"] = flip_rate
             return {
-                'away_prob': away_calibrated,
-                'home_prob': home_calibrated,
-                'prediction_confidence': max(away_calibrated, home_calibrated),
+                'away_prob': away_final,
+                'home_prob': home_final,
+                'prediction_confidence': max(away_final, home_final),
                 'raw_away_prob': away_blend_raw,
                 'raw_home_prob': home_blend_raw,
                 'correlation_away_prob': corr['away_prob'],
@@ -935,12 +1056,30 @@ class PredictionInterface:
         upset_probability = self.learning_model.predict_upset_probability(
             [max(away_calibrated, home_calibrated), abs(fallback_away - fallback_home), corr_disagreement, flip_rate]
         )
+
+        # Variance-aware adjustment for fallback as well
+        shrink_strength = 0.7
+        shrink = max(0.0, min(1.0, 1.0 - shrink_strength * float(flip_rate)))
+        away_adj = 0.5 + (away_calibrated - 0.5) * shrink
+        home_adj = 1.0 - away_adj
+
+        # Apply team bias corrections
+        home_bias = self.learning_model.get_team_bias(home_team, venue="home")
+        away_bias = self.learning_model.get_team_bias(away_team, venue="away")
+        away_final = away_adj + away_bias
+        home_final = home_adj + home_bias
+        total_final = away_final + home_final
+        if total_final > 0:
+            away_final /= total_final
+            home_final /= total_final
+        else:
+            away_final = home_final = 0.5
         metrics["corr_disagreement"] = corr_disagreement
         metrics["monte_carlo_flip_rate"] = flip_rate
         return {
-            'away_prob': away_calibrated,
-            'home_prob': home_calibrated,
-            'prediction_confidence': max(away_calibrated, home_calibrated),
+            'away_prob': away_final,
+            'home_prob': home_final,
+            'prediction_confidence': max(away_final, home_final),
             'raw_away_prob': fallback_away,
             'raw_home_prob': fallback_home,
             'correlation_away_prob': None,

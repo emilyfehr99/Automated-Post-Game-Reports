@@ -23,20 +23,98 @@ class DailyPredictionNotifier:
         
         if not predictions:
             return "No games scheduled for today."
+
+        total_games = len(predictions)
+
+        # ---- High-confidence filter for notifications ----
+        # Use overall confidence and Monte Carlo flip rate to focus Discord/email
+        # on the most stable edges. We still keep all games available via the API.
+        GREEN_CONF_MIN = 0.58     # at least 58% win prob on favorite
+        GREEN_FLIP_MAX = 0.40     # avoid very volatile (high flip-rate) games
+
+        green_zone = []
+        for pred in predictions:
+            confidence = float(pred.get('prediction_confidence', max(
+                pred.get('predicted_away_win_prob', 0.5),
+                pred.get('predicted_home_win_prob', 0.5),
+            )))
+            flip_rate = pred.get('monte_carlo_flip_rate')
+            try:
+                flip_rate = float(flip_rate) if flip_rate is not None else 0.0
+            except (TypeError, ValueError):
+                flip_rate = 0.0
+
+            if confidence >= GREEN_CONF_MIN and flip_rate <= GREEN_FLIP_MAX:
+                green_zone.append(pred)
+
+        # If filter is too strict and yields nothing, fall back to all games
+        filtered = green_zone if green_zone else predictions
         
         # Format predictions as bullet points (row 3, row 4, ...)
         summary = "🏒 **NHL GAME PREDICTIONS FOR TODAY** 🏒\n\n"
-        for i, pred in enumerate(predictions, 1):
+        if green_zone:
+            summary += f"Showing **{len(filtered)} high-confidence games** out of {total_games} on the schedule.\n"
+            summary += f"(Filters: confidence ≥ {GREEN_CONF_MIN*100:.0f}%, volatility (flip-rate) ≤ {int(GREEN_FLIP_MAX*100)}%)\n\n"
+
+        for i, pred in enumerate(filtered, 1):
             away_team = pred['away_team']
             home_team = pred['home_team']
             away_prob = pred['predicted_away_win_prob'] * 100  # Convert to percentage
             home_prob = pred['predicted_home_win_prob'] * 100  # Convert to percentage
             favorite = pred['favorite']
-            spread = pred['spread']
+            confidence = float(pred.get('prediction_confidence', max(
+                pred.get('predicted_away_win_prob', 0.5),
+                pred.get('predicted_home_win_prob', 0.5),
+            ))) * 100.0
+            flip_rate = pred.get('monte_carlo_flip_rate') or 0.0
+            upset = float(pred.get('upset_probability', 0.0) or 0.0) * 100.0
+
+            # Flip-rate bands for readability
+            try:
+                flip_val = float(flip_rate)
+            except (TypeError, ValueError):
+                flip_val = 0.0
+            if flip_val < 0.20:
+                flip_label = "LOW"
+            elif flip_val < 0.40:
+                flip_label = "MED"
+            else:
+                flip_label = "HIGH"
+
+            # Likeliest score using season/team and home/away goal averages
+            try:
+                home_perf = self.predictor.learning_model.get_team_performance(home_team, venue="home")
+                away_perf = self.predictor.learning_model.get_team_performance(away_team, venue="away")
+                home_g = float(home_perf.get("goals_avg", 3.0)) if home_perf else 3.0
+                away_g = float(away_perf.get("goals_avg", 3.0)) if away_perf else 3.0
+            except Exception:
+                home_g = away_g = 3.0
+
+            # Round to a plausible hockey scoreline near the season averages
+            home_goals = int(round(home_g))
+            away_goals = int(round(away_g))
+            if home_goals == away_goals:
+                # Nudge favorite to win by one
+                if favorite == home_team:
+                    home_goals = away_goals + 1
+                else:
+                    away_goals = home_goals + 1
+
+            # Decide if OT/SO is likely based on closeness of win probability
+            fav_prob = pred['predicted_home_win_prob'] if favorite == home_team else pred['predicted_away_win_prob']
+            fav_prob_pct = fav_prob * 100.0
+            if abs(home_goals - away_goals) == 1 and 50.0 <= fav_prob_pct <= 58.0:
+                ot_tag = "(OT/SO likely)"
+            else:
+                ot_tag = "(regulation)"
+            likely_score = f"{favorite} {max(home_goals, away_goals)}–{min(home_goals, away_goals)} {ot_tag}"
 
             summary += f"- **Row {i}**: {away_team} @ {home_team}\n"
             summary += f"  - 🎯 {away_team} {away_prob:.1f}% | {home_team} {home_prob:.1f}%\n"
-            summary += f"  - ⭐ Favorite: {favorite} (+{spread:.1f}%)\n"
+            summary += f"  - ⭐ Favorite: {favorite} (confidence {confidence:.1f}%)\n"
+            summary += f"  - 🌪️ Volatility (flip-rate): {flip_label} ({flip_val*100:.1f}%)\n"
+            summary += f"  - ⚡ Upset risk: {upset:.1f}%\n"
+            summary += f"  - 📐 Likeliest score: {likely_score}\n"
         
         # Add model performance
         perf = self.predictor.learning_model.get_model_performance()

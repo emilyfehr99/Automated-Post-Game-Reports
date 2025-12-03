@@ -1580,6 +1580,8 @@ class ImprovedSelfLearningModelV2:
         momentum_based = self._momentum_based_predict(away_team, home_team)
         
         # Combine methods with weights (favor proven traditional model)
+        # If we have strong first-goal stats, we can modestly nudge toward the
+        # team that historically converts first goals into wins more reliably.
         weights = [0.70, 0.20, 0.10]  # Traditional, form, momentum
         
         away_prob = (
@@ -1702,6 +1704,43 @@ class ImprovedSelfLearningModelV2:
             'home_prob': home_prob,
             'prediction_confidence': confidence
         }
+
+    # ---------- First-goal derived features ----------
+
+    def get_first_goal_profile(self, team: str, venue: str) -> Dict[str, float]:
+        """
+        Return first-goal profile for a team at a given venue ('home' or 'away'):
+        - scored_first_rate
+        - win_rate_scoring_first
+        - win_rate_conceding_first
+        - first_goal_uplift
+        Falls back to neutral priors if we lack data.
+        """
+        venue_key = "home" if venue == "home" else "away"
+        stats = self.model_data.get("first_goal_stats", {})
+        team_stats = stats.get(team.upper())
+        if not team_stats or venue_key not in team_stats:
+            # Neutral priors: 50% chance to score first, modest uplift
+            return {
+                "scored_first_rate": 0.5,
+                "win_rate_scoring_first": 0.6,
+                "win_rate_conceding_first": 0.4,
+                "first_goal_uplift": 0.2,
+            }
+        return team_stats[venue_key]
+
+    def get_team_bias(self, team: str, venue: str) -> float:
+        """
+        Return a small bias correction for a team at a given venue ('home'/'away'),
+        based on historical average error. Positive means we historically
+        UNDER-estimated that team's win probability at this venue.
+        """
+        venue_key = "home" if venue == "home" else "away"
+        bias_map = self.model_data.get("team_bias") or {}
+        team_map = bias_map.get(team.upper())
+        if not team_map:
+            return 0.0
+        return float(team_map.get(venue_key, 0.0) or 0.0)
     
     def add_prediction(self, game_id: str, date: str, away_team: str, home_team: str,
                       predicted_away_prob: float, predicted_home_prob: float,
@@ -1766,6 +1805,14 @@ class ImprovedSelfLearningModelV2:
         actual_side = self._normalize_outcome_side(actual_winner, away_team, home_team)
         actual_team = self._side_to_team(actual_side, away_team, home_team)
         
+        # Additional outcome labels
+        goal_diff = None
+        if actual_away_score is not None and actual_home_score is not None:
+            try:
+                goal_diff = int(actual_home_score) - int(actual_away_score)
+            except (TypeError, ValueError):
+                goal_diff = None
+
         prediction = {
             "game_id": game_id,
             "date": date,
@@ -1779,6 +1826,7 @@ class ImprovedSelfLearningModelV2:
             "actual_winner_team": actual_team or actual_winner,
             "actual_away_score": actual_away_score,
             "actual_home_score": actual_home_score,
+            "goal_diff": goal_diff,
             "prediction_accuracy": None,
             "timestamp": datetime.now().isoformat(),
             "predicted_winner": predicted_side,
@@ -1825,6 +1873,30 @@ class ImprovedSelfLearningModelV2:
             prediction["was_upset"] = self._determine_upset(
                 predicted_side, actual_side, prediction_confidence, prediction_margin
             )
+
+            # Log high-confidence mistakes for continual learning diagnostics
+            try:
+                if prediction_confidence >= 0.6 and predicted_side != actual_side:
+                    err_log = self.model_data.setdefault("error_log", [])
+                    err_log.append({
+                        "game_id": game_id,
+                        "date": date,
+                        "away_team": away_team,
+                        "home_team": home_team,
+                        "predicted_away_prob": predicted_away_prob,
+                        "predicted_home_prob": predicted_home_prob,
+                        "actual_winner": actual_winner,
+                        "prediction_confidence": prediction_confidence,
+                        "prediction_margin": prediction_margin,
+                        "context_bucket": context_bucket,
+                        "away_rest": away_rest_val,
+                        "home_rest": home_rest_val,
+                        "monte_carlo_flip_rate": flip_rate,
+                    })
+                    # Keep only the most recent 200 errors
+                    self.model_data["error_log"] = err_log[-200:]
+            except Exception:
+                pass
         else:
             prediction["correlation_predicted_winner"] = None
             prediction["correlation_correct"] = None
@@ -2547,36 +2619,180 @@ class ImprovedSelfLearningModelV2:
         predictions = self.model_data.get("predictions", [])
         
         # Calculate team accuracy
-        team_accuracy = {}
-        team_games = {}
+        team_accuracy: Dict[str, float] = {}
+        team_games: Dict[str, int] = {}
+        # First-goal impact stats (home/away split)
+        first_goal_stats: Dict[str, Dict[str, Dict[str, float]]] = {}
+        # Structure:
+        # first_goal_stats[TEAM][VENUE] = {
+        #   "games": int,
+        #   "scored_first": int,
+        #   "wins_scoring_first": int,
+        #   "wins_conceding_first": int,
+        #   "games_scoring_first": int,
+        #   "games_conceding_first": int,
+        # }
+        
+        def _venue_bucket(team: str, side: str) -> str:
+            # For now, we treat side as venue: 'home' or 'away'
+            return "home" if side == "home" else "away"
         
         for pred in predictions:
-            if pred.get("actual_winner"):
-                away_team = pred.get("away_team")
-                home_team = pred.get("home_team")
-                predicted_side = self._normalize_outcome_side(pred.get("predicted_winner"), away_team, home_team)
-                actual_side = self._normalize_outcome_side(pred.get("actual_winner"), away_team, home_team)
-                
-                # Count games for each team
-                if away_team:
-                    team_games[away_team] = team_games.get(away_team, 0) + 1
-                if home_team:
-                    team_games[home_team] = team_games.get(home_team, 0) + 1
-                
-                # Count correct predictions for each team
-                predicted_team = self._side_to_team(predicted_side, away_team, home_team)
-                actual_team = self._side_to_team(actual_side, away_team, home_team)
-                if predicted_team and actual_team and predicted_team == actual_team:
-                    team_accuracy[actual_team] = team_accuracy.get(actual_team, 0) + 1
+            if not pred.get("actual_winner"):
+                continue
+            away_team = pred.get("away_team")
+            home_team = pred.get("home_team")
+            predicted_side = self._normalize_outcome_side(pred.get("predicted_winner"), away_team, home_team)
+            actual_side = self._normalize_outcome_side(pred.get("actual_winner"), away_team, home_team)
+            
+            # Count games for each team (overall)
+            if away_team:
+                team_games[away_team] = team_games.get(away_team, 0) + 1
+            if home_team:
+                team_games[home_team] = team_games.get(home_team, 0) + 1
+            
+            # Count correct predictions for each team
+            predicted_team = self._side_to_team(predicted_side, away_team, home_team)
+            actual_team = self._side_to_team(actual_side, away_team, home_team)
+            if predicted_team and actual_team and predicted_team == actual_team:
+                team_accuracy[actual_team] = team_accuracy.get(actual_team, 0) + 1
+
+            # --- First-goal historical stats (per team, by venue) ---
+            metrics = pred.get("metrics_used") or {}
+            away_scored_first = bool(metrics.get("away_scored_first"))
+            home_scored_first = bool(metrics.get("home_scored_first"))
+            
+            # Away team perspective
+            if away_team:
+                venue = _venue_bucket(away_team, "away")
+                team_entry = first_goal_stats.setdefault(away_team, {}).setdefault(venue, {
+                    "games": 0,
+                    "scored_first": 0,
+                    "wins_scoring_first": 0,
+                    "wins_conceding_first": 0,
+                    "games_scoring_first": 0,
+                    "games_conceding_first": 0,
+                })
+                team_entry["games"] += 1
+                if away_scored_first:
+                    team_entry["scored_first"] += 1
+                    team_entry["games_scoring_first"] += 1
+                    if actual_side == "away":
+                        team_entry["wins_scoring_first"] += 1
+                else:
+                    team_entry["games_conceding_first"] += 1
+                    if actual_side == "away":
+                        team_entry["wins_conceding_first"] += 1
+
+            # Home team perspective
+            if home_team:
+                venue = _venue_bucket(home_team, "home")
+                team_entry = first_goal_stats.setdefault(home_team, {}).setdefault(venue, {
+                    "games": 0,
+                    "scored_first": 0,
+                    "wins_scoring_first": 0,
+                    "wins_conceding_first": 0,
+                    "games_scoring_first": 0,
+                    "games_conceding_first": 0,
+                })
+                team_entry["games"] += 1
+                if home_scored_first:
+                    team_entry["scored_first"] += 1
+                    team_entry["games_scoring_first"] += 1
+                    if actual_side == "home":
+                        team_entry["wins_scoring_first"] += 1
+                else:
+                    team_entry["games_conceding_first"] += 1
+                    if actual_side == "home":
+                        team_entry["wins_conceding_first"] += 1
         
         # Convert to percentages
         for team in team_accuracy:
             if team_games.get(team, 0) > 0:
                 team_accuracy[team] = team_accuracy[team] / team_games[team]
+
+        # Team bias estimation: average signed error between predicted home
+        # win probability and actual home outcome (per team, per venue).
+        team_bias: Dict[str, Dict[str, float]] = {}
+        bias_counts: Dict[str, Dict[str, int]] = {}
+        for pred in predictions:
+            if not pred.get("actual_winner"):
+                continue
+            away_team = pred.get("away_team")
+            home_team = pred.get("home_team")
+            pa = pred.get("predicted_away_win_prob")
+            ph = pred.get("predicted_home_win_prob")
+            if pa is None or ph is None:
+                continue
+            total = pa + ph
+            if total <= 0:
+                continue
+            pa /= total
+            ph /= total
+            winner = self._normalize_outcome_side(pred.get("actual_winner"), away_team, home_team)
+            if winner not in ("away", "home"):
+                continue
+            # Home perspective
+            if home_team:
+                ven = "home"
+                tb = team_bias.setdefault(home_team, {}).setdefault(ven, 0.0)
+                bc = bias_counts.setdefault(home_team, {}).setdefault(ven, 0)
+                # Error: predicted home prob minus actual outcome (1 if home wins else 0)
+                y = 1.0 if winner == "home" else 0.0
+                team_bias[home_team][ven] = tb + (ph - y)
+                bias_counts[home_team][ven] = bc + 1
+            # Away perspective
+            if away_team:
+                ven = "away"
+                tb = team_bias.setdefault(away_team, {}).setdefault(ven, 0.0)
+                bc = bias_counts.setdefault(away_team, {}).setdefault(ven, 0)
+                # For away, predicted away prob vs actual away outcome
+                y = 1.0 if winner == "away" else 0.0
+                team_bias[away_team][ven] = tb + (pa - y)
+                bias_counts[away_team][ven] = bc + 1
+
+        # Turn sums into average errors and lightly regularize (shrink) them
+        max_bias = 0.08  # don't let correction exceed 8 percentage points
+        for team, venues in team_bias.items():
+            for ven, total_err in venues.items():
+                cnt = max(1, bias_counts.get(team, {}).get(ven, 1))
+                avg_err = total_err / cnt
+                # Shrink toward zero so we don't overreact on small samples
+                shrink = min(1.0, cnt / 50.0)
+                corrected = avg_err * shrink
+                # Clamp
+                corrected = max(-max_bias, min(max_bias, corrected))
+                team_bias[team][ven] = corrected
+
+        # Persist first-goal stats and team bias into model data for reuse
+        self.model_data["first_goal_stats"] = derived_first_goal_stats
+        self.model_data["team_bias"] = team_bias
+
+        # Derive first-goal rates and win rates per team/venue
+        derived_first_goal_stats: Dict[str, Dict[str, Dict[str, float]]] = {}
+        for team, venues in first_goal_stats.items():
+            derived_first_goal_stats[team] = {}
+            for venue, agg in venues.items():
+                games = max(1, agg["games"])
+                gf_games = max(1, agg["games_scoring_first"])  # avoid div by zero
+                ga_games = max(1, agg["games_conceding_first"])
+                scored_first_rate = agg["scored_first"] / games
+                win_rate_scoring_first = agg["wins_scoring_first"] / gf_games
+                win_rate_conceding_first = agg["wins_conceding_first"] / ga_games
+                uplift = win_rate_scoring_first - win_rate_conceding_first
+                derived_first_goal_stats[team][venue] = {
+                    "games": games,
+                    "scored_first_rate": scored_first_rate,
+                    "win_rate_scoring_first": win_rate_scoring_first,
+                    "win_rate_conceding_first": win_rate_conceding_first,
+                    "first_goal_uplift": uplift,
+                }
         
         return {
             "team_accuracy": team_accuracy,
             "team_games": team_games,
+            "first_goal_stats": derived_first_goal_stats,
+            "team_bias": team_bias,
             "total_predictions": len(predictions)
         }
 
@@ -2664,6 +2880,11 @@ class ImprovedSelfLearningModelV2:
             reports.append(report)
             self.model_data["backtest_reports"] = reports[-20:]
             self.backtest_reports = self.model_data["backtest_reports"]
+            # Also refresh and persist first-goal statistics and team bias when we run a backtest
+            try:
+                self.analyze_model_performance()
+            except Exception as exc:
+                logger.warning(f"Could not update first_goal_stats/team_bias during backtest: {exc}")
             self.save_model_data()
 
         return report
