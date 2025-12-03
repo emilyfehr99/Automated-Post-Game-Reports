@@ -7,6 +7,7 @@ This is separate from the post-game win probability analysis
 import json
 import requests
 import os
+import numpy as np
 from nhl_api_client import NHLAPIClient
 from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
 from correlation_model import CorrelationModel
@@ -1211,23 +1212,89 @@ class PredictionInterface:
                 upset_val = 0.0
             
             # Calculate likeliest score using team performance data
+            # Use both offensive capability (goals scored) and account for opponent's defensive capability
             try:
                 home_perf = self.learning_model.get_team_performance(home_team, venue="home")
                 away_perf = self.learning_model.get_team_performance(away_team, venue="away")
-                home_g = float(home_perf.get("goals_avg", 3.0)) if home_perf else 3.0
-                away_g = float(away_perf.get("goals_avg", 3.0)) if away_perf else 3.0
+                
+                # Get goals scored averages
+                home_gf = float(home_perf.get("goals_avg", 3.0)) if home_perf else 3.0
+                away_gf = float(away_perf.get("goals_avg", 3.0)) if away_perf else 3.0
+                
+                # Try to get goals_against from team_stats directly for better prediction
+                try:
+                    home_team_key = home_team.upper()
+                    away_team_key = away_team.upper()
+                    if (home_team_key in self.learning_model.team_stats and 
+                        away_team_key in self.learning_model.team_stats):
+                        # Get opponent's goals_against (what they allow)
+                        home_venue_data = self.learning_model.team_stats[home_team_key].get("home", {})
+                        away_venue_data = self.learning_model.team_stats[away_team_key].get("away", {})
+                        
+                        # Calculate goals_against averages
+                        def safe_mean_ga(arr, default=3.0):
+                            if arr and len(arr) > 0:
+                                valid_values = [float(x) for x in arr if x is not None and not (isinstance(x, float) and np.isnan(x))]
+                                if valid_values:
+                                    return float(np.mean(valid_values))
+                            return default
+                        
+                        # What home team allows (opponent scores)
+                        home_ga = safe_mean_ga(home_venue_data.get('goals_against', []), 3.0)
+                        # What away team allows (opponent scores)  
+                        away_ga = safe_mean_ga(away_venue_data.get('goals_against', []), 3.0)
+                        
+                        # Predicted score = average of (team's goals scored, opponent's goals allowed)
+                        # This accounts for both offensive and defensive capabilities
+                        home_g = (home_gf + away_ga) / 2.0
+                        away_g = (away_gf + home_ga) / 2.0
+                    else:
+                        # Fallback to just goals scored
+                        home_g = home_gf
+                        away_g = away_gf
+                except Exception:
+                    # Fallback to just goals scored
+                    home_g = home_gf
+                    away_g = away_gf
+                    
             except Exception:
                 home_g = away_g = 3.0
             
-            # Round to plausible hockey scoreline
-            home_goals = int(round(home_g))
-            away_goals = int(round(away_g))
-            if home_goals == away_goals:
-                # Nudge favorite to win by one
-                if favorite == home_team:
-                    home_goals = away_goals + 1
+            # More nuanced rounding: round to nearest integer, but preserve differences
+            # Use floor/ceiling logic to avoid always getting same scores
+            def smart_round(val):
+                """Round with preference for common hockey scores (2-5 range)"""
+                if val < 1.5:
+                    return 1
+                elif val < 2.5:
+                    return 2
+                elif val < 3.5:
+                    return 3
+                elif val < 4.5:
+                    return 4
+                elif val < 5.5:
+                    return 5
                 else:
-                    away_goals = home_goals + 1
+                    return int(round(val))
+            
+            home_goals = smart_round(home_g)
+            away_goals = smart_round(away_g)
+            
+            # Ensure favorite wins (if prediction says they should)
+            fav_prob = home_prob if favorite == home_team else away_prob
+            if fav_prob > 50.0:  # Only if favorite has >50% chance
+                if home_goals == away_goals:
+                    # Nudge favorite to win by one
+                    if favorite == home_team:
+                        home_goals = away_goals + 1
+                    else:
+                        away_goals = home_goals + 1
+                elif favorite == home_team and home_goals < away_goals:
+                    # Favorite should win, swap if needed
+                    home_goals, away_goals = away_goals, home_goals
+                elif favorite != home_team and away_goals < home_goals:
+                    # Favorite should win, swap if needed
+                    home_goals, away_goals = away_goals, home_goals
             
             # Determine if OT/SO is likely based on closeness
             fav_prob = home_prob if favorite == home_team else away_prob
