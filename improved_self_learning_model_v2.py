@@ -2764,10 +2764,6 @@ class ImprovedSelfLearningModelV2:
                 corrected = max(-max_bias, min(max_bias, corrected))
                 team_bias[team][ven] = corrected
 
-        # Persist first-goal stats and team bias into model data for reuse
-        self.model_data["first_goal_stats"] = derived_first_goal_stats
-        self.model_data["team_bias"] = team_bias
-
         # Derive first-goal rates and win rates per team/venue
         derived_first_goal_stats: Dict[str, Dict[str, Dict[str, float]]] = {}
         for team, venues in first_goal_stats.items():
@@ -2787,6 +2783,10 @@ class ImprovedSelfLearningModelV2:
                     "win_rate_conceding_first": win_rate_conceding_first,
                     "first_goal_uplift": uplift,
                 }
+
+        # Persist first-goal stats and team bias into model data for reuse
+        self.model_data["first_goal_stats"] = derived_first_goal_stats
+        self.model_data["team_bias"] = team_bias
         
         return {
             "team_accuracy": team_accuracy,
