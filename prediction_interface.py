@@ -721,27 +721,65 @@ class PredictionInterface:
             game_id = str(game.get('id'))
             prediction = self.predict_game(away_team, home_team, game_id=game_id)
             
-            print(f'   🎯 Prediction: {away_team} {prediction["away_prob"]*100:.1f}% | {home_team} {prediction["home_prob"]*100:.1f}%')
+            away_prob = prediction["away_prob"]
+            home_prob = prediction["home_prob"]
+            print(f'   🎯 Prediction: {away_team} {away_prob*100:.1f}% | {home_team} {home_prob*100:.1f}%')
             
             # Determine favorite
-            if prediction["away_prob"] > prediction["home_prob"]:
+            if away_prob > home_prob:
                 favorite = away_team
-                spread = prediction["away_prob"] - prediction["home_prob"]
             else:
                 favorite = home_team
-                spread = prediction["home_prob"] - prediction["away_prob"]
-            
-            print(f'   ⭐ Favorite: {favorite} (+{spread*100:.1f}%)')
-            print(f'   📊 Confidence: {max(prediction["away_prob"], prediction["home_prob"])*100:.1f}%')
+            confidence = max(away_prob, home_prob) * 100.0
+            flip_rate = float(prediction.get("monte_carlo_flip_rate", 0.0) or 0.0)
+            upset = float(prediction.get("upset_probability", 0.0) or 0.0) * 100.0
+
+            # Flip-rate band label
+            if flip_rate < 0.20:
+                flip_label = "LOW"
+            elif flip_rate < 0.40:
+                flip_label = "MED"
+            else:
+                flip_label = "HIGH"
+
+            # Likeliest score using team + venue season data
+            try:
+                home_perf = self.learning_model.get_team_performance(home_team, venue="home")
+                away_perf = self.learning_model.get_team_performance(away_team, venue="away")
+                home_g = float(home_perf.get("goals_avg", 3.0)) if home_perf else 3.0
+                away_g = float(away_perf.get("goals_avg", 3.0)) if away_perf else 3.0
+            except Exception:
+                home_g = away_g = 3.0
+
+            home_goals = int(round(home_g))
+            away_goals = int(round(away_g))
+            if home_goals == away_goals:
+                if favorite == home_team:
+                    home_goals = away_goals + 1
+                else:
+                    away_goals = home_goals + 1
+
+            fav_prob = home_prob if favorite == home_team else away_prob
+            fav_prob_pct = fav_prob * 100.0
+            if abs(home_goals - away_goals) == 1 and 50.0 <= fav_prob_pct <= 58.0:
+                ot_tag = "(OT/SO likely)"
+            else:
+                ot_tag = "(regulation)"
+            likely_score = f"{favorite} {max(home_goals, away_goals)}–{min(home_goals, away_goals)} {ot_tag}"
+
+            print(f'   ⭐ Favorite: {favorite} (confidence {confidence:.1f}%)')
+            print(f'   🌪️ Volatility (flip-rate): {flip_label} ({flip_rate*100:.1f}%)')
+            print(f'   ⚡ Upset risk: {upset:.1f}%')
+            print(f'   📐 Likeliest score: {likely_score}')
             print()
             
             predictions.append({
                 'game_id': game.get('id'),
                 'away_team': away_team,
                 'home_team': home_team,
-                'predicted_away_win_prob': prediction["away_prob"],  # Already decimal
-                'predicted_home_win_prob': prediction["home_prob"],  # Already decimal
-                'prediction_confidence': max(prediction["away_prob"], prediction["home_prob"]),
+                'predicted_away_win_prob': away_prob,  # Already decimal
+                'predicted_home_win_prob': home_prob,  # Already decimal
+                'prediction_confidence': max(away_prob, home_prob),
                 'raw_away_prob': prediction.get("raw_away_prob"),
                 'raw_home_prob': prediction.get("raw_home_prob"),
                 'correlation_away_prob': prediction.get("correlation_away_prob"),
@@ -757,7 +795,7 @@ class PredictionInterface:
                 'away_rest': prediction.get("away_rest"),
                 'home_rest': prediction.get("home_rest"),
                 'favorite': favorite,
-                'spread': spread
+                'spread': abs(away_prob - home_prob)
             })
 
         # Save predictions to model for future learning
