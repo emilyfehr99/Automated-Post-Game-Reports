@@ -978,6 +978,39 @@ class PostGameReportGenerator:
             has_ot = self._check_for_ot_period(game_data)
             has_so = away_so_goals > 0 or home_so_goals > 0
             
+            # If there was a shootout, only the winning team gets 1 goal in the final score
+            # Check the boxscore to determine the winner
+            if has_so:
+                away_final_score = boxscore['awayTeam'].get('score', 0)
+                home_final_score = boxscore['homeTeam'].get('score', 0)
+                
+                # Calculate regulation + OT goals for both teams
+                away_reg_ot_goals = sum(away_period_scores) + away_ot_goals
+                home_reg_ot_goals = sum(home_period_scores) + home_ot_goals
+                
+                # If final scores are different, the team with higher score won the shootout
+                if away_final_score > home_final_score:
+                    # Away team won shootout - they get 1 SO goal, home gets 0
+                    away_so_goals = 1
+                    home_so_goals = 0
+                elif home_final_score > away_final_score:
+                    # Home team won shootout - they get 1 SO goal, away gets 0
+                    away_so_goals = 0
+                    home_so_goals = 1
+                else:
+                    # Scores are equal (shouldn't happen in a shootout, but handle it)
+                    # In this case, check which team scored more in regulation+OT
+                    if away_reg_ot_goals > home_reg_ot_goals:
+                        away_so_goals = 1
+                        home_so_goals = 0
+                    elif home_reg_ot_goals > away_reg_ot_goals:
+                        away_so_goals = 0
+                        home_so_goals = 1
+                    else:
+                        # Still tied - this shouldn't happen, but default to 0 for both
+                        away_so_goals = 0
+                        home_so_goals = 0
+            
             # Create mini team logos for the table
             away_logo_img = None
             home_logo_img = None
@@ -1073,7 +1106,7 @@ class PostGameReportGenerator:
                     f'{so_stats["fc_cycle_sog"]}', f'{so_stats["rush_sog"]}'])
             
             # Add Final row for away team
-            away_total_goals = sum(away_period_scores) + away_ot_goals  # Don't include shootout goals in final score
+            away_total_goals = sum(away_period_scores) + away_ot_goals + away_so_goals  # Include OT and SO goals (SO is 1 for winner, 0 for loser)
             stats_data.append(['Final', str(away_total_goals), str(sum(away_period_stats['shots'])), f"{sum(away_period_stats['corsi_pct'])/3:.1f}%",
                 f"{sum(away_period_stats['pp_goals'])}/{sum(away_period_stats['pp_attempts'])}", str(sum(away_period_stats['pim'])), 
                 str(sum(away_period_stats['hits'])), f"{sum(away_period_stats['fo_pct'])/3:.1f}%", str(sum(away_period_stats['bs'])), 
@@ -1130,7 +1163,7 @@ class PostGameReportGenerator:
                     f'{so_stats["fc_cycle_sog"]}', f'{so_stats["rush_sog"]}'])
             
             # Add Final row for home team
-            home_total_goals = sum(home_period_scores) + home_ot_goals  # Don't include shootout goals in final score
+            home_total_goals = sum(home_period_scores) + home_ot_goals + home_so_goals  # Include OT and SO goals (SO is 1 for winner, 0 for loser)
             stats_data.append(['Final', str(home_total_goals), str(sum(home_period_stats['shots'])), f"{sum(home_period_stats['corsi_pct'])/3:.1f}%",
                 f"{sum(home_period_stats['pp_goals'])}/{sum(home_period_stats['pp_attempts'])}", str(sum(home_period_stats['pim'])), 
                 str(sum(home_period_stats['hits'])), f"{sum(home_period_stats['fo_pct'])/3:.1f}%", str(sum(home_period_stats['bs'])), 
@@ -1750,10 +1783,10 @@ class PostGameReportGenerator:
                     if event_team_id == team_id:
                         if period <= 3:  # Regulation periods
                             goals_by_period[period - 1] += 1
-                        elif period_type == 'OT':  # Overtime
-                            ot_goals += 1
-                        elif period_type == 'SO':  # Shootout
+                        elif period_type == 'SO':  # Shootout (check SO first since it's more specific)
                             so_goals += 1
+                        elif period > 3 or period_type == 'OT':  # Overtime (period > 3 or explicitly marked as OT)
+                            ot_goals += 1
             
             return goals_by_period, ot_goals, so_goals
         except Exception as e:
