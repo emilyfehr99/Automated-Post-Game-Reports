@@ -229,29 +229,17 @@ class ImprovedSelfLearningModelV2:
         return conf >= confidence_threshold or margin >= margin_threshold
 
     def predict_score_distribution(self, home_xg: float, away_xg: float) -> Tuple[int, int]:
-        """Predict the likeliest exact score using Poisson distribution."""
+        """Predict the score using rounded expected goals (Mean) rather than Mode.
+           This provides better variance (e.g. 3.6->4 vs 3.2->3) avoiding the 'stuck at 3' issue."""
         import math
         
-        # Limit lambdas to reasonable hockey range to prevent performance issues
+        # Limit lambdas
         lam_h = max(0.5, min(10.0, home_xg))
         lam_a = max(0.5, min(10.0, away_xg))
         
-        def poisson_pmf(k, lam):
-            return (lam**k * math.exp(-lam)) / math.factorial(k)
-            
-        max_prob = -1.0
-        best_score = (3, 2) # Fallback
-        
-        # Check scores from 0-0 to 9-9
-        for h in range(10):
-            prob_h = poisson_pmf(h, lam_h)
-            for a in range(10):
-                prob_a = poisson_pmf(a, lam_a)
-                joint_prob = prob_h * prob_a
-                
-                if joint_prob > max_prob:
-                    max_prob = joint_prob
-                    best_score = (h, a)
+        # Use simple rounding to nearest integer
+        # This resolves the "4-3 bias" caused by the Poisson Mode being stuck at 3 for 3.0-3.9 range.
+        best_score = (int(round(lam_h)), int(round(lam_a)))
                     
         return best_score
 

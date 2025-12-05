@@ -855,6 +855,9 @@ class PredictionInterface:
                     home_exp = max(1.0, min(6.5, home_exp))
                     away_exp = max(1.0, min(6.5, away_exp))
                     
+                    # Log inputs for debugging variety
+                    print(f"   [Debug] xG inputs: {away_team} {away_exp:.2f} @ {home_team} {home_exp:.2f}")
+
                     # Predict Score
                     home_goals, away_goals = self.learning_model.predict_score_distribution(home_exp, away_exp)
                     
