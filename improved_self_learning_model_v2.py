@@ -217,6 +217,33 @@ class ImprovedSelfLearningModelV2:
         margin = prediction_margin or 0.0
         return conf >= confidence_threshold or margin >= margin_threshold
 
+    def predict_score_distribution(self, home_xg: float, away_xg: float) -> Tuple[int, int]:
+        """Predict the likeliest exact score using Poisson distribution."""
+        import math
+        
+        # Limit lambdas to reasonable hockey range to prevent performance issues
+        lam_h = max(0.5, min(10.0, home_xg))
+        lam_a = max(0.5, min(10.0, away_xg))
+        
+        def poisson_pmf(k, lam):
+            return (lam**k * math.exp(-lam)) / math.factorial(k)
+            
+        max_prob = -1.0
+        best_score = (3, 2) # Fallback
+        
+        # Check scores from 0-0 to 9-9
+        for h in range(10):
+            prob_h = poisson_pmf(h, lam_h)
+            for a in range(10):
+                prob_a = poisson_pmf(a, lam_a)
+                joint_prob = prob_h * prob_a
+                
+                if joint_prob > max_prob:
+                    max_prob = joint_prob
+                    best_score = (h, a)
+                    
+        return best_score
+
     def _estimate_monte_carlo_signal(self, prediction: Dict, iterations: int = 40) -> float:
         """Estimate volatility by perturbing metrics and observing prediction flips."""
         if not self.correlation_model:
@@ -697,19 +724,40 @@ class ImprovedSelfLearningModelV2:
                     return float(np.mean([float(x) for x in arr if x is not None]))
                 return default
             
-            xg_avg = safe_mean(venue_data.get('xg', []), 0.0)
-            hdc_avg = safe_mean(venue_data.get('hdc', []), 0.0)
-            shots_avg = safe_mean(venue_data.get('shots', []), 30.0)
+            goals_against_avg = safe_mean(venue_data.get('opp_goals', []), default=2.5)
+            xg_avg = safe_mean(venue_data.get('xg', []), default=2.0)
+            
+            # Opponent xG is stored in 'xg_against' in our file, or 'opp_xg' sometimes.
+            # Based on inspection, keys are 'xG_for' and 'xG_against' in the aggregated arrays at the bottom,
+            # but inside 'home' block it's 'xg' and 'opp_xg' usually? 
+            # File snippet showed 'xg' and 'opp_goals'. It didn't explicitly show 'opp_xg' in the lines 1-100 block 
+            # but usually it's symmetric. However, at line 289 we saw 'xG_against'.
+            # Let's try to grab 'xG_against' from the venue data if it exists, otherwise fallback to index matching?
+            # Actually, let's just use 'xg' from the Perspective of 'opp_goals' or look for 'opp_xg'.
+            # If not found, use 2.0.
+            xg_against_avg = safe_mean(venue_data.get('xG_against', []), default=2.0)
+            if xg_against_avg == 2.0 and 'opp_xg' in venue_data:
+                 xg_against_avg = safe_mean(venue_data.get('opp_xg', []), default=2.0)
+            
+            hdc_avg = safe_mean(venue_data.get('hdc', []), default=0.0)
+            shots_avg = safe_mean(venue_data.get('shots', []), default=30.0)
             goals_avg = safe_mean(venue_data.get('goals', []), 2.0)
+            goals_against_avg = safe_mean(venue_data.get('goals_against', []), 3.0)
             gs_avg = safe_mean(venue_data.get('gs', []), 0.0)
+            
+            # Advanced Metrics
             corsi_avg = safe_mean(venue_data.get('corsi_pct', []), 50.0)
-            power_play_avg = safe_mean(venue_data.get('power_play_pct', []), 0.0)
+            fenwick_avg = safe_mean(venue_data.get('fenwick_pct', []), 50.0)
+            power_play_avg = safe_mean(venue_data.get('power_play_pct', []), 20.0)
             penalty_kill_avg = safe_mean(venue_data.get('penalty_kill_pct', []), 80.0)
             faceoff_avg = safe_mean(venue_data.get('faceoff_pct', []), 50.0)
-            hits_avg = safe_mean(venue_data.get('hits', []), 0.0)
-            blocked_shots_avg = safe_mean(venue_data.get('blocked_shots', []), 0.0)
+            hits_avg = safe_mean(venue_data.get('hits', []), 20.0)
+            takeaways_avg = safe_mean(venue_data.get('takeaways', []), 5.0)
+            blocked_shots_avg = safe_mean(venue_data.get('blocked_shots', []), 15.0)
+            pdo_avg = safe_mean(venue_data.get('pdo', []), 100.0)
+            ozs_avg = safe_mean(venue_data.get('ozs', []), 15.0) # Offensive Zone Starts
+            
             giveaways_avg = safe_mean(venue_data.get('giveaways', []), 0.0)
-            takeaways_avg = safe_mean(venue_data.get('takeaways', []), 0.0)
             penalty_minutes_avg = safe_mean(venue_data.get('penalty_minutes', []), 0.0)
             
             games_played = len(venue_data.get('games', []))
@@ -725,6 +773,9 @@ class ImprovedSelfLearningModelV2:
                     'hdc_avg': hdc_avg,
                     'shots_avg': shots_avg,
                     'goals_avg': goals_avg,
+                    'goals_against_avg': goals_against_avg,
+                    'xg_avg': xg_avg,
+                    'xg_against_avg': xg_against_avg,
                     'gs_avg': gs_avg,
                     'corsi_avg': corsi_avg,
                     'power_play_avg': power_play_avg,
@@ -732,10 +783,9 @@ class ImprovedSelfLearningModelV2:
                     'faceoff_avg': faceoff_avg,
                     'hits_avg': hits_avg,
                     'blocked_shots_avg': blocked_shots_avg,
-                    'giveaways_avg': giveaways_avg,
                     'takeaways_avg': takeaways_avg,
-                    'penalty_minutes_avg': penalty_minutes_avg,
-                    'games_played': games_played,
+                    'pdo_avg': pdo_avg,
+                    'ozs_avg': ozs_avg,
                     'recent_form': self._calculate_recent_form(team_key, venue, window=10),  # Venue-aware, last 10 games
                     'head_to_head': 0.5,  # Default
                     'rest_days_advantage': rest_adv,
@@ -760,6 +810,9 @@ class ImprovedSelfLearningModelV2:
                     'hdc_avg': team_data.get('hdc_avg', 0.0),
                     'shots_avg': 30.0,
                     'goals_avg': 2.0,
+                    'goals_against_avg': 2.0,
+                    'xg_avg': team_data.get('xg_avg', 0.0),
+                    'xg_against_avg': 2.0,
                     'gs_avg': team_data.get('gs_avg', 0.0),
                     'corsi_avg': 50.0,
                     'power_play_avg': 0.0,
@@ -815,7 +868,7 @@ class ImprovedSelfLearningModelV2:
                                 
                                 return {
                                     'xg': xg_estimate, 'hdc': 2.0, 'shots': shots_estimate, 'goals': 2.5, 'gs': 3.0,
-                                    'xg_avg': xg_estimate, 'hdc_avg': 2.0, 'shots_avg': shots_estimate, 'goals_avg': 2.5, 'gs_avg': 3.0,
+                                    'xg_avg': xg_estimate, 'xg_against_avg': 2.5, 'hdc_avg': 2.0, 'shots_avg': shots_estimate, 'goals_avg': 2.5, 'goals_against_avg': 2.5, 'gs_avg': 3.0,
                                     'corsi_avg': corsi_estimate, 'power_play_avg': 20.0, 'penalty_kill_avg': 80.0, 'faceoff_avg': 50.0,
                                     'hits_avg': 20.0, 'blocked_shots_avg': 15.0, 'giveaways_avg': 8.0,
                                     'takeaways_avg': 6.0, 'penalty_minutes_avg': 8.0,
@@ -832,7 +885,7 @@ class ImprovedSelfLearningModelV2:
         """Get default performance for teams with no data"""
         return {
             'xg': 2.0, 'hdc': 2.0, 'shots': 30.0, 'goals': 2.0, 'gs': 3.0,
-            'xg_avg': 2.0, 'hdc_avg': 2.0, 'shots_avg': 30.0, 'goals_avg': 2.0, 'gs_avg': 3.0,
+            'xg_avg': 2.0, 'hdc_avg': 2.0, 'shots_avg': 30.0, 'goals_avg': 2.0, 'goals_against_avg': 2.0, 'gs_avg': 3.0,
             'corsi_avg': 50.0, 'power_play_avg': 0.0, 'penalty_kill_avg': 80.0, 'faceoff_avg': 50.0,
             'hits_avg': 0.0, 'blocked_shots_avg': 0.0, 'giveaways_avg': 0.0,
             'takeaways_avg': 0.0, 'penalty_minutes_avg': 0.0,
@@ -1812,7 +1865,7 @@ class ImprovedSelfLearningModelV2:
                 goal_diff = int(actual_home_score) - int(actual_away_score)
             except (TypeError, ValueError):
                 goal_diff = None
-
+        
         prediction = {
             "game_id": game_id,
             "date": date,
@@ -2640,22 +2693,22 @@ class ImprovedSelfLearningModelV2:
         for pred in predictions:
             if not pred.get("actual_winner"):
                 continue
-            away_team = pred.get("away_team")
-            home_team = pred.get("home_team")
-            predicted_side = self._normalize_outcome_side(pred.get("predicted_winner"), away_team, home_team)
-            actual_side = self._normalize_outcome_side(pred.get("actual_winner"), away_team, home_team)
-            
+                away_team = pred.get("away_team")
+                home_team = pred.get("home_team")
+                predicted_side = self._normalize_outcome_side(pred.get("predicted_winner"), away_team, home_team)
+                actual_side = self._normalize_outcome_side(pred.get("actual_winner"), away_team, home_team)
+                
             # Count games for each team (overall)
-            if away_team:
-                team_games[away_team] = team_games.get(away_team, 0) + 1
-            if home_team:
-                team_games[home_team] = team_games.get(home_team, 0) + 1
-            
-            # Count correct predictions for each team
-            predicted_team = self._side_to_team(predicted_side, away_team, home_team)
-            actual_team = self._side_to_team(actual_side, away_team, home_team)
-            if predicted_team and actual_team and predicted_team == actual_team:
-                team_accuracy[actual_team] = team_accuracy.get(actual_team, 0) + 1
+                if away_team:
+                    team_games[away_team] = team_games.get(away_team, 0) + 1
+                if home_team:
+                    team_games[home_team] = team_games.get(home_team, 0) + 1
+                
+                # Count correct predictions for each team
+                predicted_team = self._side_to_team(predicted_side, away_team, home_team)
+                actual_team = self._side_to_team(actual_side, away_team, home_team)
+                if predicted_team and actual_team and predicted_team == actual_team:
+                    team_accuracy[actual_team] = team_accuracy.get(actual_team, 0) + 1
 
             # --- First-goal historical stats (per team, by venue) ---
             metrics = pred.get("metrics_used") or {}

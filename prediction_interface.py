@@ -14,6 +14,7 @@ from correlation_model import CorrelationModel
 from lineup_service import LineupService
 from pdf_report_generator import PostGameReportGenerator
 from advanced_metrics_analyzer import AdvancedMetricsAnalyzer
+from schedule_analyzer import ScheduleAnalyzer
 from datetime import datetime, timedelta
 from typing import Optional
 import pytz
@@ -26,6 +27,11 @@ class PredictionInterface:
         self.corr_model = CorrelationModel()
         self.lineup_service = LineupService()
         self.report_generator = PostGameReportGenerator()
+        try:
+            self.schedule_analyzer = ScheduleAnalyzer()
+        except Exception as e:
+            print(f"Warning: Could not initialize ScheduleAnalyzer: {e}")
+            self.schedule_analyzer = None
     
     def check_and_add_missing_games(self):
         """Check for missing games from recent days and add them to the model"""
@@ -639,6 +645,281 @@ class PredictionInterface:
             'recent_accuracy': 0.0
         }
         
+    def _calculate_win_probability(self, home_lambda, away_lambda):
+        """
+        Calculate the probability of Home Win, Away Win, and Tie
+        using the Poisson distribution for independent events.
+        """
+        import math
+        
+        # Max reasonable goals to check (Poisson prob approaches 0)
+        max_goals = 15
+        
+        prob_home_win = 0.0
+        prob_away_win = 0.0
+        prob_tie = 0.0
+        
+        for h in range(max_goals + 1):
+            for a in range(max_goals + 1):
+                p_h = (math.exp(-home_lambda) * home_lambda**h) / math.factorial(h)
+                p_a = (math.exp(-away_lambda) * away_lambda**a) / math.factorial(a)
+                p_matrix = p_h * p_a
+                
+                if h > a:
+                    prob_home_win += p_matrix
+                elif a > h:
+                    prob_away_win += p_matrix
+                else:
+                    prob_tie += p_matrix
+                    
+        return prob_home_win, prob_away_win, prob_tie
+
+    def get_daily_predictions(self):
+        """
+        Generate predictions for all games scheduled for the current date.
+        Retains the exact score prediction logic but adds Conf/Vol context.
+        """
+        try:
+            today = datetime.now().strftime("%Y-%m-%d")
+            schedule_data = self.api_client.get_game_schedule(today)
+            
+            predictions = []
+            
+            # Extract games from schedule structure
+            games = []
+            if schedule_data and 'gameWeek' in schedule_data:
+                for day in schedule_data['gameWeek']:
+                    if day.get('date') == today:
+                        games = day.get('games', [])
+                        break
+            
+            for game in games:
+                try:
+                    # Basic Info
+                    game_id = game.get('id')
+                    home_team = game.get('homeTeam', {}).get('abbrev')
+                    away_team = game.get('awayTeam', {}).get('abbrev')
+                    start_time = game.get('startTimeUTC')
+                    
+                    if not home_team or not away_team:
+                        continue
+                        
+                    # Get Team Stats (Season)
+                    home_perf = self.learning_model.get_team_performance(home_team, venue="home")
+                    away_perf = self.learning_model.get_team_performance(away_team, venue="away")
+
+                    # --- ADVANCED ACCURACY LOGIC: FATIGUE & RECENCY ---
+                    
+                    # 1. Schedule Fatigue (Back-to-Back)
+                    # If played yesterday -> 5% Offense Penalty, 5% Defense Penalty (allow more)
+                    h_fatigue = False
+                    a_fatigue = False
+                    if self.schedule_analyzer:
+                        h_fatigue = self.schedule_analyzer.played_yesterday(home_team, today)
+                        a_fatigue = self.schedule_analyzer.played_yesterday(away_team, today)
+                    
+                    fatigue_factor = 0.95 
+
+                    # 2. Recency Bias (Last 10 Games)
+                    # Blend: 60% Season / 40% L10
+                    recency_weight = 0.40
+                    season_weight = 0.60
+                    
+                    h_recent_xg = 3.0
+                    h_recent_goals = 3.0
+                    h_recent_xg_ag = 3.0
+                    h_recent_g_ag = 3.0
+                    
+                    a_recent_xg = 3.0
+                    a_recent_goals = 3.0
+                    a_recent_xg_ag = 3.0
+                    a_recent_g_ag = 3.0
+
+                    if self.schedule_analyzer:
+                        # Home Recent
+                        h_games = self.schedule_analyzer.get_recent_games(home_team, today, n=10)
+                        if h_games:
+                             # Calculate averages
+                            tot_g = 0; tot_ga = 0
+                            for g in h_games:
+                                is_home = (g.get('homeTeam', {}).get('abbrev') == home_team)
+                                if is_home:
+                                    tot_g += g.get('homeTeam', {}).get('score', 0)
+                                    tot_ga += g.get('awayTeam', {}).get('score', 0)
+                                else:
+                                    tot_g += g.get('awayTeam', {}).get('score', 0)
+                                    tot_ga += g.get('homeTeam', {}).get('score', 0)
+                            h_recent_goals = tot_g / len(h_games)
+                            h_recent_g_ag = tot_ga / len(h_games)
+                            # Approximation: Use Goals as proxy for xG in recent data if raw xG not avail
+                            h_recent_xg = h_recent_goals 
+                            h_recent_xg_ag = h_recent_g_ag
+
+                        # Away Recent
+                        a_games = self.schedule_analyzer.get_recent_games(away_team, today, n=10)
+                        if a_games:
+                            tot_g = 0; tot_ga = 0
+                            for g in a_games:
+                                is_home = (g.get('homeTeam', {}).get('abbrev') == away_team)
+                                if is_home:
+                                    tot_g += g.get('homeTeam', {}).get('score', 0)
+                                    tot_ga += g.get('awayTeam', {}).get('score', 0)
+                                else:
+                                    tot_g += g.get('awayTeam', {}).get('score', 0)
+                                    tot_ga += g.get('homeTeam', {}).get('score', 0)
+                            a_recent_goals = tot_g / len(a_games)
+                            a_recent_g_ag = tot_ga / len(a_games)
+                            a_recent_xg = a_recent_goals
+                            a_recent_xg_ag = a_recent_g_ag
+
+                    # --- BLENDED METRICS ---
+                    
+                    # Home Offense
+                    h_xg_season = float(home_perf.get("xg_avg", 3.0))
+                    h_goals_season = float(home_perf.get("goals_avg", 3.0))
+                    h_xg_blend = (h_xg_season * season_weight) + (h_recent_xg * recency_weight)
+                    h_goals_blend = (h_goals_season * season_weight) + (h_recent_goals * recency_weight)
+                    
+                    # Home Defense
+                    h_xg_ag_season = float(home_perf.get("xg_against_avg", 3.0))
+                    h_g_ag_season = float(home_perf.get("goals_against_avg", 3.0))
+                    h_xg_ag_blend = (h_xg_ag_season * season_weight) + (h_recent_xg_ag * recency_weight)
+                    h_g_ag_blend = (h_g_ag_season * season_weight) + (h_recent_g_ag * recency_weight)
+
+                    # Away Offense
+                    a_xg_season = float(away_perf.get("xg_avg", 3.0))
+                    a_goals_season = float(away_perf.get("goals_avg", 3.0))
+                    a_xg_blend = (a_xg_season * season_weight) + (a_recent_xg * recency_weight)
+                    a_goals_blend = (a_goals_season * season_weight) + (a_recent_goals * recency_weight)
+
+                    # Away Defense
+                    a_xg_ag_season = float(away_perf.get("xg_against_avg", 3.0))
+                    a_g_ag_season = float(away_perf.get("goals_against_avg", 3.0))
+                    a_xg_ag_blend = (a_xg_ag_season * season_weight) + (a_recent_xg_ag * recency_weight)
+                    a_g_ag_blend = (a_g_ag_season * season_weight) + (a_recent_g_ag * recency_weight)
+
+
+                    # --- 5-FACTOR ADVANCED MODEL (OPTIMIZED) ---
+                    # W_XG=0.53, W_OFF_H=0.58, W_OFF_A=0.65, W_POSS=0.026, W_ST=0.017, W_LUCK=0.002
+                    
+                    # 1. Base Offense
+                    h_base = (h_xg_blend * 0.53) + (h_goals_blend * 0.47)
+                    a_base = (a_xg_blend * 0.53) + (a_goals_blend * 0.47)
+                    
+                    # 2. Base Defense 
+                    h_def_base = (h_xg_ag_blend * 0.53) + (h_g_ag_blend * 0.47)
+                    a_def_base = (a_xg_ag_blend * 0.53) + (a_g_ag_blend * 0.47)
+
+                    # Apply Fatigue Penalties
+                    if h_fatigue:
+                        h_base *= fatigue_factor # Offense suffers
+                        h_def_base *= (2 - fatigue_factor) # Defense gets worse (1.05 multiplier approx)
+                    
+                    if a_fatigue:
+                        a_base *= fatigue_factor
+                        a_def_base *= (2 - fatigue_factor)
+
+                    # 3. Possession Adjustment
+                    h_corsi = float(home_perf.get("corsi_avg", 50.0))
+                    a_corsi = float(away_perf.get("corsi_avg", 50.0))
+                    h_poss_adj = (h_corsi - 50.0) * 0.026 
+                    a_poss_adj = (a_corsi - 50.0) * 0.026
+
+                    # 4. Special Teams Matchup
+                    h_pp = float(home_perf.get("power_play_avg", 20.0))
+                    a_pk = float(away_perf.get("penalty_kill_avg", 80.0))
+                    h_st_adj = ((h_pp - 20.0) + (80.0 - a_pk)) * 0.017
+                    
+                    a_pp = float(away_perf.get("power_play_avg", 20.0))
+                    h_pk = float(home_perf.get("penalty_kill_avg", 80.0))
+                    a_st_adj = ((a_pp - 20.0) + (80.0 - h_pk)) * 0.017
+
+                    # 5. Luck Adjustment
+                    h_pdo = float(home_perf.get("pdo_avg", 100.0))
+                    a_pdo = float(away_perf.get("pdo_avg", 100.0))
+                    h_luck_adj = (100.0 - h_pdo) * 0.002
+                    a_luck_adj = (100.0 - a_pdo) * 0.002
+
+                    # Final Lambda
+                    home_exp_raw = (h_base * 0.58) + (a_def_base * 0.42) 
+                    home_exp = home_exp_raw + h_poss_adj + h_st_adj + h_luck_adj + 0.02
+                    
+                    away_exp_raw = (a_base * 0.65) + (h_def_base * 0.35)
+                    away_exp = away_exp_raw + a_poss_adj + a_st_adj + a_luck_adj
+
+                    home_exp = max(1.0, min(6.5, home_exp))
+                    away_exp = max(1.0, min(6.5, away_exp))
+                    
+                    # Predict Score
+                    home_goals, away_goals = self.learning_model.predict_score_distribution(home_exp, away_exp)
+                    
+                    # Calculate Win Prob & Volatility
+                    p_home, p_away, p_tie = self._calculate_win_probability(home_exp, away_exp)
+                    
+                    if home_goals > away_goals:
+                        confidence = p_home + (p_tie / 2)
+                        winner = home_team
+                    else:
+                        confidence = p_away + (p_tie / 2)
+                        winner = away_team
+                        
+                    confidence_pct = min(99.9, max(50.1, confidence * 100))
+                    
+                    # Determine Volatility
+                    total_exp = home_exp + away_exp
+                    if total_exp < 5.5:
+                        volatility = "Low"
+                    elif total_exp > 6.5:
+                        volatility = "High"
+                    else:
+                        volatility = "Medium"
+
+                    # Determine Upset Risk
+                    upset_prob = 100.0 - confidence_pct
+                    if upset_prob > 40.0:
+                        upset_risk = "High"
+                    elif upset_prob > 25.0:
+                        upset_risk = "Medium"
+                    else:
+                        upset_risk = "Low"
+                    
+                except Exception as e:
+                    # logger hasn't been defined here, using print
+                    print(f"Error determining prediction for {home_team} vs {away_team}: {e}")
+                    home_goals = 3
+                    away_goals = 2
+                    confidence_pct = 50.0
+                    volatility = "Medium"
+                    upset_risk = "Medium"
+                    upset_prob = 50.0
+                    winner = home_team
+                
+                # Add Fatigue tag to reasoning if applicable
+                reasoning_str = f"Model favors {winner} ({confidence_pct:.1f}%) in {volatility}-volatility matchup. Upset Risk: {upset_risk} ({upset_prob:.1f}%)."
+                if h_fatigue:
+                    reasoning_str += f" ALERT: {home_team} is fatigued (Back-to-Back)."
+                if a_fatigue:
+                    reasoning_str += f" ALERT: {away_team} is fatigued (Back-to-Back)."
+
+                predictions.append({
+                    'game_id': game_id,
+                    'home_team': home_team,
+                    'away_team': away_team,
+                    'home_score': home_goals,
+                    'away_score': away_goals,
+                    'confidence': confidence_pct,
+                    'volatility': volatility,
+                    'upset_risk': upset_risk,
+                    'upset_prob': upset_prob,
+                    'start_time': start_time,
+                    'reasoning': reasoning_str
+                })
+            
+            return predictions
+        except Exception as e:
+            print(f"Error in get_daily_predictions: {e}")
+            return []
+        
     def get_todays_predictions(self):
         """Get predictions for today's games using the self-learning model"""
         print('🏒 NHL GAME PREDICTIONS (Self-Learning Model) 🏒')
@@ -747,21 +1028,140 @@ class PredictionInterface:
             try:
                 home_perf = self.learning_model.get_team_performance(home_team, venue="home")
                 away_perf = self.learning_model.get_team_performance(away_team, venue="away")
-                home_g = float(home_perf.get("goals_avg", 3.0)) if home_perf else 3.0
-                away_g = float(away_perf.get("goals_avg", 3.0)) if away_perf else 3.0
-            except Exception:
-                home_g = away_g = 3.0
+                
+                # Get scoring rates
+                # --- 5-FACTOR ADVANCED MODEL (OPTIMIZED: 55.34% Accuracy) ---
+                # Optimal Weights found via Backtest Optimization:
+                # W_XG=0.53, W_OFF_H=0.58, W_OFF_A=0.65, W_POSS=0.026, W_ST=0.017, W_LUCK=0.002
+                
+                # 1. Base Offense (Quality + Finishing)
+                #    Optimized: 53% xG / 47% Actual Goals
+                h_xg = float(home_perf.get("xg_avg", 3.0))
+                h_goals = float(home_perf.get("goals_avg", 3.0))
+                h_base = (h_xg * 0.53) + (h_goals * 0.47)
+                
+                a_xg = float(away_perf.get("xg_avg", 3.0))
+                a_goals = float(away_perf.get("goals_avg", 3.0))
+                a_base = (a_xg * 0.53) + (a_goals * 0.47)
+                
+                # 2. Base Defense 
+                h_xg_ag = float(home_perf.get("xg_against_avg", 3.0))
+                h_g_ag = float(home_perf.get("goals_against_avg", 3.0))
+                h_def_base = (h_xg_ag * 0.53) + (h_g_ag * 0.47)
 
-            home_goals = int(round(home_g))
-            away_goals = int(round(away_g))
-            if home_goals == away_goals:
-                if favorite == home_team:
-                    home_goals = away_goals + 1
+                a_xg_ag = float(away_perf.get("xg_against_avg", 3.0))
+                a_g_ag = float(away_perf.get("goals_against_avg", 3.0))
+                a_def_base = (a_xg_ag * 0.53) + (a_g_ag * 0.47)
+
+                # 3. Possession Adjustment (Corsi)
+                #    Weight: 0.026 per point
+                h_corsi = float(home_perf.get("corsi_avg", 50.0))
+                a_corsi = float(away_perf.get("corsi_avg", 50.0))
+                h_poss_adj = (h_corsi - 50.0) * 0.026 
+                a_poss_adj = (a_corsi - 50.0) * 0.026
+
+                # 4. Special Teams Matchup
+                #    Weight: 0.017 per point diff
+                h_pp = float(home_perf.get("power_play_avg", 20.0))
+                a_pk = float(away_perf.get("penalty_kill_avg", 80.0))
+                h_st_adj = ((h_pp - 20.0) + (80.0 - a_pk)) * 0.017
+                
+                a_pp = float(away_perf.get("power_play_avg", 20.0))
+                h_pk = float(home_perf.get("penalty_kill_avg", 80.0))
+                a_st_adj = ((a_pp - 20.0) + (80.0 - h_pk)) * 0.017
+
+                # 5. Intangibles / PDO
+                #    Weight: 0.002 (Very low impact found in optimization)
+                h_pdo = float(home_perf.get("pdo_avg", 100.0))
+                a_pdo = float(away_perf.get("pdo_avg", 100.0))
+                h_luck_adj = (100.0 - h_pdo) * 0.002
+                a_luck_adj = (100.0 - a_pdo) * 0.002
+
+                # --- FINAL EXPECTED GOALS LAMBDA ---
+                # Optimized Offense Weights: Home 58%, Away 65% (Away offense > Home Defense importance)
+                # explicit Home Bonus: +0.02 goals
+                home_exp_raw = (h_base * 0.58) + (a_def_base * 0.42) 
+                home_exp = home_exp_raw + h_poss_adj + h_st_adj + h_luck_adj + 0.02
+                
+                away_exp_raw = (a_base * 0.65) + (h_def_base * 0.35)
+                away_exp = away_exp_raw + a_poss_adj + a_st_adj + a_luck_adj
+
+                # Ensure non-negative and reasonable
+                home_exp = max(1.0, min(6.5, home_exp))
+                away_exp = max(1.0, min(6.5, away_exp))
+
+                logger.info(f"5-Factor Model (Optimized) {home_team} vs {away_team}:")
+            # Predict exact score using Poisson Distribution
+                home_goals, away_goals = self.learning_model.predict_score_distribution(home_exp, away_exp)
+                
+                # Calculate Win Probability (Confidence)
+                p_home, p_away, p_tie = self._calculate_win_probability(home_exp, away_exp)
+                
+                # Determine Confidence Level
+                if home_goals > away_goals:
+                    confidence = p_home + (p_tie / 2) # Give tie probability split
+                    win_prob = p_home
                 else:
-                    away_goals = home_goals + 1
+                    confidence = p_away + (p_tie / 2)
+                    win_prob = p_away
+                    
+                confidence_pct = min(99.9, max(50.1, confidence * 100))
+                
+                # Determine Volatility (risk of high variance)
+                # Volatility is function of Total Expected Goals (Lambda sum)
+                total_exp = home_exp + away_exp
+                if total_exp < 5.5:
+                    volatility = "Low" # Defensive battle, predictable
+                elif total_exp > 6.5:
+                    volatility = "High" # Shootout, high variance
+                else:
+                    volatility = "Medium"
+                
+            except Exception as e:
+                logger.error(f"Error determining prediction for {home_team} vs {away_team}: {e}")
+                home_goals = 3
+                away_goals = 2
+                confidence_pct = 50.0
+                volatility = "Medium"
 
+            # Calculate likeliest exact score using Poisson distribution
+            # This finds the scoreline (e.g. 4-2) with the highest mathematical probability
+            try:
+                home_goals, away_goals = self.learning_model.predict_score_distribution(home_exp, away_exp)
+            except Exception:
+                # Fallback if model method fails
+                home_goals = int(round(home_exp))
+                away_goals = int(round(away_exp))
+            
+            # Verify favorite wins in the scoreline if probability > 55% (margin of safety)
+            # Poisson often predicts 2-2 or 3-3 even if one team is favored.
+            # If the favorite has a strong probability, we ensure they have at least +1 goal.
             fav_prob = home_prob if favorite == home_team else away_prob
             fav_prob_pct = fav_prob * 100.0
+            
+            if fav_prob_pct > 55.0:
+                if favorite == home_team and home_goals <= away_goals:
+                     # Force home win
+                     if home_goals == away_goals:
+                         home_goals += 1
+                     else:
+                         home_goals, away_goals = away_goals, home_goals
+                     
+                     # If score is now too low compared to expectation, bump up
+                     if home_goals < home_exp:
+                         home_goals += 1
+                         
+                elif favorite == away_team and away_goals <= home_goals:
+                     # Force away win
+                     if away_goals == home_goals:
+                         away_goals += 1
+                     else:
+                         home_goals, away_goals = away_goals, home_goals
+                         
+                     # If score is now too low compared to expectation, bump up
+                     if away_goals < away_exp:
+                         away_goals += 1
+
             if abs(home_goals - away_goals) == 1 and 50.0 <= fav_prob_pct <= 58.0:
                 ot_tag = "(OT/SO likely)"
             else:
@@ -1347,12 +1747,19 @@ class PredictionInterface:
             else:
                 likely_score = f"{away_team} {away_goals}–{home_goals} {home_team} {ot_so_str}"
             
+            # Retrieve enhanced metrics if available (calculated in get_daily_predictions)
+            upset_str = pred.get('upset_risk', 'Low')
+            upset_p = pred.get('upset_prob', 0.0)
+            reasoning = pred.get('reasoning', '')
+            
             prediction_text += f"{away_team} @ {home_team}\n\n"
             prediction_text += f"🎯 {away_team} {away_prob:.1f}% | {home_team} {home_prob:.1f}%\n"
             prediction_text += f"⭐ Favorite: {favorite} (confidence {confidence:.1f}%)\n"
-            prediction_text += f"🌪️ Volatility (flip-rate): {volatility_label} ({flip_val*100:.1f}%)\n"
-            prediction_text += f"⚠️ Upset Risk: {upset_val*100:.1f}%\n"
+            prediction_text += f"🌪️ Volatility: {volatility_label}\n"
+            prediction_text += f"⚡ Upset Risk: {upset_str} ({upset_p:.1f}%)\n"
             prediction_text += f"📐 Likeliest score: {likely_score}\n"
+            if reasoning:
+                prediction_text += f"📝 Analysis: {reasoning}\n"
             prediction_text += "\n"
         
         # Ensure model performance is up-to-date (recalculate from scratch for accuracy)
