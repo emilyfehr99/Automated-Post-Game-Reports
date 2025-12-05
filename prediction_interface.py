@@ -868,6 +868,22 @@ class PredictionInterface:
                         confidence = p_away + (p_tie / 2)
                         winner = away_team
                         
+                    # Handle Ties (e.g. 2-2, 3-3) by assigning OT winner
+                    # This ensures "Final Score" validity (no ties) and variety (3-2 OT, 4-3 OT)
+                    if home_goals == away_goals:
+                        # Give the win to the team with higher probability
+                        if p_home >= p_away:
+                            home_goals += 1
+                            winner = home_team
+                            confidence = p_home + (p_tie / 2)
+                        else:
+                            away_goals += 1
+                            winner = away_team
+                            confidence = p_away + (p_tie / 2)
+                    elif abs(home_goals - away_goals) == 1 and (confidence * 100) <= 60.0:
+                         # Close game (e.g. 3-2) with low confidence -> Likely went to OT
+                         pass
+                        
                     confidence_pct = min(99.9, max(50.1, confidence * 100))
                     
                     # Determine Volatility
