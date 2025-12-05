@@ -2704,22 +2704,23 @@ class ImprovedSelfLearningModelV2:
         for pred in predictions:
             if not pred.get("actual_winner"):
                 continue
-                away_team = pred.get("away_team")
-                home_team = pred.get("home_team")
-                predicted_side = self._normalize_outcome_side(pred.get("predicted_winner"), away_team, home_team)
-                actual_side = self._normalize_outcome_side(pred.get("actual_winner"), away_team, home_team)
-                
+            
+            away_team = pred.get("away_team")
+            home_team = pred.get("home_team")
+            predicted_side = self._normalize_outcome_side(pred.get("predicted_winner"), away_team, home_team)
+            actual_side = self._normalize_outcome_side(pred.get("actual_winner"), away_team, home_team)
+            
             # Count games for each team (overall)
-                if away_team:
-                    team_games[away_team] = team_games.get(away_team, 0) + 1
-                if home_team:
-                    team_games[home_team] = team_games.get(home_team, 0) + 1
-                
-                # Count correct predictions for each team
-                predicted_team = self._side_to_team(predicted_side, away_team, home_team)
-                actual_team = self._side_to_team(actual_side, away_team, home_team)
-                if predicted_team and actual_team and predicted_team == actual_team:
-                    team_accuracy[actual_team] = team_accuracy.get(actual_team, 0) + 1
+            if away_team:
+                team_games[away_team] = team_games.get(away_team, 0) + 1
+            if home_team:
+                team_games[home_team] = team_games.get(home_team, 0) + 1
+            
+            # Count correct predictions for each team
+            predicted_team = self._side_to_team(predicted_side, away_team, home_team)
+            actual_team = self._side_to_team(actual_side, away_team, home_team)
+            if predicted_team and actual_team and predicted_team == actual_team:
+                team_accuracy[actual_team] = team_accuracy.get(actual_team, 0) + 1
 
             # --- First-goal historical stats (per team, by venue) ---
             metrics = pred.get("metrics_used") or {}

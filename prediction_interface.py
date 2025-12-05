@@ -1173,7 +1173,7 @@ class PredictionInterface:
                 ot_tag = "(regulation)"
             likely_score = f"{favorite} {max(home_goals, away_goals)}–{min(home_goals, away_goals)} {ot_tag}"
 
-            print(f'   ⭐ Favorite: {favorite} (confidence {confidence:.1f}%)')
+            print(f'   ⭐ Favorite: {favorite} (confidence {confidence_pct:.1f}%)')
             print(f'   🌪️ Volatility (flip-rate): {flip_label} ({flip_rate*100:.1f}%)')
             print(f'   ⚡ Upset risk: {upset:.1f}%')
             print(f'   📐 Likeliest score: {likely_score}')
