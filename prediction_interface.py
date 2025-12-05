@@ -18,6 +18,11 @@ from schedule_analyzer import ScheduleAnalyzer
 from datetime import datetime, timedelta
 from typing import Optional
 import pytz
+import logging
+
+# Set up logging
+logger = logging.getLogger(__name__)
+logging.basicConfig(level=logging.INFO)
 
 class PredictionInterface:
     def __init__(self):

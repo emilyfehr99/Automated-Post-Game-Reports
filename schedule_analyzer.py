@@ -1,12 +1,19 @@
 import json
 from datetime import datetime, timedelta
 import logging
+import os
 
 logger = logging.getLogger(__name__)
 
 class ScheduleAnalyzer:
-    def __init__(self, schedule_file="data/season_2025_2026_schedule.json"):
-        self.schedule_file = schedule_file
+    def __init__(self, schedule_file=None):
+        if schedule_file is None:
+            # Determine path relative to script location
+            script_dir = os.path.dirname(os.path.abspath(__file__))
+            self.schedule_file = os.path.join(script_dir, "data", "season_2025_2026_schedule.json")
+        else:
+            self.schedule_file = schedule_file
+            
         self.games_by_date = {} # Date string -> list of game dicts
         self.games_by_team = {} # Team Abbrev -> list of game dicts (sorted by date)
         self.load_schedule()
