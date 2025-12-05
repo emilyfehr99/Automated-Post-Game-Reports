@@ -226,6 +226,12 @@ class RealTeamStatsGenerator(TeamReportGenerator):
                     
                     metrics = self.calculate_game_metrics(game_data, team_id, is_home=True)
                     if metrics:
+                        # DEBUG: Print first game's metrics to verify opponent fields exist
+                        if i == 0:
+                            print(f"\n  DEBUG - Metrics keys: {list(metrics.keys())}")
+                            print(f"  DEBUG - opp_goals: {metrics.get('opp_goals', 'MISSING')}")
+                            print(f"  DEBUG - opp_xg: {metrics.get('opp_xg', 'MISSING')}\n")
+                        
                         for key in home_stats.keys():
                             if key != 'games':
                                 home_stats[key].append(metrics.get(key, 0))
@@ -285,9 +291,28 @@ class RealTeamStatsGenerator(TeamReportGenerator):
                 'away': away_stats
             }
             
+            # DEBUG: Check if opponent fields exist in arrays
+            print(f"  DEBUG - home_stats keys: {list(home_stats.keys())}")
+            print(f"  DEBUG - home opp_goals array length: {len(home_stats.get('opp_goals', []))}")
+            print(f"  DEBUG - home opp_xg array length: {len(home_stats.get('opp_xg', []))}")
+            
             print(f"\n✓ Completed {abbrev}: {len(home_stats['gs'])} home games, {len(away_stats['gs'])} away games")
         
         output = {"teams": teams_data}
+        
+        # DEBUG: Print what's actually about to be written
+        if teams_data:
+            first_team = list(teams_data.keys())[0]
+            print(f"\n\n=== FINAL DEBUG BEFORE JSON WRITE ===")
+            print(f"First team: {first_team}")
+            print(f"Home keys: {list(teams_data[first_team]['home'].keys())}")
+            print(f"Has opp_goals? {'opp_goals' in teams_data[first_team]['home']}")
+            print(f"Has opp_xg? {'opp_xg' in teams_data[first_team]['home']}")
+            if 'opp_goals' in teams_data[first_team]['home']:
+                print(f"opp_goals length: {len(teams_data[first_team]['home']['opp_goals'])}")
+            if 'opp_xg' in teams_data[first_team]['home']:
+                print(f"opp_xg length: {len(teams_data[first_team]['home']['opp_xg'])}")
+            print(f"=====================================\n")
         
         # Ensure the 'data' directory exists
         output_dir = os.path.dirname(self.output_file)
