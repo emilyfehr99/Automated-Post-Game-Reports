@@ -58,11 +58,11 @@ jobs:
 
       - name: Validate edge data exists
         run: |
-          if [ -f "nhl_edge_data.json" ]; then
-            echo "✅ Edge data file created successfully"
-            ls -l nhl_edge_data.json
+          if [ -f "data/nhl_edge_data.json" ]; then
+            echo "✅ Edge data file created successfully in data/"
+            ls -l data/nhl_edge_data.json
           else
-            echo "❌ Edge data file not found" && exit 1
+            echo "❌ Edge data file not found in data/" && exit 1
           fi
 
       - name: Run daily predictions
