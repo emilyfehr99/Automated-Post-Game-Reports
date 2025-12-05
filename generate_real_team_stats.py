@@ -135,6 +135,7 @@ class RealTeamStatsGenerator(TeamReportGenerator):
             'nzs': round(total_nzs, 2),
             'dzs': round(total_dzs, 2),
             'goals': goals_for,
+            'opp_goals': goals_against,  # ← NEW: Opponent goals (goals allowed)
             'shots': shots_for,
             'hits': total_hits,
             'blocked_shots': total_blocks,
@@ -152,6 +153,7 @@ class RealTeamStatsGenerator(TeamReportGenerator):
             'long_movement': round(long_movement, 2),
             'hdc': team_hdc,
             'hdca': opp_hdc,
+            'opp_xg': round(opp_xg, 2),  # ← NEW: Opponent xG (xG allowed)
             'period_dzs': round(total_dzs, 2)
         }
     
@@ -193,11 +195,11 @@ class RealTeamStatsGenerator(TeamReportGenerator):
             # Process home games
             home_stats = {
                 'gs': [], 'xg': [], 'corsi_pct': [], 'fenwick_pct': [], 'pdo': [],
-                'ozs': [], 'nzs': [], 'dzs': [], 'goals': [], 'shots': [],
+                'ozs': [], 'nzs': [], 'dzs': [], 'goals': [], 'opp_goals': [], 'shots': [],
                 'hits': [], 'blocked_shots': [], 'giveaways': [], 'takeaways': [],
                 'penalty_minutes': [], 'power_play_pct': [], 'penalty_kill_pct': [],
                 'faceoff_pct': [], 'nzt': [], 'nztsa': [], 'fc': [], 'rush': [],
-                'lat': [], 'long_movement': [], 'hdc': [], 'hdca': [], 'period_dzs': [],
+                'lat': [], 'long_movement': [], 'hdc': [], 'hdca': [], 'opp_xg': [], 'period_dzs': [],
                 'games': []
             }
             
@@ -237,11 +239,11 @@ class RealTeamStatsGenerator(TeamReportGenerator):
             # Process away games
             away_stats = {
                 'gs': [], 'xg': [], 'corsi_pct': [], 'fenwick_pct': [], 'pdo': [],
-                'ozs': [], 'nzs': [], 'dzs': [], 'goals': [], 'shots': [],
+                'ozs': [], 'nzs': [], 'dzs': [], 'goals': [], 'opp_goals': [], 'shots': [],
                 'hits': [], 'blocked_shots': [], 'giveaways': [], 'takeaways': [],
                 'penalty_minutes': [], 'power_play_pct': [], 'penalty_kill_pct': [],
                 'faceoff_pct': [], 'nzt': [], 'nztsa': [], 'fc': [], 'rush': [],
-                'lat': [], 'long_movement': [], 'hdc': [], 'hdca': [], 'period_dzs': [],
+                'lat': [], 'long_movement': [], 'hdc': [], 'hdca': [], 'opp_xg': [], 'period_dzs': [],
                 'games': []
             }
             

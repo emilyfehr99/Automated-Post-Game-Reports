@@ -734,14 +734,16 @@ class ImprovedSelfLearningModelV2:
             # Let's try to grab 'xG_against' from the venue data if it exists, otherwise fallback to index matching?
             # Actually, let's just use 'xg' from the Perspective of 'opp_goals' or look for 'opp_xg'.
             # If not found, use 2.0.
-            xg_against_avg = safe_mean(venue_data.get('xG_against', []), default=2.0)
-            if xg_against_avg == 2.0 and 'opp_xg' in venue_data:
-                 xg_against_avg = safe_mean(venue_data.get('opp_xg', []), default=2.0)
+            # NOTE: Now using real opponent stats from regenerated data file
             
             hdc_avg = safe_mean(venue_data.get('hdc', []), default=0.0)
             shots_avg = safe_mean(venue_data.get('shots', []), default=30.0)
             goals_avg = safe_mean(venue_data.get('goals', []), 2.0)
-            goals_against_avg = safe_mean(venue_data.get('goals_against', []), 3.0)
+        
+            # Opponent stats (goals allowed, xG against)
+            goals_against_avg = safe_mean(venue_data.get('opp_goals', []), 3.0)
+            xg_against_avg = safe_mean(venue_data.get('opp_xg', []), 3.0)
+            
             gs_avg = safe_mean(venue_data.get('gs', []), 0.0)
             
             # Advanced Metrics
