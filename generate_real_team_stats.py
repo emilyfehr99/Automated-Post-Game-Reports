@@ -21,6 +21,11 @@ from team_report_generator import TeamReportGenerator
 class RealTeamStatsGenerator(TeamReportGenerator):
     """Generate real team stats using TeamReportGenerator's calculation methods"""
     
+    def __init__(self):
+        super().__init__()
+        self.output_file = "data/season_2025_2026_team_stats.json"
+
+    
     def calculate_game_metrics(self, game_data, team_id, is_home):
         """Calculate all metrics for a single game"""
         venue_key = 'home' if is_home else 'away'
