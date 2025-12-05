@@ -58,6 +58,10 @@ src/
 
 # Keep win_probability_predictions_v2.json for dashboard predictions
 !win_probability_predictions_v2.json
+!data/win_probability_predictions_v2.json
+!data/season_2025_2026_schedule.json
+!data/season_2025_2026_team_stats.json
+!data/nhl_edge_data.json
 
 # Keep vercel.json for deployment configuration
 !nhl-analytics/vercel.json
