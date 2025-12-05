@@ -795,12 +795,15 @@ class ImprovedSelfLearningModelV2:
                     'hits_avg': hits_avg,
                     'blocked_shots_avg': blocked_shots_avg,
                     'takeaways_avg': takeaways_avg,
+                    'giveaways_avg': giveaways_avg,
+                    'penalty_minutes_avg': penalty_minutes_avg,
                     'pdo_avg': pdo_avg,
                     'ozs_avg': ozs_avg,
                     'recent_form': self._calculate_recent_form(team_key, venue, window=10),  # Venue-aware, last 10 games
                     'head_to_head': 0.5,  # Default
                     'rest_days_advantage': rest_adv,
                     'goalie_performance': goalie_perf,
+                    'games_played': games_played,
                     'confidence': self._calculate_confidence(games_played)
                 }
 

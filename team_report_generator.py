@@ -167,12 +167,20 @@ class TeamReportGenerator(PostGameReportGenerator):
     
     def get_team_games(self, team_abbrev: str, season_start_date: str = None):
         """Get all games for a team from predictions file"""
-        predictions_file = Path('data/win_probability_predictions_v2.json')
+        script_dir = Path(__file__).parent.absolute()
+        predictions_file = script_dir / 'data' / 'win_probability_predictions_v2.json'
+        
         if not predictions_file.exists():
             # Fallback to current directory for backward compatibility
-            predictions_file = Path('win_probability_predictions_v2.json')
+            predictions_file = script_dir / 'win_probability_predictions_v2.json'
         if not predictions_file.exists():
-            return []
+            # Try current working directory as last resort
+            if Path('data/win_probability_predictions_v2.json').exists():
+                predictions_file = Path('data/win_probability_predictions_v2.json')
+            elif Path('win_probability_predictions_v2.json').exists():
+                predictions_file = Path('win_probability_predictions_v2.json')
+            else:
+                return []
         
         with open(predictions_file, 'r') as f:
             data = json.load(f)

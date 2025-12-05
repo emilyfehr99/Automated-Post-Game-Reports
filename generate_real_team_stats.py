@@ -23,7 +23,9 @@ class RealTeamStatsGenerator(TeamReportGenerator):
     
     def __init__(self):
         super().__init__()
-        self.output_file = "data/season_2025_2026_team_stats.json"
+        # Use absolute path for robustness
+        script_dir = Path(__file__).parent.absolute()
+        self.output_file = script_dir / "data" / "season_2025_2026_team_stats.json"
 
     
     def calculate_game_metrics(self, game_data, team_id, is_home):
