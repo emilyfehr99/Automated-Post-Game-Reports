@@ -1152,8 +1152,10 @@ class PredictionInterface:
                      else:
                          home_goals, away_goals = away_goals, home_goals
                      
+                     
                      # If score is now too low compared to expectation, bump up
-                     if home_goals < home_exp:
+                     # Only if significant difference (> 0.5 goals) to avoid gratuitous bumps
+                     if home_goals < (home_exp - 0.5):
                          home_goals += 1
                          
                 elif favorite == away_team and away_goals <= home_goals:
@@ -1164,14 +1166,24 @@ class PredictionInterface:
                          home_goals, away_goals = away_goals, home_goals
                          
                      # If score is now too low compared to expectation, bump up
-                     if away_goals < away_exp:
+                     if away_goals < (away_exp - 0.5):
                          away_goals += 1
 
             if abs(home_goals - away_goals) == 1 and 50.0 <= fav_prob_pct <= 58.0:
                 ot_tag = "(OT/SO likely)"
             else:
                 ot_tag = "(regulation)"
-            likely_score = f"{favorite} {max(home_goals, away_goals)}–{min(home_goals, away_goals)} {ot_tag}"
+            
+            # Identify the score winner for display
+            if home_goals > away_goals:
+                score_winner = home_team
+            elif away_goals > home_goals:
+                score_winner = away_team
+            else:
+                score_winner = favorite # In a tie, list favorite first? Or just say [User Preference]
+
+            # Ensure we display "Winner High-Low"
+            likely_score = f"{score_winner} {max(home_goals, away_goals)}–{min(home_goals, away_goals)} {ot_tag}"
 
             print(f'   ⭐ Favorite: {favorite} (confidence {confidence_pct:.1f}%)')
             print(f'   🌪️ Volatility (flip-rate): {flip_label} ({flip_rate*100:.1f}%)')
