@@ -685,25 +685,34 @@ class PredictionInterface:
         Retains the exact score prediction logic but adds Conf/Vol context.
         """
         try:
-            today = datetime.now().strftime("%Y-%m-%d")
-            schedule_data = self.api_client.get_game_schedule(today)
+            # Get today's games
+            schedule = self.api.get_game_schedule()
+            if not schedule or 'gameWeek' not in schedule:
+                print("No schedule data found")
+                return []
+                
+            today_games = []
+            today_str = datetime.now().strftime("%Y-%m-%d")
             
+            for day in schedule['gameWeek']:
+                if day['date'] == today_str:
+                    today_games = day.get('games', [])
+                    break
+            
+            if not today_games:
+                print(f"No games found for {today_str}")
+                return []
+                
             predictions = []
             
-            # Extract games from schedule structure
-            games = []
-            if schedule_data and 'gameWeek' in schedule_data:
-                for day in schedule_data['gameWeek']:
-                    if day.get('date') == today:
-                        games = day.get('games', [])
-                        break
-            
-            for game in games:
+            for game in today_games:
                 try:
                     # Basic Info
                     game_id = game.get('id')
-                    home_team = game.get('homeTeam', {}).get('abbrev')
-                    away_team = game.get('awayTeam', {}).get('abbrev')
+                    home_data = game.get('homeTeam', {})
+                    away_data = game.get('awayTeam', {})
+                    home_team = home_data.get('abbrev')
+                    away_team = away_data.get('abbrev')
                     start_time = game.get('startTimeUTC')
                     
                     if not home_team or not away_team:
@@ -720,8 +729,8 @@ class PredictionInterface:
                     h_fatigue = False
                     a_fatigue = False
                     if self.schedule_analyzer:
-                        h_fatigue = self.schedule_analyzer.played_yesterday(home_team, today)
-                        a_fatigue = self.schedule_analyzer.played_yesterday(away_team, today)
+                        h_fatigue = self.schedule_analyzer.played_yesterday(home_team, today_str)
+                        a_fatigue = self.schedule_analyzer.played_yesterday(away_team, today_str)
                     
                     fatigue_factor = 0.95 
 
@@ -742,7 +751,7 @@ class PredictionInterface:
 
                     if self.schedule_analyzer:
                         # Home Recent
-                        h_games = self.schedule_analyzer.get_recent_games(home_team, today, n=10)
+                        h_games = self.schedule_analyzer.get_recent_games(home_team, today_str, n=10)
                         if h_games:
                              # Calculate averages
                             tot_g = 0; tot_ga = 0
@@ -761,7 +770,7 @@ class PredictionInterface:
                             h_recent_xg_ag = h_recent_g_ag
 
                         # Away Recent
-                        a_games = self.schedule_analyzer.get_recent_games(away_team, today, n=10)
+                        a_games = self.schedule_analyzer.get_recent_games(away_team, today_str, n=10)
                         if a_games:
                             tot_g = 0; tot_ga = 0
                             for g in a_games:
