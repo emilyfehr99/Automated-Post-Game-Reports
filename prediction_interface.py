@@ -1138,13 +1138,13 @@ class PredictionInterface:
                 home_goals = int(round(home_exp))
                 away_goals = int(round(away_exp))
             
-            # Verify favorite wins in the scoreline if probability > 55% (margin of safety)
+            # Verify favorite wins in the scoreline if probability > 60% (margin of safety)
             # Poisson often predicts 2-2 or 3-3 even if one team is favored.
             # If the favorite has a strong probability, we ensure they have at least +1 goal.
             fav_prob = home_prob if favorite == home_team else away_prob
             fav_prob_pct = fav_prob * 100.0
             
-            if fav_prob_pct > 55.0:
+            if fav_prob_pct > 60.0:
                 if favorite == home_team and home_goals <= away_goals:
                      # Force home win
                      if home_goals == away_goals:
@@ -1169,7 +1169,7 @@ class PredictionInterface:
                      if away_goals < (away_exp - 0.5):
                          away_goals += 1
 
-            if abs(home_goals - away_goals) == 1 and 50.0 <= fav_prob_pct <= 58.0:
+            if abs(home_goals - away_goals) <= 1 and fav_prob_pct <= 60.0:
                 ot_tag = "(OT/SO likely)"
             else:
                 ot_tag = "(regulation)"
