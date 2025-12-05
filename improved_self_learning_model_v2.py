@@ -49,16 +49,27 @@ class ImprovedSelfLearningModelV2:
         self.deterministic = False
         # Build goalie start history (team -> [(date, goalie_name)])
         # Load persisted goalie history if present, else build from predictions
-        self.goalie_history = self.model_data.get('goalie_history') or self._build_goalie_history()
         
         # Improved learning parameters
         self.learning_rate = 0.03  # Slightly higher to adapt a bit faster
         self.momentum = 0.8  # Momentum for weight updates
         self.min_games_for_update = 3
         self.weight_clip_range = (0.03, 0.65)  # Allow more expressiveness per metric
+        self.games_data = [] # List of tuples: (home_exp, away_exp, home_goals, away_goals)
+        
+        # Determine paths relative to script location
+        self.script_dir = Path(__file__).parent.absolute()
+        self.predictions_file = self.script_dir / "data" / "win_probability_predictions_v2.json"
+        
+        # Load existing model data
+        self.model_data = self.load_model_data()
+        
+        # Build goalie start history (team -> [(date, goalie_name)])
+        # Load persisted goalie history if present, else build from predictions
+        self.goalie_history = self.model_data.get('goalie_history') or self._build_goalie_history()
         
         # Team performance tracking - use new season stats format
-        self.team_stats_file = Path("season_2025_2026_team_stats.json")
+        self.team_stats_file = Path("data/season_2025_2026_team_stats.json")
         self.historical_stats_file = Path("historical_seasons_team_stats.json")
         
         # Load current season stats

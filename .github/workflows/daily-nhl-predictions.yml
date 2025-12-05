@@ -80,12 +80,12 @@ jobs:
           echo "✅ Team stats generation complete"
           
           # Check if file was created (script saves to parent directory)
-          if [ -f "../season_2025_2026_team_stats.json" ]; then
-            echo "✅ Team stats file created in parent directory"
-            ls -lh ../season_2025_2026_team_stats.json
-          elif [ -f "season_2025_2026_team_stats.json" ]; then
-            echo "✅ Team stats file created in current directory"
-            ls -lh season_2025_2026_team_stats.json
+          if [ -f "../data/season_2025_2026_team_stats.json" ]; then
+            echo "✅ Team stats file created in parent/data directory"
+            ls -lh ../data/season_2025_2026_team_stats.json
+          elif [ -f "data/season_2025_2026_team_stats.json" ]; then
+            echo "✅ Team stats file created in current/data directory"
+            ls -lh data/season_2025_2026_team_stats.json
           else
             echo "⚠️  Team stats file not found - checking for errors"
           fi
@@ -98,34 +98,34 @@ jobs:
           # Track files to commit
           FILES_TO_COMMIT=""
           
-          # Add nhl_edge_data.json if it exists (in repo root)
-          if [ -f "nhl_edge_data.json" ]; then
-            echo "📦 Force adding nhl_edge_data.json (overriding .gitignore)..."
-            git add --force nhl_edge_data.json
-            FILES_TO_COMMIT="$FILES_TO_COMMIT nhl_edge_data.json"
+          # Add nhl_edge_data.json if it exists (in data dir)
+          if [ -f "data/nhl_edge_data.json" ]; then
+            echo "📦 Force adding nhl_edge_data.json..."
+            git add --force data/nhl_edge_data.json
+            FILES_TO_COMMIT="$FILES_TO_COMMIT data/nhl_edge_data.json"
             echo "✅ nhl_edge_data.json added"
           else
-            echo "⚠️  nhl_edge_data.json not found"
+            echo "⚠️  nhl_edge_data.json not found in data/"
           fi
           
-          # Add win_probability_predictions_v2.json if it exists (in repo root)
-          if [ -f "win_probability_predictions_v2.json" ]; then
+          # Add win_probability_predictions_v2.json if it exists (in data dir)
+          if [ -f "data/win_probability_predictions_v2.json" ]; then
             echo "📦 Adding win_probability_predictions_v2.json..."
-            git add --force win_probability_predictions_v2.json
-            FILES_TO_COMMIT="$FILES_TO_COMMIT win_probability_predictions_v2.json"
+            git add --force data/win_probability_predictions_v2.json
+            FILES_TO_COMMIT="$FILES_TO_COMMIT data/win_probability_predictions_v2.json"
             echo "✅ win_probability_predictions_v2.json added"
           else
-            echo "⚠️  win_probability_predictions_v2.json not found"
+            echo "⚠️  win_probability_predictions_v2.json not found in data/"
           fi
           
-          # Add season_2025_2026_team_stats.json if it exists (saved to repo root by script)
-          if [ -f "season_2025_2026_team_stats.json" ]; then
+          # Add season_2025_2026_team_stats.json if it exists
+          if [ -f "data/season_2025_2026_team_stats.json" ]; then
             echo "📦 Adding season_2025_2026_team_stats.json..."
-            git add --force season_2025_2026_team_stats.json
-            FILES_TO_COMMIT="$FILES_TO_COMMIT season_2025_2026_team_stats.json"
+            git add --force data/season_2025_2026_team_stats.json
+            FILES_TO_COMMIT="$FILES_TO_COMMIT data/season_2025_2026_team_stats.json"
             echo "✅ season_2025_2026_team_stats.json added"
           else
-            echo "⚠️  season_2025_2026_team_stats.json not found"
+            echo "⚠️  season_2025_2026_team_stats.json not found in data/"
           fi
           
           # Commit if there are changes

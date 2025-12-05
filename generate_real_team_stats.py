@@ -280,16 +280,16 @@ class RealTeamStatsGenerator(TeamReportGenerator):
         
         output = {"teams": teams_data}
         
-        # Save to root directory (parent of automated-post-game-reports)
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        root_dir = os.path.dirname(script_dir)
-        output_file = os.path.join(root_dir, 'season_2025_2026_team_stats.json')
+        # Ensure the 'data' directory exists
+        output_dir = os.path.dirname(self.output_file)
+        if output_dir and not os.path.exists(output_dir):
+            os.makedirs(output_dir)
         
-        with open(output_file, 'w') as f:
+        with open(self.output_file, 'w') as f:
             json.dump(output, f, indent=2)
         
         print(f"\n{'='*60}")
-        print(f"✓ Generated {output_file} with real calculated data!")
+        print(f"✓ Generated {self.output_file} with real calculated data!")
         print(f"{'='*60}")
 
 if __name__ == "__main__":

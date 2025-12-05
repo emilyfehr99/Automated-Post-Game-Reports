@@ -17,7 +17,7 @@ class DailyEdgeDataScraper:
         self.headers = {
             'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
         }
-        self.data_file = "nhl_edge_data.json"
+        self.data_file = "data/nhl_edge_data.json"
     
     def scrape_daily_edge_data(self):
         """Scrape fresh NHL Edge data daily"""
@@ -76,6 +76,9 @@ class DailyEdgeDataScraper:
                 'player_data': edge_data,
                 'team_stats': team_edge_stats
             }
+            
+            # Ensure data directory exists
+            os.makedirs(os.path.dirname(self.data_file), exist_ok=True)
             
             with open(self.data_file, 'w') as f:
                 json.dump(output_data, f, indent=2)

@@ -5,7 +5,7 @@ import logging
 logger = logging.getLogger(__name__)
 
 class ScheduleAnalyzer:
-    def __init__(self, schedule_file="season_2025_2026_schedule.json"):
+    def __init__(self, schedule_file="data/season_2025_2026_schedule.json"):
         self.schedule_file = schedule_file
         self.games_by_date = {} # Date string -> list of game dicts
         self.games_by_team = {} # Team Abbrev -> list of game dicts (sorted by date)

@@ -137,10 +137,9 @@ class PostGameReportGenerator:
     def create_header_image(self, game_data, game_id=None):
         """Create the modern header image for the report using the user's header with team names"""
         try:
-            # Use the user's header image from project directory
-            # Use path relative to script location
+            # Use exact filenames from root (now in assets/)
             script_dir = os.path.dirname(os.path.abspath(__file__))
-            header_path = os.path.join(script_dir, "Header.jpg")
+            header_path = os.path.join(script_dir, "assets", "Header.jpg")
             
             if os.path.exists(header_path):
                 # Create a custom header with team names overlaid
@@ -3680,9 +3679,9 @@ class PostGameReportGenerator:
             script_dir = os.path.dirname(__file__)
         except Exception:
             script_dir = "."
-        abs_background = os.path.join(script_dir, "Paper.png")
-        cwd_background = "Paper.png"
-        background_path = abs_background if os.path.exists(abs_background) else cwd_background
+           # Try to find the Paper.png background
+        abs_background = os.path.join(script_dir, "assets", "Paper.png")
+        cwd_background = "assets/Paper.png"
         if os.path.exists(background_path):
             print(f"Using custom page template with background: {os.path.abspath(background_path)}")
             # Create a custom document with background template
