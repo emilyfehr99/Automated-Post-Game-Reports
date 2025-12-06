@@ -1,7 +1,7 @@
 {
   "season": "2025-2026",
-  "generated_at": "2025-12-06T23:16:01.703022",
-  "total_games": 158,
+  "generated_at": "2025-12-06T23:40:30.204084",
+  "total_games": 160,
   "teams": {
     "VGK": {
       "games_played": 18,
@@ -110,6 +110,24 @@
       "xg_avg": 2.3718552905261014,
       "hdc_avg": 1.0,
       "gs_avg": 3.85
+    },
+    "CBJ": {
+      "games_played": 1,
+      "xg_sum": 2.436820488205001,
+      "hdc_sum": 7.0,
+      "gs_sum": 6.125000000000001,
+      "xg_avg": 2.436820488205001,
+      "hdc_avg": 7.0,
+      "gs_avg": 6.125000000000001
+    },
+    "FLA": {
+      "games_played": 1,
+      "xg_sum": 4.34844108536685,
+      "hdc_sum": 11.0,
+      "gs_sum": 8.175,
+      "xg_avg": 4.34844108536685,
+      "hdc_avg": 11.0,
+      "gs_avg": 8.175
     }
   }
 }
