@@ -138,6 +138,19 @@ class PostGameReportGenerator:
                 boldItalic='RussoOne'
             )
             
+            # CRITICAL FIX: The error "Can't map determine family/bold/italic for russoone"
+            # indicates ReportLab is looking up the lowercase name. We must explicitly map it.
+            addMapping('russoone', 0, 0, 'RussoOne')
+            addMapping('russoone', 0, 1, 'RussoOne')
+            addMapping('russoone', 1, 0, 'RussoOne')
+            addMapping('russoone', 1, 1, 'RussoOne')
+            
+            # Also map the original case just to be safe
+            addMapping('RussoOne', 0, 0, 'RussoOne')
+            addMapping('RussoOne', 0, 1, 'RussoOne')
+            addMapping('RussoOne', 1, 0, 'RussoOne')
+            addMapping('RussoOne', 1, 1, 'RussoOne')
+            
         except:
             try:
                 # Fallback to Helvetica-Bold which is always available
