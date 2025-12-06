@@ -117,47 +117,55 @@ class PostGameReportGenerator:
     
     def register_fonts(self):
         """Register custom fonts with ReportLab"""
+        self.font_name = 'Helvetica'  # Default fallback
         try:
             # Use path relative to script location
             script_dir = os.path.dirname(os.path.abspath(__file__))
-            font_path = os.path.join(script_dir, 'RussoOne-Regular.ttf')
             
-            if os.path.exists(font_path):
-                pdfmetrics.registerFont(TTFont('RussoOne', font_path))
+            # Check assets folder first (preferred location)
+            font_path_assets = os.path.join(script_dir, 'assets', 'RussoOne-Regular.ttf')
+            font_path_root = os.path.join(script_dir, 'RussoOne-Regular.ttf')
+            
+            font_path = None
+            if os.path.exists(font_path_assets):
+                font_path = font_path_assets
+            elif os.path.exists(font_path_root):
+                font_path = font_path_root
             else:
-                # Try user's Library folder as fallback
-                pdfmetrics.registerFont(TTFont('RussoOne', '/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf'))
+                # Try user's Library folder as fallback (local dev)
+                local_path = '/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf'
+                if os.path.exists(local_path):
+                    font_path = local_path
             
-            # Register the font family explicitly to map all variants to the single font file
-            # This prevents ReportLab from trying to auto-determine bold/italic variants
-            pdfmetrics.registerFontFamily(
-                'RussoOne',
-                normal='RussoOne',
-                bold='RussoOne',
-                italic='RussoOne',
-                boldItalic='RussoOne'
-            )
-            
-            # CRITICAL FIX: The error "Can't map determine family/bold/italic for russoone"
-            # indicates ReportLab is looking up the lowercase name. We must explicitly map it.
-            addMapping('russoone', 0, 0, 'RussoOne')
-            addMapping('russoone', 0, 1, 'RussoOne')
-            addMapping('russoone', 1, 0, 'RussoOne')
-            addMapping('russoone', 1, 1, 'RussoOne')
-            
-            # Also map the original case just to be safe
-            addMapping('RussoOne', 0, 0, 'RussoOne')
-            addMapping('RussoOne', 0, 1, 'RussoOne')
-            addMapping('RussoOne', 1, 0, 'RussoOne')
-            addMapping('RussoOne', 1, 1, 'RussoOne')
-            
-        except:
-            try:
-                # Fallback to Helvetica-Bold which is always available
-                pdfmetrics.registerFont(TTFont('RussoOne', 'Helvetica-Bold'))
-            except:
-                # Use default font if all else fails
-                pass
+            if font_path:
+                print(f"DEBUG: Found font at {font_path}")
+                pdfmetrics.registerFont(TTFont('RussoOne', font_path))
+                
+                # Register the font family explicitly
+                pdfmetrics.registerFontFamily(
+                    'RussoOne',
+                    normal='RussoOne',
+                    bold='RussoOne',
+                    italic='RussoOne',
+                    boldItalic='RussoOne'
+                )
+                
+                # CRITICAL FIX: Explicit alias mapping
+                addMapping('russoone', 0, 0, 'RussoOne')
+                addMapping('russoone', 0, 1, 'RussoOne')
+                addMapping('russoone', 1, 0, 'RussoOne')
+                addMapping('russoone', 1, 1, 'RussoOne')
+                
+                # Also register 'RussoOne-Regular' as that is used in table styles
+                pdfmetrics.registerFont(TTFont('RussoOne-Regular', font_path))
+                
+                self.font_name = 'RussoOne'
+                print("DEBUG: Successfully registered RussoOne font")
+            else:
+                print("WARNING: RussoOne font file not found. Using Helvetica.")
+                
+        except Exception as e:
+            print(f"WARNING: Could not register font: {e}. Using Helvetica.")
     
     def create_header_image(self, game_data, game_id=None):
         """Create the modern header image for the report using the user's header with team names"""
@@ -196,11 +204,23 @@ class PostGameReportGenerator:
                     # Try to load Russo One font first (better for text rendering)
                     # Try to load font from script directory first
                     script_dir = os.path.dirname(os.path.abspath(__file__))
-                    font_path = os.path.join(script_dir, 'RussoOne-Regular.ttf')
-                    if os.path.exists(font_path):
-                        font = ImageFont.truetype(font_path, 110)
-                    else:
-                        font = ImageFont.truetype("/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf", 110)
+                    font_paths = [
+                        os.path.join(script_dir, 'assets', 'RussoOne-Regular.ttf'),
+                        os.path.join(script_dir, 'RussoOne-Regular.ttf'),
+                        "/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf"
+                    ]
+                    
+                    font = None
+                    for path in font_paths:
+                        if os.path.exists(path):
+                            try:
+                                font = ImageFont.truetype(path, 110)
+                                break
+                            except:
+                                continue
+                    
+                    if font is None:
+                        raise Exception("Font not found")
                 except:
                     try:
                         # Fallback to DaggerSquare font
@@ -348,11 +368,23 @@ class PostGameReportGenerator:
                 try:
                     # Try to load font from script directory first
                     script_dir = os.path.dirname(os.path.abspath(__file__))
-                    font_path = os.path.join(script_dir, 'RussoOne-Regular.ttf')
-                    if os.path.exists(font_path):
-                        subtitle_font = ImageFont.truetype(font_path, 43)
-                    else:
-                        subtitle_font = ImageFont.truetype("/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf", 43)
+                    font_paths = [
+                        os.path.join(script_dir, 'assets', 'RussoOne-Regular.ttf'),
+                        os.path.join(script_dir, 'RussoOne-Regular.ttf'),
+                        "/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf"
+                    ]
+                    
+                    subtitle_font = None
+                    for path in font_paths:
+                        if os.path.exists(path):
+                            try:
+                                subtitle_font = ImageFont.truetype(path, 43)
+                                break
+                            except:
+                                continue
+                    
+                    if subtitle_font is None:
+                        raise Exception("Font not found")
                 except:
                     try:
                         subtitle_font = ImageFont.truetype("/Users/emilyfehr8/Library/Fonts/DAGGERSQUARE.otf", 43)
@@ -476,7 +508,7 @@ class PostGameReportGenerator:
             textColor=colors.darkblue,
             alignment=TA_CENTER,
             spaceAfter=20,
-            fontName='RussoOne'
+            fontName=self.font_name
         )
         
         # Subtitle style
@@ -487,7 +519,7 @@ class PostGameReportGenerator:
             textColor=colors.darkblue,
             alignment=TA_CENTER,
             spaceAfter=15,
-            fontName='RussoOne'
+            fontName=self.font_name
         )
         
         # Section header style
@@ -498,7 +530,7 @@ class PostGameReportGenerator:
             textColor=colors.darkred,
             alignment=TA_CENTER,
             spaceAfter=10,
-            fontName='RussoOne'
+            fontName=self.font_name
         )
         
         # Normal text style
@@ -509,7 +541,7 @@ class PostGameReportGenerator:
             textColor=colors.black,
             alignment=TA_CENTER,
             spaceAfter=6,
-            fontName='RussoOne'
+            fontName=self.font_name
         )
         
         # Stat text style
@@ -520,7 +552,7 @@ class PostGameReportGenerator:
             textColor=colors.darkgreen,
             alignment=TA_CENTER,
             spaceAfter=4,
-            fontName='RussoOne'
+            fontName=self.font_name
         )
     
     def create_score_summary(self, game_data):
@@ -3704,10 +3736,18 @@ class PostGameReportGenerator:
             script_dir = os.path.dirname(__file__)
         except Exception:
             script_dir = "."
-           # Try to find the Paper.png background
+            
+        # Try to find the Paper.png background
         abs_background = os.path.join(script_dir, "assets", "Paper.png")
         cwd_background = "assets/Paper.png"
-        if os.path.exists(background_path):
+        
+        background_path = None
+        if os.path.exists(abs_background):
+            background_path = abs_background
+        elif os.path.exists(cwd_background):
+            background_path = cwd_background
+            
+        if background_path and os.path.exists(background_path):
             print(f"Using custom page template with background: {os.path.abspath(background_path)}")
             # Create a custom document with background template
             from reportlab.platypus.frames import Frame
