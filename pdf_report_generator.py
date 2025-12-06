@@ -2780,7 +2780,7 @@ class PostGameReportGenerator:
             
             # Add note about Game Score
             story.append(Spacer(1, 10))
-            story.append(Paragraph("<i>Top players ranked by Game Score (GS) - a comprehensive metric combining goals, assists, shots, hits, and other key performance indicators.</i>", self.normal_style))
+            story.append(Paragraph("Top players ranked by Game Score (GS) - a comprehensive metric combining goals, assists, shots, hits, and other key performance indicators.", self.normal_style))
         
         story.append(Spacer(1, 20))
         return story

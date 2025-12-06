@@ -150,35 +150,46 @@ class GitHubActionsRunner:
             print(f"⚠️  Error updating team stats: {e}")
     
     def get_todays_games(self):
-        """Get all games from today (based on Central Time)"""
+        """Get all games from today and yesterday (based on Central Time)
+        
+        Checks both dates because:
+        - Games can finish late at night (after midnight CT)
+        - When running early morning (3-6 AM), we want yesterday's completed games
+        - When running later, we want today's completed games
+        """
         import pytz
+        from datetime import timedelta
         
         # Use proper Central Time (handles DST automatically)
         central_tz = pytz.timezone('US/Central')
         central_now = datetime.now(central_tz)
         today = central_now.strftime('%Y-%m-%d')
+        yesterday = (central_now - timedelta(days=1)).strftime('%Y-%m-%d')
         
         print(f"🕐 Current time (CT): {central_now.strftime('%Y-%m-%d %I:%M:%S %p')}")
-        print(f"📅 Checking games from: {today}")
+        print(f"📅 Checking games from: {yesterday} and {today}")
         
         all_games = []
         games_by_date = {}  # Track which date each game belongs to
         
-        # Only check today's games
-        try:
-            schedule = self.client.get_game_schedule(today)
-            if schedule and 'gameWeek' in schedule:
-                for day in schedule['gameWeek']:
-                    if day.get('date') == today and 'games' in day:
-                        for game in day['games']:
-                            all_games.append(game)
-                            # Store the date for this game
-                            games_by_date[str(game.get('id'))] = today
-                        print(f"   Found {len(day['games'])} games on {today}")
-        except Exception as e:
-            print(f"❌ Error fetching schedule for {today}: {e}")
-            import traceback
-            traceback.print_exc()
+        # Check both yesterday and today to catch games that finished overnight
+        dates_to_check = [yesterday, today]
+        
+        for check_date in dates_to_check:
+            try:
+                schedule = self.client.get_game_schedule(check_date)
+                if schedule and 'gameWeek' in schedule:
+                    for day in schedule['gameWeek']:
+                        if day.get('date') == check_date and 'games' in day:
+                            for game in day['games']:
+                                all_games.append(game)
+                                # Store the date for this game
+                                games_by_date[str(game.get('id'))] = check_date
+                            print(f"   Found {len(day['games'])} games on {check_date}")
+            except Exception as e:
+                print(f"❌ Error fetching schedule for {check_date}: {e}")
+                import traceback
+                traceback.print_exc()
         
         # Store games_by_date for later use
         self.games_by_date = games_by_date
@@ -554,7 +565,7 @@ class GitHubActionsRunner:
             
             if is_already_processed:
                 print(f"      ⏭️  Already processed, skipping")
-            elif game_state in ['FINAL', 'OFF'] and is_today:
+            elif game_state in ['FINAL', 'OFF']:
                 print(f"      ✅ NEW COMPLETED GAME!")
                 newly_completed.append({
                     'id': game_id,
