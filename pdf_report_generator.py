@@ -10,6 +10,7 @@ from reportlab.graphics.shapes import Drawing, String
 from reportlab.graphics.charts.linecharts import HorizontalLineChart
 from reportlab.pdfbase import pdfmetrics
 from reportlab.pdfbase.ttfonts import TTFont
+from reportlab.lib.fonts import addMapping
 from reportlab.pdfgen import canvas
 from advanced_metrics_analyzer import AdvancedMetricsAnalyzer
 from improved_xg_model import ImprovedXGModel
@@ -126,6 +127,14 @@ class PostGameReportGenerator:
             else:
                 # Try user's Library folder as fallback
                 pdfmetrics.registerFont(TTFont('RussoOne-Regular', '/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf'))
+            
+            # Register explicit mappings for bold/italic to use the regular font
+            # This prevents "Can't map determine family/bold/italic" errors
+            addMapping('RussoOne-Regular', 0, 0, 'RussoOne-Regular')  # normal
+            addMapping('RussoOne-Regular', 0, 1, 'RussoOne-Regular')  # italic
+            addMapping('RussoOne-Regular', 1, 0, 'RussoOne-Regular')  # bold
+            addMapping('RussoOne-Regular', 1, 1, 'RussoOne-Regular')  # bold & italic
+            
         except:
             try:
                 # Fallback to Helvetica-Bold which is always available
