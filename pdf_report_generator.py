@@ -123,22 +123,22 @@ class PostGameReportGenerator:
             font_path = os.path.join(script_dir, 'RussoOne-Regular.ttf')
             
             if os.path.exists(font_path):
-                pdfmetrics.registerFont(TTFont('RussoOne-Regular', font_path))
+                pdfmetrics.registerFont(TTFont('RussoOne', font_path))
             else:
                 # Try user's Library folder as fallback
-                pdfmetrics.registerFont(TTFont('RussoOne-Regular', '/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf'))
+                pdfmetrics.registerFont(TTFont('RussoOne', '/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf'))
             
             # Register explicit mappings for bold/italic to use the regular font
             # This prevents "Can't map determine family/bold/italic" errors
-            addMapping('RussoOne-Regular', 0, 0, 'RussoOne-Regular')  # normal
-            addMapping('RussoOne-Regular', 0, 1, 'RussoOne-Regular')  # italic
-            addMapping('RussoOne-Regular', 1, 0, 'RussoOne-Regular')  # bold
-            addMapping('RussoOne-Regular', 1, 1, 'RussoOne-Regular')  # bold & italic
+            addMapping('RussoOne', 0, 0, 'RussoOne')  # normal
+            addMapping('RussoOne', 0, 1, 'RussoOne')  # italic
+            addMapping('RussoOne', 1, 0, 'RussoOne')  # bold
+            addMapping('RussoOne', 1, 1, 'RussoOne')  # bold & italic
             
         except:
             try:
                 # Fallback to Helvetica-Bold which is always available
-                pdfmetrics.registerFont(TTFont('RussoOne-Regular', 'Helvetica-Bold'))
+                pdfmetrics.registerFont(TTFont('RussoOne', 'Helvetica-Bold'))
             except:
                 # Use default font if all else fails
                 pass
@@ -460,7 +460,7 @@ class PostGameReportGenerator:
             textColor=colors.darkblue,
             alignment=TA_CENTER,
             spaceAfter=20,
-            fontName='RussoOne-Regular'
+            fontName='RussoOne'
         )
         
         # Subtitle style
@@ -471,7 +471,7 @@ class PostGameReportGenerator:
             textColor=colors.darkblue,
             alignment=TA_CENTER,
             spaceAfter=15,
-            fontName='RussoOne-Regular'
+            fontName='RussoOne'
         )
         
         # Section header style
@@ -482,7 +482,7 @@ class PostGameReportGenerator:
             textColor=colors.darkred,
             alignment=TA_CENTER,
             spaceAfter=10,
-            fontName='RussoOne-Regular'
+            fontName='RussoOne'
         )
         
         # Normal text style
@@ -493,7 +493,7 @@ class PostGameReportGenerator:
             textColor=colors.black,
             alignment=TA_CENTER,
             spaceAfter=6,
-            fontName='RussoOne-Regular'
+            fontName='RussoOne'
         )
         
         # Stat text style
@@ -504,7 +504,7 @@ class PostGameReportGenerator:
             textColor=colors.darkgreen,
             alignment=TA_CENTER,
             spaceAfter=4,
-            fontName='RussoOne-Regular'
+            fontName='RussoOne'
         )
     
     def create_score_summary(self, game_data):
