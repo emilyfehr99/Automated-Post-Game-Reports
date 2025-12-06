@@ -349,6 +349,49 @@ class ImprovedSelfLearningModelV2:
             return prob
         return self._apply_calibration_points(prob, points)
         
+    def _ensure_team_stats_compatibility(self):
+        """Ensure all loaded team stats have required fields for backward compatibility"""
+        required_fields = [
+            "opponents", "games", "goals", "goals_for", "goals_against",
+            "shots", "shots_for", "shots_against",
+            "xg", "xG_for", "xG_against", "opp_xg",
+            "hdc", "hdc_for", "hdc_against",
+            "gs", "corsi_pct", "power_play_pct", "pp_pct", "penalty_kill_pct",
+            "faceoff_pct", "fo_pct", "pp_goals", "pp_attempts",
+            "faceoff_wins", "faceoff_total",
+            "hits", "blocks", "blocked_shots", "giveaways", "takeaways",
+            "pim", "penalty_minutes",
+            "lateral", "longitudinal",
+            "nzt", "nztsa", "ozs", "nzs", "dzs",
+            "fc", "rush",
+            "clutch_score", "third_period_goals", "one_goal_game",
+            "scored_first", "opponent_scored_first",
+            "period_shots", "period_corsi_pct", "period_pp_goals",
+            "period_pp_attempts", "period_pim", "period_hits",
+            "period_fo_pct", "period_blocks", "period_giveaways",
+            "period_takeaways", "period_gs", "period_xg",
+            "period_nzt", "period_nztsa", "period_ozs",
+            "period_nzs", "period_dzs", "period_fc", "period_rush"
+        ]
+        
+        for team_abbrev, venues in self.team_stats.items():
+            if not isinstance(venues, dict):
+                continue
+            for venue in ["home", "away"]:
+                if venue not in venues:
+                    venues[venue] = {}
+                venue_data = venues[venue]
+                
+                # Add missing fields with appropriate default values
+                for field in required_fields:
+                    if field not in venue_data:
+                        if field == "last_goalie":
+                            venue_data[field] = None
+                        elif field.startswith("period_"):
+                            venue_data[field] = []
+                        else:
+                            venue_data[field] = []
+        
     def load_model_data(self) -> Dict:
         """Load existing model data and predictions"""
         if self.predictions_file.exists():
@@ -358,6 +401,8 @@ class ImprovedSelfLearningModelV2:
                     # Load team stats from main file if available
                     if "team_stats" in data:
                         self.team_stats = data["team_stats"]
+                        # Ensure backward compatibility - add missing fields to loaded stats
+                        self._ensure_team_stats_compatibility()
                     data.setdefault("calibration_points", [])
                     data.setdefault("calibration_metadata", {})
                     data.setdefault("calibration_by_bucket", {})
