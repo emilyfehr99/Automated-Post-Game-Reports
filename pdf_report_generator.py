@@ -128,12 +128,15 @@ class PostGameReportGenerator:
                 # Try user's Library folder as fallback
                 pdfmetrics.registerFont(TTFont('RussoOne', '/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf'))
             
-            # Register explicit mappings for bold/italic to use the regular font
-            # This prevents "Can't map determine family/bold/italic" errors
-            addMapping('RussoOne', 0, 0, 'RussoOne')  # normal
-            addMapping('RussoOne', 0, 1, 'RussoOne')  # italic
-            addMapping('RussoOne', 1, 0, 'RussoOne')  # bold
-            addMapping('RussoOne', 1, 1, 'RussoOne')  # bold & italic
+            # Register the font family explicitly to map all variants to the single font file
+            # This prevents ReportLab from trying to auto-determine bold/italic variants
+            pdfmetrics.registerFontFamily(
+                'RussoOne',
+                normal='RussoOne',
+                bold='RussoOne',
+                italic='RussoOne',
+                boldItalic='RussoOne'
+            )
             
         except:
             try:
