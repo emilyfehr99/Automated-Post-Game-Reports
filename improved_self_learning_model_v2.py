@@ -2473,7 +2473,8 @@ class ImprovedSelfLearningModelV2:
         
         if len(recent_predictions) < self.min_games_for_update:
             logger.info(f"Not enough recent games for update ({len(recent_predictions)} < {self.min_games_for_update})")
-            return
+            # Return current model performance even if we don't update weights
+            return self.get_model_performance()
         
         # Calculate weight updates based on recent performance
         weight_updates = self._calculate_weight_updates(recent_predictions)
