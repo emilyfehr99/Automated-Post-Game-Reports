@@ -1108,52 +1108,86 @@ class PredictionInterface:
                 a_recent_xg_ag = a_recent_form.get('xg_against_avg', a_xg_ag_season)
                 a_recent_g_ag = a_recent_form.get('goals_against_avg', a_g_ag_season)
                 
-                # --- ULTRA-SIMPLIFIED DIRECT xG MODEL ---
-                # Trust the venue-specific data with minimal manipulation
+                # --- COMPREHENSIVE MODEL USING ALL AVAILABLE DATA ---
+                # Get ALL venue-specific stats (not just xG!)
                 
-                # Get raw venue-specific stats (already separated by home/away)
-                h_xg_raw = float(home_perf.get("xg_avg", 3.0))
-                h_goals_raw = float(home_perf.get("goals_avg", 3.0))
-                h_ga_raw = float(home_perf.get("goals_against_avg", 3.0))
+                # OFFENSE METRICS
+                h_xg = float(home_perf.get("xg_avg", 3.0))
+                h_goals = float(home_perf.get("goals_avg", 3.0))
+                h_hdc = float(home_perf.get("hdc_avg", 7.0))  # High danger chances
+                h_shots = float(home_perf.get("shots_avg", 30.0))
                 
-                a_xg_raw = float(away_perf.get("xg_avg", 3.0))
-                a_goals_raw = float(away_perf.get("goals_avg", 3.0))
-                a_ga_raw = float(away_perf.get("goals_against_avg", 3.0))
+                a_xg = float(away_perf.get("xg_avg", 3.0))
+                a_goals = float(away_perf.get("goals_avg", 3.0))
+                a_hdc = float(away_perf.get("hdc_avg", 7.0))
+                a_shots = float(away_perf.get("shots_avg", 30.0))
                 
-                # Optional: Blend in recent form if available (90% season / 10% recent)
-                # This is very light - we trust the full season data
+                # DEFENSE METRICS (what opponents score against them)
+                h_ga = float(home_perf.get("goals_against_avg", 3.0))
+                h_xga = float(home_perf.get("xg_against_avg", 3.0))
+                
+                a_ga = float(away_perf.get("goals_against_avg", 3.0))
+                a_xga = float(away_perf.get("xg_against_avg", 3.0))
+                
+                # POSSESSION & CONTROL METRICS
+                h_corsi = float(home_perf.get("corsi_avg", 50.0))
+                h_faceoff = float(home_perf.get("faceoff_avg", 50.0))
+                
+                a_corsi = float(away_perf.get("corsi_avg", 50.0))
+                a_faceoff = float(away_perf.get("faceoff_avg", 50.0))
+                
+                # Optional: Blend in recent form (90% season / 10% recent)
                 h_recent_form = self.learning_model._calculate_recent_form_from_stats(home_team.upper(), "home", n=5)
                 a_recent_form = self.learning_model._calculate_recent_form_from_stats(away_team.upper(), "away", n=5)
                 
                 if h_recent_form:
-                    h_xg = (h_xg_raw * 0.90) + (h_recent_form.get('xg_avg', h_xg_raw) * 0.10)
-                    h_goals = (h_goals_raw * 0.90) + (h_recent_form.get('goals_avg', h_goals_raw) * 0.10)
-                else:
-                    h_xg = h_xg_raw
-                    h_goals = h_goals_raw
+                    h_xg = (h_xg * 0.90) + (h_recent_form.get('xg_avg', h_xg) * 0.10)
+                    h_goals = (h_goals * 0.90) + (h_recent_form.get('goals_avg', h_goals) * 0.10)
                     
                 if a_recent_form:
-                    a_xg = (a_xg_raw * 0.90) + (a_recent_form.get('xg_avg', a_xg_raw) * 0.10)
-                    a_goals = (a_goals_raw * 0.90) + (a_recent_form.get('goals_avg', a_goals_raw) * 0.10)
-                else:
-                    a_xg = a_xg_raw
-                    a_goals = a_goals_raw
+                    a_xg = (a_xg * 0.90) + (a_recent_form.get('xg_avg', a_xg) * 0.10)
+                    a_goals = (a_goals * 0.90) + (a_recent_form.get('goals_avg', a_goals) * 0.10)
                 
-                # Light fatigue penalty (back-to-back games only)
+                # Fatigue penalty (back-to-back games)
                 if h_fatigue:
                     h_xg *= 0.95
-                    h_goals *= 0.95
                 if a_fatigue:
                     a_xg *= 0.95
-                    a_goals *= 0.95
                 
-                # --- DIRECT xG-BASED PREDICTION ---
-                # Use 90% xG / 10% actual goals (trust xG heavily - it has more variance!)
-                # Each team's output is their own offense, not affected by opponent
-                home_exp = (h_xg * 0.90) + (h_goals * 0.10) + 0.20  # Slightly larger home ice bonus
-                away_exp = (a_xg * 0.90) + (a_goals * 0.10)
+                # --- MULTI-FACTOR SCORING MODEL ---
                 
-                # Minimal bounds (allow full range 1.5-6.5)
+                # 1. OFFENSIVE CAPABILITY (60% of prediction)
+                # - xG: Expected quality (70%)
+                # - Goals: Actual finishing (20%)
+                # - HDC: Shot quality bonus (10%)
+                h_offense = (h_xg * 0.70) + (h_goals * 0.20) + ((h_hdc / 10.0) * 0.10)
+                a_offense = (a_xg * 0.70) + (a_goals * 0.20) + ((a_hdc / 10.0) * 0.10)
+                
+                # 2. DEFENSIVE WEAKNESS (30% - opponent will exploit this)
+                # What the opponent typically allows
+                h_defense_weakness = (h_xga * 0.70) + (h_ga * 0.30)
+                a_defense_weakness = (a_xga * 0.70) + (a_ga * 0.30)
+                
+                # 3. POSSESSION ADVANTAGE (10%)
+                # Teams that control puck get more chances
+                h_possession = ((h_corsi - 50.0) * 0.015) + ((h_faceoff - 50.0) * 0.010)
+                a_possession = ((a_corsi - 50.0) * 0.015) + ((a_faceoff - 50.0) * 0.010)
+                
+                # --- FINAL PREDICTION ---
+                # Home team scores based on:
+                # - Their offense (60%)
+                # - Away team's defensive weakness (30%)
+                # - Their possession advantage (10%)
+                # - Home ice advantage (+0.20)
+                home_exp = (h_offense * 0.60) + (a_defense_weakness * 0.30) + h_possession + 0.20
+                
+                # Away team scores based on:
+                # - Their offense (60%)
+                # - Home team's defensive weakness (30%)
+                # - Their possession advantage (10%)
+                away_exp = (a_offense * 0.60) + (h_defense_weakness * 0.30) + a_possession
+                
+                # Reasonable bounds
                 home_exp = max(1.5, min(6.5, home_exp))
                 away_exp = max(1.5, min(6.5, away_exp))
 
