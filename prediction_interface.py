@@ -1148,10 +1148,10 @@ class PredictionInterface:
                     a_goals *= 0.95
                 
                 # --- DIRECT xG-BASED PREDICTION ---
-                # Use 70% xG / 30% actual goals (trust expected goals more than results)
+                # Use 90% xG / 10% actual goals (trust xG heavily - it has more variance!)
                 # Each team's output is their own offense, not affected by opponent
-                home_exp = (h_xg * 0.70) + (h_goals * 0.30) + 0.15  # Small home ice bonus
-                away_exp = (a_xg * 0.70) + (a_goals * 0.30)
+                home_exp = (h_xg * 0.90) + (h_goals * 0.10) + 0.20  # Slightly larger home ice bonus
+                away_exp = (a_xg * 0.90) + (a_goals * 0.10)
                 
                 # Minimal bounds (allow full range 1.5-6.5)
                 home_exp = max(1.5, min(6.5, home_exp))
