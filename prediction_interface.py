@@ -1108,120 +1108,54 @@ class PredictionInterface:
                 a_recent_xg_ag = a_recent_form.get('xg_against_avg', a_xg_ag_season)
                 a_recent_g_ag = a_recent_form.get('goals_against_avg', a_g_ag_season)
                 
-                # --- BLENDED METRICS (Mostly Season, Light Recent Trend) ---
-                h_xg_blend = (h_xg_season * season_weight) + (h_recent_xg * recency_weight)
-                h_goals_blend = (h_goals_season * season_weight) + (h_recent_goals * recency_weight)
-                h_xg_ag_blend = (h_xg_ag_season * season_weight) + (h_recent_xg_ag * recency_weight)
-                h_g_ag_blend = (h_g_ag_season * season_weight) + (h_recent_g_ag * recency_weight)
+                # --- ULTRA-SIMPLIFIED DIRECT xG MODEL ---
+                # Trust the venue-specific data with minimal manipulation
                 
-                a_xg_blend = (a_xg_season * season_weight) + (a_recent_xg * recency_weight)
-                a_goals_blend = (a_goals_season * season_weight) + (a_recent_goals * recency_weight)
-                a_xg_ag_blend = (a_xg_ag_season * season_weight) + (a_recent_xg_ag * recency_weight)
-                a_g_ag_blend = (a_g_ag_season * season_weight) + (a_recent_g_ag * recency_weight)
+                # Get raw venue-specific stats (already separated by home/away)
+                h_xg_raw = float(home_perf.get("xg_avg", 3.0))
+                h_goals_raw = float(home_perf.get("goals_avg", 3.0))
+                h_ga_raw = float(home_perf.get("goals_against_avg", 3.0))
                 
-                # --- ENHANCED COMPREHENSIVE MODEL ---
-                # 1. Base Offense: 50% xG / 30% Goals / 20% HDC (shot quality matters!)
-                h_hdc = float(home_perf.get("hdc_avg", 0.0))
-                a_hdc = float(away_perf.get("hdc_avg", 0.0))
+                a_xg_raw = float(away_perf.get("xg_avg", 3.0))
+                a_goals_raw = float(away_perf.get("goals_avg", 3.0))
+                a_ga_raw = float(away_perf.get("goals_against_avg", 3.0))
                 
-                # Normalize HDC to goals scale (typically 6-12 HDC per game = 0.5-1.0 goals worth)
-                h_hdc_contribution = (h_hdc / 10.0) * 0.8  # ~8-10 HDC ≈ 0.8 goals
-                a_hdc_contribution = (a_hdc / 10.0) * 0.8
+                # Optional: Blend in recent form if available (90% season / 10% recent)
+                # This is very light - we trust the full season data
+                h_recent_form = self.learning_model._calculate_recent_form_from_stats(home_team.upper(), "home", n=5)
+                a_recent_form = self.learning_model._calculate_recent_form_from_stats(away_team.upper(), "away", n=5)
                 
-                h_base = (h_xg_blend * 0.50) + (h_goals_blend * 0.30) + (h_hdc_contribution * 0.20)
-                a_base = (a_xg_blend * 0.50) + (a_goals_blend * 0.30) + (a_hdc_contribution * 0.20)
+                if h_recent_form:
+                    h_xg = (h_xg_raw * 0.90) + (h_recent_form.get('xg_avg', h_xg_raw) * 0.10)
+                    h_goals = (h_goals_raw * 0.90) + (h_recent_form.get('goals_avg', h_goals_raw) * 0.10)
+                else:
+                    h_xg = h_xg_raw
+                    h_goals = h_goals_raw
+                    
+                if a_recent_form:
+                    a_xg = (a_xg_raw * 0.90) + (a_recent_form.get('xg_avg', a_xg_raw) * 0.10)
+                    a_goals = (a_goals_raw * 0.90) + (a_recent_form.get('goals_avg', a_goals_raw) * 0.10)
+                else:
+                    a_xg = a_xg_raw
+                    a_goals = a_goals_raw
                 
-                # 2. Base Defense (opponent xG, goals, and shot prevention)
-                h_def_base = (h_xg_ag_blend * 0.60) + (h_g_ag_blend * 0.40)
-                a_def_base = (a_xg_ag_blend * 0.60) + (a_g_ag_blend * 0.40)
-                
-                # 3. Shooting % and Save % Quality Adjustments
-                h_shots = float(home_perf.get("shots_avg", 30.0))
-                a_shots = float(away_perf.get("shots_avg", 30.0))
-                
-                # Shooting % = Goals / Shots (league avg ~10%)
-                h_sh_pct = (h_goals_blend / h_shots * 100.0) if h_shots > 0 else 10.0
-                a_sh_pct = (a_goals_blend / a_shots * 100.0) if a_shots > 0 else 10.0
-                
-                # Quality shooting adjustment (+/- 0.2 goals for elite/poor shooting)
-                h_shooting_adj = (h_sh_pct - 10.0) * 0.02  # Each % above 10% = +0.02 goals
-                a_shooting_adj = (a_sh_pct - 10.0) * 0.02
-                
-                # Apply Fatigue Penalties
+                # Light fatigue penalty (back-to-back games only)
                 if h_fatigue:
-                    h_base *= fatigue_factor
-                    h_def_base *= (2 - fatigue_factor)
+                    h_xg *= 0.95
+                    h_goals *= 0.95
                 if a_fatigue:
-                    a_base *= fatigue_factor
-                    a_def_base *= (2 - fatigue_factor)
+                    a_xg *= 0.95
+                    a_goals *= 0.95
                 
-                # 4. Advanced Situational Factors
-                # a) Possession - Corsi + Faceoffs
-                h_corsi = float(home_perf.get("corsi_avg", 50.0))
-                a_corsi = float(away_perf.get("corsi_avg", 50.0))
-                h_fo = float(home_perf.get("faceoff_avg", 50.0))
-                a_fo = float(away_perf.get("faceoff_avg", 50.0))
+                # --- DIRECT xG-BASED PREDICTION ---
+                # Use 70% xG / 30% actual goals (trust expected goals more than results)
+                # Each team's output is their own offense, not affected by opponent
+                home_exp = (h_xg * 0.70) + (h_goals * 0.30) + 0.15  # Small home ice bonus
+                away_exp = (a_xg * 0.70) + (a_goals * 0.30)
                 
-                # Possession boost: good faceoffs + corsi = more puck time = more goals
-                h_poss_factor = ((h_corsi - 50.0) * 0.012) + ((h_fo - 50.0) * 0.008)  # Combined 0.020 max impact
-                a_poss_factor = ((a_corsi - 50.0) * 0.012) + ((a_fo - 50.0) * 0.008)
-                
-                # b) Zone Starts - more offensive zone starts = more opportunities
-                h_ozs = float(home_perf.get("ozs_avg", 15.0))
-                a_ozs = float(away_perf.get("ozs_avg", 15.0))
-                h_ozs_adj = (h_ozs - 15.0) * 0.015  # Each extra OZ start = +0.015 goals
-                a_ozs_adj = (a_ozs - 15.0) * 0.015
-                
-                # c) Turnovers - Takeaways vs Giveaways (puck control)
-                h_ta = float(home_perf.get("takeaways_avg", 5.0))
-                h_ga = float(home_perf.get("giveaways_avg", 10.0))
-                a_ta = float(away_perf.get("takeaways_avg", 5.0))
-                a_ga = float(away_perf.get("giveaways_avg", 10.0))
-                
-                h_turnover_diff = h_ta - h_ga  # Positive = good puck control
-                a_turnover_diff = a_ta - a_ga
-                h_turnover_adj = h_turnover_diff * 0.015  # Each +/- = 0.015 goals
-                a_turnover_adj = a_turnover_diff * 0.015
-                
-                # d) Special Teams (Power Play vs Penalty Kill matchup)
-                h_pp = float(home_perf.get("power_play_avg", 20.0))
-                a_pk = float(away_perf.get("penalty_kill_avg", 80.0))
-                h_st_adj = ((h_pp - 20.0) + (80.0 - a_pk)) * 0.008  # Reduced slightly
-                
-                a_pp = float(away_perf.get("power_play_avg", 20.0))
-                h_pk = float(home_perf.get("penalty_kill_avg", 80.0))
-                a_st_adj = ((a_pp - 20.0) + (80.0 - h_pk)) * 0.008
-                
-                # e) Defensive Effort - Blocked Shots (sacrifice for team)
-                h_blocks = float(home_perf.get("blocked_shots_avg", 15.0))
-                a_blocks = float(away_perf.get("blocked_shots_avg", 15.0))
-                h_block_adj = (h_blocks - 15.0) * 0.010  # More blocks = better defense
-                a_block_adj = (a_blocks - 15.0) * 0.010
-                
-                # --- FINAL EXPECTED GOALS CALCULATION ---
-                # Own offense (60%) + Opponent defense (40%) + All situational adjustments
-                home_exp_base = (h_base * 0.60) + (a_def_base * 0.40)
-                home_exp = (home_exp_base + 
-                           h_shooting_adj +      # Shooting talent
-                           h_poss_factor +       # Possession (corsi + faceoffs)
-                           h_ozs_adj +           # Zone starts
-                           h_turnover_adj +      # Puck control
-                           h_st_adj +            # Special teams
-                           -a_block_adj +        # Opponent shot blocking (negative for offense)
-                           0.12)                 # Home ice advantage
-                
-                away_exp_base = (a_base * 0.60) + (h_def_base * 0.40)
-                away_exp = (away_exp_base + 
-                           a_shooting_adj + 
-                           a_poss_factor + 
-                           a_ozs_adj + 
-                           a_turnover_adj + 
-                           a_st_adj + 
-                           -h_block_adj)
-                
-                # Realistic bounds (allow 1.0-6.5 range)
-                home_exp = max(1.0, min(6.5, home_exp))
-                away_exp = max(1.0, min(6.5, away_exp))
+                # Minimal bounds (allow full range 1.5-6.5)
+                home_exp = max(1.5, min(6.5, home_exp))
+                away_exp = max(1.5, min(6.5, away_exp))
 
                 logger.info(f"5-Factor Model (Optimized) {home_team} vs {away_team}:")
             # Predict exact score using Poisson Distribution
