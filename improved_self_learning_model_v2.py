@@ -779,6 +779,68 @@ class ImprovedSelfLearningModelV2:
             else:
                 logger.warning(f"   ⚠️  venue_data is EMPTY for {team_key} @ {venue}!")
                 
+            # Check if venue_data has actual game data
+            has_venue_data = venue_data and len(venue_data.get('games', [])) > 0
+            
+            if not has_venue_data:
+                logger.warning(f"   ⚠️  No venue-specific data for {team_key} @ {venue}, using aggregate team stats as fallback")
+                # Try to use aggregate stats from standings/API
+                try:
+                    import requests
+                    url = 'https://api-web.nhle.com/v1/standings/now'
+                    response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=5)
+                    if response.status_code == 200:
+                        standings = response.json()
+                        for team_entry in standings.get('standings', []):
+                            team_abbrev_obj = team_entry.get('teamAbbrev', {})
+                            abbrev = team_abbrev_obj.get('default', '') if isinstance(team_abbrev_obj, dict) else str(team_abbrev_obj)
+                            
+                            if abbrev == team_key:
+                                # Use aggregate team stats from standings
+                                gp = team_entry.get('gamesPlayed', 1)
+                                goals_for = team_entry.get('goalFor', 0)
+                                goals_against = team_entry.get('goalAgainst', 0)
+                                
+                                # Rough estimates based on league averages
+                                goals_avg = (goals_for / gp) if gp > 0 else 2.5
+                                goals_against_avg = (goals_against / gp) if gp > 0 else 2.5
+                                
+                                # Estimate xG as goals * 0.9-1.1 (teams usually score ~90-110% of xG)
+                                xg_avg = goals_avg * 1.0
+                                xg_against_avg = goals_against_avg * 1.0
+                                
+                                logger.info(f"   📊 Using aggregate fallback: xg={xg_avg:.2f}, goals={goals_avg:.2f}, GA={goals_against_avg:.2f}")
+                                
+                                return {
+                                    'xg_avg': xg_avg,
+                                    'goals_avg': goals_avg,
+                                    'goals_against_avg': goals_against_avg,
+                                    'xg_against_avg': xg_against_avg,
+                                    'hdc_avg': xg_avg * 0.3,  # HDC is roughly 30% of xG
+                                    'shots_avg': 30.0,
+                                    'gs_avg': xg_avg * 1.5,  # Rough Game Score estimate
+                                    'corsi_avg': 50.0,
+                                    'power_play_avg': 20.0,
+                                    'penalty_kill_avg': 80.0,
+                                    'faceoff_avg': 50.0,
+                                    'hits_avg': 20.0,
+                                    'blocked_shots_avg': 15.0,
+                                    'takeaways_avg': 7.0,
+                                    'giveaways_avg': 7.0,
+                                    'penalty_minutes_avg': 8.0,
+                                    'pdo_avg': 100.0,
+                                    'ozs_avg': 15.0,
+                                    'recent_form': 0.5,
+                                    'head_to_head': 0.5,
+                                    'rest_days_advantage': 0.0,
+                                    'goalie_performance': 0.0,
+                                    'games_played': gp,
+                                    'confidence': 0.5
+                                }
+                except Exception as e:
+                    logger.error(f"   ❌ Fallback API call failed: {e}")
+                
+            # Continue with venue-specific data if available
             # Compute situational factors
             rest_adv = self._calculate_rest_days_advantage(team_key, venue)
             goalie_perf = self._calculate_goalie_performance(team_key, venue)
