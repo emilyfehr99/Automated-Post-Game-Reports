@@ -755,30 +755,10 @@ class ImprovedSelfLearningModelV2:
         """Get comprehensive team performance data from new team stats format"""
         team_key = team.upper()
         
-        # DEBUG: Log what we're looking for and what we have
-        logger.info(f"🔍 get_team_performance called: team={team_key}, venue={venue}")
-        logger.info(f"   Team stats file: {self.team_stats_file}, exists={self.team_stats_file.exists()}")
-        logger.info(f"   Loaded teams: {list(self.team_stats.keys())[:5] if self.team_stats else 'NONE'}...")
-        
         # Prefer current season stats if available
         if team_key in self.team_stats:
-            logger.info(f"   ✅ Found {team_key} in team_stats")
-            logger.info(f"   Venues available: {list(self.team_stats[team_key].keys())}")
-            
             venue_data = self.team_stats[team_key].get(venue, {})
-            logger.info(f"   Venue '{venue}' data keys: {list(venue_data.keys())[:10] if venue_data else 'EMPTY DICT'}")
             
-            if venue_data:
-                # Show sample data for debugging
-                xg_array = venue_data.get('xg', [])
-                opp_xg_array = venue_data.get('opp_xg', [])
-                goals_array = venue_data.get('goals', [])
-                logger.info(f"   xg array: len={len(xg_array)}, sample={xg_array[:3] if xg_array else 'EMPTY'}")
-                logger.info(f"   opp_xg array: len={len(opp_xg_array)}, sample={opp_xg_array[:3] if opp_xg_array else 'EMPTY'}")
-                logger.info(f"   goals array: len={len(goals_array)}, sample={goals_array[:3] if goals_array else 'EMPTY'}")
-            else:
-                logger.warning(f"   ⚠️  venue_data is EMPTY for {team_key} @ {venue}!")
-                
             # Check if venue_data has actual game data
             has_venue_data = venue_data and len(venue_data.get('games', [])) > 0
             

@@ -1057,144 +1057,122 @@ class PredictionInterface:
             else:
                 flip_label = "HIGH"
 
-            # Likeliest score using ADVANCED team + venue + situational data
-            try:
+                # Likeliest score using ADVANCED team + venue + situational data
+                try:
                 home_perf = self.learning_model.get_team_performance(home_team, venue="home")
                 away_perf = self.learning_model.get_team_performance(away_team, venue="away")
                 
-                # --- ADVANCED ACCURACY LOGIC: FATIGUE & RECENCY ---
+                # --- START WITH VENUE-SPECIFIC SEASON STATS (most reliable) ---
                 today_str = datetime.now().strftime('%Y-%m-%d')
                 
-                # 1. Schedule Fatigue (Back-to-Back)
+                # 1. Schedule Fatigue (Back-to-Back) - lighter penalty
                 h_fatigue = False
                 a_fatigue = False
                 if self.schedule_analyzer:
                     h_fatigue = self.schedule_analyzer.played_yesterday(home_team, today_str)
                     a_fatigue = self.schedule_analyzer.played_yesterday(away_team, today_str)
                 
-                fatigue_factor = 0.95  # 5% penalty for fatigue
+                fatigue_factor = 0.97  # 3% penalty (was 5%)
                 
-                # 2. Recency Bias (Last 10 Games) - Blend 60% Season / 40% Recent
-                recency_weight = 0.40
-                season_weight = 0.60
+                # 2. Use venue-specific season stats as PRIMARY source (80%)
+                # Only blend in recent form if available (20%)
+                recency_weight = 0.20  # Reduced from 0.40
+                season_weight = 0.80   # Increased from 0.60
                 
-                # Initialize recent stats with season averages as fallback
-                h_recent_xg = float(home_perf.get("xg_avg", 3.0))
-                h_recent_goals = float(home_perf.get("goals_avg", 3.0))
-                h_recent_xg_ag = float(home_perf.get("xg_against_avg", 3.0))
-                h_recent_g_ag = float(home_perf.get("goals_against_avg", 3.0))
-                
-                a_recent_xg = float(away_perf.get("xg_avg", 3.0))
-                a_recent_goals = float(away_perf.get("goals_avg", 3.0))
-                a_recent_xg_ag = float(away_perf.get("xg_against_avg", 3.0))
-                a_recent_g_ag = float(away_perf.get("goals_against_avg", 3.0))
-                
-                # Calculate recent form if schedule analyzer available
-                if self.schedule_analyzer:
-                    h_games = self.schedule_analyzer.get_recent_games(home_team, today_str, n=10)
-                    if h_games and len(h_games) > 0:
-                        tot_g = 0
-                        tot_ga = 0
-                        for g in h_games:
-                            is_home = (g.get('homeTeam', {}).get('abbrev') == home_team)
-                            if is_home:
-                                tot_g += g.get('homeTeam', {}).get('score', 0)
-                                tot_ga += g.get('awayTeam', {}).get('score', 0)
-                            else:
-                                tot_g += g.get('awayTeam', {}).get('score', 0)
-                                tot_ga += g.get('homeTeam', {}).get('score', 0)
-                        h_recent_goals = tot_g / len(h_games)
-                        h_recent_g_ag = tot_ga / len(h_games)
-                        h_recent_xg = h_recent_goals  # Proxy
-                        h_recent_xg_ag = h_recent_g_ag
-                    
-                    a_games = self.schedule_analyzer.get_recent_games(away_team, today_str, n=10)
-                    if a_games and len(a_games) > 0:
-                        tot_g = 0
-                        tot_ga = 0
-                        for g in a_games:
-                            is_home = (g.get('homeTeam', {}).get('abbrev') == away_team)
-                            if is_home:
-                                tot_g += g.get('homeTeam', {}).get('score', 0)
-                                tot_ga += g.get('awayTeam', {}).get('score', 0)
-                            else:
-                                tot_g += g.get('awayTeam', {}).get('score', 0)
-                                tot_ga += g.get('homeTeam', {}).get('score', 0)
-                        a_recent_goals = tot_g / len(a_games)
-                        a_recent_g_ag = tot_ga / len(a_games)
-                        a_recent_xg = a_recent_goals
-                        a_recent_xg_ag = a_recent_g_ag
-                
-                # --- BLENDED METRICS (Season + Recent Form) ---
+                # Get season stats from venue-specific performance
                 h_xg_season = float(home_perf.get("xg_avg", 3.0))
                 h_goals_season = float(home_perf.get("goals_avg", 3.0))
-                h_xg_blend = (h_xg_season * season_weight) + (h_recent_xg * recency_weight)
-                h_goals_blend = (h_goals_season * season_weight) + (h_recent_goals * recency_weight)
-                
                 h_xg_ag_season = float(home_perf.get("xg_against_avg", 3.0))
                 h_g_ag_season = float(home_perf.get("goals_against_avg", 3.0))
+               a_xg_season = float(away_perf.get("xg_avg", 3.0))
+                a_goals_season = float(away_perf.get("goals_avg", 3.0))
+                a_xg_ag_season = float(away_perf.get("xg_against_avg", 3.0))
+                a_g_ag_season = float(away_perf.get("goals_against_avg", 3.0))
+                
+                # Initialize recent stats to season (will override if schedule_analyzer works)
+                h_recent_xg = h_xg_season
+                h_recent_goals = h_goals_season
+                h_recent_xg_ag = h_xg_ag_season
+                h_recent_g_ag = h_g_ag_season
+                
+                a_recent_xg = a_xg_season
+                a_recent_goals = a_goals_season
+                a_recent_xg_ag = a_xg_ag_season
+                a_recent_g_ag = a_g_ag_season
+                
+                # Try to get recent form (last 5 games only, not 10)
+                if self.schedule_analyzer:
+                    try:
+                        h_games = self.schedule_analyzer.get_recent_games(home_team, today_str, n=5)
+                        if h_games and len(h_games) >= 3:  # Need at least 3 games for trend
+                            tot_g = sum(g.get('homeTeam' if g.get('homeTeam', {}).get('abbrev') == home_team else 'awayTeam', {}).get('score', 0) for g in h_games)
+                            tot_ga = sum(g.get('awayTeam' if g.get('homeTeam', {}).get('abbrev') == home_team else 'homeTeam', {}).get('score', 0) for g in h_games)
+                            h_recent_goals = tot_g / len(h_games)
+                            h_recent_g_ag = tot_ga / len(h_games)
+                            h_recent_xg = h_recent_goals  # Proxy
+                            h_recent_xg_ag = h_recent_g_ag
+                        
+                        a_games = self.schedule_analyzer.get_recent_games(away_team, today_str, n=5)
+                        if a_games and len(a_games) >= 3:
+                            tot_g = sum(g.get('homeTeam' if g.get('homeTeam', {}).get('abbrev') == away_team else 'awayTeam', {}).get('score', 0) for g in a_games)
+                            tot_ga = sum(g.get('awayTeam' if g.get('homeTeam', {}).get('abbrev') == away_team else 'homeTeam', {}).get('score', 0) for g in a_games)
+                            a_recent_goals = tot_g / len(a_games)
+                            a_recent_g_ag = tot_ga / len(a_games)
+                            a_recent_xg = a_recent_goals
+                            a_recent_xg_ag = a_recent_g_ag
+                    except Exception:
+                        pass  # Just use season stats
+                
+                # --- BLENDED METRICS (Mostly Season, Light Recent Trend) ---
+                h_xg_blend = (h_xg_season * season_weight) + (h_recent_xg * recency_weight)
+                h_goals_blend = (h_goals_season * season_weight) + (h_recent_goals * recency_weight)
                 h_xg_ag_blend = (h_xg_ag_season * season_weight) + (h_recent_xg_ag * recency_weight)
                 h_g_ag_blend = (h_g_ag_season * season_weight) + (h_recent_g_ag * recency_weight)
                 
-                a_xg_season = float(away_perf.get("xg_avg", 3.0))
-                a_goals_season = float(away_perf.get("goals_avg", 3.0))
                 a_xg_blend = (a_xg_season * season_weight) + (a_recent_xg * recency_weight)
                 a_goals_blend = (a_goals_season * season_weight) + (a_recent_goals * recency_weight)
-                
-                a_xg_ag_season = float(away_perf.get("xg_against_avg", 3.0))
-                a_g_ag_season = float(away_perf.get("goals_against_avg", 3.0))
                 a_xg_ag_blend = (a_xg_ag_season * season_weight) + (a_recent_xg_ag * recency_weight)
                 a_g_ag_blend = (a_g_ag_season * season_weight) + (a_recent_g_ag * recency_weight)
                 
-                # --- 5-FACTOR ADVANCED MODEL (OPTIMIZED: 55.34% Accuracy) ---
-                # Base Offense (Quality + Finishing): 53% xG / 47% Actual Goals
-                h_base = (h_xg_blend * 0.53) + (h_goals_blend * 0.47)
-                a_base = (a_xg_blend * 0.53) + (a_goals_blend * 0.47)
+                # --- SIMPLIFIED 3-FACTOR MODEL ---
+                # Base Offense: 60% xG / 40% Goals (trust xG more)
+                h_base = (h_xg_blend * 0.60) + (h_goals_blend * 0.40)
+                a_base = (a_xg_blend * 0.60) + (a_goals_blend * 0.40)
                 
                 # Base Defense
-                h_def_base = (h_xg_ag_blend * 0.53) + (h_g_ag_blend * 0.47)
-                a_def_base = (a_xg_ag_blend * 0.53) + (a_g_ag_blend * 0.47)
+                h_def_base = (h_xg_ag_blend * 0.60) + (h_g_ag_blend * 0.40)
+                a_def_base = (a_xg_ag_blend * 0.60) + (a_g_ag_blend * 0.40)
                 
-                # Apply Fatigue Penalties
+                # Apply Fatigue Penalties (lighter)
                 if h_fatigue:
-                    h_base *= fatigue_factor  # Offense suffers
-                    h_def_base *= (2 - fatigue_factor)  # Defense worse
+                    h_base *= fatigue_factor
+                    h_def_base *= (2 - fatigue_factor)
                 if a_fatigue:
                     a_base *= fatigue_factor
                     a_def_base *= (2 - fatigue_factor)
                 
-                # Possession Adjustment (Corsi): Weight 0.026 per point
+                # Possession & Special Teams adjustments (reduced to preserve variety)
                 h_corsi = float(home_perf.get("corsi_avg", 50.0))
                 a_corsi = float(away_perf.get("corsi_avg", 50.0))
-                h_poss_adj = (h_corsi - 50.0) * 0.026
-                a_poss_adj = (a_corsi - 50.0) * 0.026
+                h_poss_adj = (h_corsi - 50.0) * 0.015  # Reduced from 0.026
+                a_poss_adj = (a_corsi - 50.0) * 0.015
                 
-                # Special Teams Matchup: Weight 0.017 per point diff
                 h_pp = float(home_perf.get("power_play_avg", 20.0))
                 a_pk = float(away_perf.get("penalty_kill_avg", 80.0))
-                h_st_adj = ((h_pp - 20.0) + (80.0 - a_pk)) * 0.017
+                h_st_adj = ((h_pp - 20.0) + (80.0 - a_pk)) * 0.010  # Reduced from 0.017
                 
                 a_pp = float(away_perf.get("power_play_avg", 20.0))
                 h_pk = float(home_perf.get("penalty_kill_avg", 80.0))
-                a_st_adj = ((a_pp - 20.0) + (80.0 - h_pk)) * 0.017
+                a_st_adj = ((a_pp - 20.0) + (80.0 - h_pk)) * 0.010
                 
-                # PDO (Luck): Weight 0.002
-                h_pdo = float(home_perf.get("pdo_avg", 100.0))
-                a_pdo = float(away_perf.get("pdo_avg", 100.0))
-                h_luck_adj = (100.0 - h_pdo) * 0.002
-                a_luck_adj = (100.0 - a_pdo) * 0.002
+                # --- FINAL EXPECTED GOALS (Direct, Minimal Blending) ---
+                # Use heavier weighting on team's own offense vs opponent defense
+                home_exp = (h_base * 0.70) + (a_def_base * 0.30) + h_poss_adj + h_st_adj + 0.10  # Home ice bonus
+                away_exp = (a_base * 0.70) + (h_def_base * 0.30) + a_poss_adj + a_st_adj
                 
-                # --- FINAL EXPECTED GOALS ---
-                # Home 58% offense weight, Away 65% offense weight, +0.02 home bonus
-                home_exp_raw = (h_base * 0.58) + (a_def_base * 0.42)
-                home_exp = home_exp_raw + h_poss_adj + h_st_adj + h_luck_adj + 0.02
-                
-                away_exp_raw = (a_base * 0.65) + (h_def_base * 0.35)
-                away_exp = away_exp_raw + a_poss_adj + a_st_adj + a_luck_adj
-                
-                # Bounds check
-                home_exp = max(1.0, min(6.5, home_exp))
-                away_exp = max(1.0, min(6.5, away_exp))
+                # Wider bounds to allow more variety
+                home_exp = max(1.5, min(6.0, home_exp))
+                away_exp = max(1.5, min(6.0, away_exp))
 
                 logger.info(f"5-Factor Model (Optimized) {home_team} vs {away_team}:")
             # Predict exact score using Poisson Distribution
