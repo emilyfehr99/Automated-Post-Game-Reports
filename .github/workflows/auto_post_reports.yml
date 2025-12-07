@@ -2,12 +2,13 @@ name: Auto Post NHL Reports
 
 on:
   schedule:
-    # Run every 15 minutes as backup (GitHub Actions cron can be unreliable):
-    # - Weekdays (Mon-Fri): 7pm-3am CT
-    # - Weekends (Sat-Sun): 11am-3am CT
-    # CT is UTC-6 (CST) or UTC-5 (CDT)
-    # Using 0-9 UTC covers 3am CT, and we'll check times in the workflow
-    - cron: '*/15 0-9,16-23 * * *'  # Every 15 min, 0-9 UTC (covers 3am CT) and 16-23 UTC (covers 11am-11pm CT), all days
+    # Smart scheduling - only run when games are expected to finish:
+    # Most NHL games start 6-8pm CT, finish 2.5 hours later (8:30-10:30pm CT)
+    # Weekdays: Run 8pm-midnight CT (covers evening game finishes)
+    # Weekends: Run 1pm-midnight CT (covers afternoon & evening games)
+    # This reduces unnecessary runs by ~60%
+    - cron: '*/15 2-6,19-23 * * 1-5'  # Mon-Fri: Every 15min 8pm-midnight CT (2-6 UTC = 8pm-12am CT)
+    - cron: '*/15 2-6,13-23 * * 0,6'  # Sat-Sun: Every 15min 1pm-midnight CT
   repository_dispatch:  # Allow external triggers (instant when game finishes)
     types: [game-finished]  # Custom event type from game monitor
   workflow_dispatch:  # Allow manual triggering from Actions tab
@@ -24,59 +25,56 @@ jobs:
       with:
         fetch-depth: 0  # Fetch all history to ensure we have the latest commits
     
-    - name: Check if we should run (weekdays 7pm-3am CT, weekends 11am-3am CT)
-      id: time_check
+    - name: Check if any games are close to finishing
+      id: game_check
       run: |
-        # Get current time in Central Time
+        # Fetch today's schedule
         export TZ='America/Chicago'
-        current_hour=$(date +%H)
-        current_day=$(date +%u)  # 1=Monday, 7=Sunday
+        today=$(date +%Y-%m-%d)
         
-        # Weekday (Mon-Fri): 7pm-3am CT (hours 19-23 or 0-3)
-        # Weekend (Sat-Sun): 11am-3am CT (hours 11-23 or 0-3)
-        if [ "$current_day" -ge 1 ] && [ "$current_day" -le 5 ]; then
-          # Weekday: 7pm-3am CT
-          if [ "$current_hour" -ge 19 ] || [ "$current_hour" -le 3 ]; then
-            echo "✅ RUNNING: Weekday and within 7pm-3am CT window (hour: $current_hour, day: $current_day)"
-            echo "should_run=true" >> $GITHUB_OUTPUT
-          else
-            echo "⏸️  SKIPPING: Weekday but outside 7pm-3am CT window (current hour: $current_hour)"
-            echo "should_run=false" >> $GITHUB_OUTPUT
-          fi
-        elif [ "$current_day" -eq 6 ] || [ "$current_day" -eq 7 ]; then
-          # Weekend: 11am-3am CT
-          if [ "$current_hour" -ge 11 ] || [ "$current_hour" -le 3 ]; then
-            echo "✅ RUNNING: Weekend and within 11am-3am CT window (hour: $current_hour, day: $current_day)"
-            echo "should_run=true" >> $GITHUB_OUTPUT
-          else
-            echo "⏸️  SKIPPING: Weekend but outside 11am-3am CT window (current hour: $current_hour)"
-            echo "should_run=false" >> $GITHUB_OUTPUT
-          fi
+        echo "🔍 Checking if any games are close to finishing..."
+        
+        # Get schedule from NHL API
+        response=$(curl -s "https://api-web.nhle.com/v1/schedule/${today}")
+        
+        # Check if any games are LIVE or recently finished
+        games_in_progress=$(echo "$response" | grep -c '"gameState":"LIVE"' || echo "0")
+        games_final=$(echo "$response" | grep -c '"gameState":"FINAL"' || echo "0")
+        games_off=$(echo "$response" | grep -c '"gameState":"OFF"' || echo "0")
+        
+        completed_games=$((games_final + games_off))
+        
+        if [ "$games_in_progress" -gt 0 ]; then
+          echo "✅ PROCEED: $games_in_progress game(s) currently in progress"
+          echo "should_run=true" >> $GITHUB_OUTPUT
+        elif [ "$completed_games" -gt 0 ]; then
+          echo "✅ PROCEED: $completed_games finished game(s) to process"
+          echo "should_run=true" >> $GITHUB_OUTPUT
         else
-          echo "⏸️  SKIPPING: Invalid day (day: $current_day)"
+          echo "⏭️  SKIP: No games in progress or finished yet"
           echo "should_run=false" >> $GITHUB_OUTPUT
         fi
     
     - name: Set up Python
-      if: steps.time_check.outputs.should_run == 'true'
+      if: steps.game_check.outputs.should_run == 'true'
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
     
     - name: Install system dependencies
-      if: steps.time_check.outputs.should_run == 'true'
+      if: steps.game_check.outputs.should_run == 'true'
       run: |
         sudo apt-get update
         sudo apt-get install -y poppler-utils
     
     - name: Install dependencies
-      if: steps.time_check.outputs.should_run == 'true'
+      if: steps.game_check.outputs.should_run == 'true'
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
     - name: Pull latest changes (ensure we have latest processed_games.json)
-      if: steps.time_check.outputs.should_run == 'true'
+      if: steps.game_check.outputs.should_run == 'true'
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "GitHub Actions Bot"
@@ -95,7 +93,7 @@ jobs:
         fi
     
     - name: Check for completed games and post
-      if: steps.time_check.outputs.should_run == 'true'
+      if: steps.game_check.outputs.should_run == 'true'
       env:
         TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
         TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
@@ -105,7 +103,7 @@ jobs:
         python3 github_actions_runner.py
     
     - name: Commit processed games, team stats, and model learning data
-      if: steps.time_check.outputs.should_run == 'true'
+      if: steps.game_check.outputs.should_run == 'true'
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "GitHub Actions Bot"
