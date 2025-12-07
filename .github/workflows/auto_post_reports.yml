@@ -2,13 +2,13 @@ name: Auto Post NHL Reports
 
 on:
   schedule:
-    # Smart scheduling - only run when games are expected to finish:
+    # Smart scheduling - covers all game finish scenarios:
     # Most NHL games start 6-8pm CT, finish 2.5 hours later (8:30-10:30pm CT)
-    # Weekdays: Run 8pm-midnight CT (covers evening game finishes)
-    # Weekends: Run 1pm-midnight CT (covers afternoon & evening games)
-    # This reduces unnecessary runs by ~60%
-    - cron: '*/15 2-6,19-23 * * 1-5'  # Mon-Fri: Every 15min 8pm-midnight CT (2-6 UTC = 8pm-12am CT)
-    - cron: '*/15 2-6,13-23 * * 0,6'  # Sat-Sun: Every 15min 1pm-midnight CT
+    # Late games (West Coast, OT) can finish 12am-2am CT
+    # Weekdays: 8pm-3am CT (covers evening games + late finishers)
+    # Weekends: 1pm-3am CT (covers afternoon/evening games + late finishers)
+    - cron: '*/15 2-9,19-23 * * 1-5'  # Mon-Fri: Every 15min 8pm-3am CT (2-9 UTC = 8pm-3am CT)
+    - cron: '*/15 2-9,13-23 * * 0,6'  # Sat-Sun: Every 15min 1pm-3am CT
   repository_dispatch:  # Allow external triggers (instant when game finishes)
     types: [game-finished]  # Custom event type from game monitor
   workflow_dispatch:  # Allow manual triggering from Actions tab
@@ -28,30 +28,52 @@ jobs:
     - name: Check if any games are close to finishing
       id: game_check
       run: |
-        # Fetch today's schedule
+        # Fetch today's schedule (and yesterday's if it's early morning)
         export TZ='America/Chicago'
         today=$(date +%Y-%m-%d)
+        current_hour=$(date +%H)
         
         echo "🔍 Checking if any games are close to finishing..."
         
-        # Get schedule from NHL API
-        response=$(curl -s "https://api-web.nhle.com/v1/schedule/${today}")
+        # If it's early morning (12am-6am CT), also check yesterday's games
+        # This catches late games (West Coast, OT) that finish after midnight
+        dates_to_check="$today"
+        if [ "$current_hour" -ge 0 ] && [ "$current_hour" -lt 6 ]; then
+          yesterday=$(date -d "yesterday" +%Y-%m-%d 2>/dev/null || date -v-1d +%Y-%m-%d)
+          dates_to_check="$yesterday $today"
+          echo "   📅 Early morning detected - checking yesterday ($yesterday) and today ($today)"
+        fi
         
-        # Check if any games are LIVE or recently finished
-        games_in_progress=$(echo "$response" | grep -c '"gameState":"LIVE"' || echo "0")
-        games_final=$(echo "$response" | grep -c '"gameState":"FINAL"' || echo "0")
-        games_off=$(echo "$response" | grep -c '"gameState":"OFF"' || echo "0")
+        total_in_progress=0
+        total_completed=0
         
-        completed_games=$((games_final + games_off))
+        for check_date in $dates_to_check; do
+          # Get schedule from NHL API
+          response=$(curl -s "https://api-web.nhle.com/v1/schedule/${check_date}")
+          
+          # Check if any games are LIVE or recently finished
+          games_in_progress=$(echo "$response" | grep -c '"gameState":"LIVE"' || echo "0")
+          games_final=$(echo "$response" | grep -c '"gameState":"FINAL"' || echo "0")
+          games_off=$(echo "$response" | grep -c '"gameState":"OFF"' || echo "0")
+          
+          completed_games=$((games_final + games_off))
+          
+          total_in_progress=$((total_in_progress + games_in_progress))
+          total_completed=$((total_completed + completed_games))
+          
+          if [ "$games_in_progress" -gt 0 ] || [ "$completed_games" -gt 0 ]; then
+            echo "   📊 $check_date: $games_in_progress live, $completed_games completed"
+          fi
+        done
         
-        if [ "$games_in_progress" -gt 0 ]; then
-          echo "✅ PROCEED: $games_in_progress game(s) currently in progress"
+        if [ "$total_in_progress" -gt 0 ]; then
+          echo "✅ PROCEED: $total_in_progress game(s) currently in progress"
           echo "should_run=true" >> $GITHUB_OUTPUT
-        elif [ "$completed_games" -gt 0 ]; then
-          echo "✅ PROCEED: $completed_games finished game(s) to process"
+        elif [ "$total_completed" -gt 0 ]; then
+          echo "✅ PROCEED: $total_completed finished game(s) to process"
           echo "should_run=true" >> $GITHUB_OUTPUT
         else
-          echo "⏭️  SKIP: No games in progress or finished yet"
+          echo "⏭️  SKIP: No games in progress or finished"
           echo "should_run=false" >> $GITHUB_OUTPUT
         fi
     
