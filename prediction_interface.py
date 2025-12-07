@@ -1057,8 +1057,8 @@ class PredictionInterface:
             else:
                 flip_label = "HIGH"
 
-                # Likeliest score using ADVANCED team + venue + situational data
-                try:
+            # Likeliest score using ADVANCED team + venue + situational data
+            try:
                 home_perf = self.learning_model.get_team_performance(home_team, venue="home")
                 away_perf = self.learning_model.get_team_performance(away_team, venue="away")
                 
@@ -1069,8 +1069,11 @@ class PredictionInterface:
                 h_fatigue = False
                 a_fatigue = False
                 if self.schedule_analyzer:
-                    h_fatigue = self.schedule_analyzer.played_yesterday(home_team, today_str)
-                    a_fatigue = self.schedule_analyzer.played_yesterday(away_team, today_str)
+                    try:
+                        h_fatigue = self.schedule_analyzer.played_yesterday(home_team, today_str)
+                        a_fatigue = self.schedule_analyzer.played_yesterday(away_team, today_str)
+                    except Exception:
+                        pass  # Schedule analyzer may not work in all environments
                 
                 fatigue_factor = 0.97  # 3% penalty (was 5%)
                 
@@ -1084,44 +1087,26 @@ class PredictionInterface:
                 h_goals_season = float(home_perf.get("goals_avg", 3.0))
                 h_xg_ag_season = float(home_perf.get("xg_against_avg", 3.0))
                 h_g_ag_season = float(home_perf.get("goals_against_avg", 3.0))
-               a_xg_season = float(away_perf.get("xg_avg", 3.0))
+                
+                a_xg_season = float(away_perf.get("xg_avg", 3.0))
                 a_goals_season = float(away_perf.get("goals_avg", 3.0))
                 a_xg_ag_season = float(away_perf.get("xg_against_avg", 3.0))
                 a_g_ag_season = float(away_perf.get("goals_against_avg", 3.0))
                 
-                # Initialize recent stats to season (will override if schedule_analyzer works)
-                h_recent_xg = h_xg_season
-                h_recent_goals = h_goals_season
-                h_recent_xg_ag = h_xg_ag_season
-                h_recent_g_ag = h_g_ag_season
+                # Get recent form (last 5 games) directly from stats
+                h_recent_form = self.learning_model._calculate_recent_form_from_stats(home_team.upper(), "home", n=5)
+                a_recent_form = self.learning_model._calculate_recent_form_from_stats(away_team.upper(), "away", n=5)
                 
-                a_recent_xg = a_xg_season
-                a_recent_goals = a_goals_season
-                a_recent_xg_ag = a_xg_ag_season
-                a_recent_g_ag = a_g_ag_season
+                # Use recent form if available, otherwise use season stats
+                h_recent_xg = h_recent_form.get('xg_avg', h_xg_season)
+                h_recent_goals = h_recent_form.get('goals_avg', h_goals_season)
+                h_recent_xg_ag = h_recent_form.get('xg_against_avg', h_xg_ag_season)
+                h_recent_g_ag = h_recent_form.get('goals_against_avg', h_g_ag_season)
                 
-                # Try to get recent form (last 5 games only, not 10)
-                if self.schedule_analyzer:
-                    try:
-                        h_games = self.schedule_analyzer.get_recent_games(home_team, today_str, n=5)
-                        if h_games and len(h_games) >= 3:  # Need at least 3 games for trend
-                            tot_g = sum(g.get('homeTeam' if g.get('homeTeam', {}).get('abbrev') == home_team else 'awayTeam', {}).get('score', 0) for g in h_games)
-                            tot_ga = sum(g.get('awayTeam' if g.get('homeTeam', {}).get('abbrev') == home_team else 'homeTeam', {}).get('score', 0) for g in h_games)
-                            h_recent_goals = tot_g / len(h_games)
-                            h_recent_g_ag = tot_ga / len(h_games)
-                            h_recent_xg = h_recent_goals  # Proxy
-                            h_recent_xg_ag = h_recent_g_ag
-                        
-                        a_games = self.schedule_analyzer.get_recent_games(away_team, today_str, n=5)
-                        if a_games and len(a_games) >= 3:
-                            tot_g = sum(g.get('homeTeam' if g.get('homeTeam', {}).get('abbrev') == away_team else 'awayTeam', {}).get('score', 0) for g in a_games)
-                            tot_ga = sum(g.get('awayTeam' if g.get('homeTeam', {}).get('abbrev') == away_team else 'homeTeam', {}).get('score', 0) for g in a_games)
-                            a_recent_goals = tot_g / len(a_games)
-                            a_recent_g_ag = tot_ga / len(a_games)
-                            a_recent_xg = a_recent_goals
-                            a_recent_xg_ag = a_recent_g_ag
-                    except Exception:
-                        pass  # Just use season stats
+                a_recent_xg = a_recent_form.get('xg_avg', a_xg_season)
+                a_recent_goals = a_recent_form.get('goals_avg', a_goals_season)
+                a_recent_xg_ag = a_recent_form.get('xg_against_avg', a_xg_ag_season)
+                a_recent_g_ag = a_recent_form.get('goals_against_avg', a_g_ag_season)
                 
                 # --- BLENDED METRICS (Mostly Season, Light Recent Trend) ---
                 h_xg_blend = (h_xg_season * season_weight) + (h_recent_xg * recency_weight)

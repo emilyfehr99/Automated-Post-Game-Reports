@@ -751,6 +751,37 @@ class ImprovedSelfLearningModelV2:
         except Exception:
             return None
     
+    
+    def _calculate_recent_form_from_stats(self, team_key: str, venue: str, n: int = 5) -> Dict[str, float]:
+        """Calculate recent form (last N games) from team stats arrays"""
+        if team_key not in self.team_stats:
+            return {}
+            
+        venue_data = self.team_stats[team_key].get(venue, {})
+        if not venue_data:
+            return {}
+        
+        goals_array = venue_data.get('goals', [])
+        opp_goals_array = venue_data.get('opp_goals', [])
+        xg_array = venue_data.get('xg', [])
+        opp_xg_array = venue_data.get('opp_xg', [])
+        
+        if not goals_array or len(goals_array) < 3:  # Need at least 3 games
+            return {}
+        
+        # Take last N games
+        recent_goals = goals_array[-n:] if len(goals_array) >= n else goals_array
+        recent_opp_goals = opp_goals_array[-n:] if len(opp_goals_array) >= n else opp_goals_array
+        recent_xg = xg_array[-n:] if len(xg_array) >= n else xg_array
+        recent_opp_xg = opp_xg_array[-n:] if len(opp_xg_array) >= n else opp_xg_array
+        
+        return {
+            'goals_avg': float(np.mean(recent_goals)) if recent_goals else 0.0,
+            'goals_against_avg': float(np.mean(recent_opp_goals)) if recent_opp_goals else 0.0,
+            'xg_avg': float(np.mean(recent_xg)) if recent_xg else 0.0,
+            'xg_against_avg': float(np.mean(recent_opp_xg)) if recent_opp_xg else 0.0
+        }
+    
     def get_team_performance(self, team: str, venue: str) -> Dict:
         """Get comprehensive team performance data from new team stats format"""
         team_key = team.upper()
