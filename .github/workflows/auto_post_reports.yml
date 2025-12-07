@@ -2,12 +2,14 @@ name: Auto Post NHL Reports
 
 on:
   schedule:
-    # Run every 15 minutes:
+    # Run every 15 minutes as backup (GitHub Actions cron can be unreliable):
     # - Weekdays (Mon-Fri): 7pm-3am CT
     # - Weekends (Sat-Sun): 11am-3am CT
     # CT is UTC-6 (CST) or UTC-5 (CDT)
     # Using 0-9 UTC covers 3am CT, and we'll check times in the workflow
     - cron: '*/15 0-9,16-23 * * *'  # Every 15 min, 0-9 UTC (covers 3am CT) and 16-23 UTC (covers 11am-11pm CT), all days
+  repository_dispatch:  # Allow external triggers (instant when game finishes)
+    types: [game-finished]  # Custom event type from game monitor
   workflow_dispatch:  # Allow manual triggering from Actions tab
 
 jobs:
