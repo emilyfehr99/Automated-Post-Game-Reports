@@ -1294,9 +1294,18 @@ class PredictionInterface:
             # Ensure we display "Winner High-Low"
             likely_score = f"{score_winner} {max(home_goals, away_goals)}–{min(home_goals, away_goals)} {ot_tag}"
 
+            # Calculate upset risk
+            upset_prob_calc = 100.0 - confidence_pct
+            if upset_prob_calc > 40.0:
+                upset_risk_label = "High"
+            elif upset_prob_calc > 25.0:
+                upset_risk_label = "Medium"
+            else:
+                upset_risk_label = "Low"
+
             print(f'   ⭐ Favorite: {favorite} (confidence {confidence_pct:.1f}%)')
             print(f'   🌪️ Volatility (flip-rate): {flip_label} ({flip_rate*100:.1f}%)')
-            print(f'   ⚡ Upset risk: {upset:.1f}%')
+            print(f'   ⚡ Upset risk: {upset_risk_label} ({upset_prob_calc:.1f}%)')
             print(f'   📐 Likeliest score: {likely_score}')
             print()
             
@@ -1315,7 +1324,9 @@ class PredictionInterface:
                 'ensemble_home_prob': prediction.get("ensemble_home_prob"),
                 'corr_disagreement': prediction.get("corr_disagreement"),
                 'monte_carlo_flip_rate': prediction.get("monte_carlo_flip_rate"),
-                'upset_probability': prediction.get("upset_probability"),
+                'upset_probability': upset_prob_calc / 100.0,  # Store as decimal (0.0-1.0)
+                'upset_prob': upset_prob_calc,  # Also store as percentage for Discord
+                'upset_risk': upset_risk_label,  # Store label for Discord
                 'context_bucket': prediction.get("context_bucket"),
                 'away_back_to_back': prediction.get("away_back_to_back"),
                 'home_back_to_back': prediction.get("home_back_to_back"),
