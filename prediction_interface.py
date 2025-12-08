@@ -1167,39 +1167,57 @@ class PredictionInterface:
                 if a_recent_form:
                     a_goals = (a_goals * 0.90) + (a_recent_form.get('goals_avg', a_goals) * 0.10)
                 
+                # --- MATCHUP-AMPLIFIED MODEL ---
+                # Problem: All teams score 2.5-3.5 goals, so predictions cluster
+                # Solution: AMPLIFY the matchup - good offense vs bad defense = many more goals
+                
+                # Base offensive strength (goals they typically score)
+                h_offense_base = (h_goals * 0.60) + (h_xg * 0.40)
+                a_offense_base = (a_goals * 0.60) + (a_xg * 0.40)
+                
+                # Defensive weakness (goals they typically allow)
+                h_defense_weakness = (h_ga * 0.60) + (h_xga * 0.40)
+                a_defense_weakness = (a_ga * 0.60) + (a_xga * 0.40)
+                
+                # MATCHUP MULTIPLIER (this is the key!)
+                # If offense is much better than opponent defense → AMPLIFY
+                # Calculate relative strength: offense / opponent_defense
+                h_matchup_strength = h_offense_base / max(a_defense_weakness, 2.0)  # Avoid /0
+                a_matchup_strength = a_offense_base / max(h_defense_weakness, 2.0)
+                
+                # Apply multiplier (1.0 = neutral, >1.0 = advantage, <1.0 = disadvantage)
+                # This creates BLOWOUTS for mismatches and LOW SCORES for tough matchups
+                home_exp = h_offense_base * h_matchup_strength
+                away_exp = a_offense_base * a_matchup_strength
+                
+                # PDO boost (luck/hot streak)
+                h_pdo_boost = ((h_pdo - 100.0) / 100.0) * 0.8
+                a_pdo_boost = ((a_pdo - 100.0) / 100.0) * 0.8
+                
+                home_exp += h_pdo_boost
+                away_exp += a_pdo_boost
+                
+                # Power Play advantage
+                h_pp_boost = (h_pp - 20.0) * 0.04
+                a_pp_boost = (a_pp - 20.0) * 0.04
+                
+                home_exp += h_pp_boost + 0.25  # Home ice
+                away_exp += a_pp_boost
+                
                 # Fatigue
                 if h_fatigue:
-                    h_goals *= 0.95
-                    h_pdo *= 0.98
+                    home_exp *= 0.92
                 if a_fatigue:
-                    a_goals *= 0.95
-                    a_pdo *= 0.98
-                
-                # --- EMPIRICAL FORMULA (weights from correlation analysis) ---
-                # PDO: 36.2% weight (strongest predictor)
-                # PP%: 27.5% weight (2nd strongest)
-                # xG: 10% weight (surprisingly weak - use as sanity check)
-                # Goals: 26.3% weight (actual results matter)
-                
-                # PDO adjustment (100 = league average, >100 = lucky/good, <100 = unlucky/bad)
-                h_pdo_factor = ((h_pdo - 100.0) / 100.0) * 1.5  # ±1.5 goals for +/-10 PDO
-                a_pdo_factor = ((a_pdo - 100.0) / 100.0) * 1.5
-                
-                # Power Play impact (20% is league average)
-                h_pp_factor = (h_pp - 20.0) * 0.03  # ±0.3 goals for ±10% PP
-                a_pp_factor = (a_pp - 20.0) * 0.03
-                
-                # Base prediction (goals scored + PDO effect + PP effect + small xG check)
-                home_exp = (h_goals * 0.40) + h_pdo_factor + h_pp_factor + (h_xg * 0.15) + 0.20  # home ice
-                away_exp = (a_goals * 0.40) + a_pdo_factor + a_pp_factor + (a_xg * 0.15)
-                
-                # Defensive adjustment (opponent weakness)
-                home_exp += (a_ga * 0.25)
-                away_exp += (h_ga * 0.25)
+                    away_exp *= 0.92
                 
                 # Bounds
-                home_exp = max(1.5, min(6.5, home_exp))
-                away_exp = max(1.5, min(6.5, away_exp))
+                home_exp = max(1.5, min(7.0, home_exp))
+                away_exp = max(1.5, min(7.0, away_exp))
+                
+                # DEBUG: Log the actual expected goals to diagnose convergence
+                logger.info(f"🔍 {home_team} vs {away_team} Expected Goals:")
+                logger.info(f"   {home_team}: {home_exp:.2f} (Off:{h_offense_base:.2f} × Matchup:{h_matchup_strength:.2f})")
+                logger.info(f"   {away_team}: {away_exp:.2f} (Off:{a_offense_base:.2f} × Matchup:{a_matchup_strength:.2f})")
 
                 logger.info(f"5-Factor Model (Optimized) {home_team} vs {away_team}:")
             # Predict exact score using Poisson Distribution
