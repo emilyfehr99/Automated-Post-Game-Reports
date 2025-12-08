@@ -1262,38 +1262,12 @@ class PredictionInterface:
                 home_goals = int(round(home_exp))
                 away_goals = int(round(away_exp))
             
-            # Verify favorite wins in the scoreline if probability > 60% (margin of safety)
-            # Poisson often predicts 2-2 or 3-3 even if one team is favored.
-            # If the favorite has a strong probability, we ensure they have at least +1 goal.
-            fav_prob = home_prob if favorite == home_team else away_prob
-            fav_prob_pct = fav_prob * 100.0
+            # Trust the model's prediction - don't force scores
+            # The Poisson mode already accounts for probability differences
+            # Forcing wins creates artificial 4-3 bias
             
-            if fav_prob_pct > 60.0:
-                if favorite == home_team and home_goals <= away_goals:
-                     # Force home win
-                     if home_goals == away_goals:
-                         home_goals += 1
-                     else:
-                         home_goals, away_goals = away_goals, home_goals
-                     
-                     
-                     # If score is now too low compared to expectation, bump up
-                     # Only if significant difference (> 0.5 goals) to avoid gratuitous bumps
-                     if home_goals < (home_exp - 0.5):
-                         home_goals += 1
-                         
-                elif favorite == away_team and away_goals <= home_goals:
-                     # Force away win
-                     if away_goals == home_goals:
-                         away_goals += 1
-                     else:
-                         home_goals, away_goals = away_goals, home_goals
-                         
-                     # If score is now too low compared to expectation, bump up
-                     if away_goals < (away_exp - 0.5):
-                         away_goals += 1
-
             # Handle Ties (e.g. 2-2, 3-3) by assigning OT winner
+            ot_tag = ""
             if home_goals == away_goals:
                 ot_tag = "(OT/SO)"
                 # Give the win to the team with higher probability
