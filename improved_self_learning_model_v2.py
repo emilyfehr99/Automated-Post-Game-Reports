@@ -229,44 +229,46 @@ class ImprovedSelfLearningModelV2:
         return conf >= confidence_threshold or margin >= margin_threshold
 
     def predict_score_distribution(self, home_xg: float, away_xg: float) -> Tuple[int, int]:
-        """Predict the score using Poisson distribution mode (most likely value).
-           This provides better variance than simple rounding (e.g., can produce 2, 3, 4, 5, 6)."""
+        """Predict the score using Poisson-inspired rounding with realistic variance.
+           Creates varied score differences (1-goal, 2-goal, blowouts) based on xG."""
         import math
-        from scipy import stats
+        import random
         
         # Limit lambdas to reasonable range
         lam_h = max(0.5, min(10.0, home_xg))
         lam_a = max(0.5, min(10.0, away_xg))
         
-        # Use Poisson mode: floor(lambda) for lambda >= 1, else 0
-        # This is the most likely value, not just rounded mean
-        # Provides better variance: 2.3→2, 2.9→2, 3.1→3, 3.8→3, 4.2→4, 4.9→4
-        if lam_h >= 1.0:
-            home_mode = int(math.floor(lam_h))
-        else:
-            home_mode = 0
-            
-        if lam_a >= 1.0:
-            away_mode = int(math.floor(lam_a))
-        else:
-            away_mode = 0
+        # Use deterministic seed based on the matchup for consistency
+        random.seed(int(lam_h * 1000 + lam_a * 1000))
         
-        # Add slight randomness to break ties (±0.5 goals based on variance)
-        # This prevents EVERY game from being the exact mode
-        variance_h = lam_h  # Poisson variance = lambda
-        variance_a = lam_a
+        # Probabilistic rounding: 3.7 has 70% chance to round to 4, 30% to 3
+        # This creates more variance than floor() which always rounds down
+        def probabilistic_round(value):
+            base = int(math.floor(value))
+            decimal = value - base
+            # Use the decimal part as probability to round up
+            if random.random() < decimal:
+                return base + 1
+            return base
         
-        # If variance is high (>3.5), occasionally bump up by 1
-        # This represents the "tail" of high-scoring games
-        import random
-        random.seed(int(lam_h * 1000 + lam_a * 1000))  # Deterministic but varied
+        home_score = probabilistic_round(lam_h)
+        away_score = probabilistic_round(lam_a)
         
-        if variance_h > 3.5 and random.random() > 0.7:
-            home_mode += 1
-        if variance_a > 3.5 and random.random() > 0.7:
-            away_mode += 1
-                    
-        return (home_mode, away_mode)
+        # Additional variance injection based on xG difference
+        # Large xG differences should create larger score differences
+        xg_diff = abs(lam_h - lam_a)
+        
+        # If xG are very close (diff < 0.5), this is a coin-flip game
+        # If xG diff is large (diff > 1.5), amplify the score difference
+        if xg_diff > 1.5:
+            # Blowout potential - give the stronger team an extra goal sometimes
+            if random.random() < 0.3:  # 30% chance
+                if lam_h > lam_a:
+                    home_score += 1
+                else:
+                    away_score += 1
+                
+        return (home_score, away_score)
 
     def _estimate_monte_carlo_signal(self, prediction: Dict, iterations: int = 40) -> float:
         """Estimate volatility by perturbing metrics and observing prediction flips."""
