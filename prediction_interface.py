@@ -1313,6 +1313,8 @@ class PredictionInterface:
                 'game_id': game.get('id'),
                 'away_team': away_team,
                 'home_team': home_team,
+                'home_goals': home_goals,  # Store Poisson-calculated score
+                'away_goals': away_goals,  # Store Poisson-calculated score
                 'predicted_away_win_prob': away_prob,  # Already decimal
                 'predicted_home_win_prob': home_prob,  # Already decimal
                 'prediction_confidence': max(away_prob, home_prob),
@@ -1827,36 +1829,11 @@ class PredictionInterface:
                     
             except Exception as e:
                 # Fallback: use just goals scored if calculation fails
-                try:
-                    home_perf = self.learning_model.get_team_performance(home_team, venue="home")
-                    away_perf = self.learning_model.get_team_performance(away_team, venue="away")
-                    home_g = float(home_perf.get("goals_avg", 3.0)) if home_perf else 3.0
-                    away_g = float(away_perf.get("goals_avg", 3.0)) if away_perf else 3.0
-                except Exception:
-                    home_g = away_g = 3.0
+            # Get the actual Poisson-calculated scores from the prediction
+            # DO NOT recalculate - use the scores that were already computed
+            home_goals = pred.get('home_goals', 3)
+            away_goals = pred.get('away_goals', 3)
             
-            # More nuanced rounding: round to nearest integer, but preserve differences
-            # Use floor/ceiling logic to avoid always getting same scores
-            def smart_round(val):
-                """Round with preference for common hockey scores (2-5 range)"""
-                if val < 1.5:
-                    return 1
-                elif val < 2.5:
-                    return 2
-                elif val < 3.5:
-                    return 3
-                elif val < 4.5:
-                    return 4
-                elif val < 5.5:
-                    return 5
-                else:
-                    return int(round(val))
-            
-            home_goals = smart_round(home_g)
-            away_goals = smart_round(away_g)
-            
-            # Ensure favorite wins (if prediction says they should)
-            fav_prob = home_prob if favorite == home_team else away_prob
             # Determine if OT/SO is likely based on closeness
             fav_prob = home_prob if favorite == home_team else away_prob
             fav_prob_pct = fav_prob * 100.0
