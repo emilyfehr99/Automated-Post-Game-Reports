@@ -1826,9 +1826,11 @@ class PredictionInterface:
                 # This gives more weight to what the team actually scores
                 home_g = (home_gf * 0.6) + (away_ga * 0.4)
                 away_g = (away_gf * 0.6) + (home_ga * 0.4)
-                    
+                     
             except Exception as e:
-                # Fallback: use just goals scored if calculation fails
+                # Fallback: if calculation fails, pass (scores will be read from pred dict below)
+                pass
+            
             # Get the actual Poisson-calculated scores from the prediction
             # DO NOT recalculate - use the scores that were already computed
             home_goals = pred.get('home_goals', 3)
