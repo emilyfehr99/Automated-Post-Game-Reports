@@ -1266,19 +1266,16 @@ class PredictionInterface:
             # The Poisson mode already accounts for probability differences
             # Forcing wins creates artificial 4-3 bias
             
-            # Handle Ties (e.g. 2-2, 3-3) by assigning OT winner
+            # Calculate favorite probability for OT/SO logic
+            fav_prob = home_prob if favorite == home_team else away_prob
+            fav_prob_pct = fav_prob * 100.0
+            
+            # Handle Ties (e.g. 2-2, 3-3) by assigning OT winner WITHOUT forcing scores
             ot_tag = ""
             if home_goals == away_goals:
                 ot_tag = "(OT/SO)"
-                # Give the win to the team with higher probability
-                if fav_prob_pct > 50.0:
-                    if favorite == home_team:
-                        home_goals += 1
-                    else:
-                        away_goals += 1
-                else:
-                    # Pure coin flip scenarios (rare), give to home team as edge
-                    home_goals += 1
+                # In OT/SO, give slight edge to favorite (but don't change predicted score)
+                # Just for win probability - scores stay tied in display
             elif abs(home_goals - away_goals) == 1 and fav_prob_pct <= 60.0:
                  # Close game (e.g. 3-2) with low confidence -> Likely went to OT
                  ot_tag = "(OT/SO)"
