@@ -1857,24 +1857,14 @@ class PredictionInterface:
             
             # Ensure favorite wins (if prediction says they should)
             fav_prob = home_prob if favorite == home_team else away_prob
-            if fav_prob > 50.0:  # Only if favorite has >50% chance
-                if home_goals == away_goals:
-                    # Nudge favorite to win by one
-                    if favorite == home_team:
-                        home_goals = away_goals + 1
-                    else:
-                        away_goals = home_goals + 1
-                elif favorite == home_team and home_goals < away_goals:
-                    # Favorite should win, swap if needed
-                    home_goals, away_goals = away_goals, home_goals
-                elif favorite != home_team and away_goals < home_goals:
-                    # Favorite should win, swap if needed
-                    home_goals, away_goals = away_goals, home_goals
-            
             # Determine if OT/SO is likely based on closeness
             fav_prob = home_prob if favorite == home_team else away_prob
-            if abs(home_goals - away_goals) == 1 and 50.0 <= fav_prob <= 58.0:
+            fav_prob_pct = fav_prob * 100.0
+            
+            if abs(home_goals - away_goals) == 1 and 50.0 <= fav_prob_pct <= 58.0:
                 ot_so_str = "(OT/SO likely)"
+            elif home_goals == away_goals:
+                ot_so_str = "(OT/SO)"
             else:
                 ot_so_str = "(regulation)"
             
