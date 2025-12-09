@@ -52,9 +52,9 @@ jobs:
           response=$(curl -s "https://api-web.nhle.com/v1/schedule/${check_date}")
           
           # Check if any games are LIVE or recently finished
-          games_in_progress=$(echo "$response" | grep -c '"gameState":"LIVE"' || echo "0")
-          games_final=$(echo "$response" | grep -c '"gameState":"FINAL"' || echo "0")
-          games_off=$(echo "$response" | grep -c '"gameState":"OFF"' || echo "0")
+          games_in_progress=$(echo "$response" | grep -o '"gameState":"LIVE"' | wc -l)
+          games_final=$(echo "$response" | grep -o '"gameState":"FINAL"' | wc -l)
+          games_off=$(echo "$response" | grep -o '"gameState":"OFF"' | wc -l)
           
           completed_games=$((games_final + games_off))
           
