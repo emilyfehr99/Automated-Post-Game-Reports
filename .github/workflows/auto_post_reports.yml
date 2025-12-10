@@ -7,9 +7,9 @@ on:
     # Late games (West Coast, OT) can finish 12am-2am CT
     # Weekdays: 8pm-3am CT (covers evening games + late finishers)
     # Weekends: 1pm-3am CT (covers afternoon/evening games + late finishers)
-    # Peak Hours: Every 10 minutes from 6pm-3am CT (0-9 UTC)
-    # Covers typical game finish times including West Coast & OT
-    - cron: '*/10 0-9 * * *'
+    # Peak Hours: Every 10 minutes from 8pm-2am CT (2-8 UTC)
+    # Covers core game finishing window
+    - cron: '*/10 2-8 * * *'
   repository_dispatch:  # Allow external triggers (instant when game finishes)
     types: [game-finished]  # Custom event type from game monitor
   workflow_dispatch:  # Allow manual triggering from Actions tab
