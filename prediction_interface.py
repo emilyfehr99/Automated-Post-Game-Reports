@@ -963,6 +963,12 @@ class PredictionInterface:
         
         # Check for missing games first
         missing_games = self.check_and_add_missing_games()
+        
+        # --- TRIGGER DAILY LEARNING ---
+        # This recalculates weights based on recent performance errors
+        print("🧠 API Trigger: Running daily model self-learning update...")
+        self.learning_model.run_daily_update()
+        
         if missing_games > 0:
             print(f"📈 Model updated with {missing_games} missing games")
             # Recalculate model performance after adding missing games
