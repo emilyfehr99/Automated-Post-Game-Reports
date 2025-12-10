@@ -1171,38 +1171,53 @@ class PredictionInterface:
                 # Problem: All teams score 2.5-3.5 goals, so predictions cluster
                 # Solution: AMPLIFY the matchup - good offense vs bad defense = many more goals
                 
-                # Base offensive strength (goals they typically score)
-                h_offense_base = (h_goals * 0.60) + (h_xg * 0.40)
-                a_offense_base = (a_goals * 0.60) + (a_xg * 0.40)
+                # --- SELF-LEARNING SCORE MODEL ---
+                # Retrieve learned weights (or defaults)
+                score_weights = self.learning_model.get_score_weights()
+                w_goals = score_weights.get("goals_weight", 0.40)
+                w_xg = score_weights.get("xg_weight", 0.15)
+                w_pdo = score_weights.get("pdo_weight", 0.20)
+                w_pp = score_weights.get("pp_weight", 0.15)
+                w_recent = score_weights.get("recent_goals_weight", 0.10)
+                
+                # Base offensive strength (Linear Combination of Features)
+                # We use normalized features where helpful (e.g. PDO-100)
+                h_offense_base = (
+                    (h_goals * w_goals) + 
+                    (h_xg * w_xg) + 
+                    (h_recent_goals * w_recent) +
+                    ((h_pdo - 100.0) * w_pdo) +      # Deviations from 100
+                    ((h_pp - 20.0) * w_pp)           # Deviations from 20%
+                )
+                
+                a_offense_base = (
+                    (a_goals * w_goals) + 
+                    (a_xg * w_xg) + 
+                    (a_recent_goals * w_recent) +
+                    ((a_pdo - 100.0) * w_pdo) +
+                    ((a_pp - 20.0) * w_pp)
+                )
+                
+                # Ensure base isn't negative/too low before multiplier
+                h_offense_base = max(1.5, h_offense_base)
+                a_offense_base = max(1.5, a_offense_base)
                 
                 # Defensive weakness (goals they typically allow)
+                # Keep this simple for now, can add weights later
                 h_defense_weakness = (h_ga * 0.60) + (h_xga * 0.40)
                 a_defense_weakness = (a_ga * 0.60) + (a_xga * 0.40)
                 
-                # MATCHUP MULTIPLIER (this is the key!)
+                # MATCHUP MULTIPLIER (Amplifier)
                 # If offense is much better than opponent defense → AMPLIFY
-                # Calculate relative strength: offense / opponent_defense
-                h_matchup_strength = h_offense_base / max(a_defense_weakness, 2.0)  # Avoid /0
+                h_matchup_strength = h_offense_base / max(a_defense_weakness, 2.0)
                 a_matchup_strength = a_offense_base / max(h_defense_weakness, 2.0)
                 
-                # Apply multiplier (1.0 = neutral, >1.0 = advantage, <1.0 = disadvantage)
-                # This creates BLOWOUTS for mismatches and LOW SCORES for tough matchups
+                # Apply multiplier
                 home_exp = h_offense_base * h_matchup_strength
                 away_exp = a_offense_base * a_matchup_strength
                 
-                # PDO boost (luck/hot streak)
-                h_pdo_boost = ((h_pdo - 100.0) / 100.0) * 0.8
-                a_pdo_boost = ((a_pdo - 100.0) / 100.0) * 0.8
-                
-                home_exp += h_pdo_boost
-                away_exp += a_pdo_boost
-                
-                # Power Play advantage
-                h_pp_boost = (h_pp - 20.0) * 0.04
-                a_pp_boost = (a_pp - 20.0) * 0.04
-                
-                home_exp += h_pp_boost + 0.25  # Home ice
-                away_exp += a_pp_boost
+                # Home ice advantage (static for now)
+                home_exp += 0.25
                 
                 # Fatigue
                 if h_fatigue:
@@ -1339,7 +1354,19 @@ class PredictionInterface:
                 'away_rest': prediction.get("away_rest"),
                 'home_rest': prediction.get("home_rest"),
                 'favorite': favorite,
-                'spread': abs(away_prob - home_prob)
+                'spread': abs(away_prob - home_prob),
+                'metrics_used': {
+                    'home_goals_season': float(h_goals),
+                    'home_xg_season': float(h_xg),
+                    'home_pdo_season': float(h_pdo - 100.0),  # Normalized for gradient
+                    'home_pp_season': float(h_pp - 20.0),      # Normalized for gradient
+                    'home_recent_goals': float(h_recent_goals),
+                    'away_goals_season': float(a_goals),
+                    'away_xg_season': float(a_xg),
+                    'away_pdo_season': float(a_pdo - 100.0),
+                    'away_pp_season': float(a_pp - 20.0),
+                    'away_recent_goals': float(a_recent_goals)
+                }
             })
 
         # Save predictions to model for future learning

@@ -35,6 +35,15 @@ DEFAULT_WEIGHT_PRIORS = {
     "sos_weight": 0.00,
 }
 
+DEFAULT_SCORE_WEIGHTS = {
+    "goals_weight": 0.40,
+    "xg_weight": 0.15,
+    "pdo_weight": 0.20,
+    "pp_weight": 0.15,
+    "recent_goals_weight": 0.10,
+    "opponent_ga_weight": 1.0  # Usually kept as 1.0 (baseline)
+}
+
 class ImprovedSelfLearningModelV2:
     def __init__(self, predictions_file: str = "win_probability_predictions_v2.json"):
         """Initialize the improved self-learning model V2"""
@@ -433,8 +442,17 @@ class ImprovedSelfLearningModelV2:
                     data.setdefault("calibration_points", [])
                     data.setdefault("calibration_metadata", {})
                     data.setdefault("calibration_by_bucket", {})
-                    data.setdefault("backtest_reports", [])
-                    return data
+                if "backtest_reports" not in data:
+                    data["backtest_reports"] = []
+            
+                # Initialize score model weights if missing
+                if "score_model_weights" not in data:
+                    data["score_model_weights"] = DEFAULT_SCORE_WEIGHTS.copy()
+            
+                if "score_weight_momentum" not in data:
+                    data["score_weight_momentum"] = {}
+            
+                return data
             except Exception as e:
                 logger.error(f"Error loading model data: {e}")
         
@@ -460,6 +478,8 @@ class ImprovedSelfLearningModelV2:
                 "game_score_weight": 0.0,
                 "sos_weight": 0.0
             },
+            "score_model_weights": DEFAULT_SCORE_WEIGHTS.copy(),
+            "score_weight_momentum": {},
             "last_updated": datetime.now().isoformat(),
             "model_performance": {
                 "total_games": 0,
@@ -653,6 +673,15 @@ class ImprovedSelfLearningModelV2:
                 clipped_weights[key] /= total
         
         return clipped_weights
+
+    def get_score_weights(self) -> Dict[str, float]:
+        """Get current score prediction model weights"""
+        weights = self.model_data.get("score_model_weights", DEFAULT_SCORE_WEIGHTS.copy())
+        # Ensure all keys exist
+        for k, v in DEFAULT_SCORE_WEIGHTS.items():
+            if k not in weights:
+                weights[k] = v
+        return weights
     
     def _build_goalie_history(self) -> Dict[str, List[Tuple[str, str]]]:
         """Build per-team goalie start history from stored predictions/metrics_used."""
@@ -2666,6 +2695,23 @@ class ImprovedSelfLearningModelV2:
                     self.weight_clip_range[0], 
                     self.weight_clip_range[1]
                 )
+            
+        # --- Score Model Learning ---
+        score_updates = self._calculate_score_weight_updates(recent_predictions)
+        score_weights = self.model_data.get("score_model_weights", DEFAULT_SCORE_WEIGHTS.copy())
+        score_momentum = self.model_data.get("score_weight_momentum", {})
+        
+        for name, update in score_updates.items():
+            if name in score_weights:
+                # Apply momentum
+                score_momentum[name] = 0.8 * score_momentum.get(name, 0.0) + update
+                # Update
+                score_weights[name] += score_momentum[name]
+                # Clip (keep positive but reasonable)
+                score_weights[name] = max(0.01, min(1.5, score_weights[name]))
+                
+        self.model_data["score_model_weights"] = score_weights
+        self.model_data["score_weight_momentum"] = score_momentum
         
         # Normalize weights
         total = sum(current_weights.values())
@@ -2680,6 +2726,7 @@ class ImprovedSelfLearningModelV2:
         self.model_data["last_updated"] = datetime.now().isoformat()
         
         logger.info(f"Updated model weights: {current_weights}")
+        logger.info(f"Updated score weights: {score_weights}")
         
         # Save updated model
         self.save_model_data()
@@ -2765,6 +2812,80 @@ class ImprovedSelfLearningModelV2:
             
             updates[weight_name] = performance_signal + correlation_signal + upset_signal + monte_carlo_signal + mean_reversion
         
+        return updates
+
+    def _calculate_score_weight_updates(self, recent_predictions: List[Dict]) -> Dict:
+        """
+        Calculate updates for score prediction weights based on error gradients.
+        If we under-predicted goals, increase weights of features that were high.
+        If we over-predicted goals, decrease weights.
+        """
+        updates = {k: 0.0 for k in DEFAULT_SCORE_WEIGHTS.keys()}
+        learning_rate = 0.01
+        
+        count = 0
+        for pred in recent_predictions:
+            # Only learn if we have the inputs saved
+            metrics = pred.get("metrics_used", {})
+            if not metrics or "home_goals_season" not in metrics:
+                continue
+                
+            actual_home = float(pred.get("actual_home_score", 0))
+            actual_away = float(pred.get("actual_away_score", 0))
+            
+            # Reconstruct what we predicted (approx)
+            # It's better to store the predicted raw lambda, but we can infer error direction
+            # For this version, we'll use the sign of the error × feature value
+            
+            # Since we don't have the exact raw lambda stored in historicals easily, 
+            # we will rely on the "predicted_home_goals" vs actual
+            pred_home = float(pred.get("predicted_home_score", 3.0)) # This is an integer, so it's rounded
+            pred_away = float(pred.get("predicted_away_score", 3.0))
+            
+            # Error = Actual - Predicted
+            # Positive error (Actual > Predicted) -> We needed LARGER weights
+            # Negative error (Actual < Predicted) -> We needed SMALLER weights
+            
+            err_home = actual_home - pred_home
+            err_away = actual_away - pred_away
+            
+            # Features used for Home Prediction (from prediction_interface logic)
+            # We map the metrics keys to the weight keys
+            # Feature map: weight_key -> metric_key_in_prediction
+            # Note: The metrics naming must match what we save in prediction_interface
+            
+            # We need to act on Home and Away inputs separately
+            
+            # Update based on Home Error
+            # If Home scored 5 but we predicted 2 (Error +3), and Home had high PDO, increase PDO weight
+            
+            # Helper to apply update
+            def apply(w_key, feature_val, error):
+                if feature_val > 0:
+                    # Normalized feature impact (approximate)
+                    # We dampen it to avoid runaway
+                    updates[w_key] += learning_rate * error * (feature_val / 10.0)
+
+            # Features for Home Goals
+            apply("goals_weight", float(metrics.get("home_goals_season", 0)), err_home)
+            apply("xg_weight", float(metrics.get("home_xg_season", 0)), err_home)
+            apply("pdo_weight", float(metrics.get("home_pdo_season", 0)), err_home)
+            apply("pp_weight", float(metrics.get("home_pp_season", 0)), err_home)
+            apply("recent_goals_weight", float(metrics.get("home_recent_goals", 0)), err_home)
+            
+            # Features for Away Goals
+            apply("goals_weight", float(metrics.get("away_goals_season", 0)), err_away)
+            apply("xg_weight", float(metrics.get("away_xg_season", 0)), err_away)
+            apply("pdo_weight", float(metrics.get("away_pdo_season", 0)), err_away)
+            apply("pp_weight", float(metrics.get("away_pp_season", 0)), err_away)
+            apply("recent_goals_weight", float(metrics.get("away_recent_goals", 0)), err_away)
+            
+            count += 1
+            
+        if count > 0:
+            for k in updates:
+                updates[k] /= count
+                
         return updates
     
     def recalculate_performance_from_scratch(self):
