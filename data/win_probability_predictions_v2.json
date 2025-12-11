@@ -114534,13 +114534,13 @@
         "corr_disagreement": 0.4340639595573307,
         "monte_carlo_flip_rate": 0.95
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
+      "actual_winner": "home",
+      "actual_winner_side": "home",
+      "actual_winner_team": "CHI",
+      "actual_away_score": 0,
+      "actual_home_score": 3,
       "goal_diff": null,
-      "prediction_accuracy": null,
+      "prediction_accuracy": 0.4945932937131914,
       "timestamp": "2025-12-10T13:00:29.912176",
       "predicted_winner": "away",
       "predicted_winner_team": "NYR",
@@ -114564,7 +114564,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-12-11T13:00:46.585958"
     },
     {
       "game_id": 2025020477,
@@ -114588,13 +114589,13 @@
         "corr_disagreement": 0.24697392419104858,
         "monte_carlo_flip_rate": 0.65
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
+      "actual_winner": "away",
+      "actual_winner_side": "away",
+      "actual_winner_team": "DET",
+      "actual_away_score": 4,
+      "actual_home_score": 3,
       "goal_diff": null,
-      "prediction_accuracy": null,
+      "prediction_accuracy": 0.5858324565035582,
       "timestamp": "2025-12-10T13:00:30.057783",
       "predicted_winner": "away",
       "predicted_winner_team": "DET",
@@ -114618,7 +114619,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-12-11T13:00:47.060885"
     },
     {
       "game_id": 2025020478,
@@ -114642,13 +114644,13 @@
         "corr_disagreement": 0.13341876676849185,
         "monte_carlo_flip_rate": 0.15
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
+      "actual_winner": "away",
+      "actual_winner_side": "away",
+      "actual_winner_team": "FLA",
+      "actual_away_score": 4,
+      "actual_home_score": 3,
       "goal_diff": null,
-      "prediction_accuracy": null,
+      "prediction_accuracy": 0.6342867922738283,
       "timestamp": "2025-12-10T13:00:30.203644",
       "predicted_winner": "away",
       "predicted_winner_team": "FLA",
@@ -114672,7 +114674,8 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
-      "was_upset": false
+      "was_upset": false,
+      "result_updated_at": "2025-12-11T13:00:47.464286"
     },
     {
       "game_id": 2025020479,
@@ -114696,13 +114699,13 @@
         "corr_disagreement": 0.2491958882693357,
         "monte_carlo_flip_rate": 0.625
       },
-      "actual_winner": null,
-      "actual_winner_side": null,
-      "actual_winner_team": null,
-      "actual_away_score": null,
-      "actual_home_score": null,
+      "actual_winner": "home",
+      "actual_winner_side": "home",
+      "actual_winner_team": "SEA",
+      "actual_away_score": 2,
+      "actual_home_score": 3,
       "goal_diff": null,
-      "prediction_accuracy": null,
+      "prediction_accuracy": 0.4287897509580131,
       "timestamp": "2025-12-10T13:00:30.348322",
       "predicted_winner": "away",
       "predicted_winner_team": "LAK",
@@ -114726,51 +114729,754 @@
       "home_rest_value": 0.0,
       "correlation_predicted_winner": null,
       "correlation_correct": null,
+      "was_upset": false,
+      "result_updated_at": "2025-12-11T13:00:47.816593"
+    },
+    {
+      "game_id": 2025020480,
+      "date": "2025-12-11",
+      "away_team": "SJS",
+      "home_team": "TOR",
+      "predicted_away_win_prob": 0.6090867155874736,
+      "predicted_home_win_prob": 0.39091328441252643,
+      "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "context_bucket": "neutral",
+        "away_back_to_back": false,
+        "home_back_to_back": false,
+        "away_goalie_perf": 0.542,
+        "home_goalie_perf": 0.5662666666666667,
+        "away_sos": 0.5,
+        "home_sos": 0.5,
+        "away_venue_win_pct": 0.375,
+        "home_venue_win_pct": 0.5,
+        "corr_disagreement": 0.1291703504269568,
+        "monte_carlo_flip_rate": 0.575
+      },
+      "actual_winner": null,
+      "actual_winner_side": null,
+      "actual_winner_team": null,
+      "actual_away_score": null,
+      "actual_home_score": null,
+      "goal_diff": null,
+      "prediction_accuracy": null,
+      "timestamp": "2025-12-11T13:01:33.453310",
+      "predicted_winner": "away",
+      "predicted_winner_team": "SJS",
+      "prediction_confidence": 0.6090867155874736,
+      "prediction_margin": 0.2181734311749472,
+      "raw_away_prob": 0.43321829144345003,
+      "raw_home_prob": 0.56678170855655,
+      "calibrated_away_prob": 0.6090867155874736,
+      "calibrated_home_prob": 0.39091328441252643,
+      "correlation_away_prob": 0.5623886418704068,
+      "correlation_home_prob": 0.4376113581295932,
+      "ensemble_away_prob": 0.43321829144345003,
+      "ensemble_home_prob": 0.5667817085565501,
+      "corr_disagreement": 0.12477728374081365,
+      "monte_carlo_flip_rate": 0.575,
+      "upset_probability": 0.4261025790744666,
+      "context_bucket": "neutral",
+      "away_back_to_back": false,
+      "home_back_to_back": false,
+      "away_rest_value": 0.0,
+      "home_rest_value": 0.0,
+      "correlation_predicted_winner": null,
+      "correlation_correct": null,
+      "was_upset": false
+    },
+    {
+      "game_id": 2025020481,
+      "date": "2025-12-11",
+      "away_team": "TBL",
+      "home_team": "NJD",
+      "predicted_away_win_prob": 0.6456327961335583,
+      "predicted_home_win_prob": 0.3543672038664417,
+      "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "context_bucket": "neutral",
+        "away_back_to_back": false,
+        "home_back_to_back": false,
+        "away_goalie_perf": 0.6126666666666667,
+        "home_goalie_perf": 0.4758666666666667,
+        "away_sos": 0.5,
+        "home_sos": 0.5,
+        "away_venue_win_pct": 0.5625,
+        "home_venue_win_pct": 0.6428571428571429,
+        "corr_disagreement": 0.2586398592411231,
+        "monte_carlo_flip_rate": 0.025
+      },
+      "actual_winner": null,
+      "actual_winner_side": null,
+      "actual_winner_team": null,
+      "actual_away_score": null,
+      "actual_home_score": null,
+      "goal_diff": null,
+      "prediction_accuracy": null,
+      "timestamp": "2025-12-11T13:01:33.605835",
+      "predicted_winner": "away",
+      "predicted_winner_team": "TBL",
+      "prediction_confidence": 0.6456327961335583,
+      "prediction_margin": 0.29126559226711657,
+      "raw_away_prob": 0.5688229500003498,
+      "raw_home_prob": 0.43117704999965023,
+      "calibrated_away_prob": 0.6456327961335583,
+      "calibrated_home_prob": 0.3543672038664417,
+      "correlation_away_prob": 0.8274628092414729,
+      "correlation_home_prob": 0.17253719075852714,
+      "ensemble_away_prob": 0.5688229500003498,
+      "ensemble_home_prob": 0.4311770499996503,
+      "corr_disagreement": 0.6549256184829457,
+      "monte_carlo_flip_rate": 0.025,
+      "upset_probability": 0.34463539101698953,
+      "context_bucket": "neutral",
+      "away_back_to_back": false,
+      "home_back_to_back": false,
+      "away_rest_value": 0.0,
+      "home_rest_value": 0.0,
+      "correlation_predicted_winner": null,
+      "correlation_correct": null,
+      "was_upset": false
+    },
+    {
+      "game_id": 2025020482,
+      "date": "2025-12-11",
+      "away_team": "ANA",
+      "home_team": "NYI",
+      "predicted_away_win_prob": 0.5810352822840653,
+      "predicted_home_win_prob": 0.41896471771593474,
+      "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "context_bucket": "neutral",
+        "away_back_to_back": false,
+        "home_back_to_back": false,
+        "away_goalie_perf": 0.6016,
+        "home_goalie_perf": 0.5778666666666668,
+        "away_sos": 0.5,
+        "home_sos": 0.5,
+        "away_venue_win_pct": 0.5294117647058824,
+        "home_venue_win_pct": 0.5,
+        "corr_disagreement": 0.1591227058697508,
+        "monte_carlo_flip_rate": 0.75
+      },
+      "actual_winner": null,
+      "actual_winner_side": null,
+      "actual_winner_team": null,
+      "actual_away_score": null,
+      "actual_home_score": null,
+      "goal_diff": null,
+      "prediction_accuracy": null,
+      "timestamp": "2025-12-11T13:01:33.753958",
+      "predicted_winner": "away",
+      "predicted_winner_team": "ANA",
+      "prediction_confidence": 0.5810352822840653,
+      "prediction_margin": 0.16207056456813057,
+      "raw_away_prob": 0.5424620281505227,
+      "raw_home_prob": 0.4575379718494773,
+      "calibrated_away_prob": 0.5810352822840653,
+      "calibrated_home_prob": 0.41896471771593474,
+      "correlation_away_prob": 0.3833393222807719,
+      "correlation_home_prob": 0.6166606777192281,
+      "ensemble_away_prob": 0.5424620281505227,
+      "ensemble_home_prob": 0.4575379718494773,
+      "corr_disagreement": 0.23332135543845617,
+      "monte_carlo_flip_rate": 0.75,
+      "upset_probability": 0.4681316806091886,
+      "context_bucket": "neutral",
+      "away_back_to_back": false,
+      "home_back_to_back": false,
+      "away_rest_value": 0.0,
+      "home_rest_value": 0.0,
+      "correlation_predicted_winner": null,
+      "correlation_correct": null,
+      "was_upset": false
+    },
+    {
+      "game_id": 2025020483,
+      "date": "2025-12-11",
+      "away_team": "VGK",
+      "home_team": "PHI",
+      "predicted_away_win_prob": 0.5720519100077955,
+      "predicted_home_win_prob": 0.4279480899922045,
+      "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "context_bucket": "neutral",
+        "away_back_to_back": false,
+        "home_back_to_back": false,
+        "away_goalie_perf": 0.5254666666666667,
+        "home_goalie_perf": 0.5733333333333334,
+        "away_sos": 0.5,
+        "home_sos": 0.5,
+        "away_venue_win_pct": 0.5,
+        "home_venue_win_pct": 0.5789473684210527,
+        "corr_disagreement": 0.27086601090888596,
+        "monte_carlo_flip_rate": 0.825
+      },
+      "actual_winner": null,
+      "actual_winner_side": null,
+      "actual_winner_team": null,
+      "actual_away_score": null,
+      "actual_home_score": null,
+      "goal_diff": null,
+      "prediction_accuracy": null,
+      "timestamp": "2025-12-11T13:01:33.899849",
+      "predicted_winner": "away",
+      "predicted_winner_team": "VGK",
+      "prediction_confidence": 0.5720519100077955,
+      "prediction_margin": 0.14410382001559102,
+      "raw_away_prob": 0.5423931224942716,
+      "raw_home_prob": 0.45760687750572837,
+      "calibrated_away_prob": 0.5720519100077955,
+      "calibrated_home_prob": 0.4279480899922045,
+      "correlation_away_prob": 0.27152711158538567,
+      "correlation_home_prob": 0.7284728884146143,
+      "ensemble_away_prob": 0.5423931224942716,
+      "ensemble_home_prob": 0.45760687750572837,
+      "corr_disagreement": 0.45694577682922866,
+      "monte_carlo_flip_rate": 0.825,
+      "upset_probability": 0.494943567975255,
+      "context_bucket": "neutral",
+      "away_back_to_back": false,
+      "home_back_to_back": false,
+      "away_rest_value": 0.0,
+      "home_rest_value": 0.0,
+      "correlation_predicted_winner": null,
+      "correlation_correct": null,
+      "was_upset": false
+    },
+    {
+      "game_id": 2025020484,
+      "date": "2025-12-11",
+      "away_team": "MTL",
+      "home_team": "PIT",
+      "predicted_away_win_prob": 0.6013715532164614,
+      "predicted_home_win_prob": 0.39862844678353865,
+      "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "context_bucket": "neutral",
+        "away_back_to_back": false,
+        "home_back_to_back": false,
+        "away_goalie_perf": 0.5601333333333334,
+        "home_goalie_perf": 0.4505333333333334,
+        "away_sos": 0.5,
+        "home_sos": 0.5,
+        "away_venue_win_pct": 0.6153846153846154,
+        "home_venue_win_pct": 0.5,
+        "corr_disagreement": 0.19259568936043825,
+        "monte_carlo_flip_rate": 0.1
+      },
+      "actual_winner": null,
+      "actual_winner_side": null,
+      "actual_winner_team": null,
+      "actual_away_score": null,
+      "actual_home_score": null,
+      "goal_diff": null,
+      "prediction_accuracy": null,
+      "timestamp": "2025-12-11T13:01:34.046518",
+      "predicted_winner": "away",
+      "predicted_winner_team": "MTL",
+      "prediction_confidence": 0.6013715532164614,
+      "prediction_margin": 0.20274310643292276,
+      "raw_away_prob": 0.5855971859781729,
+      "raw_home_prob": 0.4144028140218271,
+      "calibrated_away_prob": 0.6013715532164614,
+      "calibrated_home_prob": 0.39862844678353865,
+      "correlation_away_prob": 0.7781928753386111,
+      "correlation_home_prob": 0.22180712466138885,
+      "ensemble_away_prob": 0.5855971859781729,
+      "ensemble_home_prob": 0.4144028140218271,
+      "corr_disagreement": 0.5563857506772223,
+      "monte_carlo_flip_rate": 0.1,
+      "upset_probability": 0.35683350709453726,
+      "context_bucket": "neutral",
+      "away_back_to_back": false,
+      "home_back_to_back": false,
+      "away_rest_value": 0.0,
+      "home_rest_value": 0.0,
+      "correlation_predicted_winner": null,
+      "correlation_correct": null,
+      "was_upset": false
+    },
+    {
+      "game_id": 2025020485,
+      "date": "2025-12-11",
+      "away_team": "CAR",
+      "home_team": "WSH",
+      "predicted_away_win_prob": 0.6341560529382952,
+      "predicted_home_win_prob": 0.3658439470617047,
+      "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "context_bucket": "neutral",
+        "away_back_to_back": false,
+        "home_back_to_back": false,
+        "away_goalie_perf": 0.5221333333333333,
+        "home_goalie_perf": 0.5946666666666667,
+        "away_sos": 0.5,
+        "home_sos": 0.5,
+        "away_venue_win_pct": 0.5714285714285714,
+        "home_venue_win_pct": 0.6111111111111112,
+        "corr_disagreement": 0.08500436292984831,
+        "monte_carlo_flip_rate": 0.175
+      },
+      "actual_winner": null,
+      "actual_winner_side": null,
+      "actual_winner_team": null,
+      "actual_away_score": null,
+      "actual_home_score": null,
+      "goal_diff": null,
+      "prediction_accuracy": null,
+      "timestamp": "2025-12-11T13:01:34.193151",
+      "predicted_winner": "away",
+      "predicted_winner_team": "CAR",
+      "prediction_confidence": 0.6341560529382952,
+      "prediction_margin": 0.26831210587659055,
+      "raw_away_prob": 0.407143413131693,
+      "raw_home_prob": 0.592856586868307,
+      "calibrated_away_prob": 0.6341560529382952,
+      "calibrated_home_prob": 0.3658439470617047,
+      "correlation_away_prob": 0.3221390502018447,
+      "correlation_home_prob": 0.6778609497981554,
+      "ensemble_away_prob": 0.407143413131693,
+      "ensemble_home_prob": 0.592856586868307,
+      "corr_disagreement": 0.3557218995963107,
+      "monte_carlo_flip_rate": 0.175,
+      "upset_probability": 0.3591391492780808,
+      "context_bucket": "neutral",
+      "away_back_to_back": false,
+      "home_back_to_back": false,
+      "away_rest_value": 0.0,
+      "home_rest_value": 0.0,
+      "correlation_predicted_winner": null,
+      "correlation_correct": null,
+      "was_upset": false
+    },
+    {
+      "game_id": 2025020486,
+      "date": "2025-12-11",
+      "away_team": "OTT",
+      "home_team": "CBJ",
+      "predicted_away_win_prob": 0.6086707622392904,
+      "predicted_home_win_prob": 0.39132923776070955,
+      "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "context_bucket": "neutral",
+        "away_back_to_back": false,
+        "home_back_to_back": false,
+        "away_goalie_perf": 0.5152000000000001,
+        "home_goalie_perf": 0.5781333333333334,
+        "away_sos": 0.5,
+        "home_sos": 0.5,
+        "away_venue_win_pct": 0.47058823529411764,
+        "home_venue_win_pct": 0.5,
+        "corr_disagreement": 0.13484095926992679,
+        "monte_carlo_flip_rate": 0.125
+      },
+      "actual_winner": null,
+      "actual_winner_side": null,
+      "actual_winner_team": null,
+      "actual_away_score": null,
+      "actual_home_score": null,
+      "goal_diff": null,
+      "prediction_accuracy": null,
+      "timestamp": "2025-12-11T13:01:34.338479",
+      "predicted_winner": "away",
+      "predicted_winner_team": "OTT",
+      "prediction_confidence": 0.6086707622392904,
+      "prediction_margin": 0.21734152447858085,
+      "raw_away_prob": 0.44461645334257105,
+      "raw_home_prob": 0.555383546657429,
+      "calibrated_away_prob": 0.6086707622392904,
+      "calibrated_home_prob": 0.39132923776070955,
+      "correlation_away_prob": 0.30977549407264426,
+      "correlation_home_prob": 0.6902245059273557,
+      "ensemble_away_prob": 0.44461645334257105,
+      "ensemble_home_prob": 0.555383546657429,
+      "corr_disagreement": 0.38044901185471147,
+      "monte_carlo_flip_rate": 0.125,
+      "upset_probability": 0.3528553988561504,
+      "context_bucket": "neutral",
+      "away_back_to_back": false,
+      "home_back_to_back": false,
+      "away_rest_value": 0.0,
+      "home_rest_value": 0.0,
+      "correlation_predicted_winner": null,
+      "correlation_correct": null,
+      "was_upset": false
+    },
+    {
+      "game_id": 2025020487,
+      "date": "2025-12-11",
+      "away_team": "STL",
+      "home_team": "NSH",
+      "predicted_away_win_prob": 0.6000678203616424,
+      "predicted_home_win_prob": 0.39993217963835753,
+      "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "context_bucket": "neutral",
+        "away_back_to_back": false,
+        "home_back_to_back": false,
+        "away_goalie_perf": 0.5688000000000001,
+        "home_goalie_perf": 0.48573333333333335,
+        "away_sos": 0.5,
+        "home_sos": 0.5,
+        "away_venue_win_pct": 0.4375,
+        "home_venue_win_pct": 0.4444444444444444,
+        "corr_disagreement": 0.06555926277715163,
+        "monte_carlo_flip_rate": 0.475
+      },
+      "actual_winner": null,
+      "actual_winner_side": null,
+      "actual_winner_team": null,
+      "actual_away_score": null,
+      "actual_home_score": null,
+      "goal_diff": null,
+      "prediction_accuracy": null,
+      "timestamp": "2025-12-11T13:01:34.485078",
+      "predicted_winner": "away",
+      "predicted_winner_team": "STL",
+      "prediction_confidence": 0.6000678203616424,
+      "prediction_margin": 0.20013564072328488,
+      "raw_away_prob": 0.4875182636905439,
+      "raw_home_prob": 0.512481736309456,
+      "calibrated_away_prob": 0.6000678203616424,
+      "calibrated_home_prob": 0.39993217963835753,
+      "correlation_away_prob": 0.4219590009133923,
+      "correlation_home_prob": 0.5780409990866078,
+      "ensemble_away_prob": 0.4875182636905439,
+      "ensemble_home_prob": 0.5124817363094561,
+      "corr_disagreement": 0.1560819981732155,
+      "monte_carlo_flip_rate": 0.475,
+      "upset_probability": 0.40883006184993204,
+      "context_bucket": "neutral",
+      "away_back_to_back": false,
+      "home_back_to_back": false,
+      "away_rest_value": 0.0,
+      "home_rest_value": 0.0,
+      "correlation_predicted_winner": null,
+      "correlation_correct": null,
+      "was_upset": false
+    },
+    {
+      "game_id": 2025020488,
+      "date": "2025-12-11",
+      "away_team": "DAL",
+      "home_team": "MIN",
+      "predicted_away_win_prob": 0.6189160732642526,
+      "predicted_home_win_prob": 0.38108392673574737,
+      "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "context_bucket": "neutral",
+        "away_back_to_back": false,
+        "home_back_to_back": false,
+        "away_goalie_perf": 0.6172000000000001,
+        "home_goalie_perf": 0.662,
+        "away_sos": 0.5,
+        "home_sos": 0.5,
+        "away_venue_win_pct": 0.6875,
+        "home_venue_win_pct": 0.5333333333333333,
+        "corr_disagreement": 0.37774870344736955,
+        "monte_carlo_flip_rate": 0.0
+      },
+      "actual_winner": null,
+      "actual_winner_side": null,
+      "actual_winner_team": null,
+      "actual_away_score": null,
+      "actual_home_score": null,
+      "goal_diff": null,
+      "prediction_accuracy": null,
+      "timestamp": "2025-12-11T13:01:34.633080",
+      "predicted_winner": "away",
+      "predicted_winner_team": "DAL",
+      "prediction_confidence": 0.6189160732642526,
+      "prediction_margin": 0.2378321465285052,
+      "raw_away_prob": 0.5201146424868079,
+      "raw_home_prob": 0.47988535751319206,
+      "calibrated_away_prob": 0.6189160732642526,
+      "calibrated_home_prob": 0.38108392673574737,
+      "correlation_away_prob": 0.8978633459341775,
+      "correlation_home_prob": 0.10213665406582251,
+      "ensemble_away_prob": 0.5201146424868079,
+      "ensemble_home_prob": 0.4798853575131921,
+      "corr_disagreement": 0.795726691868355,
+      "monte_carlo_flip_rate": 0.075,
+      "upset_probability": 0.3620380134294487,
+      "context_bucket": "neutral",
+      "away_back_to_back": false,
+      "home_back_to_back": false,
+      "away_rest_value": 0.0,
+      "home_rest_value": 0.0,
+      "correlation_predicted_winner": null,
+      "correlation_correct": null,
+      "was_upset": false
+    },
+    {
+      "game_id": 2025020489,
+      "date": "2025-12-11",
+      "away_team": "BOS",
+      "home_team": "WPG",
+      "predicted_away_win_prob": 0.5658661882318448,
+      "predicted_home_win_prob": 0.4341338117681552,
+      "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "context_bucket": "neutral",
+        "away_back_to_back": false,
+        "home_back_to_back": false,
+        "away_goalie_perf": 0.6264000000000001,
+        "home_goalie_perf": 0.5740000000000001,
+        "away_sos": 0.5,
+        "home_sos": 0.5,
+        "away_venue_win_pct": 0.5,
+        "home_venue_win_pct": 0.5384615384615384,
+        "corr_disagreement": 0.2758206315446456,
+        "monte_carlo_flip_rate": 0.875
+      },
+      "actual_winner": null,
+      "actual_winner_side": null,
+      "actual_winner_team": null,
+      "actual_away_score": null,
+      "actual_home_score": null,
+      "goal_diff": null,
+      "prediction_accuracy": null,
+      "timestamp": "2025-12-11T13:01:34.780482",
+      "predicted_winner": "away",
+      "predicted_winner_team": "BOS",
+      "prediction_confidence": 0.5658661882318448,
+      "prediction_margin": 0.13173237646368957,
+      "raw_away_prob": 0.5330391106709386,
+      "raw_home_prob": 0.46696088932906143,
+      "calibrated_away_prob": 0.5658661882318448,
+      "calibrated_home_prob": 0.4341338117681552,
+      "correlation_away_prob": 0.257218479126293,
+      "correlation_home_prob": 0.742781520873707,
+      "ensemble_away_prob": 0.5330391106709386,
+      "ensemble_home_prob": 0.46696088932906143,
+      "corr_disagreement": 0.485563041747414,
+      "monte_carlo_flip_rate": 0.875,
+      "upset_probability": 0.5068377616562239,
+      "context_bucket": "neutral",
+      "away_back_to_back": false,
+      "home_back_to_back": false,
+      "away_rest_value": 0.0,
+      "home_rest_value": 0.0,
+      "correlation_predicted_winner": null,
+      "correlation_correct": null,
+      "was_upset": false
+    },
+    {
+      "game_id": 2025020491,
+      "date": "2025-12-11",
+      "away_team": "DET",
+      "home_team": "EDM",
+      "predicted_away_win_prob": 0.6271690699642193,
+      "predicted_home_win_prob": 0.3728309300357807,
+      "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "context_bucket": "neutral",
+        "away_back_to_back": false,
+        "home_back_to_back": false,
+        "away_goalie_perf": 0.5645333333333333,
+        "home_goalie_perf": 0.5013333333333334,
+        "away_sos": 0.5,
+        "home_sos": 0.5,
+        "away_venue_win_pct": 0.5625,
+        "home_venue_win_pct": 0.5384615384615384,
+        "corr_disagreement": 0.30298110046801047,
+        "monte_carlo_flip_rate": 0.05
+      },
+      "actual_winner": null,
+      "actual_winner_side": null,
+      "actual_winner_team": null,
+      "actual_away_score": null,
+      "actual_home_score": null,
+      "goal_diff": null,
+      "prediction_accuracy": null,
+      "timestamp": "2025-12-11T13:01:34.926480",
+      "predicted_winner": "away",
+      "predicted_winner_team": "DET",
+      "prediction_confidence": 0.6271690699642193,
+      "prediction_margin": 0.25433813992843857,
+      "raw_away_prob": 0.4872210792077248,
+      "raw_home_prob": 0.5127789207922753,
+      "calibrated_away_prob": 0.6271690699642193,
+      "calibrated_home_prob": 0.3728309300357807,
+      "correlation_away_prob": 0.18423997873971432,
+      "correlation_home_prob": 0.8157600212602857,
+      "ensemble_away_prob": 0.4872210792077248,
+      "ensemble_home_prob": 0.5127789207922753,
+      "corr_disagreement": 0.6315200425205714,
+      "monte_carlo_flip_rate": 0.05,
+      "upset_probability": 0.3493615621039449,
+      "context_bucket": "neutral",
+      "away_back_to_back": false,
+      "home_back_to_back": false,
+      "away_rest_value": 0.0,
+      "home_rest_value": 0.0,
+      "correlation_predicted_winner": null,
+      "correlation_correct": null,
+      "was_upset": false
+    },
+    {
+      "game_id": 2025020490,
+      "date": "2025-12-11",
+      "away_team": "FLA",
+      "home_team": "COL",
+      "predicted_away_win_prob": 0.6192035783282144,
+      "predicted_home_win_prob": 0.38079642167178557,
+      "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "context_bucket": "neutral",
+        "away_back_to_back": false,
+        "home_back_to_back": false,
+        "away_goalie_perf": 0.5269333333333334,
+        "home_goalie_perf": 0.6449333333333334,
+        "away_sos": 0.5,
+        "home_sos": 0.5,
+        "away_venue_win_pct": 0.4166666666666667,
+        "home_venue_win_pct": 0.8461538461538461,
+        "corr_disagreement": 0.1070042357817309,
+        "monte_carlo_flip_rate": 0.3
+      },
+      "actual_winner": null,
+      "actual_winner_side": null,
+      "actual_winner_team": null,
+      "actual_away_score": null,
+      "actual_home_score": null,
+      "goal_diff": null,
+      "prediction_accuracy": null,
+      "timestamp": "2025-12-11T13:01:35.073095",
+      "predicted_winner": "away",
+      "predicted_winner_team": "FLA",
+      "prediction_confidence": 0.6192035783282144,
+      "prediction_margin": 0.2384071566564288,
+      "raw_away_prob": 0.34914119610397654,
+      "raw_home_prob": 0.6508588038960235,
+      "calibrated_away_prob": 0.6192035783282144,
+      "calibrated_home_prob": 0.38079642167178557,
+      "correlation_away_prob": 0.45614543188570744,
+      "correlation_home_prob": 0.5438545681142926,
+      "ensemble_away_prob": 0.34914119610397654,
+      "ensemble_home_prob": 0.6508588038960235,
+      "corr_disagreement": 0.08770913622858512,
+      "monte_carlo_flip_rate": 0.3,
+      "upset_probability": 0.3709323162510338,
+      "context_bucket": "neutral",
+      "away_back_to_back": false,
+      "home_back_to_back": false,
+      "away_rest_value": 0.0,
+      "home_rest_value": 0.0,
+      "correlation_predicted_winner": null,
+      "correlation_correct": null,
+      "was_upset": false
+    },
+    {
+      "game_id": 2025020492,
+      "date": "2025-12-11",
+      "away_team": "BUF",
+      "home_team": "VAN",
+      "predicted_away_win_prob": 0.5942411173357904,
+      "predicted_home_win_prob": 0.4057588826642095,
+      "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "context_bucket": "neutral",
+        "away_back_to_back": false,
+        "home_back_to_back": false,
+        "away_goalie_perf": 0.4834666666666667,
+        "home_goalie_perf": 0.47600000000000003,
+        "away_sos": 0.5,
+        "home_sos": 0.5,
+        "away_venue_win_pct": 0.2,
+        "home_venue_win_pct": 0.3333333333333333,
+        "corr_disagreement": 0.017702861331945208,
+        "monte_carlo_flip_rate": 0.375
+      },
+      "actual_winner": null,
+      "actual_winner_side": null,
+      "actual_winner_team": null,
+      "actual_away_score": null,
+      "actual_home_score": null,
+      "goal_diff": null,
+      "prediction_accuracy": null,
+      "timestamp": "2025-12-11T13:01:35.221095",
+      "predicted_winner": "away",
+      "predicted_winner_team": "BUF",
+      "prediction_confidence": 0.5942411173357904,
+      "prediction_margin": 0.18848223467158093,
+      "raw_away_prob": 0.5854695254680433,
+      "raw_home_prob": 0.4145304745319567,
+      "calibrated_away_prob": 0.5942411173357904,
+      "calibrated_home_prob": 0.4057588826642095,
+      "correlation_away_prob": 0.5677666641360981,
+      "correlation_home_prob": 0.4322333358639019,
+      "ensemble_away_prob": 0.5854695254680433,
+      "ensemble_home_prob": 0.4145304745319567,
+      "corr_disagreement": 0.13553332827219622,
+      "monte_carlo_flip_rate": 0.375,
+      "upset_probability": 0.3890836534421048,
+      "context_bucket": "neutral",
+      "away_back_to_back": false,
+      "home_back_to_back": false,
+      "away_rest_value": 0.0,
+      "home_rest_value": 0.0,
+      "correlation_predicted_winner": null,
+      "correlation_correct": null,
       "was_upset": false
     }
   ],
   "model_weights": {
-    "xg_weight": 0.28625459181489965,
-    "hdc_weight": 0.07373186812343396,
-    "corsi_weight": 0.045405801675966966,
-    "power_play_weight": 0.045405801675966966,
-    "faceoff_weight": 0.045405801675966966,
-    "shots_weight": 0.045405801675966966,
-    "hits_weight": 0.045405801675966966,
-    "blocked_shots_weight": 0.045405801675966966,
-    "takeaways_weight": 0.045405801675966966,
-    "penalty_minutes_weight": 0.045405801675966966,
-    "recent_form_weight": 0.045405801675966966,
-    "head_to_head_weight": 0.045405801675966966,
-    "rest_days_weight": 0.045405801675966966,
-    "goalie_performance_weight": 0.045405801675966966,
-    "game_score_weight": 0.04973811827409529,
-    "sos_weight": 0.045405801675966966
+    "xg_weight": 0.3635969035549554,
+    "hdc_weight": 0.10220549923237296,
+    "corsi_weight": 0.03648496991351434,
+    "power_play_weight": 0.03648496991351434,
+    "faceoff_weight": 0.03648496991351434,
+    "shots_weight": 0.03648496991351434,
+    "hits_weight": 0.03648496991351434,
+    "blocked_shots_weight": 0.03648496991351434,
+    "takeaways_weight": 0.03648496991351434,
+    "penalty_minutes_weight": 0.03648496991351434,
+    "recent_form_weight": 0.03648496991351434,
+    "head_to_head_weight": 0.03648496991351434,
+    "rest_days_weight": 0.03648496991351434,
+    "goalie_performance_weight": 0.03648496991351434,
+    "game_score_weight": 0.05989298833698497,
+    "sos_weight": 0.03648496991351434
   },
   "weight_momentum": {
-    "xg_weight": 0.0005909711497067392,
-    "hdc_weight": -0.01211635488108229,
-    "corsi_weight": -0.03280307395916475,
-    "power_play_weight": -0.037652021843082036,
-    "faceoff_weight": -0.0425482861682244,
-    "shots_weight": -0.045051641924389096,
-    "hits_weight": -0.0501497013619261,
-    "blocked_shots_weight": -0.0501497013619261,
-    "takeaways_weight": -0.052743521655074295,
-    "penalty_minutes_weight": -0.055384988280781915,
-    "recent_form_weight": -0.052743521655074295,
-    "head_to_head_weight": -0.05803561909828081,
-    "rest_days_weight": -0.05803561909828081,
-    "goalie_performance_weight": -0.05803561909828081,
-    "game_score_weight": -0.02075392260741739,
-    "sos_weight": -0.05803561909828081
+    "xg_weight": 0.012715289001920827,
+    "hdc_weight": 0.010307257693015059,
+    "corsi_weight": -0.017950261891241354,
+    "power_play_weight": -0.02530409172063195,
+    "faceoff_weight": -0.03269577470300261,
+    "shots_weight": -0.036435795069062756,
+    "hits_weight": -0.04398891414134912,
+    "blocked_shots_weight": -0.04398891414134912,
+    "takeaways_weight": -0.04780130613699607,
+    "penalty_minutes_weight": -0.05165181519869055,
+    "recent_form_weight": -0.04780130613699607,
+    "head_to_head_weight": -0.05550965561381804,
+    "rest_days_weight": -0.05550965561381804,
+    "goalie_performance_weight": -0.05550965561381804,
+    "game_score_weight": -0.0004907253238272125,
+    "sos_weight": -0.05550965561381804
   },
-  "last_updated": "2025-12-10T13:00:30.497762",
+  "last_updated": "2025-12-11T13:01:30.798958",
   "model_performance": {
-    "total_games": 503,
-    "correct_predictions": 252,
-    "accuracy": 0.5009940357852882,
-    "recent_accuracy": 0.5
+    "total_games": 507,
+    "correct_predictions": 254,
+    "accuracy": 0.5009861932938856,
+    "recent_accuracy": 0.5333333333333333
   },
   "calibration_points": [
     [
@@ -114791,43 +115497,43 @@
     ],
     [
       0.375,
-      0.5846153846153846
+      0.5909090909090909
     ],
     [
       0.4583333333333333,
-      0.5846153846153846
+      0.5909090909090909
     ],
     [
       0.5416666666666666,
-      0.5846153846153846
+      0.5909090909090909
     ],
     [
       0.625,
-      0.5846153846153846
+      0.5909090909090909
     ],
     [
       0.7083333333333333,
-      0.6111111111111112
+      0.5909090909090909
     ],
     [
       0.7916666666666666,
-      0.6111111111111112
+      0.5909090909090909
     ],
     [
       0.875,
-      0.6111111111111112
+      0.5909090909090909
     ],
     [
       0.9583333333333333,
-      0.6111111111111112
+      0.5909090909090909
     ]
   ],
   "calibration_metadata": {
-    "updated_at": "2025-12-10T13:00:30.988264",
-    "sample_size": 503,
+    "updated_at": "2025-12-11T13:01:35.540470",
+    "sample_size": 507,
     "num_bins": 12,
     "bucket_samples": {
-      "neutral": 503
+      "neutral": 507
     }
   },
   "calibration_by_bucket": {
@@ -114850,35 +115556,35 @@
       ],
       [
         0.375,
-        0.5846153846153846
+        0.5909090909090909
       ],
       [
         0.4583333333333333,
-        0.5846153846153846
+        0.5909090909090909
       ],
       [
         0.5416666666666666,
-        0.5846153846153846
+        0.5909090909090909
       ],
       [
         0.625,
-        0.5846153846153846
+        0.5909090909090909
       ],
       [
         0.7083333333333333,
-        0.6111111111111112
+        0.5909090909090909
       ],
       [
         0.7916666666666666,
-        0.6111111111111112
+        0.5909090909090909
       ],
       [
         0.875,
-        0.6111111111111112
+        0.5909090909090909
       ],
       [
         0.9583333333333333,
-        0.6111111111111112
+        0.5909090909090909
       ]
     ]
   },
@@ -115586,7 +116292,8 @@
           5.22,
           6.02,
           6.57,
-          5.2
+          5.2,
+          6.05
         ],
         "xg": [
           1.84,
@@ -115604,7 +116311,8 @@
           2.49,
           3.17,
           3.23,
-          2.16
+          2.16,
+          2.44
         ],
         "corsi_pct": [
           44.76,
@@ -115622,7 +116330,8 @@
           46.18,
           45.43,
           57.11,
-          45.5
+          45.5,
+          37.49
         ],
         "fenwick_pct": [
           44.76,
@@ -115640,7 +116349,8 @@
           46.18,
           45.43,
           57.11,
-          45.5
+          45.5,
+          37.49
         ],
         "pdo": [
           93.33,
@@ -115658,7 +116368,8 @@
           106.1,
           91.67,
           83.76,
-          110.84
+          110.84,
+          107.9
         ],
         "ozs": [
           17,
@@ -115676,7 +116387,8 @@
           14,
           26,
           19,
-          9
+          9,
+          10
         ],
         "nzs": [
           0,
@@ -115694,7 +116406,8 @@
           1,
           1,
           0,
-          2
+          2,
+          0
         ],
         "dzs": [
           11,
@@ -115712,7 +116425,8 @@
           11,
           9,
           7,
-          15
+          15,
+          17
         ],
         "goals": [
           0,
@@ -115730,6 +116444,7 @@
           4,
           1,
           3,
+          4,
           4
         ],
         "opp_goals": [
@@ -115748,7 +116463,8 @@
           3,
           4,
           5,
-          1
+          1,
+          3
         ],
         "shots": [
           28,
@@ -115766,7 +116482,8 @@
           29,
           36,
           26,
-          26
+          26,
+          28
         ],
         "hits": [
           20,
@@ -115784,7 +116501,8 @@
           18,
           26,
           22,
-          17
+          17,
+          24
         ],
         "blocked_shots": [
           7,
@@ -115802,7 +116520,8 @@
           13,
           17,
           19,
-          11
+          11,
+          13
         ],
         "giveaways": [
           12,
@@ -115820,6 +116539,7 @@
           15,
           16,
           10,
+          17,
           17
         ],
         "takeaways": [
@@ -115838,7 +116558,8 @@
           4,
           7,
           3,
-          6
+          6,
+          7
         ],
         "penalty_minutes": [
           10,
@@ -115856,7 +116577,8 @@
           6,
           10,
           8,
-          12
+          12,
+          10
         ],
         "power_play_pct": [
           0.0,
@@ -115874,7 +116596,8 @@
           0.0,
           33.33,
           0.0,
-          66.67
+          66.67,
+          200.0
         ],
         "penalty_kill_pct": [
           80.0,
@@ -115892,7 +116615,8 @@
           80.0,
           66.67,
           80.0,
-          33.33
+          33.33,
+          -100.0
         ],
         "faceoff_pct": [
           40.63,
@@ -115910,7 +116634,8 @@
           46.76,
           45.03,
           53.61,
-          34.95
+          34.95,
+          50.58
         ],
         "nzt": [
           4,
@@ -115928,7 +116653,8 @@
           4,
           3,
           3,
-          4
+          4,
+          1
         ],
         "nztsa": [
           1,
@@ -115946,7 +116672,8 @@
           3,
           0,
           3,
-          3
+          3,
+          0
         ],
         "fc": [
           27,
@@ -115964,7 +116691,8 @@
           25,
           33,
           23,
-          26
+          26,
+          27
         ],
         "rush": [
           1,
@@ -115982,9 +116710,11 @@
           1,
           3,
           3,
+          0,
           0
         ],
         "lat": [
+          0.0,
           0.0,
           0.0,
           0.0,
@@ -116018,6 +116748,7 @@
           0.0,
           0.0,
           0.0,
+          0.0,
           0.0
         ],
         "hdc": [
@@ -116036,7 +116767,8 @@
           7,
           11,
           9,
-          3
+          3,
+          9
         ],
         "hdca": [
           7,
@@ -116054,7 +116786,8 @@
           9,
           5,
           5,
-          9
+          9,
+          24
         ],
         "opp_xg": [
           3.22,
@@ -116072,7 +116805,8 @@
           3.88,
           4.48,
           2.37,
-          3.14
+          3.14,
+          6.0
         ],
         "period_dzs": [
           11,
@@ -116090,7 +116824,8 @@
           11,
           9,
           7,
-          15
+          15,
+          17
         ],
         "games": [
           0,
@@ -116108,7 +116843,8 @@
           12,
           13,
           14,
-          15
+          15,
+          16
         ],
         "lateral": [],
         "longitudinal": [],
@@ -116129,6 +116865,7 @@
           4,
           1,
           3,
+          4,
           4
         ],
         "goals_against": [
@@ -116147,7 +116884,8 @@
           3,
           4,
           5,
-          1
+          1,
+          3
         ],
         "shots_for": [
           28,
@@ -116165,7 +116903,8 @@
           29,
           36,
           26,
-          26
+          26,
+          28
         ],
         "shots_against": [],
         "xG_for": [
@@ -116184,7 +116923,8 @@
           2.49,
           3.17,
           3.23,
-          2.16
+          2.16,
+          2.44
         ],
         "xG_against": [
           3.22,
@@ -116202,7 +116942,8 @@
           3.88,
           4.48,
           2.37,
-          3.14
+          3.14,
+          6.0
         ],
         "hdc_for": [
           5,
@@ -116220,7 +116961,8 @@
           7,
           11,
           9,
-          3
+          3,
+          9
         ],
         "hdc_against": [],
         "pp_goals": [],
@@ -116993,7 +117735,8 @@
           5.05,
           5.6,
           6.07,
-          8.35
+          8.35,
+          9.55
         ],
         "xg": [
           3.78,
@@ -117010,7 +117753,8 @@
           2.65,
           3.05,
           2.58,
-          3.0
+          3.0,
+          3.87
         ],
         "corsi_pct": [
           47.24,
@@ -117027,7 +117771,8 @@
           42.78,
           58.17,
           34.06,
-          53.65
+          53.65,
+          55.14
         ],
         "fenwick_pct": [
           47.24,
@@ -117044,7 +117789,8 @@
           42.78,
           58.17,
           34.06,
-          53.65
+          53.65,
+          55.14
         ],
         "pdo": [
           105.9,
@@ -117061,7 +117807,8 @@
           104.57,
           93.18,
           119.16,
-          94.9
+          94.9,
+          108.44
         ],
         "ozs": [
           16,
@@ -117078,7 +117825,8 @@
           13,
           17,
           7,
-          25
+          25,
+          13
         ],
         "nzs": [
           0,
@@ -117095,7 +117843,8 @@
           2,
           0,
           1,
-          2
+          2,
+          1
         ],
         "dzs": [
           7,
@@ -117112,7 +117861,8 @@
           8,
           18,
           6,
-          11
+          11,
+          17
         ],
         "goals": [
           3,
@@ -117129,7 +117879,8 @@
           2,
           1,
           3,
-          4
+          4,
+          5
         ],
         "opp_goals": [
           2,
@@ -117146,7 +117897,8 @@
           1,
           3,
           1,
-          5
+          5,
+          2
         ],
         "shots": [
           23,
@@ -117163,7 +117915,8 @@
           26,
           35,
           14,
-          38
+          38,
+          31
         ],
         "hits": [
           27,
@@ -117180,7 +117933,8 @@
           28,
           30,
           24,
-          27
+          27,
+          26
         ],
         "blocked_shots": [
           23,
@@ -117197,6 +117951,7 @@
           14,
           16,
           18,
+          20,
           20
         ],
         "giveaways": [
@@ -117214,7 +117969,8 @@
           13,
           16,
           10,
-          14
+          14,
+          16
         ],
         "takeaways": [
           5,
@@ -117231,7 +117987,8 @@
           4,
           3,
           4,
-          5
+          5,
+          12
         ],
         "penalty_minutes": [
           24,
@@ -117248,7 +118005,8 @@
           12,
           14,
           8,
-          12
+          12,
+          6
         ],
         "power_play_pct": [
           20.0,
@@ -117265,7 +118023,8 @@
           0.0,
           25.0,
           100.0,
-          66.67
+          66.67,
+          0.0
         ],
         "penalty_kill_pct": [
           80.0,
@@ -117282,7 +118041,8 @@
           80.0,
           75.0,
           0.0,
-          33.33
+          33.33,
+          80.0
         ],
         "faceoff_pct": [
           58.35,
@@ -117299,7 +118059,8 @@
           38.41,
           50.85,
           50.46,
-          47.25
+          47.25,
+          42.21
         ],
         "nzt": [
           2,
@@ -117316,7 +118077,8 @@
           6,
           2,
           3,
-          4
+          4,
+          3
         ],
         "nztsa": [
           2,
@@ -117333,7 +118095,8 @@
           4,
           0,
           0,
-          3
+          3,
+          0
         ],
         "fc": [
           23,
@@ -117350,7 +118113,8 @@
           21,
           32,
           12,
-          37
+          37,
+          30
         ],
         "rush": [
           0,
@@ -117367,9 +118131,11 @@
           2,
           3,
           2,
+          1,
           1
         ],
         "lat": [
+          0.0,
           0.0,
           0.0,
           0.0,
@@ -117401,6 +118167,7 @@
           0.0,
           0.0,
           0.0,
+          0.0,
           0.0
         ],
         "hdc": [
@@ -117418,7 +118185,8 @@
           7,
           4,
           3,
-          9
+          9,
+          7
         ],
         "hdca": [
           8,
@@ -117435,7 +118203,8 @@
           3,
           6,
           17,
-          10
+          10,
+          11
         ],
         "opp_xg": [
           3.82,
@@ -117452,7 +118221,8 @@
           3.6,
           2.42,
           4.36,
-          4.8
+          4.8,
+          2.55
         ],
         "period_dzs": [
           7,
@@ -117469,7 +118239,8 @@
           8,
           18,
           6,
-          11
+          11,
+          17
         ],
         "games": [
           0,
@@ -117486,7 +118257,8 @@
           11,
           12,
           13,
-          14
+          14,
+          15
         ],
         "lateral": [],
         "longitudinal": [],
@@ -117506,7 +118278,8 @@
           2,
           1,
           3,
-          4
+          4,
+          5
         ],
         "goals_against": [
           2,
@@ -117523,7 +118296,8 @@
           1,
           3,
           1,
-          5
+          5,
+          2
         ],
         "shots_for": [
           23,
@@ -117540,7 +118314,8 @@
           26,
           35,
           14,
-          38
+          38,
+          31
         ],
         "shots_against": [],
         "xG_for": [
@@ -117558,7 +118333,8 @@
           2.65,
           3.05,
           2.58,
-          3.0
+          3.0,
+          3.87
         ],
         "xG_against": [
           3.82,
@@ -117575,7 +118351,8 @@
           3.6,
           2.42,
           4.36,
-          4.8
+          4.8,
+          2.55
         ],
         "hdc_for": [
           11,
@@ -117592,7 +118369,8 @@
           7,
           4,
           3,
-          9
+          9,
+          7
         ],
         "hdc_against": [],
         "pp_goals": [],
@@ -118364,7 +119142,8 @@
           4.82,
           4.17,
           5.65,
-          6.67
+          6.67,
+          5.75
         ],
         "xg": [
           2.52,
@@ -118380,7 +119159,8 @@
           2.74,
           3.64,
           4.35,
-          3.59
+          3.58,
+          2.29
         ],
         "corsi_pct": [
           47.06,
@@ -118396,7 +119176,8 @@
           57.96,
           48.63,
           63.9,
-          61.36
+          61.36,
+          45.9
         ],
         "fenwick_pct": [
           47.06,
@@ -118412,7 +119193,8 @@
           57.96,
           48.63,
           63.9,
-          61.36
+          61.36,
+          45.9
         ],
         "pdo": [
           104.23,
@@ -118428,7 +119210,8 @@
           100.76,
           92.61,
           85.47,
-          88.79
+          88.79,
+          104.29
         ],
         "ozs": [
           18,
@@ -118444,6 +119227,7 @@
           18,
           15,
           24,
+          14,
           14
         ],
         "nzs": [
@@ -118460,7 +119244,8 @@
           1,
           0,
           0,
-          0
+          0,
+          1
         ],
         "dzs": [
           8,
@@ -118476,7 +119261,8 @@
           12,
           14,
           11,
-          15
+          15,
+          12
         ],
         "goals": [
           5,
@@ -118492,6 +119278,7 @@
           3,
           2,
           1,
+          4,
           4
         ],
         "opp_goals": [
@@ -118508,7 +119295,8 @@
           2,
           5,
           4,
-          7
+          7,
+          3
         ],
         "shots": [
           27,
@@ -118524,7 +119312,8 @@
           33,
           29,
           35,
-          29
+          29,
+          28
         ],
         "hits": [
           19,
@@ -118540,7 +119329,8 @@
           20,
           16,
           22,
-          19
+          19,
+          14
         ],
         "blocked_shots": [
           16,
@@ -118556,7 +119346,8 @@
           14,
           16,
           11,
-          18
+          18,
+          16
         ],
         "giveaways": [
           15,
@@ -118572,7 +119363,8 @@
           18,
           13,
           13,
-          9
+          9,
+          10
         ],
         "takeaways": [
           8,
@@ -118588,7 +119380,8 @@
           4,
           3,
           6,
-          4
+          4,
+          6
         ],
         "penalty_minutes": [
           10,
@@ -118604,7 +119397,8 @@
           6,
           14,
           6,
-          16
+          16,
+          8
         ],
         "power_play_pct": [
           50.0,
@@ -118620,7 +119414,8 @@
           0.0,
           28.57,
           33.33,
-          22.22
+          22.22,
+          33.33
         ],
         "penalty_kill_pct": [
           50.0,
@@ -118636,7 +119431,8 @@
           80.0,
           71.43,
           66.67,
-          77.78
+          77.78,
+          66.67
         ],
         "faceoff_pct": [
           36.57,
@@ -118652,7 +119448,8 @@
           45.53,
           47.74,
           47.1,
-          46.24
+          46.24,
+          38.05
         ],
         "nzt": [
           3,
@@ -118668,7 +119465,8 @@
           1,
           1,
           3,
-          4
+          4,
+          2
         ],
         "nztsa": [
           0,
@@ -118684,7 +119482,8 @@
           0,
           2,
           1,
-          1
+          1,
+          0
         ],
         "fc": [
           24,
@@ -118700,7 +119499,8 @@
           30,
           26,
           32,
-          27
+          27,
+          25
         ],
         "rush": [
           2,
@@ -118716,9 +119516,11 @@
           1,
           3,
           3,
+          2,
           2
         ],
         "lat": [
+          0.0,
           0.0,
           0.0,
           0.0,
@@ -118748,6 +119550,7 @@
           0.0,
           0.0,
           0.0,
+          0.0,
           0.0
         ],
         "hdc": [
@@ -118764,6 +119567,7 @@
           12,
           11,
           12,
+          8,
           8
         ],
         "hdca": [
@@ -118780,7 +119584,8 @@
           6,
           9,
           5,
-          8
+          8,
+          16
         ],
         "opp_xg": [
           2.87,
@@ -118796,7 +119601,8 @@
           2.71,
           5.23,
           2.03,
-          2.72
+          2.72,
+          3.32
         ],
         "period_dzs": [
           8,
@@ -118812,7 +119618,8 @@
           12,
           14,
           11,
-          15
+          15,
+          12
         ],
         "games": [
           0,
@@ -118828,7 +119635,8 @@
           10,
           11,
           12,
-          13
+          13,
+          14
         ],
         "lateral": [],
         "longitudinal": [],
@@ -118847,6 +119655,7 @@
           3,
           2,
           1,
+          4,
           4
         ],
         "goals_against": [
@@ -118863,7 +119672,8 @@
           2,
           5,
           4,
-          7
+          7,
+          3
         ],
         "shots_for": [
           27,
@@ -118879,7 +119689,8 @@
           33,
           29,
           35,
-          29
+          29,
+          28
         ],
         "shots_against": [],
         "xG_for": [
@@ -118896,7 +119707,8 @@
           2.74,
           3.64,
           4.35,
-          3.59
+          3.58,
+          2.29
         ],
         "xG_against": [
           2.87,
@@ -118912,7 +119724,8 @@
           2.71,
           5.23,
           2.03,
-          2.72
+          2.72,
+          3.32
         ],
         "hdc_for": [
           10,
@@ -118928,6 +119741,7 @@
           12,
           11,
           12,
+          8,
           8
         ],
         "hdc_against": [],
@@ -119439,7 +120253,7 @@
           3.98,
           2.78,
           4.44,
-          3.59
+          3.58
         ],
         "period_dzs": [
           23,
@@ -119562,7 +120376,7 @@
           3.98,
           2.78,
           4.44,
-          3.59
+          3.58
         ],
         "hdc_for": [
           3,
@@ -120388,7 +121202,8 @@
           3.42,
           5.7,
           7.25,
-          3.75
+          3.75,
+          7.97
         ],
         "xg": [
           3.42,
@@ -120405,7 +121220,8 @@
           3.38,
           3.96,
           4.48,
-          3.63
+          3.63,
+          4.91
         ],
         "corsi_pct": [
           58.15,
@@ -120422,7 +121238,8 @@
           62.28,
           69.59,
           58.49,
-          67.65
+          67.65,
+          59.0
         ],
         "fenwick_pct": [
           58.15,
@@ -120439,7 +121256,8 @@
           62.28,
           69.59,
           58.49,
-          67.65
+          67.65,
+          59.0
         ],
         "pdo": [
           90.94,
@@ -120456,7 +121274,8 @@
           105.88,
           82.2,
           101.36,
-          86.06
+          86.06,
+          108.74
         ],
         "ozs": [
           16,
@@ -120473,7 +121292,8 @@
           4,
           11,
           14,
-          6
+          6,
+          15
         ],
         "nzs": [
           0,
@@ -120490,7 +121310,8 @@
           1,
           0,
           0,
-          1
+          1,
+          0
         ],
         "dzs": [
           20,
@@ -120507,7 +121328,8 @@
           10,
           22,
           26,
-          22
+          22,
+          16
         ],
         "goals": [
           3,
@@ -120524,7 +121346,8 @@
           1,
           1,
           6,
-          1
+          1,
+          4
         ],
         "opp_goals": [
           4,
@@ -120541,7 +121364,8 @@
           0,
           5,
           3,
-          4
+          4,
+          1
         ],
         "shots": [
           36,
@@ -120558,7 +121382,8 @@
           17,
           33,
           40,
-          29
+          29,
+          31
         ],
         "hits": [
           17,
@@ -120575,7 +121400,8 @@
           18,
           18,
           12,
-          12
+          12,
+          19
         ],
         "blocked_shots": [
           16,
@@ -120592,7 +121418,8 @@
           28,
           24,
           16,
-          27
+          27,
+          20
         ],
         "giveaways": [
           23,
@@ -120609,7 +121436,8 @@
           13,
           13,
           17,
-          18
+          18,
+          11
         ],
         "takeaways": [
           8,
@@ -120626,7 +121454,8 @@
           3,
           6,
           5,
-          6
+          6,
+          8
         ],
         "penalty_minutes": [
           2,
@@ -120643,6 +121472,7 @@
           4,
           4,
           8,
+          6,
           6
         ],
         "power_play_pct": [
@@ -120660,7 +121490,8 @@
           0.0,
           33.33,
           71.43,
-          25.0
+          25.0,
+          75.0
         ],
         "penalty_kill_pct": [
           80.0,
@@ -120677,7 +121508,8 @@
           80.0,
           66.67,
           28.57,
-          75.0
+          75.0,
+          25.0
         ],
         "faceoff_pct": [
           43.87,
@@ -120694,7 +121526,8 @@
           53.73,
           43.22,
           42.2,
-          48.83
+          48.83,
+          60.52
         ],
         "nzt": [
           4,
@@ -120711,7 +121544,8 @@
           4,
           1,
           4,
-          5
+          5,
+          2
         ],
         "nztsa": [
           2,
@@ -120728,7 +121562,8 @@
           4,
           1,
           0,
-          4
+          4,
+          0
         ],
         "fc": [
           34,
@@ -120745,7 +121580,8 @@
           15,
           33,
           39,
-          27
+          27,
+          31
         ],
         "rush": [
           2,
@@ -120762,9 +121598,11 @@
           0,
           0,
           1,
-          2
+          2,
+          0
         ],
         "lat": [
+          0.0,
           0.0,
           0.0,
           0.0,
@@ -120796,6 +121634,7 @@
           0.0,
           0.0,
           0.0,
+          0.0,
           0.0
         ],
         "hdc": [
@@ -120813,7 +121652,8 @@
           4,
           4,
           6,
-          3
+          3,
+          11
         ],
         "hdca": [
           6,
@@ -120830,7 +121670,8 @@
           5,
           13,
           6,
-          7
+          7,
+          9
         ],
         "opp_xg": [
           3.62,
@@ -120847,7 +121688,8 @@
           2.35,
           2.79,
           1.96,
-          2.08
+          2.08,
+          2.61
         ],
         "period_dzs": [
           20,
@@ -120864,7 +121706,8 @@
           10,
           22,
           26,
-          22
+          22,
+          16
         ],
         "games": [
           0,
@@ -120881,7 +121724,8 @@
           11,
           12,
           13,
-          14
+          14,
+          15
         ],
         "lateral": [],
         "longitudinal": [],
@@ -120901,7 +121745,8 @@
           1,
           1,
           6,
-          1
+          1,
+          4
         ],
         "goals_against": [
           4,
@@ -120918,7 +121763,8 @@
           0,
           5,
           3,
-          4
+          4,
+          1
         ],
         "shots_for": [
           36,
@@ -120935,7 +121781,8 @@
           17,
           33,
           40,
-          29
+          29,
+          31
         ],
         "shots_against": [],
         "xG_for": [
@@ -120953,7 +121800,8 @@
           3.38,
           3.96,
           4.48,
-          3.63
+          3.63,
+          4.91
         ],
         "xG_against": [
           3.62,
@@ -120970,7 +121818,8 @@
           2.35,
           2.79,
           1.96,
-          2.08
+          2.08,
+          2.61
         ],
         "hdc_for": [
           6,
@@ -120987,7 +121836,8 @@
           4,
           4,
           6,
-          3
+          3,
+          11
         ],
         "hdc_against": [],
         "pp_goals": [],
@@ -123568,7 +124418,8 @@
           5.05,
           7.42,
           6.97,
-          5.97
+          5.97,
+          5.47
         ],
         "xg": [
           2.24,
@@ -123588,7 +124439,8 @@
           4.03,
           4.6,
           3.66,
-          2.81
+          2.81,
+          3.7
         ],
         "corsi_pct": [
           40.47,
@@ -123608,7 +124460,8 @@
           53.59,
           53.24,
           53.24,
-          53.93
+          53.93,
+          63.63
         ],
         "fenwick_pct": [
           40.47,
@@ -123628,7 +124481,8 @@
           53.59,
           53.24,
           53.24,
-          53.93
+          53.93,
+          63.63
         ],
         "pdo": [
           113.39,
@@ -123648,7 +124502,8 @@
           97.19,
           93.61,
           99.74,
-          102.71
+          102.71,
+          92.86
         ],
         "ozs": [
           12,
@@ -123668,7 +124523,8 @@
           24,
           6,
           28,
-          15
+          15,
+          13
         ],
         "nzs": [
           0,
@@ -123687,6 +124543,7 @@
           2,
           3,
           2,
+          0,
           0,
           0
         ],
@@ -123708,7 +124565,8 @@
           11,
           30,
           13,
-          13
+          13,
+          25
         ],
         "goals": [
           4,
@@ -123726,6 +124584,7 @@
           3,
           1,
           2,
+          3,
           3,
           3,
           3
@@ -123748,7 +124607,8 @@
           3,
           6,
           2,
-          2
+          2,
+          4
         ],
         "shots": [
           23,
@@ -123768,7 +124628,8 @@
           41,
           38,
           42,
-          28
+          28,
+          42
         ],
         "hits": [
           25,
@@ -123788,7 +124649,8 @@
           12,
           26,
           21,
-          18
+          18,
+          9
         ],
         "blocked_shots": [
           16,
@@ -123808,7 +124670,8 @@
           23,
           21,
           21,
-          22
+          22,
+          21
         ],
         "giveaways": [
           17,
@@ -123828,6 +124691,7 @@
           15,
           16,
           13,
+          16,
           16
         ],
         "takeaways": [
@@ -123848,7 +124712,8 @@
           2,
           5,
           4,
-          5
+          5,
+          6
         ],
         "penalty_minutes": [
           10,
@@ -123867,6 +124732,7 @@
           4,
           2,
           10,
+          4,
           4,
           4
         ],
@@ -123888,7 +124754,8 @@
           0.0,
           0.0,
           100.0,
-          50.0
+          50.0,
+          25.0
         ],
         "penalty_kill_pct": [
           85.71,
@@ -123908,7 +124775,8 @@
           80.0,
           80.0,
           0.0,
-          50.0
+          50.0,
+          75.0
         ],
         "faceoff_pct": [
           45.1,
@@ -123928,7 +124796,8 @@
           60.0,
           53.91,
           42.28,
-          51.91
+          51.91,
+          50.94
         ],
         "nzt": [
           4,
@@ -123948,7 +124817,8 @@
           2,
           5,
           3,
-          4
+          4,
+          2
         ],
         "nztsa": [
           0,
@@ -123968,7 +124838,8 @@
           1,
           14,
           2,
-          3
+          3,
+          1
         ],
         "fc": [
           22,
@@ -123988,7 +124859,8 @@
           38,
           37,
           38,
-          28
+          28,
+          38
         ],
         "rush": [
           1,
@@ -124008,9 +124880,11 @@
           0,
           1,
           3,
+          0,
           0
         ],
         "lat": [
+          0.0,
           0.0,
           0.0,
           0.0,
@@ -124048,6 +124922,7 @@
           0.0,
           0.0,
           0.0,
+          0.0,
           0.0
         ],
         "hdc": [
@@ -124068,7 +124943,8 @@
           17,
           4,
           16,
-          6
+          6,
+          11
         ],
         "hdca": [
           3,
@@ -124088,7 +124964,8 @@
           11,
           14,
           1,
-          3
+          3,
+          10
         ],
         "opp_xg": [
           3.07,
@@ -124108,7 +124985,8 @@
           4.0,
           4.45,
           2.45,
-          2.46
+          2.46,
+          3.45
         ],
         "period_dzs": [
           11,
@@ -124128,7 +125006,8 @@
           11,
           30,
           13,
-          13
+          13,
+          25
         ],
         "games": [
           0,
@@ -124148,7 +125027,8 @@
           14,
           15,
           16,
-          17
+          17,
+          18
         ],
         "lateral": [],
         "longitudinal": [],
@@ -124171,6 +125051,7 @@
           2,
           3,
           3,
+          3,
           3
         ],
         "goals_against": [
@@ -124191,7 +125072,8 @@
           3,
           6,
           2,
-          2
+          2,
+          4
         ],
         "shots_for": [
           23,
@@ -124211,7 +125093,8 @@
           41,
           38,
           42,
-          28
+          28,
+          42
         ],
         "shots_against": [],
         "xG_for": [
@@ -124232,7 +125115,8 @@
           4.03,
           4.6,
           3.66,
-          2.81
+          2.81,
+          3.7
         ],
         "xG_against": [
           3.07,
@@ -124252,7 +125136,8 @@
           4.0,
           4.45,
           2.45,
-          2.46
+          2.46,
+          3.45
         ],
         "hdc_for": [
           4,
@@ -124272,7 +125157,8 @@
           17,
           4,
           16,
-          6
+          6,
+          11
         ],
         "hdc_against": [],
         "pp_goals": [],
@@ -124868,7 +125754,8 @@
           4.2,
           6.1,
           5.55,
-          2.98
+          2.98,
+          4.07
         ],
         "xg": [
           2.69,
@@ -124888,7 +125775,8 @@
           2.98,
           2.23,
           1.96,
-          2.95
+          2.95,
+          2.61
         ],
         "corsi_pct": [
           48.99,
@@ -124908,7 +125796,8 @@
           49.53,
           37.5,
           34.31,
-          50.03
+          50.03,
+          41.0
         ],
         "fenwick_pct": [
           48.99,
@@ -124928,7 +125817,8 @@
           49.53,
           37.5,
           34.31,
-          50.03
+          50.03,
+          41.0
         ],
         "pdo": [
           92.42,
@@ -124948,7 +125838,8 @@
           88.22,
           110.91,
           101.85,
-          94.74
+          94.74,
+          91.26
         ],
         "ozs": [
           16,
@@ -124968,7 +125859,8 @@
           16,
           11,
           15,
-          28
+          28,
+          15
         ],
         "nzs": [
           1,
@@ -124988,7 +125880,8 @@
           0,
           1,
           1,
-          2
+          2,
+          1
         ],
         "dzs": [
           5,
@@ -125008,7 +125901,8 @@
           7,
           13,
           10,
-          9
+          9,
+          8
         ],
         "goals": [
           2,
@@ -125028,7 +125922,8 @@
           1,
           5,
           6,
-          0
+          0,
+          1
         ],
         "opp_goals": [
           5,
@@ -125048,7 +125943,8 @@
           5,
           3,
           7,
-          2
+          2,
+          4
         ],
         "shots": [
           22,
@@ -125068,7 +125964,8 @@
           23,
           25,
           31,
-          39
+          39,
+          24
         ],
         "hits": [
           13,
@@ -125088,7 +125985,8 @@
           21,
           21,
           15,
-          12
+          12,
+          14
         ],
         "blocked_shots": [
           18,
@@ -125108,7 +126006,8 @@
           15,
           11,
           6,
-          13
+          13,
+          17
         ],
         "giveaways": [
           18,
@@ -125128,7 +126027,8 @@
           16,
           15,
           21,
-          17
+          17,
+          11
         ],
         "takeaways": [
           5,
@@ -125148,7 +126048,8 @@
           5,
           7,
           5,
-          5
+          5,
+          6
         ],
         "penalty_minutes": [
           4,
@@ -125167,6 +126068,7 @@
           8,
           6,
           22,
+          8,
           8,
           8
         ],
@@ -125188,7 +126090,8 @@
           0.0,
           30.0,
           33.33,
-          0.0
+          0.0,
+          33.33
         ],
         "penalty_kill_pct": [
           80.0,
@@ -125208,7 +126111,8 @@
           80.0,
           70.0,
           66.67,
-          80.0
+          80.0,
+          66.67
         ],
         "faceoff_pct": [
           44.44,
@@ -125228,7 +126132,8 @@
           55.73,
           65.38,
           41.88,
-          47.44
+          47.44,
+          39.48
         ],
         "nzt": [
           5,
@@ -125248,6 +126153,7 @@
           5,
           2,
           5,
+          1,
           1
         ],
         "nztsa": [
@@ -125268,6 +126174,7 @@
           2,
           2,
           5,
+          0,
           0
         ],
         "fc": [
@@ -125288,7 +126195,8 @@
           23,
           23,
           26,
-          37
+          37,
+          23
         ],
         "rush": [
           2,
@@ -125308,9 +126216,11 @@
           0,
           2,
           0,
-          2
+          2,
+          1
         ],
         "lat": [
+          0.0,
           0.0,
           0.0,
           0.0,
@@ -125348,6 +126258,7 @@
           0.0,
           0.0,
           0.0,
+          0.0,
           0.0
         ],
         "hdc": [
@@ -125368,7 +126279,8 @@
           7,
           6,
           7,
-          8
+          8,
+          9
         ],
         "hdca": [
           3,
@@ -125387,6 +126299,7 @@
           6,
           6,
           12,
+          11,
           11,
           11
         ],
@@ -125408,7 +126321,8 @@
           2.72,
           3.68,
           4.35,
-          3.66
+          3.66,
+          4.91
         ],
         "period_dzs": [
           5,
@@ -125428,7 +126342,8 @@
           7,
           13,
           10,
-          9
+          9,
+          8
         ],
         "games": [
           0,
@@ -125448,7 +126363,8 @@
           14,
           15,
           16,
-          17
+          17,
+          18
         ],
         "lateral": [],
         "longitudinal": [],
@@ -125471,7 +126387,8 @@
           1,
           5,
           6,
-          0
+          0,
+          1
         ],
         "goals_against": [
           5,
@@ -125491,7 +126408,8 @@
           5,
           3,
           7,
-          2
+          2,
+          4
         ],
         "shots_for": [
           22,
@@ -125511,7 +126429,8 @@
           23,
           25,
           31,
-          39
+          39,
+          24
         ],
         "shots_against": [],
         "xG_for": [
@@ -125532,7 +126451,8 @@
           2.98,
           2.23,
           1.96,
-          2.95
+          2.95,
+          2.61
         ],
         "xG_against": [
           2.71,
@@ -125552,7 +126472,8 @@
           2.72,
           3.68,
           4.35,
-          3.66
+          3.66,
+          4.91
         ],
         "hdc_for": [
           10,
@@ -125572,7 +126493,8 @@
           7,
           6,
           7,
-          8
+          8,
+          9
         ],
         "hdc_against": [],
         "pp_goals": [],
@@ -126309,7 +127231,8 @@
           9.0,
           4.9,
           4.85,
-          4.58
+          4.58,
+          3.58
         ],
         "xg": [
           2.49,
@@ -126326,7 +127249,8 @@
           4.34,
           2.49,
           2.41,
-          1.98
+          1.98,
+          2.76
         ],
         "corsi_pct": [
           41.87,
@@ -126343,7 +127267,8 @@
           47.17,
           41.25,
           42.12,
-          37.26
+          37.26,
+          40.4
         ],
         "fenwick_pct": [
           41.87,
@@ -126360,7 +127285,8 @@
           47.17,
           41.25,
           42.12,
-          37.26
+          37.26,
+          40.4
         ],
         "pdo": [
           136.84,
@@ -126377,7 +127303,8 @@
           114.67,
           107.14,
           100.38,
-          110.71
+          110.71,
+          111.96
         ],
         "ozs": [
           11,
@@ -126393,6 +127320,7 @@
           21,
           15,
           9,
+          12,
           12,
           12
         ],
@@ -126411,7 +127339,8 @@
           1,
           0,
           2,
-          2
+          2,
+          0
         ],
         "dzs": [
           7,
@@ -126428,7 +127357,8 @@
           14,
           12,
           12,
-          14
+          14,
+          7
         ],
         "goals": [
           7,
@@ -126445,7 +127375,8 @@
           8,
           3,
           2,
-          3
+          3,
+          4
         ],
         "opp_goals": [
           0,
@@ -126462,7 +127393,8 @@
           3,
           2,
           3,
-          0
+          0,
+          3
         ],
         "shots": [
           19,
@@ -126479,7 +127411,8 @@
           30,
           21,
           26,
-          28
+          28,
+          19
         ],
         "hits": [
           17,
@@ -126496,7 +127429,8 @@
           17,
           17,
           17,
-          12
+          12,
+          8
         ],
         "blocked_shots": [
           15,
@@ -126513,7 +127447,8 @@
           15,
           8,
           16,
-          9
+          9,
+          13
         ],
         "giveaways": [
           17,
@@ -126530,7 +127465,8 @@
           14,
           13,
           13,
-          16
+          16,
+          17
         ],
         "takeaways": [
           6,
@@ -126547,7 +127483,8 @@
           4,
           7,
           5,
-          7
+          7,
+          5
         ],
         "penalty_minutes": [
           10,
@@ -126564,7 +127501,8 @@
           6,
           10,
           8,
-          6
+          6,
+          8
         ],
         "power_play_pct": [
           83.33,
@@ -126581,7 +127519,8 @@
           80.0,
           0.0,
           0.0,
-          100.0
+          100.0,
+          25.0
         ],
         "penalty_kill_pct": [
           16.67,
@@ -126598,7 +127537,8 @@
           20.0,
           80.0,
           80.0,
-          0.0
+          0.0,
+          75.0
         ],
         "faceoff_pct": [
           63.25,
@@ -126615,7 +127555,8 @@
           59.15,
           50.89,
           53.01,
-          35.65
+          35.65,
+          63.22
         ],
         "nzt": [
           4,
@@ -126632,7 +127573,8 @@
           2,
           3,
           3,
-          5
+          5,
+          4
         ],
         "nztsa": [
           0,
@@ -126649,7 +127591,8 @@
           2,
           0,
           1,
-          4
+          4,
+          2
         ],
         "fc": [
           16,
@@ -126666,7 +127609,8 @@
           27,
           19,
           25,
-          27
+          27,
+          17
         ],
         "rush": [
           3,
@@ -126683,9 +127627,11 @@
           3,
           2,
           1,
-          1
+          1,
+          2
         ],
         "lat": [
+          0.0,
           0.0,
           0.0,
           0.0,
@@ -126717,6 +127663,7 @@
           0.0,
           0.0,
           0.0,
+          0.0,
           0.0
         ],
         "hdc": [
@@ -126734,7 +127681,8 @@
           8,
           5,
           5,
-          4
+          4,
+          6
         ],
         "hdca": [
           2,
@@ -126751,7 +127699,8 @@
           5,
           9,
           7,
-          5
+          5,
+          7
         ],
         "opp_xg": [
           3.06,
@@ -126768,7 +127717,8 @@
           1.95,
           2.32,
           4.4,
-          3.4
+          3.4,
+          3.97
         ],
         "period_dzs": [
           7,
@@ -126785,7 +127735,8 @@
           14,
           12,
           12,
-          14
+          14,
+          7
         ],
         "games": [
           0,
@@ -126802,7 +127753,8 @@
           11,
           12,
           13,
-          14
+          14,
+          15
         ],
         "lateral": [],
         "longitudinal": [],
@@ -126822,7 +127774,8 @@
           8,
           3,
           2,
-          3
+          3,
+          4
         ],
         "goals_against": [
           0,
@@ -126839,7 +127792,8 @@
           3,
           2,
           3,
-          0
+          0,
+          3
         ],
         "shots_for": [
           19,
@@ -126856,7 +127810,8 @@
           30,
           21,
           26,
-          28
+          28,
+          19
         ],
         "shots_against": [],
         "xG_for": [
@@ -126874,7 +127829,8 @@
           4.34,
           2.49,
           2.41,
-          1.98
+          1.98,
+          2.76
         ],
         "xG_against": [
           3.06,
@@ -126891,7 +127847,8 @@
           1.95,
           2.32,
           4.4,
-          3.4
+          3.4,
+          3.97
         ],
         "hdc_for": [
           8,
@@ -126908,7 +127865,8 @@
           8,
           5,
           5,
-          4
+          4,
+          6
         ],
         "hdc_against": [],
         "pp_goals": [],
@@ -127681,7 +128639,7 @@
           4.15,
           6.65,
           6.92,
-          4.55
+          4.62
         ],
         "xg": [
           4.41,
@@ -127698,7 +128656,7 @@
           3.45,
           3.84,
           2.93,
-          2.35
+          2.38
         ],
         "corsi_pct": [
           56.13,
@@ -127715,7 +128673,7 @@
           57.08,
           44.53,
           45.1,
-          29.14
+          29.74
         ],
         "fenwick_pct": [
           56.13,
@@ -127732,7 +128690,7 @@
           57.08,
           44.53,
           45.1,
-          29.14
+          29.74
         ],
         "pdo": [
           99.5,
@@ -127749,7 +128707,7 @@
           92.69,
           96.4,
           104.89,
-          120.0
+          119.05
         ],
         "ozs": [
           23,
@@ -127766,7 +128724,7 @@
           5,
           16,
           12,
-          9
+          10
         ],
         "nzs": [
           0,
@@ -127851,7 +128809,7 @@
           26,
           33,
           25,
-          20
+          21
         ],
         "hits": [
           23,
@@ -128038,7 +128996,7 @@
           20,
           33,
           23,
-          19
+          20
         ],
         "rush": [
           1,
@@ -128228,7 +129186,7 @@
           26,
           33,
           25,
-          20
+          21
         ],
         "shots_against": [],
         "xG_for": [
@@ -128246,7 +129204,7 @@
           3.45,
           3.84,
           2.93,
-          2.35
+          2.38
         ],
         "xG_against": [
           3.17,
@@ -128329,7 +129287,8 @@
           5.05,
           3.97,
           10.28,
-          5.33
+          5.33,
+          4.97
         ],
         "xg": [
           2.83,
@@ -128343,7 +129302,8 @@
           1.95,
           2.79,
           4.0,
-          3.64
+          3.64,
+          3.32
         ],
         "corsi_pct": [
           52.58,
@@ -128357,7 +129317,8 @@
           52.83,
           57.51,
           39.51,
-          47.7
+          47.7,
+          54.1
         ],
         "fenwick_pct": [
           52.58,
@@ -128371,7 +129332,8 @@
           52.83,
           57.51,
           39.51,
-          47.7
+          47.7,
+          54.1
         ],
         "pdo": [
           90.39,
@@ -128385,7 +129347,8 @@
           85.33,
           95.83,
           115.62,
-          112.7
+          112.7,
+          95.71
         ],
         "ozs": [
           16,
@@ -128399,7 +129362,8 @@
           15,
           18,
           22,
-          21
+          21,
+          19
         ],
         "nzs": [
           0,
@@ -128413,7 +129377,8 @@
           1,
           1,
           0,
-          1
+          1,
+          0
         ],
         "dzs": [
           13,
@@ -128427,7 +129392,8 @@
           9,
           14,
           10,
-          5
+          5,
+          11
         ],
         "goals": [
           3,
@@ -128441,7 +129407,8 @@
           3,
           0,
           9,
-          6
+          6,
+          3
         ],
         "opp_goals": [
           4,
@@ -128455,7 +129422,8 @@
           8,
           1,
           4,
-          2
+          2,
+          4
         ],
         "shots": [
           35,
@@ -128469,7 +129437,8 @@
           25,
           33,
           32,
-          27
+          27,
+          30
         ],
         "hits": [
           23,
@@ -128483,7 +129452,8 @@
           22,
           19,
           22,
-          9
+          9,
+          17
         ],
         "blocked_shots": [
           18,
@@ -128497,7 +129467,8 @@
           14,
           21,
           9,
-          6
+          6,
+          14
         ],
         "giveaways": [
           17,
@@ -128511,7 +129482,8 @@
           20,
           18,
           13,
-          16
+          16,
+          14
         ],
         "takeaways": [
           3,
@@ -128525,7 +129497,8 @@
           6,
           4,
           3,
-          2
+          2,
+          3
         ],
         "penalty_minutes": [
           8,
@@ -128539,7 +129512,8 @@
           10,
           4,
           6,
-          4
+          4,
+          12
         ],
         "power_play_pct": [
           100.0,
@@ -128553,7 +129527,8 @@
           0.0,
           0.0,
           125.0,
-          100.0
+          100.0,
+          25.0
         ],
         "penalty_kill_pct": [
           0.0,
@@ -128567,7 +129542,8 @@
           80.0,
           80.0,
           -25.0,
-          0.0
+          0.0,
+          75.0
         ],
         "faceoff_pct": [
           54.14,
@@ -128581,7 +129557,8 @@
           40.85,
           61.25,
           53.94,
-          53.94
+          53.94,
+          61.95
         ],
         "nzt": [
           2,
@@ -128595,7 +129572,8 @@
           6,
           5,
           5,
-          1
+          1,
+          3
         ],
         "nztsa": [
           0,
@@ -128609,7 +129587,8 @@
           2,
           1,
           0,
-          2
+          2,
+          0
         ],
         "fc": [
           28,
@@ -128623,7 +129602,8 @@
           24,
           30,
           31,
-          27
+          27,
+          29
         ],
         "rush": [
           1,
@@ -128637,9 +129617,11 @@
           1,
           3,
           1,
-          0
+          0,
+          1
         ],
         "lat": [
+          0.0,
           0.0,
           0.0,
           0.0,
@@ -128665,6 +129647,7 @@
           0.0,
           0.0,
           0.0,
+          0.0,
           0.0
         ],
         "hdc": [
@@ -128679,7 +129662,8 @@
           5,
           6,
           11,
-          13
+          13,
+          16
         ],
         "hdca": [
           4,
@@ -128693,7 +129677,8 @@
           8,
           3,
           8,
-          1
+          1,
+          8
         ],
         "opp_xg": [
           3.92,
@@ -128707,7 +129692,8 @@
           4.34,
           2.44,
           3.67,
-          2.37
+          2.37,
+          2.53
         ],
         "period_dzs": [
           13,
@@ -128721,7 +129707,8 @@
           9,
           14,
           10,
-          5
+          5,
+          11
         ],
         "games": [
           0,
@@ -128735,7 +129722,8 @@
           8,
           9,
           10,
-          11
+          11,
+          12
         ],
         "lateral": [],
         "longitudinal": [],
@@ -128752,7 +129740,8 @@
           3,
           0,
           9,
-          6
+          6,
+          3
         ],
         "goals_against": [
           4,
@@ -128766,7 +129755,8 @@
           8,
           1,
           4,
-          2
+          2,
+          4
         ],
         "shots_for": [
           35,
@@ -128780,7 +129770,8 @@
           25,
           33,
           32,
-          27
+          27,
+          30
         ],
         "shots_against": [],
         "xG_for": [
@@ -128795,7 +129786,8 @@
           1.95,
           2.79,
           4.0,
-          3.64
+          3.64,
+          3.32
         ],
         "xG_against": [
           3.92,
@@ -128809,7 +129801,8 @@
           4.34,
           2.44,
           3.67,
-          2.37
+          2.37,
+          2.53
         ],
         "hdc_for": [
           16,
@@ -128823,7 +129816,8 @@
           5,
           6,
           11,
-          13
+          13,
+          16
         ],
         "hdc_against": [],
         "pp_goals": [],
@@ -131583,7 +132577,7 @@
           6.28,
           5.67,
           6.07,
-          6.07
+          6.02
         ],
         "xg": [
           3.6,
@@ -131602,7 +132596,7 @@
           3.73,
           3.77,
           3.31,
-          3.06
+          3.05
         ],
         "corsi_pct": [
           56.45,
@@ -131811,7 +132805,7 @@
           16,
           25,
           21,
-          21
+          20
         ],
         "giveaways": [
           12,
@@ -132214,7 +133208,7 @@
           3.73,
           3.77,
           3.31,
-          3.06
+          3.05
         ],
         "xG_against": [
           3.3,
@@ -133641,7 +134635,8 @@
           7.55,
           6.65,
           5.65,
-          4.53
+          4.53,
+          4.65
         ],
         "xg": [
           3.82,
@@ -133659,7 +134654,8 @@
           2.87,
           2.36,
           4.21,
-          4.25
+          4.25,
+          3.76
         ],
         "corsi_pct": [
           52.76,
@@ -133677,7 +134673,8 @@
           50.53,
           43.61,
           47.51,
-          62.94
+          62.94,
+          50.0
         ],
         "fenwick_pct": [
           52.76,
@@ -133695,7 +134692,8 @@
           50.53,
           43.61,
           47.51,
-          62.94
+          62.94,
+          50.0
         ],
         "pdo": [
           94.1,
@@ -133713,7 +134711,8 @@
           109.55,
           91.85,
           103.43,
-          89.32
+          89.32,
+          81.48
         ],
         "ozs": [
           12,
@@ -133731,7 +134730,8 @@
           18,
           10,
           9,
-          7
+          7,
+          14
         ],
         "nzs": [
           1,
@@ -133748,6 +134748,7 @@
           1,
           1,
           2,
+          0,
           0,
           0
         ],
@@ -133767,7 +134768,8 @@
           10,
           10,
           17,
-          19
+          19,
+          13
         ],
         "goals": [
           2,
@@ -133785,7 +134787,8 @@
           5,
           2,
           3,
-          3
+          3,
+          1
         ],
         "opp_goals": [
           3,
@@ -133803,7 +134806,8 @@
           2,
           5,
           2,
-          4
+          4,
+          6
         ],
         "shots": [
           28,
@@ -133821,7 +134825,8 @@
           29,
           22,
           31,
-          26
+          26,
+          27
         ],
         "hits": [
           27,
@@ -133839,7 +134844,8 @@
           25,
           33,
           25,
-          14
+          14,
+          24
         ],
         "blocked_shots": [
           19,
@@ -133857,7 +134863,8 @@
           16,
           16,
           14,
-          20
+          20,
+          18
         ],
         "giveaways": [
           10,
@@ -133875,7 +134882,8 @@
           17,
           14,
           15,
-          16
+          16,
+          14
         ],
         "takeaways": [
           7,
@@ -133893,7 +134901,8 @@
           8,
           4,
           3,
-          2
+          2,
+          3
         ],
         "penalty_minutes": [
           20,
@@ -133911,7 +134920,8 @@
           16,
           8,
           4,
-          6
+          6,
+          12
         ],
         "power_play_pct": [
           16.67,
@@ -133929,7 +134939,8 @@
           50.0,
           40.0,
           50.0,
-          66.67
+          66.67,
+          14.29
         ],
         "penalty_kill_pct": [
           83.33,
@@ -133947,7 +134958,8 @@
           50.0,
           60.0,
           50.0,
-          33.33
+          33.33,
+          85.71
         ],
         "faceoff_pct": [
           41.65,
@@ -133965,7 +134977,8 @@
           43.98,
           46.51,
           60.83,
-          40.79
+          40.79,
+          69.56
         ],
         "nzt": [
           2,
@@ -133983,7 +134996,8 @@
           3,
           2,
           2,
-          6
+          6,
+          3
         ],
         "nztsa": [
           0,
@@ -134001,7 +135015,8 @@
           8,
           5,
           1,
-          0
+          0,
+          1
         ],
         "fc": [
           28,
@@ -134019,7 +135034,8 @@
           27,
           22,
           23,
-          21
+          21,
+          26
         ],
         "rush": [
           0,
@@ -134037,9 +135053,11 @@
           2,
           0,
           3,
-          5
+          5,
+          1
         ],
         "lat": [
+          0.0,
           0.0,
           0.0,
           0.0,
@@ -134073,6 +135091,7 @@
           0.0,
           0.0,
           0.0,
+          0.0,
           0.0
         ],
         "hdc": [
@@ -134091,7 +135110,8 @@
           10,
           5,
           8,
-          4
+          4,
+          8
         ],
         "hdca": [
           11,
@@ -134109,7 +135129,8 @@
           4,
           9,
           8,
-          7
+          7,
+          9
         ],
         "opp_xg": [
           3.78,
@@ -134127,7 +135148,8 @@
           1.64,
           5.62,
           4.14,
-          2.25
+          2.25,
+          4.44
         ],
         "period_dzs": [
           15,
@@ -134145,7 +135167,8 @@
           10,
           10,
           17,
-          19
+          19,
+          13
         ],
         "games": [
           0,
@@ -134163,7 +135186,8 @@
           12,
           13,
           14,
-          15
+          15,
+          16
         ],
         "lateral": [],
         "longitudinal": [],
@@ -134184,7 +135208,8 @@
           5,
           2,
           3,
-          3
+          3,
+          1
         ],
         "goals_against": [
           3,
@@ -134202,7 +135227,8 @@
           2,
           5,
           2,
-          4
+          4,
+          6
         ],
         "shots_for": [
           28,
@@ -134220,7 +135246,8 @@
           29,
           22,
           31,
-          26
+          26,
+          27
         ],
         "shots_against": [],
         "xG_for": [
@@ -134239,7 +135266,8 @@
           2.87,
           2.36,
           4.21,
-          4.25
+          4.25,
+          3.76
         ],
         "xG_against": [
           3.78,
@@ -134257,7 +135285,8 @@
           1.64,
           5.62,
           4.14,
-          2.25
+          2.25,
+          4.44
         ],
         "hdc_for": [
           8,
@@ -134275,7 +135304,8 @@
           10,
           5,
           8,
-          4
+          4,
+          8
         ],
         "hdc_against": [],
         "pp_goals": [],
@@ -134906,7 +135936,8 @@
           4.12,
           8.1,
           4.18,
-          6.77
+          6.77,
+          3.5
         ],
         "xg": [
           3.46,
@@ -134925,7 +135956,8 @@
           3.59,
           3.47,
           2.83,
-          2.86
+          2.86,
+          2.61
         ],
         "corsi_pct": [
           63.75,
@@ -134944,7 +135976,8 @@
           61.51,
           66.26,
           54.15,
-          48.92
+          48.92,
+          36.37
         ],
         "fenwick_pct": [
           63.75,
@@ -134963,7 +135996,8 @@
           61.51,
           66.26,
           54.15,
-          48.92
+          48.92,
+          36.37
         ],
         "pdo": [
           100.78,
@@ -134982,7 +136016,8 @@
           88.46,
           76.92,
           90.18,
-          114.29
+          114.29,
+          107.14
         ],
         "ozs": [
           15,
@@ -135001,7 +136036,8 @@
           23,
           26,
           14,
-          21
+          21,
+          16
         ],
         "nzs": [
           1,
@@ -135020,6 +136056,7 @@
           2,
           1,
           0,
+          1,
           1
         ],
         "dzs": [
@@ -135039,6 +136076,7 @@
           10,
           12,
           9,
+          6,
           6
         ],
         "goals": [
@@ -135058,7 +136096,8 @@
           0,
           3,
           2,
-          5
+          5,
+          4
         ],
         "opp_goals": [
           1,
@@ -135077,7 +136116,8 @@
           3,
           8,
           5,
-          1
+          1,
+          3
         ],
         "shots": [
           30,
@@ -135096,6 +136136,7 @@
           35,
           39,
           23,
+          28,
           28
         ],
         "hits": [
@@ -135115,7 +136156,8 @@
           15,
           25,
           19,
-          18
+          18,
+          11
         ],
         "blocked_shots": [
           18,
@@ -135134,7 +136176,8 @@
           18,
           18,
           16,
-          11
+          11,
+          7
         ],
         "giveaways": [
           21,
@@ -135152,6 +136195,7 @@
           20,
           17,
           13,
+          14,
           14,
           14
         ],
@@ -135172,7 +136216,8 @@
           8,
           6,
           3,
-          8
+          8,
+          3
         ],
         "penalty_minutes": [
           4,
@@ -135191,7 +136236,8 @@
           4,
           6,
           12,
-          14
+          14,
+          8
         ],
         "power_play_pct": [
           0.0,
@@ -135210,7 +136256,8 @@
           0.0,
           75.0,
           16.67,
-          33.33
+          33.33,
+          100.0
         ],
         "penalty_kill_pct": [
           80.0,
@@ -135229,7 +136276,8 @@
           80.0,
           25.0,
           83.33,
-          66.67
+          66.67,
+          0.0
         ],
         "faceoff_pct": [
           47.86,
@@ -135248,7 +136296,8 @@
           57.8,
           59.0,
           47.77,
-          41.25
+          41.25,
+          49.06
         ],
         "nzt": [
           4,
@@ -135267,7 +136316,8 @@
           2,
           3,
           3,
-          4
+          4,
+          3
         ],
         "nztsa": [
           6,
@@ -135286,7 +136336,8 @@
           0,
           2,
           0,
-          3
+          3,
+          2
         ],
         "fc": [
           26,
@@ -135305,7 +136356,8 @@
           35,
           37,
           22,
-          26
+          26,
+          23
         ],
         "rush": [
           2,
@@ -135324,9 +136376,11 @@
           0,
           2,
           1,
-          2
+          2,
+          0
         ],
         "lat": [
+          0.0,
           0.0,
           0.0,
           0.0,
@@ -135362,6 +136416,7 @@
           0.0,
           0.0,
           0.0,
+          0.0,
           0.0
         ],
         "hdc": [
@@ -135381,6 +136436,7 @@
           14,
           14,
           8,
+          10,
           10
         ],
         "hdca": [
@@ -135400,7 +136456,8 @@
           6,
           3,
           4,
-          3
+          3,
+          11
         ],
         "opp_xg": [
           1.78,
@@ -135419,7 +136476,8 @@
           2.32,
           3.07,
           3.39,
-          2.05
+          2.05,
+          4.35
         ],
         "period_dzs": [
           12,
@@ -135438,6 +136496,7 @@
           10,
           12,
           9,
+          6,
           6
         ],
         "games": [
@@ -135457,7 +136516,8 @@
           13,
           14,
           15,
-          16
+          16,
+          17
         ],
         "lateral": [],
         "longitudinal": [],
@@ -135479,7 +136539,8 @@
           0,
           3,
           2,
-          5
+          5,
+          4
         ],
         "goals_against": [
           1,
@@ -135498,7 +136559,8 @@
           3,
           8,
           5,
-          1
+          1,
+          3
         ],
         "shots_for": [
           30,
@@ -135517,6 +136579,7 @@
           35,
           39,
           23,
+          28,
           28
         ],
         "shots_against": [],
@@ -135537,7 +136600,8 @@
           3.59,
           3.47,
           2.83,
-          2.86
+          2.86,
+          2.61
         ],
         "xG_against": [
           1.78,
@@ -135556,7 +136620,8 @@
           2.32,
           3.07,
           3.39,
-          2.05
+          2.05,
+          4.35
         ],
         "hdc_for": [
           8,
@@ -135575,6 +136640,7 @@
           14,
           14,
           8,
+          10,
           10
         ],
         "hdc_against": [],
@@ -136783,7 +137849,8 @@
           5.05,
           6.7,
           6.45,
-          4.22
+          4.22,
+          5.55
         ],
         "xg": [
           2.75,
@@ -136802,7 +137869,8 @@
           2.81,
           3.48,
           1.7,
-          3.9
+          3.9,
+          2.72
         ],
         "corsi_pct": [
           52.1,
@@ -136821,7 +137889,8 @@
           49.01,
           61.67,
           28.22,
-          59.64
+          59.64,
+          41.56
         ],
         "fenwick_pct": [
           52.1,
@@ -136840,7 +137909,8 @@
           49.01,
           61.67,
           28.22,
-          59.64
+          59.64,
+          41.56
         ],
         "pdo": [
           85.88,
@@ -136859,7 +137929,8 @@
           95.83,
           87.88,
           121.74,
-          85.15
+          85.15,
+          104.61
         ],
         "ozs": [
           12,
@@ -136878,6 +137949,7 @@
           24,
           22,
           8,
+          9,
           9
         ],
         "nzs": [
@@ -136897,7 +137969,8 @@
           1,
           2,
           0,
-          2
+          2,
+          3
         ],
         "dzs": [
           18,
@@ -136916,7 +137989,8 @@
           7,
           11,
           15,
-          19
+          19,
+          20
         ],
         "goals": [
           1,
@@ -136935,7 +138009,8 @@
           0,
           3,
           5,
-          1
+          1,
+          4
         ],
         "opp_goals": [
           5,
@@ -136954,7 +138029,8 @@
           1,
           6,
           0,
-          4
+          4,
+          3
         ],
         "shots": [
           32,
@@ -136973,7 +138049,8 @@
           32,
           35,
           23,
-          30
+          30,
+          32
         ],
         "hits": [
           17,
@@ -136992,6 +138069,7 @@
           23,
           28,
           20,
+          15,
           15
         ],
         "blocked_shots": [
@@ -137011,7 +138089,8 @@
           14,
           11,
           9,
-          23
+          23,
+          12
         ],
         "giveaways": [
           13,
@@ -137030,6 +138109,7 @@
           13,
           14,
           19,
+          17,
           17
         ],
         "takeaways": [
@@ -137049,7 +138129,8 @@
           4,
           2,
           8,
-          4
+          4,
+          5
         ],
         "penalty_minutes": [
           8,
@@ -137068,7 +138149,8 @@
           2,
           12,
           6,
-          2
+          2,
+          8
         ],
         "power_play_pct": [
           0.0,
@@ -137087,7 +138169,8 @@
           0.0,
           50.0,
           0.0,
-          0.0
+          0.0,
+          25.0
         ],
         "penalty_kill_pct": [
           80.0,
@@ -137106,7 +138189,8 @@
           80.0,
           50.0,
           80.0,
-          80.0
+          80.0,
+          75.0
         ],
         "faceoff_pct": [
           55.02,
@@ -137125,7 +138209,8 @@
           53.67,
           49.66,
           54.37,
-          42.73
+          42.73,
+          44.32
         ],
         "nzt": [
           1,
@@ -137144,6 +138229,7 @@
           2,
           2,
           5,
+          4,
           4
         ],
         "nztsa": [
@@ -137163,7 +138249,8 @@
           0,
           4,
           2,
-          1
+          1,
+          9
         ],
         "fc": [
           31,
@@ -137182,7 +138269,8 @@
           31,
           35,
           23,
-          27
+          27,
+          29
         ],
         "rush": [
           1,
@@ -137201,9 +138289,11 @@
           1,
           0,
           0,
+          3,
           3
         ],
         "lat": [
+          0.0,
           0.0,
           0.0,
           0.0,
@@ -137239,6 +138329,7 @@
           0.0,
           0.0,
           0.0,
+          0.0,
           0.0
         ],
         "hdc": [
@@ -137258,7 +138349,8 @@
           14,
           11,
           4,
-          2
+          2,
+          3
         ],
         "hdca": [
           10,
@@ -137277,7 +138369,8 @@
           5,
           5,
           11,
-          8
+          8,
+          13
         ],
         "opp_xg": [
           3.33,
@@ -137296,7 +138389,8 @@
           2.4,
           3.0,
           4.16,
-          2.65
+          2.65,
+          4.26
         ],
         "period_dzs": [
           18,
@@ -137315,7 +138409,8 @@
           7,
           11,
           15,
-          19
+          19,
+          20
         ],
         "games": [
           0,
@@ -137334,7 +138429,8 @@
           13,
           14,
           15,
-          16
+          16,
+          17
         ],
         "lateral": [],
         "longitudinal": [],
@@ -137356,7 +138452,8 @@
           0,
           3,
           5,
-          1
+          1,
+          4
         ],
         "goals_against": [
           5,
@@ -137375,7 +138472,8 @@
           1,
           6,
           0,
-          4
+          4,
+          3
         ],
         "shots_for": [
           32,
@@ -137394,7 +138492,8 @@
           32,
           35,
           23,
-          30
+          30,
+          32
         ],
         "shots_against": [],
         "xG_for": [
@@ -137414,7 +138513,8 @@
           2.81,
           3.48,
           1.7,
-          3.9
+          3.9,
+          2.72
         ],
         "xG_against": [
           3.33,
@@ -137433,7 +138533,8 @@
           2.4,
           3.0,
           4.16,
-          2.65
+          2.65,
+          4.26
         ],
         "hdc_for": [
           8,
@@ -137452,7 +138553,8 @@
           14,
           11,
           4,
-          2
+          2,
+          3
         ],
         "hdc_against": [],
         "pp_goals": [],
@@ -137504,7 +138606,8 @@
           5.73,
           5.05,
           3.8,
-          9.05
+          9.05,
+          7.42
         ],
         "xg": [
           3.47,
@@ -137521,7 +138624,8 @@
           3.55,
           4.05,
           2.08,
-          4.45
+          4.45,
+          2.24
         ],
         "corsi_pct": [
           51.0,
@@ -137538,7 +138642,8 @@
           64.51,
           54.67,
           36.75,
-          46.76
+          46.76,
+          48.15
         ],
         "fenwick_pct": [
           51.0,
@@ -137555,7 +138660,8 @@
           64.51,
           54.67,
           36.75,
-          46.76
+          46.76,
+          48.15
         ],
         "pdo": [
           91.76,
@@ -137572,7 +138678,8 @@
           90.63,
           82.17,
           105.11,
-          106.39
+          106.39,
+          107.41
         ],
         "ozs": [
           22,
@@ -137589,7 +138696,8 @@
           15,
           19,
           15,
-          23
+          23,
+          21
         ],
         "nzs": [
           0,
@@ -137606,7 +138714,8 @@
           0,
           0,
           0,
-          2
+          2,
+          0
         ],
         "dzs": [
           14,
@@ -137623,7 +138732,8 @@
           13,
           12,
           9,
-          17
+          17,
+          6
         ],
         "goals": [
           2,
@@ -137640,7 +138750,8 @@
           3,
           1,
           2,
-          6
+          6,
+          5
         ],
         "opp_goals": [
           4,
@@ -137657,7 +138768,8 @@
           4,
           4,
           1,
-          3
+          3,
+          4
         ],
         "shots": [
           36,
@@ -137674,7 +138786,8 @@
           31,
           31,
           24,
-          42
+          42,
+          27
         ],
         "hits": [
           33,
@@ -137691,7 +138804,8 @@
           16,
           23,
           19,
-          18
+          18,
+          24
         ],
         "blocked_shots": [
           21,
@@ -137708,7 +138822,8 @@
           20,
           14,
           7,
-          13
+          13,
+          12
         ],
         "giveaways": [
           19,
@@ -137725,7 +138840,8 @@
           15,
           18,
           17,
-          10
+          10,
+          12
         ],
         "takeaways": [
           3,
@@ -137742,7 +138858,8 @@
           5,
           6,
           3,
-          3
+          3,
+          7
         ],
         "penalty_minutes": [
           4,
@@ -137759,7 +138876,8 @@
           4,
           4,
           6,
-          6
+          6,
+          10
         ],
         "power_play_pct": [
           66.67,
@@ -137776,7 +138894,8 @@
           25.0,
           33.33,
           33.33,
-          40.0
+          40.0,
+          75.0
         ],
         "penalty_kill_pct": [
           33.33,
@@ -137793,7 +138912,8 @@
           75.0,
           66.67,
           66.67,
-          60.0
+          60.0,
+          25.0
         ],
         "faceoff_pct": [
           53.17,
@@ -137810,7 +138930,8 @@
           51.28,
           58.61,
           48.34,
-          46.09
+          46.09,
+          48.88
         ],
         "nzt": [
           4,
@@ -137827,6 +138948,7 @@
           2,
           1,
           3,
+          0,
           0
         ],
         "nztsa": [
@@ -137844,6 +138966,7 @@
           1,
           0,
           1,
+          0,
           0
         ],
         "fc": [
@@ -137861,7 +138984,8 @@
           27,
           29,
           22,
-          42
+          42,
+          26
         ],
         "rush": [
           1,
@@ -137878,9 +139002,11 @@
           1,
           2,
           2,
-          0
+          0,
+          1
         ],
         "lat": [
+          0.0,
           0.0,
           0.0,
           0.0,
@@ -137912,6 +139038,7 @@
           0.0,
           0.0,
           0.0,
+          0.0,
           0.0
         ],
         "hdc": [
@@ -137929,7 +139056,8 @@
           12,
           14,
           7,
-          14
+          14,
+          7
         ],
         "hdca": [
           11,
@@ -137946,7 +139074,8 @@
           6,
           3,
           6,
-          4
+          4,
+          7
         ],
         "opp_xg": [
           4.45,
@@ -137963,7 +139092,8 @@
           2.7,
           2.33,
           4.37,
-          4.6
+          4.6,
+          4.09
         ],
         "period_dzs": [
           14,
@@ -137980,7 +139110,8 @@
           13,
           12,
           9,
-          17
+          17,
+          6
         ],
         "games": [
           0,
@@ -137997,7 +139128,8 @@
           11,
           12,
           13,
-          14
+          14,
+          15
         ],
         "lateral": [],
         "longitudinal": [],
@@ -138017,7 +139149,8 @@
           3,
           1,
           2,
-          6
+          6,
+          5
         ],
         "goals_against": [
           4,
@@ -138034,7 +139167,8 @@
           4,
           4,
           1,
-          3
+          3,
+          4
         ],
         "shots_for": [
           36,
@@ -138051,7 +139185,8 @@
           31,
           31,
           24,
-          42
+          42,
+          27
         ],
         "shots_against": [],
         "xG_for": [
@@ -138069,7 +139204,8 @@
           3.55,
           4.05,
           2.08,
-          4.45
+          4.45,
+          2.24
         ],
         "xG_against": [
           4.45,
@@ -138086,7 +139222,8 @@
           2.7,
           2.33,
           4.37,
-          4.6
+          4.6,
+          4.09
         ],
         "hdc_for": [
           8,
@@ -138103,7 +139240,8 @@
           12,
           14,
           7,
-          14
+          14,
+          7
         ],
         "hdc_against": [],
         "pp_goals": [],
@@ -140246,7 +141384,8 @@
           7.52,
           4.57,
           7.22,
-          7.52
+          7.52,
+          6.42
         ],
         "xg": [
           2.35,
@@ -140261,7 +141400,8 @@
           3.04,
           1.97,
           2.85,
-          3.7
+          3.7,
+          4.26
         ],
         "corsi_pct": [
           59.4,
@@ -140276,7 +141416,8 @@
           43.29,
           49.26,
           49.5,
-          65.94
+          65.94,
+          58.44
         ],
         "fenwick_pct": [
           59.4,
@@ -140291,7 +141432,8 @@
           43.29,
           49.26,
           49.5,
-          65.94
+          65.94,
+          58.44
         ],
         "pdo": [
           94.44,
@@ -140306,7 +141448,8 @@
           109.55,
           97.81,
           93.12,
-          92.38
+          92.38,
+          95.39
         ],
         "ozs": [
           11,
@@ -140321,7 +141464,8 @@
           15,
           18,
           20,
-          31
+          31,
+          25
         ],
         "nzs": [
           0,
@@ -140336,7 +141480,8 @@
           1,
           1,
           0,
-          1
+          1,
+          2
         ],
         "dzs": [
           6,
@@ -140351,7 +141496,8 @@
           9,
           8,
           7,
-          10
+          10,
+          11
         ],
         "goals": [
           0,
@@ -140366,7 +141512,8 @@
           4,
           2,
           2,
-          1
+          1,
+          3
         ],
         "opp_goals": [
           1,
@@ -140381,7 +141528,8 @@
           2,
           3,
           4,
-          2
+          2,
+          4
         ],
         "shots": [
           17,
@@ -140396,7 +141544,8 @@
           25,
           29,
           27,
-          42
+          42,
+          38
         ],
         "hits": [
           22,
@@ -140411,7 +141560,8 @@
           28,
           15,
           29,
-          25
+          25,
+          22
         ],
         "blocked_shots": [
           21,
@@ -140426,7 +141576,8 @@
           11,
           9,
           14,
-          23
+          23,
+          19
         ],
         "giveaways": [
           14,
@@ -140441,7 +141592,8 @@
           15,
           10,
           13,
-          10
+          10,
+          16
         ],
         "takeaways": [
           4,
@@ -140456,7 +141608,8 @@
           5,
           3,
           6,
-          7
+          7,
+          2
         ],
         "penalty_minutes": [
           6,
@@ -140471,7 +141624,8 @@
           4,
           6,
           2,
-          10
+          10,
+          8
         ],
         "power_play_pct": [
           0.0,
@@ -140486,7 +141640,8 @@
           33.33,
           0.0,
           66.67,
-          11.11
+          11.11,
+          75.0
         ],
         "penalty_kill_pct": [
           80.0,
@@ -140501,7 +141656,8 @@
           66.67,
           80.0,
           33.33,
-          88.89
+          88.89,
+          25.0
         ],
         "faceoff_pct": [
           55.56,
@@ -140516,7 +141672,8 @@
           62.12,
           48.04,
           45.23,
-          49.73
+          49.73,
+          55.68
         ],
         "nzt": [
           8,
@@ -140531,7 +141688,8 @@
           5,
           3,
           1,
-          1
+          1,
+          6
         ],
         "nztsa": [
           6,
@@ -140546,7 +141704,8 @@
           0,
           4,
           1,
-          3
+          3,
+          4
         ],
         "fc": [
           16,
@@ -140561,7 +141720,8 @@
           24,
           26,
           27,
-          37
+          37,
+          36
         ],
         "rush": [
           1,
@@ -140576,9 +141736,11 @@
           1,
           1,
           0,
-          5
+          5,
+          2
         ],
         "lat": [
+          0.0,
           0.0,
           0.0,
           0.0,
@@ -140606,6 +141768,7 @@
           0.0,
           0.0,
           0.0,
+          0.0,
           0.0
         ],
         "hdc": [
@@ -140621,6 +141784,7 @@
           10,
           7,
           12,
+          13,
           13
         ],
         "hdca": [
@@ -140636,7 +141800,8 @@
           4,
           8,
           6,
-          4
+          4,
+          3
         ],
         "opp_xg": [
           1.29,
@@ -140651,7 +141816,8 @@
           3.96,
           2.47,
           3.41,
-          1.93
+          1.93,
+          2.72
         ],
         "period_dzs": [
           6,
@@ -140666,7 +141832,8 @@
           9,
           8,
           7,
-          10
+          10,
+          11
         ],
         "games": [
           0,
@@ -140681,7 +141848,8 @@
           9,
           10,
           11,
-          12
+          12,
+          13
         ],
         "lateral": [],
         "longitudinal": [],
@@ -140699,7 +141867,8 @@
           4,
           2,
           2,
-          1
+          1,
+          3
         ],
         "goals_against": [
           1,
@@ -140714,7 +141883,8 @@
           2,
           3,
           4,
-          2
+          2,
+          4
         ],
         "shots_for": [
           17,
@@ -140729,7 +141899,8 @@
           25,
           29,
           27,
-          42
+          42,
+          38
         ],
         "shots_against": [],
         "xG_for": [
@@ -140745,7 +141916,8 @@
           3.04,
           1.97,
           2.85,
-          3.7
+          3.7,
+          4.26
         ],
         "xG_against": [
           1.29,
@@ -140760,7 +141932,8 @@
           3.96,
           2.47,
           3.41,
-          1.93
+          1.93,
+          2.72
         ],
         "hdc_for": [
           4,
@@ -140775,6 +141948,7 @@
           10,
           7,
           12,
+          13,
           13
         ],
         "hdc_against": [],
@@ -141551,7 +142725,8 @@
           8.38,
           4.25,
           8.4,
-          5.68
+          5.68,
+          7.3
         ],
         "xg": [
           2.25,
@@ -141571,7 +142746,8 @@
           3.0,
           2.24,
           5.23,
-          2.46
+          2.46,
+          3.76
         ],
         "corsi_pct": [
           45.43,
@@ -141591,7 +142767,8 @@
           38.33,
           51.82,
           51.37,
-          46.07
+          46.07,
+          56.75
         ],
         "fenwick_pct": [
           45.43,
@@ -141611,7 +142788,8 @@
           38.33,
           51.82,
           51.37,
-          46.07
+          46.07,
+          56.75
         ],
         "pdo": [
           98.31,
@@ -141631,7 +142809,8 @@
           112.12,
           84.93,
           107.39,
-          97.29
+          97.29,
+          107.78
         ],
         "ozs": [
           6,
@@ -141651,7 +142830,8 @@
           9,
           5,
           11,
-          8
+          8,
+          11
         ],
         "nzs": [
           1,
@@ -141671,7 +142851,8 @@
           1,
           2,
           0,
-          1
+          1,
+          2
         ],
         "dzs": [
           13,
@@ -141691,7 +142872,8 @@
           19,
           22,
           24,
-          16
+          16,
+          17
         ],
         "goals": [
           1,
@@ -141711,7 +142893,8 @@
           6,
           1,
           5,
-          2
+          2,
+          4
         ],
         "opp_goals": [
           2,
@@ -141731,7 +142914,8 @@
           3,
           5,
           2,
-          3
+          3,
+          1
         ],
         "shots": [
           21,
@@ -141751,7 +142935,8 @@
           29,
           29,
           35,
-          25
+          25,
+          30
         ],
         "hits": [
           21,
@@ -141771,7 +142956,8 @@
           23,
           27,
           18,
-          21
+          21,
+          17
         ],
         "blocked_shots": [
           10,
@@ -141791,7 +142977,8 @@
           4,
           13,
           21,
-          19
+          19,
+          20
         ],
         "giveaways": [
           18,
@@ -141811,7 +142998,8 @@
           13,
           20,
           9,
-          16
+          16,
+          10
         ],
         "takeaways": [
           4,
@@ -141831,7 +143019,8 @@
           7,
           2,
           7,
-          7
+          7,
+          4
         ],
         "penalty_minutes": [
           6,
@@ -141851,6 +143040,7 @@
           8,
           8,
           14,
+          4,
           4
         ],
         "power_play_pct": [
@@ -141871,7 +143061,8 @@
           16.67,
           14.29,
           57.14,
-          0.0
+          0.0,
+          50.0
         ],
         "penalty_kill_pct": [
           75.0,
@@ -141891,7 +143082,8 @@
           83.33,
           85.71,
           42.86,
-          80.0
+          80.0,
+          50.0
         ],
         "faceoff_pct": [
           32.13,
@@ -141911,7 +143103,8 @@
           50.34,
           48.83,
           52.26,
-          48.09
+          48.09,
+          66.99
         ],
         "nzt": [
           3,
@@ -141931,7 +143124,8 @@
           3,
           4,
           3,
-          6
+          6,
+          3
         ],
         "nztsa": [
           7,
@@ -141951,7 +143145,8 @@
           0,
           2,
           0,
-          0
+          0,
+          1
         ],
         "fc": [
           19,
@@ -141971,7 +143166,8 @@
           29,
           27,
           34,
-          25
+          25,
+          28
         ],
         "rush": [
           1,
@@ -141991,9 +143187,11 @@
           0,
           2,
           1,
-          0
+          0,
+          2
         ],
         "lat": [
+          0.0,
           0.0,
           0.0,
           0.0,
@@ -142031,6 +143229,7 @@
           0.0,
           0.0,
           0.0,
+          0.0,
           0.0
         ],
         "hdc": [
@@ -142051,7 +143250,8 @@
           5,
           5,
           9,
-          3
+          3,
+          7
         ],
         "hdca": [
           6,
@@ -142071,7 +143271,8 @@
           11,
           10,
           11,
-          6
+          6,
+          7
         ],
         "opp_xg": [
           2.45,
@@ -142091,7 +143292,8 @@
           3.48,
           3.7,
           3.64,
-          2.81
+          2.81,
+          2.12
         ],
         "period_dzs": [
           13,
@@ -142111,7 +143313,8 @@
           19,
           22,
           24,
-          16
+          16,
+          17
         ],
         "games": [
           0,
@@ -142131,7 +143334,8 @@
           14,
           15,
           16,
-          17
+          17,
+          18
         ],
         "lateral": [],
         "longitudinal": [],
@@ -142154,7 +143358,8 @@
           6,
           1,
           5,
-          2
+          2,
+          4
         ],
         "goals_against": [
           2,
@@ -142174,7 +143379,8 @@
           3,
           5,
           2,
-          3
+          3,
+          1
         ],
         "shots_for": [
           21,
@@ -142194,7 +143400,8 @@
           29,
           29,
           35,
-          25
+          25,
+          30
         ],
         "shots_against": [],
         "xG_for": [
@@ -142215,7 +143422,8 @@
           3.0,
           2.24,
           5.23,
-          2.46
+          2.46,
+          3.76
         ],
         "xG_against": [
           2.45,
@@ -142235,7 +143443,8 @@
           3.48,
           3.7,
           3.64,
-          2.81
+          2.81,
+          2.12
         ],
         "hdc_for": [
           7,
@@ -142255,7 +143464,8 @@
           5,
           5,
           9,
-          3
+          3,
+          7
         ],
         "hdc_against": [],
         "pp_goals": [],
@@ -142810,7 +144020,8 @@
           0.67,
           3.35,
           6.28,
-          5.67
+          5.67,
+          6.03
         ],
         "xg": [
           2.72,
@@ -142825,7 +144036,8 @@
           1.98,
           3.38,
           1.74,
-          3.55
+          3.55,
+          4.89
         ],
         "corsi_pct": [
           48.85,
@@ -142840,7 +144052,8 @@
           52.68,
           56.52,
           46.03,
-          69.29
+          69.29,
+          62.51
         ],
         "fenwick_pct": [
           48.85,
@@ -142855,7 +144068,8 @@
           52.68,
           56.52,
           46.03,
-          69.29
+          69.29,
+          62.51
         ],
         "pdo": [
           118.18,
@@ -142870,7 +144084,8 @@
           76.19,
           91.96,
           114.6,
-          75.28
+          75.28,
+          92.1
         ],
         "ozs": [
           3,
@@ -142885,7 +144100,8 @@
           13,
           16,
           10,
-          25
+          25,
+          28
         ],
         "nzs": [
           1,
@@ -142900,6 +144116,7 @@
           0,
           1,
           1,
+          0,
           0
         ],
         "dzs": [
@@ -142915,7 +144132,8 @@
           6,
           13,
           8,
-          10
+          10,
+          12
         ],
         "goals": [
           4,
@@ -142930,7 +144148,8 @@
           0,
           2,
           4,
-          2
+          2,
+          3
         ],
         "opp_goals": [
           0,
@@ -142945,7 +144164,8 @@
           5,
           3,
           2,
-          7
+          7,
+          4
         ],
         "shots": [
           22,
@@ -142960,7 +144180,8 @@
           19,
           32,
           19,
-          35
+          35,
+          47
         ],
         "hits": [
           15,
@@ -142975,7 +144196,8 @@
           9,
           15,
           17,
-          16
+          16,
+          11
         ],
         "blocked_shots": [
           11,
@@ -142990,7 +144212,8 @@
           15,
           13,
           16,
-          28
+          28,
+          17
         ],
         "giveaways": [
           10,
@@ -143005,7 +144228,8 @@
           22,
           20,
           14,
-          11
+          11,
+          18
         ],
         "takeaways": [
           4,
@@ -143020,7 +144244,8 @@
           5,
           2,
           6,
-          2
+          2,
+          9
         ],
         "penalty_minutes": [
           8,
@@ -143035,7 +144260,8 @@
           4,
           6,
           0,
-          10
+          10,
+          2
         ],
         "power_play_pct": [
           0.0,
@@ -143050,6 +144276,7 @@
           0.0,
           20.0,
           0.0,
+          20.0,
           20.0
         ],
         "penalty_kill_pct": [
@@ -143062,6 +144289,7 @@
           80.0,
           40.0,
           50.0,
+          80.0,
           80.0,
           80.0,
           80.0,
@@ -143080,7 +144308,8 @@
           54.92,
           55.28,
           57.37,
-          45.29
+          45.29,
+          49.42
         ],
         "nzt": [
           1,
@@ -143095,6 +144324,7 @@
           2,
           1,
           5,
+          2,
           2
         ],
         "nztsa": [
@@ -143110,6 +144340,7 @@
           1,
           0,
           10,
+          0,
           0
         ],
         "fc": [
@@ -143125,7 +144356,8 @@
           18,
           26,
           18,
-          34
+          34,
+          38
         ],
         "rush": [
           0,
@@ -143140,9 +144372,11 @@
           1,
           4,
           1,
-          1
+          1,
+          2
         ],
         "lat": [
+          0.0,
           0.0,
           0.0,
           0.0,
@@ -143170,6 +144404,7 @@
           0.0,
           0.0,
           0.0,
+          0.0,
           0.0
         ],
         "hdc": [
@@ -143185,7 +144420,8 @@
           5,
           11,
           5,
-          12
+          12,
+          24
         ],
         "hdca": [
           2,
@@ -143200,7 +144436,8 @@
           4,
           3,
           5,
-          6
+          6,
+          9
         ],
         "opp_xg": [
           1.72,
@@ -143215,7 +144452,8 @@
           2.8,
           2.32,
           3.11,
-          2.59
+          2.59,
+          2.72
         ],
         "period_dzs": [
           18,
@@ -143230,7 +144468,8 @@
           6,
           13,
           8,
-          10
+          10,
+          12
         ],
         "games": [
           0,
@@ -143245,7 +144484,8 @@
           9,
           10,
           11,
-          12
+          12,
+          13
         ],
         "lateral": [],
         "longitudinal": [],
@@ -143263,7 +144503,8 @@
           0,
           2,
           4,
-          2
+          2,
+          3
         ],
         "goals_against": [
           0,
@@ -143278,7 +144519,8 @@
           5,
           3,
           2,
-          7
+          7,
+          4
         ],
         "shots_for": [
           22,
@@ -143293,7 +144535,8 @@
           19,
           32,
           19,
-          35
+          35,
+          47
         ],
         "shots_against": [],
         "xG_for": [
@@ -143309,7 +144552,8 @@
           1.98,
           3.38,
           1.74,
-          3.55
+          3.55,
+          4.89
         ],
         "xG_against": [
           1.72,
@@ -143324,7 +144568,8 @@
           2.8,
           2.32,
           3.11,
-          2.59
+          2.59,
+          2.72
         ],
         "hdc_for": [
           1,
@@ -143339,7 +144584,8 @@
           5,
           11,
           5,
-          12
+          12,
+          24
         ],
         "hdc_against": [],
         "pp_goals": [],
@@ -144833,7 +146079,8 @@
           4.6,
           5.8,
           4.9,
-          6.67
+          6.67,
+          4.42
         ],
         "xg": [
           3.16,
@@ -144850,7 +146097,8 @@
           3.31,
           2.47,
           1.92,
-          2.08
+          2.08,
+          2.12
         ],
         "corsi_pct": [
           65.33,
@@ -144867,7 +146115,8 @@
           42.05,
           45.57,
           46.76,
-          32.35
+          32.35,
+          43.25
         ],
         "fenwick_pct": [
           65.33,
@@ -144884,7 +146133,8 @@
           42.05,
           45.57,
           46.76,
-          32.35
+          32.35,
+          43.25
         ],
         "pdo": [
           86.45,
@@ -144901,7 +146151,8 @@
           85.71,
           97.62,
           89.22,
-          113.94
+          113.94,
+          92.22
         ],
         "ozs": [
           14,
@@ -144918,7 +146169,8 @@
           6,
           12,
           10,
-          12
+          12,
+          11
         ],
         "nzs": [
           0,
@@ -144935,7 +146187,8 @@
           2,
           1,
           1,
-          2
+          2,
+          0
         ],
         "dzs": [
           12,
@@ -144952,7 +146205,8 @@
           18,
           8,
           6,
-          9
+          9,
+          7
         ],
         "goals": [
           1,
@@ -144969,7 +146223,8 @@
           0,
           3,
           1,
-          4
+          4,
+          1
         ],
         "opp_goals": [
           4,
@@ -144986,7 +146241,8 @@
           6,
           4,
           4,
-          1
+          1,
+          4
         ],
         "shots": [
           26,
@@ -145003,7 +146259,8 @@
           26,
           21,
           17,
-          23
+          23,
+          18
         ],
         "hits": [
           19,
@@ -145020,7 +146277,8 @@
           22,
           25,
           24,
-          21
+          21,
+          28
         ],
         "blocked_shots": [
           29,
@@ -145037,7 +146295,8 @@
           23,
           20,
           17,
-          9
+          9,
+          12
         ],
         "giveaways": [
           14,
@@ -145054,7 +146313,8 @@
           13,
           20,
           13,
-          9
+          9,
+          17
         ],
         "takeaways": [
           5,
@@ -145071,7 +146331,8 @@
           5,
           5,
           6,
-          4
+          4,
+          3
         ],
         "penalty_minutes": [
           4,
@@ -145088,7 +146349,8 @@
           8,
           4,
           6,
-          8
+          8,
+          4
         ],
         "power_play_pct": [
           16.67,
@@ -145105,7 +146367,8 @@
           0.0,
           50.0,
           20.0,
-          33.33
+          33.33,
+          0.0
         ],
         "penalty_kill_pct": [
           83.33,
@@ -145122,7 +146385,8 @@
           80.0,
           50.0,
           80.0,
-          66.67
+          66.67,
+          80.0
         ],
         "faceoff_pct": [
           55.24,
@@ -145139,7 +146403,8 @@
           48.72,
           41.2,
           45.46,
-          51.17
+          51.17,
+          33.01
         ],
         "nzt": [
           3,
@@ -145156,7 +146421,8 @@
           5,
           5,
           3,
-          2
+          2,
+          3
         ],
         "nztsa": [
           1,
@@ -145173,7 +146439,8 @@
           4,
           1,
           3,
-          1
+          1,
+          2
         ],
         "fc": [
           26,
@@ -145190,7 +146457,8 @@
           23,
           20,
           16,
-          23
+          23,
+          18
         ],
         "rush": [
           0,
@@ -145207,9 +146475,11 @@
           3,
           1,
           1,
+          0,
           0
         ],
         "lat": [
+          0.0,
           0.0,
           0.0,
           0.0,
@@ -145241,6 +146511,7 @@
           0.0,
           0.0,
           0.0,
+          0.0,
           0.0
         ],
         "hdc": [
@@ -145257,6 +146528,7 @@
           5,
           5,
           5,
+          7,
           7,
           7
         ],
@@ -145275,7 +146547,8 @@
           7,
           8,
           1,
-          3
+          3,
+          7
         ],
         "opp_xg": [
           2.07,
@@ -145292,7 +146565,8 @@
           4.86,
           3.39,
           2.76,
-          3.63
+          3.63,
+          3.76
         ],
         "period_dzs": [
           12,
@@ -145309,7 +146583,8 @@
           18,
           8,
           6,
-          9
+          9,
+          7
         ],
         "games": [
           0,
@@ -145326,7 +146601,8 @@
           11,
           12,
           13,
-          14
+          14,
+          15
         ],
         "lateral": [],
         "longitudinal": [],
@@ -145346,7 +146622,8 @@
           0,
           3,
           1,
-          4
+          4,
+          1
         ],
         "goals_against": [
           4,
@@ -145363,7 +146640,8 @@
           6,
           4,
           4,
-          1
+          1,
+          4
         ],
         "shots_for": [
           26,
@@ -145380,7 +146658,8 @@
           26,
           21,
           17,
-          23
+          23,
+          18
         ],
         "shots_against": [],
         "xG_for": [
@@ -145398,7 +146677,8 @@
           3.31,
           2.47,
           1.92,
-          2.08
+          2.08,
+          2.12
         ],
         "xG_against": [
           2.07,
@@ -145415,7 +146695,8 @@
           4.86,
           3.39,
           2.76,
-          3.63
+          3.63,
+          3.76
         ],
         "hdc_for": [
           9,
@@ -145431,6 +146712,7 @@
           5,
           5,
           5,
+          7,
           7,
           7
         ],
@@ -146713,7 +147995,8 @@
           7.55,
           4.88,
           4.3,
-          3.42
+          3.42,
+          6.6
         ],
         "xg": [
           2.51,
@@ -146731,7 +148014,8 @@
           3.31,
           3.25,
           2.73,
-          3.14
+          3.14,
+          2.55
         ],
         "corsi_pct": [
           42.84,
@@ -146749,7 +148033,8 @@
           39.71,
           51.49,
           42.73,
-          54.5
+          54.5,
+          44.86
         ],
         "fenwick_pct": [
           42.84,
@@ -146767,7 +148052,8 @@
           39.71,
           51.49,
           42.73,
-          54.5
+          54.5,
+          44.86
         ],
         "pdo": [
           92.58,
@@ -146785,7 +148071,8 @@
           104.68,
           102.19,
           105.26,
-          89.16
+          89.16,
+          91.56
         ],
         "ozs": [
           16,
@@ -146803,7 +148090,8 @@
           18,
           20,
           11,
-          17
+          17,
+          23
         ],
         "nzs": [
           0,
@@ -146821,7 +148109,8 @@
           3,
           0,
           1,
-          1
+          1,
+          0
         ],
         "dzs": [
           7,
@@ -146839,7 +148128,8 @@
           10,
           11,
           7,
-          4
+          4,
+          3
         ],
         "goals": [
           1,
@@ -146857,7 +148147,8 @@
           3,
           4,
           1,
-          1
+          1,
+          2
         ],
         "opp_goals": [
           4,
@@ -146875,7 +148166,8 @@
           2,
           3,
           0,
-          4
+          4,
+          5
         ],
         "shots": [
           23,
@@ -146893,7 +148185,8 @@
           31,
           31,
           19,
-          22
+          22,
+          26
         ],
         "hits": [
           24,
@@ -146911,7 +148204,8 @@
           25,
           17,
           26,
-          15
+          15,
+          30
         ],
         "blocked_shots": [
           14,
@@ -146929,7 +148223,8 @@
           7,
           18,
           14,
-          22
+          22,
+          21
         ],
         "giveaways": [
           16,
@@ -146947,7 +148242,8 @@
           10,
           21,
           18,
-          15
+          15,
+          14
         ],
         "takeaways": [
           3,
@@ -146965,7 +148261,8 @@
           6,
           0,
           5,
-          3
+          3,
+          2
         ],
         "penalty_minutes": [
           4,
@@ -146981,6 +148278,7 @@
           2,
           6,
           4,
+          6,
           6,
           6,
           6
@@ -147001,7 +148299,8 @@
           33.33,
           0.0,
           0.0,
-          16.67
+          16.67,
+          33.33
         ],
         "penalty_kill_pct": [
           80.0,
@@ -147019,7 +148318,8 @@
           66.67,
           80.0,
           80.0,
-          83.33
+          83.33,
+          66.67
         ],
         "faceoff_pct": [
           49.77,
@@ -147037,7 +148337,8 @@
           48.59,
           47.82,
           46.1,
-          65.05
+          65.05,
+          57.79
         ],
         "nzt": [
           5,
@@ -147055,7 +148356,8 @@
           1,
           6,
           3,
-          5
+          5,
+          3
         ],
         "nztsa": [
           9,
@@ -147073,7 +148375,8 @@
           2,
           1,
           2,
-          1
+          1,
+          0
         ],
         "fc": [
           22,
@@ -147091,7 +148394,8 @@
           29,
           28,
           18,
-          21
+          21,
+          23
         ],
         "rush": [
           1,
@@ -147109,9 +148413,11 @@
           2,
           3,
           1,
-          1
+          1,
+          3
         ],
         "lat": [
+          0.0,
           0.0,
           0.0,
           0.0,
@@ -147145,6 +148451,7 @@
           0.0,
           0.0,
           0.0,
+          0.0,
           0.0
         ],
         "hdc": [
@@ -147163,7 +148470,8 @@
           10,
           8,
           8,
-          9
+          9,
+          11
         ],
         "hdca": [
           7,
@@ -147181,7 +148489,8 @@
           7,
           6,
           1,
-          3
+          3,
+          7
         ],
         "opp_xg": [
           3.37,
@@ -147199,7 +148508,8 @@
           3.18,
           3.94,
           2.63,
-          2.16
+          2.16,
+          3.87
         ],
         "period_dzs": [
           7,
@@ -147217,7 +148527,8 @@
           10,
           11,
           7,
-          4
+          4,
+          3
         ],
         "games": [
           0,
@@ -147235,7 +148546,8 @@
           12,
           13,
           14,
-          15
+          15,
+          16
         ],
         "lateral": [],
         "longitudinal": [],
@@ -147256,7 +148568,8 @@
           3,
           4,
           1,
-          1
+          1,
+          2
         ],
         "goals_against": [
           4,
@@ -147274,7 +148587,8 @@
           2,
           3,
           0,
-          4
+          4,
+          5
         ],
         "shots_for": [
           23,
@@ -147292,7 +148606,8 @@
           31,
           31,
           19,
-          22
+          22,
+          26
         ],
         "shots_against": [],
         "xG_for": [
@@ -147311,7 +148626,8 @@
           3.31,
           3.25,
           2.73,
-          3.14
+          3.14,
+          2.55
         ],
         "xG_against": [
           3.37,
@@ -147329,7 +148645,8 @@
           3.18,
           3.94,
           2.63,
-          2.16
+          2.16,
+          3.87
         ],
         "hdc_for": [
           6,
@@ -147347,7 +148664,8 @@
           10,
           8,
           8,
-          9
+          9,
+          11
         ],
         "hdc_against": [],
         "pp_goals": [],
@@ -148769,7 +150087,8 @@
           7.62,
           5.77,
           4.4,
-          2.47
+          2.47,
+          9.28
         ],
         "xg": [
           2.63,
@@ -148786,7 +150105,8 @@
           3.5,
           4.44,
           4.37,
-          2.75
+          2.75,
+          4.44
         ],
         "corsi_pct": [
           39.76,
@@ -148803,7 +150123,8 @@
           48.17,
           57.14,
           63.25,
-          57.31
+          57.31,
+          50.0
         ],
         "fenwick_pct": [
           39.76,
@@ -148820,7 +150141,8 @@
           48.17,
           57.14,
           63.25,
-          57.31
+          57.31,
+          50.0
         ],
         "pdo": [
           110.65,
@@ -148837,7 +150159,8 @@
           114.11,
           103.74,
           94.89,
-          91.67
+          92.0,
+          118.52
         ],
         "ozs": [
           12,
@@ -148854,7 +150177,8 @@
           18,
           19,
           13,
-          24
+          24,
+          21
         ],
         "nzs": [
           1,
@@ -148871,7 +150195,8 @@
           0,
           0,
           1,
-          0
+          0,
+          1
         ],
         "dzs": [
           7,
@@ -148888,6 +150213,7 @@
           9,
           16,
           17,
+          5,
           5
         ],
         "goals": [
@@ -148905,7 +150231,8 @@
           6,
           4,
           1,
-          0
+          0,
+          6
         ],
         "opp_goals": [
           1,
@@ -148922,7 +150249,8 @@
           3,
           1,
           2,
-          2
+          2,
+          1
         ],
         "shots": [
           20,
@@ -148939,7 +150267,8 @@
           27,
           35,
           31,
-          29
+          29,
+          27
         ],
         "hits": [
           27,
@@ -148956,7 +150285,8 @@
           15,
           16,
           14,
-          16
+          16,
+          27
         ],
         "blocked_shots": [
           7,
@@ -148973,7 +150303,8 @@
           16,
           15,
           22,
-          18
+          18,
+          22
         ],
         "giveaways": [
           18,
@@ -148990,7 +150321,8 @@
           12,
           19,
           13,
-          19
+          19,
+          10
         ],
         "takeaways": [
           2,
@@ -149006,6 +150338,7 @@
           4,
           4,
           3,
+          4,
           4,
           4
         ],
@@ -149024,7 +150357,8 @@
           4,
           4,
           6,
-          10
+          10,
+          14
         ],
         "power_play_pct": [
           14.29,
@@ -149041,7 +150375,8 @@
           100.0,
           0.0,
           0.0,
-          0.0
+          0.0,
+          33.33
         ],
         "penalty_kill_pct": [
           85.71,
@@ -149058,7 +150393,8 @@
           0.0,
           80.0,
           80.0,
-          80.0
+          80.0,
+          66.67
         ],
         "faceoff_pct": [
           44.59,
@@ -149075,7 +150411,8 @@
           51.67,
           34.38,
           51.66,
-          42.82
+          42.82,
+          30.44
         ],
         "nzt": [
           1,
@@ -149092,7 +150429,8 @@
           5,
           2,
           3,
-          5
+          5,
+          3
         ],
         "nztsa": [
           0,
@@ -149109,7 +150447,8 @@
           0,
           0,
           1,
-          2
+          2,
+          0
         ],
         "fc": [
           20,
@@ -149126,7 +150465,8 @@
           25,
           35,
           29,
-          28
+          28,
+          27
         ],
         "rush": [
           0,
@@ -149143,9 +150483,11 @@
           2,
           0,
           2,
-          1
+          1,
+          0
         ],
         "lat": [
+          0.0,
           0.0,
           0.0,
           0.0,
@@ -149177,6 +150519,7 @@
           0.0,
           0.0,
           0.0,
+          0.0,
           0.0
         ],
         "hdc": [
@@ -149194,7 +150537,8 @@
           8,
           13,
           6,
-          14
+          14,
+          9
         ],
         "hdca": [
           2,
@@ -149211,7 +150555,8 @@
           6,
           3,
           7,
-          5
+          5,
+          8
         ],
         "opp_xg": [
           2.01,
@@ -149228,7 +150573,8 @@
           3.42,
           2.39,
           2.08,
-          2.03
+          2.05,
+          3.76
         ],
         "period_dzs": [
           7,
@@ -149245,6 +150591,7 @@
           9,
           16,
           17,
+          5,
           5
         ],
         "games": [
@@ -149262,7 +150609,8 @@
           11,
           12,
           13,
-          14
+          14,
+          15
         ],
         "lateral": [],
         "longitudinal": [],
@@ -149282,7 +150630,8 @@
           6,
           4,
           1,
-          0
+          0,
+          6
         ],
         "goals_against": [
           1,
@@ -149299,7 +150648,8 @@
           3,
           1,
           2,
-          2
+          2,
+          1
         ],
         "shots_for": [
           20,
@@ -149316,7 +150666,8 @@
           27,
           35,
           31,
-          29
+          29,
+          27
         ],
         "shots_against": [],
         "xG_for": [
@@ -149334,7 +150685,8 @@
           3.5,
           4.44,
           4.37,
-          2.75
+          2.75,
+          4.44
         ],
         "xG_against": [
           2.01,
@@ -149351,7 +150703,8 @@
           3.42,
           2.39,
           2.08,
-          2.03
+          2.05,
+          3.76
         ],
         "hdc_for": [
           10,
@@ -149368,7 +150721,8 @@
           8,
           13,
           6,
-          14
+          14,
+          9
         ],
         "hdc_against": [],
         "pp_goals": [],
@@ -149423,7 +150777,7 @@
           6.05,
           7.1,
           5.38,
-          5.8
+          5.88
         ],
         "xg": [
           2.17,
@@ -149443,7 +150797,7 @@
           2.67,
           3.76,
           1.54,
-          2.03
+          2.05
         ],
         "corsi_pct": [
           46.03,
@@ -149503,7 +150857,7 @@
           109.36,
           96.9,
           98.47,
-          108.33
+          108.0
         ],
         "ozs": [
           12,
@@ -149563,7 +150917,7 @@
           11,
           17,
           17,
-          14
+          15
         ],
         "goals": [
           3,
@@ -149623,7 +150977,7 @@
           20,
           29,
           23,
-          24
+          25
         ],
         "hits": [
           21,
@@ -149843,7 +151197,7 @@
           19,
           26,
           20,
-          23
+          24
         ],
         "rush": [
           1,
@@ -149983,7 +151337,7 @@
           11,
           17,
           17,
-          14
+          15
         ],
         "games": [
           0,
@@ -150066,7 +151420,7 @@
           20,
           29,
           23,
-          24
+          25
         ],
         "shots_against": [],
         "xG_for": [
@@ -150087,7 +151441,7 @@
           2.67,
           3.76,
           1.54,
-          2.03
+          2.05
         ],
         "xG_against": [
           3.01,
@@ -151187,7 +152541,7 @@
           2.96,
           3.61,
           1.91,
-          3.06
+          3.05
         ],
         "period_dzs": [
           9,
@@ -151303,7 +152657,7 @@
           2.96,
           3.61,
           1.91,
-          3.06
+          3.05
         ],
         "hdc_for": [
           9,
@@ -152198,7 +153552,7 @@
           58.6,
           62.1,
           44.49,
-          70.86
+          70.26
         ],
         "fenwick_pct": [
           43.78,
@@ -152215,7 +153569,7 @@
           58.6,
           62.1,
           44.49,
-          70.86
+          70.26
         ],
         "pdo": [
           113.68,
@@ -152232,7 +153586,7 @@
           82.64,
           80.81,
           112.38,
-          80.0
+          80.95
         ],
         "ozs": [
           8,
@@ -152623,7 +153977,7 @@
           2.91,
           2.72,
           2.97,
-          2.35
+          2.38
         ],
         "period_dzs": [
           17,
@@ -152746,7 +154100,7 @@
           2.91,
           2.72,
           2.97,
-          2.35
+          2.38
         ],
         "hdc_for": [
           2,
@@ -154255,7 +155609,8 @@
           4.2,
           4.62,
           5.3,
-          4.95
+          4.95,
+          5.07
         ],
         "xg": [
           2.02,
@@ -154270,7 +155625,8 @@
           3.5,
           3.61,
           3.16,
-          3.29
+          3.29,
+          3.19
         ],
         "corsi_pct": [
           56.18,
@@ -154285,7 +155641,8 @@
           44.01,
           58.38,
           41.52,
-          62.7
+          62.7,
+          51.85
         ],
         "fenwick_pct": [
           56.18,
@@ -154300,7 +155657,8 @@
           44.01,
           58.38,
           41.52,
-          62.7
+          62.7,
+          51.85
         ],
         "pdo": [
           97.29,
@@ -154315,7 +155673,8 @@
           97.25,
           81.2,
           112.0,
-          102.38
+          102.38,
+          92.59
         ],
         "ozs": [
           14,
@@ -154330,7 +155689,8 @@
           8,
           14,
           7,
-          20
+          20,
+          8
         ],
         "nzs": [
           2,
@@ -154345,7 +155705,8 @@
           2,
           4,
           0,
-          1
+          1,
+          3
         ],
         "dzs": [
           9,
@@ -154360,7 +155721,8 @@
           21,
           16,
           18,
-          5
+          5,
+          20
         ],
         "goals": [
           2,
@@ -154375,7 +155737,8 @@
           3,
           1,
           3,
-          3
+          3,
+          4
         ],
         "opp_goals": [
           3,
@@ -154390,7 +155753,8 @@
           4,
           5,
           0,
-          2
+          2,
+          5
         ],
         "shots": [
           25,
@@ -154405,7 +155769,8 @@
           32,
           34,
           25,
-          28
+          28,
+          36
         ],
         "hits": [
           15,
@@ -154420,7 +155785,8 @@
           15,
           17,
           21,
-          15
+          15,
+          14
         ],
         "blocked_shots": [
           16,
@@ -154435,7 +155801,8 @@
           15,
           19,
           13,
-          24
+          24,
+          10
         ],
         "giveaways": [
           17,
@@ -154450,7 +155817,8 @@
           21,
           14,
           19,
-          16
+          16,
+          19
         ],
         "takeaways": [
           3,
@@ -154465,7 +155833,8 @@
           3,
           2,
           5,
-          7
+          7,
+          6
         ],
         "penalty_minutes": [
           6,
@@ -154480,7 +155849,8 @@
           6,
           4,
           4,
-          6
+          6,
+          8
         ],
         "power_play_pct": [
           50.0,
@@ -154495,7 +155865,8 @@
           20.0,
           0.0,
           100.0,
-          25.0
+          25.0,
+          40.0
         ],
         "penalty_kill_pct": [
           50.0,
@@ -154510,7 +155881,8 @@
           80.0,
           80.0,
           0.0,
-          75.0
+          75.0,
+          60.0
         ],
         "faceoff_pct": [
           49.46,
@@ -154525,7 +155897,8 @@
           66.15,
           58.74,
           45.56,
-          52.94
+          52.94,
+          51.12
         ],
         "nzt": [
           2,
@@ -154540,7 +155913,8 @@
           1,
           2,
           6,
-          1
+          1,
+          9
         ],
         "nztsa": [
           0,
@@ -154555,7 +155929,8 @@
           2,
           2,
           0,
-          0
+          0,
+          4
         ],
         "fc": [
           23,
@@ -154570,7 +155945,8 @@
           29,
           32,
           23,
-          25
+          25,
+          30
         ],
         "rush": [
           2,
@@ -154585,9 +155961,11 @@
           2,
           2,
           2,
+          1,
           1
         ],
         "lat": [
+          0.0,
           0.0,
           0.0,
           0.0,
@@ -154615,6 +155993,7 @@
           0.0,
           0.0,
           0.0,
+          0.0,
           0.0
         ],
         "hdc": [
@@ -154630,7 +156009,8 @@
           8,
           5,
           3,
-          8
+          8,
+          7
         ],
         "hdca": [
           5,
@@ -154645,7 +156025,8 @@
           5,
           9,
           2,
-          13
+          13,
+          7
         ],
         "opp_xg": [
           2.39,
@@ -154660,7 +156041,8 @@
           3.31,
           3.17,
           2.56,
-          2.54
+          2.54,
+          2.58
         ],
         "period_dzs": [
           9,
@@ -154675,7 +156057,8 @@
           21,
           16,
           18,
-          5
+          5,
+          20
         ],
         "games": [
           0,
@@ -154690,7 +156073,8 @@
           9,
           10,
           11,
-          12
+          12,
+          13
         ],
         "lateral": [],
         "longitudinal": [],
@@ -154708,7 +156092,8 @@
           3,
           1,
           3,
-          3
+          3,
+          4
         ],
         "goals_against": [
           3,
@@ -154723,7 +156108,8 @@
           4,
           5,
           0,
-          2
+          2,
+          5
         ],
         "shots_for": [
           25,
@@ -154738,7 +156124,8 @@
           32,
           34,
           25,
-          28
+          28,
+          36
         ],
         "shots_against": [],
         "xG_for": [
@@ -154754,7 +156141,8 @@
           3.5,
           3.61,
           3.16,
-          3.29
+          3.29,
+          3.19
         ],
         "xG_against": [
           2.39,
@@ -154769,7 +156157,8 @@
           3.31,
           3.17,
           2.56,
-          2.54
+          2.54,
+          2.58
         ],
         "hdc_for": [
           6,
@@ -154784,7 +156173,8 @@
           8,
           5,
           3,
-          8
+          8,
+          7
         ],
         "hdc_against": [],
         "pp_goals": [],
@@ -156205,7 +157595,8 @@
           9.42,
           6.08,
           5.25,
-          7.17
+          7.17,
+          8.25
         ],
         "xg": [
           2.71,
@@ -156219,7 +157610,8 @@
           3.98,
           2.46,
           2.95,
-          2.03
+          2.03,
+          3.97
         ],
         "corsi_pct": [
           51.01,
@@ -156233,7 +157625,8 @@
           50.14,
           42.58,
           60.23,
-          36.1
+          36.1,
+          59.6
         ],
         "fenwick_pct": [
           51.01,
@@ -156247,7 +157640,8 @@
           50.14,
           42.58,
           60.23,
-          36.1
+          36.1,
+          59.6
         ],
         "pdo": [
           107.58,
@@ -156261,7 +157655,8 @@
           108.04,
           96.43,
           90.0,
-          114.53
+          114.53,
+          88.04
         ],
         "ozs": [
           8,
@@ -156275,7 +157670,8 @@
           12,
           3,
           13,
-          10
+          10,
+          14
         ],
         "nzs": [
           0,
@@ -156289,7 +157685,8 @@
           2,
           2,
           1,
-          0
+          0,
+          1
         ],
         "dzs": [
           22,
@@ -156303,7 +157700,8 @@
           20,
           23,
           18,
-          13
+          13,
+          18
         ],
         "goals": [
           5,
@@ -156317,7 +157715,8 @@
           5,
           3,
           0,
-          4
+          4,
+          3
         ],
         "opp_goals": [
           2,
@@ -156331,7 +157730,8 @@
           2,
           4,
           3,
-          1
+          1,
+          4
         ],
         "shots": [
           30,
@@ -156345,7 +157745,8 @@
           34,
           28,
           32,
-          23
+          23,
+          33
         ],
         "hits": [
           16,
@@ -156359,7 +157760,8 @@
           29,
           29,
           20,
-          33
+          33,
+          32
         ],
         "blocked_shots": [
           14,
@@ -156373,7 +157775,8 @@
           16,
           9,
           21,
-          7
+          7,
+          18
         ],
         "giveaways": [
           13,
@@ -156387,7 +157790,8 @@
           14,
           18,
           8,
-          16
+          16,
+          15
         ],
         "takeaways": [
           3,
@@ -156401,7 +157805,8 @@
           5,
           3,
           3,
-          2
+          2,
+          6
         ],
         "penalty_minutes": [
           2,
@@ -156415,7 +157820,8 @@
           4,
           8,
           6,
-          6
+          6,
+          8
         ],
         "power_play_pct": [
           50.0,
@@ -156429,7 +157835,8 @@
           20.0,
           50.0,
           0.0,
-          0.0
+          0.0,
+          50.0
         ],
         "penalty_kill_pct": [
           50.0,
@@ -156443,7 +157850,8 @@
           80.0,
           50.0,
           80.0,
-          80.0
+          80.0,
+          50.0
         ],
         "faceoff_pct": [
           55.56,
@@ -156457,7 +157865,8 @@
           46.3,
           50.29,
           55.73,
-          52.9
+          52.9,
+          36.78
         ],
         "nzt": [
           3,
@@ -156471,7 +157880,8 @@
           2,
           3,
           0,
-          4
+          4,
+          3
         ],
         "nztsa": [
           1,
@@ -156484,6 +157894,7 @@
           3,
           0,
           1,
+          0,
           0,
           0
         ],
@@ -156499,7 +157910,8 @@
           33,
           28,
           31,
-          21
+          21,
+          33
         ],
         "rush": [
           0,
@@ -156513,9 +157925,11 @@
           1,
           0,
           1,
-          2
+          2,
+          0
         ],
         "lat": [
+          0.0,
           0.0,
           0.0,
           0.0,
@@ -156541,6 +157955,7 @@
           0.0,
           0.0,
           0.0,
+          0.0,
           0.0
         ],
         "hdc": [
@@ -156555,7 +157970,8 @@
           8,
           1,
           6,
-          5
+          5,
+          7
         ],
         "hdca": [
           10,
@@ -156569,7 +157985,8 @@
           12,
           6,
           5,
-          12
+          12,
+          6
         ],
         "opp_xg": [
           2.69,
@@ -156583,7 +158000,8 @@
           4.26,
           2.1,
           2.33,
-          4.35
+          4.35,
+          2.76
         ],
         "period_dzs": [
           22,
@@ -156597,7 +158015,8 @@
           20,
           23,
           18,
-          13
+          13,
+          18
         ],
         "games": [
           0,
@@ -156611,7 +158030,8 @@
           8,
           9,
           10,
-          11
+          11,
+          12
         ],
         "lateral": [],
         "longitudinal": [],
@@ -156628,7 +158048,8 @@
           5,
           3,
           0,
-          4
+          4,
+          3
         ],
         "goals_against": [
           2,
@@ -156642,7 +158063,8 @@
           2,
           4,
           3,
-          1
+          1,
+          4
         ],
         "shots_for": [
           30,
@@ -156656,7 +158078,8 @@
           34,
           28,
           32,
-          23
+          23,
+          33
         ],
         "shots_against": [],
         "xG_for": [
@@ -156671,7 +158094,8 @@
           3.98,
           2.46,
           2.95,
-          2.03
+          2.03,
+          3.97
         ],
         "xG_against": [
           2.69,
@@ -156685,7 +158109,8 @@
           4.26,
           2.1,
           2.33,
-          4.35
+          4.35,
+          2.76
         ],
         "hdc_for": [
           3,
@@ -156699,7 +158124,8 @@
           8,
           1,
           6,
-          5
+          5,
+          7
         ],
         "hdc_against": [],
         "pp_goals": [],
@@ -157499,11 +158925,11 @@
         "first_goal_uplift": -0.09523809523809523
       },
       "home": {
-        "games": 15,
-        "scored_first_rate": 0.4666666666666667,
+        "games": 16,
+        "scored_first_rate": 0.4375,
         "win_rate_scoring_first": 0.8571428571428571,
-        "win_rate_conceding_first": 0.125,
-        "first_goal_uplift": 0.7321428571428571
+        "win_rate_conceding_first": 0.2222222222222222,
+        "first_goal_uplift": 0.6349206349206349
       }
     },
     "DET": {
@@ -157515,11 +158941,11 @@
         "first_goal_uplift": 0.2142857142857143
       },
       "away": {
-        "games": 15,
-        "scored_first_rate": 0.26666666666666666,
+        "games": 16,
+        "scored_first_rate": 0.25,
         "win_rate_scoring_first": 0.75,
-        "win_rate_conceding_first": 0.45454545454545453,
-        "first_goal_uplift": 0.29545454545454547
+        "win_rate_conceding_first": 0.5,
+        "first_goal_uplift": 0.25
       }
     },
     "NJD": {
@@ -157627,20 +159053,20 @@
         "first_goal_uplift": -0.1076923076923077
       },
       "home": {
-        "games": 15,
-        "scored_first_rate": 0.4666666666666667,
+        "games": 16,
+        "scored_first_rate": 0.4375,
         "win_rate_scoring_first": 0.42857142857142855,
-        "win_rate_conceding_first": 0.5,
-        "first_goal_uplift": -0.07142857142857145
+        "win_rate_conceding_first": 0.4444444444444444,
+        "first_goal_uplift": -0.015873015873015872
       }
     },
     "CHI": {
       "home": {
-        "games": 16,
-        "scored_first_rate": 0.5625,
+        "games": 17,
+        "scored_first_rate": 0.5294117647058824,
         "win_rate_scoring_first": 0.5555555555555556,
-        "win_rate_conceding_first": 0.14285714285714285,
-        "first_goal_uplift": 0.41269841269841273
+        "win_rate_conceding_first": 0.25,
+        "first_goal_uplift": 0.3055555555555556
       },
       "away": {
         "games": 15,
@@ -157652,11 +159078,11 @@
     },
     "NYR": {
       "away": {
-        "games": 18,
-        "scored_first_rate": 0.4444444444444444,
+        "games": 19,
+        "scored_first_rate": 0.42105263157894735,
         "win_rate_scoring_first": 1.0,
-        "win_rate_conceding_first": 0.4,
-        "first_goal_uplift": 0.6
+        "win_rate_conceding_first": 0.36363636363636365,
+        "first_goal_uplift": 0.6363636363636364
       },
       "home": {
         "games": 15,
@@ -157691,11 +159117,11 @@
         "first_goal_uplift": 0.3214285714285714
       },
       "home": {
-        "games": 14,
-        "scored_first_rate": 0.2857142857142857,
+        "games": 15,
+        "scored_first_rate": 0.26666666666666666,
         "win_rate_scoring_first": 0.75,
-        "win_rate_conceding_first": 0.6,
-        "first_goal_uplift": 0.15000000000000002
+        "win_rate_conceding_first": 0.5454545454545454,
+        "first_goal_uplift": 0.20454545454545459
       }
     },
     "SJS": {
@@ -157803,20 +159229,20 @@
         "first_goal_uplift": 0.5714285714285714
       },
       "away": {
-        "games": 11,
-        "scored_first_rate": 0.45454545454545453,
+        "games": 12,
+        "scored_first_rate": 0.4166666666666667,
         "win_rate_scoring_first": 0.6,
-        "win_rate_conceding_first": 0.16666666666666666,
-        "first_goal_uplift": 0.43333333333333335
+        "win_rate_conceding_first": 0.2857142857142857,
+        "first_goal_uplift": 0.3142857142857143
       }
     },
     "LAK": {
       "away": {
-        "games": 17,
-        "scored_first_rate": 0.35294117647058826,
+        "games": 18,
+        "scored_first_rate": 0.3333333333333333,
         "win_rate_scoring_first": 0.8333333333333334,
-        "win_rate_conceding_first": 0.45454545454545453,
-        "first_goal_uplift": 0.37878787878787884
+        "win_rate_conceding_first": 0.4166666666666667,
+        "first_goal_uplift": 0.4166666666666667
       },
       "home": {
         "games": 14,
@@ -157982,11 +159408,11 @@
     },
     "DET": {
       "home": -0.06217544920041676,
-      "away": 0.037187080051130535
+      "away": 0.0289037291812017
     },
     "SEA": {
       "away": 0.06287380607490518,
-      "home": -0.022063646565521487
+      "home": -0.03348785154636122
     },
     "TBL": {
       "home": -0.045888879660609554,
@@ -158013,19 +159439,19 @@
       "home": -0.016364814664686218
     },
     "CHI": {
-      "home": 0.004096802446001071,
+      "home": -0.0060113316797351015,
       "away": 0.05837327994281056
     },
     "CGY": {
       "away": 0.08,
-      "home": -0.04150570700488929
+      "home": -0.033222356134960454
     },
     "VGK": {
       "home": -0.037003548953249726,
       "away": 0.004753290360721315
     },
     "NYR": {
-      "away": -0.04219405397135402,
+      "away": -0.03208591984561785,
       "home": 0.04455844673558405
     },
     "SJS": {
@@ -158034,7 +159460,7 @@
     },
     "UTA": {
       "away": 0.08,
-      "home": -0.06183142120418033
+      "home": -0.05451715704965688
     },
     "BOS": {
       "home": -0.08,
@@ -158054,7 +159480,7 @@
     },
     "FLA": {
       "home": -0.07226201307637518,
-      "away": 0.052875227957876504
+      "away": 0.04556096380335306
     },
     "VAN": {
       "away": 0.050420578967963196,
@@ -158065,7 +159491,7 @@
       "away": 0.006091990210665209
     },
     "LAK": {
-      "away": 0.00019296258779385233,
+      "away": 0.01161716756863359,
       "home": -0.003380114432912034
     },
     "MTL": {
@@ -158100,5 +159526,21 @@
       "away": 0.01798744434702866,
       "home": -0.05525487637516108
     }
+  },
+  "score_model_weights": {
+    "goals_weight": 0.4,
+    "xg_weight": 0.15,
+    "pdo_weight": 0.2,
+    "pp_weight": 0.15,
+    "recent_goals_weight": 0.1,
+    "opponent_ga_weight": 1.0
+  },
+  "score_weight_momentum": {
+    "goals_weight": 0.0,
+    "xg_weight": 0.0,
+    "pdo_weight": 0.0,
+    "pp_weight": 0.0,
+    "recent_goals_weight": 0.0,
+    "opponent_ga_weight": 0.0
   }
 }
