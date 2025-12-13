@@ -22,6 +22,7 @@ const Metrics = () => {
     const [loading, setLoading] = useState(true);
     const [loadingAdvanced, setLoadingAdvanced] = useState(false);
     const [loadingPlayers, setLoadingPlayers] = useState(false);
+    const [playerError, setPlayerError] = useState(null);
     const [advancedMetrics, setAdvancedMetrics] = useState({});
     const [sortConfig, setSortConfig] = useState({ key: 'points', direction: 'descending' });
     const [filter, setFilter] = useState('');
@@ -87,13 +88,26 @@ const Metrics = () => {
         if (viewMode === 'players' && playerData.length === 0) {
             const fetchPlayerStats = async () => {
                 setLoadingPlayers(true);
+                setPlayerError(null);
                 try {
-                    const players = await backendApi.getPlayerStats();
-                    setPlayerData(players);
+                    // Add timeout to prevent infinite loading
+                    const timeoutPromise = new Promise((_, reject) =>
+                        setTimeout(() => reject(new Error('Request timeout')), 30000)
+                    );
+
+                    const players = await Promise.race([
+                        backendApi.getPlayerStats(),
+                        timeoutPromise
+                    ]);
+
+                    setPlayerData(Array.isArray(players) ? players : []);
                 } catch (error) {
                     console.error('Failed to fetch player stats:', error);
+                    setPlayerError(error.message || 'Failed to load player stats. Please try again later.');
+                    setPlayerData([]);
+                } finally {
+                    setLoadingPlayers(false);
                 }
-                setLoadingPlayers(false);
             };
             fetchPlayerStats();
         }
@@ -544,7 +558,20 @@ const Metrics = () => {
                             <p className="mt-2 text-text-muted">Loading player stats...</p>
                         </div>
                     )}
-                    {viewMode === 'players' && !loadingPlayers && sortedPlayerData.length === 0 && (
+                    {viewMode === 'players' && playerError && !loadingPlayers && (
+                        <div className="p-8 text-center">
+                            <div className="glass-panel p-4 rounded-xl border border-danger/30 bg-danger/5 inline-block">
+                                <p className="font-mono text-sm text-danger">⚠️ {playerError}</p>
+                                <button
+                                    onClick={() => window.location.reload()}
+                                    className="mt-3 px-4 py-2 rounded-lg bg-accent-primary text-bg-primary font-bold hover:bg-accent-secondary transition-colors text-sm"
+                                >
+                                    Retry
+                                </button>
+                            </div>
+                        </div>
+                    )}
+                    {viewMode === 'players' && !loadingPlayers && !playerError && sortedPlayerData.length === 0 && (
                         <div className="p-8 text-center text-text-muted">
                             No players found matching your search.
                         </div>

@@ -35,7 +35,7 @@ const calculateGameScore = (stats) => {
     const faceoffWins = stats.faceoffWins || 0;
     const faceoffTotal = (stats.faceoffWins || 0) + (stats.faceoffLosses || 0);
     const plusMinus = stats.plusMinus || 0;
-    
+
     // Simplified Game Score formula
     // Game Score = 0.75×G + 0.7×A1 + 0.55×A2 + 0.075×SOG + 0.05×BLK + 0.15×PD - 0.15×PT + 0.01×FOW - 0.01×FOL + 0.15×GF - 0.15×GA
     // Using plusMinus as proxy for GF-GA
@@ -52,46 +52,46 @@ const calculateGameScore = (stats) => {
         0.15 * (plusMinus > 0 ? plusMinus : 0) -
         0.15 * (plusMinus < 0 ? Math.abs(plusMinus) : 0)
     );
-    
+
     return Math.round(gameScore * 10) / 10;
 };
 
 // Extract top performers from boxscore (for completed/live games only)
 const extractTopPerformers = (boxscore) => {
     const allPlayers = [];
-    
+
     if (!boxscore) {
         console.log('No boxscore provided');
         return [];
     }
-    
+
     const awayTeam = boxscore.awayTeam;
     const homeTeam = boxscore.homeTeam;
     const playerByGameStats = boxscore.playerByGameStats || {};
-    
+
     console.log('Extracting top performers from boxscore:', {
         hasAwayTeam: !!awayTeam,
         hasHomeTeam: !!homeTeam,
         hasPlayerByGameStats: !!playerByGameStats,
         playerByGameStatsKeys: Object.keys(playerByGameStats)
     });
-    
+
     // Process players from playerByGameStats (primary source)
     const processPlayerGroup = (players, teamAbbrev) => {
         if (!Array.isArray(players)) {
             console.log(`Players not an array for ${teamAbbrev}:`, typeof players);
             return;
         }
-        
+
         console.log(`Processing ${players.length} players for ${teamAbbrev}`);
-        
+
         players.forEach((player, idx) => {
             try {
                 // Stats are directly on the player object, not in a nested 'stats' field
                 const stats = player.stats || player;
                 const gameScore = calculateGameScore(stats);
                 const gamesPlayed = 1;
-                
+
                 // Get name - could be object or string
                 let name = '';
                 const nameField = player.name;
@@ -100,17 +100,17 @@ const extractTopPerformers = (boxscore) => {
                 } else if (typeof nameField === 'string') {
                     name = nameField;
                 }
-                
+
                 if (!name) {
                     const firstName = player.firstName?.default || player.firstName || '';
                     const lastName = player.lastName?.default || player.lastName || '';
                     name = `${firstName} ${lastName}`.trim();
                 }
-                
+
                 // Get player ID and generate headshot URL
                 const playerId = player.playerId || player.id || player.playerID;
                 const headshot = playerId ? `https://assets.nhle.com/mugs/nhl/20242025/${playerId}.jpg` : null;
-                
+
                 // Include players with any stats (goals, assists, shots, or positive game score)
                 if (name && (stats.goals > 0 || stats.assists > 0 || stats.shots > 0 || stats.sog > 0 || stats.shotsOnGoal > 0 || gameScore > 0 || stats.hits > 0 || stats.blockedShots > 0)) {
                     allPlayers.push({
@@ -133,51 +133,51 @@ const extractTopPerformers = (boxscore) => {
             }
         });
     };
-    
+
     // Process away team players from playerByGameStats
     const awayPlayerStats = playerByGameStats.awayTeam || {};
     if (awayTeam?.abbrev) {
         const awayForwards = awayPlayerStats.forwards || [];
         const awayDefense = awayPlayerStats.defense || [];
         const awayGoalies = awayPlayerStats.goalies || [];
-        
+
         console.log(`Away team ${awayTeam.abbrev}:`, {
             forwards: awayForwards.length,
             defense: awayDefense.length,
             goalies: awayGoalies.length
         });
-        
+
         processPlayerGroup(awayForwards, awayTeam.abbrev);
         processPlayerGroup(awayDefense, awayTeam.abbrev);
         processPlayerGroup(awayGoalies, awayTeam.abbrev);
     }
-    
+
     // Process home team players from playerByGameStats
     const homePlayerStats = playerByGameStats.homeTeam || {};
     if (homeTeam?.abbrev) {
         const homeForwards = homePlayerStats.forwards || [];
         const homeDefense = homePlayerStats.defense || [];
         const homeGoalies = homePlayerStats.goalies || [];
-        
+
         console.log(`Home team ${homeTeam.abbrev}:`, {
             forwards: homeForwards.length,
             defense: homeDefense.length,
             goalies: homeGoalies.length
         });
-        
+
         processPlayerGroup(homeForwards, homeTeam.abbrev);
         processPlayerGroup(homeDefense, homeTeam.abbrev);
         processPlayerGroup(homeGoalies, homeTeam.abbrev);
     }
-    
+
     console.log(`Total players extracted: ${allPlayers.length}`);
-    
+
     // Sort by GS/GP and return top 5
     const sorted = allPlayers
         .filter(p => p && (p.gsPerGame > 0 || p.points > 0 || p.goals > 0 || p.assists > 0))
         .sort((a, b) => (b.gsPerGame || 0) - (a.gsPerGame || 0))
         .slice(0, 5);
-    
+
     console.log('Top 5 players:', sorted);
     return sorted;
 };
@@ -205,13 +205,13 @@ const GameDetailsContent = () => {
                 });
 
                 console.log('Game data received:', data);
-                
+
                 if (!data) {
                     console.error('No game data returned');
                     setLoading(false);
                     return;
                 }
-                
+
                 // Check if data structure is correct
                 if (!data.boxscore) {
                     console.error('Game data missing boxscore:', data);
@@ -222,12 +222,12 @@ const GameDetailsContent = () => {
                 // Set game data immediately so page can render
                 setGameData(data);
                 setLoading(false); // Allow page to render while we fetch additional data
-                
+
                 // Fetch live data and other non-essential data in background
                 const gameState = data.boxscore.gameState;
                 const awayAbbr = data.boxscore.awayTeam?.abbrev;
                 const homeAbbr = data.boxscore.homeTeam?.abbrev;
-                
+
                 // Extract shots from play-by-play in background (non-blocking)
                 // This is a fallback - prefer liveData?.shots_data from backend which has proper names and xG
                 if (data?.playByPlay && data?.boxscore) {
@@ -238,7 +238,7 @@ const GameDetailsContent = () => {
                             const awayTeam = data.boxscore.awayTeam;
                             const homeTeam = data.boxscore.homeTeam;
                             const shots = [];
-                            
+
                             // Create player name lookup from rosterSpots
                             const playerNameMap = {};
                             if (data.playByPlay.rosterSpots) {
@@ -251,7 +251,7 @@ const GameDetailsContent = () => {
                                     }
                                 });
                             }
-                            
+
                             if (Array.isArray(plays)) {
                                 plays.forEach(play => {
                                     const eventType = play.typeDescKey || play.typeDesc;
@@ -259,17 +259,17 @@ const GameDetailsContent = () => {
                                         const details = play.details || {};
                                         const x = details.xCoord;
                                         const y = details.yCoord;
-                                        
+
                                         if (x !== null && x !== undefined && y !== null && y !== undefined) {
                                             const teamId = details.eventOwnerTeamId;
-                                            const teamAbbrev = (teamId === awayTeam?.id) ? awayTeam.abbrev : 
-                                                             (teamId === homeTeam?.id) ? homeTeam.abbrev : 
-                                                             (details.eventOwnerTeamId ? 'UNK' : null);
-                                            
+                                            const teamAbbrev = (teamId === awayTeam?.id) ? awayTeam.abbrev :
+                                                (teamId === homeTeam?.id) ? homeTeam.abbrev :
+                                                    (details.eventOwnerTeamId ? 'UNK' : null);
+
                                             if (teamAbbrev) {
                                                 const playerId = details.shootingPlayerId || details.scoringPlayerId;
                                                 const shooterName = playerId ? (playerNameMap[playerId] || `Player #${playerId}`) : 'Unknown';
-                                                
+
                                                 shots.push({
                                                     x: x,
                                                     y: y,
@@ -287,7 +287,7 @@ const GameDetailsContent = () => {
                                     }
                                 });
                             }
-                            
+
                             console.log(`Extracted ${shots.length} shots from play-by-play data`);
                             setShotsFromPbp(shots);
                         } catch (error) {
@@ -296,7 +296,7 @@ const GameDetailsContent = () => {
                         }
                     }, 0);
                 }
-                
+
                 // Fetch live data if game is live or completed (for period stats)
                 if (gameState === 'LIVE' || gameState === 'CRIT' || gameState === 'OFF' || gameState === 'FINAL') {
                     backendApi.getLiveGame(id)
@@ -309,6 +309,86 @@ const GameDetailsContent = () => {
                                 liveMetricsPeriodStatsLength: liveGameData?.live_metrics?.period_stats?.length,
                                 liveMetricsKeys: liveGameData?.live_metrics ? Object.keys(liveGameData.live_metrics).slice(0, 20) : []
                             });
+
+                            // If live_metrics is missing for FINAL games, extract from boxscore
+                            if ((gameState === 'FINAL' || gameState === 'OFF') && !liveGameData?.live_metrics && boxscore) {
+                                console.log('Extracting physical play stats from boxscore as fallback');
+                                const awayTeamStats = boxscore.awayTeam;
+                                const homeTeamStats = boxscore.homeTeam;
+
+                                liveGameData.live_metrics = {
+                                    away_hits: awayTeamStats?.hits || 0,
+                                    home_hits: homeTeamStats?.hits || 0,
+                                    away_blocked_shots: awayTeamStats?.blocks || awayTeamStats?.blockedShots || 0,
+                                    home_blocked_shots: homeTeamStats?.blocks || homeTeamStats?.blockedShots || 0,
+                                    away_giveaways: awayTeamStats?.giveaways || 0,
+                                    home_giveaways: homeTeamStats?.giveaways || 0,
+                                    away_takeaways: awayTeamStats?.takeaways || 0,
+                                    home_takeaways: homeTeamStats?.takeaways || 0,
+                                    away_pim: awayTeamStats?.pim || 0,
+                                    home_pim: homeTeamStats?.pim || 0,
+                                    away_shots: awayTeamStats?.sog || 0,
+                                    home_shots: homeTeamStats?.sog || 0,
+                                    away_score: awayTeamStats?.score || 0,
+                                    home_score: homeTeamStats?.score || 0
+                                };
+                            }
+
+                            // If period_stats is missing for FINAL games, create basic fallback from boxscore
+                            if ((gameState === 'FINAL' || gameState === 'OFF') && (!liveGameData?.period_stats || liveGameData.period_stats.length === 0) && boxscore) {
+                                console.log('Extracting period stats from boxscore summary as fallback');
+                                const periodGoals = boxscore.summary?.linescore?.byPeriod || [];
+                                const awayTeamStats = boxscore.awayTeam;
+                                const homeTeamStats = boxscore.homeTeam;
+
+                                if (periodGoals.length > 0) {
+                                    liveGameData.period_stats = periodGoals.map((period, idx) => ({
+                                        period: period.periodDescriptor?.number || (idx + 1),
+                                        away_stats: {
+                                            goals: period.away || 0,
+                                            ga: period.home || 0,
+                                            shots: 0,  // Not available in summary
+                                            corsi: 0,
+                                            xg: 0,
+                                            xga: 0,
+                                            hits: 0,
+                                            faceoff_pct: 0,
+                                            pim: 0,
+                                            blocked_shots: 0,
+                                            giveaways: 0,
+                                            takeaways: 0,
+                                            nzt: 0,
+                                            nztsa: 0,
+                                            ozs: 0,
+                                            dzs: 0,
+                                            nzs: 0,
+                                            rush: 0,
+                                            fc: 0
+                                        },
+                                        home_stats: {
+                                            goals: period.home || 0,
+                                            ga: period.away || 0,
+                                            shots: 0,  // Not available in summary
+                                            corsi: 0,
+                                            xg: 0,
+                                            xga: 0,
+                                            hits: 0,
+                                            faceoff_pct: 0,
+                                            pim: 0,
+                                            blocked_shots: 0,
+                                            giveaways: 0,
+                                            takeaways: 0,
+                                            nzt: 0,
+                                            nztsa: 0,
+                                            ozs: 0,
+                                            dzs: 0,
+                                            nzs: 0,
+                                            rush: 0,
+                                            fc: 0
+                                        }
+                                    }));
+                                }
+                            }
                             setLiveData(liveGameData);
                         })
                         .catch(err => console.error('Error fetching live data:', err));
@@ -321,7 +401,7 @@ const GameDetailsContent = () => {
                         backendApi.getTeamMetrics().catch(() => ({})),
                         backendApi.getGamePrediction(id).catch(() => null),
                         // Fetch heatmap data for pre-game only (last 5 games)
-                        (gameState === 'FUT' || gameState === 'PREVIEW') 
+                        (gameState === 'FUT' || gameState === 'PREVIEW')
                             ? backendApi.getTeamHeatmap(awayAbbr).catch(() => null)
                             : Promise.resolve(null),
                         (gameState === 'FUT' || gameState === 'PREVIEW')
@@ -347,7 +427,7 @@ const GameDetailsContent = () => {
         };
 
         fetchGameData();
-        
+
         // Poll for game state changes and live data every 30s
         // Always poll to catch games transitioning from FUT -> LIVE -> FINAL
         const interval = setInterval(() => {
@@ -357,15 +437,15 @@ const GameDetailsContent = () => {
                     if (updatedGameData) {
                         const currentState = updatedGameData?.boxscore?.gameState;
                         const previousState = gameData?.boxscore?.gameState;
-                        
+
                         // Update game data to reflect state changes
                         setGameData(updatedGameData);
-                        
+
                         // If game is live, just became live, or completed, fetch live data
                         if (currentState === 'LIVE' || currentState === 'CRIT' || currentState === 'OFF' || currentState === 'FINAL') {
                             Promise.all([
                                 backendApi.getLiveGame(id).catch(() => null),
-                                (currentState === 'LIVE' || currentState === 'CRIT') 
+                                (currentState === 'LIVE' || currentState === 'CRIT')
                                     ? backendApi.getTeamMetrics().catch(() => ({}))
                                     : Promise.resolve({})
                             ]).then(([live, metrics]) => {
@@ -375,7 +455,7 @@ const GameDetailsContent = () => {
                                 }
                             }).catch(err => console.error('Live data polling error:', err));
                         }
-                        
+
                         // Log state transitions for debugging
                         if (previousState && previousState !== currentState) {
                             console.log(`Game state changed: ${previousState} -> ${currentState}`);
@@ -387,14 +467,14 @@ const GameDetailsContent = () => {
 
         return () => clearInterval(interval);
     }, [id]); // Remove gameState from dependencies so we always poll
-    
+
     // Extract top performers when gameData changes or when live data updates
     useEffect(() => {
         if (gameData?.boxscore) {
             const gameState = gameData.boxscore.gameState;
             const awayAbbr = gameData.boxscore.awayTeam?.abbrev;
             const homeAbbr = gameData.boxscore.homeTeam?.abbrev;
-            
+
             // For completed or live games, extract from current game
             if (gameState === 'FINAL' || gameState === 'OFF' || gameState === 'LIVE' || gameState === 'CRIT') {
                 try {
@@ -411,7 +491,7 @@ const GameDetailsContent = () => {
                     try {
                         if (awayAbbr && homeAbbr) {
                             console.log('Fetching top performers for pre-game:', { awayAbbr, homeAbbr });
-                            
+
                             const [awayPerformers, homePerformers] = await Promise.all([
                                 backendApi.getTeamTopPerformers(awayAbbr).catch((err) => {
                                     console.error(`Error fetching away performers for ${awayAbbr}:`, err);
@@ -422,16 +502,16 @@ const GameDetailsContent = () => {
                                     return [];
                                 })
                             ]);
-                            
+
                             console.log('Away performers:', awayPerformers);
                             console.log('Home performers:', homePerformers);
-                            
+
                             // Combine and sort by GS/GP
                             const allPerformers = [...(awayPerformers || []), ...(homePerformers || [])]
                                 .filter(p => p && (p.gsPerGame > 0 || p.points > 0))
                                 .sort((a, b) => (b.gsPerGame || 0) - (a.gsPerGame || 0))
                                 .slice(0, 5);
-                            
+
                             console.log('Combined top performers:', allPerformers);
                             setTopPerformers(allPerformers);
                         } else {
@@ -442,7 +522,7 @@ const GameDetailsContent = () => {
                         setTopPerformers([]);
                     }
                 };
-                
+
                 fetchRecentPerformers();
             }
         }
@@ -475,7 +555,7 @@ const GameDetailsContent = () => {
     const { awayTeam, homeTeam, gameState, period, clock, startTimeUTC } = boxscore;
     const isLive = gameState === 'LIVE' || gameState === 'CRIT';
     const isFinal = gameState === 'FINAL' || gameState === 'OFF';
-    
+
     // Safety check - if we don't have essential data, show error
     if (!awayTeam || !homeTeam) {
         console.error('Missing team data in boxscore:', boxscore);
@@ -489,10 +569,10 @@ const GameDetailsContent = () => {
             </div>
         );
     }
-    
+
     // Ensure topPerformers is always an array
     const safeTopPerformers = Array.isArray(topPerformers) ? topPerformers : [];
-    
+
     // Format game time from startTimeUTC if available
     let gameTime = null;
     if (startTimeUTC) {
@@ -527,12 +607,12 @@ const GameDetailsContent = () => {
         const homeNum = parseFloat(homeVal) || 0;
         const total = awayNum + homeNum;
         const awayPct = total > 0 ? (awayNum / total) * 100 : 50;
-        
+
         // Determine which team has the better value
         // For inverse metrics (like HDCA), lower is better
         const awayBetter = inverse ? (awayNum < homeNum) : (awayNum > homeNum);
         const homeBetter = inverse ? (homeNum < awayNum) : (homeNum > awayNum);
-        
+
         const awayColor = TEAM_COLORS[awayTeam?.abbrev] || '#00D4FF';
         const homeColor = TEAM_COLORS[homeTeam?.abbrev] || '#FF00FF';
 
@@ -553,7 +633,7 @@ const GameDetailsContent = () => {
                             "h-full transition-all duration-500",
                             awayBetter && "shadow-[0_0_8px_2px_rgba(255,255,255,0.6)]"
                         )}
-                        style={{ 
+                        style={{
                             width: `${awayPct}%`,
                             backgroundColor: awayColor
                         }}
@@ -563,7 +643,7 @@ const GameDetailsContent = () => {
                             "h-full transition-all duration-500",
                             homeBetter && "shadow-[0_0_8px_2px_rgba(255,255,255,0.6)]"
                         )}
-                        style={{ 
+                        style={{
                             width: `${100 - awayPct}%`,
                             backgroundColor: homeColor
                         }}
@@ -656,15 +736,15 @@ const GameDetailsContent = () => {
                 <div className="lg:col-span-2 space-y-8">
                     {/* Period Stats Table - Only show for LIVE or FINAL games */}
                     {(isLive || isFinal) && (
-                    <section>
-                        <div className="flex items-center gap-3 mb-6">
-                            <Clock className="w-6 h-6 text-accent-primary" />
-                            <h3 className="text-xl font-display font-bold">PERIOD PERFORMANCE</h3>
-                        </div>
+                        <section>
+                            <div className="flex items-center gap-3 mb-6">
+                                <Clock className="w-6 h-6 text-accent-primary" />
+                                <h3 className="text-xl font-display font-bold">PERIOD PERFORMANCE</h3>
+                            </div>
                             <PeriodStatsTable
                                 periodStats={
-                                    liveData?.period_stats || 
-                                    liveData?.live_metrics?.period_stats || 
+                                    liveData?.period_stats ||
+                                    liveData?.live_metrics?.period_stats ||
                                     (Array.isArray(liveData?.period_stats) ? liveData.period_stats : [])
                                 }
                                 awayTeam={awayTeam}
@@ -672,9 +752,9 @@ const GameDetailsContent = () => {
                                 currentPeriod={
                                     // For FINAL/OFF games, always show all periods (set to 3)
                                     isFinal ? 3 : (
-                                        liveData?.current_period || 
-                                        liveData?.live_metrics?.current_period || 
-                                        gameData?.boxscore?.periodDescriptor?.number || 
+                                        liveData?.current_period ||
+                                        liveData?.live_metrics?.current_period ||
+                                        gameData?.boxscore?.periodDescriptor?.number ||
                                         1
                                     )
                                 }
@@ -824,12 +904,12 @@ const GameDetailsContent = () => {
                                         homeVal={liveData?.live_metrics?.home_nzt || liveData?.home_nzt || 0}
                                         format={(v) => parseFloat(v || 0).toFixed(0)}
                                     />
-                            <ComparisonRow
-                                label="NZ TURNOVER SHOTS AGAINST"
-                                awayVal={liveData?.live_metrics?.away_nztsa || liveData?.away_nztsa || 0}
-                                homeVal={liveData?.live_metrics?.home_nztsa || liveData?.home_nztsa || 0}
-                                format={(v) => parseFloat(v || 0).toFixed(0)}
-                            />
+                                    <ComparisonRow
+                                        label="NZ TURNOVER SHOTS AGAINST"
+                                        awayVal={liveData?.live_metrics?.away_nztsa || liveData?.away_nztsa || 0}
+                                        homeVal={liveData?.live_metrics?.home_nztsa || liveData?.home_nztsa || 0}
+                                        format={(v) => parseFloat(v || 0).toFixed(0)}
+                                    />
                                 </MetricCard>
 
                                 {/* MOVEMENT */}
@@ -1188,37 +1268,37 @@ const GameDetailsContent = () => {
                         <div className="space-y-4">
                             {safeTopPerformers.length > 0 ? (
                                 safeTopPerformers.map((player, idx) => (
-                                <div key={idx} className="flex items-center gap-4 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
-                                    <div className="font-display font-bold text-2xl text-white/20 w-8 text-center">
-                                        {idx + 1}
-                                    </div>
-                                    <div className="w-12 h-12 rounded-full bg-white/10 border-2 border-white/20 flex items-center justify-center overflow-hidden">
-                                        <img 
-                                            src={`https://assets.nhle.com/logos/nhl/svg/${player?.team || 'NHL'}_light.svg`}
-                                            alt={player?.team || 'Team'}
-                                            className="w-10 h-10 object-contain"
-                                            onError={(e) => { e.target.style.display = 'none'; }}
-                                        />
-                                    </div>
-                                    <div className="flex-1">
-                                        <div className="font-bold text-white">
-                                            {player?.name || 'Unknown Player'}
+                                    <div key={idx} className="flex items-center gap-4 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
+                                        <div className="font-display font-bold text-2xl text-white/20 w-8 text-center">
+                                            {idx + 1}
                                         </div>
-                                        <div className="text-xs font-mono text-text-muted flex gap-2">
-                                            <span>{player?.team || 'N/A'}</span>
-                                            <span>•</span>
-                                            <span>{player?.position || 'N/A'}</span>
+                                        <div className="w-12 h-12 rounded-full bg-white/10 border-2 border-white/20 flex items-center justify-center overflow-hidden">
+                                            <img
+                                                src={`https://assets.nhle.com/logos/nhl/svg/${player?.team || 'NHL'}_light.svg`}
+                                                alt={player?.team || 'Team'}
+                                                className="w-10 h-10 object-contain"
+                                                onError={(e) => { e.target.style.display = 'none'; }}
+                                            />
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="font-bold text-white">
+                                                {player?.name || 'Unknown Player'}
+                                            </div>
+                                            <div className="text-xs font-mono text-text-muted flex gap-2">
+                                                <span>{player?.team || 'N/A'}</span>
+                                                <span>•</span>
+                                                <span>{player?.position || 'N/A'}</span>
+                                            </div>
+                                        </div>
+                                        <div className="text-right">
+                                            <div className="font-mono font-bold text-color-success">
+                                                {player?.gsPerGame ? player.gsPerGame.toFixed(2) : '0.00'} GS/GP
+                                            </div>
+                                            <div className="text-xs font-mono text-text-muted">
+                                                {player?.points || 0} P ({(player?.goals || 0)}G, {(player?.assists || 0)}A)
+                                            </div>
                                         </div>
                                     </div>
-                                    <div className="text-right">
-                                        <div className="font-mono font-bold text-color-success">
-                                            {player?.gsPerGame ? player.gsPerGame.toFixed(2) : '0.00'} GS/GP
-                                        </div>
-                                        <div className="text-xs font-mono text-text-muted">
-                                            {player?.points || 0} P ({(player?.goals || 0)}G, {(player?.assists || 0)}A)
-                                        </div>
-                                    </div>
-                                </div>
                                 ))
                             ) : (
                                 <div className="text-center text-text-muted py-4">No player data available</div>
@@ -1234,10 +1314,10 @@ const GameDetailsContent = () => {
 const GameDetails = () => {
     try {
         return (
-    <ErrorBoundary>
-        <GameDetailsContent />
-    </ErrorBoundary>
-);
+            <ErrorBoundary>
+                <GameDetailsContent />
+            </ErrorBoundary>
+        );
     } catch (error) {
         console.error('Error in GameDetails wrapper:', error);
         return (
