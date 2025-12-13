@@ -1410,6 +1410,17 @@ const GameDetailsContent = () => {
                         </div>
                     </section>
                 </div>
+                {/* TEAM METRICS DIAGNOSTIC */}
+                <div className="mt-8 p-4 bg-gray-900 border border-blue-500 rounded text-xs font-mono overflow-auto z-50 relative">
+                    <h3 className="text-blue-500 font-bold">METRICS INSPECTION</h3>
+                    <pre className="text-gray-300">
+                        {JSON.stringify({
+                            awayAbbrev: awayTeam?.abbrev,
+                            awayMetrics: teamMetrics?.[awayTeam?.abbrev] || 'missing',
+                            metricsKeys: teamMetrics?.[awayTeam?.abbrev] ? Object.keys(teamMetrics[awayTeam?.abbrev]) : []
+                        }, null, 2)}
+                    </pre>
+                </div>
             </div>
         </div>
     );
