@@ -1354,6 +1354,8 @@ const GameDetailsContent = () => {
                             regPeriods: gameData?.boxscore?.regPeriods,
                             periodDescriptor: gameData?.boxscore?.periodDescriptor,
                             limitedScoring: gameData?.boxscore?.limitedScoring,
+                            // LIVE DATA INSPECTION
+                            liveDataKeys: liveData ? Object.keys(liveData) : 'missing',
                             // PLAYER STATS INSPECTION
                             playerStatsKeys: gameData?.boxscore?.playerByGameStats ? Object.keys(gameData.boxscore.playerByGameStats) : 'missing',
                             awayPlayerKeys: gameData?.boxscore?.playerByGameStats?.awayTeam ? Object.keys(gameData.boxscore.playerByGameStats.awayTeam) : 'missing',
