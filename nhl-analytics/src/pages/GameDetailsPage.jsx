@@ -1462,6 +1462,23 @@ const GameDetailsContent = () => {
                         </div>
                     </section>
                 </div>
+
+                {/* TEMPORARY DEBUG PANEL */}
+                <div className="mt-8 p-4 bg-gray-900 border border-yellow-500 rounded text-xs font-mono overflow-auto z-50 relative">
+                    <h3 className="text-yellow-500 font-bold mb-2">DATA HUNTER - PREGAME</h3>
+                    <pre className="text-gray-300">
+                        {JSON.stringify({
+                            gameId: id,
+                            gameState: gameData?.boxscore?.gameState,
+                            hasPrediction: !!prediction,
+                            predictionData: prediction,
+                            topPerformersCount: safeTopPerformers.length,
+                            awayAbbrev: awayTeam?.abbrev,
+                            teamMetricsKeys: teamMetrics ? Object.keys(teamMetrics) : [],
+                            awayMetricsSample: teamMetrics?.[awayTeam?.abbrev],
+                        }, null, 2)}
+                    </pre>
+                </div>
             </div>
         </div>
     );
