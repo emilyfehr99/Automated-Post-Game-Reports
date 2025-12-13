@@ -572,6 +572,39 @@ const GameDetailsContent = () => {
                         setPrediction(gamePrediction);
                         setAwayHeatmap(awayHeat);
                         setHomeHeatmap(homeHeat);
+
+                        // Extract top performers from team stats for pre-game
+                        if (gameState === 'FUT' || gameState === 'PREVIEW') {
+                            const extractPerformersFromStats = (stats, teamAbbr) => {
+                                if (!stats) return [];
+
+                                // Check various possible structures from backend
+                                const players = stats.roster || stats.players || stats.topPlayers || [];
+
+                                if (Array.isArray(players) && players.length > 0) {
+                                    return players.slice(0, 5).map(p => ({
+                                        name: p.name || `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'Unknown',
+                                        team: teamAbbr,
+                                        position: p.position || 'N/A',
+                                        points: p.points || p.pts || 0,
+                                        goals: p.goals || p.g || 0,
+                                        assists: p.assists || p.a || 0,
+                                        gsPerGame: p.gsPerGame || p.gs_per_game || p.gameScore || 0
+                                    }));
+                                }
+                                return [];
+                            };
+
+                            const performers = [
+                                ...extractPerformersFromStats(awayStats, awayAbbr),
+                                ...extractPerformersFromStats(homeStats, homeAbbr)
+                            ];
+
+                            console.log('Pre-game performers from team stats:', performers);
+                            if (performers.length > 0) {
+                                setTopPerformers(performers);
+                            }
+                        }
                     }).catch(err => {
                         console.error('Failed to fetch additional team data:', err);
                         // Don't block page render if these fail
