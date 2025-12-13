@@ -311,10 +311,10 @@ const GameDetailsContent = () => {
                             });
 
                             // If live_metrics is missing for FINAL games, extract from boxscore
-                            if ((gameState === 'FINAL' || gameState === 'OFF') && !liveGameData?.live_metrics && boxscore) {
+                            if ((gameState === 'FINAL' || gameState === 'OFF') && !liveGameData?.live_metrics && data?.boxscore) {
                                 console.log('Extracting physical play stats from boxscore as fallback');
-                                const awayTeamStats = boxscore.awayTeam;
-                                const homeTeamStats = boxscore.homeTeam;
+                                const awayTeamStats = data.boxscore.awayTeam;
+                                const homeTeamStats = data.boxscore.homeTeam;
 
                                 liveGameData.live_metrics = {
                                     away_hits: awayTeamStats?.hits || 0,
@@ -335,11 +335,11 @@ const GameDetailsContent = () => {
                             }
 
                             // If period_stats is missing for FINAL games, create basic fallback from boxscore
-                            if ((gameState === 'FINAL' || gameState === 'OFF') && (!liveGameData?.period_stats || liveGameData.period_stats.length === 0) && boxscore) {
+                            if ((gameState === 'FINAL' || gameState === 'OFF') && (!liveGameData?.period_stats || liveGameData.period_stats.length === 0) && data?.boxscore) {
                                 console.log('Extracting period stats from boxscore summary as fallback');
-                                const periodGoals = boxscore.summary?.linescore?.byPeriod || [];
-                                const awayTeamStats = boxscore.awayTeam;
-                                const homeTeamStats = boxscore.homeTeam;
+                                const periodGoals = data.boxscore.summary?.linescore?.byPeriod || [];
+                                const awayTeamStats = data.boxscore.awayTeam;
+                                const homeTeamStats = data.boxscore.homeTeam;
 
                                 if (periodGoals.length > 0) {
                                     liveGameData.period_stats = periodGoals.map((period, idx) => ({
