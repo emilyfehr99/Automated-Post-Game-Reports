@@ -1355,24 +1355,17 @@ const GameDetailsContent = () => {
                         </div>
                     </section>
                 </div>
-                {/* DEEP DATA HUNTER - PBP INSPECTION */}
+                {/* DEEP DATA HUNTER - PLAYS INSPECTION */}
                 <div className="mt-8 p-4 bg-gray-900 border border-green-500 rounded text-xs font-mono overflow-auto z-50 relative">
-                    <h3 className="text-green-500 font-bold">PBP INSPECTION</h3>
-                    <button
-                        onClick={() => console.log('PBP DATA:', gameData?.playByPlay)}
-                        className="mb-2 bg-green-900 px-2 py-1 rounded hover:bg-green-800"
-                    >
-                        Log PBP to Console
-                    </button>
+                    <h3 className="text-green-500 font-bold">PLAYS INSPECTION</h3>
                     <pre className="text-gray-300">
                         {JSON.stringify({
-                            pbpType: typeof gameData?.playByPlay,
-                            pbpKeys: gameData?.playByPlay ? Object.keys(gameData.playByPlay) : 'missing',
-                            // Check if it's an array or has 'events'
-                            isArray: Array.isArray(gameData?.playByPlay),
-                            eventsLength: Array.isArray(gameData?.playByPlay) ? gameData.playByPlay.length : (gameData?.playByPlay?.events?.length || 'no events key'),
-                            // Sample Event (if array)
-                            sampleEvent: Array.isArray(gameData?.playByPlay) ? gameData.playByPlay[0] : (gameData?.playByPlay?.events?.[0] || 'no sample'),
+                            hasPlaysKey: !!gameData?.playByPlay?.plays,
+                            playsIsArray: Array.isArray(gameData?.playByPlay?.plays),
+                            playsLength: gameData?.playByPlay?.plays?.length,
+                            // Sample Play Structure
+                            samplePlay: gameData?.playByPlay?.plays?.[50] || 'no sample', // Pick mid-game event
+                            sampleKeys: gameData?.playByPlay?.plays?.[0] ? Object.keys(gameData.playByPlay.plays[0]) : [],
                         }, null, 2)}
                     </pre>
                 </div>
