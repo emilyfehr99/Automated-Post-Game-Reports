@@ -125,7 +125,7 @@ export const backendApi = {
     /**
      * Get player stats from MoneyPuck
      */
-    async getPlayerStats(season = '2025', type = 'regular', situation = 'all') {
+    async getPlayerStats(season = '2024', type = 'regular', situation = 'all') {
         const response = await fetch(`${BACKEND_URL}/api/player-stats?season=${season}&type=${type}&situation=${situation}`);
         if (!response.ok) throw new Error('Failed to fetch player stats');
         return response.json();
@@ -143,7 +143,7 @@ export const backendApi = {
             // Fallback: Fetch all player stats and filter
             // This is heavy but ensures we get data if the specific endpoint is missing
             console.log(`Dedicated endpoint failed for ${teamAbbr}, fetching all stats...`);
-            const allStats = await this.getPlayerStats('2025', 'regular', 'all');
+            const allStats = await this.getPlayerStats('2024', 'regular', 'all');
 
             // Filter for team and sort by points/game_score
             // MoneyPuck data usually has 'team' field

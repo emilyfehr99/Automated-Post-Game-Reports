@@ -512,33 +512,37 @@ const GameDetailsContent = () => {
                         (gameState === 'FUT' || gameState === 'PREVIEW')
                             ? backendApi.getTeamHeatmap(homeAbbr).catch(() => null)
                             : Promise.resolve(null),
-                        // Fetch Edge data for Movement metrics if missing in standard metrics
-                        backendApi.getEdgeDataByTeam(awayAbbr).catch(() => ({ error: 'fetch failed' })),
-                        backendApi.getEdgeDataByTeam(homeAbbr).catch(() => ({ error: 'fetch failed' })),
-                        // Fetch ALL players for debugging
-                        backendApi.getPlayerStats('2025', 'regular', 'all').catch(() => ({ data: [] }))
-                    ]).then(([metrics, gamePrediction, awayHeat, homeHeat, awayEdge, homeEdge, allPlayers]) => {
-                        // Debugging globals
-                        window.debug_edge_away = awayEdge;
-                        window.debug_all_players = allPlayers?.data || [];
-
-                        // Merge edge data into team metrics if needed
+                        // Fetch Edge data
+                        backendApi.getEdgeDataByTeam(awayAbbr).catch(() => null),
+                        backendApi.getEdgeDataByTeam(homeAbbr).catch(() => null),
+                        // Fetch detailed Team Stats (might have movement if edge missing)
+                        backendApi.getTeamStatsByAbbrev(awayAbbr).catch(() => null),
+                        backendApi.getTeamStatsByAbbrev(homeAbbr).catch(() => null)
+                    ]).then(([metrics, gamePrediction, awayHeat, homeHeat, awayEdge, homeEdge, awayStats, homeStats]) => {
+                        // Merge edge/stats data into team metrics if needed
                         const enrichedMetrics = { ...metrics };
 
-                        if (awayEdge && awayAbbr && !awayEdge.error) {
-                            if (!enrichedMetrics[awayAbbr]) enrichedMetrics[awayAbbr] = {};
-                            enrichedMetrics[awayAbbr].lat = awayEdge.lat || enrichedMetrics[awayAbbr].lat || 0;
-                            enrichedMetrics[awayAbbr].long_movement = awayEdge.long_movement || enrichedMetrics[awayAbbr].long_movement || 0;
-                        } else if (awayEdge?.error) {
-                            console.log('Edge Data missing for', awayAbbr);
-                        }
-                        if (homeEdge && homeAbbr && !homeEdge.error) {
-                            if (!enrichedMetrics[homeAbbr]) enrichedMetrics[homeAbbr] = {};
-                            enrichedMetrics[homeAbbr].lat = homeEdge.lat || enrichedMetrics[homeAbbr].lat || 0;
-                            enrichedMetrics[homeAbbr].long_movement = homeEdge.long_movement || enrichedMetrics[homeAbbr].long_movement || 0;
-                        } else if (homeEdge?.error) {
-                            console.log('Edge Data missing for', homeAbbr);
-                        }
+                        // Helper to merge
+                        const mergeTeamData = (abbr, edge, stats) => {
+                            if (!enrichedMetrics[abbr]) enrichedMetrics[abbr] = {};
+
+                            // 1. Movement: Try Edge, then Stats, then keep existing (or 0)
+                            enrichedMetrics[abbr].lat = edge?.lat || stats?.lat || enrichedMetrics[abbr].lat || 0;
+                            enrichedMetrics[abbr].long_movement = edge?.long_movement || stats?.long_movement || enrichedMetrics[abbr].long_movement || 0;
+
+                            // 2. GA/GP: Calculate if missing
+                            // Check if we have goalsAgainst and gamesPlayed in enrichedMetrics or stats
+                            const ga = enrichedMetrics[abbr].goalsAgainst || stats?.goalsAgainst || 0;
+                            const gp = enrichedMetrics[abbr].gamesPlayed || stats?.gamesPlayed || 1; // avoid divide by zero
+                            const calculatedGaGp = gp > 0 ? (ga / gp) : 0;
+
+                            if (!enrichedMetrics[abbr].ga_gp && !enrichedMetrics[abbr].goals_against_per_game) {
+                                enrichedMetrics[abbr].ga_gp = calculatedGaGp;
+                            }
+                        };
+
+                        if (awayAbbr) mergeTeamData(awayAbbr, awayEdge, awayStats);
+                        if (homeAbbr) mergeTeamData(homeAbbr, homeEdge, homeStats);
 
                         setTeamMetrics(enrichedMetrics);
                         setPrediction(gamePrediction);
@@ -1271,7 +1275,7 @@ const GameDetailsContent = () => {
                                             <span className="text-accent-secondary font-mono text-sm">{homeTeam?.abbrev}</span>
                                         </div>
                                     </div>
-                                    {(!isFinal && teamMetrics[awayTeam?.abbrev]?.lat === null) ? null : (
+                                    {(!isFinal && (teamMetrics[awayTeam?.abbrev]?.lat === null || teamMetrics[awayTeam?.abbrev]?.lat === 0)) ? null : (
                                         <ComparisonRow
                                             label="LATERAL MOVEMENT (LAT)"
                                             awayVal={isFinal ? (liveData?.live_metrics?.away_lateral || 0) : (teamMetrics[awayTeam?.abbrev]?.lat ?? 0)}
@@ -1279,7 +1283,7 @@ const GameDetailsContent = () => {
                                             format={(v) => parseFloat(v || 0).toFixed(1)}
                                         />
                                     )}
-                                    {(!isFinal && teamMetrics[awayTeam?.abbrev]?.long_movement === null) ? null : (
+                                    {(!isFinal && (teamMetrics[awayTeam?.abbrev]?.long_movement === null || teamMetrics[awayTeam?.abbrev]?.long_movement === 0)) ? null : (
                                         <ComparisonRow
                                             label="LONGITUDINAL MOVEMENT (LONG)"
                                             awayVal={isFinal ? (liveData?.live_metrics?.away_longitudinal || 0) : (teamMetrics[awayTeam?.abbrev]?.long_movement ?? 0)}
@@ -1471,24 +1475,6 @@ const GameDetailsContent = () => {
                             )}
                         </div>
                     </section>
-                </div>
-
-                {/* TEMPORARY DEBUG PANEL */}
-                <div className="mt-8 p-4 bg-gray-900 border border-yellow-500 rounded text-xs font-mono overflow-auto z-50 relative">
-                    <h3 className="text-yellow-500 font-bold mb-2">DATA HUNTER - LEVEL 2</h3>
-                    <pre className="text-gray-300">
-                        {JSON.stringify({
-                            gameId: id,
-                            hasPrediction: !!prediction,
-                            topPerformersCount: safeTopPerformers.length,
-                            awayAbbrev: awayTeam?.abbrev,
-                            // Debugging Performers
-                            debug_performers_sample: (window.debug_all_players || []).slice(0, 3).map(p => ({ name: p.name, team: p.team })),
-                            debug_team_codes: [...new Set((window.debug_all_players || []).map(p => p.team))].sort(),
-                            // Debugging Movement
-                            edgeData_Sample: window.debug_edge_away,
-                        }, null, 2)}
-                    </pre>
                 </div>
             </div>
         </div>
