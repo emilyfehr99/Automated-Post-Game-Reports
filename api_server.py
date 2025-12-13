@@ -728,6 +728,7 @@ def get_player_stats():
         print(f"Error fetching player stats: {e}")
         return jsonify({'error': str(e)}), 500
 
+# Team Performers Endpoint - Returns top 5 players for a team
 @app.route('/api/team-performers/<team_abbr>', methods=['GET'])
 def get_team_performers(team_abbr):
     """Get top 5 performers for a specific team"""
