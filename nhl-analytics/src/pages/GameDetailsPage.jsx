@@ -319,24 +319,49 @@ const GameDetailsContent = () => {
                         const awayTeamStats = data.boxscore.awayTeam;
                         const homeTeamStats = data.boxscore.homeTeam;
 
-                        // Verify boxscore data availability
-                        console.log('Boxscore fallback data:', {
-                            awayHits: awayTeamStats?.hits,
-                            homeHits: homeTeamStats?.hits
-                        });
+                        // AGGREGATION FALLBACK: If team stats are missing, aggregate from players
+                        let aggregatedAway = { hits: 0, blocks: 0, pim: 0, takeaways: 0, giveaways: 0 };
+                        let aggregatedHome = { hits: 0, blocks: 0, pim: 0, takeaways: 0, giveaways: 0 };
 
+                        if (data.boxscore.playerByGameStats) {
+                            const aggregate = (teamSlug) => {
+                                const teamData = data.boxscore.playerByGameStats[teamSlug];
+                                if (!teamData) return { hits: 0, blocks: 0, pim: 0, takeaways: 0, giveaways: 0 };
+
+                                const stats = { hits: 0, blocks: 0, pim: 0, takeaways: 0, giveaways: 0 };
+                                ['forwards', 'defense', 'goalies'].forEach(group => {
+                                    if (teamData[group]) {
+                                        teamData[group].forEach(player => {
+                                            stats.hits += player.hits || 0;
+                                            stats.blocks += player.blockedShots || 0; // Note: property is blockedShots
+                                            stats.pim += player.pim || 0;
+                                            stats.takeaways += player.takeaways || 0;
+                                            stats.giveaways += player.giveaways || 0;
+                                        });
+                                    }
+                                });
+                                return stats;
+                            };
+
+                            aggregatedAway = aggregate('awayTeam');
+                            aggregatedHome = aggregate('homeTeam');
+                            console.log('Aggregated Node metrics:', { aggregatedAway, aggregatedHome });
+                        }
+
+                        // Use Team Stats (if available) OR Aggregated Stats
                         liveData.live_metrics = {
                             ...liveData.live_metrics,
-                            away_hits: awayTeamStats?.hits || 0,
-                            home_hits: homeTeamStats?.hits || 0,
-                            away_blocked_shots: awayTeamStats?.blocks || awayTeamStats?.blockedShots || 0,
-                            home_blocked_shots: homeTeamStats?.blocks || homeTeamStats?.blockedShots || 0,
-                            away_giveaways: awayTeamStats?.giveaways || 0,
-                            home_giveaways: homeTeamStats?.giveaways || 0,
-                            away_takeaways: awayTeamStats?.takeaways || 0,
-                            home_takeaways: homeTeamStats?.takeaways || 0,
-                            away_pim: awayTeamStats?.pim || 0,
-                            home_pim: homeTeamStats?.pim || 0,
+                            away_hits: awayTeamStats?.hits || aggregatedAway.hits,
+                            home_hits: homeTeamStats?.hits || aggregatedHome.hits,
+                            away_blocked_shots: awayTeamStats?.blocks || awayTeamStats?.blockedShots || aggregatedAway.blocks,
+                            home_blocked_shots: homeTeamStats?.blocks || homeTeamStats?.blockedShots || aggregatedHome.blocks,
+                            away_giveaways: awayTeamStats?.giveaways || aggregatedAway.giveaways,
+                            home_giveaways: homeTeamStats?.giveaways || aggregatedHome.giveaways,
+                            away_takeaways: awayTeamStats?.takeaways || aggregatedAway.takeaways,
+                            home_takeaways: homeTeamStats?.takeaways || aggregatedHome.takeaways,
+                            away_pim: awayTeamStats?.pim || aggregatedAway.pim,
+                            home_pim: homeTeamStats?.pim || aggregatedHome.pim,
+                            // Scoring/Shots usually exist on team object, but keep fallback
                             away_shots: awayTeamStats?.sog || 0,
                             home_shots: homeTeamStats?.sog || 0,
                             away_score: awayTeamStats?.score || 0,
@@ -1330,39 +1355,6 @@ const GameDetailsContent = () => {
                         </div>
                     </section>
                 </div>
-                {/* DEBUG PANEL - RESTORED FOR DATA HUNTING */}
-                <div className="mt-8 p-4 bg-gray-900 border border-red-500 rounded text-xs font-mono overflow-auto z-50 relative">
-                    <div className="flex justify-between items-center mb-2">
-                        <h3 className="text-red-500 font-bold">DATA HUNTER PANEL</h3>
-                        <button
-                            onClick={() => console.log('FULL GAME DATA:', gameData)}
-                            className="bg-red-900 px-2 py-1 rounded hover:bg-red-800"
-                        >
-                            Log Full Data
-                        </button>
-                    </div>
-                    <pre className="text-gray-300">
-                        {JSON.stringify({
-                            boxscoreKeys: gameData?.boxscore ? Object.keys(gameData.boxscore) : 'missing',
-                            summaryKeys: gameData?.boxscore?.summary ? Object.keys(gameData.boxscore.summary) : 'missing',
-                            teamKeys: gameData?.boxscore?.awayTeam ? Object.keys(gameData.boxscore.awayTeam) : 'missing',
-                            // Check for alternative paths
-                            hasTeamGameStats: !!gameData?.boxscore?.teamGameStats,
-                            hasStats: !!gameData?.boxscore?.stats,
-                            periodStatsCheck: liveData?.period_stats,
-                            // PERIOD DATA INSPECTION
-                            regPeriods: gameData?.boxscore?.regPeriods,
-                            periodDescriptor: gameData?.boxscore?.periodDescriptor,
-                            limitedScoring: gameData?.boxscore?.limitedScoring,
-                            // LIVE DATA INSPECTION
-                            liveDataKeys: liveData ? Object.keys(liveData) : 'missing',
-                            // PLAYER STATS INSPECTION
-                            playerStatsKeys: gameData?.boxscore?.playerByGameStats ? Object.keys(gameData.boxscore.playerByGameStats) : 'missing',
-                            awayPlayerKeys: gameData?.boxscore?.playerByGameStats?.awayTeam ? Object.keys(gameData.boxscore.playerByGameStats.awayTeam) : 'missing',
-                            sampleForward: gameData?.boxscore?.playerByGameStats?.awayTeam?.forwards?.[0] ? Object.keys(gameData.boxscore.playerByGameStats.awayTeam.forwards[0]) : 'no forwards'
-                        }, null, 2)}
-                    </pre>
-                </div>
             </div>
         </div>
     );
@@ -1376,7 +1368,6 @@ const GameDetails = () => {
             </ErrorBoundary>
         );
     } catch (error) {
-        console.error('Error in GameDetails wrapper:', error);
         return (
             <div className="flex flex-col items-center justify-center h-[60vh] text-center">
                 <h2 className="text-2xl font-display font-bold mb-4">Something went wrong</h2>
