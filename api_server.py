@@ -728,6 +728,63 @@ def get_player_stats():
         print(f"Error fetching player stats: {e}")
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/team-performers/<team_abbr>', methods=['GET'])
+def get_team_performers(team_abbr):
+    """Get top 5 performers for a specific team"""
+    try:
+        # Use 2024 season (2024-25) as that's where the data is
+        season = '2024'
+        game_type = 'regular'
+        situation = 'all'
+        
+        url = f"https://moneypuck.com/moneypuck/playerData/seasonSummary/{season}/{game_type}/skaters.csv"
+        response = requests.get(url, timeout=15)
+        
+        if response.status_code != 200:
+            print(f"MoneyPuck returned status {response.status_code}")
+            return jsonify([]), 200  # Return empty array instead of error
+        
+        team_abbr_upper = team_abbr.upper()
+        players_data = []
+        content = response.content.decode('utf-8')
+        csv_reader = csv.DictReader(io.StringIO(content))
+        
+        for row in csv_reader:
+            # Filter by team and situation
+            if row['team'] == team_abbr_upper and row['situation'] == situation:
+                try:
+                    player = {
+                        'name': row['name'],
+                        'team': row['team'],
+                        'position': row['position'],
+                        'games_played': int(row['games_played']) if row.get('games_played') else 0,
+                        'icetime': float(row['icetime']) if row.get('icetime') else 0,
+                        'goals': int(float(row['I_F_goals'])) if row.get('I_F_goals') else 0,
+                        'assists': int(float(row['I_F_primaryAssists']) or 0) + int(float(row['I_F_secondaryAssists']) or 0) if row.get('I_F_primaryAssists') and row.get('I_F_secondaryAssists') else 0,
+                        'points': int(float(row['I_F_points'])) if row.get('I_F_points') else 0,
+                        'gsPerGame': round(float(row['gameScore']) / int(row['games_played']), 3) if row.get('gameScore') and row.get('games_played') and int(row['games_played']) > 0 else 0,
+                    }
+                    players_data.append(player)
+                except (ValueError, TypeError) as e:
+                    # Skip players with bad data
+                    continue
+        
+        # Sort by points descending, then by game score per game
+        players_data.sort(key=lambda x: (x['points'], x['gsPerGame']), reverse=True)
+        
+        # Return top 5
+        top_performers = players_data[:5]
+        
+        print(f"Returning {len(top_performers)} performers for {team_abbr_upper}")
+        return jsonify(top_performers)
+        
+    except Exception as e:
+        print(f"Error fetching team performers for {team_abbr}: {e}")
+        import traceback
+        traceback.print_exc()
+        return jsonify([]), 200  # Return empty array instead of error
+
+
 # NHL API Proxy endpoints to avoid CORS issues
 @app.route('/api/nhl/schedule/<date>', methods=['GET'])
 def proxy_nhl_schedule(date):
