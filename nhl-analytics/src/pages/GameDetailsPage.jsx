@@ -222,6 +222,20 @@ const GameDetailsContent = () => {
                     return;
                 }
 
+                // Enrich game data with team colors before setting
+                // NHL API doesn't provide colors, so we inject them from TEAM_COLORS
+                if (data.boxscore) {
+                    const awayAbbr = data.boxscore.awayTeam?.abbrev;
+                    const homeAbbr = data.boxscore.homeTeam?.abbrev;
+
+                    if (awayAbbr && TEAM_COLORS[awayAbbr]) {
+                        data.boxscore.awayTeam.color = TEAM_COLORS[awayAbbr];
+                    }
+                    if (homeAbbr && TEAM_COLORS[homeAbbr]) {
+                        data.boxscore.homeTeam.color = TEAM_COLORS[homeAbbr];
+                    }
+                }
+
                 // Set game data immediately so page can render
                 setGameData(data);
                 setLoading(false); // Allow page to render while we fetch additional data
@@ -526,24 +540,34 @@ const GameDetailsContent = () => {
                         const mergeTeamData = (abbr, edge, stats) => {
                             if (!enrichedMetrics[abbr]) enrichedMetrics[abbr] = {};
 
-                            // 1. Movement: Try Edge, then Stats, then keep existing (or 0)
-                            enrichedMetrics[abbr].lat = edge?.lat || stats?.lat || enrichedMetrics[abbr].lat || 0;
-                            enrichedMetrics[abbr].long_movement = edge?.long_movement || stats?.long_movement || enrichedMetrics[abbr].long_movement || 0;
+                            // 1. Movement: Use stats fields directly if available
+                            // Backend returns: avg_distance, avg_speed_mph, avg_zone_time, lat, long
+                            if (stats) {
+                                // Check various possible field names from backend
+                                enrichedMetrics[abbr].lat = stats.lat || stats.lateral_movement || stats.average_lateral || enrichedMetrics[abbr].lat || 0;
+                                enrichedMetrics[abbr].long_movement = stats.long || stats.long_movement || stats.longitudinal_movement || stats.average_longitudinal || enrichedMetrics[abbr].long_movement || 0;
+                            }
+                            if (edge && Object.keys(edge).length > 0) {
+                                enrichedMetrics[abbr].lat = edge.lat || enrichedMetrics[abbr].lat;
+                                enrichedMetrics[abbr].long_movement = edge.long || edge.long_movement || enrichedMetrics[abbr].long_movement;
+                            }
 
-                            // 2. GA/GP: Calculate if missing
-                            // Check if we have goalsAgainst and gamesPlayed in enrichedMetrics or stats
-                            const ga = enrichedMetrics[abbr].goalsAgainst || stats?.goalsAgainst || 0;
-                            const gp = enrichedMetrics[abbr].gamesPlayed || stats?.gamesPlayed || 1; // avoid divide by zero
-                            const calculatedGaGp = gp > 0 ? (ga / gp) : 0;
+                            // 2. GA/GP: Calculate from raw data in stats
+                            // Backend stats returns: goalsAgainst, gamesPlayed
+                            const ga = stats?.goalsAgainst || stats?.ga || stats?.goals_against || enrichedMetrics[abbr].goalsAgainst || 0;
+                            const gp = stats?.gamesPlayed || stats?.gp || stats?.games_played || enrichedMetrics[abbr].gamesPlayed || 1;
 
-                            if (!enrichedMetrics[abbr].ga_gp && !enrichedMetrics[abbr].goals_against_per_game) {
-                                enrichedMetrics[abbr].ga_gp = calculatedGaGp;
+                            if (gp > 0 && ga > 0) {
+                                enrichedMetrics[abbr].ga_gp = (ga / gp);
+                            } else if (enrichedMetrics[abbr].goalsAgainst && enrichedMetrics[abbr].gamesPlayed) {
+                                enrichedMetrics[abbr].ga_gp = enrichedMetrics[abbr].goalsAgainst / enrichedMetrics[abbr].gamesPlayed;
                             }
                         };
 
                         if (awayAbbr) mergeTeamData(awayAbbr, awayEdge, awayStats);
                         if (homeAbbr) mergeTeamData(homeAbbr, homeEdge, homeStats);
 
+                        console.log('Enriched team metrics:', enrichedMetrics);
                         setTeamMetrics(enrichedMetrics);
                         setPrediction(gamePrediction);
                         setAwayHeatmap(awayHeat);
@@ -629,27 +653,42 @@ const GameDetailsContent = () => {
                             console.log('Fetching top performers for pre-game:', { awayAbbr, homeAbbr });
 
                             const [awayPerformers, homePerformers] = await Promise.all([
-                                backendApi.getTeamTopPerformers(awayAbbr).catch((err) => {
-                                    console.error(`Error fetching away performers for ${awayAbbr}:`, err);
+                                backendApi.getTeamTopPerformers(awayAbbr).catch(err => {
+                                    console.error(`Failed to fetch away performers:`, err);
                                     return [];
                                 }),
-                                backendApi.getTeamTopPerformers(homeAbbr).catch((err) => {
-                                    console.error(`Error fetching home performers for ${homeAbbr}:`, err);
+                                backendApi.getTeamTopPerformers(homeAbbr).catch(err => {
+                                    console.error(`Failed to fetch home performers:`, err);
                                     return [];
                                 })
                             ]);
 
-                            console.log('Away performers:', awayPerformers);
-                            console.log('Home performers:', homePerformers);
+                            console.log('Raw performers data:', { awayPerformers, homePerformers });
 
-                            // Combine and sort by GS/GP
-                            const allPerformers = [...(awayPerformers || []), ...(homePerformers || [])]
+                            // Combine and format the performers
+                            // Backend data might have different structure - normalize it
+                            const normalizePerformer = (p, teamAbbr) => ({
+                                name: p.name || `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'Unknown',
+                                team: p.team || teamAbbr,
+                                position: p.position || 'N/A',
+                                points: p.points || p.pts || 0,
+                                goals: p.goals || p.g || 0,
+                                assists: p.assists || p.a || 0,
+                                gsPerGame: p.gsPerGame || p.gs_per_game || p.gameScore || 0
+                            });
+
+                            const allPerformers = [
+                                ...awayPerformers.map(p => normalizePerformer(p, awayAbbr)),
+                                ...homePerformers.map(p => normalizePerformer(p, homeAbbr))
+                            ];
+
+                            console.log('Normalized performers:', allPerformers);
+                            setTopPerformers(allPerformers
                                 .filter(p => p && (p.gsPerGame > 0 || p.points > 0))
                                 .sort((a, b) => (b.gsPerGame || 0) - (a.gsPerGame || 0))
-                                .slice(0, 5);
+                                .slice(0, 5));
 
                             console.log('Combined top performers:', allPerformers);
-                            setTopPerformers(allPerformers);
                         } else {
                             console.log('Missing team abbreviations:', { awayAbbr, homeAbbr });
                         }
