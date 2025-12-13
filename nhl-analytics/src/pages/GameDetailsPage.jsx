@@ -1,5 +1,5 @@
 import React, { useEffect, useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
+import { useParams, Link, useNavigate } from 'react-router-dom';
 import { nhlApi } from '../api/nhl';
 import { backendApi } from '../api/backend';
 import { motion } from 'framer-motion';
