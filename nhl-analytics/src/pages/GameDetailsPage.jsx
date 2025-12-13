@@ -1355,19 +1355,24 @@ const GameDetailsContent = () => {
                         </div>
                     </section>
                 </div>
-                {/* DEEP DATA HUNTER - PERIOD DATA SEARCH */}
-                <div className="mt-8 p-4 bg-gray-900 border border-purple-500 rounded text-xs font-mono overflow-auto z-50 relative">
-                    <h3 className="text-purple-500 font-bold">DEEP PERIOD DATA SEARCH</h3>
+                {/* DEEP DATA HUNTER - PBP INSPECTION */}
+                <div className="mt-8 p-4 bg-gray-900 border border-green-500 rounded text-xs font-mono overflow-auto z-50 relative">
+                    <h3 className="text-green-500 font-bold">PBP INSPECTION</h3>
+                    <button
+                        onClick={() => console.log('PBP DATA:', gameData?.playByPlay)}
+                        className="mb-2 bg-green-900 px-2 py-1 rounded hover:bg-green-800"
+                    >
+                        Log PBP to Console
+                    </button>
                     <pre className="text-gray-300">
                         {JSON.stringify({
-                            gameDataRootKeys: gameData ? Object.keys(gameData) : 'missing',
-                            // Check for plays at root
-                            hasPlays: !!gameData?.plays,
-                            hasPBP: !!gameData?.playByPlay,
-                            // Check deep player stats for period splits
-                            samplePlayer: gameData?.boxscore?.playerByGameStats?.awayTeam?.forwards?.[0] || 'no player',
-                            // Check if player has 'splits' or 'stats' object
-                            samplePlayerKeys: gameData?.boxscore?.playerByGameStats?.awayTeam?.forwards?.[0] ? Object.keys(gameData.boxscore.playerByGameStats.awayTeam.forwards[0]) : [],
+                            pbpType: typeof gameData?.playByPlay,
+                            pbpKeys: gameData?.playByPlay ? Object.keys(gameData.playByPlay) : 'missing',
+                            // Check if it's an array or has 'events'
+                            isArray: Array.isArray(gameData?.playByPlay),
+                            eventsLength: Array.isArray(gameData?.playByPlay) ? gameData.playByPlay.length : (gameData?.playByPlay?.events?.length || 'no events key'),
+                            // Sample Event (if array)
+                            sampleEvent: Array.isArray(gameData?.playByPlay) ? gameData.playByPlay[0] : (gameData?.playByPlay?.events?.[0] || 'no sample'),
                         }, null, 2)}
                     </pre>
                 </div>
