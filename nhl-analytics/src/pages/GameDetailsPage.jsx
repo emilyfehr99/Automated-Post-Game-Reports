@@ -1330,6 +1330,29 @@ const GameDetailsContent = () => {
                         </div>
                     </section>
                 </div>
+                {/* DEBUG PANEL - RESTORED FOR DATA HUNTING */}
+                <div className="mt-8 p-4 bg-gray-900 border border-red-500 rounded text-xs font-mono overflow-auto z-50 relative">
+                    <div className="flex justify-between items-center mb-2">
+                        <h3 className="text-red-500 font-bold">DATA HUNTER PANEL</h3>
+                        <button
+                            onClick={() => console.log('FULL GAME DATA:', gameData)}
+                            className="bg-red-900 px-2 py-1 rounded hover:bg-red-800"
+                        >
+                            Log Full Data
+                        </button>
+                    </div>
+                    <pre className="text-gray-300">
+                        {JSON.stringify({
+                            boxscoreKeys: gameData?.boxscore ? Object.keys(gameData.boxscore) : 'missing',
+                            summaryKeys: gameData?.boxscore?.summary ? Object.keys(gameData.boxscore.summary) : 'missing',
+                            teamKeys: gameData?.boxscore?.awayTeam ? Object.keys(gameData.boxscore.awayTeam) : 'missing',
+                            // Check for alternative paths
+                            hasTeamGameStats: !!gameData?.boxscore?.teamGameStats,
+                            hasStats: !!gameData?.boxscore?.stats,
+                            periodStatsCheck: liveData?.period_stats
+                        }, null, 2)}
+                    </pre>
+                </div>
             </div>
         </div>
     );
