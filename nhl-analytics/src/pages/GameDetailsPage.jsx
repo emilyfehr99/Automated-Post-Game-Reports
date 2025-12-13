@@ -1349,7 +1349,11 @@ const GameDetailsContent = () => {
                             // Check for alternative paths
                             hasTeamGameStats: !!gameData?.boxscore?.teamGameStats,
                             hasStats: !!gameData?.boxscore?.stats,
-                            periodStatsCheck: liveData?.period_stats
+                            periodStatsCheck: liveData?.period_stats,
+                            // PLAYER STATS INSPECTION
+                            playerStatsKeys: gameData?.boxscore?.playerByGameStats ? Object.keys(gameData.boxscore.playerByGameStats) : 'missing',
+                            awayPlayerKeys: gameData?.boxscore?.playerByGameStats?.awayTeam ? Object.keys(gameData.boxscore.playerByGameStats.awayTeam) : 'missing',
+                            sampleForward: gameData?.boxscore?.playerByGameStats?.awayTeam?.forwards?.[0] ? Object.keys(gameData.boxscore.playerByGameStats.awayTeam.forwards[0]) : 'no forwards'
                         }, null, 2)}
                     </pre>
                 </div>
