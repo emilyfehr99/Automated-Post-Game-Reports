@@ -306,8 +306,9 @@ const GameDetailsContent = () => {
 
                 // Helper to apply fallbacks when backend data is missing or API fails
                 const applyFallbacks = (existingLiveData) => {
-                    // Initialize safe structure
-                    const liveData = existingLiveData || {};
+                    // Create DEEP COPY to ensure immutability and avoid readonly issues
+                    const liveData = existingLiveData ? JSON.parse(JSON.stringify(existingLiveData)) : {};
+
                     if (!liveData.live_metrics) liveData.live_metrics = {};
                     if (!liveData.period_stats) liveData.period_stats = [];
 
@@ -321,6 +322,12 @@ const GameDetailsContent = () => {
                         console.log('Using boxscore fallback for physical play stats');
                         const awayTeamStats = data.boxscore.awayTeam;
                         const homeTeamStats = data.boxscore.homeTeam;
+
+                        // Verify boxscore data availability
+                        console.log('Boxscore fallback data:', {
+                            awayHits: awayTeamStats?.hits,
+                            homeHits: homeTeamStats?.hits
+                        });
 
                         liveData.live_metrics = {
                             ...liveData.live_metrics,
@@ -347,8 +354,6 @@ const GameDetailsContent = () => {
                     if ((gameState === 'FINAL' || gameState === 'OFF') && !hasPeriodStats && data?.boxscore) {
                         console.log('Using boxscore fallback for period stats');
                         const periodGoals = data.boxscore.summary?.linescore?.byPeriod || [];
-                        const awayTeamStats = data.boxscore.awayTeam;
-                        const homeTeamStats = data.boxscore.homeTeam;
 
                         if (periodGoals.length > 0) {
                             liveData.period_stats = periodGoals.map((period, idx) => ({
