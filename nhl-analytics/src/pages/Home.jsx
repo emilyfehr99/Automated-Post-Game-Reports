@@ -66,15 +66,19 @@ const Home = () => {
                     // Update predictions with live data for finished/live games
                     liveOrFinishedGames.forEach((game, idx) => {
                         const liveData = liveDataResults[idx];
-                        if (liveData) {
+                        // Ensure we have valid probabilities before updating
+                        if (liveData && typeof liveData.away_prob === 'number' && typeof liveData.home_prob === 'number') {
                             const key = `${game.awayTeam.abbrev}_${game.homeTeam.abbrev}`;
-                            predMap[key] = {
-                                ...predMap[key],
-                                predicted_away_win_prob: liveData.away_prob,
-                                predicted_home_win_prob: liveData.home_prob,
-                                calibrated_away_prob: liveData.away_prob,
-                                calibrated_home_prob: liveData.home_prob
-                            };
+                            // Only update if we have an existing prediction or create a new one if missing
+                            if (predMap[key] || true) {
+                                predMap[key] = {
+                                    ...(predMap[key] || {}), // Keep existing data if any
+                                    predicted_away_win_prob: liveData.away_prob,
+                                    predicted_home_win_prob: liveData.home_prob,
+                                    calibrated_away_prob: liveData.away_prob,
+                                    calibrated_home_prob: liveData.home_prob
+                                };
+                            }
                         }
                     });
 
