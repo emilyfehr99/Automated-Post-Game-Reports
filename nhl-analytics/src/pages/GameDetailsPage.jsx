@@ -1389,13 +1389,6 @@ const GameDetailsContent = () => {
                                         homeVal={isFinal ? (liveData?.live_metrics?.home_score || homeTeam?.score || 0) : (teamMetrics[homeTeam?.abbrev]?.goals_per_game || teamMetrics[homeTeam?.abbrev]?.goals || 0)}
                                         format={(v) => parseFloat(v || 0).toFixed(isFinal ? 0 : 2)}
                                     />
-                                    <ComparisonRow
-                                        label={isFinal ? "GOALS AGAINST" : "GOALS AGAINST PER GAME"}
-                                        awayVal={isFinal ? (liveData?.live_metrics?.home_score || homeTeam?.score || 0) : (teamMetrics[awayTeam?.abbrev]?.goals_against_per_game || teamMetrics[awayTeam?.abbrev]?.ga_gp || 0)}
-                                        homeVal={isFinal ? (liveData?.live_metrics?.away_score || awayTeam?.score || 0) : (teamMetrics[homeTeam?.abbrev]?.goals_against_per_game || teamMetrics[homeTeam?.abbrev]?.ga_gp || 0)}
-                                        format={(v) => parseFloat(v || 0).toFixed(isFinal ? 0 : 2)}
-                                        inverse={true}
-                                    />
                                 </MetricCard>
 
                                 {/* Physical Play */}
