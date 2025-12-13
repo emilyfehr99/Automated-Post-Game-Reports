@@ -187,10 +187,6 @@ const GameDetailsContent = () => {
     const navigate = useNavigate();
 
     // VERSION CHECK for debugging
-    useEffect(() => {
-        window.VERSION = "DEBUG_V1";
-        console.log("RUNNING VERSION: DEBUG_V1");
-    }, []);
     const [gameData, setGameData] = useState(null);
     const [loading, setLoading] = useState(true);
     const [liveData, setLiveData] = useState(null);
@@ -1333,24 +1329,6 @@ const GameDetailsContent = () => {
                             )}
                         </div>
                     </section>
-                </div>
-
-                {/* DEBUG PANEL - DIAGNOSTIC */}
-                <div className="mt-8 p-4 bg-gray-900 border border-yellow-500 rounded text-xs font-mono overflow-auto z-50 relative">
-                    <h3 className="text-yellow-500 font-bold mb-2">DIAGNOSTIC PANEL (DEBUG_V1)</h3>
-                    <pre className="text-gray-300">
-                        {JSON.stringify({
-                            gameState: gameData?.boxscore?.gameState,
-                            hasBoxscore: !!gameData?.boxscore,
-                            boxscorePeriods: gameData?.boxscore?.summary?.linescore?.byPeriod?.length,
-                            hasLiveData: !!liveData,
-                            liveMetricsKeys: liveData?.live_metrics ? Object.keys(liveData.live_metrics) : 'missing',
-                            boxscoreAwayKeys: gameData?.boxscore?.awayTeam ? Object.keys(gameData.boxscore.awayTeam) : 'missing',
-                            linescoreKeys: gameData?.boxscore?.summary?.linescore ? Object.keys(gameData.boxscore.summary.linescore) : 'missing',
-                            periodStatsLength: liveData?.period_stats?.length,
-                            hits: liveData?.live_metrics?.away_hits
-                        }, null, 2)}
-                    </pre>
                 </div>
             </div>
         </div>
