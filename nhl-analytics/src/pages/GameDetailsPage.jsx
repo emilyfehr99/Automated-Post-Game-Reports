@@ -345,7 +345,6 @@ const GameDetailsContent = () => {
 
                             aggregatedAway = aggregate('awayTeam');
                             aggregatedHome = aggregate('homeTeam');
-                            console.log('Aggregated Node metrics:', { aggregatedAway, aggregatedHome });
                         }
 
                         // Use Team Stats (if available) OR Aggregated Stats
@@ -372,55 +371,100 @@ const GameDetailsContent = () => {
                     // 2. Fallback for PERIOD PERFORMANCE (period_stats)
                     const hasPeriodStats = Array.isArray(liveData.period_stats) && liveData.period_stats.length > 0;
 
-                    if ((gameState === 'FINAL' || gameState === 'OFF') && !hasPeriodStats && data?.boxscore) {
+                    // CHECK FOR PBP DATA TO RECONSTRUCT PERIOD STATS
+                    const hasPBP = data?.playByPlay?.plays && Array.isArray(data.playByPlay.plays);
+
+                    if (!hasPeriodStats && hasPBP) {
+                        console.log('Reconstructing period stats from PlayByPlay data...');
+                        const plays = data.playByPlay.plays;
+                        const awayId = data.boxscore?.awayTeam?.id;
+                        const homeId = data.boxscore?.homeTeam?.id;
+
+                        // Initialize structure for 3 periods (or more if OT)
+                        const periodsMap = {};
+
+                        plays.forEach(play => {
+                            const period = play.periodDescriptor?.number;
+                            if (!period) return;
+
+                            if (!periodsMap[period]) {
+                                periodsMap[period] = {
+                                    period: period,
+                                    away_stats: { goals: 0, ga: 0, shots: 0, hits: 0, pim: 0, blocked_shots: 0, giveaways: 0, takeaways: 0, faceoff_win: 0, faceoff_total: 0 },
+                                    home_stats: { goals: 0, ga: 0, shots: 0, hits: 0, pim: 0, blocked_shots: 0, giveaways: 0, takeaways: 0, faceoff_win: 0, faceoff_total: 0 }
+                                };
+                            }
+
+                            const type = play.typeDescKey;
+                            const eventTeamId = play.details?.eventOwnerTeamId;
+
+                            // Helper to increment stats
+                            const increment = (teamId, field) => {
+                                if (teamId === awayId) periodsMap[period].away_stats[field]++;
+                                else if (teamId === homeId) periodsMap[period].home_stats[field]++;
+                            };
+
+                            // Helper for opponent stats (e.g. Giveaways = Takeaways for other team? No, explicit events usually)
+                            // But GA (Goals Against) is important
+                            const incrementGA = (teamId) => {
+                                if (teamId === awayId) periodsMap[period].home_stats.ga++;
+                                else if (teamId === homeId) periodsMap[period].away_stats.ga++;
+                            };
+
+                            if (type === 'goal') {
+                                increment(eventTeamId, 'goals');
+                                incrementGA(eventTeamId);
+                            } else if (type === 'shot-on-goal') {
+                                increment(eventTeamId, 'shots');
+                            } else if (type === 'hit') {
+                                increment(eventTeamId, 'hits');
+                            } else if (type === 'blocked-shot') {
+                                increment(eventTeamId, 'blocked_shots');
+                            } else if (type === 'giveaway') {
+                                increment(eventTeamId, 'giveaways');
+                            } else if (type === 'takeaway') {
+                                increment(eventTeamId, 'takeaways');
+                            } else if (type === 'penalty') {
+                                // PIM typically in minutes, check details.duration
+                                const minutes = play.details?.duration || 2;
+                                if (eventTeamId === awayId) periodsMap[period].away_stats.pim += minutes;
+                                else if (eventTeamId === homeId) periodsMap[period].home_stats.pim += minutes;
+                            } else if (type === 'faceoff') {
+                                const winnerId = play.details?.winningPlayerId ? eventTeamId : null; // eventOwner is usually winner? To be safe check winningTeamId if avail, or assume eventOwner is winner
+                                // PBP usually has eventOwnerTeamId as winner for faceoffs
+                                if (eventTeamId === awayId) {
+                                    periodsMap[period].away_stats.faceoff_win++;
+                                    periodsMap[period].away_stats.faceoff_total++;
+                                    periodsMap[period].home_stats.faceoff_total++;
+                                } else if (eventTeamId === homeId) {
+                                    periodsMap[period].home_stats.faceoff_win++;
+                                    periodsMap[period].home_stats.faceoff_total++;
+                                    periodsMap[period].away_stats.faceoff_total++;
+                                }
+                            }
+                        });
+
+                        // Calculation & Formatting
+                        liveData.period_stats = Object.values(periodsMap).sort((a, b) => a.period - b.period).map(p => ({
+                            ...p,
+                            away_stats: {
+                                ...p.away_stats,
+                                faceoff_pct: p.away_stats.faceoff_total > 0 ? (p.away_stats.faceoff_win / p.away_stats.faceoff_total * 100) : 0
+                            },
+                            home_stats: {
+                                ...p.home_stats,
+                                faceoff_pct: p.home_stats.faceoff_total > 0 ? (p.home_stats.faceoff_win / p.home_stats.faceoff_total * 100) : 0
+                            }
+                        }));
+                    } else if ((gameState === 'FINAL' || gameState === 'OFF') && !hasPeriodStats && data?.boxscore) {
+                        // Keep legacy boxscore fallback just in case
                         console.log('Using boxscore fallback for period stats');
                         const periodGoals = data.boxscore.summary?.linescore?.byPeriod || [];
-
                         if (periodGoals.length > 0) {
                             liveData.period_stats = periodGoals.map((period, idx) => ({
                                 period: period.periodDescriptor?.number || (idx + 1),
-                                away_stats: {
-                                    goals: period.away || 0,
-                                    ga: period.home || 0,
-                                    shots: 0,
-                                    corsi: 0,
-                                    xg: 0,
-                                    xga: 0,
-                                    hits: 0,
-                                    faceoff_pct: 0,
-                                    pim: 0,
-                                    blocked_shots: 0,
-                                    giveaways: 0,
-                                    takeaways: 0,
-                                    nzt: 0,
-                                    nztsa: 0,
-                                    ozs: 0,
-                                    dzs: 0,
-                                    nzs: 0,
-                                    rush: 0,
-                                    fc: 0
-                                },
-                                home_stats: {
-                                    goals: period.home || 0,
-                                    ga: period.away || 0,
-                                    shots: 0,
-                                    corsi: 0,
-                                    xg: 0,
-                                    xga: 0,
-                                    hits: 0,
-                                    faceoff_pct: 0,
-                                    pim: 0,
-                                    blocked_shots: 0,
-                                    giveaways: 0,
-                                    takeaways: 0,
-                                    nzt: 0,
-                                    nztsa: 0,
-                                    ozs: 0,
-                                    dzs: 0,
-                                    nzs: 0,
-                                    rush: 0,
-                                    fc: 0
-                                }
+                                away_stats: { goals: period.away || 0, ga: period.home || 0, shots: 0, hits: 0, pim: 0, blocked_shots: 0, giveaways: 0, takeaways: 0, faceoff_pct: 0 },
+                                home_stats: { goals: period.home || 0, ga: period.away || 0, shots: 0, hits: 0, pim: 0, blocked_shots: 0, giveaways: 0, takeaways: 0, faceoff_pct: 0 }
                             }));
                         }
                     }
@@ -433,13 +477,24 @@ const GameDetailsContent = () => {
                     backendApi.getLiveGame(id)
                         .then(liveGameData => {
                             console.log('Live game data received, applying fallbacks if needed');
-                            const enrichedData = applyFallbacks(liveGameData);
+                            // Merge PBP from main gameData if missing in liveGameData
+                            // The PBP is normally in gameData (first api call), not always in liveGameData
+                            // We need to pass the FULL gameData (including PBP) to applyFallbacks
+                            const combinedData = { ...liveGameData };
+                            if (!combinedData.playByPlay && data.playByPlay) {
+                                combinedData.playByPlay = data.playByPlay;
+                            }
+                            if (!combinedData.boxscore && data.boxscore) {
+                                combinedData.boxscore = data.boxscore;
+                            }
+
+                            const enrichedData = applyFallbacks(combinedData);
                             setLiveData(enrichedData);
                         })
                         .catch(err => {
                             console.error('Error fetching live data, applying strict fallbacks:', err);
-                            // CRITICAL: Even if backend fails completely, use boxscore data
-                            const fallbackData = applyFallbacks(null);
+                            // Even if backend fails, use boxscore/PBP from initial load
+                            const fallbackData = applyFallbacks(data);
                             setLiveData(fallbackData);
                         });
                 }
@@ -1354,20 +1409,6 @@ const GameDetailsContent = () => {
                             )}
                         </div>
                     </section>
-                </div>
-                {/* DEEP DATA HUNTER - PLAYS INSPECTION */}
-                <div className="mt-8 p-4 bg-gray-900 border border-green-500 rounded text-xs font-mono overflow-auto z-50 relative">
-                    <h3 className="text-green-500 font-bold">PLAYS INSPECTION</h3>
-                    <pre className="text-gray-300">
-                        {JSON.stringify({
-                            hasPlaysKey: !!gameData?.playByPlay?.plays,
-                            playsIsArray: Array.isArray(gameData?.playByPlay?.plays),
-                            playsLength: gameData?.playByPlay?.plays?.length,
-                            // Sample Play Structure
-                            samplePlay: gameData?.playByPlay?.plays?.[50] || 'no sample', // Pick mid-game event
-                            sampleKeys: gameData?.playByPlay?.plays?.[0] ? Object.keys(gameData.playByPlay.plays[0]) : [],
-                        }, null, 2)}
-                    </pre>
                 </div>
             </div>
         </div>
