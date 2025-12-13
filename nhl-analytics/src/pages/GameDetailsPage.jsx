@@ -328,7 +328,7 @@ const GameDetailsContent = () => {
                         (liveData.live_metrics.away_hits > 0 || liveData.live_metrics.home_hits > 0 ||
                             liveData.live_metrics.away_shots > 0 || liveData.live_metrics.home_shots > 0);
 
-                    if ((gameState === 'FINAL' || gameState === 'OFF') && !hasLiveMetrics && data?.boxscore) {
+                    if ((gameState === 'FINAL' || gameState === 'OFF' || gameState === 'LIVE' || gameState === 'CRIT') && !hasLiveMetrics && data?.boxscore) {
                         console.log('Using boxscore fallback for physical play stats');
                         const awayTeamStats = data.boxscore.awayTeam;
                         const homeTeamStats = data.boxscore.homeTeam;
