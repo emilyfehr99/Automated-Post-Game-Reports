@@ -1345,6 +1345,8 @@ const GameDetailsContent = () => {
                             boxscorePeriods: gameData?.boxscore?.summary?.linescore?.byPeriod?.length,
                             hasLiveData: !!liveData,
                             liveMetricsKeys: liveData?.live_metrics ? Object.keys(liveData.live_metrics) : 'missing',
+                            boxscoreAwayKeys: gameData?.boxscore?.awayTeam ? Object.keys(gameData.boxscore.awayTeam) : 'missing',
+                            linescoreKeys: gameData?.boxscore?.summary?.linescore ? Object.keys(gameData.boxscore.summary.linescore) : 'missing',
                             periodStatsLength: liveData?.period_stats?.length,
                             hits: liveData?.live_metrics?.away_hits
                         }, null, 2)}
