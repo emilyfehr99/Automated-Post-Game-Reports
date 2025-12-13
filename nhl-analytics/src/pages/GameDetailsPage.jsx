@@ -310,8 +310,12 @@ const GameDetailsContent = () => {
                                 liveMetricsKeys: liveGameData?.live_metrics ? Object.keys(liveGameData.live_metrics).slice(0, 20) : []
                             });
 
-                            // If live_metrics is missing for FINAL games, extract from boxscore
-                            if ((gameState === 'FINAL' || gameState === 'OFF') && !liveGameData?.live_metrics && data?.boxscore) {
+                            // If live_metrics is missing OR has no data for FINAL games, extract from boxscore
+                            const hasLiveMetrics = liveGameData?.live_metrics &&
+                                (liveGameData.live_metrics.away_hits > 0 || liveGameData.live_metrics.home_hits > 0 ||
+                                    liveGameData.live_metrics.away_shots > 0 || liveGameData.live_metrics.home_shots > 0);
+
+                            if ((gameState === 'FINAL' || gameState === 'OFF') && !hasLiveMetrics && data?.boxscore) {
                                 console.log('Extracting physical play stats from boxscore as fallback');
                                 const awayTeamStats = data.boxscore.awayTeam;
                                 const homeTeamStats = data.boxscore.homeTeam;
@@ -334,8 +338,10 @@ const GameDetailsContent = () => {
                                 };
                             }
 
-                            // If period_stats is missing for FINAL games, create basic fallback from boxscore
-                            if ((gameState === 'FINAL' || gameState === 'OFF') && (!liveGameData?.period_stats || liveGameData.period_stats.length === 0) && data?.boxscore) {
+                            // If period_stats is missing or empty for FINAL games, create basic fallback from boxscore
+                            if ((gameState === 'FINAL' || gameState === 'OFF') &&
+                                (!liveGameData?.period_stats || !Array.isArray(liveGameData.period_stats) || liveGameData.period_stats.length === 0) &&
+                                data?.boxscore) {
                                 console.log('Extracting period stats from boxscore summary as fallback');
                                 const periodGoals = data.boxscore.summary?.linescore?.byPeriod || [];
                                 const awayTeamStats = data.boxscore.awayTeam;
