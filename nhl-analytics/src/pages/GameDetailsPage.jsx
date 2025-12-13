@@ -477,11 +477,12 @@ const GameDetailsContent = () => {
                     backendApi.getLiveGame(id)
                         .then(liveGameData => {
                             console.log('Live game data received, applying fallbacks if needed');
-                            // Merge PBP from main gameData if missing in liveGameData
-                            // The PBP is normally in gameData (first api call), not always in liveGameData
-                            // We need to pass the FULL gameData (including PBP) to applyFallbacks
+                            // Merge PBP from main gameData if missing OR EMPTY in liveGameData
                             const combinedData = { ...liveGameData };
-                            if (!combinedData.playByPlay && data.playByPlay) {
+                            const liveHasPlays = combinedData.playByPlay?.plays && Array.isArray(combinedData.playByPlay.plays) && combinedData.playByPlay.plays.length > 0;
+
+                            if (!liveHasPlays && data.playByPlay) {
+                                console.log('Preserving initial PBP data for live update');
                                 combinedData.playByPlay = data.playByPlay;
                             }
                             if (!combinedData.boxscore && data.boxscore) {
@@ -717,8 +718,8 @@ const GameDetailsContent = () => {
         const awayBetter = inverse ? (awayNum < homeNum) : (awayNum > homeNum);
         const homeBetter = inverse ? (homeNum < awayNum) : (homeNum > awayNum);
 
-        const awayColor = TEAM_COLORS[awayTeam?.abbrev] || '#00D4FF';
-        const homeColor = TEAM_COLORS[homeTeam?.abbrev] || '#FF00FF';
+        const awayColor = awayTeam?.color || TEAM_COLORS[awayTeam?.abbrev] || '#00D4FF';
+        const homeColor = homeTeam?.color || TEAM_COLORS[homeTeam?.abbrev] || '#FF00FF';
 
         return (
             <div className="mb-4">
@@ -1276,27 +1277,27 @@ const GameDetailsContent = () => {
                                     </div>
                                     <ComparisonRow
                                         label={isFinal ? "HITS" : "HITS PER GAME"}
-                                        awayVal={isFinal ? (liveData?.live_metrics?.away_hits || 0) : (teamMetrics[awayTeam?.abbrev]?.hits_per_game || 0)}
-                                        homeVal={isFinal ? (liveData?.live_metrics?.home_hits || 0) : (teamMetrics[homeTeam?.abbrev]?.hits_per_game || 0)}
+                                        awayVal={isFinal ? (liveData?.live_metrics?.away_hits || 0) : (teamMetrics[awayTeam?.abbrev]?.hits || 0)}
+                                        homeVal={isFinal ? (liveData?.live_metrics?.home_hits || 0) : (teamMetrics[homeTeam?.abbrev]?.hits || 0)}
                                         format={(v) => parseFloat(v || 0).toFixed(isFinal ? 0 : 2)}
                                     />
                                     <ComparisonRow
                                         label="BLOCKED SHOTS"
-                                        awayVal={isFinal ? (liveData?.live_metrics?.away_blocked_shots || liveData?.advanced_metrics?.defense?.blocked_shots?.away || 0) : (teamMetrics[awayTeam?.abbrev]?.blocks_per_game || 0)}
-                                        homeVal={isFinal ? (liveData?.live_metrics?.home_blocked_shots || liveData?.advanced_metrics?.defense?.blocked_shots?.home || 0) : (teamMetrics[homeTeam?.abbrev]?.blocks_per_game || 0)}
+                                        awayVal={isFinal ? (liveData?.live_metrics?.away_blocked_shots || liveData?.advanced_metrics?.defense?.blocked_shots?.away || 0) : (teamMetrics[awayTeam?.abbrev]?.blocks || 0)}
+                                        homeVal={isFinal ? (liveData?.live_metrics?.home_blocked_shots || liveData?.advanced_metrics?.defense?.blocked_shots?.home || 0) : (teamMetrics[homeTeam?.abbrev]?.blocks || 0)}
                                         format={(v) => parseFloat(v || 0).toFixed(isFinal ? 0 : 2)}
                                     />
                                     <ComparisonRow
                                         label="GIVEAWAYS"
-                                        awayVal={isFinal ? (liveData?.live_metrics?.away_giveaways || 0) : (teamMetrics[awayTeam?.abbrev]?.giveaways_per_game || 0)}
-                                        homeVal={isFinal ? (liveData?.live_metrics?.home_giveaways || 0) : (teamMetrics[homeTeam?.abbrev]?.giveaways_per_game || 0)}
+                                        awayVal={isFinal ? (liveData?.live_metrics?.away_giveaways || 0) : (teamMetrics[awayTeam?.abbrev]?.giveaways || 0)}
+                                        homeVal={isFinal ? (liveData?.live_metrics?.home_giveaways || 0) : (teamMetrics[homeTeam?.abbrev]?.giveaways || 0)}
                                         format={(v) => parseFloat(v || 0).toFixed(isFinal ? 0 : 2)}
                                         inverse={true}
                                     />
                                     <ComparisonRow
                                         label="TAKEAWAYS"
-                                        awayVal={isFinal ? (liveData?.live_metrics?.away_takeaways || 0) : (teamMetrics[awayTeam?.abbrev]?.takeaways_per_game || 0)}
-                                        homeVal={isFinal ? (liveData?.live_metrics?.home_takeaways || 0) : (teamMetrics[homeTeam?.abbrev]?.takeaways_per_game || 0)}
+                                        awayVal={isFinal ? (liveData?.live_metrics?.away_takeaways || 0) : (teamMetrics[awayTeam?.abbrev]?.takeaways || 0)}
+                                        homeVal={isFinal ? (liveData?.live_metrics?.home_takeaways || 0) : (teamMetrics[homeTeam?.abbrev]?.takeaways || 0)}
                                         format={(v) => parseFloat(v || 0).toFixed(isFinal ? 0 : 2)}
                                     />
                                     <ComparisonRow
@@ -1331,12 +1332,14 @@ const GameDetailsContent = () => {
                                         homeVal={isFinal ? (liveData?.live_metrics?.away_power_play_pct !== null && liveData?.live_metrics?.away_power_play_pct !== undefined ? (100 - liveData.live_metrics.away_power_play_pct) : null) : (teamMetrics[homeTeam?.abbrev]?.pk_pct || 0)}
                                         format={(v) => v === null || v === undefined ? 'N/A' : parseFloat(v || 0).toFixed(1) + '%'}
                                     />
-                                    <ComparisonRow
-                                        label="FACEOFF % (FO%)"
-                                        awayVal={isFinal ? (liveData?.live_metrics?.away_faceoff_pct ?? null) : (teamMetrics[awayTeam?.abbrev]?.faceoff_pct || 0)}
-                                        homeVal={isFinal ? (liveData?.live_metrics?.home_faceoff_pct ?? null) : (teamMetrics[homeTeam?.abbrev]?.faceoff_pct || 0)}
-                                        format={(v) => v === null || v === undefined ? 'N/A' : parseFloat(v || 0).toFixed(1) + '%'}
-                                    />
+                                    {(!isFinal && teamMetrics[awayTeam?.abbrev]?.fo_pct === null) ? null : (
+                                        <ComparisonRow
+                                            label="FACEOFF % (FO%)"
+                                            awayVal={isFinal ? (liveData?.live_metrics?.away_faceoff_pct || 0) : (teamMetrics[awayTeam?.abbrev]?.fo_pct || 0)}
+                                            homeVal={isFinal ? (liveData?.live_metrics?.home_faceoff_pct || 0) : (teamMetrics[homeTeam?.abbrev]?.fo_pct || 0)}
+                                            format={(v) => parseFloat(v || 0).toFixed(1) + '%'}
+                                        />
+                                    )}
                                 </MetricCard>
                             </div>
                         </section>
@@ -1409,17 +1412,6 @@ const GameDetailsContent = () => {
                             )}
                         </div>
                     </section>
-                </div>
-                {/* TEAM METRICS DIAGNOSTIC */}
-                <div className="mt-8 p-4 bg-gray-900 border border-blue-500 rounded text-xs font-mono overflow-auto z-50 relative">
-                    <h3 className="text-blue-500 font-bold">METRICS INSPECTION</h3>
-                    <pre className="text-gray-300">
-                        {JSON.stringify({
-                            awayAbbrev: awayTeam?.abbrev,
-                            awayMetrics: teamMetrics?.[awayTeam?.abbrev] || 'missing',
-                            metricsKeys: teamMetrics?.[awayTeam?.abbrev] ? Object.keys(teamMetrics[awayTeam?.abbrev]) : []
-                        }, null, 2)}
-                    </pre>
                 </div>
             </div>
         </div>
