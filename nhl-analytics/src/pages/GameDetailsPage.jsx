@@ -1355,6 +1355,22 @@ const GameDetailsContent = () => {
                         </div>
                     </section>
                 </div>
+                {/* DEEP DATA HUNTER - PERIOD DATA SEARCH */}
+                <div className="mt-8 p-4 bg-gray-900 border border-purple-500 rounded text-xs font-mono overflow-auto z-50 relative">
+                    <h3 className="text-purple-500 font-bold">DEEP PERIOD DATA SEARCH</h3>
+                    <pre className="text-gray-300">
+                        {JSON.stringify({
+                            gameDataRootKeys: gameData ? Object.keys(gameData) : 'missing',
+                            // Check for plays at root
+                            hasPlays: !!gameData?.plays,
+                            hasPBP: !!gameData?.playByPlay,
+                            // Check deep player stats for period splits
+                            samplePlayer: gameData?.boxscore?.playerByGameStats?.awayTeam?.forwards?.[0] || 'no player',
+                            // Check if player has 'splits' or 'stats' object
+                            samplePlayerKeys: gameData?.boxscore?.playerByGameStats?.awayTeam?.forwards?.[0] ? Object.keys(gameData.boxscore.playerByGameStats.awayTeam.forwards[0]) : [],
+                        }, null, 2)}
+                    </pre>
+                </div>
             </div>
         </div>
     );
