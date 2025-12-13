@@ -513,21 +513,31 @@ const GameDetailsContent = () => {
                             ? backendApi.getTeamHeatmap(homeAbbr).catch(() => null)
                             : Promise.resolve(null),
                         // Fetch Edge data for Movement metrics if missing in standard metrics
-                        backendApi.getEdgeDataByTeam(awayAbbr).catch(() => null),
-                        backendApi.getEdgeDataByTeam(homeAbbr).catch(() => null)
-                    ]).then(([metrics, gamePrediction, awayHeat, homeHeat, awayEdge, homeEdge]) => {
+                        backendApi.getEdgeDataByTeam(awayAbbr).catch(() => ({ error: 'fetch failed' })),
+                        backendApi.getEdgeDataByTeam(homeAbbr).catch(() => ({ error: 'fetch failed' })),
+                        // Fetch ALL players for debugging
+                        backendApi.getPlayerStats('2025', 'regular', 'all').catch(() => ({ data: [] }))
+                    ]).then(([metrics, gamePrediction, awayHeat, homeHeat, awayEdge, homeEdge, allPlayers]) => {
+                        // Debugging globals
+                        window.debug_edge_away = awayEdge;
+                        window.debug_all_players = allPlayers?.data || [];
+
                         // Merge edge data into team metrics if needed
                         const enrichedMetrics = { ...metrics };
 
-                        if (awayEdge && awayAbbr) {
+                        if (awayEdge && awayAbbr && !awayEdge.error) {
                             if (!enrichedMetrics[awayAbbr]) enrichedMetrics[awayAbbr] = {};
                             enrichedMetrics[awayAbbr].lat = awayEdge.lat || enrichedMetrics[awayAbbr].lat || 0;
                             enrichedMetrics[awayAbbr].long_movement = awayEdge.long_movement || enrichedMetrics[awayAbbr].long_movement || 0;
+                        } else if (awayEdge?.error) {
+                            console.log('Edge Data missing for', awayAbbr);
                         }
-                        if (homeEdge && homeAbbr) {
+                        if (homeEdge && homeAbbr && !homeEdge.error) {
                             if (!enrichedMetrics[homeAbbr]) enrichedMetrics[homeAbbr] = {};
                             enrichedMetrics[homeAbbr].lat = homeEdge.lat || enrichedMetrics[homeAbbr].lat || 0;
                             enrichedMetrics[homeAbbr].long_movement = homeEdge.long_movement || enrichedMetrics[homeAbbr].long_movement || 0;
+                        } else if (homeEdge?.error) {
+                            console.log('Edge Data missing for', homeAbbr);
                         }
 
                         setTeamMetrics(enrichedMetrics);
@@ -1465,17 +1475,18 @@ const GameDetailsContent = () => {
 
                 {/* TEMPORARY DEBUG PANEL */}
                 <div className="mt-8 p-4 bg-gray-900 border border-yellow-500 rounded text-xs font-mono overflow-auto z-50 relative">
-                    <h3 className="text-yellow-500 font-bold mb-2">DATA HUNTER - PREGAME</h3>
+                    <h3 className="text-yellow-500 font-bold mb-2">DATA HUNTER - LEVEL 2</h3>
                     <pre className="text-gray-300">
                         {JSON.stringify({
                             gameId: id,
-                            gameState: gameData?.boxscore?.gameState,
                             hasPrediction: !!prediction,
-                            predictionData: prediction,
                             topPerformersCount: safeTopPerformers.length,
                             awayAbbrev: awayTeam?.abbrev,
-                            teamMetricsKeys: teamMetrics ? Object.keys(teamMetrics) : [],
-                            awayMetricsSample: teamMetrics?.[awayTeam?.abbrev],
+                            // Debugging Performers
+                            debug_performers_sample: (window.debug_all_players || []).slice(0, 3).map(p => ({ name: p.name, team: p.team })),
+                            debug_team_codes: [...new Set((window.debug_all_players || []).map(p => p.team))].sort(),
+                            // Debugging Movement
+                            edgeData_Sample: window.debug_edge_away,
                         }, null, 2)}
                     </pre>
                 </div>
