@@ -1341,8 +1341,7 @@ const GameDetailsContent = () => {
                             hasLiveData: !!liveData,
                             liveMetricsKeys: liveData?.live_metrics ? Object.keys(liveData.live_metrics) : 'missing',
                             periodStatsLength: liveData?.period_stats?.length,
-                            hits: liveData?.live_metrics?.away_hits,
-                            error: error?.message || 'none'
+                            hits: liveData?.live_metrics?.away_hits
                         }, null, 2)}
                     </pre>
                 </div>
