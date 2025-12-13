@@ -1222,10 +1222,10 @@ const GameDetailsContent = () => {
                                         format={(v) => parseFloat(v || 0).toFixed(1)}
                                     />
                                     <ComparisonRow
-                                        label="HIGH DANGER CHANCES AGAINST (HDCA)"
-                                        awayVal={isFinal ? (liveData?.live_metrics?.away_hdca || 0) : (teamMetrics[awayTeam?.abbrev]?.hdca || 0)}
-                                        homeVal={isFinal ? (liveData?.live_metrics?.home_hdca || 0) : (teamMetrics[homeTeam?.abbrev]?.hdca || 0)}
-                                        format={(v) => parseFloat(v || 0).toFixed(1)}
+                                        label="GOALS AGAINST PER GAME"
+                                        awayVal={isFinal ? (liveData?.live_metrics?.away_ga || 0) : (teamMetrics[awayTeam?.abbrev]?.ga_gp || teamMetrics[awayTeam?.abbrev]?.goals || 0)}
+                                        homeVal={isFinal ? (liveData?.live_metrics?.home_ga || 0) : (teamMetrics[homeTeam?.abbrev]?.ga_gp || teamMetrics[homeTeam?.abbrev]?.goals || 0)}
+                                        format={(v) => parseFloat(v || 0).toFixed(2)}
                                         inverse={true}
                                     />
                                 </MetricCard>
@@ -1437,8 +1437,8 @@ const GameDetailsContent = () => {
                                     />
                                     <ComparisonRow
                                         label="PENALTY MINUTES (PIM)"
-                                        awayVal={isFinal ? (liveData?.live_metrics?.away_pim || 0) : (teamMetrics[awayTeam?.abbrev]?.pim_per_game || 0)}
-                                        homeVal={isFinal ? (liveData?.live_metrics?.home_pim || 0) : (teamMetrics[homeTeam?.abbrev]?.pim_per_game || 0)}
+                                        awayVal={isFinal ? (liveData?.live_metrics?.away_pim || 0) : (teamMetrics[awayTeam?.abbrev]?.pim || 0)}
+                                        homeVal={isFinal ? (liveData?.live_metrics?.home_pim || 0) : (teamMetrics[homeTeam?.abbrev]?.pim || 0)}
                                         format={(v) => parseFloat(v || 0).toFixed(isFinal ? 0 : 2)}
                                     />
                                 </MetricCard>
