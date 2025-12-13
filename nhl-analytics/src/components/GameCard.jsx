@@ -143,11 +143,11 @@ const GameCard = ({ game, prediction, awayMetrics, homeMetrics }) => {
                             </div>
                             <div className="h-2 bg-white/5 rounded-full overflow-hidden flex">
                                 <div
-                                    className="h-full bg-accent-cyan transition-all duration-500"
+                                    className="h-full bg-gradient-to-r from-accent-cyan to-blue-500 transition-all duration-500"
                                     style={{ width: `${awayProb}%` }}
                                 />
                                 <div
-                                    className="h-full bg-accent-magenta transition-all duration-500"
+                                    className="h-full bg-gradient-to-l from-accent-magenta to-purple-500 transition-all duration-500"
                                     style={{ width: `${homeProb}%` }}
                                 />
                             </div>
@@ -156,18 +156,14 @@ const GameCard = ({ game, prediction, awayMetrics, homeMetrics }) => {
 
                     {/* Live Game Stats Preview */}
                     {isLive && (
-                        <div className="mt-auto grid grid-cols-3 gap-2 text-center text-xs font-mono text-gray-400 bg-white/5 rounded-lg p-2">
+                        <div className="mt-auto grid grid-cols-2 gap-2 text-center text-xs font-mono text-gray-400 bg-white/5 rounded-lg p-2">
                             <div>
-                                <div className="text-white font-bold">{game?.period || '1st'}</div>
+                                <div className="text-white font-bold">{prediction?.live_metrics?.current_period || game?.period || '1st'}</div>
                                 <div className="text-[10px]">PER</div>
                             </div>
                             <div>
-                                <div className="text-white font-bold">{game?.clock || '20:00'}</div>
+                                <div className="text-white font-bold">{prediction?.live_metrics?.time_remaining || game?.clock || '20:00'}</div>
                                 <div className="text-[10px]">TIME</div>
-                            </div>
-                            <div>
-                                <div className="text-white font-bold">{(game?.awayTeam?.sog || 0) + (game?.homeTeam?.sog || 0)}</div>
-                                <div className="text-[10px]">SOG</div>
                             </div>
                         </div>
                     )}

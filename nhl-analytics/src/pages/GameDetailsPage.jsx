@@ -414,15 +414,16 @@ const GameDetailsContent = () => {
 
                             // Helper to increment stats
                             const increment = (teamId, field) => {
-                                if (teamId === awayId) periodsMap[period].away_stats[field]++;
-                                else if (teamId === homeId) periodsMap[period].home_stats[field]++;
+                                // Use loose equality for ID matching (string vs int)
+                                if (teamId == awayId) periodsMap[period].away_stats[field]++;
+                                else if (teamId == homeId) periodsMap[period].home_stats[field]++;
                             };
 
                             // Helper for opponent stats (e.g. Giveaways = Takeaways for other team? No, explicit events usually)
                             // But GA (Goals Against) is important
                             const incrementGA = (teamId) => {
-                                if (teamId === awayId) periodsMap[period].home_stats.ga++;
-                                else if (teamId === homeId) periodsMap[period].away_stats.ga++;
+                                if (teamId == awayId) periodsMap[period].home_stats.ga++;
+                                else if (teamId == homeId) periodsMap[period].away_stats.ga++;
                             };
 
                             if (type === 'goal') {
@@ -441,16 +442,16 @@ const GameDetailsContent = () => {
                             } else if (type === 'penalty') {
                                 // PIM typically in minutes, check details.duration
                                 const minutes = play.details?.duration || 2;
-                                if (eventTeamId === awayId) periodsMap[period].away_stats.pim += minutes;
-                                else if (eventTeamId === homeId) periodsMap[period].home_stats.pim += minutes;
+                                if (eventTeamId == awayId) periodsMap[period].away_stats.pim += minutes;
+                                else if (eventTeamId == homeId) periodsMap[period].home_stats.pim += minutes;
                             } else if (type === 'faceoff') {
                                 const winnerId = play.details?.winningPlayerId ? eventTeamId : null; // eventOwner is usually winner? To be safe check winningTeamId if avail, or assume eventOwner is winner
                                 // PBP usually has eventOwnerTeamId as winner for faceoffs
-                                if (eventTeamId === awayId) {
+                                if (eventTeamId == awayId) {
                                     periodsMap[period].away_stats.faceoff_win++;
                                     periodsMap[period].away_stats.faceoff_total++;
                                     periodsMap[period].home_stats.faceoff_total++;
-                                } else if (eventTeamId === homeId) {
+                                } else if (eventTeamId == homeId) {
                                     periodsMap[period].home_stats.faceoff_win++;
                                     periodsMap[period].home_stats.faceoff_total++;
                                     periodsMap[period].away_stats.faceoff_total++;
