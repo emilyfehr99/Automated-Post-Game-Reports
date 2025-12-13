@@ -297,112 +297,122 @@ const GameDetailsContent = () => {
                     }, 0);
                 }
 
+                // Helper to apply fallbacks when backend data is missing or API fails
+                const applyFallbacks = (existingLiveData) => {
+                    // Initialize safe structure
+                    const liveData = existingLiveData || {};
+                    if (!liveData.live_metrics) liveData.live_metrics = {};
+                    if (!liveData.period_stats) liveData.period_stats = [];
+
+                    // 1. Fallback for PHYSICAL PLAY (live_metrics)
+                    // Check if we have actual data values
+                    const hasLiveMetrics = liveData.live_metrics &&
+                        (liveData.live_metrics.away_hits > 0 || liveData.live_metrics.home_hits > 0 ||
+                            liveData.live_metrics.away_shots > 0 || liveData.live_metrics.home_shots > 0);
+
+                    if ((gameState === 'FINAL' || gameState === 'OFF') && !hasLiveMetrics && data?.boxscore) {
+                        console.log('Using boxscore fallback for physical play stats');
+                        const awayTeamStats = data.boxscore.awayTeam;
+                        const homeTeamStats = data.boxscore.homeTeam;
+
+                        liveData.live_metrics = {
+                            ...liveData.live_metrics,
+                            away_hits: awayTeamStats?.hits || 0,
+                            home_hits: homeTeamStats?.hits || 0,
+                            away_blocked_shots: awayTeamStats?.blocks || awayTeamStats?.blockedShots || 0,
+                            home_blocked_shots: homeTeamStats?.blocks || homeTeamStats?.blockedShots || 0,
+                            away_giveaways: awayTeamStats?.giveaways || 0,
+                            home_giveaways: homeTeamStats?.giveaways || 0,
+                            away_takeaways: awayTeamStats?.takeaways || 0,
+                            home_takeaways: homeTeamStats?.takeaways || 0,
+                            away_pim: awayTeamStats?.pim || 0,
+                            home_pim: homeTeamStats?.pim || 0,
+                            away_shots: awayTeamStats?.sog || 0,
+                            home_shots: homeTeamStats?.sog || 0,
+                            away_score: awayTeamStats?.score || 0,
+                            home_score: homeTeamStats?.score || 0
+                        };
+                    }
+
+                    // 2. Fallback for PERIOD PERFORMANCE (period_stats)
+                    const hasPeriodStats = Array.isArray(liveData.period_stats) && liveData.period_stats.length > 0;
+
+                    if ((gameState === 'FINAL' || gameState === 'OFF') && !hasPeriodStats && data?.boxscore) {
+                        console.log('Using boxscore fallback for period stats');
+                        const periodGoals = data.boxscore.summary?.linescore?.byPeriod || [];
+                        const awayTeamStats = data.boxscore.awayTeam;
+                        const homeTeamStats = data.boxscore.homeTeam;
+
+                        if (periodGoals.length > 0) {
+                            liveData.period_stats = periodGoals.map((period, idx) => ({
+                                period: period.periodDescriptor?.number || (idx + 1),
+                                away_stats: {
+                                    goals: period.away || 0,
+                                    ga: period.home || 0,
+                                    shots: 0,
+                                    corsi: 0,
+                                    xg: 0,
+                                    xga: 0,
+                                    hits: 0,
+                                    faceoff_pct: 0,
+                                    pim: 0,
+                                    blocked_shots: 0,
+                                    giveaways: 0,
+                                    takeaways: 0,
+                                    nzt: 0,
+                                    nztsa: 0,
+                                    ozs: 0,
+                                    dzs: 0,
+                                    nzs: 0,
+                                    rush: 0,
+                                    fc: 0
+                                },
+                                home_stats: {
+                                    goals: period.home || 0,
+                                    ga: period.away || 0,
+                                    shots: 0,
+                                    corsi: 0,
+                                    xg: 0,
+                                    xga: 0,
+                                    hits: 0,
+                                    faceoff_pct: 0,
+                                    pim: 0,
+                                    blocked_shots: 0,
+                                    giveaways: 0,
+                                    takeaways: 0,
+                                    nzt: 0,
+                                    nztsa: 0,
+                                    ozs: 0,
+                                    dzs: 0,
+                                    nzs: 0,
+                                    rush: 0,
+                                    fc: 0
+                                }
+                            }));
+                        }
+                    }
+
+                    return liveData;
+                };
+
                 // Fetch live data if game is live or completed (for period stats)
                 if (gameState === 'LIVE' || gameState === 'CRIT' || gameState === 'OFF' || gameState === 'FINAL') {
                     backendApi.getLiveGame(id)
                         .then(liveGameData => {
-                            console.log('Live game data received:', {
-                                hasPeriodStats: !!liveGameData?.period_stats,
-                                periodStatsLength: liveGameData?.period_stats?.length,
-                                hasLiveMetrics: !!liveGameData?.live_metrics,
-                                hasLiveMetricsPeriodStats: !!liveGameData?.live_metrics?.period_stats,
-                                liveMetricsPeriodStatsLength: liveGameData?.live_metrics?.period_stats?.length,
-                                liveMetricsKeys: liveGameData?.live_metrics ? Object.keys(liveGameData.live_metrics).slice(0, 20) : []
-                            });
-
-                            // If live_metrics is missing OR has no data for FINAL games, extract from boxscore
-                            const hasLiveMetrics = liveGameData?.live_metrics &&
-                                (liveGameData.live_metrics.away_hits > 0 || liveGameData.live_metrics.home_hits > 0 ||
-                                    liveGameData.live_metrics.away_shots > 0 || liveGameData.live_metrics.home_shots > 0);
-
-                            if ((gameState === 'FINAL' || gameState === 'OFF') && !hasLiveMetrics && data?.boxscore) {
-                                console.log('Extracting physical play stats from boxscore as fallback');
-                                const awayTeamStats = data.boxscore.awayTeam;
-                                const homeTeamStats = data.boxscore.homeTeam;
-
-                                liveGameData.live_metrics = {
-                                    away_hits: awayTeamStats?.hits || 0,
-                                    home_hits: homeTeamStats?.hits || 0,
-                                    away_blocked_shots: awayTeamStats?.blocks || awayTeamStats?.blockedShots || 0,
-                                    home_blocked_shots: homeTeamStats?.blocks || homeTeamStats?.blockedShots || 0,
-                                    away_giveaways: awayTeamStats?.giveaways || 0,
-                                    home_giveaways: homeTeamStats?.giveaways || 0,
-                                    away_takeaways: awayTeamStats?.takeaways || 0,
-                                    home_takeaways: homeTeamStats?.takeaways || 0,
-                                    away_pim: awayTeamStats?.pim || 0,
-                                    home_pim: homeTeamStats?.pim || 0,
-                                    away_shots: awayTeamStats?.sog || 0,
-                                    home_shots: homeTeamStats?.sog || 0,
-                                    away_score: awayTeamStats?.score || 0,
-                                    home_score: homeTeamStats?.score || 0
-                                };
-                            }
-
-                            // If period_stats is missing or empty for FINAL games, create basic fallback from boxscore
-                            if ((gameState === 'FINAL' || gameState === 'OFF') &&
-                                (!liveGameData?.period_stats || !Array.isArray(liveGameData.period_stats) || liveGameData.period_stats.length === 0) &&
-                                data?.boxscore) {
-                                console.log('Extracting period stats from boxscore summary as fallback');
-                                const periodGoals = data.boxscore.summary?.linescore?.byPeriod || [];
-                                const awayTeamStats = data.boxscore.awayTeam;
-                                const homeTeamStats = data.boxscore.homeTeam;
-
-                                if (periodGoals.length > 0) {
-                                    liveGameData.period_stats = periodGoals.map((period, idx) => ({
-                                        period: period.periodDescriptor?.number || (idx + 1),
-                                        away_stats: {
-                                            goals: period.away || 0,
-                                            ga: period.home || 0,
-                                            shots: 0,  // Not available in summary
-                                            corsi: 0,
-                                            xg: 0,
-                                            xga: 0,
-                                            hits: 0,
-                                            faceoff_pct: 0,
-                                            pim: 0,
-                                            blocked_shots: 0,
-                                            giveaways: 0,
-                                            takeaways: 0,
-                                            nzt: 0,
-                                            nztsa: 0,
-                                            ozs: 0,
-                                            dzs: 0,
-                                            nzs: 0,
-                                            rush: 0,
-                                            fc: 0
-                                        },
-                                        home_stats: {
-                                            goals: period.home || 0,
-                                            ga: period.away || 0,
-                                            shots: 0,  // Not available in summary
-                                            corsi: 0,
-                                            xg: 0,
-                                            xga: 0,
-                                            hits: 0,
-                                            faceoff_pct: 0,
-                                            pim: 0,
-                                            blocked_shots: 0,
-                                            giveaways: 0,
-                                            takeaways: 0,
-                                            nzt: 0,
-                                            nztsa: 0,
-                                            ozs: 0,
-                                            dzs: 0,
-                                            nzs: 0,
-                                            rush: 0,
-                                            fc: 0
-                                        }
-                                    }));
-                                }
-                            }
-                            setLiveData(liveGameData);
+                            console.log('Live game data received, applying fallbacks if needed');
+                            const enrichedData = applyFallbacks(liveGameData);
+                            setLiveData(enrichedData);
                         })
-                        .catch(err => console.error('Error fetching live data:', err));
+                        .catch(err => {
+                            console.error('Error fetching live data, applying strict fallbacks:', err);
+                            // CRITICAL: Even if backend fails completely, use boxscore data
+                            const fallbackData = applyFallbacks(null);
+                            setLiveData(fallbackData);
+                        });
                 }
 
                 // Fetch additional data in background (non-blocking)
                 if (awayAbbr && homeAbbr) {
-                    // Fetch team metrics and prediction in parallel (non-blocking)
                     Promise.all([
                         backendApi.getTeamMetrics().catch(() => ({})),
                         backendApi.getGamePrediction(id).catch(() => null),
