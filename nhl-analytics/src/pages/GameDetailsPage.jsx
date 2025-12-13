@@ -511,9 +511,26 @@ const GameDetailsContent = () => {
                             : Promise.resolve(null),
                         (gameState === 'FUT' || gameState === 'PREVIEW')
                             ? backendApi.getTeamHeatmap(homeAbbr).catch(() => null)
-                            : Promise.resolve(null)
-                    ]).then(([metrics, gamePrediction, awayHeat, homeHeat]) => {
-                        setTeamMetrics(metrics || {});
+                            : Promise.resolve(null),
+                        // Fetch Edge data for Movement metrics if missing in standard metrics
+                        backendApi.getEdgeDataByTeam(awayAbbr).catch(() => null),
+                        backendApi.getEdgeDataByTeam(homeAbbr).catch(() => null)
+                    ]).then(([metrics, gamePrediction, awayHeat, homeHeat, awayEdge, homeEdge]) => {
+                        // Merge edge data into team metrics if needed
+                        const enrichedMetrics = { ...metrics };
+
+                        if (awayEdge && awayAbbr) {
+                            if (!enrichedMetrics[awayAbbr]) enrichedMetrics[awayAbbr] = {};
+                            enrichedMetrics[awayAbbr].lat = awayEdge.lat || enrichedMetrics[awayAbbr].lat || 0;
+                            enrichedMetrics[awayAbbr].long_movement = awayEdge.long_movement || enrichedMetrics[awayAbbr].long_movement || 0;
+                        }
+                        if (homeEdge && homeAbbr) {
+                            if (!enrichedMetrics[homeAbbr]) enrichedMetrics[homeAbbr] = {};
+                            enrichedMetrics[homeAbbr].lat = homeEdge.lat || enrichedMetrics[homeAbbr].lat || 0;
+                            enrichedMetrics[homeAbbr].long_movement = homeEdge.long_movement || enrichedMetrics[homeAbbr].long_movement || 0;
+                        }
+
+                        setTeamMetrics(enrichedMetrics);
                         setPrediction(gamePrediction);
                         setAwayHeatmap(awayHeat);
                         setHomeHeatmap(homeHeat);
@@ -1054,6 +1071,38 @@ const GameDetailsContent = () => {
                                 <h3 className="text-xl font-display font-bold">TEAM METRICS COMPARISON</h3>
                             </div>
                             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                                {/* Core Metrics */}
+                                {/* Win Probability / Prediction Card */}
+                                {(!isFinal && prediction) && (
+                                    <MetricCard title="AI MATCH PREDICTION" icon={TrendingUp}>
+                                        <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">
+                                            <div className="flex items-center gap-2">
+                                                <img src={awayTeam?.logo} alt={awayTeam?.abbrev} className="w-6 h-6" />
+                                                <span className="text-accent-primary font-mono text-sm">{awayTeam?.abbrev}</span>
+                                            </div>
+                                            <div className="flex items-center gap-2">
+                                                <img src={homeTeam?.logo} alt={homeTeam?.abbrev} className="w-6 h-6" />
+                                                <span className="text-accent-secondary font-mono text-sm">{homeTeam?.abbrev}</span>
+                                            </div>
+                                        </div>
+                                        <ComparisonRow
+                                            label="WIN PROBABILITY"
+                                            awayVal={prediction.win_probability?.away || 50}
+                                            homeVal={prediction.win_probability?.home || 50}
+                                            format={(v) => Math.round(v) + '%'}
+                                        />
+                                        <div className="mt-4 text-center">
+                                            <div className="text-xs font-mono text-text-muted mb-1">PROJECTED SCORE</div>
+                                            <div className="text-xl font-display font-bold text-white">
+                                                {prediction.score?.away || 0} - {prediction.score?.home || 0}
+                                            </div>
+                                            <div className="text-xs font-mono text-text-secondary mt-1">
+                                                Confidence: {prediction.confidence || 'Medium'}
+                                            </div>
+                                        </div>
+                                    </MetricCard>
+                                )}
+
                                 {/* Core Metrics */}
                                 <MetricCard title="CORE METRICS" icon={Target}>
                                     <div className="flex items-center justify-between mb-4 pb-2 border-b border-white/10">

@@ -129,5 +129,34 @@ export const backendApi = {
         const response = await fetch(`${BACKEND_URL}/api/player-stats?season=${season}&type=${type}&situation=${situation}`);
         if (!response.ok) throw new Error('Failed to fetch player stats');
         return response.json();
+    },
+
+    /**
+     * Get top performers for a team
+     */
+    async getTeamTopPerformers(teamAbbr) {
+        try {
+            // First try dedicated endpoint if it exists
+            const response = await fetch(`${BACKEND_URL}/api/team-performers/${teamAbbr}`);
+            if (response.ok) return response.json();
+
+            // Fallback: Fetch all player stats and filter
+            // This is heavy but ensures we get data if the specific endpoint is missing
+            console.log(`Dedicated endpoint failed for ${teamAbbr}, fetching all stats...`);
+            const allStats = await this.getPlayerStats('2025', 'regular', 'all');
+
+            // Filter for team and sort by points/game_score
+            // MoneyPuck data usually has 'team' field
+            if (allStats && Array.isArray(allStats.data)) {
+                return allStats.data
+                    .filter(p => p.team === teamAbbr)
+                    .sort((a, b) => (b.points || 0) - (a.points || 0))
+                    .slice(0, 5);
+            }
+            return [];
+        } catch (error) {
+            console.warn(`Failed to fetch team performers for ${teamAbbr}`, error);
+            return [];
+        }
     }
 };
