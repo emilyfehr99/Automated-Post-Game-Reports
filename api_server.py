@@ -213,8 +213,8 @@ def get_team_metrics():
         home_fo_pct = avg(home_stats.get('faceoff_pct', []))
         away_fo_pct = avg(away_stats.get('faceoff_pct', []))
 
-        home_ga = avg(home_stats.get('goals_against', []))
-        away_ga = avg(away_stats.get('goals_against', []))
+        home_ga = avg(home_stats.get('opp_goals', []))
+        away_ga = avg(away_stats.get('opp_goals', []))
         
         # Average home and away stats
         metrics[team_abbrev] = {

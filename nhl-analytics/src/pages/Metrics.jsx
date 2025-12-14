@@ -132,7 +132,8 @@ const Metrics = () => {
         // Merge basic data with advanced metrics
         let sortableItems = data.map(item => {
             const advanced = advancedMetrics[item.abbrev] || {};
-            return { ...item, ...advanced };
+            // Prioritize live standings data for l10 and streak
+            return { ...advanced, ...item, l10: item.l10, streak: item.streak };
         });
 
         if (sortConfig.key !== null) {
@@ -165,6 +166,7 @@ const Metrics = () => {
 
         if (sortConfig.key !== null) {
             sortableItems.sort((a, b) => {
+                if (!a || !b) return 0;
                 let aValue = a[sortConfig.key];
                 let bValue = b[sortConfig.key];
 
@@ -391,7 +393,7 @@ const Metrics = () => {
                         </thead>
                         <tbody className="divide-y divide-white/5">
                             {viewMode === 'players' ? (
-                                sortedPlayerData.map((player, index) => (
+                                sortedPlayerData.filter(p => p && p.name).map((player, index) => (
                                     <motion.tr
                                         key={`${player.name}-${player.team}`}
                                         initial={{ opacity: 0, y: 10 }}
