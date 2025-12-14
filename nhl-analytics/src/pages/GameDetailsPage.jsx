@@ -1477,8 +1477,8 @@ const GameDetailsContent = () => {
 
                 {/* Right Column - Visuals & Players */}
                 <div className="space-y-8">
-                    {/* Shot Chart - Only for Live/Final */}
-                    {(isLive || isFinal) && (
+                    {/* Shot Chart - Available for all games (Heatmap for Future) */}
+                    {(isLive || isFinal || gameState === 'FUT' || gameState === 'PREVIEW') && (
                         <section className="glass-card p-6 relative">
                             <div className="flex items-center gap-3 mb-6">
                                 <Target className="w-6 h-6 text-accent-secondary" />

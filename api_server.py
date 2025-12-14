@@ -751,59 +751,62 @@ def get_player_stats():
 # Team Performers Endpoint - Returns top 5 players for a team
 @app.route('/api/team-performers/<team_abbr>', methods=['GET'])
 def get_team_performers(team_abbr):
-    """Get top 5 performers for a specific team"""
+    """Get top 5 performers for a specific team using NHL Club Stats API"""
     try:
-        # Use 2024 season (2024-25) as that's where the data is
-        season = '2024'
-        game_type = 'regular'
-        situation = 'all'
+        # Use NHL Club Stats API which is more reliable than MoneyPuck CSV
+        # and has data for all teams including UTA
+        url = f"https://api-web.nhle.com/v1/club-stats/{team_abbr}/now"
+        response = requests.get(url, timeout=10)
         
-        url = f"https://moneypuck.com/moneypuck/playerData/seasonSummary/{season}/{game_type}/skaters.csv"
-        response = requests.get(url, timeout=15)
-        
-        if response.status_code != 200:
-            print(f"MoneyPuck returned status {response.status_code}")
-            return jsonify([]), 200  # Return empty array instead of error
-        
-        team_abbr_upper = team_abbr.upper()
         players_data = []
-        content = response.content.decode('utf-8')
-        csv_reader = csv.DictReader(io.StringIO(content))
         
-        for row in csv_reader:
-            # Filter by team and situation
-            if row['team'] == team_abbr_upper and row['situation'] == situation:
+        if response.status_code == 200:
+            data = response.json()
+            skaters = data.get('skaters', [])
+            
+            for player in skaters:
                 try:
-                    player = {
-                        'name': row['name'],
-                        'team': row['team'],
-                        'position': row['position'],
-                        'games_played': int(row['games_played']) if row.get('games_played') else 0,
-                        'icetime': float(row['icetime']) if row.get('icetime') else 0,
-                        'goals': int(float(row['I_F_goals'])) if row.get('I_F_goals') else 0,
-                        'assists': int(float(row['I_F_primaryAssists']) or 0) + int(float(row['I_F_secondaryAssists']) or 0) if row.get('I_F_primaryAssists') and row.get('I_F_secondaryAssists') else 0,
-                        'points': int(float(row['I_F_points'])) if row.get('I_F_points') else 0,
-                        'gsPerGame': round(float(row['gameScore']) / int(row['games_played']), 3) if row.get('gameScore') and row.get('games_played') and int(row['games_played']) > 0 else 0,
+                    # Calculate a simple Game Score proxy (Points + +/- + Shots/10)
+                    # This isn't real Game Score but good enough for ranking
+                    points = player.get('points', 0)
+                    plus_minus = player.get('plusMinus', 0)
+                    shots = player.get('shots', 0)
+                    games = player.get('gamesPlayed', 1)
+                    
+                    # Approximate GS per game for sorting
+                    gs_approx = (points + (plus_minus * 0.5) + (shots * 0.1)) / games if games > 0 else 0
+                    
+                    p_data = {
+                        'name': f"{player.get('firstName', {}).get('default', '')} {player.get('lastName', {}).get('default', '')}",
+                        'team': team_abbr.upper(),
+                        'position': player.get('positionCode', ''),
+                        'games_played': games,
+                        'goals': player.get('goals', 0),
+                        'assists': player.get('assists', 0),
+                        'points': points,
+                        'shots': shots,
+                        'gsPerGame': round(gs_approx, 2),
+                        'playerId': player.get('playerId'),
+                        'headshot': player.get('headshot')
                     }
-                    players_data.append(player)
-                except (ValueError, TypeError) as e:
-                    # Skip players with bad data
+                    players_data.append(p_data)
+                except Exception as e:
                     continue
-        
-        # Sort by points descending, then by game score per game
-        players_data.sort(key=lambda x: (x['points'], x['gsPerGame']), reverse=True)
-        
-        # Return top 5
-        top_performers = players_data[:5]
-        
-        print(f"Returning {len(top_performers)} performers for {team_abbr_upper}")
-        return jsonify(top_performers)
-        
+            
+            # Sort by points descending
+            players_data.sort(key=lambda x: x['points'], reverse=True)
+            
+            # Return top 5
+            top_performers = players_data[:5]
+            return jsonify(top_performers)
+            
+        else:
+            print(f"NHL API returned top performers status {response.status_code} for {team_abbr}")
+            return jsonify([]), 200
+
     except Exception as e:
         print(f"Error fetching team performers for {team_abbr}: {e}")
-        import traceback
-        traceback.print_exc()
-        return jsonify([]), 200  # Return empty array instead of error
+        return jsonify([]), 200
 
 
 # NHL API Proxy endpoints to avoid CORS issues

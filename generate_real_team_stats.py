@@ -6,7 +6,8 @@ Uses the same calculation logic as team_report_generator.py
 
 import json
 import requests
-from pathlib import Path
+from nhl_api_client import NHLAPIClient
+from advanced_metrics_analyzer import AdvancedMetricsAnalyzer
 from collections import defaultdict
 from datetime import datetime
 import numpy as np
@@ -121,9 +122,20 @@ class RealTeamStatsGenerator(TeamReportGenerator):
         sh_pct = (goals_for / shots_for * 100) if shots_for > 0 else 10.0
         pdo = sv_pct + sh_pct
         
-        # Movement metrics (would need AdvancedMetricsAnalyzer)
+        # Movement metrics (using AdvancedMetricsAnalyzer)
         lat = 0.0
         long_movement = 0.0
+        
+        try:
+            # We need valid PBP data for this
+            if 'play_by_play' in game_data:
+                analyzer = AdvancedMetricsAnalyzer(game_data.get('play_by_play', {}))
+                movement_metrics = analyzer.calculate_pre_shot_movement_metrics(team_id)
+                lat = movement_metrics['lateral_movement'].get('avg_delta_y', 0.0)
+                long_movement = movement_metrics['longitudinal_movement'].get('avg_delta_x', 0.0)
+                print(f"    Calculated movement: LAT={lat:.2f}, LONG={long_movement:.2f}")
+        except Exception as e:
+            print(f"    Error calculating movement metrics: {e}")
         
         return {
             'gs': round(total_gs, 2),
