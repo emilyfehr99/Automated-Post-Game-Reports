@@ -1,4 +1,3 @@
-```json
 {
     "buildCommand": "cd nhl-analytics && npm run build",
     "outputDirectory": "nhl-analytics/dist",
@@ -14,4 +13,3 @@
         }
     ]
 }
-```
