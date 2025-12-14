@@ -65,3 +65,4 @@ src/
 
 # Keep vercel.json for deployment configuration
 !nhl-analytics/vercel.json
+.vercel
