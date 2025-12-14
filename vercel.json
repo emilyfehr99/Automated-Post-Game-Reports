@@ -1,27 +1,17 @@
+```json
 {
-    "version": 2,
-    "builds": [
+    "buildCommand": "cd nhl-analytics && npm run build",
+    "outputDirectory": "nhl-analytics/dist",
+    "framework": "vite",
+    "rewrites": [
         {
-            "src": "api/index.py",
-            "use": "@vercel/python"
+            "source": "/api/:path*",
+            "destination": "/api/index.py"
         },
         {
-            "src": "nhl-analytics/package.json",
-            "use": "@vercel/static-build",
-            "config": {
-                "distDir": "dist"
-            }
+            "source": "/(.*)",
+            "destination": "/nhl-analytics/dist/$1"
         }
-    ],
-    "routes": [
-        {
-            "src": "/api/(.*)",
-            "dest": "/api/index.py"
-        },
-        {
-            "src": "/(.*)",
-            "dest": "/nhl-analytics/$1"
-        }
-    ],
-    "outputDirectory": "nhl-analytics/dist"
+    ]
 }
+```
