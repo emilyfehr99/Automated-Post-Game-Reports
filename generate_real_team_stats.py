@@ -6,6 +6,7 @@ Uses the same calculation logic as team_report_generator.py
 
 import json
 import requests
+from pathlib import Path
 from nhl_api_client import NHLAPIClient
 from advanced_metrics_analyzer import AdvancedMetricsAnalyzer
 from collections import defaultdict
