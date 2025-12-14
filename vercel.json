@@ -1,15 +1,13 @@
 {
-    "buildCommand": "cd nhl-analytics && npm run build",
-    "outputDirectory": "nhl-analytics/dist",
-    "framework": "vite",
+    "functions": {
+        "api/index.py": {
+            "runtime": "@vercel/python@3.9.0"
+        }
+    },
     "rewrites": [
         {
-            "source": "/api/:path*",
-            "destination": "/api/index.py"
-        },
-        {
-            "source": "/(.*)",
-            "destination": "/nhl-analytics/dist/$1"
+            "source": "/api/(.*)",
+            "destination": "/api/index"
         }
     ]
 }
