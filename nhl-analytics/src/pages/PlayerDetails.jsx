@@ -119,7 +119,7 @@ const PlayerDetails = () => {
                     <div className="h-px flex-1 bg-gradient-to-r from-accent-cyan/50 to-transparent" />
                 </div>
 
-                {player.featuredStats?.regularSeason?.subSeason ? (
+                {player?.featuredStats?.regularSeason?.subSeason ? (
                     <div className="grid grid-cols-2 md:grid-cols-3 lg:grid-cols-6 gap-4">
                         {Object.entries(player.featuredStats.regularSeason.subSeason).map(([key, value], i) => (
                             <StatBox

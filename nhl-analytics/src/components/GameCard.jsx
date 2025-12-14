@@ -16,6 +16,26 @@ const GameCard = ({ game, prediction, awayMetrics, homeMetrics }) => {
     const awayProb = awayProbRaw > 1 ? awayProbRaw.toFixed(1) : (awayProbRaw * 100).toFixed(1);
     const homeProb = homeProbRaw > 1 ? homeProbRaw.toFixed(1) : (homeProbRaw * 100).toFixed(1);
 
+    // Hardcoded fallback colors
+    const TEAM_COLORS = {
+        'ANA': '#F47A38', 'ARI': '#8C2633', 'BOS': '#FFB81C', 'BUF': '#002654',
+        'CGY': '#C8102E', 'CAR': '#CC0000', 'CHI': '#CF0A2C', 'COL': '#6F263D',
+        'CBJ': '#002654', 'DAL': '#006847', 'DET': '#CE1126', 'EDM': '#FF4C00',
+        'FLA': '#B9975B', 'LAK': '#111111', 'MIN': '#154734', 'MTL': '#AF1E2D',
+        'NSH': '#FFB81C', 'NJD': '#CE1126', 'NYI': '#00539B', 'NYR': '#0038A8',
+        'OTT': '#C52032', 'PHI': '#F74902', 'PIT': '#FCB514', 'SJS': '#006D75',
+        'SEA': '#99D9D9', 'STL': '#002F87', 'TBL': '#002868', 'TOR': '#00205B',
+        'UTA': '#71AFE5', 'VAN': '#00205B', 'VGK': '#B4975A', 'WSH': '#041E42',
+        'WPG': '#041E42'
+    };
+
+    const awayColor = awayMetrics?.color || TEAM_COLORS[game?.awayTeam?.abbrev] || '#888888';
+    const homeColor = homeMetrics?.color || TEAM_COLORS[game?.homeTeam?.abbrev] || '#888888';
+
+    // Gradient definitions
+    const awayGradient = awayMetrics?.color ? undefined : `linear-gradient(to right, ${awayColor}, ${awayColor}dd)`;
+    const homeGradient = homeMetrics?.color ? undefined : `linear-gradient(to left, ${homeColor}, ${homeColor}dd)`;
+
     const showProb = prediction && (awayProbRaw > 0 || homeProbRaw > 0);
 
 
