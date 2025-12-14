@@ -172,12 +172,19 @@ const Home = () => {
                 {games.length > 0 ? (
                     <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-6">
                         {games.map((game, index) => {
+                            // Defensive checks for valid team data
+                            if (!game?.awayTeam?.abbrev || !game?.homeTeam?.abbrev) {
+                                console.warn('Skipping invalid game data:', game);
+                                return null;
+                            }
+
                             const predictionKey = `${game.awayTeam.abbrev}_${game.homeTeam.abbrev}`;
                             const prediction = predictions[predictionKey];
+                            console.log(`Rendering GameCard ${index}: ${game.awayTeam.abbrev} vs ${game.homeTeam.abbrev}`);
 
                             return (
                                 <motion.div
-                                    key={game.id}
+                                    key={game.id || index}
                                     initial={{ opacity: 0, y: 20 }}
                                     animate={{ opacity: 1, y: 0 }}
                                     transition={{ duration: 0.4, delay: index * 0.1 }}
@@ -185,8 +192,8 @@ const Home = () => {
                                     <GameCard
                                         game={game}
                                         prediction={prediction}
-                                        awayMetrics={teamMetrics[game.awayTeam.abbrev]}
-                                        homeMetrics={teamMetrics[game.homeTeam.abbrev]}
+                                        awayMetrics={teamMetrics?.[game.awayTeam.abbrev] || {}}
+                                        homeMetrics={teamMetrics?.[game.homeTeam.abbrev] || {}}
                                     />
                                 </motion.div>
                             );
