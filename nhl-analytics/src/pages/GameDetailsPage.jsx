@@ -1475,10 +1475,10 @@ const GameDetailsContent = () => {
                     )}
                 </div>
 
-                {/* Visuals & Players - Only show for Live/Final games */}
-                {(isLive || isFinal) && (
-                    <div className="space-y-8">
-                        {/* Shot Chart */}
+                {/* Right Column - Visuals & Players */}
+                <div className="space-y-8">
+                    {/* Shot Chart - Only for Live/Final */}
+                    {(isLive || isFinal) && (
                         <section className="glass-card p-6 relative">
                             <div className="flex items-center gap-3 mb-6">
                                 <Target className="w-6 h-6 text-accent-secondary" />
@@ -1495,55 +1495,55 @@ const GameDetailsContent = () => {
                                 />
                             </div>
                         </section>
+                    )}
 
-                        {/* Top Players */}
-                        <section className="glass-card p-6">
-                            <div className="flex items-center gap-3 mb-6">
-                                <Users className="w-6 h-6 text-color-success" />
-                                <h3 className="text-xl font-display font-bold">TOP PERFORMERS</h3>
-                            </div>
-                            <div className="space-y-4">
-                                {safeTopPerformers.length > 0 ? (
-                                    safeTopPerformers.map((player, idx) => (
-                                        <div key={idx} className="flex items-center gap-4 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
-                                            <div className="font-display font-bold text-2xl text-white/20 w-8 text-center">
-                                                {idx + 1}
+                    {/* Top Players - Available for all games (Season stats for Future) */}
+                    <section className="glass-card p-6">
+                        <div className="flex items-center gap-3 mb-6">
+                            <Users className="w-6 h-6 text-color-success" />
+                            <h3 className="text-xl font-display font-bold">TOP PERFORMERS</h3>
+                        </div>
+                        <div className="space-y-4">
+                            {safeTopPerformers.length > 0 ? (
+                                safeTopPerformers.map((player, idx) => (
+                                    <div key={idx} className="flex items-center gap-4 p-3 rounded-xl bg-white/5 hover:bg-white/10 transition-colors">
+                                        <div className="font-display font-bold text-2xl text-white/20 w-8 text-center">
+                                            {idx + 1}
+                                        </div>
+                                        <div className="w-12 h-12 rounded-full bg-white/10 border-2 border-white/20 flex items-center justify-center overflow-hidden">
+                                            <img
+                                                src={`https://assets.nhle.com/logos/nhl/svg/${player?.team || 'NHL'}_light.svg`}
+                                                alt={player?.team || 'Team'}
+                                                className="w-10 h-10 object-contain"
+                                                onError={(e) => { e.target.style.display = 'none'; }}
+                                            />
+                                        </div>
+                                        <div className="flex-1">
+                                            <div className="font-bold text-white">
+                                                {player?.name || 'Unknown Player'}
                                             </div>
-                                            <div className="w-12 h-12 rounded-full bg-white/10 border-2 border-white/20 flex items-center justify-center overflow-hidden">
-                                                <img
-                                                    src={`https://assets.nhle.com/logos/nhl/svg/${player?.team || 'NHL'}_light.svg`}
-                                                    alt={player?.team || 'Team'}
-                                                    className="w-10 h-10 object-contain"
-                                                    onError={(e) => { e.target.style.display = 'none'; }}
-                                                />
-                                            </div>
-                                            <div className="flex-1">
-                                                <div className="font-bold text-white">
-                                                    {player?.name || 'Unknown Player'}
-                                                </div>
-                                                <div className="text-xs font-mono text-text-muted flex gap-2">
-                                                    <span>{player?.team || 'N/A'}</span>
-                                                    <span>•</span>
-                                                    <span>{player?.position || 'N/A'}</span>
-                                                </div>
-                                            </div>
-                                            <div className="text-right">
-                                                <div className="font-mono font-bold text-color-success">
-                                                    {player?.gsPerGame ? player.gsPerGame.toFixed(2) : '0.00'} GS/GP
-                                                </div>
-                                                <div className="text-xs font-mono text-text-muted">
-                                                    {player?.points || 0} P ({(player?.goals || 0)}G, {(player?.assists || 0)}A)
-                                                </div>
+                                            <div className="text-xs font-mono text-text-muted flex gap-2">
+                                                <span>{player?.team || 'N/A'}</span>
+                                                <span>•</span>
+                                                <span>{player?.position || 'N/A'}</span>
                                             </div>
                                         </div>
-                                    ))
-                                ) : (
-                                    <div className="text-center text-text-muted py-4">No player data available</div>
-                                )}
-                            </div>
-                        </section>
-                    </div>
-                )}
+                                        <div className="text-right">
+                                            <div className="font-mono font-bold text-color-success">
+                                                {player?.gsPerGame ? player.gsPerGame.toFixed(2) : '0.00'} GS/GP
+                                            </div>
+                                            <div className="text-xs font-mono text-text-muted">
+                                                {player?.points || 0} P ({(player?.goals || 0)}G, {(player?.assists || 0)}A)
+                                            </div>
+                                        </div>
+                                    </div>
+                                ))
+                            ) : (
+                                <div className="text-center text-text-muted py-4">No player data available</div>
+                            )}
+                        </div>
+                    </section>
+                </div>
             </div>
         </div>
     );

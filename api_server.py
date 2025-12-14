@@ -34,7 +34,7 @@ except ImportError:
 _team_metrics_cache = None
 _team_metrics_cache_time = None
 _team_metrics_file_mtime = None
-CACHE_DURATION = timedelta(hours=1)  # Cache for 1 hour
+CACHE_DURATION = timedelta(minutes=5)  # Cache for 5 minutes (reduced from 1 hour for debugging)
 
 def load_json(filename):
     """Load JSON file from current directory"""

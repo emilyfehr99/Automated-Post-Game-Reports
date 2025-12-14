@@ -209,9 +209,15 @@ const Home = () => {
                     <div className="h-px flex-1 bg-gradient-to-r from-white/10 to-transparent ml-8"></div>
                 </div>
 
-                <div className="glass-card overflow-hidden rounded-2xl border border-white/5">
-                    <StandingsTable standings={standings} />
-                </div>
+                {standings && standings.length > 0 ? (
+                    <div className="glass-card overflow-hidden rounded-2xl border border-white/5">
+                        <StandingsTable standings={standings} />
+                    </div>
+                ) : (
+                    <div className="p-12 text-center text-gray-500 glass-panel rounded-2xl">
+                        <p>No standings data available. (Debug: {standings ? 'Empty Array' : 'Undefined'})</p>
+                    </div>
+                )}
             </section>
         </div>
     );
