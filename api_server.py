@@ -255,6 +255,21 @@ def get_team_metrics():
             'l10': team_data.get('l10Wins', 0), # Fallback if not in data
             'streak': team_data.get('streakCode', '') + str(team_data.get('streakCount', ''))
         }
+
+        # Add team color
+        # Standard NHL team colors
+        team_colors = {
+            'ANA': '#F47A38', 'ARI': '#8C2633', 'BOS': '#FFB81C', 'BUF': '#002654',
+            'CGY': '#C8102E', 'CAR': '#CC0000', 'CHI': '#CF0A2C', 'COL': '#6F263D',
+            'CBJ': '#002654', 'DAL': '#006847', 'DET': '#CE1126', 'EDM': '#FF4C00',
+            'FLA': '#B9975B', 'LAK': '#111111', 'MIN': '#154734', 'MTL': '#AF1E2D',
+            'NSH': '#FFB81C', 'NJD': '#CE1126', 'NYI': '#00539B', 'NYR': '#0038A8',
+            'OTT': '#C52032', 'PHI': '#F74902', 'PIT': '#FCB514', 'SJS': '#006D75',
+            'SEA': '#99D9D9', 'STL': '#002F87', 'TBL': '#002868', 'TOR': '#00205B',
+            'UTA': '#71AFE5', 'VAN': '#00205B', 'VGK': '#B4975A', 'WSH': '#041E42',
+            'WPG': '#041E42'
+        }
+        metrics[team_abbrev]['color'] = team_colors.get(team_abbrev.upper(), '#888888')
     
     # Cache the results
     _team_metrics_cache = metrics
