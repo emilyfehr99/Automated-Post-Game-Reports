@@ -127,16 +127,16 @@ const GameCard = ({ game, prediction, awayMetrics, homeMetrics }) => {
                     {showProb && !isLive && !isFinal && (
                         <div className="mt-auto">
                             <div className="flex justify-between text-xs font-mono mb-2 px-1">
-                                <span className="text-accent-cyan font-bold" style={{ color: awayMetrics?.color }}>{awayProb}%</span>
+                                <span className="text-accent-cyan font-bold" style={{ color: awayColor }}>{awayProb}%</span>
                                 <span className="text-gray-500">WIN PROBABILITY</span>
-                                <span className="text-accent-magenta font-bold" style={{ color: homeMetrics?.color }}>{homeProb}%</span>
+                                <span className="text-accent-magenta font-bold" style={{ color: homeColor }}>{homeProb}%</span>
                             </div>
                             <div className="h-2 bg-white/5 rounded-full overflow-hidden flex">
                                 <div
                                     className="h-full relative"
                                     style={{
                                         width: `${awayProb}%`,
-                                        background: awayMetrics?.color || 'linear-gradient(to right, #00D4FF, #3B82F6)'
+                                        background: awayGradient || awayColor
                                     }}
                                 >
                                     <div className="absolute inset-0 bg-white/20 animate-pulse" />
@@ -145,7 +145,7 @@ const GameCard = ({ game, prediction, awayMetrics, homeMetrics }) => {
                                     className="h-full relative"
                                     style={{
                                         width: `${homeProb}%`,
-                                        background: homeMetrics?.color || 'linear-gradient(to left, #FF00FF, #A855F7)'
+                                        background: homeGradient || homeColor
                                     }}
                                 >
                                     <div className="absolute inset-0 bg-white/20 animate-pulse" />
@@ -158,23 +158,23 @@ const GameCard = ({ game, prediction, awayMetrics, homeMetrics }) => {
                     {showProb && (isFinal || isLive) && (
                         <div className="mt-auto">
                             <div className="flex justify-between text-xs font-mono mb-2 px-1">
-                                <span className="text-accent-cyan font-bold" style={{ color: awayMetrics?.color }}>{awayProb}%</span>
+                                <span className="text-accent-cyan font-bold" style={{ color: awayColor }}>{awayProb}%</span>
                                 <span className="text-gray-400">{isLive ? 'LIVE WIN PROBABILITY' : 'LIKELIHOOD OF WINNING'}</span>
-                                <span className="text-accent-magenta font-bold" style={{ color: homeMetrics?.color }}>{homeProb}%</span>
+                                <span className="text-accent-magenta font-bold" style={{ color: homeColor }}>{homeProb}%</span>
                             </div>
                             <div className="h-2 bg-white/5 rounded-full overflow-hidden flex">
                                 <div
                                     className="h-full transition-all duration-500"
                                     style={{
                                         width: `${awayProb}%`,
-                                        background: awayMetrics?.color || 'linear-gradient(to right, #00D4FF, #3B82F6)'
+                                        background: awayGradient || awayColor
                                     }}
                                 />
                                 <div
                                     className="h-full transition-all duration-500"
                                     style={{
                                         width: `${homeProb}%`,
-                                        background: homeMetrics?.color || 'linear-gradient(to left, #FF00FF, #A855F7)'
+                                        background: homeGradient || homeColor
                                     }}
                                 />
                             </div>
