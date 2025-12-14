@@ -811,6 +811,54 @@ def proxy_nhl_standings(date):
     except Exception as e:
         return jsonify({'error': str(e)}), 500
 
+@app.route('/api/nhl/player/<player_id>/landing', methods=['GET'])
+def proxy_nhl_player_landing(player_id):
+    """Proxy NHL player landing API to avoid CORS"""
+    try:
+        url = f"https://api-web.nhle.com/v1/player/{player_id}/landing"
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            return jsonify(response.json())
+        return jsonify({'error': 'Failed to fetch player details'}), response.status_code
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/nhl/gamecenter/<game_id>/boxscore', methods=['GET'])
+def proxy_nhl_boxscore(game_id):
+    """Proxy NHL boxscore API to avoid CORS"""
+    try:
+        url = f"https://api-web.nhle.com/v1/gamecenter/{game_id}/boxscore"
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            return jsonify(response.json())
+        return jsonify({'error': 'Failed to fetch boxscore'}), response.status_code
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/nhl/gamecenter/<game_id>/play-by-play', methods=['GET'])
+def proxy_nhl_pbp(game_id):
+    """Proxy NHL play-by-play API to avoid CORS"""
+    try:
+        url = f"https://api-web.nhle.com/v1/gamecenter/{game_id}/play-by-play"
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            return jsonify(response.json())
+        return jsonify({'error': 'Failed to fetch play-by-play'}), response.status_code
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
+@app.route('/api/nhl/standings/<date>', methods=['GET'])
+def proxy_nhl_standings(date):
+    """Proxy NHL standings API to avoid CORS"""
+    try:
+        url = f"https://api-web.nhle.com/v1/standings/{date}"
+        response = requests.get(url, timeout=10)
+        if response.status_code == 200:
+            return jsonify(response.json())
+        return jsonify({'error': 'Failed to fetch standings'}), response.status_code
+    except Exception as e:
+        return jsonify({'error': str(e)}), 500
+
 @app.route('/api/nhl/gamecenter/<game_id>/<endpoint>', methods=['GET'])
 def proxy_nhl_gamecenter(game_id, endpoint):
     """Proxy NHL game center API to avoid CORS"""
