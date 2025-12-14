@@ -18,12 +18,7 @@ const GameCard = ({ game, prediction, awayMetrics, homeMetrics }) => {
 
     const showProb = prediction && (awayProbRaw > 0 || homeProbRaw > 0);
 
-    console.log(`GameCard for ${game?.awayTeam?.abbrev} vs ${game?.homeTeam?.abbrev}:`, {
-        prediction,
-        showProb,
-        awayProb,
-        homeProb
-    });
+
 
     return (
         <div className="block h-full relative group">
