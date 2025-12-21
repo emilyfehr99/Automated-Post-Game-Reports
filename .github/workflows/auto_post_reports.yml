@@ -31,78 +31,24 @@ jobs:
       with:
         fetch-depth: 0  # Fetch all history to ensure we have the latest commits
     
-    - name: Check if any games are close to finishing
-      id: game_check
-      run: |
-        # Fetch today's schedule (and yesterday's if it's early morning)
-        export TZ='America/Chicago'
-        today=$(date +%Y-%m-%d)
-        current_hour=$(date +%H)
-        
-        echo "🔍 Checking if any games are close to finishing..."
-        
-        # If it's early morning (12am-6am CT), also check yesterday's games
-        # This catches late games (West Coast, OT) that finish after midnight
-        dates_to_check="$today"
-        if [ "$current_hour" -ge 0 ] && [ "$current_hour" -lt 6 ]; then
-          yesterday=$(date -d "yesterday" +%Y-%m-%d 2>/dev/null || date -v-1d +%Y-%m-%d)
-          dates_to_check="$yesterday $today"
-          echo "   📅 Early morning detected - checking yesterday ($yesterday) and today ($today)"
-        fi
-        
-        total_in_progress=0
-        total_completed=0
-        
-        for check_date in $dates_to_check; do
-          # Get schedule from NHL API
-          response=$(curl -s "https://api-web.nhle.com/v1/schedule/${check_date}")
-          
-          # Check if any games are LIVE or recently finished
-          games_in_progress=$(echo "$response" | grep -o '"gameState":"LIVE"' | wc -l)
-          games_final=$(echo "$response" | grep -o '"gameState":"FINAL"' | wc -l)
-          games_off=$(echo "$response" | grep -o '"gameState":"OFF"' | wc -l)
-          
-          completed_games=$((games_final + games_off))
-          
-          total_in_progress=$((total_in_progress + games_in_progress))
-          total_completed=$((total_completed + completed_games))
-          
-          if [ "$games_in_progress" -gt 0 ] || [ "$completed_games" -gt 0 ]; then
-            echo "   📊 $check_date: $games_in_progress live, $completed_games completed"
-          fi
-        done
-        
-        if [ "$total_in_progress" -gt 0 ]; then
-          echo "✅ PROCEED: $total_in_progress game(s) currently in progress"
-          echo "should_run=true" >> $GITHUB_OUTPUT
-        elif [ "$total_completed" -gt 0 ]; then
-          echo "✅ PROCEED: $total_completed finished game(s) to process"
-          echo "should_run=true" >> $GITHUB_OUTPUT
-        else
-          echo "⏭️  SKIP: No games in progress or finished"
-          echo "should_run=false" >> $GITHUB_OUTPUT
-        fi
+
     
     - name: Set up Python
-      if: steps.game_check.outputs.should_run == 'true'
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
     
     - name: Install system dependencies
-      if: steps.game_check.outputs.should_run == 'true'
       run: |
         sudo apt-get update
         sudo apt-get install -y poppler-utils
     
     - name: Install dependencies
-      if: steps.game_check.outputs.should_run == 'true'
       run: |
         python -m pip install --upgrade pip
         pip install -r requirements.txt
     
     - name: Pull latest changes (ensure we have latest processed_games.json)
-      if: steps.game_check.outputs.should_run == 'true'
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "GitHub Actions Bot"
@@ -121,7 +67,6 @@ jobs:
         fi
     
     - name: Check for completed games and post
-      if: steps.game_check.outputs.should_run == 'true'
       env:
         TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
         TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
@@ -132,7 +77,6 @@ jobs:
         python3 github_actions_runner.py
     
     - name: Commit processed games, team stats, and model learning data
-      if: steps.game_check.outputs.should_run == 'true'
       run: |
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "GitHub Actions Bot"
