@@ -10,6 +10,7 @@ from pathlib import Path
 import pytz
 from nhl_api_client import NHLAPIClient
 from twitter_poster import TwitterPoster
+from discord_poster import DiscordPoster
 from twitter_config import TEAM_HASHTAGS, TWITTER_API_KEY
 from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
 from correlation_model import CorrelationModel
@@ -28,6 +29,7 @@ class GitHubActionsRunner:
         self.learning_model = ImprovedSelfLearningModelV2()
         self.corr_model = CorrelationModel()
         self.report_generator = PostGameReportGenerator()
+        self.discord_poster = DiscordPoster() # Initialize Discord poster
         self.team_stats_file = Path('season_2025_2026_team_stats.json')
         
     def load_processed_games(self):
@@ -315,6 +317,9 @@ class GitHubActionsRunner:
             print(f"✅ Posted to Twitter: {tweet_text}")
             print(f"   🔗 https://twitter.com/user/status/{tweet_id}")
             
+            # Post to Discord
+            self.post_to_discord(away_team, home_team, image_path)
+            
             # Clean up image file after successful post
             try:
                 Path(image_path).unlink()
@@ -324,10 +329,33 @@ class GitHubActionsRunner:
             
             return True
             
+            return True
+            
         except Exception as e:
             print(f"❌ Error posting to Twitter: {e}")
             import traceback
             traceback.print_exc()
+            return False
+            
+    def post_to_discord(self, away_team, home_team, image_path):
+        """Post report to Discord"""
+        try:
+            print(f"\\n👾 Posting {away_team} @ {home_team} to Discord...")
+            
+            # Create message text
+            message = f"**{away_team} vs {home_team}**\\nPost-Game Analysis Report 📊"
+            
+            # Send
+            success = self.discord_poster.send_report(message, image_path)
+            
+            if success:
+                print(f"✅ Posted to Discord: {away_team} vs {home_team}")
+            else:
+                print(f"⚠️  Failed to post to Discord")
+                
+            return success
+        except Exception as e:
+            print(f"❌ Error posting to Discord: {e}")
             return False
     
     def learn_from_game(self, game_data, game_id, away_team, home_team):
@@ -588,6 +616,11 @@ class GitHubActionsRunner:
                     game_info['away'],
                     game_info['home']
                 )
+
+                # Also post to Discord (don't fail run if this fails)
+                # Note: We need the image path for this, but generate_and_post_game cleans it up.
+                # Refactoring note: Ideally generate_and_post_game should return the image path or accept a callback.
+                # For now, let's modify generate_and_post_game to call Discord internally BEFORE cleanup.
                 
                 if success:
                     # Only mark as processed if successfully posted
