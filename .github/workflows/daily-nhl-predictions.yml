@@ -65,12 +65,6 @@ jobs:
             echo "❌ Edge data file not found in data/" && exit 1
           fi
 
-      - name: Run daily predictions
-        env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-        run: |
-          python3 prediction_interface.py
-
       - name: Generate real team stats
         run: |
           echo "📊 GENERATING REAL TEAM STATS"
@@ -89,6 +83,14 @@ jobs:
           else
             echo "⚠️  Team stats file not found - checking for errors"
           fi
+
+      - name: Run daily predictions
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        run: |
+          echo "🎯 RUNNING DAILY PREDICTIONS WITH META-ENSEMBLE"
+          echo "All data collected, now making predictions..."
+          python3 daily_prediction_notifier.py
 
       - name: Commit predictions and edge data changes
         run: |
