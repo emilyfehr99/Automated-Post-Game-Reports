@@ -83,13 +83,19 @@ class DailyPredictionNotifier:
             winner = pred['predicted_winner']
             confidence = pred['confidence']
             
-            # Determine score prediction (simplified)
-            if winner == away:
-                away_score = 3
-                home_score = 2
-            else:
-                away_score = 2
-                home_score = 3
+            # Get actual score prediction from base model
+            try:
+                base_pred = self.predictor.learning_model.predict_game(away, home)
+                away_score = round(base_pred.get('away_score', 3))
+                home_score = round(base_pred.get('home_score', 3))
+            except:
+                # Fallback to simple prediction based on probabilities
+                if winner == away:
+                    away_score = 3
+                    home_score = 2
+                else:
+                    away_score = 2
+                    home_score = 3
             
             summary += f"**Game {i}**: {away} @ {home}\n"
             summary += f"  🏆 Prediction: **{winner} wins** ({away_score}-{home_score})\n"
