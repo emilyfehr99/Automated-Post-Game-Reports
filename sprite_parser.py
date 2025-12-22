@@ -8,8 +8,16 @@ import json
 
 def get_sprite_data(game_id, event_id):
     """Fetch sprite tracking data for a specific event"""
-    
-    sprite_url = f'https://wsr.nhle.com/sprites/20252026/{game_id}/ev{event_id}.json'
+    # Extract season from game_id (first 4 digits)
+    # e.g., 2024020088 -> 20242025
+    try:
+        year = str(game_id)[:4]
+        next_year = str(int(year) + 1)
+        season = f"{year}{next_year}"
+    except:
+        season = "20252026"
+
+    sprite_url = f'https://wsr.nhle.com/sprites/{season}/{game_id}/ev{event_id}.json'
     
     headers = {
         'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',

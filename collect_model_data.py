@@ -12,6 +12,8 @@ from typing import Dict, List, Optional
 from nhl_api_client import NHLAPIClient
 from pdf_report_generator import PostGameReportGenerator
 from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
+from experimental_metrics_analyzer import ExperimentalMetricsAnalyzer
+from sprite_goal_analyzer import SpriteGoalAnalyzer
 import numpy as np
 
 class ModelDataCollector:
@@ -108,6 +110,70 @@ class ModelDataCollector:
             away_period_stats = self.report_generator._calculate_real_period_stats(game_data, away_team_id, 'away')
             home_period_stats = self.report_generator._calculate_real_period_stats(game_data, home_team_id, 'home')
             
+            # High-signal experimental metrics
+            away_rebounds, home_rebounds = 0, 0
+            away_rush_shots, home_rush_shots = 0, 0
+            away_cycle_shots, home_cycle_shots = 0, 0
+            away_fc_turnovers, home_fc_turnovers = 0, 0
+            away_ppg, home_ppg = 0.0, 0.0
+            
+            try:
+                pbp = game_data.get('play_by_play', {})
+                exp_analyzer = ExperimentalMetricsAnalyzer(pbp)
+                exp_results = exp_analyzer.calculate_all_experimental_metrics()
+                
+                away_exp = exp_results.get(away_team_id, {})
+                home_exp = exp_results.get(home_team_id, {})
+                
+                away_rebounds = away_exp.get('rebound_count', 0)
+                home_rebounds = home_exp.get('rebound_count', 0)
+                away_rush_shots = away_exp.get('rush_shots', 0)
+                home_rush_shots = home_exp.get('rush_shots', 0)
+                away_cycle_shots = away_exp.get('cycle_shots', 0)
+                home_cycle_shots = home_exp.get('cycle_shots', 0)
+                away_fc_turnovers = away_exp.get('forecheck_turnovers', 0)
+                home_fc_turnovers = home_exp.get('forecheck_turnovers', 0)
+                away_ppg = away_exp.get('passes_per_goal', 0.0)
+                home_ppg = home_exp.get('passes_per_goal', 0.0)
+            except Exception as e:
+                print(f"Error extracting experimental metrics for game {game_id}: {e}")
+
+            # Sprite Goal analysis
+            away_traffic, home_traffic = 0.0, 0.0
+            away_avg_dist, home_avg_dist = 0.0, 0.0
+            away_carry, home_carry = 0.0, 0.0
+            away_pass, home_pass = 0.0, 0.0
+            away_ew, home_ew = 0.0, 0.0
+            away_ns, home_ns = 0.0, 0.0
+            
+            try:
+                sprite_analyzer = SpriteGoalAnalyzer(game_data)
+                sprite_results = sprite_analyzer.analyze_goals()
+                
+                away_sprite = sprite_results.get('away', {})
+                home_sprite = sprite_results.get('home', {})
+                
+                away_traffic = away_sprite.get('net_front_traffic_pct', 0.0)
+                home_traffic = home_sprite.get('net_front_traffic_pct', 0.0)
+                away_avg_dist = away_sprite.get('avg_goal_distance', 0.0)
+                home_avg_dist = home_sprite.get('avg_goal_distance', 0.0)
+                
+                away_entries = away_sprite.get('entry_type_share', {})
+                home_entries = home_sprite.get('entry_type_share', {})
+                away_carry = away_entries.get('carry', 0.0)
+                home_carry = home_entries.get('carry', 0.0)
+                away_pass = away_entries.get('pass', 0.0)
+                home_pass = home_entries.get('pass', 0.0)
+                
+                away_mv = away_sprite.get('movement_metrics', {})
+                home_mv = home_sprite.get('movement_metrics', {})
+                away_ew = away_mv.get('east_west', 0.0)
+                home_ew = home_mv.get('east_west', 0.0)
+                away_ns = away_mv.get('north_south', 0.0)
+                home_ns = home_mv.get('north_south', 0.0)
+            except Exception as e:
+                print(f"Error extracting sprite metrics for game {game_id}: {e}")
+
             # Compile metrics
             metrics_used = {
                 "away_xg": away_xg, "home_xg": home_xg,
@@ -130,7 +196,20 @@ class ModelDataCollector:
                 "away_takeaways": np.mean(away_period_stats.get('tk', [0])),
                 "home_takeaways": np.mean(home_period_stats.get('tk', [0])),
                 "away_penalty_minutes": np.mean(away_period_stats.get('pim', [0])),
-                "home_penalty_minutes": np.mean(home_period_stats.get('pim', [0]))
+                "home_penalty_minutes": np.mean(home_period_stats.get('pim', [0])),
+                
+                # New High-signal Metrics
+                "away_rebounds": away_rebounds, "home_rebounds": home_rebounds,
+                "away_rush_shots": away_rush_shots, "home_rush_shots": home_rush_shots,
+                "away_cycle_shots": away_cycle_shots, "home_cycle_shots": home_cycle_shots,
+                "away_forecheck_turnovers": away_fc_turnovers, "home_forecheck_turnovers": home_fc_turnovers,
+                "away_net_front_traffic_pct": away_traffic, "home_net_front_traffic_pct": home_traffic,
+                "away_passes_per_goal": away_ppg, "home_passes_per_goal": home_ppg,
+                "away_avg_goal_distance": away_avg_dist, "home_avg_goal_distance": home_avg_dist,
+                "away_east_west_play": away_ew, "home_east_west_play": home_ew,
+                "away_north_south_play": away_ns, "home_north_south_play": home_ns,
+                "away_zone_entry_carry_pct": away_carry, "home_zone_entry_carry_pct": home_carry,
+                "away_zone_entry_pass_pct": away_pass, "home_zone_entry_pass_pct": home_pass
             }
             
             # Determine winner

@@ -17,22 +17,28 @@ logging.basicConfig(level=logging.INFO)
 logger = logging.getLogger(__name__)
 
 DEFAULT_WEIGHT_PRIORS = {
-    "xg_weight": 0.40,
-    "hdc_weight": 0.20,
-    "corsi_weight": 0.10,
+    "xg_weight": 0.25,
+    "hdc_weight": 0.15,
+    "corsi_weight": 0.08,
     "power_play_weight": 0.08,
-    "faceoff_weight": 0.06,
-    "shots_weight": 0.05,
-    "hits_weight": 0.03,
-    "blocked_shots_weight": 0.03,
-    "takeaways_weight": 0.02,
+    "faceoff_weight": 0.04,
+    "shots_weight": 0.04,
+    "hits_weight": 0.02,
+    "blocked_shots_weight": 0.02,
+    "takeaways_weight": 0.01,
     "penalty_minutes_weight": 0.01,
-    "recent_form_weight": 0.02,
+    "recent_form_weight": 0.05,
     "head_to_head_weight": 0.00,
     "rest_days_weight": 0.00,
     "goalie_performance_weight": 0.00,
-    "game_score_weight": 0.15,
+    "game_score_weight": 0.10,
     "sos_weight": 0.00,
+    # High-signal advanced metrics
+    "rebounds_weight": 0.05,
+    "rush_shots_weight": 0.05,
+    "traffic_weight": 0.05,
+    # Zone and transition metrics
+    "zone_entry_weight": 0.05,
 }
 
 DEFAULT_SCORE_WEIGHTS = {
@@ -385,8 +391,10 @@ class ImprovedSelfLearningModelV2:
             return prob
         return self._apply_calibration_points(prob, points)
         
-    def _ensure_team_stats_compatibility(self):
+    def _ensure_team_stats_compatibility(self, stats_to_check: Optional[Dict] = None):
         """Ensure all loaded team stats have required fields for backward compatibility"""
+        target_stats = stats_to_check if stats_to_check is not None else self.team_stats
+        
         required_fields = [
             "opponents", "games", "goals", "goals_for", "goals_against",
             "shots", "shots_for", "shots_against",
@@ -407,10 +415,14 @@ class ImprovedSelfLearningModelV2:
             "period_fo_pct", "period_blocks", "period_giveaways",
             "period_takeaways", "period_gs", "period_xg",
             "period_nzt", "period_nztsa", "period_ozs",
-            "period_nzs", "period_dzs", "period_fc", "period_rush"
+            "period_nzs", "period_dzs", "period_fc", "period_rush",
+            "rebounds", "rush_shots", "cycle_shots", "forecheck_turnovers",
+            "net_front_traffic_pct", "passes_per_goal", "avg_goal_distance",
+            "east_west_play", "north_south_play",
+            "zone_entry_carry_pct", "zone_entry_pass_pct"
         ]
         
-        for team_abbrev, venues in self.team_stats.items():
+        for team_abbrev, venues in target_stats.items():
             if not isinstance(venues, dict):
                 continue
             for venue in ["home", "away"]:
@@ -445,12 +457,38 @@ class ImprovedSelfLearningModelV2:
                 if "backtest_reports" not in data:
                     data["backtest_reports"] = []
             
+                # Initialize weights if missing (migration)
+                if "model_weights" not in data:
+                    data["model_weights"] = DEFAULT_WEIGHT_PRIORS.copy()
+                else:
+                    # Merge missing weights (for new metrics)
+                    for key, value in DEFAULT_WEIGHT_PRIORS.items():
+                        if key not in data["model_weights"]:
+                            data["model_weights"][key] = value
+                
                 # Initialize score model weights if missing
                 if "score_model_weights" not in data:
                     data["score_model_weights"] = DEFAULT_SCORE_WEIGHTS.copy()
+                else:
+                    # Merge missing score weights
+                    for key, value in DEFAULT_SCORE_WEIGHTS.items():
+                        if key not in data["score_model_weights"]:
+                            data["score_model_weights"][key] = value
             
+                if "weight_momentum" not in data:
+                    data["weight_momentum"] = {}
+                else:
+                    # Ensure momentum keys exist for new weights
+                    for key in DEFAULT_WEIGHT_PRIORS:
+                        if key not in data["weight_momentum"]:
+                            data["weight_momentum"][key] = 0.0
+
                 if "score_weight_momentum" not in data:
                     data["score_weight_momentum"] = {}
+                else:
+                    for key in DEFAULT_SCORE_WEIGHTS:
+                        if key not in data["score_weight_momentum"]:
+                            data["score_weight_momentum"][key] = 0.0
             
                 return data
             except Exception as e:
@@ -516,6 +554,11 @@ class ImprovedSelfLearningModelV2:
                 "lateral": [], "longitudinal": [],
                 "nzt": [], "nztsa": [], "ozs": [], "nzs": [], "dzs": [],
                 "fc": [], "rush": [],
+                # High-signal Advanced Metrics
+                "rebounds": [], "rush_shots": [], "cycle_shots": [], "forecheck_turnovers": [],
+                "net_front_traffic_pct": [], "passes_per_goal": [], "avg_goal_distance": [],
+                "east_west_play": [], "north_south_play": [],
+                "zone_entry_carry_pct": [], "zone_entry_pass_pct": [],
                 # Clutch indicators
                 "clutch_score": [],
                 # Goals and shots (for/against) - explicit tracking
@@ -542,45 +585,13 @@ class ImprovedSelfLearningModelV2:
                             # Merge file data into initialized stats
                             for team, venues in file_stats.items():
                                 if team in stats:
-                                    # Ensure all new fields exist (migrate old data structure)
+                                    # Ensure all new fields exist using the centralized helper
+                                    self._ensure_team_stats_compatibility(stats_to_check={team: venues})
+                                    
                                     for venue in ['home', 'away']:
                                         if venue in venues:
-                                            # Add all missing fields from create_venue_data
-                                            new_fields = {
-                                                'lateral': [], 'longitudinal': [],
-                                                'nzt': [], 'nztsa': [], 'ozs': [], 'nzs': [], 'dzs': [],
-                                                'fc': [], 'rush': [],
-                                                'clutch_score': [],
-                                                'goals_for': [], 'goals_against': [],
-                                                'shots_for': [], 'shots_against': [],
-                                                'xG_for': [], 'xG_against': [],
-                                                'hdc_for': [], 'hdc_against': [],
-                                                'pp_goals': [], 'pp_attempts': [],
-                                                'pp_pct': [],  # Team report naming
-                                                'faceoff_wins': [], 'faceoff_total': [],
-                                                'fo_pct': [],  # Team report naming
-                                                'blocks': [], 'pim': [],  # Team report naming
-                                                'third_period_goals': [],
-                                                'one_goal_game': [],
-                                                'scored_first': [],
-                                                'opponent_scored_first': [],
-                                                'period_shots': [], 'period_corsi_pct': [],
-                                                'period_pp_goals': [], 'period_pp_attempts': [],
-                                                'period_pim': [], 'period_hits': [],
-                                                'period_fo_pct': [], 'period_blocks': [],
-                                                'period_giveaways': [], 'period_takeaways': [],
-                                                'period_gs': [], 'period_xg': [],
-                                                'period_nzt': [], 'period_nztsa': [],
-                                                'period_ozs': [], 'period_nzs': [],
-                                                'period_dzs': [], 'period_fc': [],
-                                                'period_rush': []
-                                            }
-                                            for key, default_value in new_fields.items():
-                                                if key not in venues[venue]:
-                                                    venues[venue][key] = default_value
-                                            # Migrate existing data to new structure
+                                            # Populate goals_for/goals_against from goals/opp_goals
                                             if 'goals' in venues[venue] and not venues[venue].get('goals_for'):
-                                                # Populate goals_for/goals_against from goals/opp_goals
                                                 goals = venues[venue].get('goals', [])
                                                 opp_goals = venues[venue].get('opp_goals', [])
                                                 venues[venue]['goals_for'] = goals.copy()
@@ -959,6 +970,12 @@ class ImprovedSelfLearningModelV2:
             giveaways_avg = safe_mean(venue_data.get('giveaways', []), 0.0)
             penalty_minutes_avg = safe_mean(venue_data.get('penalty_minutes', []), 0.0)
             
+            # New Advanced Metrics
+            rebounds_avg = safe_mean(venue_data.get('rebounds', []), 0.0)
+            rush_shots_avg = safe_mean(venue_data.get('rush_shots', []), 0.0)
+            traffic_avg = safe_mean(venue_data.get('net_front_traffic_pct', []), 0.0)
+            zone_entry_carry_avg = safe_mean(venue_data.get('zone_entry_carry_pct', []), 50.0)
+            
             games_played = len(venue_data.get('games', []))
 
             if games_played:
@@ -992,7 +1009,12 @@ class ImprovedSelfLearningModelV2:
                     'rest_days_advantage': rest_adv,
                     'goalie_performance': goalie_perf,
                     'games_played': games_played,
-                    'confidence': self._calculate_confidence(games_played)
+                    'confidence': self._calculate_confidence(games_played),
+                    # Advanced metrics for prediction
+                    'rebounds_avg': rebounds_avg,
+                    'rush_shots_avg': rush_shots_avg,
+                    'traffic_avg': traffic_avg,
+                    'zone_entry_carry_avg': zone_entry_carry_avg
                 }
 
         # Fallback to historical data if current season not available
@@ -1439,16 +1461,35 @@ class ImprovedSelfLearningModelV2:
             return 0.5
 
     def _goalie_performance_for_game(self, team: str, venue: str, game_date: Optional[str], 
-                                      confirmed_goalie: Optional[str] = None) -> float:
-        """Get goalie performance using confirmed or predicted starter when enabled and available.
+                                      confirmed_goalie: Optional[str] = None, opponent: Optional[str] = None) -> float:
+        """Get goalie performance using advanced metrics from goalie tracker.
         
         Args:
             team: Team abbreviation
             venue: 'home' or 'away'
             game_date: Game date string
             confirmed_goalie: Confirmed goalie name (from lineup service), if available
+            opponent: Opponent team abbreviation for matchup history
         """
         try:
+            # Use advanced goalie tracker if confirmed goalie and opponent available
+            if confirmed_goalie and opponent:
+                from goalie_performance_tracker import GoaliePerformanceTracker
+                tracker = GoaliePerformanceTracker()
+                
+                analysis = tracker.get_comprehensive_goalie_analysis(
+                    confirmed_goalie, team, opponent, game_date
+                )
+                
+                # Convert goalie impact to performance score (0.35-0.75 range)
+                # Impact ranges from ~-0.3 (bad) to +0.3 (good)
+                base_performance = 0.55  # League average
+                impact_adjustment = analysis['overall_impact'] * 0.15  # Scale to ±0.15
+                
+                performance = base_performance + impact_adjustment
+                return float(max(0.35, min(0.75, performance)))
+            
+            # Fall back to original method
             if self.feature_flags.get('use_per_goalie_gsax', True) and game_date:
                 team_key = team.upper()
                 # Use confirmed goalie if available, otherwise predict
@@ -1476,7 +1517,8 @@ class ImprovedSelfLearningModelV2:
                         adj = (0.40 / 6.0) * shrink
                         perf = 0.55 + max(-3.0, min(3.0, gsax_avg)) * adj
                         return float(max(0.35, min(0.75, perf)))
-        except Exception:
+        except Exception as e:
+            logger.debug(f"Advanced goalie tracking failed: {e}, falling back to basic method")
             pass
         return self._calculate_goalie_performance(team, venue)
 
@@ -1748,7 +1790,12 @@ class ImprovedSelfLearningModelV2:
             away_perf['head_to_head'] * weights['head_to_head_weight'] +
             away_rest * weights['rest_days_weight'] +
             away_goalie_perf * weights['goalie_performance_weight'] +
-            away_sos * weights.get('sos_weight', 0.0)
+            away_sos * weights.get('sos_weight', 0.0) +
+            # New Advanced Metrics
+            away_perf.get('rebounds_avg', 0.0) * weights.get('rebounds_weight', 0.0) +
+            away_perf.get('rush_shots_avg', 0.0) * weights.get('rush_shots_weight', 0.0) +
+            away_perf.get('traffic_avg', 0.0) * weights.get('traffic_weight', 0.0) +
+            away_perf.get('zone_entry_carry_avg', 50.0) * weights.get('zone_entry_weight', 0.0)
         )
         
         home_score = (
@@ -1766,7 +1813,12 @@ class ImprovedSelfLearningModelV2:
             home_perf['head_to_head'] * weights['head_to_head_weight'] +
             home_rest * weights['rest_days_weight'] +
             home_goalie_perf * weights['goalie_performance_weight'] +
-            home_sos * weights.get('sos_weight', 0.0)
+            home_sos * weights.get('sos_weight', 0.0) +
+            # New Advanced Metrics
+            home_perf.get('rebounds_avg', 0.0) * weights.get('rebounds_weight', 0.0) +
+            home_perf.get('rush_shots_avg', 0.0) * weights.get('rush_shots_weight', 0.0) +
+            home_perf.get('traffic_avg', 0.0) * weights.get('traffic_weight', 0.0) +
+            home_perf.get('zone_entry_carry_avg', 50.0) * weights.get('zone_entry_weight', 0.0)
         )
         
         # Add home ice advantage (small but consistent)
@@ -1810,16 +1862,169 @@ class ImprovedSelfLearningModelV2:
         # Calculate confidence in prediction (keep as decimal 0-1)
         prediction_confidence = avg_confidence
         
-        return {
-            'away_prob': away_prob_decimal,  # Return as decimal for blending
-            'home_prob': home_prob_decimal,   # Return as decimal for blending
+        result = {
+            'away_prob': away_prob,  # Keep as percentage
+            'home_prob': home_prob,  # Keep as percentage
             'away_score': away_score,
             'home_score': home_score,
             'away_perf': away_perf,
             'home_perf': home_perf,
             'prediction_confidence': prediction_confidence,
-            'uncertainty': uncertainty_noise
+            'uncertainty': uncertainty_noise,
+            'model_away_prob': away_prob,  # Store original model prediction
+            'model_home_prob': home_prob
         }
+        
+        # SITUATIONAL CONTEXT: Apply playoff race, rivalry, and travel adjustments
+        try:
+            from standings_tracker import StandingsTracker
+            tracker = StandingsTracker()
+            
+            # Playoff desperation
+            away_desperation = tracker.calculate_desperation_index(away_team, game_date)
+            home_desperation = tracker.calculate_desperation_index(home_team, game_date)
+            
+            # Rivalry intensity
+            rivalry_bonus = tracker.get_rivalry_intensity(away_team, home_team)
+            
+            # Calculate situational adjustment
+            # Desperation difference (fighting team gets boost)
+            desperation_diff = away_desperation - home_desperation
+            
+            # Rivalry adds intensity to both teams (slight home advantage)
+            rivalry_adjustment = rivalry_bonus * 0.3  # Home team gets 30% of rivalry bonus
+            
+            # Total situational adjustment (in probability points)
+            situational_adjustment = (desperation_diff * 5.0) + rivalry_adjustment
+            
+            # Apply adjustment
+            away_prob_adjusted = away_prob + situational_adjustment
+            home_prob_adjusted = home_prob - situational_adjustment
+            
+            # Normalize
+            total = away_prob_adjusted + home_prob_adjusted
+            if total > 0:
+                away_prob_adjusted = (away_prob_adjusted / total) * 100
+                home_prob_adjusted = (home_prob_adjusted / total) * 100
+            
+            # Store situational data
+            result['away_desperation'] = away_desperation
+            result['home_desperation'] = home_desperation
+            result['rivalry_intensity'] = rivalry_bonus
+            result['situational_adjustment'] = situational_adjustment
+            
+            # Update probabilities
+            result['away_prob'] = away_prob_adjusted
+            result['home_prob'] = home_prob_adjusted
+            
+        except Exception as e:
+            logger.debug(f"Situational context failed: {e}, using base prediction")
+            pass
+        
+        # BETTING ODDS ENSEMBLE: Blend with market consensus if available
+        if game_id:
+            try:
+                from nhl_api_client import NHLAPIClient
+                api = NHLAPIClient()
+                market_probs = api.get_consensus_betting_probability(game_id)
+                
+                if market_probs and market_probs.get('num_books', 0) >= 2:
+                    # Ensemble: 60% our model, 40% market consensus
+                    # Market gets more weight because it includes insider info
+                    model_weight = 0.60
+                    market_weight = 0.40
+                    
+                    ensemble_away = (result['away_prob'] / 100) * model_weight + market_probs['away_prob'] * market_weight
+                    ensemble_home = (result['home_prob'] / 100) * model_weight + market_probs['home_prob'] * market_weight
+                    
+                    # Normalize
+                    total = ensemble_away + ensemble_home
+                    if total > 0:
+                        ensemble_away /= total
+                        ensemble_home /= total
+                    
+                    # Store market data for analysis
+                    result['market_away_prob'] = market_probs['away_prob'] * 100
+                    result['market_home_prob'] = market_probs['home_prob'] * 100
+                    result['num_sportsbooks'] = market_probs['num_books']
+                    result['market_model_disagreement'] = abs(ensemble_away - (result['away_prob'] / 100))
+                    
+                    # Update probabilities with ensemble
+                    result['away_prob'] = ensemble_away * 100
+                    result['home_prob'] = ensemble_home * 100
+                    
+                    # Boost confidence when market agrees with us
+                    if result['market_model_disagreement'] < 0.05:
+                        result['prediction_confidence'] = min(1.0, prediction_confidence * 1.1)
+                    
+            except Exception as e:
+                # Silently fall back to model-only prediction if odds unavailable
+                logger.debug(f"Could not fetch betting odds for game {game_id}: {e}")
+                pass
+        
+        return result
+    
+    def predict_game_with_lineup(self, away_team: str, home_team: str, 
+                                 away_lineup: Dict = None, home_lineup: Dict = None,
+                                 game_id: str = None, game_date: Optional[str] = None) -> Dict:
+        """Enhanced prediction using actual lineups when available"""
+        
+        # Get base team-level prediction
+        team_prediction = self.predict_game(away_team, home_team, game_id=game_id, game_date=game_date)
+        
+        # If lineups not available, return team prediction
+        if not away_lineup or not home_lineup:
+            team_prediction['prediction_type'] = 'team_average'
+            return team_prediction
+        
+        # Calculate player-level prediction
+        try:
+            from player_impact_model import PlayerImpactModel
+            player_model = PlayerImpactModel()
+            
+            player_prediction = player_model.predict_game_score(
+                away_lineup, home_lineup,
+                away_team, home_team
+            )
+            
+            # Ensemble: 70% team model + 30% player model
+            # Team model is more proven, player model adds lineup-specific insight
+            team_weight = 0.70
+            player_weight = 0.30
+            
+            team_away_prob = team_prediction['away_prob'] / 100
+            team_home_prob = team_prediction['home_prob'] / 100
+            
+            player_away_prob = player_prediction['away_win_prob']
+            player_home_prob = player_prediction['home_win_prob']
+            
+            ensemble_away = (team_away_prob * team_weight) + (player_away_prob * player_weight)
+            ensemble_home = (team_home_prob * team_weight) + (player_home_prob * player_weight)
+            
+            # Normalize
+            total = ensemble_away + ensemble_home
+            if total > 0:
+                ensemble_away /= total
+                ensemble_home /= total
+            
+            # Update prediction with ensemble
+            result = team_prediction.copy()
+            result['away_prob'] = ensemble_away * 100
+            result['home_prob'] = ensemble_home * 100
+            result['prediction_type'] = 'lineup_enhanced'
+            result['player_model_away_prob'] = player_away_prob * 100
+            result['player_model_home_prob'] = player_home_prob * 100
+            result['team_model_away_prob'] = team_away_prob * 100
+            result['team_model_home_prob'] = team_home_prob * 100
+            result['lineup_xgf_away'] = player_prediction['away_xgf']
+            result['lineup_xgf_home'] = player_prediction['home_xgf']
+            
+            return result
+            
+        except Exception as e:
+            logger.warning(f"Player-level prediction failed: {e}, falling back to team model")
+            team_prediction['prediction_type'] = 'team_average_fallback'
+            return team_prediction
     
     def ensemble_predict(self, away_team: str, home_team: str, current_away_score: int = None, 
                         current_home_score: int = None, period: int = 1, game_id: str = None, game_date: Optional[str] = None) -> Dict:
@@ -2304,8 +2509,14 @@ class ImprovedSelfLearningModelV2:
                 "period_ozs": [],  # [[p1_ozs, p2_ozs, p3_ozs], ...]
                 "period_nzs": [],  # [[p1_nzs, p2_nzs, p3_nzs], ...]
                 "period_dzs": [],  # [[p1_dzs, p2_dzs, p3_dzs], ...]
+                "period_dzs": [],  # [[p1_dzs, p2_dzs, p3_dzs], ...]
                 "period_fc": [],  # [[p1_fc, p2_fc, p3_fc], ...]
-                "period_rush": []  # [[p1_rush, p2_rush, p3_rush], ...]
+                "period_rush": [], # [[p1_rush, p2_rush, p3_rush], ...]
+                # High-signal experimental metrics
+                "rebounds": [], "rush_shots": [], "cycle_shots": [], "forecheck_turnovers": [],
+                "net_front_traffic_pct": [], "passes_per_goal": [], "avg_goal_distance": [],
+                "east_west_play": [], "north_south_play": [],
+                "zone_entry_carry_pct": [], "zone_entry_pass_pct": []
             }
         
         if away_team not in self.team_stats:
@@ -2404,6 +2615,19 @@ class ImprovedSelfLearningModelV2:
         # Shot type metrics
         away_data["fc"].append(metrics.get("away_fc", 0))
         away_data["rush"].append(metrics.get("away_rush", 0))
+        
+        # High-signal Advanced Metrics
+        away_data["rebounds"].append(metrics.get("away_rebounds", 0))
+        away_data["rush_shots"].append(metrics.get("away_rush_shots", 0))
+        away_data["cycle_shots"].append(metrics.get("away_cycle_shots", 0))
+        away_data["forecheck_turnovers"].append(metrics.get("away_forecheck_turnovers", 0))
+        away_data["net_front_traffic_pct"].append(metrics.get("away_net_front_traffic_pct", 0.0))
+        away_data["passes_per_goal"].append(metrics.get("away_passes_per_goal", 0.0))
+        away_data["avg_goal_distance"].append(metrics.get("away_avg_goal_distance", 0.0))
+        away_data["east_west_play"].append(metrics.get("away_east_west_play", 0.0))
+        away_data["north_south_play"].append(metrics.get("away_north_south_play", 0.0))
+        away_data["zone_entry_carry_pct"].append(metrics.get("away_zone_entry_carry_pct", 0.0))
+        away_data["zone_entry_pass_pct"].append(metrics.get("away_zone_entry_pass_pct", 0.0))
         
         # Clutch score and detailed clutch metrics
         clutch_score = self._calculate_clutch_score(prediction, "away")
@@ -2521,6 +2745,19 @@ class ImprovedSelfLearningModelV2:
         # Shot type metrics
         home_data["fc"].append(metrics.get("home_fc", 0))
         home_data["rush"].append(metrics.get("home_rush", 0))
+        
+        # High-signal Advanced Metrics
+        home_data["rebounds"].append(metrics.get("home_rebounds", 0))
+        home_data["rush_shots"].append(metrics.get("home_rush_shots", 0))
+        home_data["cycle_shots"].append(metrics.get("home_cycle_shots", 0))
+        home_data["forecheck_turnovers"].append(metrics.get("home_forecheck_turnovers", 0))
+        home_data["net_front_traffic_pct"].append(metrics.get("home_net_front_traffic_pct", 0.0))
+        home_data["passes_per_goal"].append(metrics.get("home_passes_per_goal", 0.0))
+        home_data["avg_goal_distance"].append(metrics.get("home_avg_goal_distance", 0.0))
+        home_data["east_west_play"].append(metrics.get("home_east_west_play", 0.0))
+        home_data["north_south_play"].append(metrics.get("home_north_south_play", 0.0))
+        home_data["zone_entry_carry_pct"].append(metrics.get("home_zone_entry_carry_pct", 0.0))
+        home_data["zone_entry_pass_pct"].append(metrics.get("home_zone_entry_pass_pct", 0.0))
         
         # Clutch score and detailed clutch metrics
         clutch_score = self._calculate_clutch_score(prediction, "home")
@@ -2662,12 +2899,15 @@ class ImprovedSelfLearningModelV2:
                     if len(self.team_stats[team][venue][key]) > 20:
                         self.team_stats[team][venue][key] = self.team_stats[team][venue][key][-20:]
     
-    def run_daily_update(self):
+    def run_daily_update(self, recent_predictions_override: Optional[List[Dict]] = None):
         """Run daily model update with improved learning"""
         logger.info("Running improved daily model update...")
         
-        # Get recent predictions for learning
-        recent_predictions = [p for p in self.model_data["predictions"][-10:] if p.get("actual_winner")]
+        if recent_predictions_override is not None:
+            recent_predictions = recent_predictions_override
+        else:
+            # Get recent predictions for learning
+            recent_predictions = [p for p in self.model_data["predictions"][-10:] if p.get("actual_winner")]
         
         if len(recent_predictions) < self.min_games_for_update:
             logger.info(f"Not enough recent games for update ({len(recent_predictions)} < {self.min_games_for_update})")
@@ -2739,78 +2979,88 @@ class ImprovedSelfLearningModelV2:
         return self.get_model_performance()
     
     def _calculate_weight_updates(self, recent_predictions: List[Dict]) -> Dict:
-        """Calculate deterministic weight updates based on recent performance signals."""
+        """Calculate gradient-based weight updates to minimize log loss."""
         weight_names = list(self.model_data["model_weights"].keys())
         if not recent_predictions:
             return {name: 0.0 for name in weight_names}
         
-        perf = self.model_data.get("model_performance", {})
-        baseline_accuracy = perf.get("accuracy", 0.0)
+        current_weights = self.model_data["model_weights"]
         
-        correct = 0
-        confidence_balance = 0.0
-        correlation_correct = 0
-        correlation_total = 0
-        upset_count = 0
-        monte_samples: List[float] = []
+        # Calculate gradients for each weight
+        gradients = {name: 0.0 for name in weight_names}
+        
         for pred in recent_predictions:
-            away_prob = pred.get("predicted_away_win_prob", 0.5)
-            home_prob = pred.get("predicted_home_win_prob", 0.5)
-            predicted_side = pred.get("predicted_winner")
-            if predicted_side not in ("away", "home"):
-                predicted_side = "away" if away_prob > home_prob else "home"
+            # Get actual outcome (1 if away won, 0 if home won)
             actual_side = self._normalize_outcome_side(
                 pred.get("actual_winner"), pred.get("away_team"), pred.get("home_team")
             )
-            confidence = pred.get("prediction_confidence")
-            if confidence is None:
-                confidence = max(away_prob, home_prob)
-            if confidence > 1:
-                confidence = confidence / 100.0
-            confidence = max(0.0, min(1.0, confidence))
+            if not actual_side:
+                continue
+                
+            y_true = 1.0 if actual_side == "away" else 0.0
             
-            if actual_side and predicted_side == actual_side:
-                correct += 1
-                confidence_balance += confidence
-            else:
-                confidence_balance -= confidence
-            if pred.get("was_upset"):
-                upset_count += 1
-            corr_away = pred.get("correlation_away_prob")
-            corr_home = pred.get("correlation_home_prob")
-            if corr_away is not None and corr_home is not None and actual_side:
-                correlation_total += 1
-                corr_side = "away" if corr_away >= corr_home else "home"
-                if corr_side == actual_side:
-                    correlation_correct += 1
-            if self.correlation_model:
-                sensitivity = self._estimate_monte_carlo_signal(pred)
-                if sensitivity:
-                    monte_samples.append(sensitivity)
+            # Get predicted probability
+            away_prob = pred.get("predicted_away_win_prob", 0.5)
+            home_prob = pred.get("predicted_home_win_prob", 0.5)
+            total = away_prob + home_prob
+            if total > 0:
+                away_prob = away_prob / total
+                home_prob = home_prob / total
+            
+            # Clip to avoid log(0)
+            epsilon = 1e-7
+            away_prob = max(epsilon, min(1 - epsilon, away_prob))
+            
+            # Log loss gradient: ∂L/∂p = -(y/p - (1-y)/(1-p))
+            # For away probability: gradient = -(y_true/away_prob - (1-y_true)/(1-away_prob))
+            log_loss_gradient = -(y_true / away_prob - (1 - y_true) / (1 - away_prob))
+            
+            # Get metrics used in this prediction
+            metrics = pred.get("metrics_used", {})
+            
+            # Approximate ∂p/∂w for each weight using metric magnitudes
+            # This is a simplified approximation: we assume each weight's contribution
+            # is proportional to its corresponding metric value
+            metric_mapping = {
+                "xg_weight": (metrics.get("away_xg", 0) - metrics.get("home_xg", 0)),
+                "hdc_weight": (metrics.get("away_hdc", 0) - metrics.get("home_hdc", 0)),
+                "corsi_weight": (metrics.get("away_corsi_pct", 50) - metrics.get("home_corsi_pct", 50)),
+                "power_play_weight": (metrics.get("away_power_play_pct", 0) - metrics.get("home_power_play_pct", 0)),
+                "faceoff_weight": (metrics.get("away_faceoff_pct", 50) - metrics.get("home_faceoff_pct", 50)),
+                "shots_weight": (metrics.get("away_shots", 0) - metrics.get("home_shots", 0)),
+                "hits_weight": (metrics.get("away_hits", 0) - metrics.get("home_hits", 0)),
+                "blocked_shots_weight": (metrics.get("away_blocked_shots", 0) - metrics.get("home_blocked_shots", 0)),
+                "takeaways_weight": (metrics.get("away_takeaways", 0) - metrics.get("home_takeaways", 0)),
+                "penalty_minutes_weight": -(metrics.get("away_penalty_minutes", 0) - metrics.get("home_penalty_minutes", 0)),
+                "game_score_weight": (metrics.get("away_gs", 0) - metrics.get("home_gs", 0)),
+                "rebounds_weight": (metrics.get("away_rebounds", 0) - metrics.get("home_rebounds", 0)),
+                "rush_shots_weight": (metrics.get("away_rush_shots", 0) - metrics.get("home_rush_shots", 0)),
+                "traffic_weight": (metrics.get("away_net_front_traffic_pct", 0) - metrics.get("home_net_front_traffic_pct", 0)),
+                "zone_entry_weight": (metrics.get("away_zone_entry_carry_pct", 0) - metrics.get("home_zone_entry_carry_pct", 0)),
+            }
+            
+            # Accumulate gradients
+            for weight_name in weight_names:
+                metric_diff = metric_mapping.get(weight_name, 0.0)
+                # Normalize by a scaling factor to keep gradients reasonable
+                scaling = 0.01
+                gradients[weight_name] += log_loss_gradient * metric_diff * scaling
         
-        total = len(recent_predictions)
-        recent_accuracy = correct / total if total else baseline_accuracy
-        accuracy_delta = recent_accuracy - baseline_accuracy
-        confidence_signal = confidence_balance / total if total else 0.0
-        correlation_accuracy = (correlation_correct / correlation_total) if correlation_total else baseline_accuracy
-        correlation_delta = correlation_accuracy - baseline_accuracy
-        upset_rate = upset_count / total if total else 0.0
-        monte_signal = float(np.mean(monte_samples)) if monte_samples else 0.0
+        # Average gradients and apply learning rate with L2 regularization
+        n = len(recent_predictions)
+        lambda_reg = 0.01  # L2 regularization strength
         
-        current_weights = self.model_data["model_weights"]
         updates = {}
         for weight_name in weight_names:
+            avg_gradient = gradients[weight_name] / n if n > 0 else 0.0
+            current_value = current_weights.get(weight_name, 0.05)
+            
+            # L2 regularization term: push weights toward their priors
             prior = DEFAULT_WEIGHT_PRIORS.get(weight_name, 0.05)
-            current_value = current_weights.get(weight_name, prior)
-            deviation_from_prior = current_value - prior
+            regularization = lambda_reg * (current_value - prior)
             
-            performance_signal = (accuracy_delta * prior * 0.3) + (confidence_signal * prior * 0.1)
-            correlation_signal = correlation_delta * prior * 0.25
-            upset_signal = -upset_rate * prior * 0.2
-            monte_carlo_signal = -monte_signal * prior * 0.15
-            mean_reversion = -deviation_from_prior * 0.2
-            
-            updates[weight_name] = performance_signal + correlation_signal + upset_signal + monte_carlo_signal + mean_reversion
+            # Final update: -learning_rate * (gradient + regularization)
+            updates[weight_name] = -self.learning_rate * (avg_gradient + regularization)
         
         return updates
 

@@ -9,6 +9,8 @@ import requests
 from pathlib import Path
 from nhl_api_client import NHLAPIClient
 from advanced_metrics_analyzer import AdvancedMetricsAnalyzer
+from experimental_metrics_analyzer import ExperimentalMetricsAnalyzer
+from sprite_goal_analyzer import SpriteGoalAnalyzer
 from collections import defaultdict
 from datetime import datetime
 import numpy as np
@@ -123,21 +125,55 @@ class RealTeamStatsGenerator(TeamReportGenerator):
         sh_pct = (goals_for / shots_for * 100) if shots_for > 0 else 10.0
         pdo = sv_pct + sh_pct
         
-        # Movement metrics (using AdvancedMetricsAnalyzer)
-        lat = 0.0
-        long_movement = 0.0
+        # High-signal experimental metrics
+        rebounds = 0
+        rush_shots = 0
+        cycle_shots = 0
+        forecheck_turnovers = 0
+        passes_per_goal = 0.0
+        avg_goal_distance = 0.0
+        east_west_play = 0.0
+        north_south_play = 0.0
+        
+        # Sprite/Dynamic metrics
+        net_front_traffic_pct = 0.0
+        carry_pct = 0.0
+        pass_pct = 0.0
         
         try:
-            # We need valid PBP data for this
             if 'play_by_play' in game_data:
-                analyzer = AdvancedMetricsAnalyzer(game_data.get('play_by_play', {}))
-                movement_metrics = analyzer.calculate_pre_shot_movement_metrics(team_id)
-                lat = movement_metrics['lateral_movement'].get('avg_delta_y', 0.0)
-                long_movement = movement_metrics['longitudinal_movement'].get('avg_delta_x', 0.0)
-                print(f"    Calculated movement: LAT={lat:.2f}, LONG={long_movement:.2f}")
+                pbp = game_data['play_by_play']
+                exp_analyzer = ExperimentalMetricsAnalyzer(pbp)
+                exp_results = exp_analyzer.calculate_all_experimental_metrics()
+                
+                # Fetch team-specific metrics
+                team_metrics = exp_results.get(team_id, {})
+                rebounds = team_metrics.get('rebound_count', 0)
+                rush_shots = team_metrics.get('rush_shots', 0)
+                cycle_shots = team_metrics.get('cycle_shots', 0)
+                forecheck_turnovers = team_metrics.get('forecheck_turnovers', 0)
+                passes_per_goal = team_metrics.get('passes_per_goal', 0.0)
+                
+                # Sprite Goal analysis
+                sprite_analyzer = SpriteGoalAnalyzer(game_data)
+                sprite_results = sprite_analyzer.analyze_goals()
+                
+                # Extract venue-specific sprite stats
+                venue_sprite = sprite_results.get('away' if venue_key == 'away' else 'home', {})
+                net_front_traffic_pct = venue_sprite.get('net_front_traffic_pct', 0.0)
+                avg_goal_distance = venue_sprite.get('avg_goal_distance', 0.0)
+                
+                entry_share = venue_sprite.get('entry_type_share', {})
+                carry_pct = entry_share.get('carry', 0.0)
+                pass_pct = entry_share.get('pass', 0.0)
+                
+                # Movement re-mapping
+                movement = venue_sprite.get('movement_metrics', {})
+                east_west_play = movement.get('east_west', 0.0)
+                north_south_play = movement.get('north_south', 0.0)
         except Exception as e:
-            print(f"    Error calculating movement metrics: {e}")
-        
+            print(f"    Error calculating high-signal metrics: {e}")
+            
         return {
             'gs': round(total_gs, 2),
             'xg': round(total_xg, 2),
@@ -167,7 +203,19 @@ class RealTeamStatsGenerator(TeamReportGenerator):
             'hdc': team_hdc,
             'hdca': opp_hdc,
             'opp_xg': round(opp_xg, 2),  # ← NEW: Opponent xG (xG allowed)
-            'period_dzs': round(total_dzs, 2)
+            'period_dzs': round(total_dzs, 2),
+            # New Advanced Metrics
+            'rebounds': rebounds,
+            'rush_shots': rush_shots,
+            'cycle_shots': cycle_shots,
+            'forecheck_turnovers': forecheck_turnovers,
+            'net_front_traffic_pct': round(net_front_traffic_pct, 2),
+            'passes_per_goal': round(passes_per_goal, 2),
+            'avg_goal_distance': round(avg_goal_distance, 2),
+            'east_west_play': round(east_west_play, 2),
+            'north_south_play': round(north_south_play, 2),
+            'zone_entry_carry_pct': round(carry_pct, 2),
+            'zone_entry_pass_pct': round(pass_pct, 2)
         }
     
     def generate_all_team_stats(self):
@@ -213,6 +261,10 @@ class RealTeamStatsGenerator(TeamReportGenerator):
                 'penalty_minutes': [], 'power_play_pct': [], 'penalty_kill_pct': [],
                 'faceoff_pct': [], 'nzt': [], 'nztsa': [], 'fc': [], 'rush': [],
                 'lat': [], 'long_movement': [], 'hdc': [], 'hdca': [], 'opp_xg': [], 'period_dzs': [],
+                'rebounds': [], 'rush_shots': [], 'cycle_shots': [], 'forecheck_turnovers': [],
+                'net_front_traffic_pct': [], 'passes_per_goal': [], 'avg_goal_distance': [],
+                'east_west_play': [], 'north_south_play': [],
+                'zone_entry_carry_pct': [], 'zone_entry_pass_pct': [],
                 'games': []
             }
             
@@ -263,6 +315,10 @@ class RealTeamStatsGenerator(TeamReportGenerator):
                 'penalty_minutes': [], 'power_play_pct': [], 'penalty_kill_pct': [],
                 'faceoff_pct': [], 'nzt': [], 'nztsa': [], 'fc': [], 'rush': [],
                 'lat': [], 'long_movement': [], 'hdc': [], 'hdca': [], 'opp_xg': [], 'period_dzs': [],
+                'rebounds': [], 'rush_shots': [], 'cycle_shots': [], 'forecheck_turnovers': [],
+                'net_front_traffic_pct': [], 'passes_per_goal': [], 'avg_goal_distance': [],
+                'east_west_play': [], 'north_south_play': [],
+                'zone_entry_carry_pct': [], 'zone_entry_pass_pct': [],
                 'games': []
             }
             

@@ -11,6 +11,8 @@ from reportlab.lib import colors
 from pdf_report_generator import PostGameReportGenerator, HeaderFlowable, BackgroundPageTemplate
 from nhl_api_client import NHLAPIClient
 from advanced_metrics_analyzer import AdvancedMetricsAnalyzer
+from experimental_metrics_analyzer import ExperimentalMetricsAnalyzer
+from sprite_goal_analyzer import SpriteGoalAnalyzer
 from collections import defaultdict
 import numpy as np
 import json
@@ -271,7 +273,11 @@ class TeamReportGenerator(PostGameReportGenerator):
                 'xG_for': [], 'xG_against': [], 'hdc_for': [], 'hdc_against': [],
                 'corsi_pct': [], 'pp_pct': [], 'fo_pct': [], 'lateral': [], 'longitudinal': [],
                 'pim': [], 'hits': [], 'blocks': [], 'giveaways': [], 'takeaways': [],
-                'gs': [], 'nzt': [], 'nztsa': [], 'ozs': [], 'nzs': [], 'dzs': [], 'fc': [], 'rush': []
+                'gs': [], 'nzt': [], 'nztsa': [], 'ozs': [], 'nzs': [], 'dzs': [], 'fc': [], 'rush': [],
+                'rebounds': [], 'rush_shots': [], 'cycle_shots': [], 'forecheck_turnovers': [],
+                'net_front_traffic_pct': [], 'passes_per_goal': [], 'avg_goal_distance': [],
+                'east_west_play': [], 'north_south_play': [],
+                'zone_entry_carry_pct': [], 'zone_entry_pass_pct': []
             },
             # Away stats
             'away': {
@@ -279,7 +285,11 @@ class TeamReportGenerator(PostGameReportGenerator):
                 'xG_for': [], 'xG_against': [], 'hdc_for': [], 'hdc_against': [],
                 'corsi_pct': [], 'pp_pct': [], 'fo_pct': [], 'lateral': [], 'longitudinal': [],
                 'pim': [], 'hits': [], 'blocks': [], 'giveaways': [], 'takeaways': [],
-                'gs': [], 'nzt': [], 'nztsa': [], 'ozs': [], 'nzs': [], 'dzs': [], 'fc': [], 'rush': []
+                'gs': [], 'nzt': [], 'nztsa': [], 'ozs': [], 'nzs': [], 'dzs': [], 'fc': [], 'rush': [],
+                'rebounds': [], 'rush_shots': [], 'cycle_shots': [], 'forecheck_turnovers': [],
+                'net_front_traffic_pct': [], 'passes_per_goal': [], 'avg_goal_distance': [],
+                'east_west_play': [], 'north_south_play': [],
+                'zone_entry_carry_pct': [], 'zone_entry_pass_pct': []
             },
             # All games (for trends)
             'all_games': [],
@@ -488,6 +498,42 @@ class TeamReportGenerator(PostGameReportGenerator):
                     aggregated[venue_key]['dzs'].append(sum(zone_metrics.get('dz_originating_shots', [0])))
                     aggregated[venue_key]['fc'].append(sum(zone_metrics.get('fc_cycle_sog', [0])))
                     aggregated[venue_key]['rush'].append(sum(zone_metrics.get('rush_sog', [0])))
+                    
+                    # High-signal experimental and sprite metrics
+                    try:
+                        pbp = game_data.get('play_by_play', {})
+                        exp_analyzer = ExperimentalMetricsAnalyzer(pbp)
+                        exp_results = exp_analyzer.calculate_all_experimental_metrics()
+                        team_exp = exp_results.get(team_id, {})
+                        
+                        aggregated[venue_key]['rebounds'].append(team_exp.get('rebound_count', 0))
+                        aggregated[venue_key]['rush_shots'].append(team_exp.get('rush_shots', 0))
+                        aggregated[venue_key]['cycle_shots'].append(team_exp.get('cycle_shots', 0))
+                        aggregated[venue_key]['forecheck_turnovers'].append(team_exp.get('forecheck_turnovers', 0))
+                        aggregated[venue_key]['passes_per_goal'].append(team_exp.get('passes_per_goal', 0.0))
+                        
+                        # Sprite Goal analysis
+                        sprite_analyzer = SpriteGoalAnalyzer(game_data)
+                        sprite_results = sprite_analyzer.analyze_goals()
+                        venue_sprite = sprite_results.get(venue_key, {})
+                        
+                        aggregated[venue_key]['net_front_traffic_pct'].append(venue_sprite.get('net_front_traffic_pct', 0.0))
+                        aggregated[venue_key]['avg_goal_distance'].append(venue_sprite.get('avg_goal_distance', 0.0))
+                        
+                        entry_share = venue_sprite.get('entry_type_share', {})
+                        aggregated[venue_key]['zone_entry_carry_pct'].append(entry_share.get('carry', 0.0))
+                        aggregated[venue_key]['zone_entry_pass_pct'].append(entry_share.get('pass', 0.0))
+                        
+                        movement = venue_sprite.get('movement_metrics', {})
+                        aggregated[venue_key]['east_west_play'].append(movement.get('east_west', 0.0))
+                        aggregated[venue_key]['north_south_play'].append(movement.get('north_south', 0.0))
+                    except Exception as e:
+                        print(f"Error extracting high-signal metrics for aggregation: {e}")
+                        # Append defaults to maintain list lengths
+                        for k in ['rebounds', 'rush_shots', 'cycle_shots', 'forecheck_turnovers', 'passes_per_goal', 
+                                 'net_front_traffic_pct', 'avg_goal_distance', 'zone_entry_carry_pct', 'zone_entry_pass_pct',
+                                 'east_west_play', 'north_south_play']:
+                            aggregated[venue_key][k].append(0.0)
                     
                     # Game Score from period metrics
                     period_gs_xg = self._calculate_period_metrics(game_data, team_id, venue_key)

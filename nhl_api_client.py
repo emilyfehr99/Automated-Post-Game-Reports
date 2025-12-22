@@ -212,3 +212,81 @@ class NHLAPIClient:
             days_back += 1
             
         return game_ids[:limit]
+
+    def get_betting_odds(self, game_id):
+        """Extract betting odds for a game from the schedule endpoint"""
+        # We need to find the game in the schedule
+        # Try today and yesterday
+        for days_ago in range(7):  # Look back up to a week
+            date = datetime.now() - timedelta(days=days_ago)
+            date_str = date.strftime("%Y-%m-%d")
+            
+            try:
+                schedule = self.get_game_schedule(date_str)
+                if schedule and 'gameWeek' in schedule:
+                    for day in schedule['gameWeek']:
+                        for game in day.get('games', []):
+                            if game.get('id') == int(game_id):
+                                return {
+                                    'away_odds': game.get('awayTeam', {}).get('odds', []),
+                                    'home_odds': game.get('homeTeam', {}).get('odds', [])
+                                }
+            except Exception as e:
+                print(f"Error fetching odds for {date_str}: {e}")
+                continue
+        
+        return None
+    
+    def parse_american_odds_to_probability(self, american_odds_str):
+        """Convert American odds (e.g., '+205', '-250') to implied probability"""
+        try:
+            odds = float(american_odds_str)
+            if odds > 0:
+                # Underdog: probability = 100 / (odds + 100)
+                return 100 / (odds + 100)
+            else:
+                # Favorite: probability = |odds| / (|odds| + 100)
+                return abs(odds) / (abs(odds) + 100)
+        except (ValueError, TypeError):
+            return None
+    
+    def get_consensus_betting_probability(self, game_id):
+        """Get consensus betting probability from multiple sportsbooks"""
+        odds_data = self.get_betting_odds(game_id)
+        if not odds_data:
+            return None
+        
+        away_probs = []
+        home_probs = []
+        
+        # Parse away team odds
+        for odds_entry in odds_data.get('away_odds', []):
+            odds_str = odds_entry.get('value', '')
+            prob = self.parse_american_odds_to_probability(odds_str)
+            if prob:
+                away_probs.append(prob)
+        
+        # Parse home team odds
+        for odds_entry in odds_data.get('home_odds', []):
+            odds_str = odds_entry.get('value', '')
+            prob = self.parse_american_odds_to_probability(odds_str)
+            if prob:
+                home_probs.append(prob)
+        
+        if not away_probs or not home_probs:
+            return None
+        
+        # Calculate consensus (average across providers)
+        avg_away_prob = sum(away_probs) / len(away_probs)
+        avg_home_prob = sum(home_probs) / len(home_probs)
+        
+        # Normalize to sum to 1.0
+        total = avg_away_prob + avg_home_prob
+        if total > 0:
+            return {
+                'away_prob': avg_away_prob / total,
+                'home_prob': avg_home_prob / total,
+                'num_books': len(away_probs)
+            }
+        
+        return None

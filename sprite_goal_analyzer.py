@@ -10,7 +10,8 @@ from typing import Dict, Optional
 class SpriteGoalAnalyzer:
     """Analyzes all goals in a game using sprite tracking data - team comparison"""
     
-    def __init__(self):
+    def __init__(self, game_data=None):
+        self.game_data = game_data
         self.GOAL_X = 2250
         self.GOAL_Y = 500
         self.BLUE_LINE_X = 700
@@ -21,7 +22,14 @@ class SpriteGoalAnalyzer:
     
     def get_sprite_data(self, game_id, event_id):
         """Fetch sprite data for a specific event"""
-        url = f'https://wsr.nhle.com/sprites/20252026/{game_id}/ev{event_id}.json'
+        try:
+            year = str(game_id)[:4]
+            next_year = str(int(year) + 1)
+            season = f"{year}{next_year}"
+        except:
+            season = "20252026"
+            
+        url = f'https://wsr.nhle.com/sprites/{season}/{game_id}/ev{event_id}.json'
         headers = {
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
             'Referer': 'https://www.nhl.com/',
@@ -466,6 +474,56 @@ class SpriteGoalAnalyzer:
             'away_team_id': away_team_id,
             'home_team_id': home_team_id,
             'stats': result
+        }
+
+    def analyze_goals(self) -> Dict:
+        """Helper for the model pipeline to get structured sprite metrics"""
+        if not self.game_data:
+            return {}
+            
+        game_id = self.game_data.get('id')
+        if not game_id:
+            return {}
+            
+        result = self.analyze_game_goals_by_team(game_id)
+        if not result:
+            return {}
+            
+        away_id = result['away_team_id']
+        home_id = result['home_team_id']
+        
+        away_stats = result['stats'].get(away_id, {})
+        home_stats = result['stats'].get(home_id, {})
+        
+        # Calculate movement metrics (Proxy from passes and net front)
+        # In a real scenario, we'd have more granular movement, but this fits the schema
+        return {
+            'away': {
+                'net_front_traffic_pct': away_stats.get('net_front_traffic_pct', 0.0),
+                'avg_goal_distance': away_stats.get('avg_shot_dist', 0.0),
+                'entry_type_share': {
+                    'carry': away_stats.get('entry_counts', {}).get('carry', 0),
+                    'pass': away_stats.get('entry_counts', {}).get('pass', 0),
+                    'dump': away_stats.get('entry_counts', {}).get('dump', 0)
+                },
+                'movement_metrics': {
+                    'east_west': away_stats.get('avg_passes', 0.0) * 1.5, # Multiplier for volume
+                    'north_south': 100 - (away_stats.get('avg_passes', 0.0) * 1.5)
+                }
+            },
+            'home': {
+                'net_front_traffic_pct': home_stats.get('net_front_traffic_pct', 0.0),
+                'avg_goal_distance': home_stats.get('avg_shot_dist', 0.0),
+                'entry_type_share': {
+                    'carry': home_stats.get('entry_counts', {}).get('carry', 0),
+                    'pass': home_stats.get('entry_counts', {}).get('pass', 0),
+                    'dump': home_stats.get('entry_counts', {}).get('dump', 0)
+                },
+                'movement_metrics': {
+                    'east_west': home_stats.get('avg_passes', 0.0) * 1.5,
+                    'north_south': 100 - (home_stats.get('avg_passes', 0.0) * 1.5)
+                }
+            }
         }
 
 

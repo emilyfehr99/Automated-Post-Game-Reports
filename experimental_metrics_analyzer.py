@@ -8,8 +8,9 @@ from collections import defaultdict
 from typing import Dict, List, Optional
 
 class ExperimentalMetricsAnalyzer:
-    def __init__(self, play_by_play_data: dict, sprite_data: Optional[dict] = None):
+    def __init__(self, play_by_play_data: dict, game_id: Optional[str] = None, sprite_data: Optional[dict] = None):
         self.plays = play_by_play_data.get('plays', [])
+        self.game_id = game_id
         self.sprite_data = sprite_data
         self._sprite_cache = {} # Cache to avoid redundant requests
         import time
@@ -22,16 +23,34 @@ class ExperimentalMetricsAnalyzer:
             'home_team': self._calculate_team_experimental(home_team_id),
             'game_id': self._get_game_id()
         }
+
+    def calculate_all_experimental_metrics(self) -> dict:
+        """Calculate metrics for all teams present in the plays"""
+        team_ids = set()
+        for play in self.plays:
+            team_id = play.get('details', {}).get('eventOwnerTeamId')
+            if team_id:
+                team_ids.add(team_id)
+        
+        results = {}
+        for team_id in team_ids:
+            results[team_id] = self._calculate_team_experimental(team_id)
+        
+        return results
         
     def _calculate_team_experimental(self, team_id: int) -> dict:
         """Calculate metrics for a specific team"""
+        nz_stats = self._calculate_nz_success_rate(team_id)
+        
         metrics = {
-            'rebounds': self._calculate_rebounds(team_id),
+            'rebound_count': self._calculate_rebounds(team_id),
             'cycle_shots': self._calculate_cycle_shots(team_id),
             'forecheck_turnovers': self._calculate_forecheck_turnovers(team_id),
-            'nz_success_rate': self._calculate_nz_success_rate(team_id),
+            'rush_shots': nz_stats.get('successful', 0),
+            'nz_success_rate': nz_stats.get('rate', 0.0),
             'east_west_passing_volume': self._calculate_passing_depth(team_id),
-            'possession_efficiency': self._calculate_possession_efficiency(team_id)
+            'possession_efficiency': self._calculate_possession_efficiency(team_id),
+            'passes_per_goal': self._calculate_passes_per_goal(team_id)
         }
         
         # Always calculate spatial metrics
@@ -39,6 +58,25 @@ class ExperimentalMetricsAnalyzer:
         metrics['entry_gap'] = self._calculate_entry_gap(team_id)
             
         return metrics
+
+    def _calculate_passes_per_goal(self, team_id: int) -> float:
+        """Average number of passes in Offensive Zone before a goal"""
+        goals = [p for p in self.plays if p.get('typeDescKey') == 'goal' and p.get('details', {}).get('eventOwnerTeamId') == team_id]
+        if not goals:
+            return 0.0
+        
+        total_passes = 0
+        for goal in goals:
+            goal_idx = self.plays.index(goal)
+            # Look back for passes in same sequence
+            for i in range(goal_idx - 1, max(0, goal_idx - 10), -1):
+                prev_play = self.plays[i]
+                if prev_play.get('details', {}).get('eventOwnerTeamId') != team_id:
+                    break
+                if prev_play.get('typeDescKey') == 'pass':
+                    total_passes += 1
+        
+        return round(total_passes / len(goals), 2)
 
     def _calculate_rebounds(self, team_id: int) -> int:
         """Count shots taken as rebounds (within 3s of previous shot, no stoppage)"""
@@ -374,6 +412,6 @@ class ExperimentalMetricsAnalyzer:
         return data
 
     def _get_game_id(self) -> str:
-        # We'll need to store or pass the game_id
-        return getattr(self, 'game_id', "2024020088") # Default fallback
+        # Return the stored game_id or a reasonable fallback
+        return getattr(self, 'game_id', "2024020088")
 

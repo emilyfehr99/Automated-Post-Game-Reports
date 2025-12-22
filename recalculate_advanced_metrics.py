@@ -6,6 +6,8 @@ from play-by-play data for all completed games
 from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
 from pdf_report_generator import PostGameReportGenerator
 from advanced_metrics_analyzer import AdvancedMetricsAnalyzer
+from experimental_metrics_analyzer import ExperimentalMetricsAnalyzer
+from sprite_goal_analyzer import SpriteGoalAnalyzer
 from nhl_api_client import NHLAPIClient
 import json
 
@@ -21,16 +23,27 @@ def recalculate_advanced_metrics():
     preds = model.model_data.get('predictions', [])
     completed = [p for p in preds if p.get('actual_winner')]
     
-    print(f"Found {len(completed)} completed games to process")
+    print(f"Found {len(completed)} completed games to total")
     
     updated = 0
     failed = 0
+    skipped = 0
     
     for i, pred in enumerate(completed):
         game_id = str(pred.get('game_id', ''))
         if not game_id:
             failed += 1
             continue
+            
+        # Resume capability: Check if game already has advanced metrics
+        metrics = pred.get('metrics_used', {})
+        if 'away_rebounds' in metrics and metrics.get('away_rebounds') is not None:
+            skipped += 1
+            if skipped % 50 == 0:
+                print(f"  ⏭️  Skipped {skipped} already processed games...")
+            continue
+        
+        print(f"  🔄 Processing game {game_id} ({i+1}/{len(completed)})...")
         
         try:
             # Get comprehensive game data
@@ -234,8 +247,60 @@ def recalculate_advanced_metrics():
                 metrics['away_opponent_scored_first'] = (first_goal_scorer == home_team_id)
                 metrics['home_opponent_scored_first'] = (first_goal_scorer == away_team_id)
                 
+                # NEW: High-signal advanced metrics
+                pbp = game_data.get('play_by_play', {})
+                exp_analyzer = ExperimentalMetricsAnalyzer(pbp, game_id=game_id)
+                exp_results = exp_analyzer.calculate_all_experimental_metrics()
+                
+                away_exp = exp_results.get(away_team_id, {})
+                home_exp = exp_results.get(home_team_id, {})
+                
+                metrics['away_rebounds'] = away_exp.get('rebound_count', 0)
+                metrics['home_rebounds'] = home_exp.get('rebound_count', 0)
+                metrics['away_rush_shots'] = away_exp.get('rush_shots', 0)
+                metrics['home_rush_shots'] = home_exp.get('rush_shots', 0)
+                metrics['away_cycle_shots'] = away_exp.get('cycle_shots', 0)
+                metrics['home_cycle_shots'] = home_exp.get('cycle_shots', 0)
+                metrics['away_forecheck_turnovers'] = away_exp.get('forecheck_turnovers', 0)
+                metrics['home_forecheck_turnovers'] = home_exp.get('forecheck_turnovers', 0)
+                metrics['away_passes_per_goal'] = away_exp.get('passes_per_goal', 0.0)
+                metrics['home_passes_per_goal'] = home_exp.get('passes_per_goal', 0.0)
+                
+                # Sprite Goal analysis
+                sprite_analyzer = SpriteGoalAnalyzer(game_data)
+                sprite_results = sprite_analyzer.analyze_goals()
+                
+                away_sprite = sprite_results.get('away', {})
+                home_sprite = sprite_results.get('home', {})
+                
+                metrics['away_net_front_traffic_pct'] = away_sprite.get('net_front_traffic_pct', 0.0)
+                metrics['home_net_front_traffic_pct'] = home_sprite.get('net_front_traffic_pct', 0.0)
+                metrics['away_avg_goal_distance'] = away_sprite.get('avg_goal_distance', 0.0)
+                metrics['home_avg_goal_distance'] = home_sprite.get('avg_goal_distance', 0.0)
+                
+                away_entries = away_sprite.get('entry_type_share', {})
+                home_entries = home_sprite.get('entry_type_share', {})
+                metrics['away_zone_entry_carry_pct'] = away_entries.get('carry', 0.0)
+                metrics['home_zone_entry_carry_pct'] = home_entries.get('carry', 0.0)
+                metrics['away_zone_entry_pass_pct'] = away_entries.get('pass', 0.0)
+                metrics['home_zone_entry_pass_pct'] = home_entries.get('pass', 0.0)
+                
+                away_mv = away_sprite.get('movement_metrics', {})
+                home_mv = home_sprite.get('movement_metrics', {})
+                metrics['away_east_west_play'] = away_mv.get('east_west', 0.0)
+                metrics['home_east_west_play'] = home_mv.get('east_west', 0.0)
+                metrics['away_north_south_play'] = away_mv.get('north_south', 0.0)
+                metrics['home_north_south_play'] = home_mv.get('north_south', 0.0)
+                
             except Exception as e:
-                print(f"  ⚠️  Clutch metrics error for {game_id}: {e}")
+                print(f"  ⚠️  Clutch/Advanced metrics error for {game_id}: {e}")
+                # Set defaults for new metrics if they fail
+                for k in ['rebounds', 'rush_shots', 'cycle_shots', 'forecheck_turnovers', 'passes_per_goal',
+                         'net_front_traffic_pct', 'avg_goal_distance', 'zone_entry_carry_pct', 'zone_entry_pass_pct',
+                         'east_west_play', 'north_south_play']:
+                    metrics[f'away_{k}'] = 0.0
+                    metrics[f'home_{k}'] = 0.0
+                
                 for key in ['away_third_period_goals', 'home_third_period_goals',
                            'away_one_goal_game', 'home_one_goal_game',
                            'away_scored_first', 'home_scored_first',
@@ -258,9 +323,10 @@ def recalculate_advanced_metrics():
     # Save updated predictions
     model.save_model_data()
     
-    print(f"\n✅ Metrics recalculation complete!")
+    print("\n✅ Metrics recalculation complete!")
     print(f"   Updated: {updated} games")
-    print(f"   Failed: {failed} games")
+    print(f"   Skipped: {skipped} games")
+    print(f"   Failed:  {failed} games")
     
     # Rebuild team_stats with new metrics
     print(f"\n🔄 Rebuilding team_stats with new metrics...")
