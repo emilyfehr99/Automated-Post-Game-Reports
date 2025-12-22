@@ -1020,8 +1020,13 @@ class PostGameReportGenerator:
             away_zone_metrics = self._calculate_zone_metrics(game_data, away_team['id'], 'away')
             home_zone_metrics = self._calculate_zone_metrics(game_data, home_team['id'], 'home')
             
+            # Calculate rebounds by period for both teams
+            from advanced_metrics_analyzer import AdvancedMetricsAnalyzer
+            rebounds_analyzer = AdvancedMetricsAnalyzer(game_data.get('play_by_play', {}))
+            away_rebounds_by_period = rebounds_analyzer.calculate_rebounds_by_period(away_team['id'])
+            home_rebounds_by_period = rebounds_analyzer.calculate_rebounds_by_period(home_team['id'])
             
-            
+
             # Calculate real period-by-period stats from NHL API data
             away_period_stats = self._calculate_real_period_stats(game_data, away_team['id'], 'away')
             home_period_stats = self._calculate_real_period_stats(game_data, home_team['id'], 'home')
@@ -1112,20 +1117,21 @@ class PostGameReportGenerator:
             # Create period-by-period data table with all advanced metrics (dynamically handle OT/SO)
             stats_data = [
                 # Header row
-                ['Period', 'GF', 'S', 'CF%', 'PP', 'PIM', 'Hits', 'FO%', 'BLK', 'GV', 'TK', 'GS', 'xG', 'NZT', 'NZTSA', 'OZS', 'NZS', 'DZS', 'FC', 'Rush'],
+                ['Period', 'GF', 'S', 'CF%', 'PP', 'PIM', 'Hits', 'FO%', 'BLK', 'GV', 'TK', 'GS', 'xG', 'NZT', 'NZTSA', 'OZS', 'NZS', 'DZS', 'FC', 'Rush', 'REB'],
                 # Away team logo row with win probability centered in the row
-                [away_team['abbrev'], away_logo_img if away_logo_img else '', '', '', '', '', '', '', '', f"{win_prob['away_probability']}% likelihood of winning", '', '', '', '', '', '', '', '', ''],
+                [away_team['abbrev'], away_logo_img if away_logo_img else '', f"{win_prob['away_probability']}% likelihood of winning", '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
             ]
             
             # Add regulation periods for away team
             for i in range(3):
-                stats_data.append([str(i+1), str(away_period_scores[i]), str(away_period_stats['shots'][i]), f"{away_period_stats['corsi_pct'][i]:.1f}%", 
+                period_num = i + 1
+                stats_data.append([str(period_num), str(away_period_scores[i]), str(away_period_stats['shots'][i]), f"{away_period_stats['corsi_pct'][i]:.1f}%", 
                     f"{away_period_stats['pp_goals'][i]}/{away_period_stats['pp_attempts'][i]}", str(away_period_stats['pim'][i]), 
                     str(away_period_stats['hits'][i]), f"{away_period_stats['fo_pct'][i]:.1f}%", str(away_period_stats['bs'][i]), 
                     str(away_period_stats['gv'][i]), str(away_period_stats['tk'][i]), f'{away_gs_periods[i]:.1f}', f'{away_xg_periods[i]:.2f}', 
                     f'{away_zone_metrics["nz_turnovers"][i]}', f'{away_zone_metrics["nz_turnovers_to_shots"][i]}',
                     f'{away_zone_metrics["oz_originating_shots"][i]}', f'{away_zone_metrics["nz_originating_shots"][i]}', f'{away_zone_metrics["dz_originating_shots"][i]}',
-                    f'{away_zone_metrics["fc_cycle_sog"][i]}', f'{away_zone_metrics["rush_sog"][i]}'])
+                    f'{away_zone_metrics["fc_cycle_sog"][i]}', f'{away_zone_metrics["rush_sog"][i]}', str(away_rebounds_by_period.get(period_num, 0))])
             
             # Add OT/SO row(s) - combine if both occur
             if has_ot and has_so:
@@ -1139,7 +1145,7 @@ class PostGameReportGenerator:
                     str(ot_so_stats['gv']), str(ot_so_stats['tk']), f'{ot_so_stats["gs"]:.1f}', f'{ot_so_stats["xg"]:.2f}', 
                     f'{ot_so_stats["nz_turnovers"]}', f'{ot_so_stats["nz_turnovers_to_shots"]}',
                     f'{ot_so_stats["oz_originating_shots"]}', f'{ot_so_stats["nz_originating_shots"]}', f'{ot_so_stats["dz_originating_shots"]}',
-                    f'{ot_so_stats["fc_cycle_sog"]}', f'{ot_so_stats["rush_sog"]}'])
+                    f'{ot_so_stats["fc_cycle_sog"]}', f'{ot_so_stats["rush_sog"]}', str(away_rebounds_by_period.get(4, 0))])
             elif has_ot:
                 # OT only row with all metrics
                 ot_stats = self._calculate_ot_so_stats(game_data, away_team['id'], 'away', 'OT')
@@ -1149,7 +1155,7 @@ class PostGameReportGenerator:
                     str(ot_stats['gv']), str(ot_stats['tk']), f'{ot_stats["gs"]:.1f}', f'{ot_stats["xg"]:.2f}', 
                     f'{ot_stats["nz_turnovers"]}', f'{ot_stats["nz_turnovers_to_shots"]}',
                     f'{ot_stats["oz_originating_shots"]}', f'{ot_stats["nz_originating_shots"]}', f'{ot_stats["dz_originating_shots"]}',
-                    f'{ot_stats["fc_cycle_sog"]}', f'{ot_stats["rush_sog"]}'])
+                    f'{ot_stats["fc_cycle_sog"]}', f'{ot_stats["rush_sog"]}', str(away_rebounds_by_period.get(4, 0))])
             elif has_so:
                 # SO only row with all metrics
                 so_stats = self._calculate_ot_so_stats(game_data, away_team['id'], 'away', 'SO')
@@ -1159,30 +1165,32 @@ class PostGameReportGenerator:
                     str(so_stats['gv']), str(so_stats['tk']), f'{so_stats["gs"]:.1f}', f'{so_stats["xg"]:.2f}', 
                     f'{so_stats["nz_turnovers"]}', f'{so_stats["nz_turnovers_to_shots"]}',
                     f'{so_stats["oz_originating_shots"]}', f'{so_stats["nz_originating_shots"]}', f'{so_stats["dz_originating_shots"]}',
-                    f'{so_stats["fc_cycle_sog"]}', f'{so_stats["rush_sog"]}'])
+                    f'{so_stats["fc_cycle_sog"]}', f'{so_stats["rush_sog"]}', str(away_rebounds_by_period.get(4, 0))])
             
             # Add Final row for away team
-            away_total_goals = sum(away_period_scores) + away_ot_goals + away_so_goals  # Include OT and SO goals (SO is 1 for winner, 0 for loser)
+            away_total_goals = sum(away_period_scores) + away_ot_goals + away_so_goals
+            away_total_rebounds = sum(away_rebounds_by_period.values())
             stats_data.append(['Final', str(away_total_goals), str(sum(away_period_stats['shots'])), f"{sum(away_period_stats['corsi_pct'])/3:.1f}%",
                 f"{sum(away_period_stats['pp_goals'])}/{sum(away_period_stats['pp_attempts'])}", str(sum(away_period_stats['pim'])), 
                 str(sum(away_period_stats['hits'])), f"{sum(away_period_stats['fo_pct'])/3:.1f}%", str(sum(away_period_stats['bs'])), 
                 str(sum(away_period_stats['gv'])), str(sum(away_period_stats['tk'])), f'{sum(away_gs_periods):.1f}', f'{away_xg_total:.2f}',
                 f'{sum(away_zone_metrics["nz_turnovers"])}', f'{sum(away_zone_metrics["nz_turnovers_to_shots"])}',
                  f'{sum(away_zone_metrics["oz_originating_shots"])}', f'{sum(away_zone_metrics["nz_originating_shots"])}', f'{sum(away_zone_metrics["dz_originating_shots"])}',
-                f'{sum(away_zone_metrics["fc_cycle_sog"])}', f'{sum(away_zone_metrics["rush_sog"])}'])
+                f'{sum(away_zone_metrics["fc_cycle_sog"])}', f'{sum(away_zone_metrics["rush_sog"])}', str(away_total_rebounds)])
             
             # Home team logo row with win probability centered in the row
-            stats_data.append([home_team['abbrev'], home_logo_img if home_logo_img else '', '', '', '', '', '', '', '', f"{win_prob['home_probability']}% likelihood of winning", '', '', '', '', '', '', '', '', ''])
+            stats_data.append([home_team['abbrev'], home_logo_img if home_logo_img else '', f"{win_prob['home_probability']}% likelihood of winning", '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''])
             
             # Add regulation periods for home team
             for i in range(3):
-                stats_data.append([str(i+1), str(home_period_scores[i]), str(home_period_stats['shots'][i]), f"{home_period_stats['corsi_pct'][i]:.1f}%",
+                period_num = i + 1
+                stats_data.append([str(period_num), str(home_period_scores[i]), str(home_period_stats['shots'][i]), f"{home_period_stats['corsi_pct'][i]:.1f}%",
                     f"{home_period_stats['pp_goals'][i]}/{home_period_stats['pp_attempts'][i]}", str(home_period_stats['pim'][i]), 
                     str(home_period_stats['hits'][i]), f"{home_period_stats['fo_pct'][i]:.1f}%", str(home_period_stats['bs'][i]), 
                     str(home_period_stats['gv'][i]), str(home_period_stats['tk'][i]), f'{home_gs_periods[i]:.1f}', f'{home_xg_periods[i]:.2f}',
                     f'{home_zone_metrics["nz_turnovers"][i]}', f'{home_zone_metrics["nz_turnovers_to_shots"][i]}',
                     f'{home_zone_metrics["oz_originating_shots"][i]}', f'{home_zone_metrics["nz_originating_shots"][i]}', f'{home_zone_metrics["dz_originating_shots"][i]}',
-                    f'{home_zone_metrics["fc_cycle_sog"][i]}', f'{home_zone_metrics["rush_sog"][i]}'])
+                    f'{home_zone_metrics["fc_cycle_sog"][i]}', f'{home_zone_metrics["rush_sog"][i]}', str(home_rebounds_by_period.get(period_num, 0))])
             
             # Add OT/SO row(s) - combine if both occur
             if has_ot and has_so:
@@ -1196,7 +1204,7 @@ class PostGameReportGenerator:
                     str(ot_so_stats['gv']), str(ot_so_stats['tk']), f'{ot_so_stats["gs"]:.1f}', f'{ot_so_stats["xg"]:.2f}', 
                     f'{ot_so_stats["nz_turnovers"]}', f'{ot_so_stats["nz_turnovers_to_shots"]}',
                     f'{ot_so_stats["oz_originating_shots"]}', f'{ot_so_stats["nz_originating_shots"]}', f'{ot_so_stats["dz_originating_shots"]}',
-                    f'{ot_so_stats["fc_cycle_sog"]}', f'{ot_so_stats["rush_sog"]}'])
+                    f'{ot_so_stats["fc_cycle_sog"]}', f'{ot_so_stats["rush_sog"]}', str(home_rebounds_by_period.get(4, 0))])
             elif has_ot:
                 # OT only row with all metrics
                 ot_stats = self._calculate_ot_so_stats(game_data, home_team['id'], 'home', 'OT')
@@ -1206,7 +1214,7 @@ class PostGameReportGenerator:
                     str(ot_stats['gv']), str(ot_stats['tk']), f'{ot_stats["gs"]:.1f}', f'{ot_stats["xg"]:.2f}', 
                     f'{ot_stats["nz_turnovers"]}', f'{ot_stats["nz_turnovers_to_shots"]}',
                     f'{ot_stats["oz_originating_shots"]}', f'{ot_stats["nz_originating_shots"]}', f'{ot_stats["dz_originating_shots"]}',
-                    f'{ot_stats["fc_cycle_sog"]}', f'{ot_stats["rush_sog"]}'])
+                    f'{ot_stats["fc_cycle_sog"]}', f'{ot_stats["rush_sog"]}', str(home_rebounds_by_period.get(4, 0))])
             elif has_so:
                 # SO only row with all metrics
                 so_stats = self._calculate_ot_so_stats(game_data, home_team['id'], 'home', 'SO')
@@ -1216,17 +1224,18 @@ class PostGameReportGenerator:
                     str(so_stats['gv']), str(so_stats['tk']), f'{so_stats["gs"]:.1f}', f'{so_stats["xg"]:.2f}', 
                     f'{so_stats["nz_turnovers"]}', f'{so_stats["nz_turnovers_to_shots"]}',
                     f'{so_stats["oz_originating_shots"]}', f'{so_stats["nz_originating_shots"]}', f'{so_stats["dz_originating_shots"]}',
-                    f'{so_stats["fc_cycle_sog"]}', f'{so_stats["rush_sog"]}'])
+                    f'{so_stats["fc_cycle_sog"]}', f'{so_stats["rush_sog"]}', str(home_rebounds_by_period.get(4, 0))])
             
             # Add Final row for home team
-            home_total_goals = sum(home_period_scores) + home_ot_goals + home_so_goals  # Include OT and SO goals (SO is 1 for winner, 0 for loser)
+            home_total_goals = sum(home_period_scores) + home_ot_goals + home_so_goals
+            home_total_rebounds = sum(home_rebounds_by_period.values())
             stats_data.append(['Final', str(home_total_goals), str(sum(home_period_stats['shots'])), f"{sum(home_period_stats['corsi_pct'])/3:.1f}%",
                 f"{sum(home_period_stats['pp_goals'])}/{sum(home_period_stats['pp_attempts'])}", str(sum(home_period_stats['pim'])), 
                 str(sum(home_period_stats['hits'])), f"{sum(home_period_stats['fo_pct'])/3:.1f}%", str(sum(home_period_stats['bs'])), 
                 str(sum(home_period_stats['gv'])), str(sum(home_period_stats['tk'])), f'{sum(home_gs_periods):.1f}', f'{home_xg_total:.2f}',
                 f'{sum(home_zone_metrics["nz_turnovers"])}', f'{sum(home_zone_metrics["nz_turnovers_to_shots"])}',
                  f'{sum(home_zone_metrics["oz_originating_shots"])}', f'{sum(home_zone_metrics["nz_originating_shots"])}', f'{sum(home_zone_metrics["dz_originating_shots"])}',
-                f'{sum(home_zone_metrics["fc_cycle_sog"])}', f'{sum(home_zone_metrics["rush_sog"])}'])
+               f'{sum(home_zone_metrics["fc_cycle_sog"])}', f'{sum(home_zone_metrics["rush_sog"])}', str(home_total_rebounds)])
             
             # Get team colors (using the same team_colors dictionary defined earlier)
             away_team_color = team_colors.get(away_team['abbrev'], colors.white)
@@ -1249,7 +1258,7 @@ class PostGameReportGenerator:
             base_font_size = 5.5 if (has_ot or has_so) else 6
             header_font_size = 4.5 if (has_ot or has_so) else 5
             
-            stats_table = Table(stats_data, colWidths=[0.4*inch, 0.35*inch, 0.35*inch, 0.4*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.4*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch])
+            stats_table = Table(stats_data, colWidths=[0.4*inch, 0.35*inch, 0.35*inch, 0.4*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.4*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch])
             
             # Build dynamic table style
             table_style = [
@@ -1270,6 +1279,9 @@ class PostGameReportGenerator:
                 ('FONTWEIGHT', (0, away_logo_row), (-1, away_logo_row), 'BOLD'),
                 ('ALIGN', (1, away_logo_row), (1, away_logo_row), 'LEFT'),
                 ('VALIGN', (1, away_logo_row), (1, away_logo_row), 'MIDDLE'),
+                # Span and center the win probability text across columns 2-20 (full width after logo)
+                ('SPAN', (2, away_logo_row), (20, away_logo_row)),
+                ('ALIGN', (2, away_logo_row), (20, away_logo_row), 'CENTER'),
                 ('LINEBELOW', (0, away_logo_row), (-1, away_logo_row), 0, colors.transparent),
                 ('LINEABOVE', (0, away_logo_row), (-1, away_logo_row), 0, colors.transparent),
                 ('INNERGRID', (0, away_logo_row), (-1, away_logo_row), 0, colors.transparent),
@@ -1282,6 +1294,9 @@ class PostGameReportGenerator:
                 ('FONTWEIGHT', (0, home_logo_row), (-1, home_logo_row), 'BOLD'),
                 ('ALIGN', (1, home_logo_row), (1, home_logo_row), 'LEFT'),
                 ('VALIGN', (1, home_logo_row), (1, home_logo_row), 'MIDDLE'),
+                # Span and center the win probability text across columns 2-20 (full width after logo)
+                ('SPAN', (2, home_logo_row), (20, home_logo_row)),
+                ('ALIGN', (2, home_logo_row), (20, home_logo_row), 'CENTER'),
                 ('LINEBELOW', (0, home_logo_row), (-1, home_logo_row), 0, colors.transparent),
                 ('LINEABOVE', (0, home_logo_row), (-1, home_logo_row), 0, colors.transparent),
                 ('INNERGRID', (0, home_logo_row), (-1, home_logo_row), 0, colors.transparent),
@@ -2530,23 +2545,11 @@ class PostGameReportGenerator:
             return 'neutral'
     
     def _is_rush_shot(self, current_play, all_plays, team_id):
-        """Determine if a shot is from a rush: N/D zone event followed by OZ shot within 5 seconds"""
+        """Determine if a shot is from a rush: N/D zone event followed by OZ shot within 4 seconds"""
         try:
             current_team = current_play.get('details', {}).get('eventOwnerTeamId')
             current_period = current_play.get('periodDescriptor', {}).get('number', 1)
             current_time_str = current_play.get('timeInPeriod', '00:00')
-            
-            # Check if current shot is in offensive zone (use zone code if available, fallback to coordinates)
-            current_zone = current_play.get('details', {}).get('zoneCode', '')
-            current_x = current_play.get('details', {}).get('xCoord', 0)
-            
-            # Use zone code if available, otherwise use coordinates
-            if current_zone:
-                if current_zone != 'O':  # Not in offensive zone
-                    return False
-            else:
-                if current_x <= 0:  # Not in offensive zone (NHL: positive x = offensive zone)
-                    return False
             
             # Convert current time to seconds
             current_time_seconds = self._parse_time_to_seconds(current_time_str)
@@ -2557,24 +2560,22 @@ class PostGameReportGenerator:
             except ValueError:
                 return False
             
-            # Look for N/D zone events within 5 seconds (check last 10 events for efficiency)
+            # Look for N/D zone events within 4 seconds (check last 10 events for efficiency)
             for i in range(max(0, play_index - 10), play_index):
                 prev_play = all_plays[i]
                 prev_team = prev_play.get('details', {}).get('eventOwnerTeamId')
-                prev_type = prev_play.get('typeDescKey', '')
                 prev_period = prev_play.get('periodDescriptor', {}).get('number', 1)
-                prev_time_str = prev_play.get('timeInPeriod', '00:00')
                 
                 # Only consider plays from the same team and period
                 if prev_team != current_team or prev_period != current_period:
                     continue
                 
-                # Convert previous time to seconds
+                prev_time_str = prev_play.get('timeInPeriod', '00:00')
                 prev_time_seconds = self._parse_time_to_seconds(prev_time_str)
                 
-                # Check if within 5 seconds
-                time_diff = current_time_seconds - prev_time_seconds
-                if time_diff < 0 or time_diff > 5:  # Skip if negative (future) or > 5 seconds
+                # Check if within 4 seconds
+                time_diff = abs(current_time_seconds - prev_time_seconds)
+                if time_diff > 4:
                     continue
                 
                 # Check if previous event was in neutral or defensive zone
@@ -2584,15 +2585,23 @@ class PostGameReportGenerator:
                 # Use zone code if available, otherwise use coordinates
                 is_nd_zone = False
                 if prev_zone:
-                    is_nd_zone = prev_zone in ['N', 'D']  # Neutral or Defensive zone
+                    is_nd_zone = prev_zone in ['N', 'D']
                 else:
-                    is_nd_zone = prev_x <= 0  # Neutral or Defensive zone (x <= 0)
+                    # Note: We can't rely just on X <= 0 because it depends on team side.
+                    # But checking for explicit N/D zone code is safer if available.
+                    # If no zone code, fallback to type logic
+                    pass
                 
-                # Check for rush-indicating events
-                rush_events = ['faceoff', 'takeaway', 'giveaway', 'blocked-shot', 'hit']
-                
-                if is_nd_zone and prev_type in rush_events:
+                # If we have explicit N/D zone, great.
+                if is_nd_zone:
                     return True
+                    
+                # Fallback: check event types that typically happen in N/D zone or transition
+                # If we don't have zone code, we rely on event type + time
+                prev_type = prev_play.get('typeDescKey', '')
+                if prev_type in ['takeaway', 'block-shot', 'hit', 'faceoff'] and time_diff <= 4:
+                     # This is a heuristic: defensive plays shortly before a shot likely mean transition
+                     return True
             
             return False
             
@@ -2610,97 +2619,12 @@ class PostGameReportGenerator:
         except:
             return 0
     
-    def _is_forecheck_cycle_shot(self, current_play, all_plays):
-        """Determine if a shot is from forecheck/cycle using proper hockey logic"""
-        try:
-            play_index = all_plays.index(current_play)
-            current_team = current_play.get('details', {}).get('eventOwnerTeamId')
-            current_period = current_play.get('periodDescriptor', {}).get('number', 1)
-            
-            # Look back through recent plays to find forecheck/cycle indicators
-            forecheck_indicators = 0
-            cycle_indicators = 0
-            forecheck_found = False
-            sustained_pressure = False
-            
-            # Check last 8 plays for forecheck/cycle indicators
-            for i in range(max(0, play_index - 8), play_index):
-                prev_play = all_plays[i]
-                prev_team = prev_play.get('details', {}).get('eventOwnerTeamId')
-                prev_type = prev_play.get('typeDescKey', '')
-                prev_period = prev_play.get('periodDescriptor', {}).get('number', 1)
-                
-                # Only consider plays from the same team and period
-                if prev_team != current_team or prev_period != current_period:
-                    continue
-                
-                coords = prev_play.get('details', {}).get('coordinates', {})
-                x_coord = coords.get('x', 0)
-                
-                # Forecheck indicators:
-                # 1. Takeaway in offensive zone - indicates successful forecheck
-                if prev_type == 'takeaway' and x_coord > 25:
-                    forecheck_indicators += 3
-                    forecheck_found = True
-                
-                # 2. Hit in offensive zone - indicates forecheck pressure
-                elif prev_type == 'hit' and x_coord > 25:
-                    forecheck_indicators += 1
-                
-                # 3. Giveaway by opponent in their defensive zone - indicates forecheck pressure
-                elif prev_type == 'giveaway' and x_coord < -25:
-                    forecheck_indicators += 2
-                    forecheck_found = True
-                
-                # Cycle indicators:
-                # 4. Pass in offensive zone - indicates cycle
-                elif prev_type == 'pass' and x_coord > 25:
-                    cycle_indicators += 1
-                    sustained_pressure = True
-                
-                # 5. Shot from previous play in offensive zone - indicates sustained pressure
-                elif prev_type in ['shot-on-goal', 'missed-shot', 'blocked-shot'] and x_coord > 25:
-                    cycle_indicators += 0.5
-                    sustained_pressure = True
-                
-                # 6. Faceoff win in offensive zone - indicates cycle opportunity
-                elif prev_type == 'faceoff' and x_coord > 25:
-                    cycle_indicators += 1
-                    sustained_pressure = True
-                
-                # 7. Multiple passes in offensive zone - indicates cycle
-                elif prev_type == 'pass' and x_coord > 25:
-                    cycle_indicators += 0.3
-            
-            # Get shot coordinates for debug
-            shot_coords = current_play.get('details', {}).get('coordinates', {})
-            shot_x = shot_coords.get('x', 0)
-            
-            # Forecheck/Cycle shot criteria (extremely lenient):
-            # - Any forecheck indicators OR any cycle indicators
-            # - OR just cycle indicators (0.5+)
-            # - OR any forecheck pressure
-            # - OR any shot in offensive zone (simplified approach)
-            if (forecheck_indicators > 0 or cycle_indicators > 0 or cycle_indicators >= 0.5 or forecheck_indicators > 0 or 
-                shot_x > 25):
-                return True
-            
-            # Debug output for first few shots
-            if play_index < 5:  # Only debug first 5 shots to avoid spam
-                print(f"Debug - Shot {play_index}: x={shot_x}, forecheck={forecheck_indicators}, cycle={cycle_indicators}")
-            
-            return False
-            
-        except Exception as e:
-            print(f"Error in forecheck/cycle shot detection: {e}")
-            return False
-    
     def _is_shot_after_turnover(self, shot_x, shot_y, turnover, time_window_seconds=5):
         """Check if shot occurred after a turnover within time window"""
         # Simplified - in reality would need timestamp comparison
         # For now, just check if shot is in same general area
         distance = ((shot_x - turnover['x']) ** 2 + (shot_y - turnover['y']) ** 2) ** 0.5
-        return distance < 50  # Within 50 units
+        return distance < 60  # Within 60 units (increased slightly)
     
     def create_player_performance(self, game_data):
         """Create top 5 players by Game Score across both teams"""
@@ -2839,7 +2763,7 @@ class PostGameReportGenerator:
             story.append(Spacer(1, 10))
             story.append(Paragraph("Top players ranked by Game Score (GS) - a comprehensive metric combining goals, assists, shots, hits, and other key performance indicators.", self.normal_style))
         
-        story.append(Spacer(1, 20))
+        story.append(Spacer(1, -20))  # Negative spacing to pull content up further
         return story
     
     def create_side_by_side_tables(self, game_data):
@@ -2921,7 +2845,7 @@ class PostGameReportGenerator:
             ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
         ]))
         story.append(advanced_metrics_title_wrapper)
-        story.append(Spacer(1, 5))
+        story.append(Spacer(1, 2))  # Moved up 0.3cm (approx 9pts) from 11
         
         # Add advanced metrics table with left positioning
         advanced_metrics_story = self.create_advanced_metrics_section(game_data)
@@ -3019,7 +2943,7 @@ class PostGameReportGenerator:
                 story.append(right_table)
                 break
         
-        story.append(Spacer(1, 20))
+        story.append(Spacer(1, -11))  # Negative spacing to pull content up
         return story
     
     
@@ -3459,6 +3383,14 @@ class PostGameReportGenerator:
             home_cross_ice = metrics['home_team']['cross_ice_passes']
             away_pre_shot = metrics['away_team']['pre_shot_movement']
             home_pre_shot = metrics['home_team']['pre_shot_movement']
+            away_nzt = metrics['away_team'].get('nzt_stats', {'nzt': 0, 'nztsa': 0})
+            home_nzt = metrics['home_team'].get('nzt_stats', {'nzt': 0, 'nztsa': 0})
+            away_fo = metrics['away_team'].get('faceoff_stats', {'oz_wins': 0, 'oz_wins_leading_to_shot': 0})
+            home_fo = metrics['home_team'].get('faceoff_stats', {'oz_wins': 0, 'oz_wins_leading_to_shot': 0})
+            
+            # Calculates Faceoff to Shot %
+            away_fo_pct = (away_fo['oz_wins_leading_to_shot'] / away_fo['oz_wins'] * 100) if away_fo['oz_wins'] > 0 else 0.0
+            home_fo_pct = (home_fo['oz_wins_leading_to_shot'] / home_fo['oz_wins'] * 100) if home_fo['oz_wins'] > 0 else 0.0
             
             # Load team logos for header - use PNG format from ESPN instead of SVG
             away_logo_img = None
@@ -3514,38 +3446,39 @@ class PostGameReportGenerator:
             combined_data = [
                 ['Category', 'Metric', away_logo_img if away_logo_img else away_team_abbrev, home_logo_img if home_logo_img else home_team_abbrev],
                 
-                # Shot Quality Analysis
+                # Shot Quality Analysis (Rows 1-5)
                 ['SHOT QUALITY', 'Expected Goals (xG)', f"{away_xg_total:.2f}", f"{home_xg_total:.2f}"],
                 ['', 'High Danger Shots', str(away_shot_quality['high_danger_shots']), str(home_shot_quality['high_danger_shots'])],
                 ['', 'Total Shots', str(away_shot_quality['total_shots']), str(home_shot_quality['total_shots'])],
                 ['', 'Shots on Goal', str(away_shot_quality['shots_on_goal']), str(home_shot_quality['shots_on_goal'])],
                 ['', 'Shooting %', f"{away_shot_quality['shooting_percentage']:.1%}", f"{home_shot_quality['shooting_percentage']:.1%}"],
                 
-                # Pressure Analysis
+                # Pressure Analysis (Rows 6-8)
                 ['PRESSURE', 'Sustained Pressure Sequences', str(away_pressure['sustained_pressure_sequences']), str(home_pressure['sustained_pressure_sequences'])],
                 ['', 'Quick Strike Opportunities', str(away_pressure['quick_strike_opportunities']), str(home_pressure['quick_strike_opportunities'])],
                 ['', 'Avg Shots per Sequence', 
                  f"{sum(away_pressure['shot_attempts_per_sequence'])/len(away_pressure['shot_attempts_per_sequence']):.1f}" if away_pressure['shot_attempts_per_sequence'] else '0.0', 
                  f"{sum(home_pressure['shot_attempts_per_sequence'])/len(home_pressure['shot_attempts_per_sequence']):.1f}" if home_pressure['shot_attempts_per_sequence'] else '0.0'],
                 
-                # Defensive Analysis
+                # Defensive Analysis (Rows 9-13) - Removed NZT rows
                 ['DEFENSIVE', 'Blocked Shots', str(away_defense['blocked_shots']), str(home_defense['blocked_shots'])],
                 ['', 'Takeaways', str(away_defense['takeaways']), str(home_defense['takeaways'])],
                 ['', 'Hits', str(away_defense['hits']), str(home_defense['hits'])],
                 ['', 'Shot Attempts Against', str(away_defense['shot_attempts_against']), str(home_defense['shot_attempts_against'])],
                 ['', 'High Danger Chances Against', str(away_defense['high_danger_chances_against']), str(home_defense['high_danger_chances_against'])],
                 
-                # Pre-Shot Movement Analysis
+                # Pre-Shot Movement Analysis (Rows 14-18)
                 ['PRE-SHOT MOVEMENT', 'Royal Road Proxy', 
                  f"{away_pre_shot['royal_road_proxy']['attempts']} shots", 
                  f"{home_pre_shot['royal_road_proxy']['attempts']} shots"],
+                ['', 'Faceoffs Leading to Shots %', f"{away_fo_pct:.1f}%", f"{home_fo_pct:.1f}%"],
                 ['', 'OZ Retrieval to Shot', 
                  f"{away_pre_shot['oz_retrieval_to_shot']['attempts']} shots", 
                  f"{home_pre_shot['oz_retrieval_to_shot']['attempts']} shots"],
-                ['', 'Lateral Movement (E-W)', 
+                ['', 'East-West Play', 
                  self._classify_lateral_movement(away_pre_shot['lateral_movement']['avg_delta_y']), 
                  self._classify_lateral_movement(home_pre_shot['lateral_movement']['avg_delta_y'])],
-                ['', 'Longitudinal Movement (N-S)', 
+                ['', 'North-South Play', 
                  self._classify_longitudinal_movement(away_pre_shot['longitudinal_movement']['avg_delta_x']), 
                  self._classify_longitudinal_movement(home_pre_shot['longitudinal_movement']['avg_delta_x'])]
             ]
@@ -3558,23 +3491,24 @@ class PostGameReportGenerator:
                 ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
                 ('FONTNAME', (0, 0), (-1, 0), 'RussoOne-Regular'),
                 ('FONTSIZE', (0, 0), (-1, 0), 8),
-                ('BOTTOMPADDING', (0, 0), (-1, 0), 6),
+                ('BOTTOMPADDING', (0, 0), (-1, 0), 4),  # Reduced padding to compact table
+                ('TOPPADDING', (0, 0), (-1, 0), 4),     # Reduced padding
                 
-                # SHOT QUALITY category header and all metric rows - medium orange/salmon background with black text (Category column only)
-                ('BACKGROUND', (0, 1), (0, 5), colors.Color(255/255, 160/255, 122/255)),  # Medium orange/salmon
+                # SHOT QUALITY category header and all metric rows - medium orange/salmon background with black text
+                ('BACKGROUND', (0, 1), (0, 5), colors.Color(255/255, 160/255, 122/255)),  
                 ('TEXTCOLOR', (0, 1), (0, 5), colors.black),
                 
-                # PRESSURE category header and all metric rows - light blue background with black text (Category column only)
-                ('BACKGROUND', (0, 6), (0, 8), colors.Color(135/255, 206/255, 250/255)),  # Light blue
+                # PRESSURE category header and all metric rows - light blue background with black text
+                ('BACKGROUND', (0, 6), (0, 8), colors.Color(135/255, 206/255, 250/255)),  
                 ('TEXTCOLOR', (0, 6), (0, 8), colors.black),
                 
-                # DEFENSIVE category header and all metric rows - light gray background with black text (Category column only)
-                ('BACKGROUND', (0, 9), (0, 13), colors.Color(211/255, 211/255, 211/255)),  # Light gray
+                # DEFENSIVE category header and all metric rows - light gray background with black text
+                ('BACKGROUND', (0, 9), (0, 13), colors.Color(211/255, 211/255, 211/255)),  
                 ('TEXTCOLOR', (0, 9), (0, 13), colors.black),
                 
-                # PRE-SHOT MOVEMENT category header and all metric rows - light yellow/cream background with black text (Category column only)
-                ('BACKGROUND', (0, 14), (0, 17), colors.Color(255/255, 253/255, 208/255)),  # Light yellow/cream
-                ('TEXTCOLOR', (0, 14), (0, 17), colors.black),
+                # PRE-SHOT MOVEMENT category header and all metric rows - light yellow/cream background with black text
+                ('BACKGROUND', (0, 14), (0, 18), colors.Color(255/255, 253/255, 208/255)),  
+                ('TEXTCOLOR', (0, 14), (0, 18), colors.black),
                 
                 # Alternating grey background for Metric and team columns (every second row)
                 ('BACKGROUND', (1, 2), (-1, 2), colors.lightgrey),  # Row 2 (High Danger Shots)
@@ -3583,17 +3517,61 @@ class PostGameReportGenerator:
                 ('BACKGROUND', (1, 8), (-1, 8), colors.lightgrey),  # Row 8 (Avg Shots per Sequence)
                 ('BACKGROUND', (1, 10), (-1, 10), colors.lightgrey),  # Row 10 (Takeaways)
                 ('BACKGROUND', (1, 12), (-1, 12), colors.lightgrey),  # Row 12 (Shot Attempts Against)
-                ('BACKGROUND', (1, 15), (-1, 15), colors.lightgrey),  # Row 15 (OZ Retrieval to Shot)
-                ('BACKGROUND', (1, 17), (-1, 17), colors.lightgrey),  # Row 17 (Longitudinal Movement)
                 
-                # Font styling
+                ('BACKGROUND', (1, 14), (-1, 14), colors.lightgrey), # Royal Road (Start of Section)
+                ('BACKGROUND', (1, 16), (-1, 16), colors.lightgrey), # OZ Retrieval
+                ('BACKGROUND', (1, 18), (-1, 18), colors.lightgrey), # North-South Play
+                
+                
+                # Font styling - REDUCED SIZE to ensure fit
                 ('FONTNAME', (0, 1), (0, -1), 'RussoOne-Regular'),
-                ('FONTSIZE', (0, 1), (0, -1), 5.5),
+                ('FONTSIZE', (0, 1), (0, -1), 5.5), # Already small, keeping it
                 ('FONTWEIGHT', (0, 1), (0, -1), 'BOLD'),
                 ('FONTNAME', (1, 1), (-1, -1), 'RussoOne-Regular'),
                 ('FONTSIZE', (1, 1), (-1, -1), 5.5),
-                ('TOPPADDING', (0, 1), (-1, -1), 2),
-                ('BOTTOMPADDING', (0, 1), (-1, -1), 2),
+                ('TOPPADDING', (0, 1), (-1, -1), 1),  # Reduced from 2
+                ('BOTTOMPADDING', (0, 1), (-1, -1), 1), # Reduced from 2
+                
+                # Green/Red comparison colors for selected metrics
+                # Row 1: Expected Goals (xG) - higher is better
+                ('TEXTCOLOR', (2, 1), (2, 1), colors.HexColor('#008000') if away_xg_total > home_xg_total else colors.HexColor('#DC143C')),
+                ('TEXTCOLOR', (3, 1), (3, 1), colors.HexColor('#008000') if home_xg_total > away_xg_total else colors.HexColor('#DC143C')),
+                # Row 2: High Danger Shots - higher is better
+                ('TEXTCOLOR', (2, 2), (2, 2), colors.HexColor('#008000') if away_shot_quality['high_danger_shots'] > home_shot_quality['high_danger_shots'] else colors.HexColor('#DC143C')),
+                ('TEXTCOLOR', (3, 2), (3, 2), colors.HexColor('#008000') if home_shot_quality['high_danger_shots'] > away_shot_quality['high_danger_shots'] else colors.HexColor('#DC143C')),
+                # Row 3: Total Shots - higher is better
+                ('TEXTCOLOR', (2, 3), (2, 3), colors.HexColor('#008000') if away_shot_quality['total_shots'] > home_shot_quality['total_shots'] else colors.HexColor('#DC143C')),
+                ('TEXTCOLOR', (3, 3), (3, 3), colors.HexColor('#008000') if home_shot_quality['total_shots'] > away_shot_quality['total_shots'] else colors.HexColor('#DC143C')),
+                # Row 4: Shots on Goal - higher is better
+                ('TEXTCOLOR', (2, 4), (2, 4), colors.HexColor('#008000') if away_shot_quality['shots_on_goal'] > home_shot_quality['shots_on_goal'] else colors.HexColor('#DC143C')),
+                ('TEXTCOLOR', (3, 4), (3, 4), colors.HexColor('#008000') if home_shot_quality['shots_on_goal'] > away_shot_quality['shots_on_goal'] else colors.HexColor('#DC143C')),
+                # Row 5: Shooting % - higher is better
+                ('TEXTCOLOR', (2, 5), (2, 5), colors.HexColor('#008000') if away_shot_quality['shooting_percentage'] > home_shot_quality['shooting_percentage'] else colors.HexColor('#DC143C')),
+                ('TEXTCOLOR', (3, 5), (3, 5), colors.HexColor('#008000') if home_shot_quality['shooting_percentage'] > away_shot_quality['shooting_percentage'] else colors.HexColor('#DC143C')),
+                # Row 6: Sustained Pressure Sequences - higher is better
+                ('TEXTCOLOR', (2, 6), (2, 6), colors.HexColor('#008000') if away_pressure['sustained_pressure_sequences'] > home_pressure['sustained_pressure_sequences'] else colors.HexColor('#DC143C')),
+                ('TEXTCOLOR', (3, 6), (3, 6), colors.HexColor('#008000') if home_pressure['sustained_pressure_sequences'] > away_pressure['sustained_pressure_sequences'] else colors.HexColor('#DC143C')),
+                # Row 7: Quick Strike Opportunities - higher is better
+                ('TEXTCOLOR', (2, 7), (2, 7), colors.HexColor('#008000') if away_pressure['quick_strike_opportunities'] > home_pressure['quick_strike_opportunities'] else colors.HexColor('#DC143C')),
+                ('TEXTCOLOR', (3, 7), (3, 7), colors.HexColor('#008000') if home_pressure['quick_strike_opportunities'] > away_pressure['quick_strike_opportunities'] else colors.HexColor('#DC143C')),
+                # Row 8: Avg Shots per Sequence - higher is better
+                ('TEXTCOLOR', (2, 8), (2, 8), colors.HexColor('#008000') if (sum(away_pressure['shot_attempts_per_sequence'])/len(away_pressure['shot_attempts_per_sequence']) if away_pressure['shot_attempts_per_sequence'] else 0) > (sum(home_pressure['shot_attempts_per_sequence'])/len(home_pressure['shot_attempts_per_sequence']) if home_pressure['shot_attempts_per_sequence'] else 0) else colors.HexColor('#DC143C')),
+                ('TEXTCOLOR', (3, 8), (3, 8), colors.HexColor('#008000') if (sum(home_pressure['shot_attempts_per_sequence'])/len(home_pressure['shot_attempts_per_sequence']) if home_pressure['shot_attempts_per_sequence'] else 0) > (sum(away_pressure['shot_attempts_per_sequence'])/len(away_pressure['shot_attempts_per_sequence']) if away_pressure['shot_attempts_per_sequence'] else 0) else colors.HexColor('#DC143C')),
+                # Row 9: Blocked Shots - higher is better
+                ('TEXTCOLOR', (2, 9), (2, 9), colors.HexColor('#008000') if away_defense['blocked_shots'] > home_defense['blocked_shots'] else colors.HexColor('#DC143C')),
+                ('TEXTCOLOR', (3, 9), (3, 9), colors.HexColor('#008000') if home_defense['blocked_shots'] > away_defense['blocked_shots'] else colors.HexColor('#DC143C')),
+                # Row 10: Takeaways - higher is better
+                ('TEXTCOLOR', (2, 10), (2, 10), colors.HexColor('#008000') if away_defense['takeaways'] > home_defense['takeaways'] else colors.HexColor('#DC143C')),
+                ('TEXTCOLOR', (3, 10), (3, 10), colors.HexColor('#008000') if home_defense['takeaways'] > away_defense['takeaways'] else colors.HexColor('#DC143C')),
+                # Row 11: Hits - higher is better
+                ('TEXTCOLOR', (2, 11), (2, 11), colors.HexColor('#008000') if away_defense['hits'] > home_defense['hits'] else colors.HexColor('#DC143C')),
+                ('TEXTCOLOR', (3, 11), (3, 11), colors.HexColor('#008000') if home_defense['hits'] > away_defense['hits'] else colors.HexColor('#DC143C')),
+                # Row 12: Shot Attempts Against - LOWER is better
+                ('TEXTCOLOR', (2, 12), (2, 12), colors.HexColor('#008000') if away_defense['shot_attempts_against'] < home_defense['shot_attempts_against'] else colors.HexColor('#DC143C')),
+                ('TEXTCOLOR', (3, 12), (3, 12), colors.HexColor('#008000') if home_defense['shot_attempts_against'] < away_defense['shot_attempts_against'] else colors.HexColor('#DC143C')),
+                # Row 13: High Danger Chances Against - LOWER is better
+                ('TEXTCOLOR', (2, 13), (2, 13), colors.HexColor('#008000') if away_defense['high_danger_chances_against'] < home_defense['high_danger_chances_against'] else colors.HexColor('#DC143C')),
+                ('TEXTCOLOR', (3, 13), (3, 13), colors.HexColor('#008000') if home_defense['high_danger_chances_against'] < away_defense['high_danger_chances_against'] else colors.HexColor('#DC143C')),
                 
                 # Grid borders
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
@@ -3601,7 +3579,7 @@ class PostGameReportGenerator:
             
             # Add the table directly (positioning will be handled by side-by-side layout)
             story.append(combined_table)
-            story.append(Spacer(1, 12))
+            story.append(Spacer(1, 4)) # Reduced from 12 to save space
             
         except Exception as e:
             print(f"Error creating advanced metrics: {e}")
@@ -3613,7 +3591,7 @@ class PostGameReportGenerator:
         """Create shot location visualizations"""
         story = []
                         
-        story.append(Spacer(1, 4))  # Reduced to move shot locations up by 0.2cm
+        story.append(Spacer(1, 18))  # Increased from 4 to 18 (+14 pts for 0.5cm)
         
         try:
             import os
@@ -3713,7 +3691,7 @@ class PostGameReportGenerator:
             # Use negative spacer to pull header to absolute top
             story.append(Spacer(1, -40))  # Increased negative spacer to pull header higher and cover top white space
             story.append(header_image)
-            story.append(Spacer(1, 14))  # Reduced space after header to move content up by 0.2cm
+            story.append(Spacer(1, 4))  # Reduced space after header to move content up by 0.2cm
         else:
             print("Warning: Header image failed to load")
         
@@ -3729,6 +3707,22 @@ class PostGameReportGenerator:
         
         # Create side-by-side layout for advanced metrics and top players
         story.extend(self.create_side_by_side_tables(game_data))
+        
+        # Add Sprite Goal Analysis Tables (if data available)
+        try:
+            from sprite_goal_analyzer import SpriteGoalAnalyzer
+            from sprite_table_generator import create_sprite_analysis_tables
+            
+            analyzer = SpriteGoalAnalyzer()
+            sprite_data = analyzer.analyze_game_goals_by_team(game_id)
+            
+            if sprite_data:
+                # Add sprite tables at bottom with spacing
+                story.append(Spacer(1, 17))  # Moved up 0.2cm (approx 6pts) from 23
+                sprite_tables = create_sprite_analysis_tables(sprite_data)
+                story.extend(sprite_tables)
+        except Exception as e:
+            print(f"Note: Sprite analysis not available: {e}")
         
         # Build the PDF with custom page template for background
         # Resolve background image using absolute path relative to this file, with cwd fallback

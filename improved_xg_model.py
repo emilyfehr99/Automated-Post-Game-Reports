@@ -293,6 +293,10 @@ class ImprovedXGModel:
         for prev_event in reversed(previous_events[-5:]):  # Check last 5 events
             prev_type = prev_event.get('typeDescKey', '')
             
+            # Check for play stoppages (whistle, faceoff) that break a rebound sequence
+            if prev_type in ['stoppage', 'faceoff', 'period-start', 'period-end']:
+                return 1.0  # Stoppage in play, not a rebound
+            
             # Check if previous event was a shot
             if prev_type in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
                 prev_time = self._parse_time(prev_event.get('timeInPeriod', '00:00'))
@@ -307,7 +311,8 @@ class ImprovedXGModel:
                         return self.rebound_multiplier
             
             # Stop looking if we go back more than 5 seconds
-            prev_time = self._parse_time(prev_event.get('timeInPeriod', '00:00'))
+            prev_time_str = prev_event.get('timeInPeriod', '00:00')
+            prev_time = self._parse_time(prev_time_str)
             if abs(current_time - prev_time) > 5:
                 break
         

@@ -750,6 +750,172 @@ class AdvancedMetricsAnalyzer:
         
         return metrics
     
+    def calculate_rush_metrics(self, team_id: int) -> dict:
+        """Calculate rush shot metrics"""
+        rush_stats = {
+            'rush_shots': 0,
+            'rush_goals': 0
+        }
+        
+        for i, play in enumerate(self.plays):
+            details = play.get('details', {})
+            event_type = play.get('typeDescKey', '')
+            event_team = details.get('eventOwnerTeamId')
+            
+            if event_team != team_id:
+                continue
+                
+            if event_type not in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
+                continue
+                
+            # Check for Rush (using xG model logic: N/D zone event within 4s)
+            is_rush = False
+            current_time = self._time_to_seconds(play.get('timeInPeriod', '00:00'))
+            
+            # Look back 4 seconds
+            for j in range(i - 1, max(-1, i - 10), -1):
+                prev_play = self.plays[j]
+                prev_time = self._time_to_seconds(prev_play.get('timeInPeriod', '00:00'))
+                
+                if abs(current_time - prev_time) > 4:
+                    break
+                    
+                prev_zone = prev_play.get('details', {}).get('zoneCode', '')
+                prev_team = prev_play.get('details', {}).get('eventOwnerTeamId')
+                
+                # If shooting team had possession in Neutral or Defensive zone recently
+                if prev_team == team_id and prev_zone in ['N', 'D']:
+                    is_rush = True
+                    break
+            
+            if is_rush:
+                rush_stats['rush_shots'] += 1
+                if event_type == 'goal':
+                    rush_stats['rush_goals'] += 1
+                    
+        return rush_stats
+
+    def calculate_rebounds_by_period(self, team_id: int) -> dict:
+        """Calculate rebounds by period (shots within 3s of previous shot, no stoppage)"""
+        rebounds_by_period = {1: 0, 2: 0, 3: 0, 4: 0}  # Periods 1, 2, 3, OT
+        
+        last_shot_time = -999
+        last_period = -1
+        
+        for play in self.plays:
+            event_type = play.get('typeDescKey', '')
+            details = play.get('details', {})
+            event_team = details.get('eventOwnerTeamId')
+            period = play.get('periodDescriptor', {}).get('number', 1)
+            time_str = play.get('timeInPeriod', '00:00')
+            current_time = self._time_to_seconds(time_str)
+            
+            # Reset on stoppage/faceoff (not a rebound if play stopped)
+            if event_type in ['stoppage', 'faceoff', 'period-start']:
+                last_shot_time = -999
+                continue
+                
+            if event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal'] and event_team == team_id:
+                if period == last_period and (current_time - last_shot_time) <= 3 and last_shot_time != -999:
+                    # This is a rebound
+                    if period in rebounds_by_period:
+                        rebounds_by_period[period] += 1
+                    elif period > 3:  # OT periods
+                        rebounds_by_period[4] += 1
+                
+                last_shot_time = current_time
+                last_period = period
+                
+        return rebounds_by_period
+
+    def calculate_nzt_metrics(self, team_id: int) -> dict:
+        """Calculate Neutral Zone Turnover metrics (Turnovers Committed)"""
+        nzt_stats = {
+            'nzt': 0,        # Turnovers committed by this team in NZ (Giveaways)
+            'nztsa': 0       # NZ Turnovers leading to Shot Attempts Against
+        }
+        
+        for i, play in enumerate(self.plays):
+            details = play.get('details', {})
+            event_type = play.get('typeDescKey', '')
+            event_team = details.get('eventOwnerTeamId')
+            zone = details.get('zoneCode', '')
+            
+            # We are looking for Turnovers COMMITTED by team_id
+            # 1. Giveaway by Team ID
+            # 2. Takeaway by Opponent (Event Owner != Team ID)
+            
+            is_nzt = False
+            if zone == 'N':
+                if event_type == 'giveaway' and event_team == team_id:
+                    is_nzt = True
+                elif event_type == 'takeaway' and event_team != team_id:
+                    is_nzt = True
+            
+            if is_nzt:
+                nzt_stats['nzt'] += 1
+                
+                # Check for subsequent shot attempt AGAINST team_id within 8 seconds
+                nzt_time = self._time_to_seconds(play.get('timeInPeriod', '00:00'))
+                
+                for j in range(i + 1, min(i + 20, len(self.plays))):
+                    next_play = self.plays[j]
+                    next_time = self._time_to_seconds(next_play.get('timeInPeriod', '00:00'))
+                    
+                    if abs(next_time - nzt_time) > 8:
+                        break
+                        
+                    next_type = next_play.get('typeDescKey', '')
+                    next_team = next_play.get('details', {}).get('eventOwnerTeamId')
+                    
+                    # Look for SHOT by OPPONENT (not team_id)
+                    if next_team != team_id and next_type in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
+                        nzt_stats['nztsa'] += 1
+                        break
+                        
+        return nzt_stats
+
+    def calculate_faceoff_metrics(self, team_id: int) -> dict:
+        """Calculate Faceoff metrics including FO to Shot %"""
+        fo_stats = {
+            'oz_wins': 0,
+            'oz_wins_leading_to_shot': 0
+        }
+        
+        for i, play in enumerate(self.plays):
+            if play.get('typeDescKey') == 'faceoff':
+                details = play.get('details', {})
+                zone = details.get('zoneCode', '')
+                winner_id = details.get('winningPlayerId')
+                
+                # We need to know which team the winner belongs to.
+                # using roster_map check
+                winner_team_id = None
+                if winner_id in self.roster_map:
+                    winner_team_id = self.roster_map[winner_id]['teamId']
+                
+                if winner_team_id == team_id and zone == 'O':
+                    fo_stats['oz_wins'] += 1
+                    
+                    # Check for shot within 10 seconds
+                    fo_time = self._time_to_seconds(play.get('timeInPeriod', '00:00'))
+                    
+                    for j in range(i + 1, min(i + 25, len(self.plays))):
+                        next_play = self.plays[j]
+                        next_time = self._time_to_seconds(next_play.get('timeInPeriod', '00:00'))
+                        
+                        if abs(next_time - fo_time) > 10:
+                            break
+                            
+                        next_type = next_play.get('typeDescKey', '')
+                        next_team = next_play.get('details', {}).get('eventOwnerTeamId')
+                        
+                        if next_team == team_id and next_type in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
+                            fo_stats['oz_wins_leading_to_shot'] += 1
+                            break
+                            
+        return fo_stats
+    
     def _time_to_seconds(self, time_str: str) -> float:
         """Convert MM:SS time string to seconds"""
         try:
@@ -845,7 +1011,10 @@ class AdvancedMetricsAnalyzer:
                 'pressure': self.calculate_pressure_metrics(away_team_id),
                 'defense': self.calculate_defensive_metrics(away_team_id),
                 'cross_ice_passes': self.calculate_cross_ice_pass_metrics(away_team_id),
-                'pre_shot_movement': self.calculate_pre_shot_movement_metrics(away_team_id)
+                'pre_shot_movement': self.calculate_pre_shot_movement_metrics(away_team_id),
+                'rush_stats': self.calculate_rush_metrics(away_team_id),
+                'nzt_stats': self.calculate_nzt_metrics(away_team_id),
+                'faceoff_stats': self.calculate_faceoff_metrics(away_team_id)
             },
             'home_team': {
                 'team_id': home_team_id,
@@ -853,7 +1022,10 @@ class AdvancedMetricsAnalyzer:
                 'pressure': self.calculate_pressure_metrics(home_team_id),
                 'defense': self.calculate_defensive_metrics(home_team_id),
                 'cross_ice_passes': self.calculate_cross_ice_pass_metrics(home_team_id),
-                'pre_shot_movement': self.calculate_pre_shot_movement_metrics(home_team_id)
+                'pre_shot_movement': self.calculate_pre_shot_movement_metrics(home_team_id),
+                'rush_stats': self.calculate_rush_metrics(home_team_id),
+                'nzt_stats': self.calculate_nzt_metrics(home_team_id),
+                'faceoff_stats': self.calculate_faceoff_metrics(home_team_id)
             },
             'available_metrics': self.get_available_metrics()
         }
