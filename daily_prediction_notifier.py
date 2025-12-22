@@ -83,19 +83,31 @@ class DailyPredictionNotifier:
             winner = pred['predicted_winner']
             confidence = pred['confidence']
             
-            # Get actual score prediction from base model
+            # Get actual score prediction from advanced score model
             try:
-                base_pred = self.predictor.learning_model.predict_game(away, home)
-                away_score = round(base_pred.get('away_score', 3))
-                home_score = round(base_pred.get('home_score', 3))
-            except:
-                # Fallback to simple prediction based on probabilities
-                if winner == away:
-                    away_score = 3
-                    home_score = 2
-                else:
-                    away_score = 2
-                    home_score = 3
+                from score_prediction_model import ScorePredictionModel
+                score_model = ScorePredictionModel()
+                score_pred = score_model.predict_score(
+                    away, home,
+                    away_goalie=pred.get('away_goalie'),
+                    home_goalie=pred.get('home_goalie')
+                )
+                away_score = score_pred['away_score']
+                home_score = score_pred['home_score']
+            except Exception as e:
+                # Fallback to base model
+                try:
+                    base_pred = self.predictor.learning_model.predict_game(away, home)
+                    away_score = round(base_pred.get('away_score', 3))
+                    home_score = round(base_pred.get('home_score', 3))
+                except:
+                    # Final fallback
+                    if winner == away:
+                        away_score = 3
+                        home_score = 2
+                    else:
+                        away_score = 2
+                        home_score = 3
             
             summary += f"**Game {i}**: {away} @ {home}\n"
             summary += f"  🏆 Prediction: **{winner} wins** ({away_score}-{home_score})\n"
