@@ -230,8 +230,12 @@ def create_sprite_analysis_tables(sprite_data):
             top_fill = PILImage.new('RGB', (top_fill_w, half_height), color=fill_color_hex) 
             img.paste(top_fill, (0, 0))
             
-        # Label "CARRY" with percentage
-        text = f"CARRY {top_pct:.0f}%"
+        # Label "CARRY" with percentage - ensure proper formatting
+        if top_pct is None or top_pct == 0:
+            text = "CARRY 0%"
+        else:
+            text = f"CARRY {int(top_pct)}%"
+        
         # Calculate text position to center
         try:
             left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
@@ -264,8 +268,11 @@ def create_sprite_analysis_tables(sprite_data):
             bot_fill = PILImage.new('RGB', (bot_fill_w, half_height), color=fill_color_hex)
             img.paste(bot_fill, (0, half_height))
             
-        # Label "PASS" with percentage
-        text = f"PASS {bottom_pct:.0f}%"
+        # Label "PASS" with percentage - ensure proper formatting
+        if bottom_pct is None or bottom_pct == 0:
+            text = "PASS 0%"
+        else:
+            text = f"PASS {int(bottom_pct)}%"
         try:
             left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
             text_w = right - left
