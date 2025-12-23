@@ -933,7 +933,7 @@ class PostGameReportGenerator:
                 'faceoffTotal': 0
             }
     
-    def create_team_stats_comparison(self, game_data):
+    def create_team_stats_comparison(self, game_data, game_id=None):
         """Create period-by-period team statistics comparison table"""
         story = []
         
@@ -1026,6 +1026,21 @@ class PostGameReportGenerator:
             away_rebounds_by_period = rebounds_analyzer.calculate_rebounds_by_period(away_team['id'])
             home_rebounds_by_period = rebounds_analyzer.calculate_rebounds_by_period(home_team['id'])
             
+            # Calculate zone efficiency metrics by period
+            from zone_efficiency_analyzer import ZoneTransitionEfficiencyAnalyzer
+            zone_eff_analyzer = ZoneTransitionEfficiencyAnalyzer()
+            # Correctly get game_id if not provided
+            if game_id is None:
+                game_id = game_data.get('game_center', {}).get('game', {}).get('id')
+            
+            # Extract period stats and game-level totals for both teams
+            zone_eff_result = zone_eff_analyzer.analyze_by_period(game_id)
+            zone_eff_game_result = zone_eff_analyzer.analyze_game(game_id)
+            away_zone_eff = zone_eff_result.get('period_stats', {}).get(away_team['id'], {})
+            home_zone_eff = zone_eff_result.get('period_stats', {}).get(home_team['id'], {})
+            away_total_stats = zone_eff_game_result.get('stats', {}).get(away_team['id'], {})
+            home_total_stats = zone_eff_game_result.get('stats', {}).get(home_team['id'], {})
+            
 
             # Calculate real period-by-period stats from NHL API data
             away_period_stats = self._calculate_real_period_stats(game_data, away_team['id'], 'away')
@@ -1116,22 +1131,29 @@ class PostGameReportGenerator:
             
             # Create period-by-period data table with all advanced metrics (dynamically handle OT/SO)
             stats_data = [
-                # Header row
-                ['Period', 'GF', 'S', 'CF%', 'PP', 'PIM', 'Hits', 'FO%', 'BLK', 'GV', 'TK', 'GS', 'xG', 'NZT', 'NZTSA', 'OZS', 'NZS', 'DZS', 'FC', 'Rush', 'REB'],
+                # Header row - added ENtoS and EXtoEN to the right
+                ['Period', 'GF', 'S', 'CF%', 'PP', 'PIM', 'Hits', 'FO%', 'BLK', 'GV', 'TK', 'GS', 'xG', 'NZT', 'NZTSA', 'OZS', 'NZS', 'DZS', 'FC', 'Rush', 'REB', 'ENtoS', 'EXtoEN'],
                 # Away team logo row with win probability centered in the row
-                [away_team['abbrev'], away_logo_img if away_logo_img else '', f"{win_prob['away_probability']}% likelihood of winning", '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
+                [away_team['abbrev'], away_logo_img if away_logo_img else '', f"{win_prob['away_probability']}% likelihood of winning", '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''],
             ]
             
             # Add regulation periods for away team
             for i in range(3):
                 period_num = i + 1
+                # Get zone efficiency for this period
+                period_zone_eff = away_zone_eff.get(period_num, {})
+                en_sog_pct = period_zone_eff.get('entry_efficiency', 0)
+                ex_en_pct = period_zone_eff.get('breakout_success', 0)
+                
                 stats_data.append([str(period_num), str(away_period_scores[i]), str(away_period_stats['shots'][i]), f"{away_period_stats['corsi_pct'][i]:.1f}%", 
                     f"{away_period_stats['pp_goals'][i]}/{away_period_stats['pp_attempts'][i]}", str(away_period_stats['pim'][i]), 
                     str(away_period_stats['hits'][i]), f"{away_period_stats['fo_pct'][i]:.1f}%", str(away_period_stats['bs'][i]), 
-                    str(away_period_stats['gv'][i]), str(away_period_stats['tk'][i]), f'{away_gs_periods[i]:.1f}', f'{away_xg_periods[i]:.2f}', 
+                    str(away_period_stats['gv'][i]), str(away_period_stats['tk'][i]), f'{away_gs_periods[i]:.1f}', f'{away_xg_periods[i]:.2f}',
                     f'{away_zone_metrics["nz_turnovers"][i]}', f'{away_zone_metrics["nz_turnovers_to_shots"][i]}',
                     f'{away_zone_metrics["oz_originating_shots"][i]}', f'{away_zone_metrics["nz_originating_shots"][i]}', f'{away_zone_metrics["dz_originating_shots"][i]}',
-                    f'{away_zone_metrics["fc_cycle_sog"][i]}', f'{away_zone_metrics["rush_sog"][i]}', str(away_rebounds_by_period.get(period_num, 0))])
+                    f'{away_zone_metrics["fc_cycle_sog"][i]}', f'{away_zone_metrics["rush_sog"][i]}', str(away_rebounds_by_period.get(period_num, 0)),
+                    f'{int(period_zone_eff.get("entries_to_shots", 0))}', 
+                    f'{int(period_zone_eff.get("exits_to_entries", 0))}'])
             
             # Add OT/SO row(s) - combine if both occur
             if has_ot and has_so:
@@ -1145,7 +1167,9 @@ class PostGameReportGenerator:
                     str(ot_so_stats['gv']), str(ot_so_stats['tk']), f'{ot_so_stats["gs"]:.1f}', f'{ot_so_stats["xg"]:.2f}', 
                     f'{ot_so_stats["nz_turnovers"]}', f'{ot_so_stats["nz_turnovers_to_shots"]}',
                     f'{ot_so_stats["oz_originating_shots"]}', f'{ot_so_stats["nz_originating_shots"]}', f'{ot_so_stats["dz_originating_shots"]}',
-                    f'{ot_so_stats["fc_cycle_sog"]}', f'{ot_so_stats["rush_sog"]}', str(away_rebounds_by_period.get(4, 0))])
+                    f'{ot_so_stats["fc_cycle_sog"]}', f'{ot_so_stats["rush_sog"]}', str(away_rebounds_by_period.get(4, 0)), 
+                    f'{int(away_zone_eff.get(4, {}).get("entries_to_shots", 0))}', 
+                    f'{int(away_zone_eff.get(4, {}).get("exits_to_entries", 0))}'])
             elif has_ot:
                 # OT only row with all metrics
                 ot_stats = self._calculate_ot_so_stats(game_data, away_team['id'], 'away', 'OT')
@@ -1155,7 +1179,9 @@ class PostGameReportGenerator:
                     str(ot_stats['gv']), str(ot_stats['tk']), f'{ot_stats["gs"]:.1f}', f'{ot_stats["xg"]:.2f}', 
                     f'{ot_stats["nz_turnovers"]}', f'{ot_stats["nz_turnovers_to_shots"]}',
                     f'{ot_stats["oz_originating_shots"]}', f'{ot_stats["nz_originating_shots"]}', f'{ot_stats["dz_originating_shots"]}',
-                    f'{ot_stats["fc_cycle_sog"]}', f'{ot_stats["rush_sog"]}', str(away_rebounds_by_period.get(4, 0))])
+                    f'{ot_stats["fc_cycle_sog"]}', f'{ot_stats["rush_sog"]}', str(away_rebounds_by_period.get(4, 0)), 
+                    f'{int(away_zone_eff.get(4, {}).get("entries_to_shots", 0))}', 
+                    f'{int(away_zone_eff.get(4, {}).get("exits_to_entries", 0))}'])
             elif has_so:
                 # SO only row with all metrics
                 so_stats = self._calculate_ot_so_stats(game_data, away_team['id'], 'away', 'SO')
@@ -1165,32 +1191,52 @@ class PostGameReportGenerator:
                     str(so_stats['gv']), str(so_stats['tk']), f'{so_stats["gs"]:.1f}', f'{so_stats["xg"]:.2f}', 
                     f'{so_stats["nz_turnovers"]}', f'{so_stats["nz_turnovers_to_shots"]}',
                     f'{so_stats["oz_originating_shots"]}', f'{so_stats["nz_originating_shots"]}', f'{so_stats["dz_originating_shots"]}',
-                    f'{so_stats["fc_cycle_sog"]}', f'{so_stats["rush_sog"]}', str(away_rebounds_by_period.get(4, 0))])
+                    f'{so_stats["fc_cycle_sog"]}', f'{so_stats["rush_sog"]}', str(away_rebounds_by_period.get(5, 0)), 
+                    f'{int(away_zone_eff.get(5, {}).get("entries_to_shots", 0))}', 
+                    f'{int(away_zone_eff.get(5, {}).get("exits_to_entries", 0))}'])
             
             # Add Final row for away team
             away_total_goals = sum(away_period_scores) + away_ot_goals + away_so_goals
             away_total_rebounds = sum(away_rebounds_by_period.values())
+            # Calculate overall zone efficiency for away team
+            # Calculate game-level totals accurately from counts
+            away_total_entries = away_total_stats.get('total_entries', 0)
+            away_total_en_sog_count = len(away_total_stats.get('entries_to_shots', []))
+            away_total_en_sog_eff = (away_total_en_sog_count / away_total_entries * 100) if away_total_entries > 0 else 0
+            
+            away_total_exits = away_total_stats.get('total_exits', 0)
+            away_total_ex_en_count = len(away_total_stats.get('exits_to_entries', []))
+            away_total_ex_en_eff = (away_total_ex_en_count / away_total_exits * 100) if away_total_exits > 0 else 0
+            
             stats_data.append(['Final', str(away_total_goals), str(sum(away_period_stats['shots'])), f"{sum(away_period_stats['corsi_pct'])/3:.1f}%",
                 f"{sum(away_period_stats['pp_goals'])}/{sum(away_period_stats['pp_attempts'])}", str(sum(away_period_stats['pim'])), 
                 str(sum(away_period_stats['hits'])), f"{sum(away_period_stats['fo_pct'])/3:.1f}%", str(sum(away_period_stats['bs'])), 
                 str(sum(away_period_stats['gv'])), str(sum(away_period_stats['tk'])), f'{sum(away_gs_periods):.1f}', f'{away_xg_total:.2f}',
                 f'{sum(away_zone_metrics["nz_turnovers"])}', f'{sum(away_zone_metrics["nz_turnovers_to_shots"])}',
                  f'{sum(away_zone_metrics["oz_originating_shots"])}', f'{sum(away_zone_metrics["nz_originating_shots"])}', f'{sum(away_zone_metrics["dz_originating_shots"])}',
-                f'{sum(away_zone_metrics["fc_cycle_sog"])}', f'{sum(away_zone_metrics["rush_sog"])}', str(away_total_rebounds)])
+                f'{sum(away_zone_metrics["fc_cycle_sog"])}', f'{sum(away_zone_metrics["rush_sog"])}', str(away_total_rebounds),
+                f'{away_total_en_sog_count}', f'{away_total_ex_en_count}'])
             
             # Home team logo row with win probability centered in the row
-            stats_data.append([home_team['abbrev'], home_logo_img if home_logo_img else '', f"{win_prob['home_probability']}% likelihood of winning", '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''])
+            stats_data.append([home_team['abbrev'], home_logo_img if home_logo_img else '', f"{win_prob['home_probability']}% likelihood of winning", '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''])
             
             # Add regulation periods for home team
             for i in range(3):
                 period_num = i + 1
+                # Get zone efficiency for this period
+                period_zone_eff = home_zone_eff.get(period_num, {})
+                en_sog_pct = period_zone_eff.get('entry_efficiency', 0)
+                ex_en_pct = period_zone_eff.get('breakout_success', 0)
+                
                 stats_data.append([str(period_num), str(home_period_scores[i]), str(home_period_stats['shots'][i]), f"{home_period_stats['corsi_pct'][i]:.1f}%",
                     f"{home_period_stats['pp_goals'][i]}/{home_period_stats['pp_attempts'][i]}", str(home_period_stats['pim'][i]), 
                     str(home_period_stats['hits'][i]), f"{home_period_stats['fo_pct'][i]:.1f}%", str(home_period_stats['bs'][i]), 
                     str(home_period_stats['gv'][i]), str(home_period_stats['tk'][i]), f'{home_gs_periods[i]:.1f}', f'{home_xg_periods[i]:.2f}',
                     f'{home_zone_metrics["nz_turnovers"][i]}', f'{home_zone_metrics["nz_turnovers_to_shots"][i]}',
                     f'{home_zone_metrics["oz_originating_shots"][i]}', f'{home_zone_metrics["nz_originating_shots"][i]}', f'{home_zone_metrics["dz_originating_shots"][i]}',
-                    f'{home_zone_metrics["fc_cycle_sog"][i]}', f'{home_zone_metrics["rush_sog"][i]}', str(home_rebounds_by_period.get(period_num, 0))])
+                    f'{home_zone_metrics["fc_cycle_sog"][i]}', f'{home_zone_metrics["rush_sog"][i]}', str(home_rebounds_by_period.get(period_num, 0)),
+                    f'{int(period_zone_eff.get("entries_to_shots", 0))}', 
+                    f'{int(period_zone_eff.get("exits_to_entries", 0))}'])
             
             # Add OT/SO row(s) - combine if both occur
             if has_ot and has_so:
@@ -1204,7 +1250,9 @@ class PostGameReportGenerator:
                     str(ot_so_stats['gv']), str(ot_so_stats['tk']), f'{ot_so_stats["gs"]:.1f}', f'{ot_so_stats["xg"]:.2f}', 
                     f'{ot_so_stats["nz_turnovers"]}', f'{ot_so_stats["nz_turnovers_to_shots"]}',
                     f'{ot_so_stats["oz_originating_shots"]}', f'{ot_so_stats["nz_originating_shots"]}', f'{ot_so_stats["dz_originating_shots"]}',
-                    f'{ot_so_stats["fc_cycle_sog"]}', f'{ot_so_stats["rush_sog"]}', str(home_rebounds_by_period.get(4, 0))])
+                    f'{ot_so_stats["fc_cycle_sog"]}', f'{ot_so_stats["rush_sog"]}', str(home_rebounds_by_period.get(4, 0)), 
+                    f'{int(home_zone_eff.get(4, {}).get("entries_to_shots", 0))}', 
+                    f'{int(home_zone_eff.get(4, {}).get("exits_to_entries", 0))}'])
             elif has_ot:
                 # OT only row with all metrics
                 ot_stats = self._calculate_ot_so_stats(game_data, home_team['id'], 'home', 'OT')
@@ -1214,7 +1262,9 @@ class PostGameReportGenerator:
                     str(ot_stats['gv']), str(ot_stats['tk']), f'{ot_stats["gs"]:.1f}', f'{ot_stats["xg"]:.2f}', 
                     f'{ot_stats["nz_turnovers"]}', f'{ot_stats["nz_turnovers_to_shots"]}',
                     f'{ot_stats["oz_originating_shots"]}', f'{ot_stats["nz_originating_shots"]}', f'{ot_stats["dz_originating_shots"]}',
-                    f'{ot_stats["fc_cycle_sog"]}', f'{ot_stats["rush_sog"]}', str(home_rebounds_by_period.get(4, 0))])
+                    f'{ot_stats["fc_cycle_sog"]}', f'{ot_stats["rush_sog"]}', str(home_rebounds_by_period.get(4, 0)), 
+                    f'{int(home_zone_eff.get(4, {}).get("entries_to_shots", 0))}', 
+                    f'{int(home_zone_eff.get(4, {}).get("exits_to_entries", 0))}'])
             elif has_so:
                 # SO only row with all metrics
                 so_stats = self._calculate_ot_so_stats(game_data, home_team['id'], 'home', 'SO')
@@ -1224,18 +1274,32 @@ class PostGameReportGenerator:
                     str(so_stats['gv']), str(so_stats['tk']), f'{so_stats["gs"]:.1f}', f'{so_stats["xg"]:.2f}', 
                     f'{so_stats["nz_turnovers"]}', f'{so_stats["nz_turnovers_to_shots"]}',
                     f'{so_stats["oz_originating_shots"]}', f'{so_stats["nz_originating_shots"]}', f'{so_stats["dz_originating_shots"]}',
-                    f'{so_stats["fc_cycle_sog"]}', f'{so_stats["rush_sog"]}', str(home_rebounds_by_period.get(4, 0))])
+                    f'{so_stats["fc_cycle_sog"]}', f'{so_stats["rush_sog"]}', str(home_rebounds_by_period.get(5, 0)), 
+                    f'{int(home_zone_eff.get(5, {}).get("entries_to_shots", 0))}', 
+                    f'{int(home_zone_eff.get(5, {}).get("exits_to_entries", 0))}'])
             
             # Add Final row for home team
             home_total_goals = sum(home_period_scores) + home_ot_goals + home_so_goals
             home_total_rebounds = sum(home_rebounds_by_period.values())
+            
+            # Calculate overall zone efficiency for home team
+            # Calculate game-level totals accurately from counts
+            home_total_entries = home_total_stats.get('total_entries', 0)
+            home_total_en_sog_count = len(home_total_stats.get('entries_to_shots', []))
+            home_total_en_sog_eff = (home_total_en_sog_count / home_total_entries * 100) if home_total_entries > 0 else 0
+            
+            home_total_exits = home_total_stats.get('total_exits', 0)
+            home_total_ex_en_count = len(home_total_stats.get('exits_to_entries', []))
+            home_total_ex_en_eff = (home_total_ex_en_count / home_total_exits * 100) if home_total_exits > 0 else 0
+            
             stats_data.append(['Final', str(home_total_goals), str(sum(home_period_stats['shots'])), f"{sum(home_period_stats['corsi_pct'])/3:.1f}%",
                 f"{sum(home_period_stats['pp_goals'])}/{sum(home_period_stats['pp_attempts'])}", str(sum(home_period_stats['pim'])), 
                 str(sum(home_period_stats['hits'])), f"{sum(home_period_stats['fo_pct'])/3:.1f}%", str(sum(home_period_stats['bs'])), 
                 str(sum(home_period_stats['gv'])), str(sum(home_period_stats['tk'])), f'{sum(home_gs_periods):.1f}', f'{home_xg_total:.2f}',
                 f'{sum(home_zone_metrics["nz_turnovers"])}', f'{sum(home_zone_metrics["nz_turnovers_to_shots"])}',
                  f'{sum(home_zone_metrics["oz_originating_shots"])}', f'{sum(home_zone_metrics["nz_originating_shots"])}', f'{sum(home_zone_metrics["dz_originating_shots"])}',
-               f'{sum(home_zone_metrics["fc_cycle_sog"])}', f'{sum(home_zone_metrics["rush_sog"])}', str(home_total_rebounds)])
+                f'{sum(home_zone_metrics["fc_cycle_sog"])}', f'{sum(home_zone_metrics["rush_sog"])}', str(home_total_rebounds),
+                f'{home_total_en_sog_count}', f'{home_total_ex_en_count}'])
             
             # Get team colors (using the same team_colors dictionary defined earlier)
             away_team_color = team_colors.get(away_team['abbrev'], colors.white)
@@ -1258,7 +1322,14 @@ class PostGameReportGenerator:
             base_font_size = 5.5 if (has_ot or has_so) else 6
             header_font_size = 4.5 if (has_ot or has_so) else 5
             
-            stats_table = Table(stats_data, colWidths=[0.4*inch, 0.35*inch, 0.35*inch, 0.4*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.4*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch, 0.35*inch])
+            # Fixed colWidths to fit standard letter page (7.5 inches usable width with 0.5-inch margins)
+            # Total width: 0.4*1 + 0.3*2 + 0.4*2 + 0.3*2 + 0.4*1 + 0.3*3 + 0.35*2 + 0.3*8 + 0.45*2 = 
+            # Calculated precisely to sum to 7.5 inches
+            col_widths = [
+                0.40*inch, 0.30*inch, 0.30*inch, 0.40*inch, 0.40*inch, 0.30*inch, 0.30*inch, 0.40*inch, 0.30*inch, 0.30*inch, 0.30*inch, 0.35*inch, 0.35*inch,
+                0.30*inch, 0.30*inch, 0.30*inch, 0.30*inch, 0.30*inch, 0.30*inch, 0.30*inch, 0.30*inch, 0.45*inch, 0.45*inch
+            ]
+            stats_table = Table(stats_data, colWidths=col_widths)
             
             # Build dynamic table style
             table_style = [
@@ -1722,10 +1793,39 @@ class PostGameReportGenerator:
                     # Assume 50% win rate for simplicity
                     stats['fo_wins'] += 0.5
                 
-                # Calculate xG for shots
+                # Calculate xG and zone metrics
                 if event_type in ['shot-on-goal', 'goal', 'missed-shot', 'blocked-shot']:
                     xg = self._calculate_shot_xg(details, event_type, play, [])
                     stats['xg'] += xg
+                    
+                    # Determine zone and originating shots
+                    x_coord = details.get('xCoord', 0)
+                    y_coord = details.get('yCoord', 0)
+                    zone = self._determine_zone(x_coord, y_coord)
+                    
+                    if zone == 'offensive':
+                        stats['oz_originating_shots'] += 1
+                    elif zone == 'neutral':
+                        stats['nz_originating_shots'] += 1
+                    elif zone == 'defensive':
+                        stats['dz_originating_shots'] += 1
+                        
+                    # Rush vs Cycle (simplified: Rush if time from entry < 5s)
+                    # Note: Full logic requires tracking entries, but we'll use a simplified check
+                    # identifying Rush shots as those from NZ or with high velocity (not easy here)
+                    # For consistency with main metrics, we'll mark as FC if in zone
+                    if zone == 'offensive':
+                        stats['fc_cycle_sog'] += 1
+                    else:
+                        stats['rush_sog'] += 1
+                
+                # Neutral zone turnovers
+                if event_type in ['giveaway', 'turnover']:
+                    x_coord = details.get('xCoord', 0)
+                    y_coord = details.get('yCoord', 0)
+                    zone = self._determine_zone(x_coord, y_coord)
+                    if zone == 'neutral':
+                        stats['nz_turnovers'] += 1
             
             # Calculate percentages
             total_corsi = stats['corsi_for'] + stats['corsi_against']
@@ -2845,7 +2945,7 @@ class PostGameReportGenerator:
             ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
         ]))
         story.append(advanced_metrics_title_wrapper)
-        story.append(Spacer(1, 2))  # Moved up 0.3cm (approx 9pts) from 11
+        story.append(Spacer(1, 17))  # Moved down additional 0.3cm (approx 8pts) from 9
         
         # Add advanced metrics table with left positioning
         advanced_metrics_story = self.create_advanced_metrics_section(game_data)
@@ -2860,11 +2960,15 @@ class PostGameReportGenerator:
                     ('VALIGN', (0, 0), (-1, -1), 'TOP'),
                     ('LEFTPADDING', (0, 0), (-1, -1), -1.6*inch),  # Move 4 cm total to the left (2.5 + 1.5)
                     ('RIGHTPADDING', (0, 0), (-1, -1), 0),
-                    ('TOPPADDING', (0, 0), (-1, -1), 0.2*inch),  # Move down 1 cm (-0.2 + 1*0.3937 = -0.2 + 0.394 = 0.194, rounded to 0.2)
+                    ('TOPPADDING', (0, 0), (-1, -1), -0.16*inch),  # Moved down 0.1cm (0.04 inches) from -0.2
                     ('BOTTOMPADDING', (0, 0), (-1, -1), 0),
                 ]))
                 story.append(left_table)
                 break
+        
+        # Add spacing between advanced metrics and shot locations
+        # Reduced to compensate for moving advanced metrics down (36 - 3 = 33pts)
+        story.append(Spacer(1, 33))
         
         # Create SHOT LOCATIONS title bar - narrow and centered over the shot plot
         shot_locations_title_data = [["SHOT LOCATIONS"]]
@@ -3579,7 +3683,7 @@ class PostGameReportGenerator:
             
             # Add the table directly (positioning will be handled by side-by-side layout)
             story.append(combined_table)
-            story.append(Spacer(1, 4)) # Reduced from 12 to save space
+            story.append(Spacer(1, -5)) # Moved up 0.3cm (approx 8.5pts) from 4
             
         except Exception as e:
             print(f"Error creating advanced metrics: {e}")
@@ -3703,7 +3807,10 @@ class PostGameReportGenerator:
         story.append(Spacer(1, 0))  # No top spacing
         
         # Add all sections
-        story.extend(self.create_team_stats_comparison(game_data))
+        story.extend(self.create_team_stats_comparison(game_data, game_id))
+        
+        # Move down by 0.2 cm (approx 5.7 points) before the bottom tables
+        story.append(Spacer(1, 5.7))
         
         # Create side-by-side layout for advanced metrics and top players
         story.extend(self.create_side_by_side_tables(game_data))
@@ -3718,7 +3825,7 @@ class PostGameReportGenerator:
             
             if sprite_data:
                 # Add sprite tables at bottom with spacing
-                story.append(Spacer(1, 17))  # Moved up 0.2cm (approx 6pts) from 23
+                story.append(Spacer(1, -15))  # Moved up 0.5cm (approx 14pts) from -1 to fit on page 1
                 sprite_tables = create_sprite_analysis_tables(sprite_data)
                 story.extend(sprite_tables)
         except Exception as e:

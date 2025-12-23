@@ -69,6 +69,8 @@ class SpriteGoalAnalyzer:
             for p in frame['onIce'].values():
                 if p.get('sweaterNumber') == '':
                     continue
+                if 'x' not in p or 'y' not in p:
+                    continue
                 if (GOAL_X_MIN <= p['x'] <= GOAL_X_MAX and 
                     GOAL_Y_MIN <= p['y'] <= GOAL_Y_MAX):
                     count += 1
@@ -293,6 +295,13 @@ class SpriteGoalAnalyzer:
         """Count number of passes in sequence"""
         if not sprite_data:
             return 0
+        passes = self.analyze_passes(sprite_data)
+        return len(passes)
+
+    def analyze_passes(self, sprite_data):
+        """Identify player ids involved in the scoring sequence"""
+        if not sprite_data:
+            return []
         
         possessions = []
         for frame in sprite_data[::5]:
@@ -309,22 +318,73 @@ class SpriteGoalAnalyzer:
             closest_player = None
             
             for p in frame['onIce'].values():
-                if p.get('sweaterNumber') == '' or p.get('teamId') != scoring_team_id:
+                if p.get('sweaterNumber') == '':
                     continue
-                dist = self.distance(puck['x'], puck['y'], p['x'], p['y'])
+                dist = self.distance(puck.get('x', 0), puck.get('y', 0), p.get('x', 0), p.get('y', 0))
                 if dist < 50 and dist < closest_dist:
                     closest_dist = dist
                     closest_player = p['sweaterNumber']
             
             if closest_player:
-                possessions.append(closest_player)
+                if not possessions or possessions[-1] != closest_player:
+                    possessions.append(closest_player)
         
-        passes = 0
-        for i in range(1, len(possessions)):
-            if possessions[i] != possessions[i-1]:
-                passes += 1
+        return possessions
+
+    def analyze_traffic_screens(self, sprite_data):
+        """Count opponent players in the shot lane"""
+        if not sprite_data or len(sprite_data) < 5:
+            return 0
+            
+        last_frame = sprite_data[-1]
+        puck = None
+        for p in last_frame['onIce'].values():
+            if p.get('id') == 1:
+                puck = p
+                break
         
-        return passes
+        if not puck or 'x' not in puck:
+            return 0
+            
+        count = 0
+        p_x, p_y = puck['x'], puck['y']
+        
+        for p in last_frame['onIce'].values():
+            if p.get('id') == 1: continue
+            if 'x' not in p: continue
+            
+            px, py = p['x'], p['y']
+            if min(p_x, 2250) <= px <= max(p_x, 2250):
+                if abs(py - 500) < 50:
+                    count += 1
+        
+        return max(0, count - 1)
+
+    def analyze_goalie_status(self, sprite_data):
+        """Determine if goalie is set or out of position"""
+        if not sprite_data:
+            return "Unknown"
+            
+        last_frame = sprite_data[-1]
+        goalie = None
+        min_dist = 1000
+        
+        for p in last_frame['onIce'].values():
+            if p.get('id') == 1: continue
+            if 'x' not in p: continue
+            
+            dist = self.distance(p['x'], p['y'], 2250, 500)
+            if dist < min_dist:
+                min_dist = dist
+                goalie = p
+                
+        if not goalie:
+            return "Unknown"
+            
+        if min_dist > 80:
+            return "Out of Position"
+        else:
+            return "Set"
     
     def analyze_game_goals_by_team(self, game_id) -> Optional[Dict]:
         """Analyze all goals by team and return team comparison data"""

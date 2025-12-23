@@ -20,8 +20,13 @@ def main():
     nhl_client = NHLAPIClient()
     
     try:
-        # Use the requested game ID: 2025010028
-        game_id = "2025010028"
+        # Parse command line arguments for game ID
+        import argparse
+        parser = argparse.ArgumentParser(description='Generate NHL post-game report')
+        parser.add_argument('--game-id', type=str, default='2025020573', help='NHL game ID')
+        args = parser.parse_args()
+        
+        game_id = args.game_id
         print(f"Using game ID: {game_id}")
         
         # Get game data for the specific game

@@ -41,18 +41,43 @@ def register_russo_font():
     return False
 
 def get_team_color(team_abbrev):
-    """Get team's primary color"""
+    """Get team's primary color matching pdf_report_generator.py"""
     team_colors = {
-        'ANA': '#F47A38', 'BOS': '#FFB81C', 'BUF': '#002654', 'CGY': '#C8102E',
-        'CAR': '#CC0000', 'CHI': '#CF0A2C', 'COL': '#6F263D', 'CBJ': '#002654',
-        'DAL': '#006847', 'DET': '#CE1126', 'EDM': '#FF4C00', 'FLA': '#041E42',
-        'LAK': '#111111', 'MIN': '#154734', 'MTL': '#AF1E2D', 'NSH': '#FFB81C',
-        'NJD': '#CE1126', 'NYI': '#00539B', 'NYR': '#0038A8', 'OTT': '#C52032',
-        'PHI': '#F74902', 'PIT': '#000000', 'SJS': '#006D75', 'SEA': '#001628',
-        'STL': '#002F87', 'TBL': '#002868', 'TOR': '#00205B', 'VAN': '#00205B',
-        'VGK': '#B4975A', 'WSH': '#041E42', 'WPG': '#041E42', 'ARI': '#8C2633'
+        'TBL': colors.Color(0/255, 40/255, 104/255),  # Tampa Bay Lightning Blue
+        'NSH': colors.Color(255/255, 184/255, 28/255),  # Nashville Predators Gold
+        'EDM': colors.Color(4/255, 30/255, 66/255),  # Edmonton Oilers Blue
+        'FLA': colors.Color(200/255, 16/255, 46/255),  # Florida Panthers Red
+        'COL': colors.Color(111/255, 38/255, 61/255),  # Colorado Avalanche Burgundy
+        'DAL': colors.Color(0/255, 99/255, 65/255),  # Dallas Stars Green
+        'BOS': colors.Color(252/255, 181/255, 20/255),  # Boston Bruins Gold
+        'TOR': colors.Color(0/255, 32/255, 91/255),  # Toronto Maple Leafs Blue
+        'MTL': colors.Color(175/255, 30/255, 45/255),  # Montreal Canadiens Red
+        'OTT': colors.Color(200/255, 16/255, 46/255),  # Ottawa Senators Red
+        'BUF': colors.Color(0/255, 38/255, 84/255),  # Buffalo Sabres Blue
+        'DET': colors.Color(206/255, 17/255, 38/255),  # Detroit Red Wings Red
+        'CAR': colors.Color(226/255, 24/255, 54/255),  # Carolina Hurricanes Red
+        'WSH': colors.Color(4/255, 30/255, 66/255),  # Washington Capitals Blue
+        'PIT': colors.Color(255/255, 184/255, 28/255),  # Pittsburgh Penguins Gold
+        'NYR': colors.Color(0/255, 56/255, 168/255),  # New York Rangers Blue
+        'NYI': colors.Color(0/255, 83/255, 155/255),  # New York Islanders Blue
+        'NJD': colors.Color(206/255, 17/255, 38/255),  # New Jersey Devils Red
+        'PHI': colors.Color(247/255, 30/255, 36/255),  # Philadelphia Flyers Orange
+        'CBJ': colors.Color(0/255, 38/255, 84/255),  # Columbus Blue Jackets Blue
+        'STL': colors.Color(0/255, 47/255, 108/255),  # St. Louis Blues Blue
+        'MIN': colors.Color(0/255, 99/255, 65/255),  # Minnesota Wild Green
+        'WPG': colors.Color(4/255, 30/255, 66/255),  # Winnipeg Jets Blue
+        'ARI': colors.Color(140/255, 38/255, 51/255),  # Arizona Coyotes Red
+        'VGK': colors.Color(185/255, 151/255, 91/255),  # Vegas Golden Knights Gold
+        'SJS': colors.Color(0/255, 109/255, 117/255),  # San Jose Sharks Teal
+        'LAK': colors.Color(162/255, 170/255, 173/255),  # Los Angeles Kings Silver
+        'ANA': colors.Color(185/255, 151/255, 91/255),  # Anaheim Ducks Gold
+        'CGY': colors.Color(200/255, 16/255, 46/255),  # Calgary Flames Red
+        'VAN': colors.Color(0/255, 32/255, 91/255),  # Vancouver Canucks Blue
+        'SEA': colors.Color(0/255, 22/255, 40/255),  # Seattle Kraken Navy
+        'UTA': colors.Color(105/255, 179/255, 231/255),  # Utah Hockey Club
+        'CHI': colors.Color(207/255, 10/255, 44/255)  # Chicago Blackhawks Red
     }
-    return team_colors.get(team_abbrev, '#1a4d6b')  # Default dark blue
+    return team_colors.get(team_abbrev, colors.Color(26/255, 77/255, 107/255))  # Default dark blue
 
 def get_team_logo(team_abbrev, size=40):
     """Download and resize team logo"""
@@ -120,7 +145,7 @@ def create_sprite_analysis_tables(sprite_data):
     # Define table style
     table_style = TableStyle([
         # Header row styling
-        ('BACKGROUND', (0, 0), (-1, 0), colors.HexColor(header_color)),
+        ('BACKGROUND', (0, 0), (-1, 0), header_color),
         ('TEXTCOLOR', (0, 0), (-1, 0), colors.whitesmoke),
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
         ('VALIGN', (0, 0), (-1, -1), 'MIDDLE'),
@@ -198,107 +223,128 @@ def create_sprite_analysis_tables(sprite_data):
     
     col_width = 0.40*inch  # Reduced to fit within page margins
     
-    def create_split_bar(top_pct, bottom_pct, fill_color_hex, width=400, height=160):
+    
+    def create_split_bar(carry_pct, pass_pct, fill_color_obj, width=400, height=160):
         """
-        Create a split cell with two horizontal bars using team color
-        Top Half: Carry Share
-        Bottom Half: Pass Share
-        Fills entire cell height (height=40 -> 0.20 inch)
-        Adds text labels "CARRY" and "PASS"
+        Create a vertical split bar with Carry on left and Pass on right
+        Each side fills from bottom up to its percentage
+        Labels at bottom: "Carry" and "Pass"
         """
-        img = PILImage.new('RGB', (width, height), color='#FFFFFF') # White background
+        # Convert Color object to Hex string if needed
+        if hasattr(fill_color_obj, 'red'):
+            r = int(fill_color_obj.red * 255)
+            g = int(fill_color_obj.green * 255)
+            b = int(fill_color_obj.blue * 255)
+            fill_color_hex = f'#{r:02X}{g:02X}{b:02X}'
+        else:
+            fill_color_hex = fill_color_obj
+            
+        img = PILImage.new('RGB', (width, height), color='#FFFFFF')  # White background
         draw = ImageDraw.Draw(img)
         
-        # Try to load a font, or use default
+        # Try to load a font
         try:
-            # Use specific path if possible or default
-            # Scale font up for high-res image (was 9 -> now ~36)
-            font = ImageFont.truetype("/Users/emilyfehr8/.gemini/antigravity/scratch/Automated-Post-Game-Reports/assets/RussoOne-Regular.ttf", 36)
+            font = ImageFont.truetype("/Users/emilyfehr8/.gemini/antigravity/scratch/Automated-Post-Game-Reports/assets/RussoOne-Regular.ttf", 28)
+            label_font = ImageFont.truetype("/Users/emilyfehr8/.gemini/antigravity/scratch/Automated-Post-Game-Reports/assets/RussoOne-Regular.ttf", 24)
         except:
             font = ImageFont.load_default()
+            label_font = font
         
-        half_height = height // 2
+        half_width = width // 2
+        label_height = 35  # Reserve space at bottom for labels
+        bar_height = height - label_height
         
-        # 1. Top Bar (Carry)
-        # Background: Very light grey
-        top_bg = PILImage.new('RGB', (width, half_height), color='#F0F0F0') 
-        img.paste(top_bg, (0, 0))
+        # LEFT SIDE: Carry
+        # Background: Light grey
+        draw.rectangle([(0, 0), (half_width - 2, bar_height)], fill='#F0F0F0')
         
-        # Top Fill (Team Color)
-        top_fill_w = int((top_pct / 100.0) * width)
-        if top_fill_w > 0:
-            top_fill = PILImage.new('RGB', (top_fill_w, half_height), color=fill_color_hex) 
-            img.paste(top_fill, (0, 0))
-            
-        # Label "CARRY" with percentage - ensure proper formatting
-        if top_pct is None or top_pct == 0:
-            text = "CARRY 0%"
-        else:
-            text = f"CARRY {int(top_pct)}%"
+        # Fill from bottom up based on percentage
+        carry_fill_height = int((carry_pct / 100.0) * bar_height)
+        if carry_fill_height > 0:
+            fill_y_start = bar_height - carry_fill_height
+            draw.rectangle([(0, fill_y_start), (half_width - 2, bar_height)], fill=fill_color_hex)
         
-        # Calculate text position to center
+        # Percentage text in center of bar
+        carry_text = f"{int(carry_pct)}%"
         try:
-            left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
-            text_w = right - left
-            text_h = bottom - top
+            bbox = draw.textbbox((0, 0), carry_text, font=font)
+            text_w = bbox[2] - bbox[0]
+            text_h = bbox[3] - bbox[1]
         except:
-            text_w, text_h = draw.textsize(text, font=font)
-            
-        text_x = (width - text_w) / 2
-        text_y = (half_height - text_h) / 2
+            text_w, text_h = draw.textsize(carry_text, font=font)
         
-        # Draw outline/shadow for readability
-        outline_color = '#000000'
-        # Thicker outline for bigger text
-        for offset in range(-2, 3):
-             for offset_y in range(-2, 3):
-                 if offset == 0 and offset_y == 0: continue
-                 draw.text((text_x + offset, text_y + offset_y), text, font=font, fill=outline_color)
-                 
-        draw.text((text_x, text_y), text, font=font, fill='#FFFFFF')
-
-        # 2. Bottom Bar (Pass)
-        # Background
-        bot_bg = PILImage.new('RGB', (width, half_height), color='#F0F0F0') 
-        img.paste(bot_bg, (0, half_height))
+        text_x = (half_width - 2 - text_w) // 2
+        text_y = (bar_height - text_h) // 2
         
-        # Bottom Fill (Team Color)
-        bot_fill_w = int((bottom_pct / 100.0) * width)
-        if bot_fill_w > 0:
-            bot_fill = PILImage.new('RGB', (bot_fill_w, half_height), color=fill_color_hex)
-            img.paste(bot_fill, (0, half_height))
-            
-        # Label "PASS" with percentage - ensure proper formatting
-        if bottom_pct is None or bottom_pct == 0:
-            text = "PASS 0%"
-        else:
-            text = f"PASS {int(bottom_pct)}%"
+        # Draw with outline for readability
+        for offset_x in range(-1, 2):
+            for offset_y in range(-1, 2):
+                if offset_x == 0 and offset_y == 0: continue
+                draw.text((text_x + offset_x, text_y + offset_y), carry_text, font=font, fill='#000000')
+        draw.text((text_x, text_y), carry_text, font=font, fill='#FFFFFF')
+        
+        # RIGHT SIDE: Pass
+        # Background: Light grey
+        draw.rectangle([(half_width + 2, 0), (width, bar_height)], fill='#F0F0F0')
+        
+        # Fill from bottom up based on percentage
+        pass_fill_height = int((pass_pct / 100.0) * bar_height)
+        if pass_fill_height > 0:
+            fill_y_start = bar_height - pass_fill_height
+            draw.rectangle([(half_width + 2, fill_y_start), (width, bar_height)], fill=fill_color_hex)
+        
+        # Percentage text in center of bar
+        pass_text = f"{int(pass_pct)}%"
         try:
-            left, top, right, bottom = draw.textbbox((0, 0), text, font=font)
-            text_w = right - left
-            text_h = bottom - top
+            bbox = draw.textbbox((0, 0), pass_text, font=font)
+            text_w = bbox[2] - bbox[0]
+            text_h = bbox[3] - bbox[1]
         except:
-            text_w, text_h = draw.textsize(text, font=font)
-            
-        text_x = (width - text_w) / 2
-        # Center in bottom half: start y = half_height + (half_height - text_h)/2
-        text_y = half_height + (half_height - text_h) / 2
+            text_w, text_h = draw.textsize(pass_text, font=font)
         
-        for offset in range(-2, 3):
-             for offset_y in range(-2, 3):
-                 if offset == 0 and offset_y == 0: continue
-                 draw.text((text_x + offset, text_y + offset_y), text, font=font, fill=outline_color)
-                 
-        draw.text((text_x, text_y), text, font=font, fill='#FFFFFF')
+        text_x = half_width + 2 + (half_width - 2 - text_w) // 2
+        text_y = (bar_height - text_h) // 2
+        
+        # Draw with outline
+        for offset_x in range(-1, 2):
+            for offset_y in range(-1, 2):
+                if offset_x == 0 and offset_y == 0: continue
+                draw.text((text_x + offset_x, text_y + offset_y), pass_text, font=font, fill='#000000')
+        draw.text((text_x, text_y), pass_text, font=font, fill='#FFFFFF')
+        
+        # LABELS AT BOTTOM
+        # "Carry" label on left
+        carry_label = "Carry"
+        try:
+            bbox = draw.textbbox((0, 0), carry_label, font=label_font)
+            label_w = bbox[2] - bbox[0]
+            label_h = bbox[3] - bbox[1]
+        except:
+            label_w, label_h = draw.textsize(carry_label, font=label_font)
+        
+        label_x = (half_width - 2 - label_w) // 2
+        label_y = bar_height + (label_height - label_h) // 2
+        draw.text((label_x, label_y), carry_label, font=label_font, fill='#000000')
+        
+        # "Pass" label on right
+        pass_label = "Pass"
+        try:
+            bbox = draw.textbbox((0, 0), pass_label, font=label_font)
+            label_w = bbox[2] - bbox[0]
+            label_h = bbox[3] - bbox[1]
+        except:
+            label_w, label_h = draw.textsize(pass_label, font=label_font)
+        
+        label_x = half_width + 2 + (half_width - 2 - label_w) // 2
+        label_y = bar_height + (label_height - label_h) // 2
+        draw.text((label_x, label_y), pass_label, font=label_font, fill='#000000')
 
-        # Add thin separator
-        separator = PILImage.new('RGB', (width, 2), color='#FFFFFF') # Thicker separator for hi-res
-        img.paste(separator, (0, half_height))
-
-        # Save
-        temp_path = f"/tmp/split_bar_{fill_color_hex}_{top_pct}_{bottom_pct}.png"
+        
+        # Save to temp file and return as ReportLab Image
+        temp_path = f"/tmp/split_bar_{fill_color_hex}_{int(carry_pct)}_{int(pass_pct)}.png"
         img.save(temp_path)
         return RLImage(temp_path, width=0.35*inch, height=0.20*inch)
+
     
     # Generate split-bar images with Team Colors
     ze_away_bar = create_split_bar(away_carry_share, away_pass_share, away_color)
@@ -306,7 +352,7 @@ def create_sprite_analysis_tables(sprite_data):
     
     # Table 1: Net-Front Traffic %
     net_front_table = Table([
-        ['NET-FRONT TRAFFIC %'],  # Updated label
+        ['NET-FRONT TRAFFIC % ON GF'],  # Updated label
         [away_logo if away_logo else away_abbrev, 
          f"{nf_away}%",  # Display as percentage
          home_logo if home_logo else home_abbrev,
@@ -334,7 +380,7 @@ def create_sprite_analysis_tables(sprite_data):
     
     # Table 3: Zone Entry (Split Visual)
     entry_table = Table([
-        ['ENTRY TYPE SHARE'],
+        ['ENTRY TYPE SHARE ON GF'],
         [away_logo if away_logo else away_abbrev,
          ze_away_bar,
          home_logo if home_logo else home_abbrev,
@@ -387,9 +433,10 @@ def create_sprite_analysis_tables(sprite_data):
         spaceBefore=4
     )
     
-    note_text = "* Four tables above analyze goals for (GF) only"
-    flowables.append(Spacer(1, 4))
-    flowables.append(Paragraph(note_text, note_style))
+    # Note removed per user request
+    # note_text = "* Four tables above analyze goals for (GF) only"
+    # flowables.append(Spacer(1, 4))
+    # flowables.append(Paragraph(note_text, note_style))
     
     return flowables
 
