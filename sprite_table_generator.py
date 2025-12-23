@@ -183,18 +183,18 @@ def create_sprite_analysis_tables(sprite_data):
     ze_away_counts = away_stats.get('entry_counts', {'carry':0, 'pass':0, 'dump':0})
     ze_home_counts = home_stats.get('entry_counts', {'carry':0, 'pass':0, 'dump':0})
     
-    # Calculate Total Game Counts for Share Calculation
-    total_carries = ze_away_counts.get('carry', 0) + ze_home_counts.get('carry', 0)
-    total_passes = ze_away_counts.get('pass', 0) + ze_home_counts.get('pass', 0)
+    # Calculate each team's total entries (carry + pass, excluding dump)
+    away_total_entries = ze_away_counts.get('carry', 0) + ze_away_counts.get('pass', 0)
+    home_total_entries = ze_home_counts.get('carry', 0) + ze_home_counts.get('pass', 0)
     
-    # Calculate Shares (avoid div by zero)
-    # Away Share
-    away_carry_share = (ze_away_counts.get('carry', 0) / total_carries * 100) if total_carries > 0 else 0
-    away_pass_share = (ze_away_counts.get('pass', 0) / total_passes * 100) if total_passes > 0 else 0
+    # Calculate Shares as percentage of each team's entries
+    # Away Team: What % of their entries were carries vs passes
+    away_carry_share = (ze_away_counts.get('carry', 0) / away_total_entries * 100) if away_total_entries > 0 else 50
+    away_pass_share = (ze_away_counts.get('pass', 0) / away_total_entries * 100) if away_total_entries > 0 else 50
     
-    # Home Share
-    home_carry_share = (ze_home_counts.get('carry', 0) / total_carries * 100) if total_carries > 0 else 0
-    home_pass_share = (ze_home_counts.get('pass', 0) / total_passes * 100) if total_passes > 0 else 0
+    # Home Team: What % of their entries were carries vs passes  
+    home_carry_share = (ze_home_counts.get('carry', 0) / home_total_entries * 100) if home_total_entries > 0 else 50
+    home_pass_share = (ze_home_counts.get('pass', 0) / home_total_entries * 100) if home_total_entries > 0 else 50
     
     col_width = 0.40*inch  # Reduced to fit within page margins
     
