@@ -242,10 +242,12 @@ def create_sprite_analysis_tables(sprite_data):
         img = PILImage.new('RGB', (width, height), color='#FFFFFF')  # White background
         draw = ImageDraw.Draw(img)
         
-        # Try to load a font
+        # Try to load a font using relative path for CI compatibility
         try:
-            font = ImageFont.truetype("/Users/emilyfehr8/.gemini/antigravity/scratch/Automated-Post-Game-Reports/assets/RussoOne-Regular.ttf", 28)
-            label_font = ImageFont.truetype("/Users/emilyfehr8/.gemini/antigravity/scratch/Automated-Post-Game-Reports/assets/RussoOne-Regular.ttf", 24)
+            base_dir = os.path.dirname(__file__)
+            font_path = os.path.join(base_dir, "assets", "RussoOne-Regular.ttf")
+            font = ImageFont.truetype(font_path, 28)
+            label_font = ImageFont.truetype(font_path, 24)
         except:
             font = ImageFont.load_default()
             label_font = font
@@ -343,7 +345,8 @@ def create_sprite_analysis_tables(sprite_data):
         # Save to temp file and return as ReportLab Image
         temp_path = f"/tmp/split_bar_{fill_color_hex}_{int(carry_pct)}_{int(pass_pct)}.png"
         img.save(temp_path)
-        return RLImage(temp_path, width=0.35*inch, height=0.20*inch)
+        # Increased size significantly for readability
+        return RLImage(temp_path, width=0.75*inch, height=0.35*inch)
 
     
     # Generate split-bar images with Team Colors
@@ -379,13 +382,14 @@ def create_sprite_analysis_tables(sprite_data):
     ]))
     
     # Table 3: Zone Entry (Split Visual)
+    # Using specific column widths for the bars (0.75" bar vs 0.4" logo/text)
     entry_table = Table([
         ['ENTRY TYPE SHARE ON GF'],
         [away_logo if away_logo else away_abbrev,
          ze_away_bar,
          home_logo if home_logo else home_abbrev,
          ze_home_bar]
-    ], colWidths=[col_width]*4, rowHeights=[0.15*inch, 0.22*inch])  # Increased header height for centering
+    ], colWidths=[0.3*inch, 0.75*inch, 0.3*inch, 0.75*inch], rowHeights=[0.15*inch, 0.38*inch])
     entry_table.setStyle(table_style)
     
     # Table 4: Passes
@@ -406,10 +410,10 @@ def create_sprite_analysis_tables(sprite_data):
     from reportlab.platypus import Spacer
     
     # Create a container table with spacers between each table
-    spacer_width = 0.2*inch  # Space between tables
+    spacer_width = 0.15*inch  # Space between tables
     horizontal_row = Table(
         [[net_front_table, Spacer(spacer_width, 1), shot_dist_table, Spacer(spacer_width, 1), entry_table, Spacer(spacer_width, 1), pass_table]], 
-        colWidths=[col_width*4, spacer_width, col_width*4, spacer_width, col_width*4, spacer_width, col_width*4]
+        colWidths=[col_width*4, spacer_width, col_width*4, spacer_width, 2.1*inch, spacer_width, col_width*4]
     )
     horizontal_row.setStyle(TableStyle([
         ('ALIGN', (0, 0), (-1, -1), 'CENTER'),
