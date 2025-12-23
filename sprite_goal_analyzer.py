@@ -77,7 +77,7 @@ class SpriteGoalAnalyzer:
         return round(sum(player_counts) / len(player_counts), 1) if player_counts else 0
     
     def analyze_shot_distance(self, sprite_data):
-        """Calculate shot distance from release point to goal"""
+        """Calculate shot distance from release point to goal in FEET"""
         if not sprite_data:
             return 0
         
@@ -94,17 +94,37 @@ class SpriteGoalAnalyzer:
         if not release_point:
             return 0
         
-        # Goal is always at x = ±89 (89 feet from center), y = 0 (center of goal)
-        # Determine which goal based on x position of shot
-        # If shot from left side (negative x), goal is at right (positive x = 89)
-        # If shot from right side (positive x), goal is at left (negative x = -89)
-        goal_x = 89 if release_point[0] < 0 else -89
-        goal_y = 0
+        # Find goal point (last puck position before crossing goal line)
+        goal_point = None
+        for frame in reversed(sprite_data):
+            for p in frame['onIce'].values():
+                if p.get('id') == 1:  # Puck ID
+                    goal_point = (p['x'], p['y'])
+                    break
+            if goal_point:
+                break
         
-        # Calculate distance from release point to goal
-        shot_distance = self.distance(release_point[0], release_point[1], goal_x, goal_y)
+        if not goal_point:
+            # Fallback: estimate goal location based on release side
+            # NHL rink in sprite coordinates appears to be ~2400 pixels wide
+            # Goals are at the ends (x ~= 0 or x ~= 2400)
+            goal_point = (2400 if release_point[0] < 1200 else 0, release_point[1])
         
-        return round(shot_distance, 0)
+        # Calculate distance in pixels
+        pixel_distance = self.distance(release_point[0], release_point[1], goal_point[0], goal_point[1])
+        
+        # Convert pixels to feet
+        # NHL rink is 200 feet long
+        # Sprite coordinates appear to span ~2400 pixels for full rink width
+        # So: 1 foot ≈ 12 pixels
+        PIXELS_PER_FOOT = 12.0
+        
+        shot_distance_feet = pixel_distance / PIXELS_PER_FOOT
+        
+        # Sanity check: shots should be between 1-89 feet (can't be longer than rink)
+        shot_distance_feet = max(1, min(89, shot_distance_feet))
+        
+        return round(shot_distance_feet, 0)
     
     def get_game_landing(self, game_id):
         """Fetch game landing data for detailed period info"""
