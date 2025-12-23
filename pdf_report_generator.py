@@ -1208,13 +1208,11 @@ class PostGameReportGenerator:
             away_total_ex_en_count = len(away_total_stats.get('exits_to_entries', []))
             away_total_ex_en_eff = (away_total_ex_en_count / away_total_exits * 100) if away_total_exits > 0 else 0
             
-            stats_data.append(['Final', str(away_total_goals), str(sum(away_period_stats['shots'])), f"{sum(away_period_stats['corsi_pct'])/3:.1f}%",
+            final_row = ['Final', str(away_total_goals), str(sum(away_period_stats['shots'])), f"{sum(away_period_stats['corsi_pct'])/3:.1f}%",
                 f"{sum(away_period_stats['pp_goals'])}/{sum(away_period_stats['pp_attempts'])}", str(sum(away_period_stats['pim'])), 
                 str(sum(away_period_stats['hits'])), f"{sum(away_period_stats['fo_pct'])/3:.1f}%", str(sum(away_period_stats['bs'])), 
                 str(sum(away_period_stats['gv'])), str(sum(away_period_stats['tk'])), f'{sum(away_gs_periods):.1f}', f'{away_xg_total:.2f}',
                 f'{sum(away_zone_metrics["nz_turnovers"])}', f'{sum(away_zone_metrics["nz_turnovers_to_shots"])}',
-                 f'{sum(away_zone_metrics["oz_originating_shots"])}', f'{sum(away_zone_metrics["nz_originating_shots"])}', f'{sum(away_zone_metrics["dz_originating_shots"])}',
-                f'{sum(away_zone_metrics["fc_cycle_sog"])}', f'{sum(away_zone_metrics["rush_sog"])}', str(away_total_rebounds),
                 f'{away_total_en_sog_count}', f'{away_total_ex_en_count}'])
             
             # Home team logo row with win probability centered in the row
@@ -1636,8 +1634,10 @@ class PostGameReportGenerator:
             }
             
             # Calculate baseline xG from distance and angle
-            distance = (x_coord**2 + y_coord**2)**0.5
-            angle = abs(y_coord) / max(abs(x_coord), 1)  # Avoid division by zero
+            # Goal is at abs(X)=89
+            dist_to_goal_line = abs(89 - abs(x_coord))
+            distance = (dist_to_goal_line**2 + y_coord**2)**0.5
+            angle = abs(y_coord) / max(dist_to_goal_line, 1)  # Avoid division by zero
             
             # Baseline xG based on distance (research-backed)
             if distance < 20:
@@ -1801,7 +1801,8 @@ class PostGameReportGenerator:
                     # Determine zone and originating shots
                     x_coord = details.get('xCoord', 0)
                     y_coord = details.get('yCoord', 0)
-                    zone = self._determine_zone(x_coord, y_coord)
+                    zone_code = details.get('zoneCode')
+                    zone = self._determine_zone(x_coord, y_coord, zone_code)
                     
                     if zone == 'offensive':
                         stats['oz_originating_shots'] += 1
@@ -1823,7 +1824,8 @@ class PostGameReportGenerator:
                 if event_type in ['giveaway', 'turnover']:
                     x_coord = details.get('xCoord', 0)
                     y_coord = details.get('yCoord', 0)
-                    zone = self._determine_zone(x_coord, y_coord)
+                    zone_code = details.get('zoneCode')
+                    zone = self._determine_zone(x_coord, y_coord, zone_code)
                     if zone == 'neutral':
                         stats['nz_turnovers'] += 1
             
@@ -2128,8 +2130,8 @@ class PostGameReportGenerator:
         # Base expected goal value
         base_xG = 0.0
         
-        # Distance calculation (from goal line at x=89)
-        distance_from_goal = ((89 - x_coord) ** 2 + (y_coord) ** 2) ** 0.5
+        # Distance calculation (from goal line at abs(x)=89)
+        distance_from_goal = ((89 - abs(x_coord)) ** 2 + (y_coord) ** 2) ** 0.5
         
         # Angle calculation (angle from goal posts)
         # Goal posts are at y = ±3 (assuming 6-foot goal width)
@@ -2176,17 +2178,18 @@ class PostGameReportGenerator:
         """Calculate the angle of the shot relative to the goal"""
         import math
         
-        # Goal center is at (89, 0), goal posts at (89, ±3)
-        distance_to_center = ((89 - x_coord) ** 2 + (y_coord) ** 2) ** 0.5
+        # Goal center is at abs(x)=89
+        dist_to_goal_line = abs(89 - abs(x_coord))
+        distance_to_center = (dist_to_goal_line ** 2 + (y_coord) ** 2) ** 0.5
         
         if distance_to_center == 0:
             return 0
         
         # Calculate angle using law of cosines
         # Distance from shot to left post
-        dist_to_left = ((89 - x_coord) ** 2 + (y_coord - 3) ** 2) ** 0.5
+        dist_to_left = (dist_to_goal_line ** 2 + (y_coord - 3) ** 2) ** 0.5
         # Distance from shot to right post  
-        dist_to_right = ((89 - x_coord) ** 2 + (y_coord + 3) ** 2) ** 0.5
+        dist_to_right = (dist_to_goal_line ** 2 + (y_coord + 3) ** 2) ** 0.5
         
         # Goal width
         goal_width = 6
@@ -2204,11 +2207,11 @@ class PostGameReportGenerator:
         """Get zone-based expected goal multiplier"""
         
         # High danger area (slot, crease area)
-        if zone == 'O' and x_coord > 75 and abs(y_coord) < 15:
+        if zone == 'O' and abs(x_coord) > 75 and abs(y_coord) < 15:
             return 1.5
         
         # Medium danger area (offensive zone, good position)
-        elif zone == 'O' and x_coord > 60 and abs(y_coord) < 25:
+        elif zone == 'O' and abs(x_coord) > 60 and abs(y_coord) < 25:
             return 1.2
         
         # Low danger area (point shots, wide angles)
@@ -2421,7 +2424,8 @@ class PostGameReportGenerator:
                 y_coord = details.get('yCoord', 0)
                 
                 # Determine zone
-                zone = self._determine_zone(x_coord, y_coord)
+                zone_code = details.get('zoneCode')
+                zone = self._determine_zone(x_coord, y_coord, zone_code)
                 
                 # Process team events
                 if event_team == team_id:
@@ -2631,16 +2635,21 @@ class PostGameReportGenerator:
         except:
             return False
     
-    def _determine_zone(self, x_coord, y_coord):
-        """Determine which zone the coordinates are in"""
-        # NHL rink zones (approximate)
-        # Offensive zone: X > 25 (blue line to goal line)
-        # Neutral zone: -25 <= X <= 25 (between blue lines)
-        # Defensive zone: X < -25 (blue line to goal line)
-        if x_coord > 25:
+    def _determine_zone(self, x_coord, y_coord, zone_code=None):
+        """Determine which zone the coordinates are in, preferring zoneCode if available"""
+        if zone_code == 'O' or zone_code == 'offensive':
             return 'offensive'
-        elif x_coord < -25:
+        elif zone_code == 'D' or zone_code == 'defensive':
             return 'defensive'
+        elif zone_code == 'N' or zone_code == 'neutral':
+            return 'neutral'
+            
+        # Fallback to coordinates (use absolute value of X to handle team side)
+        abs_x = abs(x_coord)
+        if abs_x > 25:
+            # We assume if it's in an end zone, it's offensive for the purposes of these metrics
+            # unless we have the side context to distinguish O from D.
+            return 'offensive'
         else:
             return 'neutral'
     

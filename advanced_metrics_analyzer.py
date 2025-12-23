@@ -257,8 +257,8 @@ class AdvancedMetricsAnalyzer:
         # Base expected goal value
         base_xG = 0.0
         
-        # Distance calculation (from goal line at x=89)
-        distance_from_goal = ((89 - x_coord) ** 2 + (y_coord) ** 2) ** 0.5
+        # Distance calculation (from goal line at abs(x)=89)
+        distance_from_goal = ((89 - abs(x_coord)) ** 2 + (y_coord) ** 2) ** 0.5
         
         # Angle calculation (angle from goal posts)
         # Goal posts are at y = ±3 (assuming 6-foot goal width)
@@ -305,17 +305,18 @@ class AdvancedMetricsAnalyzer:
         """Calculate the angle of the shot relative to the goal"""
         import math
         
-        # Goal center is at (89, 0), goal posts at (89, ±3)
-        distance_to_center = ((89 - x_coord) ** 2 + (y_coord) ** 2) ** 0.5
+        # Goal center is at abs(x)=89
+        dist_to_goal_line = abs(89 - abs(x_coord))
+        distance_to_center = (dist_to_goal_line ** 2 + (y_coord) ** 2) ** 0.5
         
         if distance_to_center == 0:
             return 0
         
         # Calculate angle using law of cosines
         # Distance from shot to left post
-        dist_to_left = ((89 - x_coord) ** 2 + (y_coord - 3) ** 2) ** 0.5
+        dist_to_left = (dist_to_goal_line ** 2 + (y_coord - 3) ** 2) ** 0.5
         # Distance from shot to right post  
-        dist_to_right = ((89 - x_coord) ** 2 + (y_coord + 3) ** 2) ** 0.5
+        dist_to_right = (dist_to_goal_line ** 2 + (y_coord + 3) ** 2) ** 0.5
         
         # Goal width
         goal_width = 6
@@ -333,11 +334,11 @@ class AdvancedMetricsAnalyzer:
         """Get zone-based expected goal multiplier"""
         
         # High danger area (slot, crease area)
-        if zone == 'O' and x_coord > 75 and abs(y_coord) < 15:
+        if zone == 'O' and abs(x_coord) > 75 and abs(y_coord) < 15:
             return 1.5
         
         # Medium danger area (offensive zone, good position)
-        elif zone == 'O' and x_coord > 60 and abs(y_coord) < 25:
+        elif zone == 'O' and abs(x_coord) > 60 and abs(y_coord) < 25:
             return 1.2
         
         # Low danger area (point shots, wide angles)

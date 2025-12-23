@@ -235,9 +235,8 @@ class ZoneTransitionEfficiencyAnalyzer:
                     prev_play = play
                     continue
                 
-                is_home_team = (team == home_team_id)
-                team_defensive_zone = 'D' if is_home_team else 'O'
-                team_offensive_zone = 'O' if is_home_team else 'D'
+                team_defensive_zone = 'D'
+                team_offensive_zone = 'O'
                 
                 if prev_play:
                     prev_zone = prev_play.get('details', {}).get('zoneCode')
