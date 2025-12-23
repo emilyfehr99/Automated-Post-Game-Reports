@@ -1801,17 +1801,18 @@ class PostGameReportGenerator:
                     xg = self._calculate_shot_xg(details, event_type, play, [])
                     stats['xg'] += xg
                     
-                    # Determine zone and originating shots
+                    # Determine zone and originating shots using possession logic
                     x_coord = details.get('xCoord', 0)
                     y_coord = details.get('yCoord', 0)
                     zone_code = details.get('zoneCode')
-                    zone = self._determine_zone(x_coord, y_coord, zone_code)
                     
-                    if zone == 'offensive':
+                    origin_zone = self._get_shot_origin_zone(play, play_by_play['plays'], team_id)
+                    
+                    if origin_zone == 'offensive':
                         stats['oz_originating_shots'] += 1
-                    elif zone == 'neutral':
+                    elif origin_zone == 'neutral':
                         stats['nz_originating_shots'] += 1
-                    elif zone == 'defensive':
+                    elif origin_zone == 'defensive':
                         stats['dz_originating_shots'] += 1
                         
                     # Rush vs Cycle (simplified: Rush if time from entry < 5s)
@@ -2445,13 +2446,15 @@ class PostGameReportGenerator:
                         if zone == 'neutral':
                             metrics['nz_turnovers'][period_index] += 1
                     
-                    # Track shots by originating zone
+                    # Track shots by originating zone using possession logic
                     elif event_type in ['shot-on-goal', 'goal']:
-                        if zone == 'offensive':
+                        origin_zone = self._get_shot_origin_zone(play, play_by_play['plays'], team_id)
+                        
+                        if origin_zone == 'offensive':
                             metrics['oz_originating_shots'][period_index] += 1
-                        elif zone == 'neutral':
+                        elif origin_zone == 'neutral':
                             metrics['nz_originating_shots'][period_index] += 1
-                        elif zone == 'defensive':
+                        elif origin_zone == 'defensive':
                             metrics['dz_originating_shots'][period_index] += 1
                         
                         # Determine shot type using proper hockey logic
@@ -2720,6 +2723,74 @@ class PostGameReportGenerator:
         except Exception as e:
             print(f"Error in rush shot detection: {e}")
             return False
+    
+    def _get_shot_origin_zone(self, current_play, all_plays, team_id):
+        """
+        Determine the zone where the attack sequence leading to the shot originated.
+        Searches back for the possession-triggering event.
+        """
+        try:
+            current_team = current_play.get('details', {}).get('eventOwnerTeamId')
+            current_period = current_play.get('periodDescriptor', {}).get('number', 1)
+            current_time_seconds = self._parse_time_to_seconds(current_play.get('timeInPeriod', '00:00'))
+            
+            # Default to shot location
+            details = current_play.get('details', {})
+            x_coord = details.get('xCoord', 0)
+            y_coord = details.get('yCoord', 0)
+            zone_code = details.get('zoneCode')
+            shot_zone = self._determine_zone(x_coord, y_coord, zone_code)
+            
+            # Find current play index
+            try:
+                play_index = all_plays.index(current_play)
+            except ValueError:
+                return shot_zone
+
+            # Search back up to 10 events or 20 seconds
+            for idx in range(max(0, play_index - 1), max(-1, play_index - 11), -1):
+                prev_play = all_plays[idx]
+                
+                prev_details = prev_play.get('details', {})
+                prev_team = prev_details.get('eventOwnerTeamId')
+                prev_period = prev_play.get('periodDescriptor', {}).get('number', 1)
+                
+                # Only consider same team/period
+                if prev_team != current_team or prev_period != current_period:
+                    continue
+                    
+                prev_time_seconds = self._parse_time_to_seconds(prev_play.get('timeInPeriod', '00:00'))
+                time_diff = current_time_seconds - prev_time_seconds
+                if time_diff > 20: # Long possession likely changed context
+                    break
+                
+                prev_type = prev_play.get('typeDescKey', '')
+                prev_zone_code = prev_details.get('zoneCode', '')
+                prev_x = prev_details.get('xCoord', 0)
+                prev_y = prev_details.get('yCoord', 0)
+                
+                # Zone of the previous event
+                prev_zone = self._determine_zone(prev_x, prev_y, prev_zone_code)
+                
+                # Logic: If we found a takeaway, hit, or faceoff win in D or N zone, that's the origin
+                if prev_type in ['takeaway', 'hit', 'faceoff']:
+                     if prev_zone in ['defensive', 'neutral']:
+                         return prev_zone
+                
+                # If we see the play transition from D or N to O within the sequence
+                if prev_zone in ['defensive', 'neutral']:
+                    return prev_zone
+                    
+                # If we find a previous shot/goal, it indicates sustained OZ pressure
+                if prev_type in ['shot-on-goal', 'goal', 'missed-shot']:
+                    return 'offensive'
+
+            return shot_zone
+            
+        except Exception as e:
+            print(f"Error determining shot origin zone: {e}")
+            return 'offensive' # Fallback
+
     
     def _parse_time_to_seconds(self, time_str):
         """Convert MM:SS time string to seconds"""
