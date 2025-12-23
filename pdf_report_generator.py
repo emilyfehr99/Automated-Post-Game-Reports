@@ -1213,7 +1213,10 @@ class PostGameReportGenerator:
                 str(sum(away_period_stats['hits'])), f"{sum(away_period_stats['fo_pct'])/3:.1f}%", str(sum(away_period_stats['bs'])), 
                 str(sum(away_period_stats['gv'])), str(sum(away_period_stats['tk'])), f'{sum(away_gs_periods):.1f}', f'{away_xg_total:.2f}',
                 f'{sum(away_zone_metrics["nz_turnovers"])}', f'{sum(away_zone_metrics["nz_turnovers_to_shots"])}',
-                f'{away_total_en_sog_count}', f'{away_total_ex_en_count}'])
+                 f'{sum(away_zone_metrics["oz_originating_shots"])}', f'{sum(away_zone_metrics["nz_originating_shots"])}', f'{sum(away_zone_metrics["dz_originating_shots"])}',
+                f'{sum(away_zone_metrics["fc_cycle_sog"])}', f'{sum(away_zone_metrics["rush_sog"])}', str(away_total_rebounds),
+                f'{away_total_en_sog_count}', f'{away_total_ex_en_count}']
+            stats_data.append(final_row)
             
             # Home team logo row with win probability centered in the row
             stats_data.append([home_team['abbrev'], home_logo_img if home_logo_img else '', f"{win_prob['home_probability']}% likelihood of winning", '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', '', ''])
