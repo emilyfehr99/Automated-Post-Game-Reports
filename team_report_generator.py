@@ -71,7 +71,11 @@ class TeamReportGenerator(PostGameReportGenerator):
         # Fetch fresh data
         try:
             url = f"https://moneypuck.com/moneypuck/playerData/seasonSummary/{season_year}/regular/teams.csv"
-            response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=30)
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8'
+            }
+            response = requests.get(url, headers=headers, timeout=30)
             response.raise_for_status()
             
             # Parse CSV
@@ -792,7 +796,11 @@ class TeamReportGenerator(PostGameReportGenerator):
         """Get team record from NHL standings API"""
         try:
             url = 'https://api-web.nhle.com/v1/standings/now'
-            response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'})
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Accept': '*/*'
+            }
+            response = requests.get(url, headers=headers)
             print(f"DEBUG: Standings API status code: {response.status_code}")
             if response.status_code == 200:
                 data = response.json()

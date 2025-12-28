@@ -134,6 +134,9 @@ class RealTeamStatsGenerator(TeamReportGenerator):
         avg_goal_distance = 0.0
         east_west_play = 0.0
         north_south_play = 0.0
+        lat = 0.0 
+        long_movement = 0.0
+        # print(f"DEBUG: Initialized lat={lat}")
         
         # Sprite/Dynamic metrics
         net_front_traffic_pct = 0.0
@@ -143,7 +146,14 @@ class RealTeamStatsGenerator(TeamReportGenerator):
         try:
             if 'play_by_play' in game_data:
                 pbp = game_data['play_by_play']
-                exp_analyzer = ExperimentalMetricsAnalyzer(pbp)
+                # Pass game_id (as string) to ensure sprite lookups work
+                game_id = game_data.get('game_center', {}).get('id')
+                if not game_id:
+                     # Fallback to checking boxscore or other fields if needed
+                     game_id = game_data.get('boxscore', {}).get('id')
+                
+                game_id_str = str(game_id) if game_id else ''
+                exp_analyzer = ExperimentalMetricsAnalyzer(pbp, game_id=game_id_str)
                 exp_results = exp_analyzer.calculate_all_experimental_metrics()
                 
                 # Fetch team-specific metrics
@@ -222,7 +232,11 @@ class RealTeamStatsGenerator(TeamReportGenerator):
         """Generate stats for all teams"""
         print("Fetching standings to get all teams...")
         try:
-            response = requests.get("https://api-web.nhle.com/v1/standings/now")
+            # Use the API client's session to ensure proper headers (User-Agent) are sent
+            response = self.api.session.get("https://api-web.nhle.com/v1/standings/now")
+            if response.status_code != 200:
+                print(f"Error fetching standings: Status {response.status_code}")
+                return
             data = response.json()
             standings = data.get('standings', [])
         except Exception as e:

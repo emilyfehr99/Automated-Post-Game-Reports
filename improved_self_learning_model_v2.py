@@ -282,6 +282,13 @@ class ImprovedSelfLearningModelV2:
                     home_score += 1
                 else:
                     away_score += 1
+        
+        # Ensure definitive winner (No Ties in playoff/prediction context)
+        if home_score == away_score:
+            if lam_h >= lam_a:
+                home_score += 1
+            else:
+                away_score += 1
                 
         return (home_score, away_score)
 
