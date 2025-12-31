@@ -380,6 +380,20 @@ class RealTeamStatsGenerator(TeamReportGenerator):
             print(f"  DEBUG - home opp_xg array length: {len(home_stats.get('opp_xg', []))}")
             
             print(f"\n✓ Completed {abbrev}: {len(home_stats['gs'])} home games, {len(away_stats['gs'])} away games")
+            
+            # Incremental Save: Write to file after each team to prevent data loss on crash/interrupt
+            try:
+                # Ensure the 'data' directory exists
+                output_dir = os.path.dirname(self.output_file)
+                if output_dir and not os.path.exists(output_dir):
+                    os.makedirs(output_dir)
+                
+                output = {"teams": teams_data}
+                with open(self.output_file, 'w') as f:
+                    json.dump(output, f, indent=2)
+                print(f"  (Saved progress to {self.output_file})")
+            except Exception as e:
+                print(f"  Warning: Failed to save incremental progress: {e}")
         
         output = {"teams": teams_data}
         

@@ -1404,6 +1404,103 @@ class PostGameReportGenerator:
         
         return story
     
+    def create_goalie_analytics_section(self, game_id, game_data):
+        """Create enhanced goalie analytics section with GSAx and Entry stats"""
+        from goalie_analytics_analyzer import GoalieAnalyticsAnalyzer
+        from reportlab.platypus import Table, TableStyle
+        from reportlab.lib import colors
+        
+        elements = []
+        
+        # Add Header
+        elements.append(Paragraph("GOALIE ANALYTICS (GSAx & CONTEXT)", self.custom_styles['SectionHeader']))
+        elements.append(Spacer(1, 10))
+        
+        # Run Analysis
+        try:
+            analyzer = GoalieAnalyticsAnalyzer(game_id)
+            goalie_stats = analyzer.analyze_goalies()
+            
+            if not goalie_stats:
+                elements.append(Paragraph("No goalie data available.", self.styles['Normal']))
+                return elements
+                
+            # Prepare Data Table
+            # Columns: Goalie, Team, Sv/SA, GSAx, RoyalRoad Sv%, Carry Sv%, Pass Sv%
+            
+            # Map goalie IDs to Names/Teams
+            roster_map = self._create_player_roster_map(game_data.get('play_by_play', {}))
+            
+            data = [['Goalie', 'Sv/SA', 'GSAx', 'RoyalRoad\nSv%', 'Carry Entry\nSv%', 'Pass Entry\nSv%']]
+            
+            sorted_ids = sorted(goalie_stats.keys(), key=lambda gid: goalie_stats[gid]['xG'], reverse=True)
+            
+            curr_row = 1
+            for gid in sorted_ids:
+                s = goalie_stats[gid]
+                
+                # Retrieve Name and Team
+                player_info = roster_map.get(gid, {})
+                name = f"{player_info.get('firstName', {}).get('default', '')} {player_info.get('lastName', {}).get('default', '')}"
+                if len(name.strip()) < 2:
+                     name = f"Goalie {gid}"
+                
+                sv_sa = f"{s['shots']-s['goals']}/{s['shots']}"
+                gsax_val = s['GSAx']
+                gsax_str = f"{gsax_val:+.2f}"
+                
+                rr_total = s['RoyalRoad_Shots']
+                rr_sv = f"{s['RoyalRoad_SvPct']*100:.1f}% ({rr_total})" if rr_total > 0 else "N/A"
+                
+                carry_total = s['CarryEntry_Shots']
+                carry_sv = f"{s['CarryEntry_SvPct']*100:.1f}% ({carry_total})" if carry_total > 0 else "N/A"
+                
+                pass_total = s['PassEntry_Shots']
+                pass_sv = f"{s['PassEntry_SvPct']*100:.1f}% ({pass_total})" if pass_total > 0 else "N/A"
+                
+                row = [name, sv_sa, gsax_str, rr_sv, carry_sv, pass_sv]
+                data.append(row)
+                curr_row += 1
+            
+            # Create Table
+            t = Table(data, colWidths=[1.8*72, 0.8*72, 0.8*72, 1.1*72, 1.1*72, 1.1*72])
+            
+            style = [
+                ('BACKGROUND', (0,0), (-1,0), self.colors['primary']),
+                ('TEXTCOLOR', (0,0), (-1,0), colors.white),
+                ('ALIGN', (0,0), (-1,-1), 'CENTER'),
+                ('ALIGN', (0,0), (0,-1), 'LEFT'),
+                ('FONTNAME', (0,0), (-1,0), 'RussoOne'),
+                ('FONTSIZE', (0,0), (-1,0), 10),
+                ('BOTTOMPADDING', (0,0), (-1,0), 8),
+                ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
+                ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
+            ]
+            
+            # Color GSAx
+            for i in range(1, len(data)):
+                gsax_val = float(data[i][2])
+                if gsax_val > 0:
+                    style.append(('TEXTCOLOR', (2,i), (2,i), colors.green))
+                elif gsax_val < 0:
+                    style.append(('TEXTCOLOR', (2,i), (2,i), colors.red))
+                    
+            t.setStyle(TableStyle(style))
+            elements.append(t)
+            elements.append(Spacer(1, 10))
+            
+            # Add Explainer
+            explainer_text = "<b>GSAx:</b> Goals Saved Above Expected (Positive = Good). <b>Royal Road:</b> Shots crossing center ice. <b>Entry:</b> Shots after Carry vs Pass entry."
+            elements.append(Paragraph(explainer_text, self.styles['Normal']))
+                
+            elements.append(Spacer(1, 20))
+            
+        except Exception as e:
+            elements.append(Paragraph(f"Error generating goalie analytics: {str(e)}", self.styles['Normal']))
+            
+        return elements
+
+    
     def calculate_win_probability(self, game_data):
         """Calculate win probability using POSTGAME correlation-based weights.
         Uses actual game stats with weights derived from correlation analysis of completed games.
@@ -3766,10 +3863,19 @@ class PostGameReportGenerator:
             
             # Add the table directly (positioning will be handled by side-by-side layout)
             story.append(combined_table)
-            story.append(Spacer(1, -5)) # Moved up 0.3cm (approx 8.5pts) from 4
+            
+            # Add Goalie Analytics
+            story.append(Spacer(1, 15))
+            try:
+                goalie_elements = self.create_goalie_analytics_section(game_id, game_data)
+                story.extend(goalie_elements)
+            except Exception as e:
+                print(f"Failed to add goalie analytics: {e}")
+
+            story.append(Spacer(1, -5)) # Conserve space
             
         except Exception as e:
-            print(f"Error creating advanced metrics: {e}")
+            print(f"Error creating advanced metrics or goalie stats: {e}")
             story.append(Paragraph("Advanced metrics could not be calculated for this game.", self.normal_style))
         
         return story

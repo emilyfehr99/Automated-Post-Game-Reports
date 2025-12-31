@@ -112,7 +112,27 @@ class DailyPredictionNotifier:
             summary += f"**Game {i}**: {away} @ {home}\n"
             summary += f"  🏆 Prediction: **{winner} wins** ({away_score}-{home_score})\n"
             summary += f"  ⭐ Confidence: {confidence:.1f}%\n"
-            summary += f"  🥅 Goalies: {pred['away_goalie']} vs {pred['home_goalie']}\n"
+
+            # Add In-Depth Analysis
+            # Add In-Depth Analysis
+            has_factors = False
+            if 'factors' in score_pred:
+                factors = score_pred['factors']
+                if factors.get('goalie_home') != 'Neutral':
+                    summary += f"  🥅 {factors['goalie_home']}\n"
+                    has_factors = True
+                if factors.get('goalie_away') != 'Neutral':
+                    summary += f"  🥅 {factors['goalie_away']}\n"
+                    has_factors = True
+                if factors.get('pace') != 'Neutral':
+                    summary += f"  ⏱️ {factors['pace']}\n"
+                    has_factors = True
+                if factors.get('situation') != 'Neutral':
+                    summary += f"  🔥 {factors['situation']}\n"
+                    has_factors = True
+                    
+            if not has_factors:
+                 summary += f"  🥅 Goalies: {pred['away_goalie']} vs {pred['home_goalie']}\n"
             
             # Show contexts used
             if pred['contexts']:

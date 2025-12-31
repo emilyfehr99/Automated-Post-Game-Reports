@@ -496,6 +496,14 @@ class ImprovedSelfLearningModelV2:
                     for key in DEFAULT_SCORE_WEIGHTS:
                         if key not in data["score_weight_momentum"]:
                             data["score_weight_momentum"][key] = 0.0
+
+                if "model_performance" not in data:
+                     data["model_performance"] = {
+                        "total_games": 0,
+                        "correct_predictions": 0,
+                        "accuracy": 0.0,
+                        "recent_accuracy": 0.0
+                     }
             
                 return data
             except Exception as e:

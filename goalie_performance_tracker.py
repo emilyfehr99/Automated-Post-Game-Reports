@@ -9,9 +9,70 @@ from typing import Dict, List, Optional
 from nhl_api_client import NHLAPIClient
 
 class GoaliePerformanceTracker:
+    
     def __init__(self):
         self.api = NHLAPIClient()
         self.goalie_cache = {}
+        self.advanced_stats = self._load_advanced_stats()
+        
+    def _load_advanced_stats(self) -> Dict:
+        """Load detailed season stats from JSON"""
+        try:
+            with open('season_goalie_stats.json', 'r') as f:
+                return json.load(f)
+        except Exception:
+            return {}
+            
+    def get_goalie_style_profile(self, goalie_name: str) -> Dict:
+        """Get advanced style profile (Rush, Traffic, HD) for a goalie"""
+        if not self.advanced_stats:
+            return {}
+            
+        # Find goalie ID by name
+        goalie_id = None
+        names_map = self.advanced_stats.get('names', {})
+        for gid, name in names_map.items():
+            if goalie_name.lower() in name.lower() or name.lower() in goalie_name.lower():
+                goalie_id = gid
+                break
+        
+        if not goalie_id:
+            return {}
+            
+        stats = self.advanced_stats.get('stats', {}).get(goalie_id, {})
+        if not stats:
+            return {}
+            
+        def calc_sv(shots, saves):
+            return (saves / shots) if shots > 0 else 0.0
+            
+        # Extract specific save percentages
+        rush_sv = calc_sv(stats.get('rush_shots', 0), stats.get('rush_saves', 0))
+        traffic_sv = calc_sv(stats.get('screened_shots', 0), stats.get('screened_saves', 0))
+        hd_sv = calc_sv(stats.get('hd_shots', 0), stats.get('hd_saves', 0))
+        dist_sv = calc_sv(stats.get('dist_long_shots', 0), stats.get('dist_long_saves', 0))
+        
+        # League Baselines (Approximate for 2025)
+        LEAGUE_RUSH_SV = 0.820
+        LEAGUE_TRAFFIC_SV = 0.860
+        LEAGUE_HD_SV = 0.780
+        LEAGUE_DIST_SV = 0.960
+        
+        return {
+            'rush_sv': rush_sv,
+            'rush_diff': rush_sv - LEAGUE_RUSH_SV,
+            'traffic_sv': traffic_sv,
+            'traffic_diff': traffic_sv - LEAGUE_TRAFFIC_SV,
+            'hd_sv': hd_sv,
+            'hd_diff': hd_sv - LEAGUE_HD_SV,
+            'dist_sv': dist_sv,
+            'dist_diff': dist_sv - LEAGUE_DIST_SV,
+            'samples': {
+                'rush': stats.get('rush_shots', 0),
+                'traffic': stats.get('screened_shots', 0),
+                'hd': stats.get('hd_shots', 0)
+            }
+        }
     
     def get_goalie_recent_starts(self, goalie_name: str, team_abbr: str, n: int = 5) -> List[Dict]:
         """Get goalie's last N starts with detailed stats"""

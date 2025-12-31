@@ -37,15 +37,25 @@ class ScorePredictionModel:
         away_xg_adjusted = self._apply_goalie_adjustment(away_xg, home_goalie, home_team)
         home_xg_adjusted = self._apply_goalie_adjustment(home_xg, away_goalie, away_team)
         
+        # Calculate Goalie Impact
+        away_goalie_impact = away_xg_adjusted - away_xg
+        home_goalie_impact = home_xg_adjusted - home_xg
+        
         # 3. Apply pace/tempo adjustments
-        away_xg_final, home_xg_final = self._apply_pace_adjustment(
+        away_xg_paced, home_xg_paced = self._apply_pace_adjustment(
             away_xg_adjusted, home_xg_adjusted, away_perf, home_perf
         )
         
+        # Calculate Pace Impact
+        pace_impact = (away_xg_paced + home_xg_paced) - (away_xg_adjusted + home_xg_adjusted)
+        
         # 4. Apply situational context (rivalry, playoff race)
         away_xg_final, home_xg_final = self._apply_situational_adjustment(
-            away_xg_final, home_xg_final, away_team, home_team
+            away_xg_paced, home_xg_paced, away_team, home_team
         )
+        
+        # Calculate Situational Impact
+        sit_impact = (away_xg_final + home_xg_final) - (away_xg_paced + home_xg_paced)
         
         # 5. Convert xG to actual goals with variance
         away_goals = self._xg_to_goals(away_xg_final)
@@ -54,13 +64,66 @@ class ScorePredictionModel:
         # 6. Ensure realistic score differential
         away_goals, home_goals = self._normalize_score_differential(away_goals, home_goals)
         
+        # 7. Resolve Ties (NHL games must have a winner)
+        away_score = int(round(away_goals))
+        home_score = int(round(home_goals))
+        
+        if away_score == home_score:
+            # Tie-breaker: Higher xG wins OT/SO
+            if away_xg_final > home_xg_final:
+                away_score += 1
+            elif home_xg_final > away_xg_final:
+                home_score += 1
+            else:
+                # If xG is identical, give to home team (Home Ice Advantage)
+                home_score += 1
+        
+        # 8. Generate Analysis Factors
+        factors = {
+            'pace': 'Neutral',
+            'goalie_away': 'Neutral',
+            'goalie_home': 'Neutral',
+            'situation': 'Neutral'
+        }
+        
+        # Interpret Pace
+        if pace_impact > 0.2:
+            factors['pace'] = "🔥 High Tempo (Offense Boost)"
+        elif pace_impact < -0.2:
+            factors['pace'] = "🧊 Grinding/Defensive Pace"
+            
+        # Interpret Goalie Impact (Negative impact on xG = Good Save Peformance)
+        # Note: away_goalie_impact affects HOME xG (because it's the away goalie saving shots)
+        # Actually in _apply_goalie_adjustment(away_xg, home_goalie), we are adjusting AWAY's xG based on HOME goalie.
+        # So away_goalie_impact is how the HOME GOALIE affects AWAY scoring.
+        
+        # Let's clarify: 
+        # away_xg_adjusted = effect of HOME GOALIE on AWAY Team
+        home_goalie_effect = away_xg_adjusted - away_xg
+        away_goalie_effect = home_xg_adjusted - home_xg
+        
+        if home_goalie_effect < -0.10:
+            factors['goalie_home'] = f"🛡️  Strong Goalie ({home_goalie})"
+        elif home_goalie_effect > 0.10:
+            factors['goalie_home'] = f"⚠️  Shaky Goaltending ({home_goalie})"
+            
+        if away_goalie_effect < -0.10:
+            factors['goalie_away'] = f"🛡️  Strong Goalie ({away_goalie})"
+        elif away_goalie_effect > 0.10:
+            factors['goalie_away'] = f"⚠️  Shaky Goaltending ({away_goalie})"
+            
+        # Interpret Situation
+        if sit_impact > 0.1:
+            factors['situation'] = "⚔️  Rivalry/High Intensity"
+        
         return {
-            'away_score': int(round(away_goals)),
-            'home_score': int(round(home_goals)),
+            'away_score': away_score,
+            'home_score': home_score,
             'away_xg': round(away_xg_final, 2),
             'home_xg': round(home_xg_final, 2),
-            'total_goals': int(round(away_goals + home_goals)),
-            'confidence': self._calculate_confidence(away_xg_final, home_xg_final)
+            'total_goals': int(round(away_score + home_score)), # Recalculate total with no fractions
+            'confidence': self._calculate_confidence(away_xg_final, home_xg_final),
+            'factors': factors
         }
     
     def _calculate_expected_goals(self, team: str, opponent: str, venue: str,
@@ -94,8 +157,10 @@ class ScorePredictionModel:
         
         return max(2.0, min(4.0, expected_goals))  # Clamp to realistic range
     
+        return xg
+            
     def _apply_goalie_adjustment(self, xg: float, goalie_name: str, team: str) -> float:
-        """Adjust xG based on goalie performance"""
+        """Adjust xG based on goalie performance and style matchup"""
         if not goalie_name or goalie_name == "TBD":
             return xg
         
@@ -103,30 +168,42 @@ class ScorePredictionModel:
             from goalie_performance_tracker import GoaliePerformanceTracker
             tracker = GoaliePerformanceTracker()
             
-            # Get goalie's recent form
-            recent_starts = tracker.get_goalie_recent_starts(goalie_name, team, n=5)
+            adjustment = 1.0
             
+            # 1. Recent Form Adjustment
+            recent_starts = tracker.get_goalie_recent_starts(goalie_name, team, n=5)
             if recent_starts:
-                # Calculate average GSAx (Goals Saved Above Expected)
                 avg_gsax = np.mean([s.get('gsax', 0) for s in recent_starts])
-                
-                # Elite goalies (GSAx > 0.5): reduce xG against by 15%
-                # Average goalies (GSAx ~0): no change
-                # Poor goalies (GSAx < -0.5): increase xG against by 15%
-                
-                if avg_gsax > 0.5:
-                    adjustment = 0.85  # Elite goalie
-                elif avg_gsax > 0.2:
-                    adjustment = 0.92  # Above average
-                elif avg_gsax < -0.5:
-                    adjustment = 1.15  # Poor goalie
-                elif avg_gsax < -0.2:
-                    adjustment = 1.08  # Below average
-                else:
-                    adjustment = 1.0  # Average
-                
-                return xg * adjustment
-        except:
+                if avg_gsax > 0.5: adjustment *= 0.85
+                elif avg_gsax > 0.2: adjustment *= 0.92
+                elif avg_gsax < -0.5: adjustment *= 1.15
+                elif avg_gsax < -0.2: adjustment *= 1.08
+            
+            # 2. Advanced Style Matchup Adjustment
+            style_profile = tracker.get_goalie_style_profile(goalie_name)
+            if style_profile:
+                # Rush Vulnerability
+                # Ideally we check if opponent is a high-rush team, but for now we penalize weak rush goalies generally
+                # as they are vulnerable to breakaways/odd-man rushes which happen in every game.
+                if style_profile['rush_diff'] < -0.05 and style_profile['samples']['rush'] > 10:
+                    adjustment *= 1.05  # +5% goals against for weak rush defense
+                elif style_profile['rush_diff'] > 0.05 and style_profile['samples']['rush'] > 10:
+                    adjustment *= 0.95  # -5% goals against for elite rush defense
+                    
+                # Traffic/Screen Vulnerability
+                if style_profile['traffic_diff'] < -0.05 and style_profile['samples']['traffic'] > 10:
+                    adjustment *= 1.03  # +3% goals against for weak screen fighting
+                elif style_profile['traffic_diff'] > 0.05 and style_profile['samples']['traffic'] > 10:
+                     adjustment *= 0.97 # -3% goals against for elite screen fighting (rebound control)
+                    
+                # High Danger Vulnerability
+                if style_profile['hd_diff'] < -0.04 and style_profile['samples']['hd'] > 20:
+                    adjustment *= 1.05  # +5% goals against for poor HD save %
+            
+            return xg * adjustment
+            
+        except Exception as e:
+            # print(f"Goalie adj error: {e}")
             pass
         
         return xg
