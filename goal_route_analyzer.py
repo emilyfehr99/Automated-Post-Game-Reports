@@ -125,6 +125,19 @@ class GoalRouteAnalyzer:
                 pbp_data = api.get_play_by_play(game_id)
                 if not pbp_data:
                     continue
+                
+                # Get team abbreviations for mapping
+                home_team_abbrev = pbp_data.get('homeTeam', {}).get('abbrev')
+                away_team_abbrev = pbp_data.get('awayTeam', {}).get('abbrev')
+                home_team_id = pbp_data.get('homeTeam', {}).get('id')
+                away_team_id = pbp_data.get('awayTeam', {}).get('id')
+                
+                # Create team ID to abbreviation mapping
+                team_id_map = {}
+                if home_team_id and home_team_abbrev:
+                    team_id_map[home_team_id] = home_team_abbrev
+                if away_team_id and away_team_abbrev:
+                    team_id_map[away_team_id] = away_team_abbrev
                     
                 plays = pbp_data.get('plays', [])
                 
@@ -139,7 +152,10 @@ class GoalRouteAnalyzer:
                     
                     # Get team info
                     details = play.get('details', {})
-                    scoring_team = details.get('eventOwnerTeamId')
+                    scoring_team_id = details.get('eventOwnerTeamId')
+                    
+                    # Map team ID to abbreviation
+                    scoring_team = team_id_map.get(scoring_team_id)
                     
                     # Apply team filter if specified
                     if team_filter and scoring_team != team_filter:
