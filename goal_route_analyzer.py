@@ -22,6 +22,38 @@ class GoalRouteAnalyzer:
     def __init__(self):
         self.trajectories = []
         
+        # Sprite coordinate system (approximate based on NHL video feed)
+        # Sprite uses pixels, need to convert to feet
+        # Typical sprite dimensions: ~2400-2600 pixels wide, ~600-700 pixels tall
+        # NHL rink: 200 feet long, 85 feet wide
+        self.SPRITE_WIDTH = 2500  # Approximate pixel width
+        self.SPRITE_HEIGHT = 650  # Approximate pixel height
+        self.RINK_LENGTH = 200  # feet
+        self.RINK_WIDTH = 85  # feet
+        
+    def convert_sprite_to_rink_coords(self, sprite_x: float, sprite_y: float) -> Tuple[float, float]:
+        """
+        Convert sprite pixel coordinates to NHL rink feet coordinates
+        
+        Sprite coords: (0, 0) to (~2500, ~650) pixels
+        Rink coords: (-100, -42.5) to (100, 42.5) feet
+        
+        Args:
+            sprite_x: X coordinate in sprite pixels
+            sprite_y: Y coordinate in sprite pixels
+            
+        Returns:
+            (x, y) in rink feet
+        """
+        # Convert pixels to feet
+        # X: sprite 0 -> rink -100, sprite 2500 -> rink 100
+        rink_x = (sprite_x / self.SPRITE_WIDTH) * self.RINK_LENGTH - (self.RINK_LENGTH / 2)
+        
+        # Y: sprite 0 -> rink -42.5, sprite 650 -> rink 42.5
+        rink_y = (sprite_y / self.SPRITE_HEIGHT) * self.RINK_WIDTH - (self.RINK_WIDTH / 2)
+        
+        return (rink_x, rink_y)
+        
     def extract_goal_trajectory(self, sprite_data: List[Dict]) -> Optional[List[Tuple[float, float]]]:
         """
         Extract puck path from sprite frames leading to goal
@@ -46,7 +78,9 @@ class GoalRouteAnalyzer:
                     x = data.get('x')
                     y = data.get('y')
                     if x is not None and y is not None:
-                        puck_positions.append((float(x), float(y)))
+                        # Convert sprite pixels to rink feet
+                        rink_x, rink_y = self.convert_sprite_to_rink_coords(float(x), float(y))
+                        puck_positions.append((rink_x, rink_y))
                         
         # Filter out trajectories that are too short (likely incomplete data)
         if len(puck_positions) < 3:
