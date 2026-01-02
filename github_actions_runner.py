@@ -277,7 +277,8 @@ class GitHubActionsRunner:
             traceback.print_exc()
             return False
         
-        # Post to Twitter
+        # Post to Twitter (non-fatal if it fails)
+        twitter_success = False
         print(f"\n🐦 Posting {away_team} @ {home_team} to Twitter...")
         try:
             # Debug: Check if environment variables are set
@@ -304,38 +305,43 @@ class GitHubActionsRunner:
             media_id = poster.upload_media(image_path)
             
             if not media_id:
-                print(f"❌ Failed to upload image")
-                return False
-            
-            # Post tweet
-            tweet = poster.client.create_tweet(
-                text=tweet_text,
-                media_ids=[media_id]
-            )
-            
-            tweet_id = tweet.data['id']
-            print(f"✅ Posted to Twitter: {tweet_text}")
-            print(f"   🔗 https://twitter.com/user/status/{tweet_id}")
-            
-            # Post to Discord
-            self.post_to_discord(away_team, home_team, image_path)
-            
-            # Clean up image file after successful post
-            try:
-                Path(image_path).unlink()
-                print(f"🗑️  Cleaned up image: {image_path}")
-            except Exception as e:
-                print(f"⚠️  Could not delete image: {e}")
-            
-            return True
-            
-            return True
+                print(f"⚠️  Failed to upload image to Twitter - continuing anyway")
+            else:
+                # Post tweet
+                tweet = poster.client.create_tweet(
+                    text=tweet_text,
+                    media_ids=[media_id]
+                )
+                
+                tweet_id = tweet.data['id']
+                print(f"✅ Posted to Twitter: {tweet_text}")
+                print(f"   🔗 https://twitter.com/user/status/{tweet_id}")
+                twitter_success = True
             
         except Exception as e:
-            print(f"❌ Error posting to Twitter: {e}")
+            print(f"⚠️  Twitter posting failed (non-fatal): {e}")
             import traceback
             traceback.print_exc()
-            return False
+            print(f"   Continuing with Discord and cleanup...")
+        
+        # Post to Discord (also non-fatal)
+        try:
+            self.post_to_discord(away_team, home_team, image_path)
+        except Exception as e:
+            print(f"⚠️  Discord posting failed (non-fatal): {e}")
+        
+        # Clean up image file
+        try:
+            Path(image_path).unlink()
+            print(f"🗑️  Cleaned up image: {image_path}")
+        except Exception as e:
+            print(f"⚠️  Could not delete image: {e}")
+        
+        # Return True even if Twitter failed - we generated the report successfully
+        if not twitter_success:
+            print(f"⚠️  Report generated but Twitter posting failed - marking as processed anyway")
+        
+        return True
             
     def post_to_discord(self, away_team, home_team, image_path):
         """Post report to Discord"""
