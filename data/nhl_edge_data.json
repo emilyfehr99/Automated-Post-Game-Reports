@@ -1,6 +1,6 @@
 {
-  "scraped_at": "2026-01-12T13:02:38.739667",
-  "total_players": 829,
+  "scraped_at": "2026-01-13T13:02:41.621509",
+  "total_players": 830,
   "player_data": [
     {
       "": "",
@@ -7531,6 +7531,19 @@
     },
     {
       "": "",
+      "Player": "Andre Lee",
+      "Team": "LAK",
+      "Pos": "L",
+      "GP": 4,
+      "Top Speed": 20.59,
+      "Distance Skated": 4.69,
+      "Average Speed": 10.2,
+      "Bursts>20 per mile": 0.85,
+      "ES Dist. Skated": 4.69,
+      "ES Avg. Speed": 10.21
+    },
+    {
+      "": "",
       "Player": "Nikita Nesterenko",
       "Team": "ANA",
       "Pos": "C",
@@ -11307,6 +11320,19 @@
         },
         {
           "": "",
+          "Player": "Andre Lee",
+          "Team": "LAK",
+          "Pos": "L",
+          "GP": 4,
+          "Top Speed": 20.59,
+          "Distance Skated": 4.69,
+          "Average Speed": 10.2,
+          "Bursts>20 per mile": 0.85,
+          "ES Dist. Skated": 4.69,
+          "ES Avg. Speed": 10.21
+        },
+        {
+          "": "",
           "Player": "Quinton Byfield",
           "Team": "LAK",
           "Pos": "R",
@@ -11384,17 +11410,17 @@
           "ES Avg. Speed": 9.15
         }
       ],
-      "total_distance": 1410.6599999999999,
-      "avg_speed": 7.117000000000002,
+      "total_distance": 1415.35,
+      "avg_speed": 7.263809523809525,
       "max_speed": 23.16,
-      "total_bursts": 6.43,
-      "player_count": 20,
-      "avg_distance": 70.53299999999999,
-      "avg_bursts": 0.3215,
-      "speed_score": 0.7117000000000002,
+      "total_bursts": 7.279999999999999,
+      "player_count": 21,
+      "avg_distance": 67.39761904761905,
+      "avg_bursts": 0.3466666666666666,
+      "speed_score": 0.7263809523809525,
       "distance_score": 1.0,
-      "burst_score": 0.16075,
-      "edge_advantage": 0.6880000000000001
+      "burst_score": 0.1733333333333333,
+      "edge_advantage": 0.6978571428571428
     },
     "WSH": {
       "players": [
