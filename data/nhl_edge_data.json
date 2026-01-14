@@ -1,5 +1,5 @@
 {
-  "scraped_at": "2026-01-13T13:02:41.621509",
+  "scraped_at": "2026-01-14T13:02:38.960039",
   "total_players": 830,
   "player_data": [
     {
@@ -7794,13 +7794,13 @@
       "Player": "Daemon Hunt",
       "Team": "MIN",
       "Pos": "D",
-      "GP": 12,
+      "GP": 15,
       "Top Speed": 21.4,
-      "Distance Skated": 21.51,
-      "Average Speed": 8.65,
-      "Bursts>20 per mile": 0.37,
-      "ES Dist. Skated": 20.58,
-      "ES Avg. Speed": 8.72
+      "Distance Skated": 27.06,
+      "Average Speed": 8.71,
+      "Bursts>20 per mile": 0.33,
+      "ES Dist. Skated": 26.08,
+      "ES Avg. Speed": 8.78
     },
     {
       "": "",
@@ -17599,13 +17599,13 @@
           "Player": "Daemon Hunt",
           "Team": "MIN",
           "Pos": "D",
-          "GP": 12,
+          "GP": 15,
           "Top Speed": 21.4,
-          "Distance Skated": 21.51,
-          "Average Speed": 8.65,
-          "Bursts>20 per mile": 0.37,
-          "ES Dist. Skated": 20.58,
-          "ES Avg. Speed": 8.72
+          "Distance Skated": 27.06,
+          "Average Speed": 8.71,
+          "Bursts>20 per mile": 0.33,
+          "ES Dist. Skated": 26.08,
+          "ES Avg. Speed": 8.78
         },
         {
           "": "",
@@ -17686,17 +17686,17 @@
           "ES Avg. Speed": 9.82
         }
       ],
-      "total_distance": 1843.46,
-      "avg_speed": 8.452692307692308,
+      "total_distance": 1849.0099999999998,
+      "avg_speed": 8.455,
       "max_speed": 23.61,
-      "total_bursts": 11.1,
+      "total_bursts": 11.06,
       "player_count": 26,
-      "avg_distance": 70.90230769230769,
-      "avg_bursts": 0.4269230769230769,
-      "speed_score": 0.8452692307692308,
+      "avg_distance": 71.11576923076922,
+      "avg_bursts": 0.4253846153846154,
+      "speed_score": 0.8455,
       "distance_score": 1.0,
-      "burst_score": 0.21346153846153845,
-      "edge_advantage": 0.7653269230769231
+      "burst_score": 0.2126923076923077,
+      "edge_advantage": 0.7652884615384615
     },
     "VAN": {
       "players": [
