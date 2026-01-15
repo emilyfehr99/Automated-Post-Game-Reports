@@ -141,6 +141,12 @@ class DailyPredictionNotifier:
             
             summary += "\n"
         
+        # Recalculate model performance from latest predictions before displaying
+        try:
+            self.predictor.learning_model.recalculate_performance_from_scratch()
+        except Exception as e:
+            print(f"⚠️  Warning: Failed to recalculate performance: {e}")
+        
         # Add model performance
         perf = self.predictor.learning_model.get_model_performance()
         summary += f"📊 **Model Performance:**\n"

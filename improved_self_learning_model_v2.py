@@ -253,35 +253,74 @@ class ImprovedSelfLearningModelV2:
         lam_h = max(0.5, min(10.0, home_xg))
         lam_a = max(0.5, min(10.0, away_xg))
         
-        # Use deterministic seed based on the matchup for consistency
-        random.seed(int(lam_h * 1000 + lam_a * 1000))
+        # Use deterministic seed only if deterministic mode is enabled
+        # Otherwise use natural random state for maximum variety
+        if self.deterministic:
+            random.seed(int(lam_h * 1000 + lam_a * 1000))
+            np.random.seed(int(lam_h * 1000 + lam_a * 1000))
         
-        # Probabilistic rounding: 3.7 has 70% chance to round to 4, 30% to 3
-        # This creates more variance than floor() which always rounds down
-        def probabilistic_round(value):
-            base = int(math.floor(value))
-            decimal = value - base
-            # Use the decimal part as probability to round up
-            if random.random() < decimal:
-                return base + 1
-            return base
+        # Use Poisson distribution for more realistic score variety
+        # Sample from Poisson distribution - this naturally creates variance
+        home_poisson = np.random.poisson(lam_h)
+        away_poisson = np.random.poisson(lam_a)
         
-        home_score = probabilistic_round(lam_h)
-        away_score = probabilistic_round(lam_a)
-        
-        # Additional variance injection based on xG difference
-        # Large xG differences should create larger score differences
+        # Add additional variance based on xG difference to create more score variety
         xg_diff = abs(lam_h - lam_a)
         
-        # If xG are very close (diff < 0.5), this is a coin-flip game
-        # If xG diff is large (diff > 1.5), amplify the score difference
-        if xg_diff > 1.5:
-            # Blowout potential - give the stronger team an extra goal sometimes
-            if random.random() < 0.3:  # 30% chance
+        # More aggressive variance injection to prevent all 1-goal games
+        # Add variance based on multiple factors
+        variance_roll = random.random()
+        
+        if xg_diff < 0.8:
+            # Close game - higher chance of 2+ goal difference (30% total)
+            if variance_roll < 0.20:  # 20% chance of 2-goal difference
                 if lam_h > lam_a:
-                    home_score += 1
+                    home_poisson += 1
                 else:
-                    away_score += 1
+                    away_poisson += 1
+            elif variance_roll < 0.30:  # Additional 10% chance (total 30%)
+                # Add to both to create larger total but keep it close
+                if random.random() < 0.5:
+                    home_poisson += 1
+                else:
+                    away_poisson += 1
+        elif xg_diff < 1.5:
+            # Medium difference - moderate chance of larger margin (40% total)
+            if variance_roll < 0.30:  # 30% chance
+                if lam_h > lam_a:
+                    home_poisson += 1
+                else:
+                    away_poisson += 1
+            elif variance_roll < 0.40:  # Additional 10% chance
+                if lam_h > lam_a:
+                    home_poisson += 1
+                else:
+                    away_poisson += 1
+        else:
+            # Large difference - higher chance of blowout (50% total)
+            if variance_roll < 0.35:  # 35% chance
+                if lam_h > lam_a:
+                    home_poisson += 1
+                else:
+                    away_poisson += 1
+            # Additional chance of 2-goal blowout (15% more)
+            if random.random() < 0.15:
+                if lam_h > lam_a:
+                    home_poisson += 1
+                else:
+                    away_poisson += 1
+        
+        # Additional random variance injection (10% chance regardless of xG diff)
+        # This ensures we get some 2+ goal games even when xG are similar
+        if random.random() < 0.10:
+            if random.random() < 0.5:
+                home_poisson += 1
+            else:
+                away_poisson += 1
+        
+        # Ensure scores are in reasonable range (1-8 goals)
+        home_score = max(1, min(8, home_poisson))
+        away_score = max(1, min(8, away_poisson))
         
         # Ensure definitive winner (No Ties in playoff/prediction context)
         if home_score == away_score:
@@ -289,7 +328,6 @@ class ImprovedSelfLearningModelV2:
                 home_score += 1
             else:
                 away_score += 1
-                
         return (home_score, away_score)
 
     def _estimate_monte_carlo_signal(self, prediction: Dict, iterations: int = 40) -> float:
@@ -3155,7 +3193,35 @@ class ImprovedSelfLearningModelV2:
     
     def recalculate_performance_from_scratch(self):
         """Recalculate model performance from all predictions (ensures accuracy after bulk updates)"""
-        predictions = self.model_data.get("predictions", [])
+        # Reload predictions from file to ensure we have the latest data
+        # Try multiple possible file locations
+        file_paths_to_try = [
+            self.predictions_file,  # Primary location (data/win_probability_predictions_v2.json)
+            self.script_dir / "win_probability_predictions_v2.json",  # Root of script directory
+            Path("win_probability_predictions_v2.json"),  # Current working directory
+            Path("data/win_probability_predictions_v2.json"),  # data/ relative to CWD
+        ]
+        
+        predictions = None
+        for file_path in file_paths_to_try:
+            if file_path.exists():
+                try:
+                    with open(file_path, 'r') as f:
+                        file_data = json.load(f)
+                        predictions = file_data.get("predictions", [])
+                        # Update in-memory model_data with latest predictions
+                        self.model_data["predictions"] = predictions
+                        logger.info(f"Reloaded {len(predictions)} predictions from {file_path} for performance recalculation")
+                        break
+                except Exception as e:
+                    logger.warning(f"Failed to reload predictions from {file_path}: {e}")
+                    continue
+        
+        # Fallback to in-memory data if file loading failed
+        if predictions is None:
+            predictions = self.model_data.get("predictions", [])
+            logger.warning(f"Using in-memory predictions ({len(predictions)} predictions) - file reload failed")
+        
         # Filter for completed games - check multiple possible formats
         completed = []
         for p in predictions:
