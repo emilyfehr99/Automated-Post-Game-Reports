@@ -104,6 +104,7 @@ class MetaEnsemblePredictor:
         self.xgb_model = None
         self.history_tracker = TeamHistory()
         self.feature_names = []
+        self.team_profiles = {}
         
         try:
             self._load_xgboost_components()
@@ -130,7 +131,15 @@ class MetaEnsemblePredictor:
             self.xgb_model = None
             return
 
-        # 3. Build Team History State
+        # 3. Load Finishing Profiles
+        try:
+            with open('team_scoring_profiles.json', 'r') as f:
+                self.team_profiles = json.load(f)
+            print(f"✅ Loaded {len(self.team_profiles)} team finishing profiles")
+        except:
+            print("⚠️ Could not load team finishing profiles")
+
+        # 4. Build Team History State
         data_path = Path('data/win_probability_predictions_v2.json')
         if not data_path.exists():
             data_path = Path('win_probability_predictions_v2.json')
@@ -205,9 +214,18 @@ class MetaEnsemblePredictor:
         h_l10 = tracker.get_rolling_stats(home_team, 10)
         a_l10 = tracker.get_rolling_stats(away_team, 10)
         
+        # Finish Factors
+        h_finish = self.team_profiles.get(home_team, 1.0)
+        a_finish = self.team_profiles.get(away_team, 1.0)
+        
         # Build Feature Vector
         feature_data = {
             'elo_diff': (home_elo + tracker.elo.ha) - away_elo,
+            
+            # Finish Factor
+            'finish_diff': h_finish - a_finish,
+            'home_finish': h_finish,
+            'away_finish': a_finish,
             
             'rest_diff': home_rest - away_rest,
             'home_fatigue': 1 if home_rest <= 1 else 0,

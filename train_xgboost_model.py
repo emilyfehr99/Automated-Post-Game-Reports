@@ -24,6 +24,13 @@ def normalize_side(val, home_team, away_team):
         return 'away'
     return None
 
+def load_profiles():
+    try:
+        with open('team_scoring_profiles.json', 'r') as f:
+            return json.load(f)
+    except:
+        return {}
+
 class EloTracker:
     def __init__(self, k_factor=20, home_advantage=35):
         self.ratings = {}  # {team: rating}
@@ -128,9 +135,10 @@ def extract_features_chronologically(predictions):
     sorted_preds = sorted(predictions, key=lambda x: x['date'])
     
     tracker = TeamHistory()
+    profiles = load_profiles() # Load finishing profiles
     training_data = []
     
-    print("Generating rolling features + Elo...")
+    print("Generating rolling features + Elo + Finish Factors...")
     
     for p in sorted_preds:
         game_id = p.get('game_id')
@@ -161,6 +169,10 @@ def extract_features_chronologically(predictions):
         h_l10 = tracker.get_rolling_stats(home, 10)
         a_l10 = tracker.get_rolling_stats(away, 10)
         
+        # Finish Factors
+        h_finish = profiles.get(home, 1.0)
+        a_finish = profiles.get(away, 1.0)
+        
         if winner_side:
             row = {
                 'game_id': game_id,
@@ -169,6 +181,11 @@ def extract_features_chronologically(predictions):
                 
                 # ELO: The big new feature
                 'elo_diff': (home_elo + tracker.elo.ha) - away_elo,
+                
+                # Finish Factor
+                'finish_diff': h_finish - a_finish,
+                'home_finish': h_finish,
+                'away_finish': a_finish,
                 
                 # Rest
                 'rest_diff': home_rest - away_rest,
