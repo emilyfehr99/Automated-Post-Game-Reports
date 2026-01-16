@@ -155,9 +155,8 @@ class ScorePredictionModel:
         if venue == "home":
             expected_goals *= 1.03
         
-        return max(2.0, min(4.0, expected_goals))  # Clamp to realistic range
-    
-        return xg
+        # REMOVED CLAMPING to allow for high/low variance
+        return expected_goals
             
     def _apply_goalie_adjustment(self, xg: float, goalie_name: str, team: str) -> float:
         """Adjust xG based on goalie performance and style matchup"""
@@ -255,13 +254,14 @@ class ScorePredictionModel:
         return away_xg, home_xg
     
     def _xg_to_goals(self, xg: float) -> float:
-        """Convert xG to actual goals with realistic variance"""
-        # Add some randomness (±10% variance, reduced from 15%)
-        variance = np.random.normal(0, 0.10)
-        goals = xg * (1 + variance)
+        """Convert xG to actual goals using Poisson distribution for realistic variance"""
+        # Simulate the game 3 times and take the average
+        # This preserves the "tail" possibility (high/low scores) while filtering pure noise
+        # This resolves the "boring 3-2" issue by allowing scores like 5-2 or 1-0 based on probability
+        samples = np.random.poisson(xg, 3)
+        goals = np.mean(samples)
         
-        # Ensure minimum of 0.5 goals
-        return max(0.5, goals)
+        return max(0.0, goals)
     
     def _normalize_score_differential(self, away_goals: float, home_goals: float) -> Tuple[float, float]:
         """Ensure realistic score differentials"""
@@ -276,15 +276,15 @@ class ScorePredictionModel:
                 home_goals = away_goals + 4.5
         
         # Ensure total goals is realistic (2-8 range)
+        # RELAXED: Allow totals up to 10 for high randomness events
         total = away_goals + home_goals
-        if total < 2:
-            # Scale up
-            scale = 2.5 / total
-            away_goals *= scale
-            home_goals *= scale
-        elif total > 8:
-            # Scale down
-            scale = 7.5 / total
+        if total < 1:
+            # Boost to at least 1-0
+            if away_goals > home_goals: away_goals = 1
+            else: home_goals = 1
+        elif total > 12:
+            # Scale down extreme outliers
+            scale = 10.0 / total
             away_goals *= scale
             home_goals *= scale
         
