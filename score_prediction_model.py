@@ -6,6 +6,7 @@ Predicts realistic game scores based on team metrics, xG, goalie performance, an
 import numpy as np
 from typing import Dict, Tuple
 from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
+import json
 
 class ScorePredictionModel:
     """Advanced model for predicting realistic game scores"""
@@ -16,6 +17,15 @@ class ScorePredictionModel:
         # League averages (2024-25 season)
         self.league_avg_goals = 3.0
         self.league_avg_xg = 2.5
+        
+        # Load Team Finishing Profiles
+        self.team_profiles = {}
+        try:
+            with open('team_scoring_profiles.json', 'r') as f:
+                self.team_profiles = json.load(f)
+            print(f"✅ Loaded {len(self.team_profiles)} team finishing profiles")
+        except:
+            print("⚠️ Could not load team finishing profiles, using defaults")
         
     def predict_score(self, away_team: str, home_team: str, 
                      away_goalie: str = None, home_goalie: str = None,
@@ -57,14 +67,26 @@ class ScorePredictionModel:
         # Calculate Situational Impact
         sit_impact = (away_xg_final + home_xg_final) - (away_xg_paced + home_xg_paced)
         
-        # 5. Convert xG to actual goals with variance
+        # 5. Apply Team Finishing Ability (Snipers vs Volume)
+        away_finish = self.team_profiles.get(away_team, 1.0)
+        home_finish = self.team_profiles.get(home_team, 1.0)
+        
+        # Apply 80% of the observed finishing lift (to be conservative)
+        # e.g. If TOR finishes at 1.69x, we use ~1.55x for prediction
+        away_finish_adj = 1.0 + (away_finish - 1.0) * 0.8
+        home_finish_adj = 1.0 + (home_finish - 1.0) * 0.8
+        
+        away_xg_final *= away_finish_adj
+        home_xg_final *= home_finish_adj
+        
+        # 6. Convert xG to actual goals with variance
         away_goals = self._xg_to_goals(away_xg_final)
         home_goals = self._xg_to_goals(home_xg_final)
         
-        # 6. Ensure realistic score differential
+        # 7. Ensure realistic score differential
         away_goals, home_goals = self._normalize_score_differential(away_goals, home_goals)
         
-        # 7. Resolve Ties (NHL games must have a winner)
+        # 8. Resolve Ties (NHL games must have a winner)
         away_score = int(round(away_goals))
         home_score = int(round(home_goals))
         
@@ -78,12 +100,13 @@ class ScorePredictionModel:
                 # If xG is identical, give to home team (Home Ice Advantage)
                 home_score += 1
         
-        # 8. Generate Analysis Factors
+        # 9. Generate Analysis Factors
         factors = {
             'pace': 'Neutral',
             'goalie_away': 'Neutral',
             'goalie_home': 'Neutral',
-            'situation': 'Neutral'
+            'situation': 'Neutral',
+            'finishing': 'Neutral'
         }
         
         # Interpret Pace
@@ -92,13 +115,17 @@ class ScorePredictionModel:
         elif pace_impact < -0.2:
             factors['pace'] = "🧊 Grinding/Defensive Pace"
             
+        # Interpret Finishing
+        if home_finish > 1.2:
+             factors['finishing'] = f"🎯 {home_team} Elite Finishing (x{home_finish:.2f})"
+        elif away_finish > 1.2:
+             factors['finishing'] = f"🎯 {away_team} Elite Finishing (x{away_finish:.2f})"
+        elif home_finish < 0.9:
+             factors['finishing'] = f"🧱 {home_team} Low Finishing (x{home_finish:.2f})"
+        elif away_finish < 0.9:
+             factors['finishing'] = f"🧱 {away_team} Low Finishing (x{away_finish:.2f})"
+            
         # Interpret Goalie Impact (Negative impact on xG = Good Save Peformance)
-        # Note: away_goalie_impact affects HOME xG (because it's the away goalie saving shots)
-        # Actually in _apply_goalie_adjustment(away_xg, home_goalie), we are adjusting AWAY's xG based on HOME goalie.
-        # So away_goalie_impact is how the HOME GOALIE affects AWAY scoring.
-        
-        # Let's clarify: 
-        # away_xg_adjusted = effect of HOME GOALIE on AWAY Team
         home_goalie_effect = away_xg_adjusted - away_xg
         away_goalie_effect = home_xg_adjusted - home_xg
         
@@ -325,3 +352,5 @@ if __name__ == "__main__":
         print(f"  Total: {pred['total_goals']} goals")
         print(f"  xG: {away} {pred['away_xg']} - {home} {pred['home_xg']}")
         print(f"  Confidence: {pred['confidence']:.1%}")
+        if pred.get('factors'):
+            print(f"  Factors: {pred['factors']}")
