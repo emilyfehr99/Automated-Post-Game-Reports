@@ -256,11 +256,11 @@ class MetaEnsemblePredictor:
         predictions = []
         weights = []
         
-        # 1. XGBoost ML Model (40% Weight)
+        # 1. XGBoost ML Model (50% Weight - Highest Accuracy Component)
         xgb_pred = self._predict_xgboost(away_team, home_team, game_date)
         if xgb_pred:
             predictions.append(xgb_pred)
-            weights.append(0.40)
+            weights.append(0.50)
         
         # 2. Specialized ensemble (25% weight)
         try:
@@ -281,11 +281,11 @@ class MetaEnsemblePredictor:
             except Exception as e:
                 print(f"Player-level model failed: {e}")
         
-        # 4. Base model (20% weight)
+        # 4. Base model (10% weight - reduced due to lower accuracy)
         try:
             base_pred = self.base_model.predict_game(away_team, home_team, game_id=game_id, game_date=game_date)
             predictions.append(base_pred)
-            weights.append(0.20)
+            weights.append(0.10)
         except Exception as e:
             print(f"Base model failed: {e}")
             
