@@ -84,6 +84,11 @@ jobs:
             echo "⚠️  Team stats file not found - checking for errors"
           fi
 
+      - name: Update game outcomes
+        run: |
+          echo "📝 UPDATING PAST GAME OUTCOMES"
+          python3 update_game_outcomes.py
+          
       - name: Run daily predictions
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
