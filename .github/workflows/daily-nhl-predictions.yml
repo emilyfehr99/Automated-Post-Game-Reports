@@ -32,7 +32,7 @@ jobs:
       - name: Install dependencies
         run: |
           python -m pip install --upgrade pip
-          pip install pytz requests pandas numpy beautifulsoup4 python-dateutil reportlab pillow matplotlib scikit-learn seaborn
+          pip install pytz requests pandas numpy beautifulsoup4 python-dateutil reportlab pillow matplotlib scikit-learn seaborn xgboost
 
       - name: Check time window
         run: |
@@ -88,7 +88,17 @@ jobs:
         run: |
           echo "📝 UPDATING PAST GAME OUTCOMES"
           python3 update_game_outcomes.py
-          
+
+      - name: Retrain XGBoost Model
+        run: |
+          echo "🧠 RETRAINING MODEL WITH LATEST RESULTS"
+          python3 train_xgboost_model.py
+          if [ -f "xgb_nhl_model.json" ]; then
+             echo "✅ Model retrained successfully"
+          else
+             echo "⚠️ Model training failed or didn't save (accuracy threshold not met?)"
+          fi
+
       - name: Run daily predictions
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
@@ -133,6 +143,18 @@ jobs:
             echo "✅ season_2025_2026_team_stats.json added"
           else
             echo "⚠️  season_2025_2026_team_stats.json not found in data/"
+          fi
+
+          # Add XGBoost Model Artifacts
+          if [ -f "xgb_nhl_model.json" ]; then
+            echo "📦 Adding updated XGBoost model..."
+            git add --force xgb_nhl_model.json
+            FILES_TO_COMMIT="$FILES_TO_COMMIT xgb_nhl_model.json"
+          fi
+          
+          if [ -f "xgb_features.pkl" ]; then
+             git add --force xgb_features.pkl
+             FILES_TO_COMMIT="$FILES_TO_COMMIT xgb_features.pkl"
           fi
           
           # Commit if there are changes

@@ -229,7 +229,7 @@ class RealTeamStatsGenerator(TeamReportGenerator):
         }
     
     def generate_all_team_stats(self):
-        """Generate stats for all teams"""
+        """Generate stats for all teams incrementally"""
         print("Fetching standings to get all teams...")
         try:
             # Use the API client's session to ensure proper headers (User-Agent) are sent
@@ -243,7 +243,18 @@ class RealTeamStatsGenerator(TeamReportGenerator):
             print(f"Error fetching standings: {e}")
             return
         
-        teams_data = {}
+        # Load existing data to enable incremental updates
+        existing_data = {}
+        if os.path.exists(self.output_file):
+            try:
+                with open(self.output_file, 'r') as f:
+                    file_content = json.load(f)
+                    existing_data = file_content.get('teams', {})
+                print(f"✅ Loaded existing stats for {len(existing_data)} teams")
+            except Exception as e:
+                print(f"⚠️ Could not load existing stats: {e}. Starting fresh.")
+                
+        teams_data = existing_data
         
         for team in standings:
             abbrev = team['teamAbbrev']['default']
@@ -255,7 +266,7 @@ class RealTeamStatsGenerator(TeamReportGenerator):
             
             # Get all games for this team using parent class method
             team_games = self.get_team_games(abbrev)
-            print(f"Found {len(team_games)} games")
+            print(f"Found {len(team_games)} total games in history")
             
             if not team_games:
                 print(f"  No games found for {abbrev}, skipping...")
@@ -265,29 +276,60 @@ class RealTeamStatsGenerator(TeamReportGenerator):
             home_games = [g for g in team_games if g['was_home']]
             away_games = [g for g in team_games if not g['was_home']]
             
-            print(f"  Home games: {len(home_games)}, Away games: {len(away_games)}")
+            # Initialize team stats structure if not present
+            if abbrev not in teams_data:
+                teams_data[abbrev] = {
+                    'home': {
+                        'gs': [], 'xg': [], 'corsi_pct': [], 'fenwick_pct': [], 'pdo': [],
+                        'ozs': [], 'nzs': [], 'dzs': [], 'goals': [], 'opp_goals': [], 'shots': [],
+                        'hits': [], 'blocked_shots': [], 'giveaways': [], 'takeaways': [],
+                        'penalty_minutes': [], 'power_play_pct': [], 'penalty_kill_pct': [],
+                        'faceoff_pct': [], 'nzt': [], 'nztsa': [], 'fc': [], 'rush': [],
+                        'lat': [], 'long_movement': [], 'hdc': [], 'hdca': [], 'opp_xg': [], 'period_dzs': [],
+                        'rebounds': [], 'rush_shots': [], 'cycle_shots': [], 'forecheck_turnovers': [],
+                        'net_front_traffic_pct': [], 'passes_per_goal': [], 'avg_goal_distance': [],
+                        'east_west_play': [], 'north_south_play': [],
+                        'zone_entry_carry_pct': [], 'zone_entry_pass_pct': [],
+                        'games': []
+                    },
+                    'away': {
+                        'gs': [], 'xg': [], 'corsi_pct': [], 'fenwick_pct': [], 'pdo': [],
+                        'ozs': [], 'nzs': [], 'dzs': [], 'goals': [], 'opp_goals': [], 'shots': [],
+                        'hits': [], 'blocked_shots': [], 'giveaways': [], 'takeaways': [],
+                        'penalty_minutes': [], 'power_play_pct': [], 'penalty_kill_pct': [],
+                        'faceoff_pct': [], 'nzt': [], 'nztsa': [], 'fc': [], 'rush': [],
+                        'lat': [], 'long_movement': [], 'hdc': [], 'hdca': [], 'opp_xg': [], 'period_dzs': [],
+                        'rebounds': [], 'rush_shots': [], 'cycle_shots': [], 'forecheck_turnovers': [],
+                        'net_front_traffic_pct': [], 'passes_per_goal': [], 'avg_goal_distance': [],
+                        'east_west_play': [], 'north_south_play': [],
+                        'zone_entry_carry_pct': [], 'zone_entry_pass_pct': [],
+                        'games': []
+                    }
+                }
             
-            # Process home games
-            home_stats = {
-                'gs': [], 'xg': [], 'corsi_pct': [], 'fenwick_pct': [], 'pdo': [],
-                'ozs': [], 'nzs': [], 'dzs': [], 'goals': [], 'opp_goals': [], 'shots': [],
-                'hits': [], 'blocked_shots': [], 'giveaways': [], 'takeaways': [],
-                'penalty_minutes': [], 'power_play_pct': [], 'penalty_kill_pct': [],
-                'faceoff_pct': [], 'nzt': [], 'nztsa': [], 'fc': [], 'rush': [],
-                'lat': [], 'long_movement': [], 'hdc': [], 'hdca': [], 'opp_xg': [], 'period_dzs': [],
-                'rebounds': [], 'rush_shots': [], 'cycle_shots': [], 'forecheck_turnovers': [],
-                'net_front_traffic_pct': [], 'passes_per_goal': [], 'avg_goal_distance': [],
-                'east_west_play': [], 'north_south_play': [],
-                'zone_entry_carry_pct': [], 'zone_entry_pass_pct': [],
-                'games': []
-            }
+            # INCREMENTAL UPDATE LOGIC
+            # Check how many games we have already processed
+            processed_home = len(teams_data[abbrev]['home'].get('gs', []))
+            processed_away = len(teams_data[abbrev]['away'].get('gs', []))
             
-            for i, game_info in enumerate(home_games):
+            # Identify new games (by skipping the first N games)
+            # Assumption: team_games is sorted by date (guaranteed by get_team_games)
+            new_home_games = home_games[processed_home:]
+            new_away_games = away_games[processed_away:]
+            
+            print(f"  Home games: {processed_home} processed, {len(new_home_games)} new")
+            print(f"  Away games: {processed_away} processed, {len(new_away_games)} new")
+            
+            # Process new home games
+            home_stats = teams_data[abbrev]['home']
+            for i, game_info in enumerate(new_home_games):
+                # Calculate true index (for logging)
+                idx = processed_home + i
                 game_id = game_info.get('game_id')
                 if not game_id:
                     continue
                 
-                print(f"  Processing home game {i+1}/{len(home_games)}: {game_info.get('date')} (ID: {game_id})...", end=' ', flush=True)
+                print(f"  Processing NEW home game {i+1}/{len(new_home_games)}: {game_info.get('date')} (ID: {game_id})...", end=' ', flush=True)
                 
                 try:
                     game_data = self.api.get_comprehensive_game_data(str(game_id))
@@ -299,49 +341,28 @@ class RealTeamStatsGenerator(TeamReportGenerator):
                     home_team_data = boxscore.get('homeTeam', {})
                     team_id = home_team_data.get('id')
                     
-                    if not team_id:
-                        print("No team ID")
-                        continue
-                    
                     metrics = self.calculate_game_metrics(game_data, team_id, is_home=True)
                     if metrics:
-                        # DEBUG: Print first game's metrics to verify opponent fields exist
-                        if i == 0:
-                            print(f"\n  DEBUG - Metrics keys: {list(metrics.keys())}")
-                            print(f"  DEBUG - opp_goals: {metrics.get('opp_goals', 'MISSING')}")
-                            print(f"  DEBUG - opp_xg: {metrics.get('opp_xg', 'MISSING')}\n")
-                        
+                        # Append metrics to existing lists
                         for key in home_stats.keys():
-                            if key != 'games':
+                            if key != 'games' and key in metrics:
                                 home_stats[key].append(metrics.get(key, 0))
-                        home_stats['games'].append(i)
+                        
+                        # Use game_id instead of index for robustness
+                        home_stats['games'].append(game_id)
                         print(f"✓ GS={metrics['gs']:.1f}, xG={metrics['xg']:.2f}")
                     else:
                         print("Failed to calculate metrics")
                 except Exception as e:
                     print(f"Error: {e}")
             
-            # Process away games
-            away_stats = {
-                'gs': [], 'xg': [], 'corsi_pct': [], 'fenwick_pct': [], 'pdo': [],
-                'ozs': [], 'nzs': [], 'dzs': [], 'goals': [], 'opp_goals': [], 'shots': [],
-                'hits': [], 'blocked_shots': [], 'giveaways': [], 'takeaways': [],
-                'penalty_minutes': [], 'power_play_pct': [], 'penalty_kill_pct': [],
-                'faceoff_pct': [], 'nzt': [], 'nztsa': [], 'fc': [], 'rush': [],
-                'lat': [], 'long_movement': [], 'hdc': [], 'hdca': [], 'opp_xg': [], 'period_dzs': [],
-                'rebounds': [], 'rush_shots': [], 'cycle_shots': [], 'forecheck_turnovers': [],
-                'net_front_traffic_pct': [], 'passes_per_goal': [], 'avg_goal_distance': [],
-                'east_west_play': [], 'north_south_play': [],
-                'zone_entry_carry_pct': [], 'zone_entry_pass_pct': [],
-                'games': []
-            }
-            
-            for i, game_info in enumerate(away_games):
+            # Process new away games
+            away_stats = teams_data[abbrev]['away']
+            for i, game_info in enumerate(new_away_games):
+                idx = processed_away + i
                 game_id = game_info.get('game_id')
-                if not game_id:
-                    continue
                 
-                print(f"  Processing away game {i+1}/{len(away_games)}: {game_info.get('date')} (ID: {game_id})...", end=' ', flush=True)
+                print(f"  Processing NEW away game {i+1}/{len(new_away_games)}: {game_info.get('date')} (ID: {game_id})...", end=' ', flush=True)
                 
                 try:
                     game_data = self.api.get_comprehensive_game_data(str(game_id))
@@ -353,37 +374,21 @@ class RealTeamStatsGenerator(TeamReportGenerator):
                     away_team_data = boxscore.get('awayTeam', {})
                     team_id = away_team_data.get('id')
                     
-                    if not team_id:
-                        print("No team ID")
-                        continue
-                    
                     metrics = self.calculate_game_metrics(game_data, team_id, is_home=False)
                     if metrics:
                         for key in away_stats.keys():
-                            if key != 'games':
+                            if key != 'games' and key in metrics:
                                 away_stats[key].append(metrics.get(key, 0))
-                        away_stats['games'].append(i)
+                        
+                        away_stats['games'].append(game_id)
                         print(f"✓ GS={metrics['gs']:.1f}, xG={metrics['xg']:.2f}")
                     else:
                         print("Failed to calculate metrics")
                 except Exception as e:
                     print(f"Error: {e}")
             
-            teams_data[abbrev] = {
-                'home': home_stats,
-                'away': away_stats
-            }
-            
-            # DEBUG: Check if opponent fields exist in arrays
-            print(f"  DEBUG - home_stats keys: {list(home_stats.keys())}")
-            print(f"  DEBUG - home opp_goals array length: {len(home_stats.get('opp_goals', []))}")
-            print(f"  DEBUG - home opp_xg array length: {len(home_stats.get('opp_xg', []))}")
-            
-            print(f"\n✓ Completed {abbrev}: {len(home_stats['gs'])} home games, {len(away_stats['gs'])} away games")
-            
-            # Incremental Save: Write to file after each team to prevent data loss on crash/interrupt
+            # Incremental Save
             try:
-                # Ensure the 'data' directory exists
                 output_dir = os.path.dirname(self.output_file)
                 if output_dir and not os.path.exists(output_dir):
                     os.makedirs(output_dir)
@@ -391,36 +396,18 @@ class RealTeamStatsGenerator(TeamReportGenerator):
                 output = {"teams": teams_data}
                 with open(self.output_file, 'w') as f:
                     json.dump(output, f, indent=2)
-                print(f"  (Saved progress to {self.output_file})")
+                if len(new_home_games) > 0 or len(new_away_games) > 0:
+                    print(f"  (Saved updates to {self.output_file})")
             except Exception as e:
-                print(f"  Warning: Failed to save incremental progress: {e}")
+                print(f"  Warning: Failed to save progress: {e}")
         
+        # Final Save
         output = {"teams": teams_data}
-        
-        # DEBUG: Print what's actually about to be written
-        if teams_data:
-            first_team = list(teams_data.keys())[0]
-            print(f"\n\n=== FINAL DEBUG BEFORE JSON WRITE ===")
-            print(f"First team: {first_team}")
-            print(f"Home keys: {list(teams_data[first_team]['home'].keys())}")
-            print(f"Has opp_goals? {'opp_goals' in teams_data[first_team]['home']}")
-            print(f"Has opp_xg? {'opp_xg' in teams_data[first_team]['home']}")
-            if 'opp_goals' in teams_data[first_team]['home']:
-                print(f"opp_goals length: {len(teams_data[first_team]['home']['opp_goals'])}")
-            if 'opp_xg' in teams_data[first_team]['home']:
-                print(f"opp_xg length: {len(teams_data[first_team]['home']['opp_xg'])}")
-            print(f"=====================================\n")
-        
-        # Ensure the 'data' directory exists
-        output_dir = os.path.dirname(self.output_file)
-        if output_dir and not os.path.exists(output_dir):
-            os.makedirs(output_dir)
-        
         with open(self.output_file, 'w') as f:
             json.dump(output, f, indent=2)
         
         print(f"\n{'='*60}")
-        print(f"✓ Generated {self.output_file} with real calculated data!")
+        print(f"✓ Stats generation complete. {self.output_file}")
         print(f"{'='*60}")
 
 if __name__ == "__main__":
