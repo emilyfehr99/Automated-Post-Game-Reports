@@ -1,0 +1,53 @@
+name: Regenerate Team Stats
+
+on:
+  workflow_dispatch:  # Manual trigger
+  schedule:
+    - cron: '0 9 * * *'  # Run daily at 9 AM UTC (4 AM EST)
+
+jobs:
+  regenerate-stats:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write  # Allow pushing changes back to repo
+      
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0  # Fetch full history for git push
+
+      - name: Set up Python
+        uses: actions/setup-python@v4
+        with:
+          python-version: '3.10'
+          cache: 'pip'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run Stats Regeneration
+        run: |
+          # Increase timeout for the script if needed inside python 
+          # The GH runner has 6 hours max
+          python generate_real_team_stats.py
+        env:
+          PYTHONUNBUFFERED: 1
+
+      - name: Commit and Push changes
+        run: |
+          git config --global user.name "GitHub Actions Bot"
+          git config --global user.email "actions@github.com"
+          
+          # Check for changes
+          if [[ -n $(git status -s data/season_2025_2026_team_stats.json) ]]; then
+            echo "Changes detected in stats file"
+            git add data/season_2025_2026_team_stats.json
+            git commit -m "data: automated stats regeneration [skip ci]"
+            git push
+            echo "✅ Successfully updated stats"
+          else
+            echo "No changes detected"
+          fi
