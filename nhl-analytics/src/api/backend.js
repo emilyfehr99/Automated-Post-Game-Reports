@@ -136,7 +136,12 @@ export const backendApi = {
      * Get player stats from MoneyPuck
      */
     async getPlayerStats(season = '2024', type = 'regular', situation = 'all') {
-        const response = await fetch(`${BACKEND_URL}/api/player-stats?season=${season}&type=${type}&situation=${situation}`);
+        // Use edge function in production to avoid CORS
+        const endpoint = import.meta.env.MODE === 'production'
+            ? `/api/player-stats?season=${season}&type=${type}&situation=${situation}`
+            : `${BACKEND_URL}/api/player-stats?season=${season}&type=${type}&situation=${situation}`;
+
+        const response = await fetch(endpoint);
         if (!response.ok) throw new Error('Failed to fetch player stats');
         return response.json();
     },
