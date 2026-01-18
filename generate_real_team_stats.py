@@ -125,9 +125,10 @@ class RealTeamStatsGenerator(TeamReportGenerator):
         sh_pct = (goals_for / shots_for * 100) if shots_for > 0 else 10.0
         pdo = sv_pct + sh_pct
         
+        
         # Get pre-shot movement from advanced metrics analyzer
-        lat = 0.0
-        long_movement = 0.0
+        lat = "No data"
+        long_movement = "No data"
         
         try:
             from advanced_metrics_analyzer import AdvancedMetricsAnalyzer
@@ -139,9 +140,13 @@ class RealTeamStatsGenerator(TeamReportGenerator):
             else:
                 pre_shot_data = metrics_report.get('away_team', {}).get('pre_shot_movement', {})
             
-            # Extract lateral (E-W) and longitudinal (N-S) movement
-            lat = pre_shot_data.get('lateral_movement', {}).get('avg_delta_y', 0.0)
-            long_movement = pre_shot_data.get('longitudinal_movement', {}).get('avg_delta_x', 0.0)
+            # Extract numeric values
+            lat_feet = pre_shot_data.get('lateral_movement', {}).get('avg_delta_y', 0.0)
+            long_feet = pre_shot_data.get('longitudinal_movement', {}).get('avg_delta_x', 0.0)
+            
+            # Convert to text descriptions (same as PDF reports)
+            lat = self._classify_lateral_movement(lat_feet)
+            long_movement = self._classify_longitudinal_movement(long_feet)
         except Exception as e:
             print(f"    Warning: Could not calculate movement metrics: {e}")
         
@@ -225,8 +230,8 @@ class RealTeamStatsGenerator(TeamReportGenerator):
             'nztsa': round(total_nztsa, 2),
             'fc': round(total_fc, 2),
             'rush': round(total_rush, 2),
-            'lat': round(lat, 2),
-            'long_movement': round(long_movement, 2),
+            'lat': lat,  # Text description
+            'long_movement': long_movement,  # Text description
             'hdc': team_hdc,
             'hdca': opp_hdc,
             'opp_xg': round(opp_xg, 2),  # ← NEW: Opponent xG (xG allowed)
