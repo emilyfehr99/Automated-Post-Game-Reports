@@ -18,7 +18,10 @@ export const backendApi = {
      * Get stats for specific team
      */
     async getTeamStatsByAbbrev(abbrev) {
-        const response = await fetch(`${BACKEND_URL}/api/team-stats/${abbrev}`);
+        const endpoint = import.meta.env.MODE === 'production'
+            ? `/api/team-stats/${abbrev}`
+            : `${BACKEND_URL}/api/team-stats/${abbrev}`;
+        const response = await fetch(endpoint);
         if (!response.ok) throw new Error(`Failed to fetch stats for ${abbrev}`);
         return response.json();
     },
@@ -41,7 +44,10 @@ export const backendApi = {
      * Get NHL Edge data
      */
     async getEdgeData() {
-        const response = await fetch(`${BACKEND_URL}/api/edge-data`);
+        const endpoint = import.meta.env.MODE === 'production'
+            ? '/api/edge-data'
+            : `${BACKEND_URL}/api/edge-data`;
+        const response = await fetch(endpoint);
         if (!response.ok) throw new Error('Failed to fetch edge data');
         return response.json();
     },
@@ -50,7 +56,10 @@ export const backendApi = {
      * Get Edge data for specific team
      */
     async getEdgeDataByTeam(abbrev) {
-        const response = await fetch(`${BACKEND_URL}/api/edge-data/${abbrev}`);
+        const endpoint = import.meta.env.MODE === 'production'
+            ? `/api/edge-data/${abbrev}`
+            : `${BACKEND_URL}/api/edge-data/${abbrev}`;
+        const response = await fetch(endpoint);
         if (!response.ok) throw new Error(`Failed to fetch edge data for ${abbrev}`);
         return response.json();
     },
@@ -82,7 +91,10 @@ export const backendApi = {
      * Get prediction for specific game
      */
     async getGamePrediction(gameId) {
-        const response = await fetch(`${BACKEND_URL}/api/predictions/game/${gameId}`);
+        const endpoint = import.meta.env.MODE === 'production'
+            ? `/api/predictions/game/${gameId}`
+            : `${BACKEND_URL}/api/predictions/game/${gameId}`;
+        const response = await fetch(endpoint);
         if (!response.ok) throw new Error(`Failed to fetch prediction for game ${gameId}`);
         return response.json();
     },
@@ -91,7 +103,10 @@ export const backendApi = {
      * Get live game data including advanced metrics
      */
     async getLiveGame(gameId) {
-        const response = await fetch(`${BACKEND_URL}/api/live-game/${gameId}`);
+        const endpoint = import.meta.env.MODE === 'production'
+            ? `/api/live-game/${gameId}`
+            : `${BACKEND_URL}/api/live-game/${gameId}`;
+        const response = await fetch(endpoint);
         if (!response.ok) throw new Error(`Failed to fetch live game data for ${gameId}`);
         return response.json();
     },
@@ -100,7 +115,10 @@ export const backendApi = {
      * Get team heatmap data
      */
     async getTeamHeatmap(teamAbbr) {
-        const response = await fetch(`${BACKEND_URL}/api/team-heatmap/${teamAbbr}`);
+        const endpoint = import.meta.env.MODE === 'production'
+            ? `/api/team-heatmap/${teamAbbr}`
+            : `${BACKEND_URL}/api/team-heatmap/${teamAbbr}`;
+        const response = await fetch(endpoint);
         if (!response.ok) throw new Error('Failed to fetch team heatmap');
         return response.json();
     },
@@ -152,7 +170,10 @@ export const backendApi = {
     async getTeamTopPerformers(teamAbbr) {
         try {
             // First try dedicated endpoint if it exists
-            const response = await fetch(`${BACKEND_URL}/api/team-performers/${teamAbbr}`);
+            const endpoint = import.meta.env.MODE === 'production'
+                ? `/api/team-performers/${teamAbbr}`
+                : `${BACKEND_URL}/api/team-performers/${teamAbbr}`;
+            const response = await fetch(endpoint);
             if (response.ok) return response.json();
 
             // Fallback: Fetch all player stats and filter
