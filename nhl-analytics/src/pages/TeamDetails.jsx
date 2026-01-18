@@ -120,9 +120,14 @@ const TeamDetails = () => {
     useEffect(() => {
         const fetchTeamData = async () => {
             try {
+                // Use edge function endpoint in production
+                const metricsEndpoint = import.meta.env.MODE === 'production'
+                    ? '/api/team-metrics'
+                    : `${import.meta.env.VITE_API_URL || 'http://localhost:5002'}/api/team-metrics`;
+
                 const [rosterData, metricsResponse] = await Promise.all([
                     nhlApi.getTeamDetails(id),
-                    fetch(`${import.meta.env.MODE === 'production' ? 'https://nhl-analytics-api.onrender.com' : (import.meta.env.VITE_API_URL || 'http://localhost:5002')}/api/team-metrics`)
+                    fetch(metricsEndpoint)
                 ]);
 
                 setRoster(rosterData);
