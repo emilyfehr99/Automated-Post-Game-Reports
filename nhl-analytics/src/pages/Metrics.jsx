@@ -6,6 +6,20 @@ import { motion } from 'framer-motion';
 import { ArrowUpDown, ArrowUp, ArrowDown, Search } from 'lucide-react';
 import clsx from 'clsx';
 
+// Team colors for player team badges
+const TEAM_COLORS = {
+    'TBL': '#002868', 'NSH': '#FFB81C', 'EDM': '#041E42', 'FLA': '#C8102E',
+    'COL': '#6F263D', 'DAL': '#006847', 'BOS': '#FFB81C', 'TOR': '#00205B',
+    'MTL': '#AF1E2D', 'OTT': '#C8102E', 'BUF': '#002654', 'DET': '#CE1126',
+    'CAR': '#CC0000', 'WSH': '#C8102E', 'PIT': '#FFB81C', 'NYR': '#0038A8',
+    'NYI': '#00539B', 'NJD': '#CE1126', 'PHI': '#F74902', 'CBJ': '#002654',
+    'STL': '#002F87', 'MIN': '#154734', 'WPG': '#041E42', 'VGK': '#B4975A',
+    'SJS': '#006D75', 'LAK': '#111111', 'ANA': '#F47A38', 'CGY': '#C8102E',
+    'VAN': '#00205B', 'SEA': '#001628', 'UTA': '#000000', 'CHI': '#CF0A2C'
+};
+
+const getTeamColor = (teamAbbr) => TEAM_COLORS[teamAbbr] || '#333333';
+
 const SortIcon = ({ column, sortConfig }) => {
     if (sortConfig.key !== column) {
         return <ArrowUpDown size={14} className="text-text-muted opacity-50 group-hover:opacity-100" />;
