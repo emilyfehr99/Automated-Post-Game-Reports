@@ -354,9 +354,22 @@ class RealTeamStatsGenerator(TeamReportGenerator):
                 print(f"  Processing NEW home game {i+1}/{len(new_home_games)}: {game_info.get('date')} (ID: {game_id})...", end=' ', flush=True)
                 
                 try:
-                    game_data = self.api.get_comprehensive_game_data(str(game_id))
+                    import signal
+                    
+                    # Set 30-second timeout for API call
+                    def timeout_handler(signum, frame):
+                        raise TimeoutError("API call timed out")
+                    
+                    signal.signal(signal.SIGALRM, timeout_handler)
+                    signal.alarm(30)  # 30 second timeout
+                    
+                    try:
+                        game_data = self.api.get_comprehensive_game_data(str(game_id))
+                    finally:
+                        signal.alarm(0)  # Cancel alarm
+                    
                     if not game_data:
-                        print("No data")
+                        print("No data - skipping")
                         continue
                     
                     boxscore = game_data.get('boxscore', {})
@@ -374,9 +387,13 @@ class RealTeamStatsGenerator(TeamReportGenerator):
                         home_stats['games'].append(game_id)
                         print(f"✓ GS={metrics['gs']:.1f}, xG={metrics['xg']:.2f}")
                     else:
-                        print("Failed to calculate metrics")
+                        print("Failed to calculate metrics - skipping")
+                except TimeoutError as e:
+                    print(f"Timeout - skipping: {e}")
+                except KeyboardInterrupt:
+                    raise  # Allow user to stop
                 except Exception as e:
-                    print(f"Error: {e}")
+                    print(f"Error (skipping): {e}")
             
             # Process new away games
             away_stats = teams_data[abbrev]['away']
@@ -387,9 +404,21 @@ class RealTeamStatsGenerator(TeamReportGenerator):
                 print(f"  Processing NEW away game {i+1}/{len(new_away_games)}: {game_info.get('date')} (ID: {game_id})...", end=' ', flush=True)
                 
                 try:
-                    game_data = self.api.get_comprehensive_game_data(str(game_id))
+                    import signal
+                    
+                    def timeout_handler(signum, frame):
+                        raise TimeoutError("API call timed out")
+                    
+                    signal.signal(signal.SIGALRM, timeout_handler)
+                    signal.alarm(30)
+                    
+                    try:
+                        game_data = self.api.get_comprehensive_game_data(str(game_id))
+                    finally:
+                        signal.alarm(0)
+                    
                     if not game_data:
-                        print("No data")
+                        print("No data - skipping")
                         continue
                     
                     boxscore = game_data.get('boxscore', {})
@@ -405,9 +434,13 @@ class RealTeamStatsGenerator(TeamReportGenerator):
                         away_stats['games'].append(game_id)
                         print(f"✓ GS={metrics['gs']:.1f}, xG={metrics['xg']:.2f}")
                     else:
-                        print("Failed to calculate metrics")
+                        print("Failed to calculate metrics - skipping")
+                except TimeoutError as e:
+                    print(f"Timeout - skipping: {e}")
+                except KeyboardInterrupt:
+                    raise
                 except Exception as e:
-                    print(f"Error: {e}")
+                    print(f"Error (skipping): {e}")
             
             # Incremental Save
             try:
