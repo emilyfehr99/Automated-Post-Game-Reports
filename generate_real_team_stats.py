@@ -125,6 +125,26 @@ class RealTeamStatsGenerator(TeamReportGenerator):
         sh_pct = (goals_for / shots_for * 100) if shots_for > 0 else 10.0
         pdo = sv_pct + sh_pct
         
+        # Get pre-shot movement from advanced metrics analyzer
+        lat = 0.0
+        long_movement = 0.0
+        
+        try:
+            from advanced_metrics_analyzer import AdvancedMetricsAnalyzer
+            analyzer = AdvancedMetricsAnalyzer(game_data.get('play_by_play', {}))
+            metrics_report = analyzer.generate_comprehensive_report(away_team_data.get('id'), home_team_data.get('id'))
+            
+            if is_home:
+                pre_shot_data = metrics_report.get('home_team', {}).get('pre_shot_movement', {})
+            else:
+                pre_shot_data = metrics_report.get('away_team', {}).get('pre_shot_movement', {})
+            
+            # Extract lateral (E-W) and longitudinal (N-S) movement
+            lat = pre_shot_data.get('lateral_movement', {}).get('avg_delta_y', 0.0)
+            long_movement = pre_shot_data.get('longitudinal_movement', {}).get('avg_delta_x', 0.0)
+        except Exception as e:
+            print(f"    Warning: Could not calculate movement metrics: {e}")
+        
         # High-signal experimental metrics
         rebounds = 0
         rush_shots = 0
@@ -134,9 +154,6 @@ class RealTeamStatsGenerator(TeamReportGenerator):
         avg_goal_distance = 0.0
         east_west_play = 0.0
         north_south_play = 0.0
-        lat = 0.0 
-        long_movement = 0.0
-        # print(f"DEBUG: Initialized lat={lat}")
         
         # Sprite/Dynamic metrics
         net_front_traffic_pct = 0.0
