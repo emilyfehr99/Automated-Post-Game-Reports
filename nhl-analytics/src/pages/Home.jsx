@@ -1,27 +1,59 @@
-import React, { useEffect, useState } from 'react';
+import React, { useEffect, useState, useMemo } from 'react';
 import { nhlApi } from '../api/nhl';
 import { backendApi } from '../api/backend';
 import { Calendar, Trophy, Activity, TrendingUp } from 'lucide-react';
 import { motion } from 'framer-motion';
 import GameCard from '../components/GameCard';
 import StandingsTable from '../components/StandingsTable';
+import { useSWRFetch } from '../hooks/useSWRFetch';
 
 const Home = () => {
-    const [standings, setStandings] = useState([]);
-    const [games, setGames] = useState([]);
-    const [predictions, setPredictions] = useState({});
-    const [teamMetrics, setTeamMetrics] = useState({});
-    const [loading, setLoading] = useState(true);
+    // Calculate today's date string
+    const today = useMemo(() => {
+        const date = new Date();
+        const year = date.getFullYear();
+        const month = String(date.getMonth() + 1).padStart(2, '0');
+        const day = String(date.getDate()).padStart(2, '0');
+        return `${year}-${month}-${day}`;
+    }, []);
+
+    // Use SWR for all API calls - they'll be cached and deduplicated
+    const standingsEndpoint = import.meta.env.MODE === 'production'
+        ? `/api/standings/${today}`
+        : null; // Will use API client in dev
+    const scheduleEndpoint = import.meta.env.MODE === 'production'
+        ? `/api/schedule/${today}`
+        : null;
+    const predictionsEndpoint = import.meta.env.MODE === 'production'
+        ? '/api/predictions/today'
+        : null;
+    const metricsEndpoint = import.meta.env.MODE === 'production'
+        ? '/api/team-metrics'
+        : null;
+
+    // Fetch data with SWR - in production uses edge functions, in dev falls back to API clients
+    const { data: standingsData, error: standingsError, isLoading: standingsLoading } =
+        standingsEndpoint ? useSWRFetch(standingsEndpoint) : { data: null, error: null, isLoading: true };
+    const { data: scheduleData, error: scheduleError, isLoading: scheduleLoading } =
+        scheduleEndpoint ? useSWRFetch(scheduleEndpoint) : { data: null, error: null, isLoading: true };
+    const { data: predictionsData, error: predictionsError, isLoading: predictionsLoading } =
+        predictionsEndpoint ? useSWRFetch(predictionsEndpoint) : { data: null, error: null, isLoading: true };
+    const { data: metricsData, error: metricsError, isLoading: metricsLoading } =
+        metricsEndpoint ? useSWRFetch(metricsEndpoint) : { data: null, error: null, isLoading: true };
+
+    // In development mode, fetch using API clients
+    const [devData, setDevData] = useState({ standings: null, games: null, predictions: null, metrics: null });
+    const [devLoading, setDevLoading] = useState(import.meta.env.MODE !== 'production');
 
     useEffect(() => {
-        const fetchData = async () => {
+        if (import.meta.env.MODE === 'production') {
+            setDevLoading(false);
+            return;
+        }
+
+        // Development mode - use existing API clients
+        const fetchDevData = async () => {
             try {
-                // Use local date to avoid UTC rollover issues
-                const date = new Date();
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                const today = `${year}-${month}-${day}`;
                 const [standingsResult, scheduleResult, predictionsResult, metricsResult] = await Promise.allSettled([
                     nhlApi.getStandings(today),
                     nhlApi.getSchedule(today),
@@ -29,80 +61,88 @@ const Home = () => {
                     backendApi.getTeamMetrics()
                 ]);
 
-                if (standingsResult.status === 'fulfilled') {
-                    setStandings(standingsResult.value.standings || []);
-                } else {
-                    console.error('Standings fetch failed:', standingsResult.reason);
-                }
-
-                let fetchedGames = [];
-                if (scheduleResult.status === 'fulfilled') {
-                    fetchedGames = scheduleResult.value.gameWeek?.[0]?.games || [];
-                } else {
-                    console.error('Schedule fetch failed:', scheduleResult.reason);
-                }
-
-                setGames(fetchedGames);
-
-                if (predictionsResult.status === 'fulfilled') {
-                    // Create a map of predictions by game ID or team matchup
-                    const predMap = {};
-                    const preds = predictionsResult.value || [];
-                    preds.forEach(pred => {
-                        const key = `${pred.away_team}_${pred.home_team}`;
-                        predMap[key] = pred;
-                    });
-
-                    // For finished and live games, fetch live data to get probabilities
-                    const liveOrFinishedGames = fetchedGames.filter(g =>
-                        ['FINAL', 'OFF', 'LIVE', 'CRIT'].includes(g.gameState)
-                    );
-                    const liveDataPromises = liveOrFinishedGames.map(game =>
-                        backendApi.getLiveGame(game.id).catch(() => null)
-                    );
-
-                    const liveDataResults = await Promise.all(liveDataPromises);
-
-                    // Update predictions with live data for finished/live games
-                    liveOrFinishedGames.forEach((game, idx) => {
-                        const liveData = liveDataResults[idx];
-                        // Ensure we have valid probabilities before updating
-                        if (liveData && typeof liveData.away_prob === 'number' && typeof liveData.home_prob === 'number') {
-                            const key = `${game.awayTeam.abbrev}_${game.homeTeam.abbrev}`;
-                            // Only update if we have an existing prediction or create a new one if missing
-                            if (predMap[key] || true) {
-                                predMap[key] = {
-                                    ...(predMap[key] || {}), // Keep existing data if any
-                                    predicted_away_win_prob: liveData.away_prob,
-                                    predicted_home_win_prob: liveData.home_prob,
-                                    calibrated_away_prob: liveData.away_prob,
-                                    calibrated_home_prob: liveData.home_prob
-                                };
-                            }
-                        }
-                    });
-
-                    console.log('Predictions map:', predMap);
-                    console.log('Sample prediction:', Object.values(predMap)[0]);
-                    setPredictions(predMap);
-                } else {
-                    console.warn('Predictions fetch failed:', predictionsResult.reason);
-                }
-
-                if (metricsResult.status === 'fulfilled') {
-                    setTeamMetrics(metricsResult.value || {});
-                } else {
-                    console.warn('Metrics fetch failed:', metricsResult.reason);
-                }
+                setDevData({
+                    standings: standingsResult.status === 'fulfilled' ? standingsResult.value : null,
+                    games: scheduleResult.status === 'fulfilled' ? scheduleResult.value : null,
+                    predictions: predictionsResult.status === 'fulfilled' ? predictionsResult.value : null,
+                    metrics: metricsResult.status === 'fulfilled' ? metricsResult.value : null,
+                });
             } catch (error) {
-                console.error('Failed to fetch data:', error);
+                console.error('Dev mode fetch error:', error);
             } finally {
-                setLoading(false);
+                setDevLoading(false);
             }
         };
 
-        fetchData();
-    }, []);
+        fetchDevData();
+    }, [today]);
+
+    // Use prod data if available, otherwise dev data
+    const standings = standingsData?.standings || devData.standings?.standings || [];
+    const rawGames = scheduleData?.gameWeek?.[0]?.games || devData.games?.gameWeek?.[0]?.games || [];
+    const rawPredictions = predictionsData || devData.predictions || [];
+    const teamMetrics = metricsData || devData.metrics || {};
+
+    // Process predictions and live game data
+    const [predictions, setPredictions] = useState({});
+    const [games, setGames] = useState([]);
+    const [dataProcessing, setDataProcessing] = useState(false);
+
+    useEffect(() => {
+        const processData = async () => {
+            if (!rawGames.length || !rawPredictions) return;
+
+            setDataProcessing(true);
+            try {
+                // Create predictions map
+                const predMap = {};
+                const preds = Array.isArray(rawPredictions) ? rawPredictions : [];
+                preds.forEach(pred => {
+                    const key = `${pred.away_team}_${pred.home_team}`;
+                    predMap[key] = pred;
+                });
+
+                // Fetch live data for finished/live games
+                const liveOrFinishedGames = rawGames.filter(g =>
+                    ['FINAL', 'OFF', 'LIVE', 'CRIT'].includes(g.gameState)
+                );
+                const liveDataPromises = liveOrFinishedGames.map(game =>
+                    backendApi.getLiveGame(game.id).catch(() => null)
+                );
+
+                const liveDataResults = await Promise.all(liveDataPromises);
+
+                // Update predictions with live data
+                liveOrFinishedGames.forEach((game, idx) => {
+                    const liveData = liveDataResults[idx];
+                    if (liveData && typeof liveData.away_prob === 'number' && typeof liveData.home_prob === 'number') {
+                        const key = `${game.awayTeam.abbrev}_${game.homeTeam.abbrev}`;
+                        predMap[key] = {
+                            ...(predMap[key] || {}),
+                            predicted_away_win_prob: liveData.away_prob,
+                            predicted_home_win_prob: liveData.home_prob,
+                            calibrated_away_prob: liveData.away_prob,
+                            calibrated_home_prob: liveData.home_prob
+                        };
+                    }
+                });
+
+                setPredictions(predMap);
+                setGames(rawGames);
+            } catch (error) {
+                console.error('Error processing data:', error);
+            } finally {
+                setDataProcessing(false);
+            }
+        };
+
+        processData();
+    }, [rawGames, rawPredictions]);
+
+    // Combined loading state
+    const loading = import.meta.env.MODE === 'production'
+        ? (standingsLoading || scheduleLoading || predictionsLoading || metricsLoading || dataProcessing)
+        : (devLoading || dataProcessing);
 
     if (loading) {
         return (

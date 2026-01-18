@@ -27,7 +27,12 @@ export const backendApi = {
      * Get aggregated team metrics for all teams (optimized for Metrics page)
      */
     async getTeamMetrics() {
-        const response = await fetch(`${BACKEND_URL}/api/team-metrics`);
+        // Use local edge function in production, backend in development
+        const endpoint = import.meta.env.MODE === 'production'
+            ? '/api/team-metrics'
+            : `${BACKEND_URL}/api/team-metrics`;
+
+        const response = await fetch(endpoint);
         if (!response.ok) throw new Error('Failed to fetch team metrics');
         return response.json();
     },
@@ -63,7 +68,12 @@ export const backendApi = {
      * Get today's predictions
      */
     async getTodayPredictions() {
-        const response = await fetch(`${BACKEND_URL}/api/predictions/today`);
+        // Use local edge function in production, backend in development
+        const endpoint = import.meta.env.MODE === 'production'
+            ? '/api/predictions/today'
+            : `${BACKEND_URL}/api/predictions/today`;
+
+        const response = await fetch(endpoint);
         if (!response.ok) throw new Error('Failed to fetch today\'s predictions');
         return response.json();
     },

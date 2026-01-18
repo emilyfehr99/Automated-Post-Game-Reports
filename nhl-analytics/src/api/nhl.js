@@ -16,7 +16,13 @@ export const nhlApi = {
                 const day = String(d.getDate()).padStart(2, '0');
                 dateStr = `${year}-${month}-${day}`;
             }
-            const response = await fetch(`${BASE_URL}/standings/${dateStr}`);
+
+            // Use local edge function in production, backend in development
+            const endpoint = import.meta.env.MODE === 'production'
+                ? `/api/standings/${dateStr}`
+                : `${BASE_URL}/standings/${dateStr}`;
+
+            const response = await fetch(endpoint);
             if (!response.ok) throw new Error('Failed to fetch standings');
             return await response.json();
         } catch (error) {
@@ -27,8 +33,12 @@ export const nhlApi = {
 
     async getSchedule(date) {
         try {
-            // date format: YYYY-MM-DD
-            const response = await fetch(`${BASE_URL}/schedule/${date}`);
+            // Use local edge function in production, backend in development
+            const endpoint = import.meta.env.MODE === 'production'
+                ? `/api/schedule/${date}`
+                : `${BASE_URL}/schedule/${date}`;
+
+            const response = await fetch(endpoint);
             if (!response.ok) throw new Error('Failed to fetch schedule');
             return await response.json();
         } catch (error) {
