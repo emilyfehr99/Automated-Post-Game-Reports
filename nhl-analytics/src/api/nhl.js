@@ -72,10 +72,18 @@ export const nhlApi = {
 
     async getGameCenter(gameId) {
         try {
+            // Use edge functions in production to avoid CORS issues
+            const boxscoreEndpoint = import.meta.env.MODE === 'production'
+                ? `/api/gamecenter/${gameId}/boxscore`
+                : `${BASE_URL}/gamecenter/${gameId}/boxscore`;
+            const pbpEndpoint = import.meta.env.MODE === 'production'
+                ? `/api/gamecenter/${gameId}/play-by-play`
+                : `${BASE_URL}/gamecenter/${gameId}/play-by-play`;
+
             // Fetch both boxscore and play-by-play
             const [boxscoreResponse, pbpResponse] = await Promise.all([
-                fetch(`${BASE_URL}/gamecenter/${gameId}/boxscore`),
-                fetch(`${BASE_URL}/gamecenter/${gameId}/play-by-play`)
+                fetch(boxscoreEndpoint),
+                fetch(pbpEndpoint)
             ]);
 
             if (!boxscoreResponse.ok || !pbpResponse.ok) throw new Error('Failed to fetch game data');
