@@ -1,3 +1,4 @@
+```python
 from flask import Flask, jsonify, request
 from flask_cors import CORS
 import json
@@ -6,6 +7,9 @@ import csv
 import io
 import requests
 from datetime import datetime, timedelta
+import pytz
+
+# Version: Comprehensive Stats 1.0 (Force Deploy)
 
 app = Flask(__name__)
 # Enable CORS for React frontend - allows Vercel deployment and localhost
