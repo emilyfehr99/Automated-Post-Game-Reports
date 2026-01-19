@@ -347,21 +347,21 @@ const TeamDetails = () => {
                         />
                         <MetricCard
                             label="LATERAL MOVE"
-                            value={teamMetrics.lat?.toFixed(1) || '-'}
-                            subLabel="Feet/Play"
+                            value={typeof teamMetrics.lat === 'string' ? teamMetrics.lat : (teamMetrics.lat?.toFixed(1) || '-')}
+                            subLabel={typeof teamMetrics.lat === 'string' ? "Style" : "Feet/Play"}
                             icon={Activity}
                             colorClass="text-accent-orange"
-                            percentile={calculatePercentile(teamMetrics.lat, 'lat', true)}
-                            rank={calculateRank(teamMetrics.lat, 'lat', true)}
+                            percentile={typeof teamMetrics.lat === 'string' ? null : calculatePercentile(teamMetrics.lat, 'lat', true)}
+                            rank={typeof teamMetrics.lat === 'string' ? null : calculateRank(teamMetrics.lat, 'lat', true)}
                         />
                         <MetricCard
                             label="N-S MOVEMENT"
-                            value={teamMetrics.long_movement?.toFixed(1) || '-'}
-                            subLabel="Feet/Play"
+                            value={typeof teamMetrics.long_movement === 'string' ? teamMetrics.long_movement : (teamMetrics.long_movement?.toFixed(1) || '-')}
+                            subLabel={typeof teamMetrics.long_movement === 'string' ? "Style" : "Feet/Play"}
                             icon={Zap}
                             colorClass="text-blue-400"
-                            percentile={calculatePercentile(teamMetrics.long_movement, 'long_movement', true)}
-                            rank={calculateRank(teamMetrics.long_movement, 'long_movement', true)}
+                            percentile={typeof teamMetrics.long_movement === 'string' ? null : calculatePercentile(teamMetrics.long_movement, 'long_movement', true)}
+                            rank={typeof teamMetrics.long_movement === 'string' ? null : calculateRank(teamMetrics.long_movement, 'long_movement', true)}
                         />
                         <MetricCard
                             label="POWER PLAY"

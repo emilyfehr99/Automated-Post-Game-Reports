@@ -1348,20 +1348,20 @@ const GameDetailsContent = () => {
                                             <span className="text-accent-secondary font-mono text-sm">{homeTeam?.abbrev}</span>
                                         </div>
                                     </div>
-                                    {(!isFinal && (!teamMetrics[awayTeam?.abbrev]?.lat || parseFloat(teamMetrics[awayTeam?.abbrev]?.lat) <= 0)) ? null : (
+                                    {(!isFinal && !teamMetrics[awayTeam?.abbrev]?.lat) ? null : (
                                         <ComparisonRow
                                             label="LATERAL MOVEMENT (LAT)"
-                                            awayVal={isFinal ? (liveData?.live_metrics?.away_lateral || 0) : (teamMetrics[awayTeam?.abbrev]?.lat ?? 0)}
-                                            homeVal={isFinal ? (liveData?.live_metrics?.home_lateral || 0) : (teamMetrics[homeTeam?.abbrev]?.lat ?? 0)}
-                                            format={(v) => parseFloat(v || 0).toFixed(1)}
+                                            awayVal={isFinal ? (liveData?.live_metrics?.away_lateral || 0) : (teamMetrics[awayTeam?.abbrev]?.lat || "N/A")}
+                                            homeVal={isFinal ? (liveData?.live_metrics?.home_lateral || 0) : (teamMetrics[homeTeam?.abbrev]?.lat || "N/A")}
+                                            format={(v) => typeof v === 'string' ? v : parseFloat(v || 0).toFixed(1)}
                                         />
                                     )}
-                                    {(!isFinal && (!teamMetrics[awayTeam?.abbrev]?.long_movement || parseFloat(teamMetrics[awayTeam?.abbrev]?.long_movement) <= 0)) ? null : (
+                                    {(!isFinal && !teamMetrics[awayTeam?.abbrev]?.long_movement) ? null : (
                                         <ComparisonRow
                                             label="LONGITUDINAL MOVEMENT (LONG)"
-                                            awayVal={isFinal ? (liveData?.live_metrics?.away_longitudinal || 0) : (teamMetrics[awayTeam?.abbrev]?.long_movement ?? 0)}
-                                            homeVal={isFinal ? (liveData?.live_metrics?.home_longitudinal || 0) : (teamMetrics[homeTeam?.abbrev]?.long_movement ?? 0)}
-                                            format={(v) => parseFloat(v || 0).toFixed(1)}
+                                            awayVal={isFinal ? (liveData?.live_metrics?.away_longitudinal || 0) : (teamMetrics[awayTeam?.abbrev]?.long_movement || "N/A")}
+                                            homeVal={isFinal ? (liveData?.live_metrics?.home_longitudinal || 0) : (teamMetrics[homeTeam?.abbrev]?.long_movement || "N/A")}
+                                            format={(v) => typeof v === 'string' ? v : parseFloat(v || 0).toFixed(1)}
                                         />
                                     )}
                                 </MetricCard>
