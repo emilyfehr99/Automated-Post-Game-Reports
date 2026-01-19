@@ -12,14 +12,16 @@ __pycache__/
 *.pyo
 *.pyd
 
-# Exclude large data files
+# Exclude large data files in root or backend
 *.csv
-*.json
 *.log
 regeneration.log
 
-# Exclude Python scripts in root
+# Exclude Python scripts
 *.py
 
-# Keep the frontend
+# Explicitly allow the frontend directory and its contents
 !nhl-analytics/
+!nhl-analytics/**
+!nhl-analytics/package.json
+
