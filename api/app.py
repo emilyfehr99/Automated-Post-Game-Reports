@@ -826,10 +826,21 @@ def proxy_nhl_schedule(date):
 def proxy_nhl_standings(date):
     """Proxy NHL standings API to avoid CORS"""
     try:
+        # Try specific date first
         url = f"https://api-web.nhle.com/v1/standings/{date}"
         response = requests.get(url, timeout=10)
+        
         if response.status_code == 200:
             return jsonify(response.json())
+            
+        # Fallback to 'now' if date specific fails (e.g. future date)
+        print(f"Standings for {date} failed, falling back to 'now'")
+        url_now = "https://api-web.nhle.com/v1/standings/now"
+        response_now = requests.get(url_now, timeout=10)
+        
+        if response_now.status_code == 200:
+            return jsonify(response_now.json())
+            
         return jsonify({'error': 'Failed to fetch standings'}), response.status_code
     except Exception as e:
         return jsonify({'error': str(e)}), 500

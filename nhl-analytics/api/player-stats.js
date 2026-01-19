@@ -5,7 +5,7 @@ const BACKEND_URL = 'https://nhl-analytics-api.onrender.com';
 
 export default async function handler(request) {
     const url = new URL(request.url);
-    const season = url.searchParams.get('season') || '2024';
+    const season = url.searchParams.get('season') || '2025';
     const type = url.searchParams.get('type') || 'regular';
     const situation = url.searchParams.get('situation') || 'all';
 
