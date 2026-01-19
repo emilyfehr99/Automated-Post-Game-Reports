@@ -153,7 +153,7 @@ export const backendApi = {
     /**
      * Get player stats from MoneyPuck
      */
-    async getPlayerStats(season = '2024', type = 'regular', situation = 'all') {
+    async getPlayerStats(season = '2025', type = 'regular', situation = 'all') {
         // Use edge function in production to avoid CORS
         const endpoint = import.meta.env.MODE === 'production'
             ? `/api/player-stats?season=${season}&type=${type}&situation=${situation}`
