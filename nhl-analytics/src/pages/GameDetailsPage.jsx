@@ -953,30 +953,47 @@ const GameDetailsContent = () => {
                             <PeriodStatsTable
                                 periodStats={(() => {
                                     // 1. Get Official Boxscore Periods (The "Truth" for what periods exist)
-                                    // Adapts to various NHL API structures
-                                    const boxscorePeriods = gameData?.summary?.linescore?.periods ||
+                                    let periods = gameData?.summary?.linescore?.periods ||
                                         gameData?.linescore?.periods ||
                                         [];
+
+                                    // Fallback: If API doesn't provide linescore (common in new API), 
+                                    // generate skeleton based on the official period descriptor
+                                    if (periods.length === 0) {
+                                        const officialPeriod = gameData?.boxscore?.periodDescriptor?.number ||
+                                            gameData?.periodDescriptor?.number ||
+                                            (isFinal ? 3 : 1);
+
+                                        // Generate 1..officialPeriod
+                                        for (let i = 1; i <= officialPeriod; i++) {
+                                            periods.push({
+                                                num: i,
+                                                period: i,
+                                                // Initialize with dashes or 0 if we can't find basic stats
+                                                away: { goals: null, shotsOnGoal: null },
+                                                home: { goals: null, shotsOnGoal: null }
+                                            });
+                                        }
+                                    }
 
                                     // 2. Get Advanced Metrics (Might be partial/lagging)
                                     const advancedStats = liveData?.period_stats || liveData?.live_metrics?.period_stats || [];
 
                                     // 3. Merge Strategy:
-                                    // If we have boxscore data, use it as the base structure to ensure all periods are shown.
-                                    if (boxscorePeriods.length > 0) {
-                                        return boxscorePeriods.map(p => {
+                                    if (periods.length > 0) {
+                                        return periods.map(p => {
                                             // Find matching advanced stats for this period number
                                             const advanced = Array.isArray(advancedStats)
-                                                ? advancedStats.find(a => a.period === p.num)
+                                                ? advancedStats.find(a => a.period == p.num || a.period == p.period)
                                                 : null;
 
                                             if (advanced) {
-                                                // We have advanced stats for this period!
-                                                // But double check it has goals/shots populated, if not, fill from boxscore
+                                                // We have advanced stats! Merge them.
                                                 return {
                                                     ...advanced,
                                                     away_stats: {
                                                         ...advanced.away_stats,
+                                                        // Prefer advanced stats, fallback to boxscore, then keep null (dash)
                                                         goals: advanced.away_stats?.goals ?? p.away.goals,
                                                         shots: advanced.away_stats?.shots ?? p.away.shotsOnGoal
                                                     },
@@ -989,7 +1006,7 @@ const GameDetailsContent = () => {
                                             } else {
                                                 // No advanced stats for this period yet, use Boxscore fallback
                                                 return {
-                                                    period: p.num,
+                                                    period: p.num || p.period,
                                                     away_stats: {
                                                         goals: p.away.goals,
                                                         shots: p.away.shotsOnGoal,
@@ -1003,19 +1020,17 @@ const GameDetailsContent = () => {
                                         });
                                     }
 
-                                    // 4. Fallback: If no boxscore (rare), just return whatever advanced stats we have
+                                    // 4. Fallback: Just return whatever advanced stats we have if structure failed
                                     return Array.isArray(advancedStats) ? advancedStats : [];
                                 })()}
                                 awayTeam={awayTeam}
                                 homeTeam={homeTeam}
                                 currentPeriod={
-                                    // For FINAL/OFF games, always show all periods (set to 3)
-                                    isFinal ? 3 : (
-                                        liveData?.current_period ||
-                                        liveData?.live_metrics?.current_period ||
-                                        gameData?.boxscore?.periodDescriptor?.number ||
-                                        1
-                                    )
+                                    // CRITICAL: Prioritize OFFICIAL game object period (most up to date)
+                                    // liveData is often lagging/cached.
+                                    gameData?.boxscore?.periodDescriptor?.number ||
+                                    gameData?.periodDescriptor?.number ||
+                                    (isFinal ? 3 : (liveData?.current_period || 1))
                                 }
                             />
                         </section>
