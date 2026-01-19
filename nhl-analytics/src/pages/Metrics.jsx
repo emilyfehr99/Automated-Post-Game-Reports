@@ -249,48 +249,16 @@ const Metrics = () => {
         { key: 'l10', label: 'L10', align: 'center' },
         { key: 'streak', label: 'STRK', align: 'center' },
 
-        // Advanced Metrics - Core
+        // Advanced Metrics
         { key: 'gs', label: 'GS', align: 'center', advanced: true, tooltip: 'Game Score' },
         { key: 'xg', label: 'xG', align: 'center', advanced: true, tooltip: 'Expected Goals' },
-        { key: 'hdc', label: 'HDC', align: 'center', advanced: true, tooltip: 'High Danger Chances' },
-        { key: 'hdca', label: 'HDCA', align: 'center', advanced: true, tooltip: 'High Danger Chances Against' },
-
-        // Zone Metrics
-        { key: 'ozs', label: 'OZS', align: 'center', advanced: true, tooltip: 'Offensive Zone Shots' },
-        { key: 'nzs', label: 'NZS', align: 'center', advanced: true, tooltip: 'Neutral Zone Shots' },
-        { key: 'dzs', label: 'DZS', align: 'center', advanced: true, tooltip: 'Defensive Zone Shots' },
-
-        // Shot Generation
-        { key: 'fc', label: 'FC', align: 'center', advanced: true, tooltip: 'Forecheck/Cycle Shots' },
-        { key: 'rush', label: 'RUSH', align: 'center', advanced: true, tooltip: 'Rush Shots' },
-
-        // Turnovers
-        { key: 'nzts', label: 'NZT', align: 'center', advanced: true, tooltip: 'Neutral Zone Turnovers' },
-        { key: 'nztsa', label: 'NZTSA', align: 'center', advanced: true, tooltip: 'NZ Turnovers to Shots Against' },
-
-        // Movement
-        { key: 'lat', label: 'LAT', align: 'center', advanced: true, tooltip: 'Lateral Movement' },
-        { key: 'long_movement', label: 'LONG', align: 'center', advanced: true, tooltip: 'Longitudinal Movement' },
-
-        // Shooting
-        { key: 'shots', label: 'SOG', align: 'center', advanced: true, tooltip: 'Shots on Goal' },
-        { key: 'goals', label: 'G/G', align: 'center', advanced: true, tooltip: 'Goals per Game' },
-        { key: 'ga_gp', label: 'GA/GP', align: 'center', advanced: true, tooltip: 'Goals Against per Game' },
-
-        // Possession
         { key: 'corsi_pct', label: 'CF%', align: 'center', advanced: true, tooltip: 'Corsi For %' },
-
-        // Physical
         { key: 'hits', label: 'HITS', align: 'center', advanced: true, tooltip: 'Hits per Game' },
         { key: 'blocks', label: 'BLK', align: 'center', advanced: true, tooltip: 'Blocked Shots' },
-        { key: 'giveaways', label: 'GV', align: 'center', advanced: true, tooltip: 'Giveaways' },
         { key: 'takeaways', label: 'TK', align: 'center', advanced: true, tooltip: 'Takeaways' },
-        { key: 'pim', label: 'PIM', align: 'center', advanced: true, tooltip: 'Penalty Minutes' },
-
-        // Special Teams
+        { key: 'giveaways', label: 'GV', align: 'center', advanced: true, tooltip: 'Giveaways' },
         { key: 'pp_pct', label: 'PP%', align: 'center', advanced: true, tooltip: 'Power Play %' },
-        { key: 'pk_pct', label: 'PK%', align: 'center', advanced: true, tooltip: 'Penalty Kill %' },
-        { key: 'fo_pct', label: 'FO%', align: 'center', advanced: true, tooltip: 'Faceoff %' },
+        { key: 'pk_pct', label: 'PK%', align: 'center', advanced: true, tooltip: 'Penalty Kill %' }
     ];
 
     const playerColumns = [
@@ -299,21 +267,28 @@ const Metrics = () => {
         { key: 'team', label: 'TEAM', align: 'center' },
         { key: 'position', label: 'POS', align: 'center' },
         { key: 'games_played', label: 'GP', align: 'center' },
-        { key: 'goals', label: 'G', align: 'center', highlight: true },
-        { key: 'assists', label: 'A', align: 'center' },
+
+        // Scoring
         { key: 'points', label: 'PTS', align: 'center', highlight: true },
-        { key: 'shots', label: 'SOG', align: 'center' },
-        { key: 'icetime', label: 'TOI', align: 'center', format: (v) => Math.round(v / 60) + 'm' },
-        { key: 'game_score', label: 'GS', align: 'center', advanced: true, tooltip: 'Game Score' },
-        { key: 'xgoals', label: 'xG', align: 'center', advanced: true, tooltip: 'Expected Goals' },
-        { key: 'xgoals_pct', label: 'xG%', align: 'center', advanced: true, tooltip: 'Expected Goals %' },
+        { key: 'goals', label: 'G', align: 'center' },
+        { key: 'assists', label: 'A', align: 'center' },
+        { key: 'points_per_game', label: 'P/GP', align: 'center', tooltip: 'Points per Game' },
+
+        // Advanced
+        { key: 'game_score', label: 'GS/GP', align: 'center', advanced: true, tooltip: 'Avg Game Score' },
+        { key: 'xgoals', label: 'xG', align: 'center', advanced: true, tooltip: 'Expected Goals (Total)' },
         { key: 'corsi_pct', label: 'CF%', align: 'center', advanced: true, tooltip: 'Corsi For %' },
-        { key: 'I_F_shotAttempts', label: 'iSA', align: 'center', advanced: true, tooltip: 'Individual Shot Attempts' },
-        { key: 'I_F_highDangerShots', label: 'iHDS', align: 'center', advanced: true, tooltip: 'Individual High Danger Shots' },
-        { key: 'I_F_highDangerxGoals', label: 'iHDxG', align: 'center', advanced: true, tooltip: 'Individual High Danger xGoals' },
-        { key: 'I_F_highDangerGoals', label: 'iHDG', align: 'center', advanced: true, tooltip: 'Individual High Danger Goals' },
-        { key: 'onIce_corsiPercentage', label: 'onCF%', align: 'center', advanced: true, tooltip: 'On-Ice Corsi For %' },
-        { key: 'onIce_xGoalsPercentage', label: 'onxG%', align: 'center', advanced: true, tooltip: 'On-Ice Expected Goals %' },
+
+        // Physical / Defensive
+        { key: 'hits', label: 'HITS', align: 'center', advanced: true, tooltip: 'Hits (Total)' },
+        { key: 'hits_per_game', label: 'H/GP', align: 'center', advanced: true, tooltip: 'Hits per Game' },
+        { key: 'blocks', label: 'BLK', align: 'center', advanced: true, tooltip: 'Blocked Shots (Total)' },
+        { key: 'pim', label: 'PIM', align: 'center', advanced: true, tooltip: 'Penalty Minutes' },
+        { key: 'takeaways', label: 'TK', align: 'center', advanced: true, tooltip: 'Takeaways' },
+        { key: 'giveaways', label: 'GV', align: 'center', advanced: true, tooltip: 'Giveaways' },
+        { key: 'fo_pct', label: 'FO%', align: 'center', advanced: true, tooltip: 'Faceoff %' },
+
+        { key: 'icetime', label: 'TOI', align: 'center', format: (v) => Math.round(v / 60) + 'm' },
     ];
 
     return (
@@ -409,7 +384,9 @@ const Metrics = () => {
                             {viewMode === 'players' ? (
                                 sortedPlayerData.filter(p => p && p.name).map((player, index) => (
                                     <motion.tr
-                                        key={`${player.name}-${player.team}`}
+                                        // key must be unique to avoid React duplicate key/ghost row issues
+                                        // Using name + team + position is usually unique enough
+                                        key={`${player.name}-${player.team}-${player.position}-${index}`}
                                         initial={{ opacity: 0, y: 10 }}
                                         animate={{ opacity: 1, y: 0 }}
                                         transition={{ delay: index * 0.005 }}
@@ -423,21 +400,25 @@ const Metrics = () => {
                                         <td className="p-4 text-center text-text-muted">{player.team}</td>
                                         <td className="p-4 text-center text-text-muted">{player.position}</td>
                                         <td className="p-4 text-center text-text-muted">{player.games_played}</td>
+
+                                        <td className="p-4 text-center text-white font-bold">{player.points}</td>
                                         <td className="p-4 text-center text-accent-primary font-bold bg-white/5">{player.goals}</td>
                                         <td className="p-4 text-center text-text-muted">{player.assists}</td>
-                                        <td className="p-4 text-center text-white font-bold">{player.points}</td>
-                                        <td className="p-4 text-center text-text-muted">{player.shots}</td>
-                                        <td className="p-4 text-center text-text-muted">{Math.round(player.icetime / 60)}m</td>
+                                        <td className="p-4 text-center text-text-muted">{displayMetric(player.points_per_game)}</td>
+
                                         <td className="p-4 text-center text-accent-secondary">{displayMetric(player.game_score)}</td>
                                         <td className="p-4 text-center text-text-muted">{displayMetric(player.xgoals)}</td>
-                                        <td className="p-4 text-center text-text-muted">{displayMetric(player.xgoals_pct)}%</td>
                                         <td className="p-4 text-center text-text-muted">{displayMetric(player.corsi_pct)}%</td>
-                                        <td className="p-4 text-center text-text-muted">{displayMetric(player.I_F_shotAttempts)}</td>
-                                        <td className="p-4 text-center text-text-muted">{displayMetric(player.I_F_highDangerShots)}</td>
-                                        <td className="p-4 text-center text-text-muted">{displayMetric(player.I_F_highDangerxGoals)}</td>
-                                        <td className="p-4 text-center text-text-muted">{displayMetric(player.I_F_highDangerGoals)}</td>
-                                        <td className="p-4 text-center text-text-muted">{displayMetric(player.onIce_corsiPercentage)}%</td>
-                                        <td className="p-4 text-center text-text-muted">{displayMetric(player.onIce_xGoalsPercentage)}%</td>
+
+                                        <td className="p-4 text-center text-text-muted">{displayMetric(player.hits)}</td>
+                                        <td className="p-4 text-center text-text-muted">{displayMetric(player.hits_per_game)}</td>
+                                        <td className="p-4 text-center text-text-muted">{displayMetric(player.blocks)}</td>
+                                        <td className="p-4 text-center text-text-muted">{displayMetric(player.pim)}</td>
+                                        <td className="p-4 text-center text-text-muted">{displayMetric(player.takeaways)}</td>
+                                        <td className="p-4 text-center text-text-muted">{displayMetric(player.giveaways)}</td>
+                                        <td className="p-4 text-center text-text-muted">{displayMetric(player.fo_pct)}%</td>
+
+                                        <td className="p-4 text-center text-text-muted">{Math.round(player.icetime / 60)}m</td>
                                     </motion.tr>
                                 ))
                             ) : (

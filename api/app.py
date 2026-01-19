@@ -740,29 +740,73 @@ def get_player_stats():
         for row in csv_reader:
             # Filter by situation if specified
             if row['situation'] == situation:
-                player = {
-                    'name': row['name'],
-                    'team': row['team'],
-                    'position': row['position'],
-                    'games_played': int(row['games_played']) if row['games_played'] else 0,
-                    'icetime': float(row['icetime']) if row['icetime'] else 0,
-                    'goals': int(float(row['I_F_goals'])) if row['I_F_goals'] else 0,
-                    'assists': int(float(row['I_F_primaryAssists'])) + int(float(row['I_F_secondaryAssists'])) if row['I_F_primaryAssists'] and row['I_F_secondaryAssists'] else 0,
-                    'points': int(float(row['I_F_points'])) if row['I_F_points'] else 0,
-                    'shots': int(float(row['I_F_shotsOnGoal'])) if row['I_F_shotsOnGoal'] else 0,
-                    'game_score': round(float(row['gameScore']), 2) if row['gameScore'] else 0,
-                    'xgoals': round(float(row['I_F_xGoals']), 2) if row['I_F_xGoals'] else 0,
-                    'corsi_pct': round(float(row['onIce_corsiPercentage']) * 100, 1) if row['onIce_corsiPercentage'] else 0,
-                    'xgoals_pct': round(float(row['onIce_xGoalsPercentage']) * 100, 1) if row['onIce_xGoalsPercentage'] else 0,
-                    # New fields
-                    'I_F_shotAttempts': int(float(row['I_F_shotAttempts'])) if row.get('I_F_shotAttempts') else 0,
-                    'I_F_highDangerShots': int(float(row['I_F_highDangerShots'])) if row.get('I_F_highDangerShots') else 0,
-                    'I_F_highDangerxGoals': round(float(row['I_F_highDangerxGoals']), 2) if row.get('I_F_highDangerxGoals') else 0,
-                    'I_F_highDangerGoals': int(float(row['I_F_highDangerGoals'])) if row.get('I_F_highDangerGoals') else 0,
-                    'onIce_corsiPercentage': round(float(row['onIce_corsiPercentage']) * 100, 1) if row.get('onIce_corsiPercentage') else 0,
-                    'onIce_xGoalsPercentage': round(float(row['onIce_xGoalsPercentage']) * 100, 1) if row.get('onIce_xGoalsPercentage') else 0,
-                }
-                players_data.append(player)
+                games_played = int(row['games_played']) if row['games_played'] else 0
+                
+                if games_played > 0:
+                    # Helper to safe float conversion
+                    def safe_float(key):
+                        return float(row[key]) if row.get(key) else 0.0
+                    
+                    def safe_int(key):
+                        return int(float(row[key])) if row.get(key) else 0
+
+                    game_score_total = safe_float('gameScore')
+                    goals = safe_int('I_F_goals')
+                    assists = safe_int('I_F_primaryAssists') + safe_int('I_F_secondaryAssists')
+                    points = safe_int('I_F_points')
+                    shots = safe_int('I_F_shotsOnGoal')
+                    hits = safe_int('I_F_hits')
+                    blocks = safe_int('shotsBlockedByPlayer')
+                    pim = safe_int('penalityMinutes')
+                    takeaways = safe_int('I_F_takeaways')
+                    giveaways = safe_int('I_F_giveaways')
+                    
+                    # Faceoffs
+                    fo_won = safe_int('faceOffsWon')
+                    fo_lost = safe_int('faceoffsLost')
+                    fo_total = fo_won + fo_lost
+                    fo_pct = round((fo_won / fo_total * 100), 1) if fo_total > 0 else 0.0
+
+                    player = {
+                        'name': row['name'],
+                        'team': row['team'],
+                        'position': row['position'],
+                        'games_played': games_played,
+                        'icetime': safe_float('icetime'), # Total ice time
+                        
+                        # Totals
+                        'goals': goals,
+                        'assists': assists,
+                        'points': points,
+                        'shots': shots,
+                        'hits': hits,
+                        'blocks': blocks,
+                        'pim': pim,
+                        'takeaways': takeaways,
+                        'giveaways': giveaways,
+                        'fo_pct': fo_pct,
+                        
+                        # Per Game Averages (Rounded to 2 decimals)
+                        'game_score': round(game_score_total / games_played, 2), # AVG Game Score
+                        'goals_per_game': round(goals / games_played, 2),
+                        'points_per_game': round(points / games_played, 2),
+                        'shots_per_game': round(shots / games_played, 2),
+                        'hits_per_game': round(hits / games_played, 2),
+                        'blocks_per_game': round(blocks / games_played, 2),
+                        
+                        # Advanced
+                        'xgoals': round(safe_float('I_F_xGoals'), 2),
+                        'corsi_pct': round(safe_float('onIce_corsiPercentage') * 100, 1),
+                        'xgoals_pct': round(safe_float('onIce_xGoalsPercentage') * 100, 1),
+                        
+                        'I_F_shotAttempts': safe_int('I_F_shotAttempts'),
+                        'I_F_highDangerShots': safe_int('I_F_highDangerShots'),
+                        'I_F_highDangerxGoals': round(safe_float('I_F_highDangerxGoals'), 2),
+                        'I_F_highDangerGoals': safe_int('I_F_highDangerGoals'),
+                        'onIce_corsiPercentage': round(safe_float('onIce_corsiPercentage') * 100, 1),
+                        'onIce_xGoalsPercentage': round(safe_float('onIce_xGoalsPercentage') * 100, 1),
+                    }
+                    players_data.append(player)
         
         return jsonify(players_data)
         
