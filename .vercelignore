@@ -1,0 +1,25 @@
+# Vercel Ignore File
+# Exclude everything backend related
+api/
+nhl-tool/
+venv/
+env/
+.env
+.git/
+.github/
+__pycache__/
+*.pyc
+*.pyo
+*.pyd
+
+# Exclude large data files
+*.csv
+*.json
+*.log
+regeneration.log
+
+# Exclude Python scripts in root
+*.py
+
+# Keep the frontend
+!nhl-analytics/
