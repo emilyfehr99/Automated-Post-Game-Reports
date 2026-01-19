@@ -5,13 +5,17 @@ const BACKEND_URL = 'https://nhl-analytics-api.onrender.com';
 
 export default async function handler(request) {
     const url = new URL(request.url);
+    // Extract teamAbbr from the URL path - handles /api/team-performers/TOR
     const teamAbbr = url.pathname.split('/').pop();
 
     try {
+        console.log(`Fetching performers for ${teamAbbr} from ${BACKEND_URL}`);
+
         // Fetch from backend
         const response = await fetch(`${BACKEND_URL}/api/team-performers/${teamAbbr}`);
 
         if (!response.ok) {
+            console.error(`Backend error: ${response.status} for ${teamAbbr}`);
             return new Response(JSON.stringify({ error: 'Failed to fetch performers' }), {
                 status: response.status,
                 headers: { 'Content-Type': 'application/json' }
@@ -30,6 +34,7 @@ export default async function handler(request) {
             }
         });
     } catch (error) {
+        console.error(`Edge function error: ${error.message}`);
         return new Response(JSON.stringify({ error: error.message }), {
             status: 500,
             headers: { 'Content-Type': 'application/json' }
