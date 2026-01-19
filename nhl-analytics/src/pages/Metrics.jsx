@@ -134,9 +134,9 @@ const Metrics = () => {
         }));
     };
 
-    // Helper to display metric value, showing "—" for zeros
+    // Helper to display metric value, showing "—" only for null/undefined
     const displayMetric = (value) => {
-        if (value === undefined || value === null || value === 0 || value === 0.0 || value === '0.0') {
+        if (value === undefined || value === null || value === '') {
             return '—';
         }
         return value;
@@ -249,16 +249,48 @@ const Metrics = () => {
         { key: 'l10', label: 'L10', align: 'center' },
         { key: 'streak', label: 'STRK', align: 'center' },
 
-        // Advanced Metrics
+        // Advanced Metrics - Core
         { key: 'gs', label: 'GS', align: 'center', advanced: true, tooltip: 'Game Score' },
         { key: 'xg', label: 'xG', align: 'center', advanced: true, tooltip: 'Expected Goals' },
+        { key: 'hdc', label: 'HDC', align: 'center', advanced: true, tooltip: 'High Danger Chances' },
+        { key: 'hdca', label: 'HDCA', align: 'center', advanced: true, tooltip: 'High Danger Chances Against' },
+
+        // Zone Metrics
+        { key: 'ozs', label: 'OZS', align: 'center', advanced: true, tooltip: 'Offensive Zone Shots' },
+        { key: 'nzs', label: 'NZS', align: 'center', advanced: true, tooltip: 'Neutral Zone Shots' },
+        { key: 'dzs', label: 'DZS', align: 'center', advanced: true, tooltip: 'Defensive Zone Shots' },
+
+        // Shot Generation
+        { key: 'fc', label: 'FC', align: 'center', advanced: true, tooltip: 'Forecheck/Cycle Shots' },
+        { key: 'rush', label: 'RUSH', align: 'center', advanced: true, tooltip: 'Rush Shots' },
+
+        // Turnovers
+        { key: 'nzts', label: 'NZT', align: 'center', advanced: true, tooltip: 'Neutral Zone Turnovers' },
+        { key: 'nztsa', label: 'NZTSA', align: 'center', advanced: true, tooltip: 'NZ Turnovers to Shots Against' },
+
+        // Movement
+        { key: 'lat', label: 'LAT', align: 'center', advanced: true, tooltip: 'Lateral Movement' },
+        { key: 'long_movement', label: 'LONG', align: 'center', advanced: true, tooltip: 'Longitudinal Movement' },
+
+        // Shooting
+        { key: 'shots', label: 'SOG', align: 'center', advanced: true, tooltip: 'Shots on Goal' },
+        { key: 'goals', label: 'G/G', align: 'center', advanced: true, tooltip: 'Goals per Game' },
+        { key: 'ga_gp', label: 'GA/GP', align: 'center', advanced: true, tooltip: 'Goals Against per Game' },
+
+        // Possession
         { key: 'corsi_pct', label: 'CF%', align: 'center', advanced: true, tooltip: 'Corsi For %' },
+
+        // Physical
         { key: 'hits', label: 'HITS', align: 'center', advanced: true, tooltip: 'Hits per Game' },
         { key: 'blocks', label: 'BLK', align: 'center', advanced: true, tooltip: 'Blocked Shots' },
-        { key: 'takeaways', label: 'TK', align: 'center', advanced: true, tooltip: 'Takeaways' },
         { key: 'giveaways', label: 'GV', align: 'center', advanced: true, tooltip: 'Giveaways' },
+        { key: 'takeaways', label: 'TK', align: 'center', advanced: true, tooltip: 'Takeaways' },
+        { key: 'pim', label: 'PIM', align: 'center', advanced: true, tooltip: 'Penalty Minutes' },
+
+        // Special Teams
         { key: 'pp_pct', label: 'PP%', align: 'center', advanced: true, tooltip: 'Power Play %' },
-        { key: 'pk_pct', label: 'PK%', align: 'center', advanced: true, tooltip: 'Penalty Kill %' }
+        { key: 'pk_pct', label: 'PK%', align: 'center', advanced: true, tooltip: 'Penalty Kill %' },
+        { key: 'fo_pct', label: 'FO%', align: 'center', advanced: true, tooltip: 'Faceoff %' }
     ];
 
     const playerColumns = [
