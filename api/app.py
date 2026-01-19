@@ -23,8 +23,10 @@ DATA_DIR = os.path.dirname(os.path.abspath(__file__))
 try:
     from live_in_game_predictions import LiveInGamePredictor
     live_predictor = LiveInGamePredictor()
-except ImportError:
-    print("Warning: LiveInGamePredictor not found, using mock")
+    PREDICTOR_IMPORT_ERROR = None
+except ImportError as e:
+    print(f"Warning: LiveInGamePredictor not found: {e}")
+    PREDICTOR_IMPORT_ERROR = str(e)
     class MockPredictor:
         def get_live_game_data(self, game_id): return {}
         def predict_live_game(self, metrics): return {}
@@ -129,6 +131,19 @@ def get_team_metrics():
         if len(numeric_values) == 0:
             return 0
         return sum(numeric_values) / len(numeric_values)
+        
+    # Helper for text-based metrics (lat/long) - returns most frequent value
+    def get_text_mode(lst):
+        if not lst or len(lst) == 0:
+            return "N/A"
+        # Filter for strings
+        text_values = [x for x in lst if isinstance(x, str)]
+        if len(text_values) == 0:
+            return "N/A"
+        # Return mode
+        from collections import Counter
+        c = Counter(text_values)
+        return c.most_common(1)[0][0]
     
     # Transform to format expected by Metrics page
     # Calculate averages from home/away stats (which are lists)
@@ -162,11 +177,12 @@ def get_team_metrics():
         away_rush = avg(away_stats.get('rush', []))
         
         # Additional metrics
-        home_lat = avg(home_stats.get('lat', []))
-        away_lat = avg(away_stats.get('lat', []))
+        # For text metrics, combine lists and find mode
+        combined_lat = home_stats.get('lat', []) + away_stats.get('lat', [])
+        lat_mode = get_text_mode(combined_lat)
         
-        home_long = avg(home_stats.get('long_movement', []))
-        away_long = avg(away_stats.get('long_movement', []))
+        combined_long = home_stats.get('long_movement', []) + away_stats.get('long_movement', [])
+        long_mode = get_text_mode(combined_long)
         
         home_nztsa = avg(home_stats.get('nztsa', []))
         away_nztsa = avg(away_stats.get('nztsa', []))
@@ -229,8 +245,8 @@ def get_team_metrics():
             'rush': round((home_rush + away_rush) / 2),
             
             # Movement metrics
-            'lat': round((home_lat + away_lat) / 2, 1),
-            'long_movement': round((home_long + away_long) / 2, 1),
+            'lat': lat_mode,
+            'long_movement': long_mode,
             
             # Shooting metrics
             'xg': round((home_xg + away_xg) / 2, 2),
@@ -638,6 +654,12 @@ def get_live_game_data(game_id):
         live_metrics = live_predictor.get_live_game_data(game_id)
         
         if not live_metrics:
+            # Check if predictor failed to import
+            if PREDICTOR_IMPORT_ERROR:
+                return jsonify({
+                    "error": "LiveInGamePredictor failed to initialize",
+                    "details": PREDICTOR_IMPORT_ERROR
+                }), 500
             return jsonify({"error": "Game not found or not live"}), 404
             
         # Generate prediction
