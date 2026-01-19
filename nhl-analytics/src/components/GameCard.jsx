@@ -185,7 +185,10 @@ const GameCard = ({ game, prediction, awayMetrics, homeMetrics }) => {
                     {isLive && (
                         <div className="mt-auto grid grid-cols-2 gap-2 text-center text-xs font-mono text-gray-400 bg-white/5 rounded-lg p-2">
                             <div>
-                                <div className="text-white font-bold">{prediction?.live_metrics?.current_period || game?.period || '1st'}</div>
+                                <div className="text-white font-bold">
+                                    {/* Prioritize official game object period which comes from live schedule */}
+                                    {game?.periodDescriptor?.number || game?.period || prediction?.live_metrics?.current_period || '1st'}
+                                </div>
                                 <div className="text-[10px]">PER</div>
                             </div>
                             <div>

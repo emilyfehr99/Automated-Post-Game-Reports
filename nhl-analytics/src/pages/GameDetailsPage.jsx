@@ -952,33 +952,59 @@ const GameDetailsContent = () => {
                             </div>
                             <PeriodStatsTable
                                 periodStats={(() => {
-                                    // Try to get advanced period stats from live data
-                                    const advancedStats = liveData?.period_stats || liveData?.live_metrics?.period_stats;
-                                    if (Array.isArray(advancedStats) && advancedStats.length > 0) {
-                                        return advancedStats;
-                                    }
+                                    // 1. Get Official Boxscore Periods (The "Truth" for what periods exist)
+                                    // Adapts to various NHL API structures
+                                    const boxscorePeriods = gameData?.summary?.linescore?.periods ||
+                                        gameData?.linescore?.periods ||
+                                        [];
 
-                                    // Fallback: Construct basic period stats (Goals/Shots) from boxscore for completed games
-                                    // boxscore structure usually has period descriptors or a linescore
-                                    // This adapts to common NHL API boxscore structures
-                                    const periods = gameData?.summary?.linescore?.periods || gameData?.linescore?.periods || [];
+                                    // 2. Get Advanced Metrics (Might be partial/lagging)
+                                    const advancedStats = liveData?.period_stats || liveData?.live_metrics?.period_stats || [];
 
-                                    if (periods.length > 0) {
-                                        return periods.map(p => ({
-                                            period: p.num,
-                                            away_stats: {
-                                                goals: p.away.goals,
-                                                shots: p.away.shotsOnGoal,
-                                                // Other metrics will be undefined and render as '-'
-                                            },
-                                            home_stats: {
-                                                goals: p.home.goals,
-                                                shots: p.home.shotsOnGoal
+                                    // 3. Merge Strategy:
+                                    // If we have boxscore data, use it as the base structure to ensure all periods are shown.
+                                    if (boxscorePeriods.length > 0) {
+                                        return boxscorePeriods.map(p => {
+                                            // Find matching advanced stats for this period number
+                                            const advanced = Array.isArray(advancedStats)
+                                                ? advancedStats.find(a => a.period === p.num)
+                                                : null;
+
+                                            if (advanced) {
+                                                // We have advanced stats for this period!
+                                                // But double check it has goals/shots populated, if not, fill from boxscore
+                                                return {
+                                                    ...advanced,
+                                                    away_stats: {
+                                                        ...advanced.away_stats,
+                                                        goals: advanced.away_stats?.goals ?? p.away.goals,
+                                                        shots: advanced.away_stats?.shots ?? p.away.shotsOnGoal
+                                                    },
+                                                    home_stats: {
+                                                        ...advanced.home_stats,
+                                                        goals: advanced.home_stats?.goals ?? p.home.goals,
+                                                        shots: advanced.home_stats?.shots ?? p.home.shotsOnGoal
+                                                    }
+                                                };
+                                            } else {
+                                                // No advanced stats for this period yet, use Boxscore fallback
+                                                return {
+                                                    period: p.num,
+                                                    away_stats: {
+                                                        goals: p.away.goals,
+                                                        shots: p.away.shotsOnGoal,
+                                                    },
+                                                    home_stats: {
+                                                        goals: p.home.goals,
+                                                        shots: p.home.shotsOnGoal
+                                                    }
+                                                };
                                             }
-                                        }));
+                                        });
                                     }
 
-                                    return [];
+                                    // 4. Fallback: If no boxscore (rare), just return whatever advanced stats we have
+                                    return Array.isArray(advancedStats) ? advancedStats : [];
                                 })()}
                                 awayTeam={awayTeam}
                                 homeTeam={homeTeam}
