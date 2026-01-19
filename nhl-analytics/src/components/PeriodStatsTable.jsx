@@ -12,10 +12,10 @@ const PeriodStatsTable = ({ periodStats, awayTeam, homeTeam, currentPeriod }) =>
             currentPeriod
         });
     }, [periodStats, currentPeriod]);
-    
+
     // Show empty table structure when no data
     const hasData = periodStats && Array.isArray(periodStats) && periodStats.length > 0;
-    
+
     // Filter periods to only show active/completed periods
     // If currentPeriod is provided, only show periods <= currentPeriod
     // Also always show OT/SO if they exist (they're marked as 'OT' or 'SO' strings)
@@ -38,7 +38,7 @@ const PeriodStatsTable = ({ periodStats, awayTeam, homeTeam, currentPeriod }) =>
         }
         return true;
     }) : [];
-    
+
     // If no data, show empty table structure
     if (!hasData) {
         const emptyMetrics = [
@@ -106,9 +106,9 @@ const PeriodStatsTable = ({ periodStats, awayTeam, homeTeam, currentPeriod }) =>
                                         </td>
                                         <td className="py-2 px-4 text-center sticky left-[80px] bg-gray-900/80 backdrop-blur-sm z-20 border-r border-white/20 shadow-[2px_0_4px_rgba(0,0,0,0.3)]">
                                             {awayTeam?.logo ? (
-                                                <img 
-                                                    src={awayTeam.logo} 
-                                                    alt={awayTeam.abbrev || 'AWAY'} 
+                                                <img
+                                                    src={awayTeam.logo}
+                                                    alt={awayTeam.abbrev || 'AWAY'}
                                                     className="w-6 h-6 mx-auto object-contain"
                                                 />
                                             ) : (
@@ -126,9 +126,9 @@ const PeriodStatsTable = ({ periodStats, awayTeam, homeTeam, currentPeriod }) =>
                                     <tr className="hover:bg-white/5 transition-colors">
                                         <td className="py-2 px-4 text-center sticky left-[80px] bg-gray-900/80 backdrop-blur-sm z-20 border-r border-white/20 shadow-[2px_0_4px_rgba(0,0,0,0.3)]">
                                             {homeTeam?.logo ? (
-                                                <img 
-                                                    src={homeTeam.logo} 
-                                                    alt={homeTeam.abbrev || 'HOME'} 
+                                                <img
+                                                    src={homeTeam.logo}
+                                                    alt={homeTeam.abbrev || 'HOME'}
                                                     className="w-6 h-6 mx-auto object-contain"
                                                 />
                                             ) : (
@@ -145,11 +145,11 @@ const PeriodStatsTable = ({ periodStats, awayTeam, homeTeam, currentPeriod }) =>
                                     </tr>
                                 </React.Fragment>
                             ))}
-                    </tbody>
-                </table>
+                        </tbody>
+                    </table>
+                </div>
             </div>
-        </div>
-    );
+        );
     }
 
     const metrics = [
@@ -234,9 +234,9 @@ const PeriodStatsTable = ({ periodStats, awayTeam, homeTeam, currentPeriod }) =>
                                         </td>
                                         <td className="py-2 px-4 text-center sticky left-[80px] bg-gray-900/80 backdrop-blur-sm z-20 border-r border-white/20 shadow-[2px_0_4px_rgba(0,0,0,0.3)]">
                                             {awayTeam?.logo ? (
-                                                <img 
-                                                    src={awayTeam.logo} 
-                                                    alt={awayTeam.abbrev || 'AWAY'} 
+                                                <img
+                                                    src={awayTeam.logo}
+                                                    alt={awayTeam.abbrev || 'AWAY'}
                                                     className="w-6 h-6 mx-auto object-contain"
                                                 />
                                             ) : (
@@ -246,17 +246,22 @@ const PeriodStatsTable = ({ periodStats, awayTeam, homeTeam, currentPeriod }) =>
                                             )}
                                         </td>
                                         {metrics.map((metric) => {
-                                            const awayVal = parseFloat(period.away_stats[metric.key]) || 0;
-                                            const homeVal = parseFloat(period.home_stats[metric.key]) || 0;
-                                            const isWinner = awayVal > homeVal;
-                                            
-                                            let displayValue;
-                                            if (metric.isPercentage) {
-                                                displayValue = awayVal.toFixed(1) + '%';
-                                            } else if (metric.isDecimal) {
-                                                displayValue = awayVal.toFixed(2);
-                                            } else {
-                                                displayValue = Math.round(awayVal);
+                                            const rawAwayVal = period.away_stats?.[metric.key];
+                                            const awayVal = (rawAwayVal !== undefined && rawAwayVal !== null) ? parseFloat(rawAwayVal) : null;
+                                            const rawHomeVal = period.home_stats?.[metric.key];
+                                            const homeVal = (rawHomeVal !== undefined && rawHomeVal !== null) ? parseFloat(rawHomeVal) : null;
+
+                                            const isWinner = awayVal !== null && homeVal !== null && awayVal > homeVal;
+
+                                            let displayValue = '-';
+                                            if (awayVal !== null) {
+                                                if (metric.isPercentage) {
+                                                    displayValue = awayVal.toFixed(1) + '%';
+                                                } else if (metric.isDecimal) {
+                                                    displayValue = awayVal.toFixed(2);
+                                                } else {
+                                                    displayValue = Math.round(awayVal);
+                                                }
                                             }
 
                                             return (
@@ -266,19 +271,19 @@ const PeriodStatsTable = ({ periodStats, awayTeam, homeTeam, currentPeriod }) =>
                                                             isWinner ? "text-accent-primary font-bold" : "text-text-muted"
                                                         )}>
                                                             {displayValue}
-                                                </span>
-                                            </div>
-                                        </td>
-                                    );
-                                })}
+                                                        </span>
+                                                    </div>
+                                                </td>
+                                            );
+                                        })}
                                     </tr>
                                     {/* Home Team Row */}
                                     <tr className="hover:bg-white/5 transition-colors">
                                         <td className="py-2 px-4 text-center sticky left-[80px] bg-gray-900/80 backdrop-blur-sm z-20 border-r border-white/20 shadow-[2px_0_4px_rgba(0,0,0,0.3)]">
                                             {homeTeam?.logo ? (
-                                                <img 
-                                                    src={homeTeam.logo} 
-                                                    alt={homeTeam.abbrev || 'HOME'} 
+                                                <img
+                                                    src={homeTeam.logo}
+                                                    alt={homeTeam.abbrev || 'HOME'}
                                                     className="w-6 h-6 mx-auto object-contain"
                                                 />
                                             ) : (
@@ -288,17 +293,22 @@ const PeriodStatsTable = ({ periodStats, awayTeam, homeTeam, currentPeriod }) =>
                                             )}
                                         </td>
                                         {metrics.map((metric) => {
-                                            const awayVal = parseFloat(period.away_stats[metric.key]) || 0;
-                                            const homeVal = parseFloat(period.home_stats[metric.key]) || 0;
-                                            const isWinner = homeVal > awayVal;
-                                            
-                                            let displayValue;
-                                            if (metric.isPercentage) {
-                                                displayValue = homeVal.toFixed(1) + '%';
-                                            } else if (metric.isDecimal) {
-                                                displayValue = homeVal.toFixed(2);
-                                            } else {
-                                                displayValue = Math.round(homeVal);
+                                            const rawAwayVal = period.away_stats?.[metric.key];
+                                            const awayVal = (rawAwayVal !== undefined && rawAwayVal !== null) ? parseFloat(rawAwayVal) : null;
+                                            const rawHomeVal = period.home_stats?.[metric.key];
+                                            const homeVal = (rawHomeVal !== undefined && rawHomeVal !== null) ? parseFloat(rawHomeVal) : null;
+
+                                            const isWinner = homeVal !== null && awayVal !== null && homeVal > awayVal;
+
+                                            let displayValue = '-';
+                                            if (homeVal !== null) {
+                                                if (metric.isPercentage) {
+                                                    displayValue = homeVal.toFixed(1) + '%';
+                                                } else if (metric.isDecimal) {
+                                                    displayValue = homeVal.toFixed(2);
+                                                } else {
+                                                    displayValue = Math.round(homeVal);
+                                                }
                                             }
 
                                             return (
@@ -308,12 +318,13 @@ const PeriodStatsTable = ({ periodStats, awayTeam, homeTeam, currentPeriod }) =>
                                                             isWinner ? "text-accent-secondary font-bold" : "text-text-muted"
                                                         )}>
                                                             {displayValue}
-                                        </span>
-                                    </div>
-                                </td>
+
+                                                        </span>
+                                                    </div>
+                                                </td>
                                             );
                                         })}
-                            </tr>
+                                    </tr>
                                 </React.Fragment>
                             );
                         })}

@@ -951,11 +951,35 @@ const GameDetailsContent = () => {
                                 <h3 className="text-xl font-display font-bold">PERIOD PERFORMANCE</h3>
                             </div>
                             <PeriodStatsTable
-                                periodStats={
-                                    liveData?.period_stats ||
-                                    liveData?.live_metrics?.period_stats ||
-                                    (Array.isArray(liveData?.period_stats) ? liveData.period_stats : [])
-                                }
+                                periodStats={(() => {
+                                    // Try to get advanced period stats from live data
+                                    const advancedStats = liveData?.period_stats || liveData?.live_metrics?.period_stats;
+                                    if (Array.isArray(advancedStats) && advancedStats.length > 0) {
+                                        return advancedStats;
+                                    }
+
+                                    // Fallback: Construct basic period stats (Goals/Shots) from boxscore for completed games
+                                    // boxscore structure usually has period descriptors or a linescore
+                                    // This adapts to common NHL API boxscore structures
+                                    const periods = gameData?.summary?.linescore?.periods || gameData?.linescore?.periods || [];
+
+                                    if (periods.length > 0) {
+                                        return periods.map(p => ({
+                                            period: p.num,
+                                            away_stats: {
+                                                goals: p.away.goals,
+                                                shots: p.away.shotsOnGoal,
+                                                // Other metrics will be undefined and render as '-'
+                                            },
+                                            home_stats: {
+                                                goals: p.home.goals,
+                                                shots: p.home.shotsOnGoal
+                                            }
+                                        }));
+                                    }
+
+                                    return [];
+                                })()}
                                 awayTeam={awayTeam}
                                 homeTeam={homeTeam}
                                 currentPeriod={
