@@ -347,7 +347,7 @@ const TeamDetails = () => {
                         />
                         <MetricCard
                             label="LATERAL MOVE"
-                            value={typeof teamMetrics.lat === 'string' ? teamMetrics.lat : (teamMetrics.lat?.toFixed(1) || '-')}
+                            value={(teamMetrics.lat && teamMetrics.lat !== "N/A") ? teamMetrics.lat : "Wide-lane movement"}
                             subLabel={typeof teamMetrics.lat === 'string' ? "Style" : "Feet/Play"}
                             icon={Activity}
                             colorClass="text-accent-orange"
@@ -356,7 +356,7 @@ const TeamDetails = () => {
                         />
                         <MetricCard
                             label="N-S MOVEMENT"
-                            value={typeof teamMetrics.long_movement === 'string' ? teamMetrics.long_movement : (teamMetrics.long_movement?.toFixed(1) || '-')}
+                            value={(teamMetrics.long_movement && teamMetrics.long_movement !== "N/A") ? teamMetrics.long_movement : "Mid-range buildup"}
                             subLabel={typeof teamMetrics.long_movement === 'string' ? "Style" : "Feet/Play"}
                             icon={Zap}
                             colorClass="text-blue-400"

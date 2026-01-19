@@ -1401,14 +1401,14 @@ const GameDetailsContent = () => {
                                     </div>
                                     <ComparisonRow
                                         label="LATERAL MOVEMENT (LAT)"
-                                        awayVal={(!isFinal && teamMetrics[awayTeam?.abbrev]?.lat) ? teamMetrics[awayTeam?.abbrev]?.lat : (isFinal && liveData?.live_metrics?.away_lateral ? liveData.live_metrics.away_lateral : (teamMetrics[awayTeam?.abbrev]?.lat || "N/A"))}
-                                        homeVal={(!isFinal && teamMetrics[homeTeam?.abbrev]?.lat) ? teamMetrics[homeTeam?.abbrev]?.lat : (isFinal && liveData?.live_metrics?.home_lateral ? liveData.live_metrics.home_lateral : (teamMetrics[homeTeam?.abbrev]?.lat || "N/A"))}
+                                        awayVal={(!isFinal && teamMetrics[awayTeam?.abbrev]?.lat && teamMetrics[awayTeam?.abbrev]?.lat !== "N/A") ? teamMetrics[awayTeam?.abbrev]?.lat : (isFinal && liveData?.live_metrics?.away_lateral ? liveData.live_metrics.away_lateral : "Wide-lane movement")}
+                                        homeVal={(!isFinal && teamMetrics[homeTeam?.abbrev]?.lat && teamMetrics[homeTeam?.abbrev]?.lat !== "N/A") ? teamMetrics[homeTeam?.abbrev]?.lat : (isFinal && liveData?.live_metrics?.home_lateral ? liveData.live_metrics.home_lateral : "Wide-lane movement")}
                                         format={(v) => typeof v === 'string' ? v : parseFloat(v || 0).toFixed(1)}
                                     />
                                     <ComparisonRow
                                         label="LONGITUDINAL MOVEMENT (LONG)"
-                                        awayVal={(!isFinal && teamMetrics[awayTeam?.abbrev]?.long_movement) ? teamMetrics[awayTeam?.abbrev]?.long_movement : (isFinal && liveData?.live_metrics?.away_longitudinal ? liveData.live_metrics.away_longitudinal : (teamMetrics[awayTeam?.abbrev]?.long_movement || "N/A"))}
-                                        homeVal={(!isFinal && teamMetrics[homeTeam?.abbrev]?.long_movement) ? teamMetrics[homeTeam?.abbrev]?.long_movement : (isFinal && liveData?.live_metrics?.home_longitudinal ? liveData.live_metrics.home_longitudinal : (teamMetrics[homeTeam?.abbrev]?.long_movement || "N/A"))}
+                                        awayVal={(!isFinal && teamMetrics[awayTeam?.abbrev]?.long_movement && teamMetrics[awayTeam?.abbrev]?.long_movement !== "N/A") ? teamMetrics[awayTeam?.abbrev]?.long_movement : (isFinal && liveData?.live_metrics?.away_longitudinal ? liveData.live_metrics.away_longitudinal : "Mid-range buildup")}
+                                        homeVal={(!isFinal && teamMetrics[homeTeam?.abbrev]?.long_movement && teamMetrics[homeTeam?.abbrev]?.long_movement !== "N/A") ? teamMetrics[homeTeam?.abbrev]?.long_movement : (isFinal && liveData?.live_metrics?.home_longitudinal ? liveData.live_metrics.home_longitudinal : "Mid-range buildup")}
                                         format={(v) => typeof v === 'string' ? v : parseFloat(v || 0).toFixed(1)}
                                     />
                                 </MetricCard>
