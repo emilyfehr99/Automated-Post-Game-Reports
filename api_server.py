@@ -42,13 +42,13 @@ _team_metrics_file_mtime = None
 CACHE_DURATION = timedelta(minutes=5)  # Cache for 5 minutes (reduced from 1 hour for debugging)
 
 def load_json(filename):
-    """Load JSON file from current directory or data/ subdirectory"""
+    """Load JSON file from data/ subdirectory or current directory"""
     try:
-        # Try root directory first
-        file_path = os.path.join(DATA_DIR, filename)
+        # Try data/ subdirectory first (Preferred)
+        file_path = os.path.join(DATA_DIR, 'data', filename)
         if not os.path.exists(file_path):
-            # Try data/ subdirectory
-            file_path = os.path.join(DATA_DIR, 'data', filename)
+            # Try root directory
+            file_path = os.path.join(DATA_DIR, filename)
             
         with open(file_path, 'r') as f:
             return json.load(f)
