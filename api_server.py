@@ -874,7 +874,7 @@ def get_team_lines(team_abbrev):
 
 @app.route('/api/player-stats', methods=['GET'])
 def get_player_stats():
-    """Get player stats from MoneyPuck"""
+    """Get player stats from MoneyPuck - Comprehensive Dynamic Parsing"""
     try:
         season = request.args.get('season', '2025')
         game_type = request.args.get('type', 'regular')
@@ -893,238 +893,97 @@ def get_player_stats():
         for row in csv_reader:
             # Filter by situation if specified
             if row['situation'] == situation:
-                games_played = int(row['games_played']) if row['games_played'] else 0
+                games_played = int(row['games_played']) if row.get('games_played') else 0
                 
-                if games_played > 0:
-                    # Helper functions for safe conversion
-                    def safe_float(key):
-                        return float(row[key]) if row.get(key) and row[key] != '' else 0.0
-                    
-                    def safe_int(key):
-                        return int(float(row[key])) if row.get(key) and row[key] != '' else 0
-                    
-                    def per_game(value):
-                        return round(value / games_played, 2) if games_played > 0 else 0.0
+                # 1. Base Identity Fields
+                player = {
+                    'name': row.get('name', ''),
+                    'team': row.get('team', ''),
+                    'position': row.get('position', ''),
+                    'season': int(row['season']) if row.get('season') else int(season),
+                    'playerId': int(row['playerId']) if row.get('playerId') else None,
+                    'games_played': games_played
+                }
 
-                    # Parse ALL fields from MoneyPuck CSV (154 total)
-                    player = {
-                        # Basic Info
-                        'playerId': safe_int('playerId'),
-                        'name': row.get('name', ''),
-                        'team': row.get('team', ''),
-                        'position': row.get('position', ''),
-                        'season': row.get('season', ''),
-                        'games_played': games_played,
-                        'icetime': safe_float('icetime'),
-                        'icetime_per_game': per_game(safe_float('icetime')),
-                        'shifts': safe_int('shifts'),
-                        'shifts_per_game': per_game(safe_int('shifts')),
+                # 2. Dynamic Parsing of ALL metrics
+                for key, value in row.items():
+                    # Skip identity fields and empty values
+                    if key in ['name', 'team', 'position', 'season', 'playerId', 'games_played', 'situation']:
+                        continue
+                    if not value:
+                        continue
                         
-                        # Game Score
-                        'gameScore_total': safe_float('gameScore'),
-                        'game_score': per_game(safe_float('gameScore')),
-                        'iceTimeRank': safe_int('iceTimeRank'),
+                    # Parse numeric values
+                    try:
+                        val_float = float(value)
                         
-                        # Percentages (On/Off Ice)
-                        'onIce_xGoalsPercentage': round(safe_float('onIce_xGoalsPercentage') * 100, 1),
-                        'offIce_xGoalsPercentage': round(safe_float('offIce_xGoalsPercentage') * 100, 1),
-                        'onIce_corsiPercentage': round(safe_float('onIce_corsiPercentage') * 100, 1),
-                        'offIce_corsiPercentage': round(safe_float('offIce_corsiPercentage') * 100, 1),
-                        'onIce_fenwickPercentage': round(safe_float('onIce_fenwickPercentage') * 100, 1),
-                        'offIce_fenwickPercentage': round(safe_float('offIce_fenwickPercentage') * 100, 1),
+                        # Store raw value (int if possible, else round float)
+                        if val_float.is_integer():
+                            player[key] = int(val_float)
+                        else:
+                            player[key] = round(val_float, 2)
+                            
+                        # 3. Calculate Per-Game Averages for cumulative stats
+                        # Logic: if key looks like a cumulative count, divide by GP
+                        cumulative_keys = [
+                            'goals', 'assists', 'points', 'shots', 'hits', 'icetime', 
+                            'takeaways', 'giveaways', 'blockedShotAttempts', 'penalityMinutes',
+                            'faceOffsWon', 'faceoffsWon', 'faceoffsLost', 'shifts',
+                            'gameScore'
+                        ]
                         
-                        # Individual For (I_F) - Basic Scoring
-                        'I_F_goals': safe_int('I_F_goals'),
-                        'I_F_primaryAssists': safe_int('I_F_primaryAssists'),
-                        'I_F_secondaryAssists': safe_int('I_F_secondaryAssists'),
-                        'I_F_points': safe_int('I_F_points'),
-                        'goals': safe_int('I_F_goals'),  # Alias
-                        'assists': safe_int('I_F_primaryAssists') + safe_int('I_F_secondaryAssists'),
-                        'points': safe_int('I_F_points'),
-                        'goals_per_game': per_game(safe_int('I_F_goals')),
-                        'assists_per_game': per_game(safe_int('I_F_primaryAssists') + safe_int('I_F_secondaryAssists')),
-                        'points_per_game': per_game(safe_int('I_F_points')),
+                        is_cumulative = (
+                            key.startswith('I_F_') or 
+                            key.startswith('OnIce_F_') or 
+                            key.startswith('OnIce_A_') or
+                            key.startswith('OffIce_') or
+                            key in cumulative_keys
+                        )
                         
-                        # Individual For - Expected Goals
-                        'I_F_xGoals': round(safe_float('I_F_xGoals'), 2),
-                        'xgoals': round(safe_float('I_F_xGoals'), 2),  # Alias
-                        'I_F_xOnGoal': round(safe_float('I_F_xOnGoal'), 2),
-                        'I_F_xRebounds': round(safe_float('I_F_xRebounds'), 2),
-                        'I_F_xFreeze': round(safe_float('I_F_xFreeze'), 2),
-                        'I_F_xPlayStopped': round(safe_float('I_F_xPlayStopped'), 2),
-                        'I_F_xPlayContinuedInZone': round(safe_float('I_F_xPlayContinuedInZone'), 2),
-                        'I_F_xPlayContinuedOutsideZone': round(safe_float('I_F_xPlayContinuedOutsideZone'), 2),
-                        'I_F_flurryAdjustedxGoals': round(safe_float('I_F_flurryAdjustedxGoals'), 2),
-                        'I_F_scoreVenueAdjustedxGoals': round(safe_float('I_F_scoreVenueAdjustedxGoals'), 2),
-                        'I_F_flurryScoreVenueAdjustedxGoals': round(safe_float('I_F_flurryScoreVenueAdjustedxGoals'), 2),
-                        
-                        # Individual For - Shots
-                        'I_F_shotsOnGoal': safe_int('I_F_shotsOnGoal'),
-                        'shots': safe_int('I_F_shotsOnGoal'),  # Alias
-                        'shots_per_game': per_game(safe_int('I_F_shotsOnGoal')),
-                        'I_F_missedShots': safe_int('I_F_missedShots'),
-                        'I_F_blockedShotAttempts': safe_int('I_F_blockedShotAttempts'),
-                        'I_F_shotAttempts': safe_int('I_F_shotAttempts'),
-                        'I_F_unblockedShotAttempts': safe_int('I_F_unblockedShotAttempts'),
-                        'I_F_scoreAdjustedShotsAttempts': safe_int('I_F_scoreAdjustedShotsAttempts'),
-                        'I_F_scoreAdjustedUnblockedShotAttempts': safe_int('I_F_scoreAdjustedUnblockedShotAttempts'),
-                        'I_F_savedShotsOnGoal': safe_int('I_F_savedShotsOnGoal'),
-                        'I_F_savedUnblockedShotAttempts': safe_int('I_F_savedUnblockedShotAttempts'),
-                        
-                        # Individual For - Danger Levels
-                        'I_F_lowDangerShots': safe_int('I_F_lowDangerShots'),
-                        'I_F_mediumDangerShots': safe_int('I_F_mediumDangerShots'),
-                        'I_F_highDangerShots': safe_int('I_F_highDangerShots'),
-                        'I_F_lowDangerxGoals': round(safe_float('I_F_lowDangerxGoals'), 2),
-                        'I_F_mediumDangerxGoals': round(safe_float('I_F_mediumDangerxGoals'), 2),
-                        'I_F_highDangerxGoals': round(safe_float('I_F_highDangerxGoals'), 2),
-                        'I_F_lowDangerGoals': safe_int('I_F_lowDangerGoals'),
-                        'I_F_mediumDangerGoals': safe_int('I_F_mediumDangerGoals'),
-                        'I_F_highDangerGoals': safe_int('I_F_highDangerGoals'),
-                        
-                        # Individual For - Rebounds
-                        'I_F_rebounds': safe_int('I_F_rebounds'),
-                        'I_F_reboundGoals': safe_int('I_F_reboundGoals'),
-                        'I_F_reboundxGoals': round(safe_float('I_F_reboundxGoals'), 2),
-                        'I_F_xGoalsFromxReboundsOfShots': round(safe_float('I_F_xGoalsFromxReboundsOfShots'), 2),
-                        'I_F_xGoalsFromActualReboundsOfShots': round(safe_float('I_F_xGoalsFromActualReboundsOfShots'), 2),
-                        'I_F_xGoals_with_earned_rebounds': round(safe_float('I_F_xGoals_with_earned_rebounds'), 2),
-                        'I_F_xGoals_with_earned_rebounds_scoreAdjusted': round(safe_float('I_F_xGoals_with_earned_rebounds_scoreAdjusted'), 2),
-                        'I_F_xGoals_with_earned_rebounds_scoreFlurryAdjusted': round(safe_float('I_F_xGoals_with_earned_rebounds_scoreFlurryAdjusted'), 2),
-                        
-                        # Individual For - Play Outcomes
-                        'I_F_freeze': safe_int('I_F_freeze'),
-                        'I_F_playStopped': safe_int('I_F_playStopped'),
-                        'I_F_playContinuedInZone': safe_int('I_F_playContinuedInZone'),
-                        'I_F_playContinuedOutsideZone': safe_int('I_F_playContinuedOutsideZone'),
-                        
-                        # Individual For - Physical/Defensive
-                        'I_F_hits': safe_int('I_F_hits'),
-                        'hits': safe_int('I_F_hits'),  # Alias
-                        'hits_per_game': per_game(safe_int('I_F_hits')),
-                        'I_F_takeaways': safe_int('I_F_takeaways'),
-                        'takeaways': safe_int('I_F_takeaways'),  # Alias
-                        'I_F_giveaways': safe_int('I_F_giveaways'),
-                        'giveaways': safe_int('I_F_giveaways'),  # Alias
-                        'I_F_dZoneGiveaways': safe_int('I_F_dZoneGiveaways'),
-                        'shotsBlockedByPlayer': safe_int('shotsBlockedByPlayer'),
-                        'blocks': safe_int('shotsBlockedByPlayer'),  # Alias
-                        'blocks_per_game': per_game(safe_int('shotsBlockedByPlayer')),
-                        
-                        # Penalties
-                        'penalties': safe_int('penalties'),
-                        'I_F_penalityMinutes': safe_int('I_F_penalityMinutes'),
-                        'penalityMinutes': safe_int('penalityMinutes'),
-                        'pim': safe_int('penalityMinutes'),  # Alias
-                        'penalityMinutesDrawn': safe_int('penalityMinutesDrawn'),
-                        'penaltiesDrawn': safe_int('penaltiesDrawn'),
-                        
-                        # Faceoffs
-                        'I_F_faceOffsWon': safe_int('I_F_faceOffsWon'),
-                        'faceOffsWon': safe_int('faceOffsWon'),
-                        'faceoffsWon': safe_int('faceoffsWon'),  # Handle typo
-                        'faceoffsLost': safe_int('faceoffsLost'),
-                        'fo_pct': round((safe_int('faceoffsWon') / (safe_int('faceoffsWon') + safe_int('faceoffsLost')) * 100), 1) if (safe_int('faceoffsWon') + safe_int('faceoffsLost')) > 0 else 0.0,
-                        
-                        # Zone Starts/Ends
-                        'I_F_shifts': safe_int('I_F_shifts'),
-                        'I_F_oZoneShiftStarts': safe_int('I_F_oZoneShiftStarts'),
-                        'I_F_dZoneShiftStarts': safe_int('I_F_dZoneShiftStarts'),
-                        'I_F_neutralZoneShiftStarts': safe_int('I_F_neutralZoneShiftStarts'),
-                        'I_F_flyShiftStarts': safe_int('I_F_flyShiftStarts'),
-                        'I_F_oZoneShiftEnds': safe_int('I_F_oZoneShiftEnds'),
-                        'I_F_dZoneShiftEnds': safe_int('I_F_dZoneShiftEnds'),
-                        'I_F_neutralZoneShiftEnds': safe_int('I_F_neutralZoneShiftEnds'),
-                        'I_F_flyShiftEnds': safe_int('I_F_flyShiftEnds'),
-                        'timeOnBench': safe_float('timeOnBench'),
-                        
-                        # OnIce For (OnIce_F) - Team Stats While Player On Ice
-                        'OnIce_F_xGoals': round(safe_float('OnIce_F_xGoals'), 2),
-                        'OnIce_F_xOnGoal': round(safe_float('OnIce_F_xOnGoal'), 2),
-                        'OnIce_F_goals': safe_int('OnIce_F_goals'),
-                        'OnIce_F_shotsOnGoal': safe_int('OnIce_F_shotsOnGoal'),
-                        'OnIce_F_shotAttempts': safe_int('OnIce_F_shotAttempts'),
-                        'OnIce_F_missedShots': safe_int('OnIce_F_missedShots'),
-                        'OnIce_F_blockedShotAttempts': safe_int('OnIce_F_blockedShotAttempts'),
-                        'OnIce_F_unblockedShotAttempts': safe_int('OnIce_F_unblockedShotAttempts'),
-                        'OnIce_F_flurryAdjustedxGoals': round(safe_float('OnIce_F_flurryAdjustedxGoals'), 2),
-                        'OnIce_F_scoreVenueAdjustedxGoals': round(safe_float('OnIce_F_scoreVenueAdjustedxGoals'), 2),
-                        'OnIce_F_flurryScoreVenueAdjustedxGoals': round(safe_float('OnIce_F_flurryScoreVenueAdjustedxGoals'), 2),
-                        'OnIce_F_rebounds': safe_int('OnIce_F_rebounds'),
-                        'OnIce_F_reboundGoals': safe_int('OnIce_F_reboundGoals'),
-                        'OnIce_F_reboundxGoals': round(safe_float('OnIce_F_reboundxGoals'), 2),
-                        'OnIce_F_scoreAdjustedShotsAttempts': safe_int('OnIce_F_scoreAdjustedShotsAttempts'),
-                        'OnIce_F_scoreAdjustedUnblockedShotAttempts': safe_int('OnIce_F_scoreAdjustedUnblockedShotAttempts'),
-                        
-                        # OnIce For - Danger Levels
-                        'OnIce_F_lowDangerShots': safe_int('OnIce_F_lowDangerShots'),
-                        'OnIce_F_mediumDangerShots': safe_int('OnIce_F_mediumDangerShots'),
-                        'OnIce_F_highDangerShots': safe_int('OnIce_F_highDangerShots'),
-                        'OnIce_F_lowDangerxGoals': round(safe_float('OnIce_F_lowDangerxGoals'), 2),
-                        'OnIce_F_mediumDangerxGoals': round(safe_float('OnIce_F_mediumDangerxGoals'), 2),
-                        'OnIce_F_highDangerxGoals': round(safe_float('OnIce_F_highDangerxGoals'), 2),
-                        'OnIce_F_lowDangerGoals': safe_int('OnIce_F_lowDangerGoals'),
-                        'OnIce_F_mediumDangerGoals': safe_int('OnIce_F_mediumDangerGoals'),
-                        'OnIce_F_highDangerGoals': safe_int('OnIce_F_highDangerGoals'),
-                        'OnIce_F_xGoalsFromxReboundsOfShots': round(safe_float('OnIce_F_xGoalsFromxReboundsOfShots'), 2),
-                        'OnIce_F_xGoalsFromActualReboundsOfShots': round(safe_float('OnIce_F_xGoalsFromActualReboundsOfShots'), 2),
-                        'OnIce_F_xGoals_with_earned_rebounds': round(safe_float('OnIce_F_xGoals_with_earned_rebounds'), 2),
-                        'OnIce_F_xGoals_with_earned_rebounds_scoreAdjusted': round(safe_float('OnIce_F_xGoals_with_earned_rebounds_scoreAdjusted'), 2),
-                        'OnIce_F_xGoals_with_earned_rebounds_scoreFlurryAdjusted': round(safe_float('OnIce_F_xGoals_with_earned_rebounds_scoreFlurryAdjusted'), 2),
-                        
-                        # OnIce Against (OnIce_A) - Opposition Stats While Player On Ice
-                        'OnIce_A_xGoals': round(safe_float('OnIce_A_xGoals'), 2),
-                        'OnIce_A_xOnGoal': round(safe_float('OnIce_A_xOnGoal'), 2),
-                        'OnIce_A_goals': safe_int('OnIce_A_goals'),
-                        'OnIce_A_shotsOnGoal': safe_int('OnIce_A_shotsOnGoal'),
-                        'OnIce_A_shotAttempts': safe_int('OnIce_A_shotAttempts'),
-                        'OnIce_A_missedShots': safe_int('OnIce_A_missedShots'),
-                        'OnIce_A_blockedShotAttempts': safe_int('OnIce_A_blockedShotAttempts'),
-                        'OnIce_A_unblockedShotAttempts': safe_int('OnIce_A_unblockedShotAttempts'),
-                        'OnIce_A_flurryAdjustedxGoals': round(safe_float('OnIce_A_flurryAdjustedxGoals'), 2),
-                        'OnIce_A_scoreVenueAdjustedxGoals': round(safe_float('OnIce_A_scoreVenueAdjustedxGoals'), 2),
-                        'OnIce_A_flurryScoreVenueAdjustedxGoals': round(safe_float('OnIce_A_flurryScoreVenueAdjustedxGoals'), 2),
-                        'OnIce_A_rebounds': safe_int('OnIce_A_rebounds'),
-                        'OnIce_A_reboundGoals': safe_int('OnIce_A_reboundGoals'),
-                        'OnIce_A_reboundxGoals': round(safe_float('OnIce_A_reboundxGoals'), 2),
-                        'OnIce_A_scoreAdjustedShotsAttempts': safe_int('OnIce_A_scoreAdjustedShotsAttempts'),
-                        'OnIce_A_scoreAdjustedUnblockedShotAttempts': safe_int('OnIce_A_scoreAdjustedUnblockedShotAttempts'),
-                        
-                        # OnIce Against - Danger Levels
-                        'OnIce_A_lowDangerShots': safe_int('OnIce_A_lowDangerShots'),
-                        'OnIce_A_mediumDangerShots': safe_int('OnIce_A_mediumDangerShots'),
-                        'OnIce_A_highDangerShots': safe_int('OnIce_A_highDangerShots'),
-                        'OnIce_A_lowDangerxGoals': round(safe_float('OnIce_A_lowDangerxGoals'), 2),
-                        'OnIce_A_mediumDangerxGoals': round(safe_float('OnIce_A_mediumDangerxGoals'), 2),
-                        'OnIce_A_highDangerxGoals': round(safe_float('OnIce_A_highDangerxGoals'), 2),
-                        'OnIce_A_lowDangerGoals': safe_int('OnIce_A_lowDangerGoals'),
-                        'OnIce_A_mediumDangerGoals': safe_int('OnIce_A_mediumDangerGoals'),
-                        'OnIce_A_highDangerGoals': safe_int('OnIce_A_highDangerGoals'),
-                        'OnIce_A_xGoalsFromxReboundsOfShots': round(safe_float('OnIce_A_xGoalsFromxReboundsOfShots'), 2),
-                        'OnIce_A_xGoalsFromActualReboundsOfShots': round(safe_float('OnIce_A_xGoalsFromActualReboundsOfShots'), 2),
-                        'OnIce_A_xGoals_with_earned_rebounds': round(safe_float('OnIce_A_xGoals_with_earned_rebounds'), 2),
-                        'OnIce_A_xGoals_with_earned_rebounds_scoreAdjusted': round(safe_float('OnIce_A_xGoals_with_earned_rebounds_scoreAdjusted'), 2),
-                        'OnIce_A_xGoals_with_earned_rebounds_scoreFlurryAdjusted': round(safe_float('OnIce_A_xGoals_with_earned_rebounds_scoreFlurryAdjusted'), 2),
-                        
-                        # OffIce Stats
-                        'OffIce_F_xGoals': round(safe_float('OffIce_F_xGoals'), 2),
-                        'OffIce_A_xGoals': round(safe_float('OffIce_A_xGoals'), 2),
-                        'OffIce_F_shotAttempts': safe_int('OffIce_F_shotAttempts'),
-                        'OffIce_A_shotAttempts': safe_int('OffIce_A_shotAttempts'),
-                        
-                        # After Shift Stats
-                        'xGoalsForAfterShifts': round(safe_float('xGoalsForAfterShifts'), 2),
-                        'xGoalsAgainstAfterShifts': round(safe_float('xGoalsAgainstAfterShifts'), 2),
-                        'corsiForAfterShifts': safe_int('corsiForAfterShifts'),
-                        'corsiAgainstAfterShifts': safe_int('corsiAgainstAfterShifts'),
-                        'fenwickForAfterShifts': safe_int('fenwickForAfterShifts'),
-                        'fenwickAgainstAfterShifts': safe_int('fenwickAgainstAfterShifts'),
-                        
-                        # Legacy aliases for backwards compatibility
-                        'corsi_pct': round(safe_float('onIce_corsiPercentage') * 100, 1),
-                        'xgoals_pct': round(safe_float('onIce_xGoalsPercentage') * 100, 1),
-                    }
-                    players_data.append(player)
+                        # Skip percentages/ratios/ranks/ids for per-game calc
+                        skip_pg = ['Percentage', 'Pct', 'rate', 'Rank', 'Id', 'season']
+                        if any(s in key for s in skip_pg):
+                            is_cumulative = False
+                            
+                        if is_cumulative and games_played > 0:
+                            player[f"{key}_per_game"] = round(val_float / games_played, 2)
+                            
+                    except ValueError:
+                        # Keep string values
+                        player[key] = value
+
+                # 4. Aliases for Frontend Compatibility
+                # Ensure essential fields exist with expected names
+                aliases = {
+                    'hits': 'I_F_hits',
+                    'blocks': 'I_F_blockedShotAttempts', 
+                    'pim': 'I_F_penalityMinutes',
+                    'takeaways': 'I_F_takeaways',
+                    'giveaways': 'I_F_giveaways',
+                    'xgoals': 'I_F_xGoals',
+                    'shots': 'I_F_shotsOnGoal',
+                    'shot_attempts': 'I_F_shotAttempts',
+                    'shots_blocked': 'shotsBlockedByPlayer'
+                }
+                
+                for alias, source in aliases.items():
+                    if source in player:
+                        player[alias] = player[source]
+                        if f"{source}_per_game" in player:
+                            player[f"{alias}_per_game"] = player[f"{source}_per_game"]
+                            
+                # Special calculations
+                if 'I_F_faceOffsWon' in player: player['faceoffsWon'] = player['I_F_faceOffsWon']
+                
+                # Faceoff PCT alias
+                fo_won = player.get('faceOffsWon', 0)
+                fo_lost = player.get('faceoffsLost', 0)
+                if (fo_won + fo_lost) > 0:
+                    player['fo_pct'] = round((fo_won / (fo_won + fo_lost)) * 100, 1)
+                else:
+                    player['fo_pct'] = 0.0
+
+                players_data.append(player)
         
         return jsonify(players_data)
         
@@ -1132,7 +991,6 @@ def get_player_stats():
         print(f"Error fetching player stats: {e}")
         return jsonify({'error': str(e)}), 500
 
-# Team Performers Endpoint - Returns top 5 players for a team
 @app.route('/api/team-performers/<team_abbr>', methods=['GET'])
 def get_team_performers(team_abbr):
     """Get top 5 performers for a specific team using NHL Club Stats API"""
