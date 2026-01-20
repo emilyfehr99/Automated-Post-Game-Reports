@@ -517,98 +517,81 @@ const GameDetailsContent = () => {
 
                 // Fetch additional data in background (non-blocking)
                 if (awayAbbr && homeAbbr) {
+                    // FAST PATH: Static Data (Instant)
+                    // We fetch these locally (CDN) and update UI immediately
                     Promise.all([
                         backendApi.getTeamMetrics().catch(() => ({})),
-                        backendApi.getGamePrediction(id).catch(() => null),
-                        // Fetch heatmap data for pre-game only (last 5 games)
-                        (gameState === 'FUT' || gameState === 'PREVIEW')
-                            ? backendApi.getTeamHeatmap(awayAbbr).catch(() => null)
-                            : Promise.resolve(null),
-                        (gameState === 'FUT' || gameState === 'PREVIEW')
-                            ? backendApi.getTeamHeatmap(homeAbbr).catch(() => null)
-                            : Promise.resolve(null),
-                        // Fetch Edge data
-                        backendApi.getEdgeDataByTeam(awayAbbr).catch(() => null),
-                        backendApi.getEdgeDataByTeam(homeAbbr).catch(() => null),
-                        // Fetch detailed Team Stats (might have movement if edge missing)
-                        backendApi.getTeamStatsByAbbrev(awayAbbr).catch(() => null),
-                        backendApi.getTeamStatsByAbbrev(homeAbbr).catch(() => null)
-                    ]).then(([metrics, gamePrediction, awayHeat, homeHeat, awayEdge, homeEdge, awayStats, homeStats]) => {
-                        // Merge edge/stats data into team metrics if needed
-                        const enrichedMetrics = { ...metrics };
-
-                        // Helper to merge
-                        const mergeTeamData = (abbr, edge, stats) => {
-                            if (!enrichedMetrics[abbr]) enrichedMetrics[abbr] = {};
-
-                            // 1. Movement: Use stats fields directly if available
-                            // Backend returns: avg_distance, avg_speed_mph, avg_zone_time, lat, long
-                            if (stats) {
-                                // Check various possible field names from backend
-                                enrichedMetrics[abbr].lat = stats.lat || stats.lateral_movement || stats.average_lateral || enrichedMetrics[abbr].lat || 0;
-                                enrichedMetrics[abbr].long_movement = stats.long || stats.long_movement || stats.longitudinal_movement || stats.average_longitudinal || enrichedMetrics[abbr].long_movement || 0;
-                            }
-                            if (edge && Object.keys(edge).length > 0) {
-                                enrichedMetrics[abbr].lat = edge.lat || enrichedMetrics[abbr].lat;
-                                enrichedMetrics[abbr].long_movement = edge.long || edge.long_movement || enrichedMetrics[abbr].long_movement;
-                            }
-
-                            // 2. GA/GP: Calculate from raw data in stats
-                            // Backend stats returns: goalsAgainst, gamesPlayed
-                            const ga = stats?.goalsAgainst || stats?.ga || stats?.goals_against || enrichedMetrics[abbr].goalsAgainst || 0;
-                            const gp = stats?.gamesPlayed || stats?.gp || stats?.games_played || enrichedMetrics[abbr].gamesPlayed || 1;
-
-                            if (gp > 0 && ga > 0) {
-                                enrichedMetrics[abbr].ga_gp = (ga / gp);
-                            } else if (enrichedMetrics[abbr].goalsAgainst && enrichedMetrics[abbr].gamesPlayed) {
-                                enrichedMetrics[abbr].ga_gp = enrichedMetrics[abbr].goalsAgainst / enrichedMetrics[abbr].gamesPlayed;
-                            }
-                        };
-
-                        if (awayAbbr) mergeTeamData(awayAbbr, awayEdge, awayStats);
-                        if (homeAbbr) mergeTeamData(homeAbbr, homeEdge, homeStats);
-
-                        console.log('Enriched team metrics:', enrichedMetrics);
-                        setTeamMetrics(enrichedMetrics);
+                        backendApi.getGamePrediction(id).catch(() => null)
+                    ]).then(([metrics, gamePrediction]) => {
+                        console.log('✅ Fast load metrics/prediction complete');
+                        setTeamMetrics(metrics);
                         setPrediction(gamePrediction);
-                        setAwayHeatmap(awayHeat);
-                        setHomeHeatmap(homeHeat);
 
-                        // Extract top performers from team stats for pre-game
-                        if (gameState === 'FUT' || gameState === 'PREVIEW') {
-                            const extractPerformersFromStats = (stats, teamAbbr) => {
-                                if (!stats) return [];
+                        // SLOW PATH: Detailed Backend Data (Lazy Load)
+                        Promise.all([
+                            (gameState === 'FUT' || gameState === 'PREVIEW')
+                                ? backendApi.getTeamHeatmap(awayAbbr).catch(() => null) : Promise.resolve(null),
+                            (gameState === 'FUT' || gameState === 'PREVIEW')
+                                ? backendApi.getTeamHeatmap(homeAbbr).catch(() => null) : Promise.resolve(null),
+                            backendApi.getEdgeDataByTeam(awayAbbr).catch(() => null),
+                            backendApi.getEdgeDataByTeam(homeAbbr).catch(() => null),
+                            backendApi.getTeamStatsByAbbrev(awayAbbr).catch(() => null),
+                            backendApi.getTeamStatsByAbbrev(homeAbbr).catch(() => null)
+                        ]).then(([awayHeat, homeHeat, awayEdge, homeEdge, awayStats, homeStats]) => {
+                            // 1. Merge slow data into existing metrics
+                            setTeamMetrics(prevMetrics => {
+                                const enrichedMetrics = { ...prevMetrics };
+                                const mergeTeamData = (abbr, edge, stats) => {
+                                    if (!enrichedMetrics[abbr]) enrichedMetrics[abbr] = {};
+                                    if (stats) {
+                                        enrichedMetrics[abbr].lat = stats.lat || stats.lateral_movement || enrichedMetrics[abbr].lat || 0;
+                                        enrichedMetrics[abbr].long_movement = stats.long || stats.long_movement || enrichedMetrics[abbr].long_movement || 0;
+                                    }
+                                    if (edge && Object.keys(edge).length > 0) {
+                                        enrichedMetrics[abbr].lat = edge.lat || enrichedMetrics[abbr].lat;
+                                        enrichedMetrics[abbr].long_movement = edge.long || enrichedMetrics[abbr].long_movement;
+                                    }
+                                    const ga = stats?.goalsAgainst || stats?.ga || enrichedMetrics[abbr].goalsAgainst || 0;
+                                    const gp = stats?.gamesPlayed || stats?.gp || enrichedMetrics[abbr].gamesPlayed || 1;
+                                    if (gp > 0 && ga > 0) enrichedMetrics[abbr].ga_gp = (ga / gp);
+                                };
+                                if (awayAbbr) mergeTeamData(awayAbbr, awayEdge, awayStats);
+                                if (homeAbbr) mergeTeamData(homeAbbr, homeEdge, homeStats);
+                                return enrichedMetrics;
+                            });
 
-                                // Check various possible structures from backend
-                                const players = stats.roster || stats.players || stats.topPlayers || [];
+                            // 2. Set Heatmaps
+                            setAwayHeatmap(awayHeat);
+                            setHomeHeatmap(homeHeat);
 
-                                if (Array.isArray(players) && players.length > 0) {
-                                    return players.slice(0, 5).map(p => ({
-                                        name: p.name || `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'Unknown',
-                                        team: teamAbbr,
-                                        position: p.position || 'N/A',
-                                        points: p.points || p.pts || 0,
-                                        goals: p.goals || p.g || 0,
-                                        assists: p.assists || p.a || 0,
-                                        gsPerGame: p.gsPerGame || p.gs_per_game || p.gameScore || 0
-                                    }));
-                                }
-                                return [];
-                            };
+                            // 3. Extract Top Performers
+                            if (gameState === 'FUT' || gameState === 'PREVIEW') {
+                                const extractPerformersFromStats = (stats, teamAbbr) => {
+                                    if (!stats) return [];
+                                    const players = stats.roster || stats.players || stats.topPlayers || [];
+                                    if (Array.isArray(players) && players.length > 0) {
+                                        return players.slice(0, 5).map(p => ({
+                                            name: p.name || `${p.firstName || ''} ${p.lastName || ''}`.trim() || 'Unknown',
+                                            team: teamAbbr,
+                                            position: p.position || 'N/A',
+                                            points: p.points || p.pts || 0,
+                                            goals: p.goals || p.g || 0,
+                                            assists: p.assists || p.a || 0,
+                                            gsPerGame: p.gsPerGame || p.gs_per_game || p.gameScore || 0
+                                        }));
+                                    }
+                                    return [];
+                                };
 
-                            const performers = [
-                                ...extractPerformersFromStats(awayStats, awayAbbr),
-                                ...extractPerformersFromStats(homeStats, homeAbbr)
-                            ];
-
-                            console.log('Pre-game performers from team stats:', performers);
-                            if (performers.length > 0) {
-                                setTopPerformers(performers);
+                                const performers = [
+                                    ...extractPerformersFromStats(awayStats, awayAbbr),
+                                    ...extractPerformersFromStats(homeStats, homeAbbr)
+                                ];
+                                if (performers.length > 0) setTopPerformers(performers);
                             }
-                        }
+                        });
                     }).catch(err => {
-                        console.error('Failed to fetch additional team data:', err);
-                        // Don't block page render if these fail
+                        console.error('Data fetch error:', err);
                     });
                 }
             } catch (error) {

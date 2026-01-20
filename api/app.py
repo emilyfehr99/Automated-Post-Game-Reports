@@ -963,7 +963,9 @@ def get_player_stats():
                     'xgoals': 'I_F_xGoals',
                     'shots': 'I_F_shotsOnGoal',
                     'shot_attempts': 'I_F_shotAttempts',
-                    'shots_blocked': 'shotsBlockedByPlayer'
+                    'shots_blocked': 'shotsBlockedByPlayer',
+                    'game_score': 'gameScore',
+                    'corsi_pct': 'onIce_corsiPercentage'
                 }
                 
                 for alias, source in aliases.items():
@@ -974,6 +976,14 @@ def get_player_stats():
                             
                 # Special calculations
                 if 'I_F_faceOffsWon' in player: player['faceoffsWon'] = player['I_F_faceOffsWon']
+                
+                # Faceoff Percentage
+                fw = player.get('faceOffsWon', player.get('I_F_faceOffsWon', 0))
+                fl = player.get('faceOffsLost', player.get('I_F_faceOffsLost', 0))
+                if (fw + fl) > 0:
+                    player['fo_pct'] = round((fw / (fw + fl)) * 100, 1)
+                else:
+                    player['fo_pct'] = 0.0
                 
                 # Faceoff PCT alias
                 fo_won = player.get('faceOffsWon', 0)

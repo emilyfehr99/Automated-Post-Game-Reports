@@ -62,6 +62,7 @@ src/
 !data/season_2025_2026_schedule.json
 !data/season_2025_2026_team_stats.json
 !data/nhl_edge_data.json
+!nhl-analytics/public/data/*.json
 
 # Keep vercel.json for deployment configuration
 !nhl-analytics/vercel.json
