@@ -30,14 +30,21 @@ export const backendApi = {
      * Get aggregated team metrics for all teams (optimized for Metrics page)
      */
     async getTeamMetrics() {
-        // Use local edge function in production, backend in development
-        const endpoint = import.meta.env.MODE === 'production'
-            ? '/api/team-metrics'
-            : `${BACKEND_URL}/api/team-metrics`;
-
-        const response = await fetch(endpoint);
-        if (!response.ok) throw new Error('Failed to fetch team metrics');
-        return response.json();
+        // FAST LOAD: Fetch static JSON directly from public folder (Vercel CDN)
+        try {
+            const response = await fetch('/data/team_metrics.json');
+            if (response.ok) return response.json();
+            throw new Error('Static metrics not found');
+        } catch (e) {
+            console.warn('Falling back to API for metrics:', e);
+            // Fallback to API if static file missing
+            const endpoint = import.meta.env.MODE === 'production'
+                ? 'https://nhl-analytics-api.onrender.com/api/team-metrics'
+                : 'http://localhost:5002/api/team-metrics';
+            const response = await fetch(endpoint);
+            if (!response.ok) throw new Error('Failed to fetch team metrics');
+            return response.json();
+        }
     },
 
     /**
@@ -68,6 +75,12 @@ export const backendApi = {
      * Get all predictions
      */
     async getPredictions() {
+        // FAST LOAD: Fetch static JSON
+        try {
+            const response = await fetch('/data/predictions.json');
+            if (response.ok) return response.json();
+        } catch (e) { console.warn('Static predictions missing', e); }
+
         const response = await fetch(`${BACKEND_URL}/api/predictions`);
         if (!response.ok) throw new Error('Failed to fetch predictions');
         return response.json();
