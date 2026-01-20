@@ -165,6 +165,18 @@ export const backendApi = {
     },
 
     /**
+     * Get playoff predictions
+     */
+    async getPlayoffPredictions() {
+        const endpoint = import.meta.env.MODE === 'production'
+            ? '/api/predictions/playoffs'
+            : `${BACKEND_URL}/api/predictions/playoffs`;
+        const response = await fetch(endpoint);
+        if (!response.ok) throw new Error('Failed to fetch playoff predictions');
+        return response.json();
+    },
+
+    /**
      * Get top performers for a team
      */
     async getTeamTopPerformers(teamAbbr) {

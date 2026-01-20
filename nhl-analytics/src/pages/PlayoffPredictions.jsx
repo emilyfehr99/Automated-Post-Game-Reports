@@ -160,7 +160,7 @@ const PlayoffPredictions = () => {
             </div>
 
             {/* Divisions */}
-            {Object.entries(teamsByDivision).map(([division, teams], divIndex) => (
+            {Object.entries(divisions).map(([division, teams], divIndex) => (
                 <motion.div
                     key={division}
                     initial={{ opacity: 0, y: 20 }}
