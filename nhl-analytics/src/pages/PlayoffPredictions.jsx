@@ -6,37 +6,90 @@ import { Trophy, TrendingUp, TrendingDown, Minus, Activity } from 'lucide-react'
 import clsx from 'clsx';
 
 const PlayoffPredictions = () => {
-    const [standings, setStandings] = useState([]);
-    const [teamMetrics, setTeamMetrics] = useState({});
+    // State management
+    const [divisions, setDivisions] = useState({});
     const [loading, setLoading] = useState(true);
 
     useEffect(() => {
         const fetchData = async () => {
             try {
-                // Use local date to avoid UTC rollover issues
-                const date = new Date();
-                const year = date.getFullYear();
-                const month = String(date.getMonth() + 1).padStart(2, '0');
-                const day = String(date.getDate()).padStart(2, '0');
-                const today = `${year}-${month}-${day}`;
-                const [standingsResult, metricsResult] = await Promise.allSettled([
-                    nhlApi.getStandings(today),
-                    backendApi.getTeamMetrics()
+                // Fetch standings and backend predictions concurrently
+                const [standingsResult, predictionsResult] = await Promise.allSettled([
+                    nhlApi.getStandings(new Date().toISOString().split('T')[0]),
+                    backendApi.getPlayoffPredictions() // New API call
                 ]);
 
-                if (standingsResult.status === 'fulfilled') {
-                    setStandings(standingsResult.value.standings || []);
-                } else {
-                    console.error('Standings fetch failed:', standingsResult.reason);
+                const standingsData = standingsResult.status === 'fulfilled' ? standingsResult.value.standings : [];
+                const predictionsData = predictionsResult.status === 'fulfilled' ? predictionsResult.value : [];
+
+                // Map predictions for easy lookup
+                const predictionsMap = {};
+                if (Array.isArray(predictionsData)) {
+                    predictionsData.forEach(p => {
+                        predictionsMap[p.teamAbbrev] = p;
+                    });
                 }
 
-                if (metricsResult.status === 'fulfilled') {
-                    setTeamMetrics(metricsResult.value || {});
-                } else {
-                    console.warn('Metrics fetch failed:', metricsResult.reason);
-                }
+                // Process data into divisions
+                const processedDivisions = {};
+
+                standingsData.forEach(team => {
+                    const division = team.divisionName || 'Unknown';
+                    const abbr = team.teamAbbrev?.default;
+                    if (!processedDivisions[division]) processedDivisions[division] = [];
+
+                    // Get prediction from backend or fallback logic if missing (e.g. during dev/failed fetch)
+                    const backendPrediction = predictionsMap[abbr];
+                    let playoffProb = 0;
+
+                    if (backendPrediction) {
+                        playoffProb = backendPrediction.playoffProb;
+                    } else {
+                        // Maintain fallback logic just in case backend is empty
+                        // Base probability from standings (50% weight)
+                        const divisionRank = processedDivisions[division].length + 1; // Approx rank
+                        const pointsPct = team.pointPctg || 0;
+                        let standingsProb = 0;
+
+                        if (divisionRank <= 3) {
+                            standingsProb = 70 + (pointsPct * 25);
+                        } else if (divisionRank <= 6) {
+                            standingsProb = 30 + (pointsPct * 40);
+                        } else if (divisionRank <= 8) {
+                            standingsProb = 10 + (pointsPct * 20);
+                        } else {
+                            standingsProb = 1 + (pointsPct * 14);
+                        }
+
+                        // Recent form (20% weight)
+                        const wins = team.l10Wins || 0;
+                        const formProb = (wins / 10) * 100;
+
+                        // Simple weighted sum
+                        playoffProb = Math.round((standingsProb * 0.7) + (formProb * 0.3));
+                        playoffProb = Math.max(1, Math.min(95, playoffProb));
+                    }
+
+                    // Determine trend
+                    const l10Wins = team.l10Wins || 0;
+                    const trend = l10Wins >= 7 ? 'up' : l10Wins <= 3 ? 'down' : 'neutral';
+
+                    processedDivisions[division].push({
+                        ...team,
+                        playoffProb,
+                        trend,
+                        metrics: backendPrediction?.metrics || {}
+                    });
+                });
+
+                // Sort teams within divisions by points (standard standings order)
+                Object.keys(processedDivisions).forEach(div => {
+                    processedDivisions[div].sort((a, b) => b.points - a.points);
+                });
+
+                setDivisions(processedDivisions);
             } catch (error) {
-                console.error('Failed to fetch data:', error);
+                console.error('Error fetching playoff data:', error);
             } finally {
                 setLoading(false);
             }
@@ -44,93 +97,6 @@ const PlayoffPredictions = () => {
 
         fetchData();
     }, []);
-
-    // Calculate playoff probability
-    const calculatePlayoffProb = (team, divisionRank, metrics) => {
-        // Base probability from standings (50% weight)
-        const pointsPct = team.pointPctg || 0;
-        let standingsProb = 0;
-
-        if (divisionRank <= 3) {
-            standingsProb = 70 + (pointsPct * 25); // 70-95%
-        } else if (divisionRank <= 6) {
-            standingsProb = 30 + (pointsPct * 40); // 30-70%
-        } else if (divisionRank <= 8) {
-            standingsProb = 10 + (pointsPct * 20); // 10-30%
-        } else {
-            standingsProb = 1 + (pointsPct * 14); // 1-15%
-        }
-
-        // Recent form (20% weight)
-        const wins = team.l10Wins || 0;
-        const formProb = (wins / 10) * 100;
-
-        // Advanced metrics (20% weight)
-        let metricsProb = 50; // Default
-        if (metrics) {
-            const gs = parseFloat(metrics.gs) || 0;
-            const xg = parseFloat(metrics.xg) || 0;
-            const corsi = parseFloat(metrics.corsi_pct) || 50;
-
-            // Normalize metrics (assuming league average)
-            const gsNorm = Math.min(100, (gs / 5) * 100); // 5 is good GS
-            const xgNorm = Math.min(100, (xg / 3) * 100); // 3 is good xG
-            const corsiNorm = corsi; // Already a percentage
-
-            metricsProb = (gsNorm + xgNorm + corsiNorm) / 3;
-        }
-
-        // Games remaining (10% weight)
-        const gamesPlayed = team.gamesPlayed || 0;
-        const gamesRemaining = 82 - gamesPlayed;
-        const remainingProb = gamesRemaining > 40 ? 50 : 50 + ((40 - gamesRemaining) / 40) * 50;
-
-        // Combine with weights
-        const rawProb = (
-            standingsProb * 0.5 +
-            formProb * 0.2 +
-            metricsProb * 0.2 +
-            remainingProb * 0.1
-        );
-
-        // Apply bounds (1% to 95%)
-        return Math.max(1, Math.min(95, Math.round(rawProb)));
-    };
-
-    // Calculate trend
-    const getTrend = (team) => {
-        const wins = team.l10Wins || 0;
-        if (wins >= 7) return 'up';
-        if (wins <= 3) return 'down';
-        return 'neutral';
-    };
-
-    // Group teams by division
-    const teamsByDivision = useMemo(() => {
-        const divisions = {};
-
-        standings.forEach(team => {
-            const division = team.divisionName || 'Unknown';
-            if (!divisions[division]) {
-                divisions[division] = [];
-            }
-
-            const metrics = teamMetrics[team.teamAbbrev?.default];
-            const divisionRank = divisions[division].length + 1;
-            const playoffProb = calculatePlayoffProb(team, divisionRank, metrics);
-            const trend = getTrend(team);
-
-            divisions[division].push({
-                ...team,
-                metrics,
-                playoffProb,
-                trend,
-                divisionRank
-            });
-        });
-
-        return divisions;
-    }, [standings, teamMetrics]);
 
     if (loading) {
         return (
@@ -247,9 +213,9 @@ const PlayoffPredictions = () => {
                                             </div>
                                         </div>
                                         <div className="text-center">
-                                            <div className="text-[10px] text-text-muted font-mono mb-1">xG</div>
+                                            <div className="text-[10px] text-text-muted font-mono mb-1">Strength</div>
                                             <div className="text-sm font-bold text-white">
-                                                {team.metrics?.xg ? parseFloat(team.metrics.xg).toFixed(1) : '-'}
+                                                {team.metrics?.strength_score ? team.metrics.strength_score : '-'}
                                             </div>
                                         </div>
                                         <div className="text-center">
