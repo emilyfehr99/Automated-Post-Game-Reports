@@ -32,11 +32,16 @@ export const backendApi = {
     async getTeamMetrics() {
         // FAST LOAD: Fetch static JSON directly from public folder (Vercel CDN)
         try {
-            const response = await fetch('/data/team_metrics.json');
-            if (response.ok) return response.json();
-            throw new Error('Static metrics not found');
+            // cache busting to ensure fresh data
+            const response = await fetch(`/data/team_metrics.json?v=${new Date().getTime()}`);
+            if (response.ok) {
+                const data = await response.json();
+                console.log('✅ Loaded static team metrics:', Object.keys(data).length, 'teams');
+                return data;
+            }
+            throw new Error(`Static metrics status: ${response.status}`);
         } catch (e) {
-            console.warn('Falling back to API for metrics:', e);
+            console.warn('⚠️ Static fetch failed, falling back to API:', e);
             // Fallback to API if static file missing
             const endpoint = import.meta.env.MODE === 'production'
                 ? 'https://nhl-analytics-api.onrender.com/api/team-metrics'
