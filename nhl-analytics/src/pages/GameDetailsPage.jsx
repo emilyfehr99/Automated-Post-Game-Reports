@@ -236,9 +236,9 @@ const GameDetailsContent = () => {
                     }
                 }
 
-                // Set game data immediately so page can render
+                // Set game data immediately
                 setGameData(data);
-                setLoading(false); // Allow page to render while we fetch additional data
+                // Note: We keep loading=true until metrics are fetched to avoid layout flash
 
                 // Fetch live data and other non-essential data in background
                 const gameState = data.boxscore.gameState;
@@ -526,6 +526,7 @@ const GameDetailsContent = () => {
                         console.log('✅ Fast load metrics/prediction complete');
                         setTeamMetrics(metrics);
                         setPrediction(gamePrediction);
+                        setLoading(false); // Metrics ready - unblock UI
 
                         // SLOW PATH: Detailed Backend Data (Lazy Load)
                         Promise.all([
@@ -592,7 +593,10 @@ const GameDetailsContent = () => {
                         });
                     }).catch(err => {
                         console.error('Data fetch error:', err);
+                        setLoading(false); // Ensure UI unblocks on error
                     });
+                } else {
+                    setLoading(false); // Unblock if no teams found
                 }
             } catch (error) {
                 console.error('Failed to fetch game data:', error);
