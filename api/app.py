@@ -528,23 +528,67 @@ def get_today_predictions():
             home_prob = 0.55 
             
             if away_metrics and home_metrics:
-                # Use xG and Corsi as factors
-                home_xg = sum(home_metrics.get('xg', [0])) / len(home_metrics.get('xg', [1])) if home_metrics.get('xg') else 2.5
-                away_xg = sum(away_metrics.get('xg', [0])) / len(away_metrics.get('xg', [1])) if away_metrics.get('xg') else 2.5
+                # Advanced Weighted Model
+                # 1. Expected Goals % (35%) - Best predictor of sustainable play
+                # 2. Goal Differential per Game (20%) - Actual results
+                # 3. L10 Form (15%) - Recent momentum
+                # 4. Corsi % (10%) - Possession dominance
+                # 5. Save % (15%) - Goaltending performance
+                # 6. Home Ice (+5%)
                 
-                home_corsi = sum(home_metrics.get('corsi_pct', [0])) / len(home_metrics.get('corsi_pct', [1])) if home_metrics.get('corsi_pct') else 50
-                away_corsi = sum(away_metrics.get('corsi_pct', [0])) / len(away_metrics.get('corsi_pct', [1])) if away_metrics.get('corsi_pct') else 50
+                # Helper to normalize stats (0.0 - 1.0 range centered at 0.5)
+                def get_stat(metrics, key, default=0):
+                    val = metrics.get(key)
+                    if not val: return default
+                    if isinstance(val, list): return sum(val) / len(val)
+                    return val
+
+                h_xg = get_stat(home_metrics, 'xg_pct', 50)
+                a_xg = get_stat(away_metrics, 'xg_pct', 50)
                 
-                # Weighted calculation
-                xg_factor = (home_xg / (home_xg + away_xg)) * 0.6
-                corsi_factor = (home_corsi / (home_corsi + away_corsi)) * 0.4
+                h_gd = get_stat(home_metrics, 'goal_diff_per_game', 0)
+                a_gd = get_stat(away_metrics, 'goal_diff_per_game', 0)
                 
-                home_prob = xg_factor + corsi_factor
-                # Add small home ice advantage
+                h_l10 = team_stats.get(home_abbr, {}).get('l10PtsPct', 0.5)
+                a_l10 = team_stats.get(away_abbr, {}).get('l10PtsPct', 0.5)
+                
+                h_corsi = get_stat(home_metrics, 'corsi_pct', 50)
+                a_corsi = get_stat(away_metrics, 'corsi_pct', 50)
+                
+                h_sv = get_stat(home_metrics, 'sv_pct', 0.900)
+                a_sv = get_stat(away_metrics, 'sv_pct', 0.900)
+
+                # Normalize differential stats to probabilities
+                # xG % (already 0-100 or 0-1, verify scale) - assume 0-100 from API usually, but let's normalize
+                # If values are > 1, assume percentage (50.5), else decimal (0.505)
+                def norm_pct(h, a):
+                    if h > 1 or a > 1: return h / (h + a)
+                    return h / (h + a) if (h+a) > 0 else 0.5
+                
+                # Goal Diff to Prob: +1 GD ~= 65% win prob sigmoid approximation
+                # simple linear: 0.5 + (diff * 0.15)
+                prob_gd = 0.5 + ((h_gd - a_gd) * 0.15)
+                
+                # Calculate component probabilities for Home Win
+                p_xg = norm_pct(h_xg, a_xg)
+                p_corsi = norm_pct(h_corsi, a_corsi)
+                p_form = h_l10 / (h_l10 + a_l10) if (h_l10 + a_l10) > 0 else 0.5
+                p_sv = h_sv / (h_sv + a_sv) if (h_sv + a_sv) > 0 else 0.5
+                
+                # Weighted Sum
+                home_prob = (
+                    (p_xg * 0.35) +
+                    (prob_gd * 0.20) +
+                    (p_form * 0.15) +
+                    (p_corsi * 0.10) +
+                    (p_sv * 0.15)
+                )
+                
+                # Home Ice Advantage
                 home_prob += 0.05
                 
                 # Clamp
-                home_prob = max(0.2, min(0.8, home_prob))
+                home_prob = max(0.25, min(0.75, home_prob))
             
             predictions.append({
                 "game_id": game['id'],
