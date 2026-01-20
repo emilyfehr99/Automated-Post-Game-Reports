@@ -182,6 +182,23 @@ const extractTopPerformers = (boxscore) => {
     return sorted;
 };
 
+// Helper for metric cards - Defined outside component to prevent re-initialization on render
+const MetricCard = ({ title, icon: Icon, children, className }) => (
+    <motion.div
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className={clsx("glass-card p-6", className)}
+    >
+        <div className="flex items-center gap-3 mb-4">
+            <div className="p-2 rounded-lg bg-white/5">
+                <Icon className="w-5 h-5 text-accent-primary" />
+            </div>
+            <h3 className="font-display font-bold text-lg tracking-wide">{title}</h3>
+        </div>
+        {children}
+    </motion.div>
+);
+
 const GameDetailsContent = () => {
     const { id } = useParams();
     const navigate = useNavigate();
@@ -780,22 +797,7 @@ const GameDetailsContent = () => {
         }
     }
 
-    // Helper for metric cards
-    const MetricCard = ({ title, icon: Icon, children, className }) => (
-        <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            className={clsx("glass-card p-6", className)}
-        >
-            <div className="flex items-center gap-3 mb-4">
-                <div className="p-2 rounded-lg bg-white/5">
-                    <Icon className="w-5 h-5 text-accent-primary" />
-                </div>
-                <h3 className="font-display font-bold text-lg tracking-wide">{title}</h3>
-            </div>
-            {children}
-        </motion.div>
-    );
+
 
     // Helper for comparison rows with team colors - always show both team colors
     const ComparisonRow = ({ label, awayVal, homeVal, format = (v) => v, inverse = false }) => {
