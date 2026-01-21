@@ -1,5 +1,5 @@
 {
-  "scraped_at": "2026-01-20T13:06:22.618765",
+  "scraped_at": "2026-01-21T13:05:21.292382",
   "total_players": 830,
   "player_data": [
     {
@@ -7664,13 +7664,13 @@
       "Player": "Connor Zary",
       "Team": "CGY",
       "Pos": "C",
-      "GP": 41,
+      "GP": 47,
       "Top Speed": 20.79,
-      "Distance Skated": 96.07,
-      "Average Speed": 10.25,
-      "Bursts>20 per mile": 0.06,
-      "ES Dist. Skated": 84.67,
-      "ES Avg. Speed": 10.22
+      "Distance Skated": 115.04,
+      "Average Speed": 10.2,
+      "Bursts>20 per mile": 0.07,
+      "ES Dist. Skated": 101.14,
+      "ES Avg. Speed": 10.18
     },
     {
       "": "",
@@ -16475,13 +16475,13 @@
           "Player": "Connor Zary",
           "Team": "CGY",
           "Pos": "C",
-          "GP": 41,
+          "GP": 47,
           "Top Speed": 20.79,
-          "Distance Skated": 96.07,
-          "Average Speed": 10.25,
-          "Bursts>20 per mile": 0.06,
-          "ES Dist. Skated": 84.67,
-          "ES Avg. Speed": 10.22
+          "Distance Skated": 115.04,
+          "Average Speed": 10.2,
+          "Bursts>20 per mile": 0.07,
+          "ES Dist. Skated": 101.14,
+          "ES Avg. Speed": 10.18
         },
         {
           "": "",
@@ -16614,17 +16614,17 @@
           "ES Avg. Speed": 10.24
         }
       ],
-      "total_distance": 1901.3600000000001,
-      "avg_speed": 9.080714285714285,
+      "total_distance": 1920.3300000000002,
+      "avg_speed": 9.078928571428571,
       "max_speed": 22.87,
-      "total_bursts": 9.669999999999998,
+      "total_bursts": 9.679999999999998,
       "player_count": 28,
-      "avg_distance": 67.9057142857143,
-      "avg_bursts": 0.3453571428571428,
-      "speed_score": 0.9080714285714284,
+      "avg_distance": 68.58321428571429,
+      "avg_bursts": 0.34571428571428564,
+      "speed_score": 0.9078928571428572,
       "distance_score": 1.0,
-      "burst_score": 0.1726785714285714,
-      "edge_advantage": 0.7885714285714285
+      "burst_score": 0.17285714285714282,
+      "edge_advantage": 0.7885178571428572
     },
     "TBL": {
       "players": [
