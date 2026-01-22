@@ -14,6 +14,7 @@ from prediction_interface import PredictionInterface
 from meta_ensemble_predictor import MetaEnsemblePredictor
 from rotowire_scraper import RotoWireScraper
 import os
+from pathlib import Path
 
 class DailyPredictionNotifier:
     def __init__(self):
@@ -21,12 +22,90 @@ class DailyPredictionNotifier:
         self.predictor = PredictionInterface()  # Keep for compatibility
         self.meta_ensemble = MetaEnsemblePredictor()
         self.rotowire = RotoWireScraper()
-        
+
+    def save_predictions_to_history(self, predictions: list):
+        """Save predictions to the permanent JSON history file for future training"""
+        history_file = Path('data/win_probability_predictions_v2.json')
+        if not history_file.exists():
+            history_file = Path('win_probability_predictions_v2.json')
+            
+        if not history_file.exists():
+            print("⚠️ Warning: Could not find history file to save predictions.")
+            return
+
+        try:
+            with open(history_file, 'r') as f:
+                data = json.load(f)
+            
+            existing_ids = {p.get('game_id') for p in data.get('predictions', []) if p.get('game_id')}
+            new_count = 0
+            
+            for pred in predictions:
+                # Only save if we have a game_id and it's not already there
+                if pred.get('game_id') and pred.get('game_id') not in existing_ids:
+                    # Construct record in the format expected by training scripts
+                    record = {
+                        'date': datetime.now(pytz.timezone('US/Central')).strftime('%Y-%m-%d'),
+                        'game_id': pred['game_id'],
+                        'home_team': pred['home_team'],
+                        'away_team': pred['away_team'],
+                        'predicted_winner': pred['predicted_winner'],
+                        'home_win_prob': pred['home_prob'] / 100.0,
+                        'away_win_prob': pred['away_prob'] / 100.0,
+                        'model_confidence': pred['confidence'] / 100.0,
+                        # Store the metrics used for this prediction (crucial for training)
+                        'metrics_used': {
+                            'home_xg': pred.get('home_xg', 0),
+                            'away_xg': pred.get('away_xg', 0),
+                            # Add other metrics if available from meta_ensemble
+                        },
+                        'prediction_reason': "Meta-Ensemble Daily Run"
+                    }
+                    data['predictions'].append(record)
+                    existing_ids.add(pred['game_id'])
+                    new_count += 1
+            
+            if new_count > 0:
+                with open(history_file, 'w') as f:
+                    json.dump(data, f, indent=2)
+                print(f"✅ Saved {new_count} new predictions to history file.")
+            else:
+                print("ℹ️  No new predictions to save (all game IDs already exist).")
+                
+        except Exception as e:
+            print(f"❌ Error saving predictions to history: {e}")
+
     def get_daily_predictions_summary(self):
         """Get formatted summary of today's predictions using meta-ensemble"""
         # Get today's games from RotoWire
         rotowire_data = self.rotowire.scrape_daily_data()
         games = rotowire_data.get('games', [])
+        
+        # Get NHL Schedule for Game IDs
+        from nhl_api_client import NHLAPIClient
+        nhl_client = NHLAPIClient()
+        schedule = nhl_client.get_game_schedule()  # Defaults to today
+        schedule_map = {} # 'AWAY@HOME' -> game_id
+        
+        if schedule:
+            # Handle new API structure: { "gameWeek": [ { "games": [...] } ] }
+            games_list = []
+            if 'gameWeek' in schedule:
+                for day in schedule['gameWeek']:
+                    games_list.extend(day.get('games', []))
+            elif 'games' in schedule:
+                # Legacy fallback
+                games_list = schedule['games']
+            
+            for g in games_list:
+                # API v1 uses 'awayTeam'/'homeTeam' objects
+                # Check different key possibilities just in case
+                away_abbr = g.get('awayTeam', {}).get('abbrev') or g.get('awayTeam', {}).get('triCode')
+                home_abbr = g.get('homeTeam', {}).get('abbrev') or g.get('homeTeam', {}).get('triCode')
+                
+                if away_abbr and home_abbr:
+                    key = f"{away_abbr}@{home_abbr}"
+                    schedule_map[key] = g['id']
         
         if not games:
             # Fallback to prediction interface
@@ -51,6 +130,12 @@ class DailyPredictionNotifier:
                 
                 # Only include if meets confidence threshold (50%)
                 if self.meta_ensemble.should_predict(pred):
+                    # Attach Game ID
+                    key = f"{game['away_team']}@{game['home_team']}"
+                    game_id = schedule_map.get(key)
+                    if not game_id:
+                        print(f"⚠️  Could not find game_id for {key}. Keys in map: {list(schedule_map.keys())[:5]}...")
+                    
                     predictions.append({
                         'away_team': game['away_team'],
                         'home_team': game['home_team'],
@@ -61,7 +146,8 @@ class DailyPredictionNotifier:
                         'away_goalie': game.get('away_goalie', 'TBD'),
                         'home_goalie': game.get('home_goalie', 'TBD'),
                         'start_time': game.get('game_time', ''),
-                        'contexts': pred.get('contexts_used', [])
+                        'contexts': pred.get('contexts_used', []),
+                        'game_id': game_id  # Critical for tracking
                     })
             except Exception as e:
                 print(f"Error predicting {game['away_team']} @ {game['home_team']}: {e}")
@@ -69,6 +155,9 @@ class DailyPredictionNotifier:
         
         if not predictions:
             return "No high-confidence predictions for today."
+            
+        # SAVE PREDICTIONS TO IDB
+        self.save_predictions_to_history(predictions)
         
         total_games = len(games)
         
@@ -158,7 +247,7 @@ class DailyPredictionNotifier:
         summary += f"📅 {datetime.now(pytz.timezone('US/Central')).strftime('%Y-%m-%d %I:%M %p CT')}"
         
         return summary
-    
+
     def send_email_notification(self, to_email, subject="Daily NHL Predictions"):
         """Send predictions via email"""
         try:
