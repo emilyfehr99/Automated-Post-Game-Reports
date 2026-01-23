@@ -110009,7 +110009,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "CBJ",
+      "actual_away_score": 0,
+      "actual_home_score": 1,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-01-22",
@@ -110024,7 +110028,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "BOS",
+      "actual_away_score": 3,
+      "actual_home_score": 4,
+      "prediction_accuracy": 1.0
     },
     {
       "date": "2026-01-22",
@@ -110039,7 +110047,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "CHI",
+      "actual_away_score": 4,
+      "actual_home_score": 3,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-01-22",
@@ -110054,7 +110066,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "BUF",
+      "actual_away_score": 4,
+      "actual_home_score": 2,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-01-22",
@@ -110069,7 +110085,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "NSH",
+      "actual_away_score": 3,
+      "actual_home_score": 5,
+      "prediction_accuracy": 1.0
     },
     {
       "date": "2026-01-22",
@@ -110084,7 +110104,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "FLA",
+      "actual_away_score": 2,
+      "actual_home_score": 1,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-01-22",
@@ -110099,7 +110123,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "PIT",
+      "actual_away_score": 6,
+      "actual_home_score": 2,
+      "prediction_accuracy": 1.0
     },
     {
       "date": "2026-01-22",
@@ -110110,6 +110138,130 @@
       "home_win_prob": 0.5831202237236761,
       "away_win_prob": 0.41687977627632394,
       "model_confidence": 0.6122762349098599,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "MIN",
+      "actual_away_score": 3,
+      "actual_home_score": 4,
+      "prediction_accuracy": 1.0
+    },
+    {
+      "date": "2026-01-23",
+      "game_id": 2025020803,
+      "home_team": "CHI",
+      "away_team": "TBL",
+      "predicted_winner": "CHI",
+      "home_win_prob": 0.6255611777257569,
+      "away_win_prob": 0.37443882227424313,
+      "model_confidence": 0.6255611777257569,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run"
+    },
+    {
+      "date": "2026-01-23",
+      "game_id": 2025020802,
+      "home_team": "TOR",
+      "away_team": "VGK",
+      "predicted_winner": "TOR",
+      "home_win_prob": 0.5167135108167799,
+      "away_win_prob": 0.4832864891832201,
+      "model_confidence": 0.5167135108167799,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run"
+    },
+    {
+      "date": "2026-01-23",
+      "game_id": 2025020804,
+      "home_team": "DAL",
+      "away_team": "STL",
+      "predicted_winner": "DAL",
+      "home_win_prob": 0.6878721029072752,
+      "away_win_prob": 0.3121278970927249,
+      "model_confidence": 0.6878721029072752,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run"
+    },
+    {
+      "date": "2026-01-23",
+      "game_id": 2025020806,
+      "home_team": "CGY",
+      "away_team": "WSH",
+      "predicted_winner": "CGY",
+      "home_win_prob": 0.5140347476585649,
+      "away_win_prob": 0.48596525234143506,
+      "model_confidence": 0.5140347476585649,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run"
+    },
+    {
+      "date": "2026-01-23",
+      "game_id": 2025020805,
+      "home_team": "COL",
+      "away_team": "PHI",
+      "predicted_winner": "COL",
+      "home_win_prob": 0.7566102023624979,
+      "away_win_prob": 0.24338979763750226,
+      "model_confidence": 0.7944407124806228,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run"
+    },
+    {
+      "date": "2026-01-23",
+      "game_id": 2025020809,
+      "home_team": "SEA",
+      "away_team": "ANA",
+      "predicted_winner": "SEA",
+      "home_win_prob": 0.6323162357957474,
+      "away_win_prob": 0.36768376420425264,
+      "model_confidence": 0.6323162357957474,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run"
+    },
+    {
+      "date": "2026-01-23",
+      "game_id": 2025020808,
+      "home_team": "SJS",
+      "away_team": "NYR",
+      "predicted_winner": "NYR",
+      "home_win_prob": 0.4947704582866882,
+      "away_win_prob": 0.5052295417133118,
+      "model_confidence": 0.5052295417133118,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run"
+    },
+    {
+      "date": "2026-01-23",
+      "game_id": 2025020807,
+      "home_team": "VAN",
+      "away_team": "NJD",
+      "predicted_winner": "VAN",
+      "home_win_prob": 0.5230094874145028,
+      "away_win_prob": 0.4769905125854972,
+      "model_confidence": 0.5230094874145028,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -110163,9 +110315,9 @@
   },
   "last_updated": "2025-12-17T12:00:05.316190",
   "model_performance": {
-    "total_games": 677,
-    "correct_predictions": 342,
-    "accuracy": 0.5051698670605613,
+    "total_games": 555,
+    "correct_predictions": 279,
+    "accuracy": 0.5027027027027027,
     "recent_accuracy": 0.5
   },
   "calibration_points": [
@@ -110187,43 +110339,43 @@
     ],
     [
       0.375,
-      0.5490196078431373
+      0.5915492957746479
     ],
     [
       0.4583333333333333,
-      0.5490196078431373
+      0.5915492957746479
     ],
     [
       0.5416666666666666,
-      0.5490196078431373
+      0.5915492957746479
     ],
     [
       0.625,
-      0.5490196078431373
+      0.5915492957746479
     ],
     [
       0.7083333333333333,
-      0.5789473684210527
+      0.5915492957746479
     ],
     [
       0.7916666666666666,
-      0.5789473684210527
+      0.5915492957746479
     ],
     [
       0.875,
-      0.5789473684210527
+      0.5915492957746479
     ],
     [
       0.9583333333333333,
-      0.5789473684210527
+      0.5915492957746479
     ]
   ],
   "calibration_metadata": {
-    "updated_at": "2026-01-22T08:50:02.638255",
-    "sample_size": 677,
+    "updated_at": "2026-01-23T13:09:56.218722",
+    "sample_size": 547,
     "num_bins": 12,
     "bucket_samples": {
-      "neutral": 677
+      "neutral": 547
     }
   },
   "calibration_by_bucket": {
@@ -110246,35 +110398,35 @@
       ],
       [
         0.375,
-        0.5490196078431373
+        0.5915492957746479
       ],
       [
         0.4583333333333333,
-        0.5490196078431373
+        0.5915492957746479
       ],
       [
         0.5416666666666666,
-        0.5490196078431373
+        0.5915492957746479
       ],
       [
         0.625,
-        0.5490196078431373
+        0.5915492957746479
       ],
       [
         0.7083333333333333,
-        0.5789473684210527
+        0.5915492957746479
       ],
       [
         0.7916666666666666,
-        0.5789473684210527
+        0.5915492957746479
       ],
       [
         0.875,
-        0.5789473684210527
+        0.5915492957746479
       ],
       [
         0.9583333333333333,
-        0.5789473684210527
+        0.5915492957746479
       ]
     ]
   },
