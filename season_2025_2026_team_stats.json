@@ -1,7 +1,7 @@
 {
   "season": "2025-2026",
-  "generated_at": "2026-01-24T02:53:40.505991",
-  "total_games": 68,
+  "generated_at": "2026-01-24T03:58:46.919430",
+  "total_games": 70,
   "teams": {
     "BUF": {
       "games_played": 3,
@@ -229,13 +229,13 @@
       "gs_avg": 3.725
     },
     "DAL": {
-      "games_played": 2,
-      "xg_sum": 7.217412655485338,
-      "hdc_sum": 17.0,
-      "gs_sum": 10.125,
-      "xg_avg": 3.608706327742669,
-      "hdc_avg": 8.5,
-      "gs_avg": 5.0625
+      "games_played": 3,
+      "xg_sum": 9.374783904970121,
+      "hdc_sum": 19.0,
+      "gs_sum": 13.725,
+      "xg_avg": 3.1249279683233735,
+      "hdc_avg": 6.333333333333333,
+      "gs_avg": 4.575
     },
     "NSH": {
       "games_played": 2,
@@ -247,13 +247,13 @@
       "gs_avg": 5.3
     },
     "STL": {
-      "games_played": 1,
-      "xg_sum": 3.2164986268775015,
-      "hdc_sum": 4.0,
-      "gs_sum": 3.2999999999999994,
-      "xg_avg": 3.2164986268775015,
-      "hdc_avg": 4.0,
-      "gs_avg": 3.2999999999999994
+      "games_played": 2,
+      "xg_sum": 5.529558666665001,
+      "hdc_sum": 6.0,
+      "gs_sum": 6.3500000000000005,
+      "xg_avg": 2.7647793333325006,
+      "hdc_avg": 3.0,
+      "gs_avg": 3.1750000000000003
     },
     "EDM": {
       "games_played": 2,
