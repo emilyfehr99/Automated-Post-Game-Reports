@@ -1,5 +1,5 @@
 {
-  "scraped_at": "2026-01-27T13:06:39.443020",
+  "scraped_at": "2026-01-28T13:06:47.536452",
   "total_players": 830,
   "player_data": [
     {
@@ -9861,13 +9861,13 @@
       "Player": "Dominic James",
       "Team": "TBL",
       "Pos": "C",
-      "GP": 27,
+      "GP": 36,
       "Top Speed": 23.71,
-      "Distance Skated": 53.11,
+      "Distance Skated": 71.06,
       "Average Speed": 9.88,
-      "Bursts>20 per mile": 1.2,
-      "ES Dist. Skated": 49.54,
-      "ES Avg. Speed": 10.01
+      "Bursts>20 per mile": 1.28,
+      "ES Dist. Skated": 67.24,
+      "ES Avg. Speed": 9.97
     },
     {
       "": "",
@@ -17010,26 +17010,26 @@
           "Player": "Dominic James",
           "Team": "TBL",
           "Pos": "C",
-          "GP": 27,
+          "GP": 36,
           "Top Speed": 23.71,
-          "Distance Skated": 53.11,
+          "Distance Skated": 71.06,
           "Average Speed": 9.88,
-          "Bursts>20 per mile": 1.2,
-          "ES Dist. Skated": 49.54,
-          "ES Avg. Speed": 10.01
+          "Bursts>20 per mile": 1.28,
+          "ES Dist. Skated": 67.24,
+          "ES Avg. Speed": 9.97
         }
       ],
-      "total_distance": 1764.73,
+      "total_distance": 1782.68,
       "avg_speed": 8.888,
       "max_speed": 23.71,
-      "total_bursts": 14.809999999999999,
+      "total_bursts": 14.889999999999999,
       "player_count": 30,
-      "avg_distance": 58.824333333333335,
-      "avg_bursts": 0.49366666666666664,
+      "avg_distance": 59.42266666666667,
+      "avg_bursts": 0.4963333333333333,
       "speed_score": 0.8888,
       "distance_score": 1.0,
-      "burst_score": 0.24683333333333332,
-      "edge_advantage": 0.7937666666666666
+      "burst_score": 0.24816666666666665,
+      "edge_advantage": 0.7940333333333333
     },
     "NSH": {
       "players": [
