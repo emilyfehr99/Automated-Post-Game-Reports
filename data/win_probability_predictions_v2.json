@@ -111240,7 +111240,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "LAK",
+      "actual_away_score": 3,
+      "actual_home_score": 2,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-01-31",
@@ -111255,7 +111259,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "COL",
+      "actual_away_score": 5,
+      "actual_home_score": 0,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-01-31",
@@ -111270,7 +111278,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "PIT",
+      "actual_away_score": 5,
+      "actual_home_score": 6,
+      "prediction_accuracy": 1.0
     },
     {
       "date": "2026-01-31",
@@ -111285,7 +111297,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "CGY",
+      "actual_away_score": 2,
+      "actual_home_score": 3,
+      "prediction_accuracy": 1.0
     },
     {
       "date": "2026-01-31",
@@ -111300,7 +111316,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "WPG",
+      "actual_away_score": 2,
+      "actual_home_score": 1,
+      "prediction_accuracy": 1.0
     },
     {
       "date": "2026-01-31",
@@ -111315,7 +111335,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "WSH",
+      "actual_away_score": 3,
+      "actual_home_score": 4,
+      "prediction_accuracy": 1.0
     },
     {
       "date": "2026-01-31",
@@ -111330,7 +111354,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "MTL",
+      "actual_away_score": 4,
+      "actual_home_score": 2,
+      "prediction_accuracy": 1.0
     },
     {
       "date": "2026-01-31",
@@ -111345,7 +111373,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "NSH",
+      "actual_away_score": 4,
+      "actual_home_score": 3,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-01-31",
@@ -111360,7 +111392,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "OTT",
+      "actual_away_score": 1,
+      "actual_home_score": 4,
+      "prediction_accuracy": 1.0
     },
     {
       "date": "2026-01-31",
@@ -111375,7 +111411,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "CBJ",
+      "actual_away_score": 5,
+      "actual_home_score": 3,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-01-31",
@@ -111390,7 +111430,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "TOR",
+      "actual_away_score": 3,
+      "actual_home_score": 2,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-01-31",
@@ -111405,7 +111449,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "DAL",
+      "actual_away_score": 3,
+      "actual_home_score": 2,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-01-31",
@@ -111420,7 +111468,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "MIN",
+      "actual_away_score": 7,
+      "actual_home_score": 3,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-01-31",
@@ -111431,6 +111483,55 @@
       "home_win_prob": 0.5783171308635844,
       "away_win_prob": 0.4216828691364155,
       "model_confidence": 0.6072329874067637,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "SEA",
+      "actual_away_score": 3,
+      "actual_home_score": 2,
+      "prediction_accuracy": 0.0
+    },
+    {
+      "date": "2026-02-01",
+      "game_id": 2025020874,
+      "home_team": "CAR",
+      "away_team": "LAK",
+      "predicted_winner": "LAK",
+      "home_win_prob": 0.4434425324439172,
+      "away_win_prob": 0.5565574675560828,
+      "model_confidence": 0.5565574675560828,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run"
+    },
+    {
+      "date": "2026-02-01",
+      "game_id": 2025020873,
+      "home_team": "TBL",
+      "away_team": "BOS",
+      "predicted_winner": "BOS",
+      "home_win_prob": 0.40234972087800885,
+      "away_win_prob": 0.5976502791219912,
+      "model_confidence": 0.6275327930780907,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run"
+    },
+    {
+      "date": "2026-02-01",
+      "game_id": 2025020875,
+      "home_team": "ANA",
+      "away_team": "VGK",
+      "predicted_winner": "ANA",
+      "home_win_prob": 0.5080857744542401,
+      "away_win_prob": 0.4919142255457599,
+      "model_confidence": 0.5080857744542401,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -111484,9 +111585,9 @@
   },
   "last_updated": "2025-12-17T12:00:05.316190",
   "model_performance": {
-    "total_games": 611,
-    "correct_predictions": 308,
-    "accuracy": 0.5040916530278232,
+    "total_games": 625,
+    "correct_predictions": 312,
+    "accuracy": 0.4992,
     "recent_accuracy": 0.5
   },
   "calibration_points": [
@@ -111540,7 +111641,7 @@
     ]
   ],
   "calibration_metadata": {
-    "updated_at": "2026-01-31T13:10:55.285536",
+    "updated_at": "2026-02-01T13:08:08.364717",
     "sample_size": 547,
     "num_bins": 12,
     "bucket_samples": {
@@ -123469,7 +123570,8 @@
           5.33,
           5.65,
           5.95,
-          2.62
+          2.62,
+          3.2
         ],
         "xg": [
           2.74,
@@ -123491,7 +123593,8 @@
           2.37,
           2.44,
           2.55,
-          1.68
+          1.68,
+          2.44
         ],
         "corsi_pct": [
           47.63,
@@ -123513,7 +123616,8 @@
           42.89,
           50.06,
           60.89,
-          49.54
+          49.54,
+          50.5
         ],
         "fenwick_pct": [
           47.63,
@@ -123535,7 +123639,8 @@
           42.89,
           50.06,
           60.89,
-          49.54
+          49.54,
+          50.5
         ],
         "pdo": [
           112.22,
@@ -123557,7 +123662,8 @@
           116.24,
           112.0,
           83.33,
-          84.55
+          84.55,
+          92.95
         ],
         "ozs": [
           16,
@@ -123579,7 +123685,8 @@
           15,
           24,
           21,
-          17
+          17,
+          18
         ],
         "nzs": [
           1,
@@ -123601,7 +123708,8 @@
           0,
           1,
           2,
-          0
+          0,
+          1
         ],
         "dzs": [
           6,
@@ -123623,6 +123731,7 @@
           3,
           0,
           3,
+          5,
           5
         ],
         "goals": [
@@ -123645,7 +123754,8 @@
           5,
           3,
           0,
-          1
+          1,
+          2
         ],
         "opp_goals": [
           2,
@@ -123667,7 +123777,8 @@
           3,
           0,
           4,
-          5
+          5,
+          4
         ],
         "shots": [
           23,
@@ -123689,7 +123800,8 @@
           18,
           25,
           26,
-          22
+          22,
+          24
         ],
         "hits": [
           13,
@@ -123711,7 +123823,8 @@
           15,
           12,
           30,
-          11
+          11,
+          13
         ],
         "blocked_shots": [
           16,
@@ -123733,7 +123846,8 @@
           9,
           14,
           23,
-          6
+          6,
+          13
         ],
         "giveaways": [
           19,
@@ -123755,7 +123869,8 @@
           16,
           9,
           10,
-          12
+          12,
+          17
         ],
         "takeaways": [
           5,
@@ -123777,7 +123892,8 @@
           5,
           7,
           2,
-          2
+          2,
+          3
         ],
         "penalty_minutes": [
           20,
@@ -123799,7 +123915,8 @@
           6,
           6,
           6,
-          2
+          2,
+          6
         ],
         "power_play_pct": [
           27.27,
@@ -123821,7 +123938,8 @@
           50.0,
           25.0,
           0.0,
-          0.0
+          0.0,
+          50.0
         ],
         "penalty_kill_pct": [
           72.73,
@@ -123843,7 +123961,8 @@
           50.0,
           75.0,
           80.0,
-          80.0
+          80.0,
+          50.0
         ],
         "faceoff_pct": [
           45.54,
@@ -123865,7 +123984,8 @@
           46.39,
           32.08,
           55.69,
-          45.25
+          45.25,
+          40.0
         ],
         "nzt": [
           1,
@@ -123886,6 +124006,7 @@
           1,
           4,
           4,
+          3,
           3,
           3
         ],
@@ -123909,7 +124030,8 @@
           0,
           3,
           0,
-          2
+          2,
+          1
         ],
         "fc": [
           20,
@@ -123931,7 +124053,8 @@
           18,
           25,
           26,
-          22
+          22,
+          20
         ],
         "rush": [
           3,
@@ -123953,7 +124076,8 @@
           0,
           0,
           0,
-          0
+          0,
+          4
         ],
         "lat": [
           "Cross-ice movement",
@@ -123975,7 +124099,8 @@
           "Wide-lane movement",
           "Wide-lane movement",
           "Wide-lane movement",
-          "Wide-lane movement"
+          "Wide-lane movement",
+          "Cross-ice movement"
         ],
         "long_movement": [
           "Close-range setup",
@@ -123997,7 +124122,8 @@
           "Mid-range buildup",
           "Mid-range buildup",
           "Extended buildup",
-          "Close-range setup"
+          "Close-range setup",
+          "Mid-range buildup"
         ],
         "hdc": [
           4,
@@ -124019,6 +124145,7 @@
           5,
           4,
           3,
+          4,
           4
         ],
         "hdca": [
@@ -124041,6 +124168,7 @@
           9,
           8,
           5,
+          9,
           9
         ],
         "opp_xg": [
@@ -124063,7 +124191,8 @@
           3.23,
           2.38,
           2.99,
-          2.36
+          2.36,
+          2.82
         ],
         "period_dzs": [
           6,
@@ -124085,6 +124214,7 @@
           3,
           0,
           3,
+          5,
           5
         ],
         "rebounds": [
@@ -124107,7 +124237,8 @@
           3,
           4,
           6,
-          2
+          2,
+          4
         ],
         "rush_shots": [
           3,
@@ -124129,6 +124260,7 @@
           6,
           4,
           2,
+          1,
           1
         ],
         "cycle_shots": [
@@ -124151,7 +124283,8 @@
           7,
           8,
           14,
-          6
+          6,
+          5
         ],
         "forecheck_turnovers": [
           1,
@@ -124173,9 +124306,11 @@
           2,
           2,
           0,
+          0,
           0
         ],
         "net_front_traffic_pct": [
+          0.0,
           0.0,
           0.0,
           0.0,
@@ -124217,9 +124352,11 @@
           0.0,
           0.0,
           0.0,
+          0.0,
           0.0
         ],
         "avg_goal_distance": [
+          0.0,
           0.0,
           0.0,
           0.0,
@@ -124261,9 +124398,11 @@
           0.0,
           0.0,
           0.0,
+          0.0,
           0.0
         ],
         "north_south_play": [
+          0.0,
           0.0,
           0.0,
           0.0,
@@ -124305,9 +124444,11 @@
           0.0,
           0.0,
           0.0,
+          0.0,
           0.0
         ],
         "zone_entry_pass_pct": [
+          0.0,
           0.0,
           0.0,
           0.0,
@@ -124349,7 +124490,8 @@
           2025020403,
           2025020476,
           2025020504,
-          2025020823
+          2025020823,
+          2025020858
         ],
         "opponents": [],
         "goals_for": [
@@ -124372,7 +124514,8 @@
           5,
           3,
           0,
-          1
+          1,
+          2
         ],
         "goals_against": [
           2,
@@ -124394,7 +124537,8 @@
           3,
           0,
           4,
-          5
+          5,
+          4
         ],
         "shots_for": [
           23,
@@ -124416,7 +124560,8 @@
           18,
           25,
           26,
-          22
+          22,
+          24
         ],
         "shots_against": [],
         "xG_for": [
@@ -124439,7 +124584,8 @@
           2.37,
           2.44,
           2.55,
-          1.68
+          1.68,
+          2.44
         ],
         "xG_against": [
           2.44,
@@ -124461,7 +124607,8 @@
           3.23,
           2.38,
           2.99,
-          2.36
+          2.36,
+          2.82
         ],
         "hdc_for": [
           4,
@@ -124483,6 +124630,7 @@
           5,
           4,
           3,
+          4,
           4
         ],
         "hdc_against": [],
