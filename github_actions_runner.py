@@ -31,6 +31,7 @@ class GitHubActionsRunner:
         self.report_generator = PostGameReportGenerator()
         self.discord_poster = DiscordPoster() # Initialize Discord poster
         self.team_stats_file = Path('season_2025_2026_team_stats.json')
+        self.posted_tweets_file = Path('posted_tweets.json')
         
     def load_processed_games(self):
         """Load previously processed game IDs"""
@@ -63,7 +64,44 @@ class GitHubActionsRunner:
         except Exception as e:
             print(f"⚠️  Could not save processed games: {e}")
             import traceback
+            import traceback
             traceback.print_exc()
+    
+    def save_tweet_id(self, game_id, tweet_id, description):
+        """Save Tweet ID for later reposting"""
+        try:
+            # Load existing
+            data = {}
+            if self.posted_tweets_file.exists():
+                with open(self.posted_tweets_file, 'r') as f:
+                    try:
+                        data = json.load(f)
+                    except json.JSONDecodeError:
+                        pass
+            
+            # Get today's date (Central)
+            central_tz = pytz.timezone('US/Central')
+            today = datetime.now(central_tz).strftime('%Y-%m-%d')
+            
+            if today not in data:
+                data[today] = []
+            
+            # Append new tweet info
+            data[today].append({
+                'game_id': str(game_id),
+                'tweet_id': str(tweet_id),
+                'description': description,
+                'posted_at': datetime.now(central_tz).isoformat()
+            })
+            
+            # Save back
+            with open(self.posted_tweets_file, 'w') as f:
+                json.dump(data, f, indent=2)
+                
+            print(f"💾 Saved Tweet ID {tweet_id} for {description}")
+            
+        except Exception as e:
+            print(f"⚠️  Could not save Tweet ID: {e}")
     
     def load_team_stats(self):
         """Load current team stats"""
@@ -317,6 +355,9 @@ class GitHubActionsRunner:
                 print(f"✅ Posted to Twitter: {tweet_text}")
                 print(f"   🔗 https://twitter.com/user/status/{tweet_id}")
                 twitter_success = True
+                
+                # Save Tweet ID for tomorrow's repost
+                self.save_tweet_id(game_id, tweet_id, f"{away_team} vs {home_team}")
             
         except Exception as e:
             print(f"⚠️  Twitter posting failed (non-fatal): {e}")

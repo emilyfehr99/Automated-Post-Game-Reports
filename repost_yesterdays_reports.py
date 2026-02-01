@@ -8,6 +8,8 @@ import os
 import sys
 import tweepy
 import pytz
+import json
+from pathlib import Path
 from datetime import datetime, timedelta
 import argparse
 from twitter_config import (
@@ -23,6 +25,7 @@ CENTRAL_TZ = pytz.timezone('US/Central')
 class ReportReposter:
     def __init__(self, dry_run=False):
         self.dry_run = dry_run
+        self.posted_tweets_file = Path('posted_tweets.json')
         
         # Authenticate
         print("🔐 Authenticating with Twitter API...")
@@ -61,56 +64,42 @@ class ReportReposter:
         
         return start_date, end_date
 
-    def is_report_tweet(self, tweet):
-        """Check if a tweet looks like a game report"""
-        text = tweet.text
-        
-        # Check for typical report indicators
-        # 1. Contains "vs" or "@" with hashtags/teams
-        # 2. Contains "Report" or "Analysis"
-        # 3. Created by us (implicit since we fetch user tweets)
-        
-        if "vs" in text and "#" in text:
-            return True
-        if "Report" in text:
-            return True
-            
-        return False
-
     def find_yesterdays_reports(self):
-        """Find tweets from yesterday that are reports"""
-        start_date, end_date = self.get_yesterdays_range()
-        print(f"🔍 Looking for reports from: {start_date.strftime('%Y-%m-%d')} (Central Time)")
+        """Find tweets from yesterday that are reports (from local JSON)"""
+        now = datetime.now(CENTRAL_TZ)
+        yesterday = now - timedelta(days=1)
+        yesterday_str = yesterday.strftime('%Y-%m-%d')
         
+        print(f"🔍 Looking for reports from: {yesterday_str} (Central Time)")
+        
+        if not self.posted_tweets_file.exists():
+            print(f"ℹ️  No {self.posted_tweets_file} found. No reports to repost.")
+            return []
+            
         reports_found = []
         
         try:
-            # Fetch recent tweets
-            # max_results=100 is good to cover a busy day
-            response = self.client.get_users_tweets(
-                id=self.user_id,
-                max_results=100,
-                tweet_fields=['created_at', 'text', 'public_metrics'],
-                exclude=['retweets', 'replies']  # Only original tweets
-            )
-            
-            if not response.data:
-                print("ℹ️  No recent tweets found.")
-                return []
+            with open(self.posted_tweets_file, 'r') as f:
+                data = json.load(f)
                 
-            for tweet in response.data:
-                # Convert tweet time (UTC) to Central
-                created_at_utc = tweet.created_at
-                created_at_central = created_at_utc.astimezone(CENTRAL_TZ)
+            if yesterday_str in data:
+                reports = data[yesterday_str]
+                for report in reports:
+                    # Create a simple object to match what the rest of the code expects
+                    # The existing code expects an object with .id attribute
+                    class Tweet:
+                        def __init__(self, id, text):
+                            self.id = id
+                            self.text = text
+                            
+                    tweet = Tweet(report['tweet_id'], report.get('description', 'Unknown Report'))
+                    reports_found.append(tweet)
+                    print(f"   found: {tweet.text} (ID: {tweet.id})")
+            else:
+                print(f"ℹ️  No entries found for {yesterday_str} in local file.")
                 
-                # Check if within yesterday's range
-                if start_date <= created_at_central <= end_date:
-                    if self.is_report_tweet(tweet):
-                        reports_found.append(tweet)
-                        print(f"   found: {tweet.text[:60]}... ({created_at_central.strftime('%H:%M')})")
-        
         except Exception as e:
-            print(f"❌ Error fetching tweets: {e}")
+            print(f"❌ Error reading posted tweets file: {e}")
             return []
             
         print(f"✅ Found {len(reports_found)} reports from yesterday.")
