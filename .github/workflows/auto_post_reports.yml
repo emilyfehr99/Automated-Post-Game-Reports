@@ -20,29 +20,7 @@ on:
   workflow_dispatch:  # Allow manual triggering from Actions tab
 
 jobs:
-  check-games:
-    runs-on: ubuntu-latest
-    outputs:
-      should_run: ${{ steps.check.outputs.should_run }}
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-      
-      - name: Check for games to process
-        id: check
-        run: |
-          chmod +x fast_game_check.py
-          if python3 fast_game_check.py; then
-            echo "should_run=true" >> $GITHUB_OUTPUT
-            echo "✅ Games found or live - proceeding with run"
-          else
-            echo "should_run=false" >> $GITHUB_OUTPUT
-            echo "⏭️ No new completed or live games found - skipping run"
-          fi
-
   check-and-post:
-    needs: check-games
-    if: needs.check-games.outputs.should_run == 'true' || github.event_name == 'workflow_dispatch' || github.event_name == 'repository_dispatch'
     runs-on: ubuntu-latest
     permissions:
       contents: write  # Allow workflow to commit and push
