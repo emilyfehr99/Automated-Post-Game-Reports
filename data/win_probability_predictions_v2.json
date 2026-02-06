@@ -112076,7 +112076,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "PIT",
+      "actual_away_score": 5,
+      "actual_home_score": 2,
+      "prediction_accuracy": 1.0
     },
     {
       "date": "2026-02-05",
@@ -112091,7 +112095,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "NYI",
+      "actual_away_score": 3,
+      "actual_home_score": 1,
+      "prediction_accuracy": 1.0
     },
     {
       "date": "2026-02-05",
@@ -112106,7 +112114,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "CAR",
+      "actual_away_score": 2,
+      "actual_home_score": 0,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-02-05",
@@ -112121,7 +112133,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "OTT",
+      "actual_away_score": 2,
+      "actual_home_score": 1,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-02-05",
@@ -112136,7 +112152,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "WSH",
+      "actual_away_score": 2,
+      "actual_home_score": 4,
+      "prediction_accuracy": 1.0
     },
     {
       "date": "2026-02-05",
@@ -112151,7 +112171,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "TBL",
+      "actual_away_score": 1,
+      "actual_home_score": 6,
+      "prediction_accuracy": 1.0
     },
     {
       "date": "2026-02-05",
@@ -112166,7 +112190,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "VGK",
+      "actual_away_score": 1,
+      "actual_home_score": 4,
+      "prediction_accuracy": 1.0
     }
   ],
   "model_weights": {
