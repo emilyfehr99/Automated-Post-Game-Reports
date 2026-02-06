@@ -603,6 +603,59 @@ class GitHubActionsRunner:
         print(f"📋 Previously processed: {len(self.processed_games)} games")
         print("="*60)
         
+        # Get today's date context
+        central_tz = pytz.timezone('US/Central')
+        central_now = datetime.now(central_tz)
+        today_str = central_now.strftime('%m-%d')
+        
+        # Define major holidays (Fixed dates + US Thanksgiving approximation if needed)
+        # For simplicity, including New Year's, Christmas/Boxing Day, Veterans/Remembrance Day
+        # US Thanksgiving is 4th Thursday in Nov.
+        HOLIDAYS = {'01-01', '07-04', '11-11', '12-24', '12-25', '12-26', '12-31'}
+        
+        # Check for dynamic US Thanksgiving (4th Thursday in Nov)
+        if central_now.month == 11 and central_now.weekday() == 3 and 22 <= central_now.day <= 28:
+            HOLIDAYS.add(f"11-{central_now.day}")
+
+        # Check for Memorial Day (Last Monday in May) - sometimes playoffs
+        if central_now.month == 5 and central_now.weekday() == 0 and central_now.day >= 25:
+             HOLIDAYS.add(f"05-{central_now.day}")
+
+        # Check for Labor Day (First Monday in Sep)
+        if central_now.month == 9 and central_now.weekday() == 0 and central_now.day <= 7:
+             HOLIDAYS.add(f"09-{central_now.day}")
+        
+        is_weekend = central_now.weekday() >= 5 # 5=Sat, 6=Sun
+        is_holiday = today_str in HOLIDAYS
+        is_off_day = is_weekend or is_holiday
+        
+        current_hour = central_now.hour
+        current_minute = central_now.minute
+        
+        should_skip = False
+        skip_reason = ""
+        
+        if is_off_day:
+            # Weekends & Holidays: Active 11:30 AM - 2:00 AM (next day)
+            # Skip if: 02:00 <= Time < 11:30
+            if 2 <= current_hour < 11:
+                should_skip = True
+            elif current_hour == 11 and current_minute < 30:
+                should_skip = True
+            
+            if should_skip:
+                skip_reason = f"Weekend/Holiday Off-Hours ({current_hour}:{current_minute:02d} CT). Active: 11:30 AM - 2:00 AM."
+        else:
+            # Weekdays: Active 8:00 PM - 2:00 AM (next day)
+            # Skip if: 02:00 <= Time < 20:00 (8 PM)
+            if 2 <= current_hour < 20:
+                should_skip = True
+                skip_reason = f"Weekday Off-Hours ({current_hour}:{current_minute:02d} CT). Active: 8:00 PM - 2:00 AM."
+        
+        if should_skip:
+            print(f"\n⏸️  Skipping run: {skip_reason}")
+            return
+        
         # Get games from today
         games = self.get_todays_games()
         print(f"\n🔍 Found {len(games)} games from today")
