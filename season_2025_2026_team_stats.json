@@ -1,7 +1,7 @@
 {
   "season": "2025-2026",
-  "generated_at": "2026-02-13T04:08:35.605920",
-  "total_games": 290,
+  "generated_at": "2026-02-14T03:43:01.509230",
+  "total_games": 298,
   "teams": {
     "BUF": {
       "games_played": 10,
@@ -292,76 +292,76 @@
       "gs_avg": 4.143750000000001
     },
     "SVK": {
-      "games_played": 1,
-      "xg_sum": 0.015118470000000002,
+      "games_played": 2,
+      "xg_sum": 0.026457322500000005,
       "hdc_sum": 0.0,
-      "gs_sum": 2.7,
-      "xg_avg": 0.015118470000000002,
+      "gs_sum": 4.050000000000001,
+      "xg_avg": 0.013228661250000003,
       "hdc_avg": 0.0,
-      "gs_avg": 2.7
+      "gs_avg": 2.0250000000000004
     },
     "FIN": {
-      "games_played": 1,
-      "xg_sum": 0.0037796175000000005,
-      "hdc_sum": 0.0,
-      "gs_sum": 0.44999999999999996,
-      "xg_avg": 0.0037796175000000005,
-      "hdc_avg": 0.0,
-      "gs_avg": 0.44999999999999996
-    },
-    "SWE": {
-      "games_played": 1,
+      "games_played": 2,
       "xg_sum": 0.0188980875,
       "hdc_sum": 0.0,
-      "gs_sum": 3.6,
-      "xg_avg": 0.0188980875,
+      "gs_sum": 2.1000000000000005,
+      "xg_avg": 0.00944904375,
       "hdc_avg": 0.0,
-      "gs_avg": 3.6
+      "gs_avg": 1.0500000000000003
+    },
+    "SWE": {
+      "games_played": 2,
+      "xg_sum": 0.022677705,
+      "hdc_sum": 0.0,
+      "gs_sum": 3.3000000000000003,
+      "xg_avg": 0.0113388525,
+      "hdc_avg": 0.0,
+      "gs_avg": 1.6500000000000001
     },
     "ITA": {
-      "games_played": 1,
-      "xg_sum": 0.007559235000000001,
+      "games_played": 2,
+      "xg_sum": 0.015118470000000002,
       "hdc_sum": 0.0,
-      "gs_sum": 1.35,
+      "gs_sum": 1.9500000000000002,
       "xg_avg": 0.007559235000000001,
+      "hdc_avg": 0.0,
+      "gs_avg": 0.9750000000000001
+    },
+    "SUI": {
+      "games_played": 2,
+      "xg_sum": 0.0188980875,
+      "hdc_sum": 0.0,
+      "gs_sum": 2.7,
+      "xg_avg": 0.00944904375,
       "hdc_avg": 0.0,
       "gs_avg": 1.35
     },
-    "SUI": {
-      "games_played": 1,
-      "xg_sum": 0.015118470000000002,
-      "hdc_sum": 0.0,
-      "gs_sum": 2.4000000000000004,
-      "xg_avg": 0.015118470000000002,
-      "hdc_avg": 0.0,
-      "gs_avg": 2.4000000000000004
-    },
     "FRA": {
-      "games_played": 1,
-      "xg_sum": 0.0,
+      "games_played": 2,
+      "xg_sum": 0.011338852500000001,
       "hdc_sum": 0.0,
-      "gs_sum": -0.75,
-      "xg_avg": 0.0,
+      "gs_sum": 1.05,
+      "xg_avg": 0.005669426250000001,
       "hdc_avg": 0.0,
-      "gs_avg": -0.75
+      "gs_avg": 0.525
     },
     "CZE": {
-      "games_played": 1,
-      "xg_sum": 0.0,
+      "games_played": 2,
+      "xg_sum": 0.022677705,
       "hdc_sum": 0.0,
-      "gs_sum": -0.44999999999999996,
-      "xg_avg": 0.0,
+      "gs_sum": 3.75,
+      "xg_avg": 0.0113388525,
       "hdc_avg": 0.0,
-      "gs_avg": -0.44999999999999996
+      "gs_avg": 1.875
     },
     "CAN": {
-      "games_played": 1,
-      "xg_sum": 0.0188980875,
+      "games_played": 2,
+      "xg_sum": 0.037796175,
       "hdc_sum": 0.0,
-      "gs_sum": 3.6,
+      "gs_sum": 6.9,
       "xg_avg": 0.0188980875,
       "hdc_avg": 0.0,
-      "gs_avg": 3.6
+      "gs_avg": 3.45
     },
     "LAT": {
       "games_played": 1,
