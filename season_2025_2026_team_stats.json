@@ -1,7 +1,7 @@
 {
   "season": "2025-2026",
-  "generated_at": "2026-02-14T22:57:16.845088",
-  "total_games": 306,
+  "generated_at": "2026-02-15T17:52:07.902685",
+  "total_games": 308,
   "teams": {
     "BUF": {
       "games_played": 10,
@@ -328,13 +328,13 @@
       "gs_avg": 0.45
     },
     "SUI": {
-      "games_played": 2,
-      "xg_sum": 0.0188980875,
+      "games_played": 3,
+      "xg_sum": 0.0340165575,
       "hdc_sum": 0.0,
-      "gs_sum": 2.7,
-      "xg_avg": 0.00944904375,
+      "gs_sum": 5.1000000000000005,
+      "xg_avg": 0.011338852500000001,
       "hdc_avg": 0.0,
-      "gs_avg": 1.35
+      "gs_avg": 1.7000000000000002
     },
     "FRA": {
       "games_played": 2,
@@ -346,13 +346,13 @@
       "gs_avg": 0.525
     },
     "CZE": {
-      "games_played": 2,
-      "xg_sum": 0.022677705,
+      "games_played": 3,
+      "xg_sum": 0.0340165575,
       "hdc_sum": 0.0,
-      "gs_sum": 3.75,
-      "xg_avg": 0.0113388525,
+      "gs_sum": 5.55,
+      "xg_avg": 0.011338852500000001,
       "hdc_avg": 0.0,
-      "gs_avg": 1.875
+      "gs_avg": 1.8499999999999999
     },
     "CAN": {
       "games_played": 2,
