@@ -12,23 +12,40 @@ jobs:
       contents: write  # Allow pushing changes back to repo
       
     steps:
+      - name: Check Season Resume Date
+        run: |
+          current_date=$(date +%Y-%m-%d)
+          target_date="2026-02-25"
+          if [[ "$current_date" < "$target_date" ]]; then
+            echo "⏸️  Olympic Break: Current date $current_date is before resume date $target_date."
+            echo "Skipping workflow."
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          else
+            echo "✅ Season Resumed!"
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          fi
+        id: check_date
       - name: Checkout code
+        if: steps.check_date.outputs.should_run == 'true'
         uses: actions/checkout@v4
         with:
           fetch-depth: 0  # Fetch full history for git push
 
       - name: Set up Python
+        if: steps.check_date.outputs.should_run == 'true'
         uses: actions/setup-python@v4
         with:
           python-version: '3.10'
           cache: 'pip'
 
       - name: Install dependencies
+        if: steps.check_date.outputs.should_run == 'true'
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
       - name: Run Stats Regeneration
+        if: steps.check_date.outputs.should_run == 'true'
         run: |
           # Increase timeout for the script if needed inside python 
           # The GH runner has 6 hours max
@@ -37,6 +54,7 @@ jobs:
           PYTHONUNBUFFERED: 1
 
       - name: Commit and Push changes
+        if: steps.check_date.outputs.should_run == 'true'
         run: |
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"

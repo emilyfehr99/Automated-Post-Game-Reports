@@ -18,20 +18,37 @@ jobs:
     runs-on: ubuntu-latest
     
     steps:
+    - name: Check Season Resume Date
+      run: |
+        current_date=$(date +%Y-%m-%d)
+        target_date="2026-02-25"
+        if [[ "$current_date" < "$target_date" ]]; then
+          echo "⏸️  Olympic Break: Current date $current_date is before resume date $target_date."
+          echo "Skipping workflow."
+          echo "should_run=false" >> $GITHUB_OUTPUT
+        else
+          echo "✅ Season Resumed!"
+          echo "should_run=true" >> $GITHUB_OUTPUT
+        fi
+      id: check_date
     - name: Checkout repository
+      if: steps.check_date.outputs.should_run == 'true'
       uses: actions/checkout@v3
       
     - name: Set up Python
+      if: steps.check_date.outputs.should_run == 'true'
       uses: actions/setup-python@v4
       with:
         python-version: '3.10'
         
     - name: Install dependencies
+      if: steps.check_date.outputs.should_run == 'true'
       run: |
         python -m pip install --upgrade pip
         pip install tweepy pytz
         
     - name: Repost Yesterday's Reports
+      if: steps.check_date.outputs.should_run == 'true'
       env:
         TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
         TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
