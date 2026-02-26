@@ -301,13 +301,23 @@ class TeamAdvancedMetricsBuilder:
                   f"{t['rush_shots_for']/t['games']:>8.1f} | {t['pizzas_per_game']:>10.1f}")
 
 
+    def run_refresher(self):
+        """Main entry point to refresh team stats from prediction history."""
+        for p in [Path('data/win_probability_predictions_v2.json'),
+                  Path('win_probability_predictions_v2.json')]:
+            if p.exists():
+                with open(p) as f:
+                    pred_data = json.load(f)
+                game_ids = [str(pr.get('game_id')) for pr in pred_data.get('predictions', []) 
+                           if pr.get('actual_winner')]
+                
+                print(f"📋 Found {len(game_ids)} completed games to process for Team ADV Stats")
+                self.run_backfill(game_ids)
+                return
+        
+        print("❌ No prediction history found")
+
+
 if __name__ == "__main__":
     builder = TeamAdvancedMetricsBuilder()
-    for p in [Path('data/win_probability_predictions_v2.json'),
-              Path('win_probability_predictions_v2.json')]:
-        if p.exists():
-            with open(p) as f:
-                pred_data = json.load(f)
-            game_ids = [str(pr.get('game_id')) for pr in pred_data.get('predictions', []) if pr.get('actual_winner')]
-            builder.run_backfill(game_ids)
-            break
+    builder.run_refresher()

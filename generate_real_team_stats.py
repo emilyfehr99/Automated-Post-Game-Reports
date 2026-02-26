@@ -472,16 +472,11 @@ class RealTeamStatsGenerator(TeamReportGenerator):
         try:
             # Refresh Goalie Stats
             gb = GoalieStatsBuilder()
-            # Reuse the already processed games if possible, but for simplicity, 
-            # we can just run the builder's logic.
-            # GoalieStatsBuilder.save() handles the final calculations.
-            # We don't need to re-process everything if github_actions_runner does it per-game,
-            # but for a full regeneration, we should ensure the summary is up to date.
-            gb.save() 
+            gb.run_refresher() 
             
             # Refresh Team Advanced Metrics
             tb = TeamAdvancedMetricsBuilder()
-            tb.save()
+            tb.run_refresher()
             print("✅ Advanced metrics summaries refreshed successfully")
         except Exception as e:
             print(f"⚠️ Failed to refresh advanced metrics: {e}")

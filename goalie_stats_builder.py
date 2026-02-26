@@ -579,7 +579,6 @@ class GoalieStatsBuilder:
         
         # Print summary
         self._print_summary()
-    
     def _print_summary(self):
         """Print top goalies summary."""
         print("\n📊 TOP GOALIES (min 10 GP)")
@@ -609,21 +608,23 @@ class GoalieStatsBuilder:
             print(f"{gs['name']:<22} {gs['games']:>3} {sv_pct:>6.3f} {gaa:>5.2f} "
                   f"{gsax:>+6.1f} {hd_sv:>6.3f} {glv_sv:>7.3f} {blk_sv:>7.3f} {reb:>5.3f}")
 
+    def run_refresher(self):
+        """Main entry point to refresh goalie stats from prediction history."""
+        # Load game IDs from prediction history
+        for p in [Path('data/win_probability_predictions_v2.json'),
+                  Path('win_probability_predictions_v2.json')]:
+            if p.exists():
+                with open(p) as f:
+                    pred_data = json.load(f)
+                game_ids = [str(pr.get('game_id')) for pr in pred_data.get('predictions', [])
+                           if pr.get('actual_winner')]
+                
+                print(f"📋 Found {len(game_ids)} completed games to process")
+                self.run_backfill(game_ids)
+                return
+        
+        print("❌ No prediction history found")
 
 if __name__ == "__main__":
     builder = GoalieStatsBuilder()
-    
-    # Load game IDs from prediction history
-    for p in [Path('data/win_probability_predictions_v2.json'),
-              Path('win_probability_predictions_v2.json')]:
-        if p.exists():
-            with open(p) as f:
-                pred_data = json.load(f)
-            game_ids = [str(pr.get('game_id')) for pr in pred_data.get('predictions', [])
-                       if pr.get('actual_winner')]
-            
-            print(f"📋 Found {len(game_ids)} completed games to process")
-            builder.run_backfill(game_ids)
-            break
-    else:
-        print("❌ No prediction history found")
+    builder.run_refresher()
