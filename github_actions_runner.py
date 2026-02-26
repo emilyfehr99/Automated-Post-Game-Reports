@@ -286,10 +286,23 @@ class GitHubActionsRunner:
                 print(f"❌ PDF conversion failed - no pages")
                 return False
             
-            # Save first page as PNG
+            # Stitch all pages into a single tall image (fixes truncated reports)
+            if len(pages) == 1:
+                final_image = pages[0]
+            else:
+                from PIL import Image as PILImage
+                total_width = max(p.width for p in pages)
+                total_height = sum(p.height for p in pages)
+                final_image = PILImage.new('RGB', (total_width, total_height), 'white')
+                y_offset = 0
+                for page in pages:
+                    final_image.paste(page, (0, y_offset))
+                    y_offset += page.height
+                print(f"📐 Stitched {len(pages)} pages into single image ({total_width}x{total_height})")
+            
             image_filename = f"nhl_postgame_report_{away_team}_vs_{home_team}_{game_id}.png"
             image_path = output_dir / image_filename
-            pages[0].save(image_path, 'PNG')
+            final_image.save(image_path, 'PNG')
             
             if not image_path or not Path(image_path).exists():
                 print(f"❌ Image conversion failed")
@@ -603,6 +616,13 @@ class GitHubActionsRunner:
         print(f"📋 Previously processed: {len(self.processed_games)} games")
         print("="*60)
         
+        # Check for Olympic Break (Resume on Feb 25, 2026)
+        today_date_str = datetime.now().strftime('%Y-%m-%d')
+        if today_date_str < '2026-02-25':
+            print(f"\n⏸️  Olympic Break: NHL season paused until Feb 25, 2026.")
+            print(f"   Today is {today_date_str}. Skipping execution.")
+            return
+
         # Get today's date context
         central_tz = pytz.timezone('US/Central')
         central_now = datetime.now(central_tz)
