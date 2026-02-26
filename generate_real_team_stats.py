@@ -11,6 +11,8 @@ from nhl_api_client import NHLAPIClient
 from advanced_metrics_analyzer import AdvancedMetricsAnalyzer
 from experimental_metrics_analyzer import ExperimentalMetricsAnalyzer
 from sprite_goal_analyzer import SpriteGoalAnalyzer
+from goalie_stats_builder import GoalieStatsBuilder
+from team_advanced_metrics_builder import TeamAdvancedMetricsBuilder
 from collections import defaultdict
 from datetime import datetime
 import numpy as np
@@ -463,6 +465,27 @@ class RealTeamStatsGenerator(TeamReportGenerator):
         
         print(f"\n{'='*60}")
         print(f"✓ Stats generation complete. {self.output_file}")
+        
+        # Also refresh advanced goalie and team metrics
+        print(f"\n{'='*60}")
+        print("🔄 Refreshing advanced goalie and team metrics...")
+        try:
+            # Refresh Goalie Stats
+            gb = GoalieStatsBuilder()
+            # Reuse the already processed games if possible, but for simplicity, 
+            # we can just run the builder's logic.
+            # GoalieStatsBuilder.save() handles the final calculations.
+            # We don't need to re-process everything if github_actions_runner does it per-game,
+            # but for a full regeneration, we should ensure the summary is up to date.
+            gb.save() 
+            
+            # Refresh Team Advanced Metrics
+            tb = TeamAdvancedMetricsBuilder()
+            tb.save()
+            print("✅ Advanced metrics summaries refreshed successfully")
+        except Exception as e:
+            print(f"⚠️ Failed to refresh advanced metrics: {e}")
+            
         print(f"{'='*60}")
 
 if __name__ == "__main__":

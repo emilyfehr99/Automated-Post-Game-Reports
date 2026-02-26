@@ -125,6 +125,12 @@ jobs:
         if [ -f "posted_tweets.json" ]; then
           git add -f posted_tweets.json
         fi
+        if [ -f "data/goalie_stats.json" ]; then
+          git add -f data/goalie_stats.json
+        fi
+        if [ -f "data/team_advanced_metrics.json" ]; then
+          git add -f data/team_advanced_metrics.json
+        fi
         
         # Check if there are changes to commit
         if ! git diff --staged --quiet; then

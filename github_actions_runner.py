@@ -15,6 +15,8 @@ from twitter_config import TEAM_HASHTAGS, TWITTER_API_KEY
 from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
 from correlation_model import CorrelationModel
 from pdf_report_generator import PostGameReportGenerator
+from goalie_stats_builder import GoalieStatsBuilder
+from team_advanced_metrics_builder import TeamAdvancedMetricsBuilder
 import json
 import subprocess
 import numpy as np
@@ -30,6 +32,8 @@ class GitHubActionsRunner:
         self.corr_model = CorrelationModel()
         self.report_generator = PostGameReportGenerator()
         self.discord_poster = DiscordPoster() # Initialize Discord poster
+        self.goalie_builder = GoalieStatsBuilder()
+        self.team_metrics_builder = TeamAdvancedMetricsBuilder()
         self.team_stats_file = Path('season_2025_2026_team_stats.json')
         self.posted_tweets_file = Path('posted_tweets.json')
         
@@ -272,6 +276,18 @@ class GitHubActionsRunner:
             
             # Learn from this game's data
             self.learn_from_game(game_data, game_id, away_team, home_team)
+            
+            # Update Advanced Goalie and Team Metrics
+            print(f"🔄 Updating advanced goalie and team metrics for game {game_id}...")
+            try:
+                self.goalie_builder.process_game(game_data)
+                self.goalie_builder.save()
+                
+                self.team_metrics_builder.process_game(game_data)
+                self.team_metrics_builder.save()
+                print("✅ Advanced metrics updated successfully")
+            except Exception as e:
+                print(f"⚠️ Failed to update advanced metrics: {e}")
             
             # Convert PDF to PNG using pdf2image
             from pdf2image import convert_from_path
