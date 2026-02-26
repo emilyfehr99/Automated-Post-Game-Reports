@@ -173,6 +173,7 @@ class DailyPredictionNotifier:
             confidence = pred['confidence']
             
             # Get actual score prediction from advanced score model
+            score_pred = {}
             try:
                 from score_prediction_model import ScorePredictionModel
                 score_model = ScorePredictionModel()
