@@ -95,9 +95,9 @@ class ReportReposter:
                             
                     tweet = Tweet(report['tweet_id'], report.get('description', 'Unknown Report'))
                     reports_found.append(tweet)
-                    print(f"   found: {tweet.text} (ID: {tweet.id})")
+                print(f"   found: {tweet.text} (ID: {tweet.id})", flush=True)
             else:
-                print(f"ℹ️  No entries found for {yesterday_str} in local file.")
+                print(f"ℹ️  No entries found for {yesterday_str} in local file.", flush=True)
                 
         except Exception as e:
             print(f"❌ Error reading posted tweets file: {e}")
@@ -130,34 +130,34 @@ class ReportReposter:
         for i, tweet in enumerate(reports, 1):
             if i > 1:
                 # Add a delay between retweets to avoid 429 rate limits
-                wait_time = 30
-                print(f"   ⏳ Waiting {wait_time} seconds before next retweet...")
+                wait_time = 60
+                print(f"   ⏳ Waiting {wait_time} seconds before next retweet...", flush=True)
                 time.sleep(wait_time)
                 
-            print(f"[{i}/{len(reports)}] Processing tweet {tweet.id}...")
+            print(f"[{i}/{len(reports)}] Processing tweet {tweet.id}...", flush=True)
             
             if self.dry_run:
-                print(f"   [DRY RUN] Would retweet: {tweet.text[:50]}...")
+                print(f"   [DRY RUN] Would retweet: {tweet.text[:50]}...", flush=True)
                 successful += 1
                 continue
                 
             try:
                 # Use keyword argument and catching more specific exceptions if needed
                 self.client.retweet(tweet_id=tweet.id)
-                print(f"   ✅ Retweeted successfully!")
+                print(f"   ✅ Retweeted successfully!", flush=True)
                 successful += 1
             except Exception as e:
                 # Check directly for 'already retweeted' error to not count as failure
                 error_str = str(e)
                 if "already retweeted" in error_str.lower():
-                    print(f"   ℹ️  Already retweeted.")
+                    print(f"   ℹ️  Already retweeted.", flush=True)
                     successful += 1
                 elif "429" in error_str:
-                    print(f"   ❌ Hit Twitter Rate Limit (429). Stopping further attempts.")
+                    print(f"   ❌ Hit Twitter Rate Limit (429). Stopping further attempts.", flush=True)
                     failed += (len(reports) - i + 1)
                     break
                 else:    
-                    print(f"   ❌ Failed to retweet: {e}")
+                    print(f"   ❌ Failed to retweet: {e}", flush=True)
                     failed += 1
                     
         print(f"\n🎉 Finished!")
