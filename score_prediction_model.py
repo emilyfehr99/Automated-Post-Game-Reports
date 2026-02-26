@@ -74,7 +74,16 @@ class ScorePredictionModel:
                 with open(p) as f:
                     pred_data = json.load(f)
                 self.prediction_history = pred_data.get('predictions', [])
-                self.goalie_stats = pred_data.get('goalie_stats', {})
+                break
+        
+        # Load comprehensive goalie stats
+        for p in [Path('data/goalie_stats.json'), Path('goalie_stats.json')]:
+            if p.exists():
+                with open(p) as f:
+                    g_data = json.load(f)
+                self.goalie_stats = g_data.get('goalies', {})
+                # Create a name -> ID layout for easy lookup
+                self.goalie_names = {v['name']: k for k, v in self.goalie_stats.items()}
                 break
         
         # NOTE: Finishing profiles (team_scoring_profiles.json) removed —
@@ -419,27 +428,36 @@ class ScorePredictionModel:
             'factors': factors,
         }
     
+    def _get_goalie_data(self, goalie_name: str) -> Optional[Dict]:
+        """Find goalie data by name."""
+        if not goalie_name or goalie_name == 'TBD' or not self.goalie_stats:
+            return None
+        
+        # Exact match
+        if goalie_name in self.goalie_names:
+            return self.goalie_stats[self.goalie_names[goalie_name]]
+        
+        # Partial match
+        for name, gid in self.goalie_names.items():
+            if goalie_name.lower() in name.lower() or name.lower() in goalie_name.lower():
+                return self.goalie_stats[gid]
+        return None
+
     def _get_goalie_adjustment(self, goalie_name: str, team: str, venue: str) -> float:
         """Get scoring adjustment based on opposing goalie quality.
         
         A strong opposing goalie reduces expected goals; a weak one increases them.
-        Uses GSAX from goalie_stats if available, otherwise returns 0.
+        Uses GSAX/game from comprehensive goalie_stats.
         """
-        if not goalie_name or goalie_name == 'TBD':
-            return 0.0
-        
-        # Check goalie_stats from prediction data
-        if self.goalie_stats:
-            gs = self.goalie_stats.get(goalie_name, {})
-            if gs and gs.get('games', 0) >= 5:
-                games = gs['games']
-                xga = float(gs.get('xga_sum', 0)) / games
-                ga = float(gs.get('ga_sum', 0)) / games
-                gsax = xga - ga  # Positive = saves more than expected
-                # Good goalie (high GSAX) reduces opponent scoring
-                # Scale: GSAX of 0.5 ≈ -0.15 goals adjustment
-                return -gsax * 0.3
-        
+        gs = self._get_goalie_data(goalie_name)
+        if gs and gs.get('games', 0) >= 5:
+            # Positive GSAX means goalie is saving more than expected -> reduces opponent goals
+            gsax_pg = gs.get('gsax_per_game', 0.0)
+            
+            # Dampen extremes (very rarely does a goalie save/cost > 1.0 goal per game sustainably)
+            # Scale factor: 0.8 to keep it realistic in predictions
+            return -gsax_pg * 0.8
+            
         return 0.0
     
     def _generate_factors(self, away, home, away_exp, home_exp,
@@ -462,16 +480,39 @@ class ScorePredictionModel:
             factors['pace'] = "🧊 Grinding/Defensive Pace"
         
         # Goalie context
-        if away_goalie and away_goalie != 'TBD':
-            if home_def < 0.90:
-                factors['goalie_away'] = f"🛡️ Strong Goalie ({away_goalie})"
-            elif home_def > 1.10:
-                factors['goalie_away'] = f"⚠️ Shaky Goaltending ({away_goalie})"
-        if home_goalie and home_goalie != 'TBD':
-            if away_def < 0.90:
-                factors['goalie_home'] = f"🛡️ Strong Goalie ({home_goalie})"
-            elif away_def > 1.10:
-                factors['goalie_home'] = f"⚠️ Shaky Goaltending ({home_goalie})"
+        for g_name, label in [(away_goalie, 'goalie_away'), (home_goalie, 'goalie_home')]:
+            gs = self._get_goalie_data(g_name)
+            if not gs or gs.get('games', 0) < 5:
+                continue
+            
+            gsax = gs.get('gsax_total', 0)
+            rebound_rate = gs.get('rebound_rate', 0)
+            glv = gs.get('glove_sv_pct', 0)
+            blk = gs.get('blocker_sv_pct', 0)
+            
+            warnings = []
+            
+            # Overall quality
+            if gsax > 8.0:
+                factors[label] = f"🧱 Elite Goalie ({g_name}, +{gsax:.1f} GSAX)"
+            elif gsax < -8.0:
+                factors[label] = f"⚠️ Struggling Goalie ({g_name}, {gsax:.1f} GSAX)"
+                
+            # Rebounds
+            if rebound_rate > 0.09:
+                warnings.append("Juicy Rebounds")
+                
+            # Off-wing weakness (significant differential)
+            if glv > 0 and blk > 0:
+                if glv - blk > 0.04:
+                    warnings.append(f"Blocker Vulnerable ({(glv-blk)*100:.1f}%)")
+                elif blk - glv > 0.04:
+                    warnings.append(f"Glove Vulnerable ({(blk-glv)*100:.1f}%)")
+            
+            if warnings and factors[label] == 'Neutral':
+                factors[label] = f"🥅 {g_name} ({', '.join(warnings)})"
+            elif warnings:
+                factors[label] += f" | {', '.join(warnings)}"
         
         # Situational
         situations = []
@@ -556,9 +597,15 @@ class ScorePredictionModel:
             away_b2b = pred.get('away_back_to_back', False)
             home_b2b = pred.get('home_back_to_back', False)
             
+            # Extract goalie names if available
+            metrics = pred.get('metrics_used', {})
+            away_goalie = metrics.get('away_goalie', 'TBD')
+            home_goalie = metrics.get('home_goalie', 'TBD')
+            
             # Predict (using deterministic Poisson for reproducibility)
             prediction = self.predict_score(
                 away, home,
+                away_goalie=away_goalie, home_goalie=home_goalie,
                 away_b2b=away_b2b, home_b2b=home_b2b
             )
             
