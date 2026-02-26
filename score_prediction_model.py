@@ -472,10 +472,27 @@ class ScorePredictionModel:
                     # Cap venue adjustment at +/- 0.4 goals
                     venue_adj = max(-0.4, min(0.4, venue_adj))
             
-            # Base GSAX adjustment (0.8 scale) + Venue adjustment
-            # Note: gsax_pg is GA saved relative to expected, so positive = good
-            # Return value is added to expected goals, so negative = fewer goals allowed
-            total_adj = (-gsax_pg * 0.8) - venue_adj
+            # Rebound Adjustment (High rebound rate = more goals allowed)
+            reb_adj = 0.0
+            reb_rate = gs.get('rebound_rate', 0.075) # League avg ~7.5%
+            if reb_rate > 0.08:
+                # Every 1% above 8% adds 0.05 goals
+                reb_adj = (reb_rate - 0.08) * 5.0
+                reb_adj = min(0.3, reb_adj) # Max 0.3 goal penalty
+            
+            # Angle Adjustment (Acute angle vulnerability)
+            angle_adj = 0.0
+            acute_sv = gs.get('acute_angle_sv_pct', 0)
+            center_sv = gs.get('center_angle_sv_pct', 0)
+            if acute_sv > 0 and center_sv > 0:
+                # If much worse on sides than center
+                if center_sv - acute_sv > 0.015:
+                    angle_adj = (center_sv - acute_sv) * 10.0
+                    angle_adj = min(0.2, angle_adj)
+            
+            # Base GSAX adjustment (0.8 scale) + Modifiers
+            # Note: total_adj is added to expected goals, so positive = more goals
+            total_adj = (-gsax_pg * 0.8) - venue_adj + reb_adj + angle_adj
             return total_adj
             
         return 0.0

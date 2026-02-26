@@ -218,12 +218,6 @@ class DailyPredictionNotifier:
             has_factors = False
             if 'factors' in score_pred:
                 factors = score_pred['factors']
-                if factors.get('goalie_home') != 'Neutral':
-                    summary += f"  🥅 {factors['goalie_home']}\n"
-                    has_factors = True
-                if factors.get('goalie_away') != 'Neutral':
-                    summary += f"  🥅 {factors['goalie_away']}\n"
-                    has_factors = True
                 if factors.get('pace') != 'Neutral':
                     summary += f"  ⏱️ {factors['pace']}\n"
                     has_factors = True
