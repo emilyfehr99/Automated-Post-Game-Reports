@@ -185,11 +185,19 @@ class DailyPredictionNotifier:
                 away_score = score_pred['away_score']
                 home_score = score_pred['home_score']
             except Exception as e:
-                # Fallback to base model
+                # Fallback: derive realistic scores from xG averages + win probability
                 try:
                     base_pred = self.predictor.learning_model.predict_game(away, home)
-                    away_score = round(base_pred.get('away_score', 3))
-                    home_score = round(base_pred.get('home_score', 3))
+                    # Use xG averages (realistic per-game values ~2-4), NOT raw model composite scores
+                    away_xg = base_pred.get('away_perf', {}).get('xg_avg', 2.8)
+                    home_xg = base_pred.get('home_perf', {}).get('xg_avg', 2.8)
+                    away_score = round(away_xg)
+                    home_score = round(home_xg)
+                    # Ensure winner's score is higher
+                    if winner == away and away_score <= home_score:
+                        away_score = home_score + 1
+                    elif winner == home and home_score <= away_score:
+                        home_score = away_score + 1
                 except:
                     # Final fallback
                     if winner == away:
