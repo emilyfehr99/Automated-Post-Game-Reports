@@ -87,9 +87,20 @@ class GoalieStatsBuilder:
             'slot_shots': 0, 'slot_goals': 0,
             'perimeter_shots': 0, 'perimeter_goals': 0,
             
+            # Shot Angle (Center vs Acute)
+            'center_angle_shots': 0, 'center_angle_goals': 0,
+            'acute_angle_shots': 0, 'acute_angle_goals': 0,
+            
             # Off-wing (shots to blocker side vs glove side)
             'glove_shots': 0, 'glove_goals': 0,
             'blocker_shots': 0, 'blocker_goals': 0,
+            
+            # Home vs Away Split
+            'home_shots': 0, 'home_goals': 0,
+            'away_shots': 0, 'away_goals': 0,
+            
+            # Head-to-Head tracking (opponent_abbrev -> {shots, goals})
+            'opponent_stats': {},
             
             # Rebound control
             'rebound_shots': 0,      # Shots that generated a rebound
@@ -160,6 +171,21 @@ class GoalieStatsBuilder:
         goal_x = 89.0 if defending_right else -89.0
         return (abs(x - goal_x) <= (89 - SLOT_X_THRESHOLD) and 
                 abs(y) <= SLOT_Y_THRESHOLD)
+
+    def _get_shot_angle(self, x: float, y: float, defending_right: bool) -> float:
+        """Calculate the absolute angle of the shot relative to the center of the net.
+        0 degrees = straight down the middle.
+        90 degrees = straight from the side boards at the goal line.
+        """
+        goal_x = 89.0 if defending_right else -89.0
+        dx = abs(x - goal_x)
+        dy = abs(y)
+        if dx == 0:
+            return 90.0 if dy > 0 else 0.0
+        
+        # Angle in degrees
+        angle = math.degrees(math.atan(dy / dx))
+        return angle
     
     def _is_glove_side(self, x: float, y: float, defending_right: bool, 
                        catches: str) -> bool:
@@ -353,6 +379,15 @@ class GoalieStatsBuilder:
             else:
                 gs['perimeter_shots'] += 1
                 gs['perimeter_goals'] += (1 if is_goal else 0)
+                
+            # Angle
+            angle = self._get_shot_angle(x, y, defending_right)
+            if angle <= 35.0:  # Center shots (relatively straight on)
+                gs['center_angle_shots'] += 1
+                gs['center_angle_goals'] += (1 if is_goal else 0)
+            else:              # Acute angles (from the sides)
+                gs['acute_angle_shots'] += 1
+                gs['acute_angle_goals'] += (1 if is_goal else 0)
             
             # Glove/blocker
             if is_glove:
@@ -361,6 +396,21 @@ class GoalieStatsBuilder:
             else:
                 gs['blocker_shots'] += 1
                 gs['blocker_goals'] += (1 if is_goal else 0)
+                
+            # Venue (Home vs Away performance)
+            if goalie_is_home:
+                gs['home_shots'] += 1
+                gs['home_goals'] += (1 if is_goal else 0)
+            else:
+                gs['away_shots'] += 1
+                gs['away_goals'] += (1 if is_goal else 0)
+                
+            # Head-to-Head
+            opponent = away_abbrev if goalie_is_home else home_abbrev
+            if opponent not in gs['opponent_stats']:
+                gs['opponent_stats'][opponent] = {'shots': 0, 'goals': 0}
+            gs['opponent_stats'][opponent]['shots'] += 1
+            gs['opponent_stats'][opponent]['goals'] += (1 if is_goal else 0)
             
             # Rebounds
             if is_rebound:
@@ -459,9 +509,20 @@ class GoalieStatsBuilder:
                 'ev_sv_pct': round((gs['ev_shots'] - gs['ev_goals']) / gs['ev_shots'], 4) if gs['ev_shots'] > 0 else 0,
                 'pp_sv_pct': round((gs['pp_shots'] - gs['pp_goals']) / gs['pp_shots'], 4) if gs['pp_shots'] > 0 else 0,
                 
-                # High-danger
+                # High-danger & Angles
                 'hd_sv_pct': round((gs['high_danger_shots'] - gs['high_danger_goals']) / gs['high_danger_shots'], 4) if gs['high_danger_shots'] > 0 else 0,
                 'slot_sv_pct': round((gs['slot_shots'] - gs['slot_goals']) / gs['slot_shots'], 4) if gs['slot_shots'] > 0 else 0,
+                'center_angle_sv_pct': round((gs['center_angle_shots'] - gs['center_angle_goals']) / gs['center_angle_shots'], 4) if gs['center_angle_shots'] > 0 else 0,
+                'acute_angle_sv_pct': round((gs['acute_angle_shots'] - gs['acute_angle_goals']) / gs['acute_angle_shots'], 4) if gs['acute_angle_shots'] > 0 else 0,
+                
+                # Shot Types
+                'slap_sv_pct': round((gs['slap_shots'] - gs['slap_goals']) / gs['slap_shots'], 4) if gs['slap_shots'] > 0 else 0,
+                'wrist_sv_pct': round((gs['wrist_shots'] - gs['wrist_goals']) / gs['wrist_shots'], 4) if gs['wrist_shots'] > 0 else 0,
+                'backhand_sv_pct': round((gs['backhand_shots'] - gs['backhand_goals']) / gs['backhand_shots'], 4) if gs['backhand_shots'] > 0 else 0,
+                
+                # Venue
+                'home_sv_pct': round((gs['home_shots'] - gs['home_goals']) / gs['home_shots'], 4) if gs['home_shots'] > 0 else 0,
+                'away_sv_pct': round((gs['away_shots'] - gs['away_goals']) / gs['away_shots'], 4) if gs['away_shots'] > 0 else 0,
                 
                 # Glove/Blocker
                 'glove_sv_pct': round((gs['glove_shots'] - gs['glove_goals']) / gs['glove_shots'], 4) if gs['glove_shots'] > 0 else 0,

@@ -480,10 +480,15 @@ class ScorePredictionModel:
             factors['pace'] = "🧊 Grinding/Defensive Pace"
         
         # Goalie context
+        is_away_home = False # used to pass to venue check
         for g_name, label in [(away_goalie, 'goalie_away'), (home_goalie, 'goalie_home')]:
             gs = self._get_goalie_data(g_name)
             if not gs or gs.get('games', 0) < 5:
                 continue
+            
+            # Determine if this goalie is home or away right now
+            is_home_for_this_game = (label == 'goalie_home')
+            opp_team = away if is_home_for_this_game else home
             
             gsax = gs.get('gsax_total', 0)
             rebound_rate = gs.get('rebound_rate', 0)
@@ -505,9 +510,34 @@ class ScorePredictionModel:
             # Off-wing weakness (significant differential)
             if glv > 0 and blk > 0:
                 if glv - blk > 0.04:
-                    warnings.append(f"Blocker Vulnerable ({(glv-blk)*100:.1f}%)")
+                    warnings.append(f"Blocker Vuln ({(glv-blk)*100:.1f}%)")
                 elif blk - glv > 0.04:
-                    warnings.append(f"Glove Vulnerable ({(blk-glv)*100:.1f}%)")
+                    warnings.append(f"Glove Vuln ({(blk-glv)*100:.1f}%)")
+                    
+            # Shot types and angles
+            if gs.get('slap_shots', 0) > 20 and gs.get('slap_sv_pct', 1.0) < 0.85:
+                warnings.append("Struggles vs Slapshots")
+            if gs.get('acute_angle_shots', 0) > 20 and gs.get('acute_angle_sv_pct', 1.0) < 0.88:
+                warnings.append("Struggles on Sharp Angles")
+                
+            # Venue splits
+            home_sv = gs.get('home_sv_pct', 0)
+            away_sv = gs.get('away_sv_pct', 0)
+            if home_sv > 0 and away_sv > 0:
+                if is_home_for_this_game and (home_sv - away_sv > 0.025):
+                    warnings.append(f"Much Better at Home ({home_sv:.3f} vs {away_sv:.3f})")
+                elif not is_home_for_this_game and (home_sv - away_sv > 0.025):
+                    warnings.append(f"Struggles on Road ({away_sv:.3f} vs {home_sv:.3f})")
+                    
+            # Head-to-Head
+            opp_stats = gs.get('opponent_stats', {}).get(opp_team)
+            if opp_stats and opp_stats['shots'] >= 25:
+                # Calculate h2h save %
+                h2h_sv = (opp_stats['shots'] - opp_stats['goals']) / opp_stats['shots']
+                if h2h_sv < 0.875:
+                    warnings.append(f"Owned by {opp_team} ({h2h_sv:.3f} SV%)")
+                elif h2h_sv > 0.935:
+                    warnings.append(f"Dominates {opp_team} ({h2h_sv:.3f} SV%)")
             
             if warnings and factors[label] == 'Neutral':
                 factors[label] = f"🥅 {g_name} ({', '.join(warnings)})"
