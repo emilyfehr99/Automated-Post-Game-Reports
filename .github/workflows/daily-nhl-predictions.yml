@@ -187,6 +187,18 @@ jobs:
             echo "⚠️  season_2025_2026_team_stats.json not found in data/"
           fi
 
+          # Add advanced goalie and team metrics
+          if [ -f "data/goalie_stats.json" ]; then
+            echo "📦 Adding goalie_stats.json..."
+            git add --force data/goalie_stats.json
+            FILES_TO_COMMIT="$FILES_TO_COMMIT data/goalie_stats.json"
+          fi
+          if [ -f "data/team_advanced_metrics.json" ]; then
+            echo "📦 Adding team_advanced_metrics.json..."
+            git add --force data/team_advanced_metrics.json
+            FILES_TO_COMMIT="$FILES_TO_COMMIT data/team_advanced_metrics.json"
+          fi
+
           # Add XGBoost Model Artifacts
           if [ -f "xgb_nhl_model.json" ]; then
             echo "📦 Adding updated XGBoost model..."

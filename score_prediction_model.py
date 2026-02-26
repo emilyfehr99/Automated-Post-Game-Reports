@@ -352,8 +352,10 @@ class ScorePredictionModel:
         home_b2b_adj = -self.B2B_PENALTY if home_b2b else 0.0
         
         # ─── 12. Goalie adjustment (NEW) ───
-        away_goalie_adj = self._get_goalie_adjustment(away_goalie, away, 'away')
-        home_goalie_adj = self._get_goalie_adjustment(home_goalie, home, 'home')
+        # An opposing goalie's quality affects the shooting team's score.
+        # Home goalie (at home) affects Away team; Away goalie (away) affects Home team.
+        away_goalie_adj = self._get_goalie_adjustment(home_goalie, home, 'home')
+        home_goalie_adj = self._get_goalie_adjustment(away_goalie, away, 'away')
         
         # ─── COMBINE: Weighted expected goals ───
         away_raw = (
@@ -454,9 +456,27 @@ class ScorePredictionModel:
             # Positive GSAX means goalie is saving more than expected -> reduces opponent goals
             gsax_pg = gs.get('gsax_per_game', 0.0)
             
-            # Dampen extremes (very rarely does a goalie save/cost > 1.0 goal per game sustainably)
-            # Scale factor: 0.8 to keep it realistic in predictions
-            return -gsax_pg * 0.8
+            # Venue Adjustment (Home/Away Splits)
+            venue_adj = 0.0
+            home_sv = gs.get('home_sv_pct', 0)
+            away_sv = gs.get('away_sv_pct', 0)
+            if home_sv > 0 and away_sv > 0:
+                diff = home_sv - away_sv
+                if abs(diff) > 0.015: # Significant split (> 1.5% SV%)
+                    # Scale: 0.010 SV% diff ~ 0.25 goals per game adjustment
+                    if venue == 'home':
+                        venue_adj = diff * 25.0 # Positive diff = bonus at home
+                    else:
+                        venue_adj = -diff * 25.0 # Positive diff = penalty away
+                    
+                    # Cap venue adjustment at +/- 0.4 goals
+                    venue_adj = max(-0.4, min(0.4, venue_adj))
+            
+            # Base GSAX adjustment (0.8 scale) + Venue adjustment
+            # Note: gsax_pg is GA saved relative to expected, so positive = good
+            # Return value is added to expected goals, so negative = fewer goals allowed
+            total_adj = (-gsax_pg * 0.8) - venue_adj
+            return total_adj
             
         return 0.0
     
