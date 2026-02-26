@@ -9,6 +9,7 @@ import sys
 import tweepy
 import pytz
 import json
+import time
 from pathlib import Path
 from datetime import datetime, timedelta
 import argparse
@@ -103,7 +104,15 @@ class ReportReposter:
             return []
             
         print(f"✅ Found {len(reports_found)} reports from yesterday.")
-        return reports_found
+        # Deduplicate by game_id to only repost the latest version if multiple exist
+        unique_reports = {}
+        for r in reports_found:
+            # If multiple reports for the same game, the later one is usually better
+            unique_reports[r.text] = r
+            
+        final_reports = list(unique_reports.values())
+        print(f"✅ Filtered to {len(final_reports)} unique reports.")
+        return final_reports
 
     def repost_reports(self):
         """Main execution: find and retweet"""
@@ -119,6 +128,12 @@ class ReportReposter:
         failed = 0
         
         for i, tweet in enumerate(reports, 1):
+            if i > 1:
+                # Add a delay between retweets to avoid 429 rate limits
+                wait_time = 30
+                print(f"   ⏳ Waiting {wait_time} seconds before next retweet...")
+                time.sleep(wait_time)
+                
             print(f"[{i}/{len(reports)}] Processing tweet {tweet.id}...")
             
             if self.dry_run:
@@ -127,14 +142,20 @@ class ReportReposter:
                 continue
                 
             try:
-                self.client.retweet(tweet.id)
+                # Use keyword argument and catching more specific exceptions if needed
+                self.client.retweet(tweet_id=tweet.id)
                 print(f"   ✅ Retweeted successfully!")
                 successful += 1
             except Exception as e:
                 # Check directly for 'already retweeted' error to not count as failure
-                if "You have already retweeted this Tweet" in str(e):
+                error_str = str(e)
+                if "already retweeted" in error_str.lower():
                     print(f"   ℹ️  Already retweeted.")
                     successful += 1
+                elif "429" in error_str:
+                    print(f"   ❌ Hit Twitter Rate Limit (429). Stopping further attempts.")
+                    failed += (len(reports) - i + 1)
+                    break
                 else:    
                     print(f"   ❌ Failed to retweet: {e}")
                     failed += 1

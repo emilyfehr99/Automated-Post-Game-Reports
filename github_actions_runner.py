@@ -90,13 +90,23 @@ class GitHubActionsRunner:
             if today not in data:
                 data[today] = []
             
-            # Append new tweet info
-            data[today].append({
-                'game_id': str(game_id),
-                'tweet_id': str(tweet_id),
-                'description': description,
-                'posted_at': datetime.now(central_tz).isoformat()
-            })
+            # Check if we already have a tweet for this game today
+            found = False
+            for entry in data[today]:
+                if entry.get('game_id') == str(game_id):
+                    entry['tweet_id'] = str(tweet_id)
+                    entry['posted_at'] = datetime.now(central_tz).isoformat()
+                    found = True
+                    break
+            
+            # Append if not found
+            if not found:
+                data[today].append({
+                    'game_id': str(game_id),
+                    'tweet_id': str(tweet_id),
+                    'description': description,
+                    'posted_at': datetime.now(central_tz).isoformat()
+                })
             
             # Save back
             with open(self.posted_tweets_file, 'w') as f:
