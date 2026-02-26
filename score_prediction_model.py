@@ -77,13 +77,9 @@ class ScorePredictionModel:
                 self.goalie_stats = pred_data.get('goalie_stats', {})
                 break
         
-        # Load finishing profiles
-        self.team_profiles = {}
-        try:
-            with open('team_scoring_profiles.json', 'r') as f:
-                self.team_profiles = json.load(f)
-        except:
-            pass
+        # NOTE: Finishing profiles (team_scoring_profiles.json) removed —
+        # 29/32 teams were above 1.2x (noise), and xG luck regression
+        # already captures over/underperformance vs expected goals.
         
         if self.team_stats:
             self._precompute_averages()
@@ -336,11 +332,7 @@ class ScorePredictionModel:
         away_div_adj = div_strength.get(TEAM_TO_DIV.get(away, ''), 0.0)
         home_div_adj = div_strength.get(TEAM_TO_DIV.get(home, ''), 0.0)
         
-        # ─── 9. Finishing ability ───
-        away_finish = self.team_profiles.get(away, 1.0)
-        home_finish = self.team_profiles.get(home, 1.0)
-        away_finish_adj = 1.0 + (away_finish - 1.0) * 0.4
-        home_finish_adj = 1.0 + (home_finish - 1.0) * 0.4
+        # ─── 9. (Finishing profiles removed — noise, captured by xG luck) ───
         
         # ─── 10. Head-to-head adjustment (NEW) ───
         away_h2h_adj = self._get_h2h_adjustment(away, home)
@@ -355,30 +347,42 @@ class ScorePredictionModel:
         home_goalie_adj = self._get_goalie_adjustment(home_goalie, home, 'home')
         
         # ─── COMBINE: Weighted expected goals ───
-        away_expected = (
+        away_raw = (
             self.W_GS * away_gs_goals +
             self.W_XG * away_xg +
             self.W_PP * (self.LEAGUE_AVG_GF * away_pp_factor) +
             self.W_HDC * (self.LEAGUE_AVG_GF * away_hdc_factor) +
             self.W_CONTEXT * self.LEAGUE_AVG_GF
         )
-        away_expected *= away_def_factor
-        away_expected *= away_finish_adj
-        away_expected += away_luck_adj
-        away_expected += away_div_adj
-        away_expected += away_h2h_adj
-        away_expected += away_b2b_adj
-        away_expected += away_goalie_adj  # Goalie of opponent affects scoring
-        
-        home_expected = (
+        home_raw = (
             self.W_GS * home_gs_goals +
             self.W_XG * home_xg +
             self.W_PP * (self.LEAGUE_AVG_GF * home_pp_factor) +
             self.W_HDC * (self.LEAGUE_AVG_GF * home_hdc_factor) +
             self.W_CONTEXT * self.LEAGUE_AVG_GF
         )
+        
+        # ─── Calibrate to league average (3.03 GF/game) ───
+        # Raw weighted sum runs ~3.5-3.8, so scale down to league reality
+        raw_avg = (away_raw + home_raw) / 2.0
+        if raw_avg > 0:
+            calibration = self.LEAGUE_AVG_GF / raw_avg
+        else:
+            calibration = 1.0
+        away_expected = away_raw * calibration
+        home_expected = home_raw * calibration
+        
+        # Apply multiplicative modifiers
+        away_expected *= away_def_factor
         home_expected *= home_def_factor
-        home_expected *= home_finish_adj
+        
+        # Apply additive adjustments
+        away_expected += away_luck_adj
+        away_expected += away_div_adj
+        away_expected += away_h2h_adj
+        away_expected += away_b2b_adj
+        away_expected += away_goalie_adj
+        
         home_expected += home_luck_adj
         home_expected += home_div_adj
         home_expected += home_boost
@@ -398,7 +402,7 @@ class ScorePredictionModel:
             away, home, away_expected, home_expected,
             away_luck, home_luck, away_goalie, home_goalie,
             away_hdc, home_hdc, away_def_factor, home_def_factor,
-            away_finish, home_finish, away_b2b, home_b2b,
+            away_b2b, home_b2b,
             away_h2h_adj, home_h2h_adj
         )
         
@@ -441,7 +445,6 @@ class ScorePredictionModel:
     def _generate_factors(self, away, home, away_exp, home_exp,
                           away_luck, home_luck, away_goalie, home_goalie,
                           away_hdc, home_hdc, away_def, home_def,
-                          away_finish, home_finish,
                           away_b2b, home_b2b,
                           away_h2h_adj, home_h2h_adj) -> Dict:
         """Generate human-readable analysis factors."""
@@ -450,7 +453,6 @@ class ScorePredictionModel:
             'goalie_away': 'Neutral',
             'goalie_home': 'Neutral',
             'situation': 'Neutral',
-            'finishing': 'Neutral',
         }
         
         total_exp = away_exp + home_exp
@@ -470,16 +472,6 @@ class ScorePredictionModel:
                 factors['goalie_home'] = f"🛡️ Strong Goalie ({home_goalie})"
             elif away_def > 1.10:
                 factors['goalie_home'] = f"⚠️ Shaky Goaltending ({home_goalie})"
-        
-        # Finishing
-        if home_finish > 1.5:
-            factors['finishing'] = f"🎯 {home} Elite Finishing (x{home_finish:.2f})"
-        elif away_finish > 1.5:
-            factors['finishing'] = f"🎯 {away} Elite Finishing (x{away_finish:.2f})"
-        elif home_finish < 1.05:
-            factors['finishing'] = f"🧱 {home} Low Finishing (x{home_finish:.2f})"
-        elif away_finish < 1.05:
-            factors['finishing'] = f"🧱 {away} Low Finishing (x{away_finish:.2f})"
         
         # Situational
         situations = []

@@ -180,7 +180,9 @@ class DailyPredictionNotifier:
                 score_pred = score_model.predict_score(
                     away, home,
                     away_goalie=pred.get('away_goalie'),
-                    home_goalie=pred.get('home_goalie')
+                    home_goalie=pred.get('home_goalie'),
+                    away_b2b=pred.get('away_back_to_back', False),
+                    home_b2b=pred.get('home_back_to_back', False)
                 )
                 away_score = score_pred['away_score']
                 home_score = score_pred['home_score']
