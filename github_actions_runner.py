@@ -325,6 +325,26 @@ class GitHubActionsRunner:
                     final_image.paste(page, (0, y_offset))
                     y_offset += page.height
                 print(f"📐 Stitched {len(pages)} pages into single image ({total_width}x{total_height})")
+                
+                # Auto-crop the stitched image to remove empty space at the bottom (useful for OT spill-over)
+                try:
+                    gray = final_image.convert('L')
+                    # Threshold: Paper.png pixels are very bright (> 220ish). Text/lines are darker.
+                    # Convert content pixels (< 230) to 255 (white) and background to 0 (black).
+                    content_mask = gray.point(lambda p: 255 if p < 230 else 0)
+                    bbox = content_mask.getbbox()
+                    
+                    if bbox:
+                        # getbbox returns (left, upper, right, lower)
+                        # Add a padding of 150 pixels below the actual content
+                        crop_bottom = min(bbox[3] + 150, final_image.height)
+                        
+                        # Only crop if there's a significant amount of empty space (e.g. > 200px)
+                        if final_image.height - crop_bottom > 200:
+                            final_image = final_image.crop((0, 0, final_image.width, crop_bottom))
+                            print(f"✂️ Cropped image height from {total_height} to {crop_bottom} to remove empty space")
+                except Exception as e:
+                    print(f"⚠️ Could not auto-crop image: {e}")
             
             image_filename = f"nhl_postgame_report_{away_team}_vs_{home_team}_{game_id}.png"
             image_path = output_dir / image_filename
