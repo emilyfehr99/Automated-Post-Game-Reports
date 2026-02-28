@@ -4006,17 +4006,36 @@ class PostGameReportGenerator:
         
         # Add Sprite Goal Analysis Tables (if data available)
         try:
-            from sprite_goal_analyzer import SpriteGoalAnalyzer
-            from sprite_table_generator import create_sprite_analysis_tables
-            
-            analyzer = SpriteGoalAnalyzer()
-            sprite_data = analyzer.analyze_game_goals_by_team(game_id)
-            
-            if sprite_data:
-                # Add sprite tables at bottom with spacing
-                story.append(Spacer(1, -15))  # Moved up 0.5cm (approx 14pts) from -1 to fit on page 1
-                sprite_tables = create_sprite_analysis_tables(sprite_data)
-                story.extend(sprite_tables)
+            # Check for OT/SO from play-by-play data before generating sprite tables
+            game_ending = ""
+            try:
+                play_by_play_data = game_data.get('play_by_play', {})
+                if play_by_play_data and 'plays' in play_by_play_data:
+                    for play in play_by_play_data['plays']:
+                        period_type = play.get('periodDescriptor', {}).get('periodType', 'REG')
+                        if period_type == 'SO':
+                            game_ending = "SO"
+                            break
+                        elif period_type == 'OT':
+                            game_ending = "OT"
+                            # Don't break - keep checking for SO
+            except:
+                pass
+                
+            if game_ending in ["OT", "SO"]:
+                print(f"Note: Skipping Sprite analysis because game went to {game_ending}")
+            else:
+                from sprite_goal_analyzer import SpriteGoalAnalyzer
+                from sprite_table_generator import create_sprite_analysis_tables
+                
+                analyzer = SpriteGoalAnalyzer()
+                sprite_data = analyzer.analyze_game_goals_by_team(game_id)
+                
+                if sprite_data:
+                    # Add sprite tables at bottom with spacing
+                    story.append(Spacer(1, -15))  # Moved up 0.5cm (approx 14pts) from -1 to fit on page 1
+                    sprite_tables = create_sprite_analysis_tables(sprite_data)
+                    story.extend(sprite_tables)
         except Exception as e:
             print(f"Note: Sprite analysis not available: {e}")
         
