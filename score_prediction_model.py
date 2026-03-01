@@ -164,6 +164,16 @@ class ScorePredictionModel:
                     metrics[key] = self._recency_weight(numeric) if numeric else None
                     # Also store flat average for comparison
                     metrics[f'{key}_flat'] = np.mean(numeric) if numeric else None
+                    
+                    # Store short-term form (Last 5, Last 10)
+                    if numeric:
+                        l5 = numeric[-5:] if len(numeric) >= 5 else numeric
+                        l10 = numeric[-10:] if len(numeric) >= 10 else numeric
+                        metrics[f'{key}_l5'] = np.mean(l5)
+                        metrics[f'{key}_l10'] = np.mean(l10)
+                    else:
+                        metrics[f'{key}_l5'] = None
+                        metrics[f'{key}_l10'] = None
                 
                 # Sanitize PP% and PK%
                 pp_raw = vdata.get('power_play_pct', [])
@@ -357,6 +367,27 @@ class ScorePredictionModel:
         away_goalie_adj = self._get_goalie_adjustment(home_goalie, home, 'home')
         home_goalie_adj = self._get_goalie_adjustment(away_goalie, away, 'away')
         
+        # ─── 13. Short-Term Form (Momentum) ───
+        # Compare last 5 and last 10 xG against season-long xG to detect "hot" or "cold" streaks.
+        away_xg_l5 = self._get_team_metric(away, 'xg_l5', 'away')
+        away_xg_l10 = self._get_team_metric(away, 'xg_l10', 'away')
+        away_xg_flat = self._get_team_metric(away, 'xg_flat', 'away')
+        
+        home_xg_l5 = self._get_team_metric(home, 'xg_l5', 'home')
+        home_xg_l10 = self._get_team_metric(home, 'xg_l10', 'home')
+        home_xg_flat = self._get_team_metric(home, 'xg_flat', 'home')
+        
+        away_momentum_adj = 0.0
+        if away_xg_l5 and away_xg_l10 and away_xg_flat:
+            # L5 forms the sharpest momentum, L10 smooths it out.
+            momentum = ((away_xg_l5 - away_xg_flat) * 0.6) + ((away_xg_l10 - away_xg_flat) * 0.4)
+            away_momentum_adj = max(-0.4, min(0.4, momentum * 0.5))  # Cap the impact
+            
+        home_momentum_adj = 0.0
+        if home_xg_l5 and home_xg_l10 and home_xg_flat:
+            momentum = ((home_xg_l5 - home_xg_flat) * 0.6) + ((home_xg_l10 - home_xg_flat) * 0.4)
+            home_momentum_adj = max(-0.4, min(0.4, momentum * 0.5))
+        
         # ─── COMBINE: Weighted expected goals ───
         away_raw = (
             self.W_GS * away_gs_goals +
@@ -393,6 +424,7 @@ class ScorePredictionModel:
         away_expected += away_h2h_adj
         away_expected += away_b2b_adj
         away_expected += away_goalie_adj
+        away_expected += away_momentum_adj
         
         home_expected += home_luck_adj
         home_expected += home_div_adj
@@ -400,6 +432,7 @@ class ScorePredictionModel:
         home_expected += home_h2h_adj
         home_expected += home_b2b_adj
         home_expected += home_goalie_adj
+        home_expected += home_momentum_adj
         
         # ─── Clamp to realistic range ───
         away_expected = max(1.5, min(4.5, away_expected))
@@ -414,7 +447,8 @@ class ScorePredictionModel:
             away_luck, home_luck, away_goalie, home_goalie,
             away_hdc, home_hdc, away_def_factor, home_def_factor,
             away_b2b, home_b2b,
-            away_h2h_adj, home_h2h_adj
+            away_h2h_adj, home_h2h_adj,
+            away_momentum_adj, home_momentum_adj
         )
         
         # ─── Confidence ───
@@ -501,7 +535,8 @@ class ScorePredictionModel:
                           away_luck, home_luck, away_goalie, home_goalie,
                           away_hdc, home_hdc, away_def, home_def,
                           away_b2b, home_b2b,
-                          away_h2h_adj, home_h2h_adj) -> Dict:
+                          away_h2h_adj, home_h2h_adj,
+                          away_momentum, home_momentum) -> Dict:
         """Generate human-readable analysis factors."""
         factors = {
             'pace': 'Neutral',
@@ -603,6 +638,17 @@ class ScorePredictionModel:
                 situations.append(f"📈 {home} due for regression (luck: {home_luck:+.2f})")
             else:
                 situations.append(f"📉 {home} overperforming (luck: {home_luck:+.2f})")
+                
+        # Momentum updates
+        if away_momentum > 0.15:
+            situations.append(f"🔥 {away} is Hot (+{away_momentum:.2f} xG L10)")
+        elif away_momentum < -0.15:
+            situations.append(f"🧊 {away} is Cold ({away_momentum:.2f} xG L10)")
+            
+        if home_momentum > 0.15:
+            situations.append(f"🔥 {home} is Hot (+{home_momentum:.2f} xG L10)")
+        elif home_momentum < -0.15:
+            situations.append(f"🧊 {home} is Cold ({home_momentum:.2f} xG L10)")
         
         if situations:
             factors['situation'] = ' | '.join(situations[:2])
