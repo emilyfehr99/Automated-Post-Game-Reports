@@ -112513,7 +112513,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "NYR",
+      "actual_away_score": 2,
+      "actual_home_score": 3,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-02-28",
@@ -112528,7 +112532,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "PHI",
+      "actual_away_score": 1,
+      "actual_home_score": 3,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-02-28",
@@ -112543,7 +112551,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "SJS",
+      "actual_away_score": 4,
+      "actual_home_score": 5,
+      "prediction_accuracy": 1.0
     },
     {
       "date": "2026-02-28",
@@ -112558,7 +112570,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "NJD",
+      "actual_away_score": 3,
+      "actual_home_score": 1,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-02-28",
@@ -112573,7 +112589,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "NYI",
+      "actual_away_score": 4,
+      "actual_home_score": 3,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-02-28",
@@ -112588,7 +112608,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "COL",
+      "actual_away_score": 1,
+      "actual_home_score": 3,
+      "prediction_accuracy": 1.0
     },
     {
       "date": "2026-02-28",
@@ -112603,7 +112627,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "CAR",
+      "actual_away_score": 2,
+      "actual_home_score": 5,
+      "prediction_accuracy": 1.0
     },
     {
       "date": "2026-02-28",
@@ -112618,7 +112646,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "LAK",
+      "actual_away_score": 0,
+      "actual_home_score": 2,
+      "prediction_accuracy": 1.0
     },
     {
       "date": "2026-02-28",
@@ -112633,7 +112665,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "MTL",
+      "actual_away_score": 2,
+      "actual_home_score": 6,
+      "prediction_accuracy": 1.0
     },
     {
       "date": "2026-02-28",
@@ -112648,7 +112684,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "OTT",
+      "actual_away_score": 5,
+      "actual_home_score": 2,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-02-28",
@@ -112663,7 +112703,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "BUF",
+      "actual_away_score": 6,
+      "actual_home_score": 2,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-02-28",
@@ -112678,7 +112722,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "DAL",
+      "actual_away_score": 2,
+      "actual_home_score": 3,
+      "prediction_accuracy": 1.0
     },
     {
       "date": "2026-02-28",
@@ -112689,6 +112737,100 @@
       "home_win_prob": 0.6065730229567579,
       "away_win_prob": 0.3934269770432421,
       "model_confidence": 0.6369016741045957,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "SEA",
+      "actual_away_score": 1,
+      "actual_home_score": 5,
+      "prediction_accuracy": 1.0
+    },
+    {
+      "date": "2026-03-01",
+      "game_id": 2025020947,
+      "home_team": "PIT",
+      "away_team": "VGK",
+      "predicted_winner": "VGK",
+      "home_win_prob": 0.4864219347491309,
+      "away_win_prob": 0.513578065250869,
+      "model_confidence": 0.513578065250869,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run"
+    },
+    {
+      "date": "2026-03-01",
+      "game_id": 2025020950,
+      "home_team": "SJS",
+      "away_team": "WPG",
+      "predicted_winner": "SJS",
+      "home_win_prob": 0.6207067893224927,
+      "away_win_prob": 0.3792932106775073,
+      "model_confidence": 0.6207067893224927,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run"
+    },
+    {
+      "date": "2026-03-01",
+      "game_id": 2025020949,
+      "home_team": "UTA",
+      "away_team": "CHI",
+      "predicted_winner": "UTA",
+      "home_win_prob": 0.6542206474001806,
+      "away_win_prob": 0.3457793525998195,
+      "model_confidence": 0.6869316797701895,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run"
+    },
+    {
+      "date": "2026-03-01",
+      "game_id": 2025020951,
+      "home_team": "MIN",
+      "away_team": "STL",
+      "predicted_winner": "MIN",
+      "home_win_prob": 0.7408454901668116,
+      "away_win_prob": 0.2591545098331885,
+      "model_confidence": 0.7408454901668116,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run"
+    },
+    {
+      "date": "2026-03-01",
+      "game_id": 2025020948,
+      "home_team": "NYI",
+      "away_team": "FLA",
+      "predicted_winner": "FLA",
+      "home_win_prob": 0.39932832491502046,
+      "away_win_prob": 0.6006716750849795,
+      "model_confidence": 0.6006716750849795,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run"
+    },
+    {
+      "date": "2026-03-01",
+      "game_id": 2025020952,
+      "home_team": "ANA",
+      "away_team": "CGY",
+      "predicted_winner": "ANA",
+      "home_win_prob": 0.6152083289073178,
+      "away_win_prob": 0.3847916710926822,
+      "model_confidence": 0.6459687453526837,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -112742,10 +112884,10 @@
   },
   "last_updated": "2025-12-17T12:00:05.316190",
   "model_performance": {
-    "total_games": 678,
-    "correct_predictions": 337,
-    "accuracy": 0.4970501474926254,
-    "recent_accuracy": 0.5666666666666667
+    "total_games": 691,
+    "correct_predictions": 344,
+    "accuracy": 0.49782923299565845,
+    "recent_accuracy": 0.4666666666666667
   },
   "calibration_points": [
     [
@@ -112798,7 +112940,7 @@
     ]
   ],
   "calibration_metadata": {
-    "updated_at": "2026-02-28T20:26:23.647129",
+    "updated_at": "2026-03-01T13:04:40.474055",
     "sample_size": 547,
     "num_bins": 12,
     "bucket_samples": {
