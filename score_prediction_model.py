@@ -486,50 +486,68 @@ class ScorePredictionModel:
         Uses GSAX/game from comprehensive goalie_stats.
         """
         gs = self._get_goalie_data(goalie_name)
-        if gs and gs.get('games', 0) >= 5:
-            # Positive GSAX means goalie is saving more than expected -> reduces opponent goals
-            gsax_pg = gs.get('gsax_per_game', 0.0)
+        
+        if gs and gs.get('games', 0) >= 1:
+            # 1. Backup Goalie Penalty (Phase 3 Improvement)
+            # If a goalie has played very few games relative to the season, they are likely a backup/AHL call-up
+            backup_penalty = 0.0
+            team_games = self._get_team_metric(team, 'n_games', 'combined')
             
-            # Venue Adjustment (Home/Away Splits)
-            venue_adj = 0.0
-            home_sv = gs.get('home_sv_pct', 0)
-            away_sv = gs.get('away_sv_pct', 0)
-            if home_sv > 0 and away_sv > 0:
-                diff = home_sv - away_sv
-                if abs(diff) > 0.015: # Significant split (> 1.5% SV%)
-                    # Scale: 0.010 SV% diff ~ 0.25 goals per game adjustment
-                    if venue == 'home':
-                        venue_adj = diff * 25.0 # Positive diff = bonus at home
-                    else:
-                        venue_adj = -diff * 25.0 # Positive diff = penalty away
-                    
-                    # Cap venue adjustment at +/- 0.4 goals
-                    venue_adj = max(-0.4, min(0.4, venue_adj))
+            # If we're deep enough into the season (e.g., > 20 games) and the goalie has played < 25% of games
+            if team_games > 20 and gs.get('games', 0) < (team_games * 0.25):
+                # Apply a severe +0.35 to +0.50 expected goals penalty to the team starting them
+                backup_penalty = 0.40
+                if gs.get('games', 0) < 5:
+                    backup_penalty = 0.50 # AHL call-up or extreme backup
             
-            # Rebound Adjustment (High rebound rate = more goals allowed)
-            reb_adj = 0.0
-            reb_rate = gs.get('rebound_rate', 0.075) # League avg ~7.5%
-            if reb_rate > 0.08:
-                # Every 1% above 8% adds 0.05 goals
-                reb_adj = (reb_rate - 0.08) * 5.0
-                reb_adj = min(0.3, reb_adj) # Max 0.3 goal penalty
-            
-            # Angle Adjustment (Acute angle vulnerability)
-            angle_adj = 0.0
-            acute_sv = gs.get('acute_angle_sv_pct', 0)
-            center_sv = gs.get('center_angle_sv_pct', 0)
-            if acute_sv > 0 and center_sv > 0:
-                # If much worse on sides than center
-                if center_sv - acute_sv > 0.015:
-                    angle_adj = (center_sv - acute_sv) * 10.0
-                    angle_adj = min(0.2, angle_adj)
-            
-            # Base GSAX adjustment (0.8 scale) + Modifiers
-            # Note: total_adj is added to expected goals, so positive = more goals
-            total_adj = (-gsax_pg * 0.8) - venue_adj + reb_adj + angle_adj
-            return total_adj
-            
-        return 0.0
+            # 2. Base GSAX Adjustment
+            if gs.get('games', 0) >= 5:
+                # Positive GSAX means goalie is saving more than expected -> reduces opponent goals
+                gsax_pg = gs.get('gsax_per_game', 0.0)
+                
+                # Venue Adjustment (Home/Away Splits)
+                venue_adj = 0.0
+                home_sv = gs.get('home_sv_pct', 0)
+                away_sv = gs.get('away_sv_pct', 0)
+                if home_sv > 0 and away_sv > 0:
+                    diff = home_sv - away_sv
+                    if abs(diff) > 0.015: # Significant split (> 1.5% SV%)
+                        # Scale: 0.010 SV% diff ~ 0.25 goals per game adjustment
+                        if venue == 'home':
+                            venue_adj = diff * 25.0 # Positive diff = bonus at home
+                        else:
+                            venue_adj = -diff * 25.0 # Positive diff = penalty away
+                        
+                        # Cap venue adjustment at +/- 0.4 goals
+                        venue_adj = max(-0.4, min(0.4, venue_adj))
+                
+                # Rebound Adjustment (High rebound rate = more goals allowed)
+                reb_adj = 0.0
+                reb_rate = gs.get('rebound_rate', 0.075) # League avg ~7.5%
+                if reb_rate > 0.08:
+                    # Every 1% above 8% adds 0.05 goals
+                    reb_adj = (reb_rate - 0.08) * 5.0
+                    reb_adj = min(0.3, reb_adj) # Max 0.3 goal penalty
+                
+                # Angle Adjustment (Acute angle vulnerability)
+                angle_adj = 0.0
+                acute_sv = gs.get('acute_angle_sv_pct', 0)
+                center_sv = gs.get('center_angle_sv_pct', 0)
+                if acute_sv > 0 and center_sv > 0:
+                    # If much worse on sides than center
+                    if center_sv - acute_sv > 0.015:
+                        angle_adj = (center_sv - acute_sv) * 10.0
+                        angle_adj = min(0.2, angle_adj)
+                
+                # Base GSAX adjustment (0.8 scale) + Modifiers + Backup Penalty
+                # Note: total_adj is added to expected goals, so positive = more goals for the shooting team
+                total_adj = (-gsax_pg * 0.8) - venue_adj + reb_adj + angle_adj + backup_penalty
+                return total_adj
+            else:
+                return backup_penalty
+        
+        # If we have no data on the goalie (e.g. NHL debut), assume they are highly vulnerable
+        return 0.50
     
     def _generate_factors(self, away, home, away_exp, home_exp,
                           away_luck, home_luck, away_goalie, home_goalie,
@@ -566,8 +584,14 @@ class ScorePredictionModel:
             rebound_rate = gs.get('rebound_rate', 0)
             glv = gs.get('glove_sv_pct', 0)
             blk = gs.get('blocker_sv_pct', 0)
+            goalie_games = gs.get('games', 0)
             
             warnings = []
+            
+            # Backup Goalie Penalty
+            team_games = self._get_team_metric(opp_team, 'n_games', 'combined')
+            if team_games > 20 and goalie_games < (team_games * 0.25):
+                warnings.append("🚨 SEVERE: Backup Penalty")
             
             # Overall quality
             if gsax > 8.0:
