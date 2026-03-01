@@ -81,6 +81,10 @@ class DailyPredictionNotifier:
         rotowire_data = self.rotowire.scrape_daily_data()
         games = rotowire_data.get('games', [])
         
+        # Fetch Vegas odds
+        from vegas_odds_scraper import scrape_vegas_odds
+        market_odds = scrape_vegas_odds()
+        
         # Get NHL Schedule for Game IDs
         from nhl_api_client import NHLAPIClient
         nhl_client = NHLAPIClient()
@@ -119,13 +123,18 @@ class DailyPredictionNotifier:
         predictions = []
         for game in games:
             try:
+                # Map RotoWire game to Vegas odds key
+                odds_key = f"{game['away_team']}_vs_{game['home_team']}"
+                vegas_odds = market_odds.get(odds_key)
+                
                 pred = self.meta_ensemble.predict(
                     game['away_team'],
                     game['home_team'],
                     away_lineup=game.get('away_lineup'),
                     home_lineup=game.get('home_lineup'),
                     away_goalie=game.get('away_goalie'),
-                    home_goalie=game.get('home_goalie')
+                    home_goalie=game.get('home_goalie'),
+                    vegas_odds=vegas_odds
                 )
                 
                 # Only include if meets confidence threshold (50%)

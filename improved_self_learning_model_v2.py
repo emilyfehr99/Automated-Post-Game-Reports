@@ -1803,7 +1803,7 @@ class ImprovedSelfLearningModelV2:
         }
     
     def predict_game(self, away_team: str, home_team: str, current_away_score: int = None, 
-                    current_home_score: int = None, period: int = 1, game_id: str = None, game_date: Optional[str] = None) -> Dict:
+                    current_home_score: int = None, period: int = 1, game_id: str = None, game_date: Optional[str] = None, vegas_odds: Dict = None) -> Dict:
         """Predict a game with improved features and confidence"""
         
         # Get team performance data
@@ -2019,7 +2019,7 @@ class ImprovedSelfLearningModelV2:
     
     def predict_game_with_lineup(self, away_team: str, home_team: str, 
                                  away_lineup: Dict = None, home_lineup: Dict = None,
-                                 game_id: str = None, game_date: Optional[str] = None) -> Dict:
+                                 game_id: str = None, game_date: Optional[str] = None, vegas_odds: Dict = None) -> Dict:
         """Enhanced prediction using actual lineups when available"""
         
         # Get base team-level prediction

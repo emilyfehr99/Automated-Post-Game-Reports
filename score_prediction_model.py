@@ -290,7 +290,8 @@ class ScorePredictionModel:
     def predict_score(self, away_team: str, home_team: str,
                      away_goalie: str = None, home_goalie: str = None,
                      game_date: str = None,
-                     away_b2b: bool = False, home_b2b: bool = False) -> Dict:
+                     away_b2b: bool = False, home_b2b: bool = False,
+                     vegas_odds: Dict = None) -> Dict:
         """
         Predict realistic game score.
         
@@ -437,6 +438,26 @@ class ScorePredictionModel:
         # ─── Clamp to realistic range ───
         away_expected = max(1.5, min(4.5, away_expected))
         home_expected = max(1.5, min(4.5, home_expected))
+        
+        # ─── 14. Vegas Odds Integration (Phase 3 Improvement) ───
+        # Blend expected goals output slightly toward Vegas implied probabilities if provided
+        if vegas_odds:
+            v_away = vegas_odds.get('away_prob', 0.5)
+            v_home = vegas_odds.get('home_prob', 0.5)
+            
+            # Convert current xG to a win probability (rough estimate for blending)
+            total_x = away_expected + home_expected
+            if total_x > 0:
+                m_away_prob = away_expected / total_x
+                m_home_prob = home_expected / total_x
+                
+                # Blend: 65% Model, 35% Vegas (Wisdom of Crowds)
+                blended_away_prob = (m_away_prob * 0.65) + (v_away * 0.35)
+                blended_home_prob = (m_home_prob * 0.65) + (v_home * 0.35)
+                
+                # Convert back to xG scale while preserving total goals
+                away_expected = total_x * blended_away_prob
+                home_expected = total_x * blended_home_prob
         
         # ─── Poisson-sampled scores for realistic variance ───
         away_score, home_score = self._poisson_score(away_expected, home_expected)
