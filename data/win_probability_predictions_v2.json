@@ -112743,9 +112743,9 @@
   "last_updated": "2025-12-17T12:00:05.316190",
   "model_performance": {
     "total_games": 678,
-    "correct_predictions": 345,
-    "accuracy": 0.5088495575221239,
-    "recent_accuracy": 0.5
+    "correct_predictions": 337,
+    "accuracy": 0.4970501474926254,
+    "recent_accuracy": 0.5666666666666667
   },
   "calibration_points": [
     [
@@ -112798,7 +112798,7 @@
     ]
   ],
   "calibration_metadata": {
-    "updated_at": "2026-02-28T13:00:58.688559",
+    "updated_at": "2026-02-28T20:07:34.959374",
     "sample_size": 547,
     "num_bins": 12,
     "bucket_samples": {
