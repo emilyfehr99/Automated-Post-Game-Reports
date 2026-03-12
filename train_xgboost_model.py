@@ -59,6 +59,48 @@ def load_profiles():
     except:
         return {}
 
+def load_edge_data():
+    """Aggregate player-level NHL Edge metrics into team-level features"""
+    file_path = Path('data/nhl_edge_data.json')
+    if not file_path.exists():
+        return {}
+    
+    try:
+        with open(file_path, 'r') as f:
+            data = json.load(f)
+        
+        player_data = data.get('player_data', [])
+        team_metrics = {}
+        
+        for p in player_data:
+            team = p.get('Team')
+            if not team: continue
+            
+            if team not in team_metrics:
+                team_metrics[team] = {'top_speeds': [], 'bursts': []}
+            
+            try:
+                speed = float(p.get('Top Speed', 0) or 0)
+                burst = float(p.get('Bursts>20 per mile', 0) or 0)
+                if speed > 0: team_metrics[team]['top_speeds'].append(speed)
+                if burst > 0: team_metrics[team]['bursts'].append(burst)
+            except:
+                continue
+        
+        # Aggregate: Top 3 average for explosiveness
+        final_team_edge = {}
+        for team, metrics in team_metrics.items():
+            top_speeds = sorted(metrics['top_speeds'], reverse=True)[:3]
+            top_bursts = sorted(metrics['bursts'], reverse=True)[:3]
+            
+            final_team_edge[team] = {
+                'edge_top_speed': np.mean(top_speeds) if top_speeds else 21.0,
+                'edge_burst_avg': np.mean(top_bursts) if top_bursts else 0.5
+            }
+        return final_team_edge
+    except:
+        return {}
+
 class EloTracker:
     def __init__(self, k_factor=20, home_advantage=35):
         self.ratings = {}  # {team: rating}
@@ -233,6 +275,7 @@ def extract_features_chronologically(predictions):
     
     tracker = TeamHistory()
     profiles = load_profiles() # Load finishing profiles
+    edge_data = load_edge_data() # Load NHL Edge speed profiles
     training_data = []
     
     print("Generating rolling features + Elo + Finish Factors...")
@@ -303,6 +346,10 @@ def extract_features_chronologically(predictions):
                 # Goalie Difference
                 'gsax_diff': h_gsax_roll - a_gsax_roll,
                 'finish_diff': h_finish - a_finish,
+                
+                # NHL Edge Micro-Movement (Phase 6)
+                'edge_speed_diff': edge_data.get(home, {}).get('edge_top_speed', 21.0) - edge_data.get(away, {}).get('edge_top_speed', 21.0),
+                'edge_burst_diff': edge_data.get(home, {}).get('edge_burst_avg', 0.5) - edge_data.get(away, {}).get('edge_burst_avg', 0.5),
                 
                 # Rolling General (EWMA)
                 'l5_goal_diff': h_l5.get('goal_diff', 0) - a_l5.get('goal_diff', 0),

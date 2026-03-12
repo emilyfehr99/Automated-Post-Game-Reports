@@ -212,6 +212,12 @@ jobs:
              git add --force xgb_features.pkl
              FILES_TO_COMMIT="$FILES_TO_COMMIT xgb_features.pkl"
           fi
+
+          if [ -f "team_travel_archetypes.json" ]; then
+             echo "📦 Adding travel archetypes..."
+             git add --force team_travel_archetypes.json
+             FILES_TO_COMMIT="$FILES_TO_COMMIT team_travel_archetypes.json"
+          fi
           
           # Commit if there are changes
           if ! git diff --staged --quiet; then

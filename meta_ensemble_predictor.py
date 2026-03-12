@@ -204,6 +204,7 @@ class MetaEnsemblePredictor:
         self.feature_names = []
         self.team_profiles = {}
         self.travel_archetypes = {}
+        self.edge_profiles = {}
         self.rotowire = RotoWireScraper()
         
         try:
@@ -246,6 +247,38 @@ class MetaEnsemblePredictor:
             print(f"✅ Loaded {len(self.travel_archetypes)} team travel archetypes")
         except:
             print("⚠️ Could not load travel archetypes")
+
+        # 5. Load NHL Edge Profiles (Phase 6)
+        try:
+            file_path = Path('data/nhl_edge_data.json')
+            if file_path.exists():
+                with open(file_path, 'r') as f:
+                    data = json.load(f)
+                
+                player_data = data.get('player_data', [])
+                team_metrics = {}
+                for p in player_data:
+                    team = p.get('Team')
+                    if not team: continue
+                    if team not in team_metrics:
+                        team_metrics[team] = {'top_speeds': [], 'bursts': []}
+                    try:
+                        speed = float(p.get('Top Speed', 0) or 0)
+                        burst = float(p.get('Bursts>20 per mile', 0) or 0)
+                        if speed > 0: team_metrics[team]['top_speeds'].append(speed)
+                        if burst > 0: team_metrics[team]['bursts'].append(burst)
+                    except: continue
+                
+                for team, metrics in team_metrics.items():
+                    top_speeds = sorted(metrics['top_speeds'], reverse=True)[:3]
+                    top_bursts = sorted(metrics['bursts'], reverse=True)[:3]
+                    self.edge_profiles[team] = {
+                        'edge_top_speed': np.mean(top_speeds) if top_speeds else 21.0,
+                        'edge_burst_avg': np.mean(top_bursts) if top_bursts else 0.5
+                    }
+                print(f"✅ Loaded {len(self.edge_profiles)} team Edge profiles")
+        except Exception as e:
+            print(f"⚠️ Could not load NHL Edge profiles: {e}")
 
         # 4. Build Team History State
         data_path = Path('data/win_probability_predictions_v2.json')
@@ -400,6 +433,10 @@ class MetaEnsemblePredictor:
             # Goalie Difference
             'gsax_diff': h_gsax_roll - a_gsax_roll,
             'finish_diff': h_finish - a_finish,
+            
+            # NHL Edge Micro-Movement (Phase 6)
+            'edge_speed_diff': self.edge_profiles.get(home_team, {}).get('edge_top_speed', 21.0) - self.edge_profiles.get(away_team, {}).get('edge_top_speed', 21.0),
+            'edge_burst_diff': self.edge_profiles.get(home_team, {}).get('edge_burst_avg', 0.5) - self.edge_profiles.get(away_team, {}).get('edge_burst_avg', 0.5),
             
             # Rolling General (EWMA)
             'l5_goal_diff': h_l5.get('goal_diff', 0) - a_l5.get('goal_diff', 0),
