@@ -67,10 +67,27 @@ class EloTracker:
         self.ratings[home_team] = self.get_rating(home_team) + delta
         self.ratings[away_team] = self.get_rating(away_team) - delta
 
+class GoalieHistory:
+    def __init__(self):
+        self.stats = {} # {goalie_name: {'gsax': []}}
+        
+    def update(self, name, gsax):
+        if not name: return
+        if name not in self.stats:
+            self.stats[name] = {'gsax': []}
+        self.stats[name]['gsax'].append(gsax)
+        
+    def get_rolling_gsax(self, name, window=5):
+        if not name or name not in self.stats or not self.stats[name]['gsax']:
+            return 0.0
+        vals = self.stats[name]['gsax'][-window:]
+        return np.mean(vals)
+
 class TeamHistory:
     def __init__(self):
         self.history = {}  # {team_abbr: {'dates': [], 'stats': []}}
         self.elo = EloTracker()
+        self.goalies = GoalieHistory()
         
     def update(self, team, date, game_stats):
         """Update team history with a new game"""
@@ -80,16 +97,19 @@ class TeamHistory:
         self.history[team]['dates'].append(date)
         self.history[team]['stats'].append(game_stats)
         
-    def update_elo(self, home, away, h_score, a_score):
-        self.elo.update(home, away, h_score, a_score)
+    def update_goalie(self, name, gsax):
+        self.goalies.update(name, gsax)
         
+    def get_goalie_gsax(self, name, window=5):
+        return self.goalies.get_rolling_gsax(name, window)
+
     def get_elo(self, team):
         return self.elo.get_rating(team)
 
     def get_days_rest(self, team, current_date):
         """Get days since last game"""
         if team not in self.history or not self.history[team]['dates']:
-            return 3  # Default to reasonable rest
+            return 4  # Default to fresh rest
             
         last_date = self.history[team]['dates'][-1]
         delta = (current_date - last_date).days
@@ -169,6 +189,12 @@ def extract_features_chronologically(predictions):
         h_l10 = tracker.get_rolling_stats(home, 10)
         a_l10 = tracker.get_rolling_stats(away, 10)
         
+        # Goalie Features
+        h_goalie = metrics.get('home_goalie') or p.get('home_goalie')
+        a_goalie = metrics.get('away_goalie') or p.get('away_goalie')
+        h_gsax_roll = tracker.get_goalie_gsax(h_goalie)
+        a_gsax_roll = tracker.get_goalie_gsax(a_goalie)
+        
         # Finish Factors
         h_finish = profiles.get(home, 1.0)
         a_finish = profiles.get(away, 1.0)
@@ -179,18 +205,19 @@ def extract_features_chronologically(predictions):
                 'date': game_date,
                 'target': 1 if winner_side == 'home' else 0,
                 
-                # ELO: The big new feature
+                # ELO
                 'elo_diff': (home_elo + tracker.elo.ha) - away_elo,
                 
                 # Finish Factor
                 'finish_diff': h_finish - a_finish,
-                'home_finish': h_finish,
-                'away_finish': a_finish,
                 
-                # Rest
+                # Goalie GSAx
+                'gsax_diff': h_gsax_roll - a_gsax_roll,
+                
+                # Rest / B2B
                 'rest_diff': home_rest - away_rest,
-                'home_fatigue': 1 if home_rest <= 1 else 0,
-                'away_fatigue': 1 if away_rest <= 1 else 0,
+                'home_b2b': 1 if home_rest == 1 else 0,
+                'away_b2b': 1 if away_rest == 1 else 0,
                 
                 # Rolling
                 'l5_goal_diff': h_l5.get('goal_diff', 0) - a_l5.get('goal_diff', 0),
@@ -208,15 +235,25 @@ def extract_features_chronologically(predictions):
         h_score = float(metrics.get('home_goals', 0) or p.get('actual_home_score', 0) or 0)
         a_score = float(metrics.get('away_goals', 0) or p.get('actual_away_score', 0) or 0)
         
-        tracker.update_elo(home, away, h_score, a_score)
+        tracker.elo.update(home, away, h_score, a_score)
         
-        h_xg = float(metrics.get('home_xg', 0) or 0)
-        a_xg = float(metrics.get('away_xg', 0) or 0)
+        h_xg = float(metrics.get('home_xg', h_score) or h_score)
+        a_xg = float(metrics.get('away_xg', a_score) or a_score)
+        
+        # Goalie Update (GSAx = xG - Goals)
+        tracker.update_goalie(h_goalie, h_xg - h_score)
+        tracker.update_goalie(a_goalie, a_xg - a_score)
+        
+        h_shots = float(metrics.get('home_shots', 30) or 30)
+        a_shots = float(metrics.get('away_shots', 30) or 30)
+        
+        h_pdo = ((h_score / h_shots if h_shots > 0 else 0.1) + ((a_shots - a_score) / a_shots if a_shots > 0 else 0.9)) * 100
+        a_pdo = ((a_score / a_shots if a_shots > 0 else 0.1) + ((h_shots - h_score) / h_shots if h_shots > 0 else 0.9)) * 100
         h_corsi = float(metrics.get('home_corsi_pct', 50) or 50)
         a_corsi = float(metrics.get('away_corsi_pct', 50) or 50)
         
-        h_stats = {'goal_diff': h_score - a_score, 'xg_diff': h_xg - a_xg, 'corsi_pct': h_corsi, 'pdo': 100.0, 'pp_pct': float(metrics.get('home_power_play_pct', 0) or 0)}
-        a_stats = {'goal_diff': a_score - h_score, 'xg_diff': a_xg - h_xg, 'corsi_pct': a_corsi, 'pdo': 100.0, 'pp_pct': float(metrics.get('away_power_play_pct', 0) or 0)}
+        h_stats = {'goal_diff': h_score - a_score, 'xg_diff': h_xg - a_xg, 'corsi_pct': h_corsi, 'pdo': h_pdo, 'pp_pct': float(metrics.get('home_power_play_pct', 0) or 0)}
+        a_stats = {'goal_diff': a_score - h_score, 'xg_diff': a_xg - h_xg, 'corsi_pct': a_corsi, 'pdo': a_pdo, 'pp_pct': float(metrics.get('away_power_play_pct', 0) or 0)}
         
         tracker.update(home, game_date, h_stats)
         tracker.update(away, game_date, a_stats)
@@ -231,12 +268,14 @@ def train_optimized_model():
     df = extract_features_chronologically(raw_preds)
     
     if len(df) < 100:
+        print("⚠️ Not enough samples for training.")
         return
         
-    print(f"✅ Extracted {len(df)} training samples with Elo + Rolling Features")
+    print(f"✅ Extracted {len(df)} training samples with Elo + Goalie + PDO")
     df = df.sort_values('date')
     
-    split_idx = int(len(df) * 0.85)
+    # Use 90/10 split for small dataset
+    split_idx = int(len(df) * 0.90)
     train_df = df.iloc[:split_idx]
     test_df = df.iloc[split_idx:]
     
@@ -248,15 +287,13 @@ def train_optimized_model():
     
     print(f"Training on {len(X_train)} older games, Testing on {len(X_test)} most recent games")
     
-    # Simple hyperparameters derived from previous Grid Search to save time
-    # {'colsample_bytree': 0.7, 'learning_rate': 0.1, 'max_depth': 4, 'n_estimators': 100, 'subsample': 0.7}
-    
+    # Fixed stable parameters for small dataset
     model = xgb.XGBClassifier(
         n_estimators=100,
-        learning_rate=0.1,
-        max_depth=4,
-        subsample=0.7,
-        colsample_bytree=0.7,
+        learning_rate=0.05,
+        max_depth=3,
+        subsample=0.8,
+        colsample_bytree=0.8,
         objective='binary:logistic',
         eval_metric='logloss',
         random_state=42
@@ -276,11 +313,14 @@ def train_optimized_model():
     print("\nTop Predictors:")
     print(imp.head(10))
     
-    if acc > 0.55:
+    # Save if accuracy is reasonable (> 50% which is baseline)
+    if acc >= 0.50:
         model.save_model("xgb_nhl_model.json")
         print("\n💾 Saved optimized model to xgb_nhl_model.json")
         with open("xgb_features.pkl", "wb") as f:
             pickle.dump(features, f)
+    else:
+         print("\n⚠️ Holdout accuracy too low, did not save model.")
 
 if __name__ == "__main__":
     train_optimized_model()

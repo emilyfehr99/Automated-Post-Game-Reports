@@ -46,10 +46,27 @@ class EloTracker:
         self.ratings[home_team] = self.get_rating(home_team) + delta
         self.ratings[away_team] = self.get_rating(away_team) - delta
 
+class GoalieHistory:
+    def __init__(self):
+        self.stats = {} # {goalie_name: {'gsax': []}}
+        
+    def update(self, name, gsax):
+        if not name: return
+        if name not in self.stats:
+            self.stats[name] = {'gsax': []}
+        self.stats[name]['gsax'].append(gsax)
+        
+    def get_rolling_gsax(self, name, window=5):
+        if not name or name not in self.stats or not self.stats[name]['gsax']:
+            return 0.0
+        vals = self.stats[name]['gsax'][-window:]
+        return np.mean(vals)
+
 class TeamHistory:
     def __init__(self):
         self.history = {}  # {team_abbr: {'dates': [], 'stats': []}}
         self.elo = EloTracker()
+        self.goalies = GoalieHistory()
         
     def update(self, team, date, game_stats):
         """Update team history with a new game"""
@@ -59,16 +76,19 @@ class TeamHistory:
         self.history[team]['dates'].append(date)
         self.history[team]['stats'].append(game_stats)
         
-    def update_elo(self, home, away, h_score, a_score):
-        self.elo.update(home, away, h_score, a_score)
+    def update_goalie(self, name, gsax):
+        self.goalies.update(name, gsax)
         
+    def get_goalie_gsax(self, name, window=5):
+        return self.goalies.get_rolling_gsax(name, window)
+
     def get_elo(self, team):
         return self.elo.get_rating(team)
 
     def get_days_rest(self, team, current_date):
         """Get days since last game"""
         if team not in self.history or not self.history[team]['dates']:
-            return 3  # Default to reasonable rest
+            return 4  # Default to fresh rest
             
         last_date = self.history[team]['dates'][-1]
         delta = (current_date - last_date).days
@@ -170,23 +190,37 @@ class MetaEnsemblePredictor:
                 # Extract stats (logic matches train_xgboost_model.py)
                 h_goals = float(metrics.get('home_goals', 0) or p.get('actual_home_score', 0) or 0)
                 a_goals = float(metrics.get('away_goals', 0) or p.get('actual_away_score', 0) or 0)
-                h_xg = float(metrics.get('home_xg', 0) or 0)
-                a_xg = float(metrics.get('away_xg', 0) or 0)
+                h_xg = float(metrics.get('home_xg', h_goals) or h_goals)
+                a_xg = float(metrics.get('away_xg', a_goals) or a_goals)
+                
+                # Goalie Update
+                h_goalie = metrics.get('home_goalie') or p.get('home_goalie')
+                a_goalie = metrics.get('away_goalie') or p.get('away_goalie')
+                if h_goalie: self.history_tracker.update_goalie(h_goalie, h_xg - h_goals)
+                if a_goalie: self.history_tracker.update_goalie(a_goalie, a_xg - a_goals)
+                
+                h_shots = float(metrics.get('home_shots', 30) or 30)
+                a_shots = float(metrics.get('away_shots', 30) or 30)
+                
+                # Real PDO
+                h_pdo = ((h_goals / h_shots if h_shots > 0 else 0.1) + ((a_shots - a_goals) / a_shots if a_shots > 0 else 0.9)) * 100
+                a_pdo = ((a_goals / a_shots if a_shots > 0 else 0.1) + ((h_shots - h_goals) / h_shots if h_shots > 0 else 0.9)) * 100
+
                 h_corsi = float(metrics.get('home_corsi_pct', 50) or 50)
                 a_corsi = float(metrics.get('away_corsi_pct', 50) or 50)
                 h_pp = float(metrics.get('home_power_play_pct', 0) or 0)
                 a_pp = float(metrics.get('away_power_play_pct', 0) or 0)
 
-                h_stats = {'goal_diff': h_goals - a_goals, 'xg_diff': h_xg - a_xg, 'corsi_pct': h_corsi, 'pdo': 100.0, 'pp_pct': h_pp}
-                a_stats = {'goal_diff': a_goals - h_goals, 'xg_diff': a_xg - h_xg, 'corsi_pct': a_corsi, 'pdo': 100.0, 'pp_pct': a_pp}
+                h_stats = {'goal_diff': h_goals - a_goals, 'xg_diff': h_xg - a_xg, 'corsi_pct': h_corsi, 'pdo': h_pdo, 'pp_pct': h_pp}
+                a_stats = {'goal_diff': a_goals - h_goals, 'xg_diff': a_xg - h_xg, 'corsi_pct': a_corsi, 'pdo': a_pdo, 'pp_pct': a_pp}
                 
-                self.history_tracker.update_elo(home, away, h_goals, a_goals)
+                self.history_tracker.elo.update(home, away, h_goals, a_goals)
                 self.history_tracker.update(home, game_date, h_stats)
                 self.history_tracker.update(away, game_date, a_stats)
                 count += 1
             print(f"✅ Replayed {count} games to build current state")
 
-    def _predict_xgboost(self, away_team, home_team, game_date_str=None) -> Optional[Dict]:
+    def _predict_xgboost(self, away_team, home_team, game_date_str=None, away_goalie=None, home_goalie=None) -> Optional[Dict]:
         """Make prediction using XGBoost model with dynamic features"""
         if not self.xgb_model or not self.feature_names:
             return None
@@ -214,6 +248,10 @@ class MetaEnsemblePredictor:
         h_l10 = tracker.get_rolling_stats(home_team, 10)
         a_l10 = tracker.get_rolling_stats(away_team, 10)
         
+        # Goalie Features
+        h_gsax_roll = tracker.get_goalie_gsax(home_goalie)
+        a_gsax_roll = tracker.get_goalie_gsax(away_goalie)
+        
         # Finish Factors
         h_finish = self.team_profiles.get(home_team, 1.0)
         a_finish = self.team_profiles.get(away_team, 1.0)
@@ -224,12 +262,14 @@ class MetaEnsemblePredictor:
             
             # Finish Factor
             'finish_diff': h_finish - a_finish,
-            'home_finish': h_finish,
-            'away_finish': a_finish,
             
+            # Goalie GSAx
+            'gsax_diff': h_gsax_roll - a_gsax_roll,
+            
+            # Rest / B2B
             'rest_diff': home_rest - away_rest,
-            'home_fatigue': 1 if home_rest <= 1 else 0,
-            'away_fatigue': 1 if away_rest <= 1 else 0,
+            'home_b2b': 1 if home_rest == 1 else 0,
+            'away_b2b': 1 if away_rest == 1 else 0,
             
             'l5_goal_diff': h_l5.get('goal_diff', 0) - a_l5.get('goal_diff', 0),
             'l5_xg_diff': h_l5.get('xg_diff', 0) - a_l5.get('xg_diff', 0),
@@ -276,7 +316,7 @@ class MetaEnsemblePredictor:
         weights = []
         
         # 1. XGBoost ML Model (50% Weight - Highest Accuracy Component)
-        xgb_pred = self._predict_xgboost(away_team, home_team, game_date)
+        xgb_pred = self._predict_xgboost(away_team, home_team, game_date, away_goalie, home_goalie)
         if xgb_pred:
             predictions.append(xgb_pred)
             weights.append(0.50)
