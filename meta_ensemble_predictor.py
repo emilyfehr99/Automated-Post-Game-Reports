@@ -64,18 +64,26 @@ class GoalieHistory:
 
 class TeamHistory:
     def __init__(self):
-        self.history = {}  # {team_abbr: {'dates': [], 'stats': []}}
+        self.history = {}  # {team_abbr: {'dates': [], 'stats': [], 'home_stats': [], 'away_stats': [], 'opponents_elo': []}}
         self.elo = EloTracker()
         self.goalies = GoalieHistory()
         
-    def update(self, team, date, game_stats):
+    def update(self, team, date, game_stats, venue=None, opponent_elo=None):
         """Update team history with a new game"""
         if team not in self.history:
-            self.history[team] = {'dates': [], 'stats': []}
+            self.history[team] = {'dates': [], 'stats': [], 'home_stats': [], 'away_stats': [], 'opponents_elo': []}
             
         self.history[team]['dates'].append(date)
         self.history[team]['stats'].append(game_stats)
         
+        if opponent_elo is not None:
+             self.history[team]['opponents_elo'].append(opponent_elo)
+        
+        if venue == 'home':
+            self.history[team]['home_stats'].append(game_stats)
+        elif venue == 'away':
+            self.history[team]['away_stats'].append(game_stats)
+            
     def update_goalie(self, name, gsax):
         self.goalies.update(name, gsax)
         
@@ -94,12 +102,18 @@ class TeamHistory:
         delta = (current_date - last_date).days
         return max(1, delta)
         
-    def get_rolling_stats(self, team, window=5):
-        """Calculate rolling averages for specified window"""
-        if team not in self.history or len(self.history[team]['stats']) < 1:
+    def get_rolling_stats(self, team, window=5, venue=None):
+        """Calculate rolling averages for specified window with optional venue filter"""
+        if team not in self.history:
             return {}
             
-        stats_list = self.history[team]['stats'][-window:]
+        if venue == 'home':
+            stats_list = self.history[team]['home_stats'][-window:]
+        elif venue == 'away':
+            stats_list = self.history[team]['away_stats'][-window:]
+        else:
+            stats_list = self.history[team]['stats'][-window:]
+            
         aggregated = {}
         if not stats_list:
             return {}
@@ -112,6 +126,20 @@ class TeamHistory:
             else:
                 aggregated[k] = 0.0
         return aggregated
+
+    def get_rolling_std(self, team, window=5, key='goal_diff'):
+        """Calculate rolling standard deviation for a metric"""
+        if team not in self.history or len(self.history[team]['stats']) < 2:
+            return 1.0
+        stats_list = self.history[team]['stats'][-window:]
+        vals = [g[key] for g in stats_list if g.get(key) is not None]
+        return np.std(vals) if len(vals) > 1 else 1.0
+
+    def get_sos(self, team, window=5):
+        """Calculate Strength of Schedule (Avg Opponent Elo)"""
+        if team not in self.history or not self.history[team]['opponents_elo']:
+            return self.elo.base_rating
+        return np.mean(self.history[team]['opponents_elo'][-window:])
 
 class MetaEnsemblePredictor:
     """Combines multiple ensemble strategies for maximum accuracy"""
@@ -211,12 +239,33 @@ class MetaEnsemblePredictor:
                 h_pp = float(metrics.get('home_power_play_pct', 0) or 0)
                 a_pp = float(metrics.get('away_power_play_pct', 0) or 0)
 
-                h_stats = {'goal_diff': h_goals - a_goals, 'xg_diff': h_xg - a_xg, 'corsi_pct': h_corsi, 'pdo': h_pdo, 'pp_pct': h_pp}
-                a_stats = {'goal_diff': a_goals - h_goals, 'xg_diff': a_xg - h_xg, 'corsi_pct': a_corsi, 'pdo': a_pdo, 'pp_pct': a_pp}
+                h_stats = {
+                    'goal_diff': h_goals - a_goals, 
+                    'xg_diff': h_xg - a_xg, 
+                    'corsi_pct': h_corsi, 
+                    'pdo': h_pdo, 
+                    'pp_pct': h_pp,
+                    'rush': float(p.get('home_rush', 2) or 2),
+                    'nzt': float(p.get('home_nzt', 5) or 5),
+                    'ozs': float(p.get('home_ozs', 10) or 10)
+                }
+                a_stats = {
+                    'goal_diff': a_goals - h_goals, 
+                    'xg_diff': a_xg - h_xg, 
+                    'corsi_pct': a_corsi, 
+                    'pdo': a_pdo, 
+                    'pp_pct': a_pp,
+                    'rush': float(p.get('away_rush', 2) or 2),
+                    'nzt': float(p.get('away_nzt', 5) or 5),
+                    'ozs': float(p.get('away_ozs', 10) or 10)
+                }
+                
+                curr_h_elo = self.history_tracker.get_elo(home)
+                curr_a_elo = self.history_tracker.get_elo(away)
                 
                 self.history_tracker.elo.update(home, away, h_goals, a_goals)
-                self.history_tracker.update(home, game_date, h_stats)
-                self.history_tracker.update(away, game_date, a_stats)
+                self.history_tracker.update(home, game_date, h_stats, venue='home', opponent_elo=curr_a_elo)
+                self.history_tracker.update(away, game_date, a_stats, venue='away', opponent_elo=curr_h_elo)
                 count += 1
             print(f"✅ Replayed {count} games to build current state")
 
@@ -248,6 +297,10 @@ class MetaEnsemblePredictor:
         h_l10 = tracker.get_rolling_stats(home_team, 10)
         a_l10 = tracker.get_rolling_stats(away_team, 10)
         
+        # Venue Specific Rolling (L5)
+        h_home_l5 = tracker.get_rolling_stats(home_team, 5, venue='home')
+        a_away_l5 = tracker.get_rolling_stats(away_team, 5, venue='away')
+        
         # Goalie Features
         h_gsax_roll = tracker.get_goalie_gsax(home_goalie)
         a_gsax_roll = tracker.get_goalie_gsax(away_goalie)
@@ -271,11 +324,28 @@ class MetaEnsemblePredictor:
             'home_b2b': 1 if home_rest == 1 else 0,
             'away_b2b': 1 if away_rest == 1 else 0,
             
+            # Rolling General
             'l5_goal_diff': h_l5.get('goal_diff', 0) - a_l5.get('goal_diff', 0),
             'l5_xg_diff': h_l5.get('xg_diff', 0) - a_l5.get('xg_diff', 0),
             'l5_corsi_diff': h_l5.get('corsi_pct', 50) - a_l5.get('corsi_pct', 50),
             'l5_pdo_diff': h_l5.get('pdo', 100) - a_l5.get('pdo', 100),
             'l5_pp_diff': h_l5.get('pp_pct', 20) - a_l5.get('pp_pct', 20),
+            
+            # Technical Metrics (Rush & Transitions)
+            'l5_rush_diff': h_l5.get('rush', 2) - a_l5.get('rush', 2),
+            'l5_nzt_diff': h_l5.get('nzt', 5) - a_l5.get('nzt', 5),
+            'l5_ozs_diff': h_l5.get('ozs', 10) - a_l5.get('ozs', 10),
+            
+            # Venue Specific
+            'home_venue_goal_diff': h_home_l5.get('goal_diff', 0),
+            'away_venue_goal_diff': a_away_l5.get('goal_diff', 0),
+            
+            # Strength of Schedule (SoS)
+            'home_sos': tracker.get_sos(home_team, 5),
+            'away_sos': tracker.get_sos(away_team, 5),
+            
+            # Stability (Performance Consistency)
+            'l5_std_diff': tracker.get_rolling_std(home_team, 5) - tracker.get_rolling_std(away_team, 5),
             
             'l10_goal_diff': h_l10.get('goal_diff', 0) - a_l10.get('goal_diff', 0),
             'l10_xg_diff': h_l10.get('xg_diff', 0) - a_l10.get('xg_diff', 0),

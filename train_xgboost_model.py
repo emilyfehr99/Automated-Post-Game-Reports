@@ -85,18 +85,26 @@ class GoalieHistory:
 
 class TeamHistory:
     def __init__(self):
-        self.history = {}  # {team_abbr: {'dates': [], 'stats': []}}
+        self.history = {}  # {team_abbr: {'dates': [], 'stats': [], 'home_stats': [], 'away_stats': [], 'opponents_elo': []}}
         self.elo = EloTracker()
         self.goalies = GoalieHistory()
         
-    def update(self, team, date, game_stats):
+    def update(self, team, date, game_stats, venue=None, opponent_elo=None):
         """Update team history with a new game"""
         if team not in self.history:
-            self.history[team] = {'dates': [], 'stats': []}
+            self.history[team] = {'dates': [], 'stats': [], 'home_stats': [], 'away_stats': [], 'opponents_elo': []}
             
         self.history[team]['dates'].append(date)
         self.history[team]['stats'].append(game_stats)
         
+        if opponent_elo is not None:
+            self.history[team]['opponents_elo'].append(opponent_elo)
+        
+        if venue == 'home':
+            self.history[team]['home_stats'].append(game_stats)
+        elif venue == 'away':
+            self.history[team]['away_stats'].append(game_stats)
+            
     def update_goalie(self, name, gsax):
         self.goalies.update(name, gsax)
         
@@ -115,12 +123,18 @@ class TeamHistory:
         delta = (current_date - last_date).days
         return max(1, delta)
         
-    def get_rolling_stats(self, team, window=5):
-        """Calculate rolling averages"""
-        if team not in self.history or len(self.history[team]['stats']) < 1:
+    def get_rolling_stats(self, team, window=5, venue=None):
+        """Calculate rolling averages with optional venue filter"""
+        if team not in self.history:
             return {}
             
-        stats_list = self.history[team]['stats'][-window:]
+        if venue == 'home':
+            stats_list = self.history[team]['home_stats'][-window:]
+        elif venue == 'away':
+            stats_list = self.history[team]['away_stats'][-window:]
+        else:
+            stats_list = self.history[team]['stats'][-window:]
+            
         aggregated = {}
         if not stats_list:
             return {}
@@ -133,6 +147,20 @@ class TeamHistory:
             else:
                 aggregated[k] = 0.0
         return aggregated
+
+    def get_rolling_std(self, team, window=5, key='goal_diff'):
+        """Calculate rolling standard deviation for a metric"""
+        if team not in self.history or len(self.history[team]['stats']) < 2:
+            return 1.0
+        stats_list = self.history[team]['stats'][-window:]
+        vals = [g[key] for g in stats_list if g.get(key) is not None]
+        return np.std(vals) if len(vals) > 1 else 1.0
+
+    def get_sos(self, team, window=5):
+        """Calculate Strength of Schedule (Avg Opponent Elo)"""
+        if team not in self.history or not self.history[team]['opponents_elo']:
+            return self.elo.base_rating
+        return np.mean(self.history[team]['opponents_elo'][-window:])
 
 def load_data():
     file_path = Path('data/win_probability_predictions_v2.json')
@@ -189,6 +217,10 @@ def extract_features_chronologically(predictions):
         h_l10 = tracker.get_rolling_stats(home, 10)
         a_l10 = tracker.get_rolling_stats(away, 10)
         
+        # Venue Specific Rolling (L5)
+        h_home_l5 = tracker.get_rolling_stats(home, 5, venue='home')
+        a_away_l5 = tracker.get_rolling_stats(away, 5, venue='away')
+        
         # Goalie Features
         h_goalie = metrics.get('home_goalie') or p.get('home_goalie')
         a_goalie = metrics.get('away_goalie') or p.get('away_goalie')
@@ -219,12 +251,27 @@ def extract_features_chronologically(predictions):
                 'home_b2b': 1 if home_rest == 1 else 0,
                 'away_b2b': 1 if away_rest == 1 else 0,
                 
-                # Rolling
+                # Rolling General
                 'l5_goal_diff': h_l5.get('goal_diff', 0) - a_l5.get('goal_diff', 0),
                 'l5_xg_diff': h_l5.get('xg_diff', 0) - a_l5.get('xg_diff', 0),
                 'l5_corsi_diff': h_l5.get('corsi_pct', 50) - a_l5.get('corsi_pct', 50),
                 'l5_pdo_diff': h_l5.get('pdo', 100) - a_l5.get('pdo', 100),
                 'l5_pp_diff': h_l5.get('pp_pct', 20) - a_l5.get('pp_pct', 20),
+                
+                # Technical Metrics (Rush & Transitions)
+                'l5_rush_diff': h_l5.get('rush', 2) - a_l5.get('rush', 2),
+                'l5_nzt_diff': h_l5.get('nzt', 5) - a_l5.get('nzt', 5),
+                'l5_ozs_diff': h_l5.get('ozs', 10) - a_l5.get('ozs', 10),
+                
+                'home_venue_goal_diff': h_home_l5.get('goal_diff', 0),
+                'away_venue_goal_diff': a_away_l5.get('goal_diff', 0),
+                
+                # Strength of Schedule (SoS)
+                'home_sos': tracker.get_sos(home, 5),
+                'away_sos': tracker.get_sos(away, 5),
+                
+                # Stability (Performance Consistency)
+                'l5_std_diff': tracker.get_rolling_std(home, 5) - tracker.get_rolling_std(away, 5),
                 
                 'l10_goal_diff': h_l10.get('goal_diff', 0) - a_l10.get('goal_diff', 0),
                 'l10_xg_diff': h_l10.get('xg_diff', 0) - a_l10.get('xg_diff', 0),
@@ -234,6 +281,10 @@ def extract_features_chronologically(predictions):
         # 2. UPDATE HISTORY
         h_score = float(metrics.get('home_goals', 0) or p.get('actual_home_score', 0) or 0)
         a_score = float(metrics.get('away_goals', 0) or p.get('actual_away_score', 0) or 0)
+        
+        # Save current Elos for next SoS calc
+        curr_h_elo = tracker.get_elo(home)
+        curr_a_elo = tracker.get_elo(away)
         
         tracker.elo.update(home, away, h_score, a_score)
         
@@ -252,11 +303,29 @@ def extract_features_chronologically(predictions):
         h_corsi = float(metrics.get('home_corsi_pct', 50) or 50)
         a_corsi = float(metrics.get('away_corsi_pct', 50) or 50)
         
-        h_stats = {'goal_diff': h_score - a_score, 'xg_diff': h_xg - a_xg, 'corsi_pct': h_corsi, 'pdo': h_pdo, 'pp_pct': float(metrics.get('home_power_play_pct', 0) or 0)}
-        a_stats = {'goal_diff': a_score - h_score, 'xg_diff': a_xg - h_xg, 'corsi_pct': a_corsi, 'pdo': a_pdo, 'pp_pct': float(metrics.get('away_power_play_pct', 0) or 0)}
+        h_stats = {
+            'goal_diff': h_score - a_score, 
+            'xg_diff': h_xg - a_xg, 
+            'corsi_pct': h_corsi, 
+            'pdo': h_pdo, 
+            'pp_pct': float(metrics.get('home_power_play_pct', 0) or 0),
+            'rush': float(p.get('home_rush', 2) or 2),
+            'nzt': float(p.get('home_nzt', 5) or 5),
+            'ozs': float(p.get('home_ozs', 10) or 10)
+        }
+        a_stats = {
+            'goal_diff': a_score - h_score, 
+            'xg_diff': a_xg - h_xg, 
+            'corsi_pct': a_corsi, 
+            'pdo': a_pdo, 
+            'pp_pct': float(metrics.get('away_power_play_pct', 0) or 0),
+            'rush': float(p.get('away_rush', 2) or 2),
+            'nzt': float(p.get('away_nzt', 5) or 5),
+            'ozs': float(p.get('away_ozs', 10) or 10)
+        }
         
-        tracker.update(home, game_date, h_stats)
-        tracker.update(away, game_date, a_stats)
+        tracker.update(home, game_date, h_stats, venue='home', opponent_elo=curr_a_elo)
+        tracker.update(away, game_date, a_stats, venue='away', opponent_elo=curr_h_elo)
         
     return pd.DataFrame(training_data)
 
