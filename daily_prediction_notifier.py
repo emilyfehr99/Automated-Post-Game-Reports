@@ -302,6 +302,22 @@ class DailyPredictionNotifier:
             print(f"❌ Error sending email: {e}")
             return False
     
+    def _split_message(self, text, limit=1900):
+        """Split a large message into chunks that fit Discord's character limit"""
+        chunks = []
+        while len(text) > limit:
+            # Find the last newline before the limit to avoid cutting in the middle of a line
+            split_at = text.rfind('\n', 0, limit)
+            if split_at == -1 or split_at < 500: # If no newline or it's too early, just cut at limit
+                split_at = limit
+            
+            chunks.append(text[:split_at].strip())
+            text = text[split_at:].strip()
+        
+        if text:
+            chunks.append(text)
+        return chunks
+
     def send_discord_notification(self, webhook_url):
         """Send predictions via Discord webhook"""
         try:
@@ -309,21 +325,33 @@ class DailyPredictionNotifier:
             
             predictions_text = self.get_daily_predictions_summary()
             
-            # Discord webhook payload
-            payload = {
-                "content": predictions_text,
-                "username": "NHL Predictions Bot",
-                "avatar_url": "https://cdn-icons-png.flaticon.com/512/3048/3048127.png"
-            }
+            # Split message if it exceeds Discord's limit (2000 chars)
+            # Using 1900 to be safe
+            chunks = self._split_message(predictions_text, limit=1900)
             
-            response = requests.post(webhook_url, json=payload, timeout=10)
+            success = True
+            for i, chunk in enumerate(chunks):
+                # Discord webhook payload
+                payload = {
+                    "content": chunk,
+                    "username": "NHL Predictions Bot",
+                    "avatar_url": "https://cdn-icons-png.flaticon.com/512/3048/3048127.png"
+                }
+                
+                # Add part indicator if split
+                if len(chunks) > 1:
+                    payload["username"] = f"NHL Predictions Bot (Part {i+1}/{len(chunks)})"
+
+                response = requests.post(webhook_url, json=payload, timeout=15)
+                
+                if response.status_code not in [200, 204]:
+                    print(f"❌ Discord notification chunk {i+1} failed: {response.status_code}")
+                    print(f"   Response: {response.text}")
+                    success = False
             
-            if response.status_code == 204:
-                print("✅ Discord notification sent successfully")
-                return True
-            else:
-                print(f"❌ Discord notification failed: {response.status_code}")
-                return False
+            if success:
+                print(f"✅ Discord notification sent successfully ({len(chunks)} parts)")
+            return success
                 
         except Exception as e:
             print(f"❌ Error sending Discord notification: {e}")
