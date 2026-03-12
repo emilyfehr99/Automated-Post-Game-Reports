@@ -123,8 +123,8 @@ class TeamHistory:
         delta = (current_date - last_date).days
         return max(1, delta)
         
-    def get_rolling_stats(self, team, window=5, venue=None):
-        """Calculate rolling averages with optional venue filter"""
+    def get_rolling_stats(self, team, window=5, venue=None, alpha=None):
+        """Calculate averages with optional venue filter and exponential decay (alpha)"""
         if team not in self.history:
             return {}
             
@@ -143,7 +143,13 @@ class TeamHistory:
         for k in keys:
             vals = [g[k] for g in stats_list if g.get(k) is not None]
             if vals:
-                aggregated[k] = np.mean(vals)
+                if alpha is not None and len(vals) > 1:
+                    # Exponential Weighted Mean (most recent has higher weight)
+                    weights = [alpha * (1 - alpha) ** i for i in range(len(vals))]
+                    weights = weights[::-1]  # Latest value gets alpha
+                    aggregated[k] = np.average(vals, weights=weights)
+                else:
+                    aggregated[k] = np.mean(vals)
             else:
                 aggregated[k] = 0.0
         return aggregated
@@ -212,14 +218,14 @@ def extract_features_chronologically(predictions):
         home_rest = tracker.get_days_rest(home, game_date)
         away_rest = tracker.get_days_rest(away, game_date)
         
-        h_l5 = tracker.get_rolling_stats(home, 5)
-        a_l5 = tracker.get_rolling_stats(away, 5)
-        h_l10 = tracker.get_rolling_stats(home, 10)
-        a_l10 = tracker.get_rolling_stats(away, 10)
+        h_l5 = tracker.get_rolling_stats(home, 5, alpha=0.3)
+        a_l5 = tracker.get_rolling_stats(away, 5, alpha=0.3)
+        h_l10 = tracker.get_rolling_stats(home, 10, alpha=0.3)
+        a_l10 = tracker.get_rolling_stats(away, 10, alpha=0.3)
         
         # Venue Specific Rolling (L5)
-        h_home_l5 = tracker.get_rolling_stats(home, 5, venue='home')
-        a_away_l5 = tracker.get_rolling_stats(away, 5, venue='away')
+        h_home_l5 = tracker.get_rolling_stats(home, 5, venue='home', alpha=0.3)
+        a_away_l5 = tracker.get_rolling_stats(away, 5, venue='away', alpha=0.3)
         
         # Goalie Features
         h_goalie = metrics.get('home_goalie') or p.get('home_goalie')
@@ -251,18 +257,25 @@ def extract_features_chronologically(predictions):
                 'home_b2b': 1 if home_rest == 1 else 0,
                 'away_b2b': 1 if away_rest == 1 else 0,
                 
-                # Rolling General
+                # Rolling General (EWMA)
                 'l5_goal_diff': h_l5.get('goal_diff', 0) - a_l5.get('goal_diff', 0),
                 'l5_xg_diff': h_l5.get('xg_diff', 0) - a_l5.get('xg_diff', 0),
                 'l5_corsi_diff': h_l5.get('corsi_pct', 50) - a_l5.get('corsi_pct', 50),
                 'l5_pdo_diff': h_l5.get('pdo', 100) - a_l5.get('pdo', 100),
-                'l5_pp_diff': h_l5.get('pp_pct', 20) - a_l5.get('pp_pct', 20),
                 
-                # Technical Metrics (Rush & Transitions)
+                # Special Teams
+                'l5_pp_diff': h_l5.get('pp_pct', 20) - a_l5.get('pp_pct', 20),
+                'l5_pk_diff': h_l5.get('pk_pct', 80) - a_l5.get('pk_pct', 80),
+                'l5_st_net': (h_l5.get('pp_pct', 20) + h_l5.get('pk_pct', 80)) - (a_l5.get('pp_pct', 20) + a_l5.get('pk_pct', 80)),
+                
+                # Technical Metrics (Rush, Transitions, HDC)
                 'l5_rush_diff': h_l5.get('rush', 2) - a_l5.get('rush', 2),
                 'l5_nzt_diff': h_l5.get('nzt', 5) - a_l5.get('nzt', 5),
                 'l5_ozs_diff': h_l5.get('ozs', 10) - a_l5.get('ozs', 10),
+                'l5_hdc_diff': h_l5.get('hdc', 5) - a_l5.get('hdc', 5),
+                'l5_pizza_diff': h_l5.get('pizzas', 2) - a_l5.get('pizzas', 2),
                 
+                # Venue Specific
                 'home_venue_goal_diff': h_home_l5.get('goal_diff', 0),
                 'away_venue_goal_diff': a_away_l5.get('goal_diff', 0),
                 
@@ -270,7 +283,7 @@ def extract_features_chronologically(predictions):
                 'home_sos': tracker.get_sos(home, 5),
                 'away_sos': tracker.get_sos(away, 5),
                 
-                # Stability (Performance Consistency)
+                # Stability
                 'l5_std_diff': tracker.get_rolling_std(home, 5) - tracker.get_rolling_std(away, 5),
                 
                 'l10_goal_diff': h_l10.get('goal_diff', 0) - a_l10.get('goal_diff', 0),
@@ -303,25 +316,38 @@ def extract_features_chronologically(predictions):
         h_corsi = float(metrics.get('home_corsi_pct', 50) or 50)
         a_corsi = float(metrics.get('away_corsi_pct', 50) or 50)
         
+        h_pp = float(metrics.get('home_power_play_pct', 0) or 0)
+        a_pp = float(metrics.get('away_power_play_pct', 0) or 0)
+        
+        # Calculate PK as (100 - Opponent PP%)
+        h_pk = 100 - a_pp
+        a_pk = 100 - h_pp
+        
         h_stats = {
             'goal_diff': h_score - a_score, 
             'xg_diff': h_xg - a_xg, 
             'corsi_pct': h_corsi, 
             'pdo': h_pdo, 
-            'pp_pct': float(metrics.get('home_power_play_pct', 0) or 0),
+            'pp_pct': h_pp,
+            'pk_pct': h_pk,
             'rush': float(p.get('home_rush', 2) or 2),
             'nzt': float(p.get('home_nzt', 5) or 5),
-            'ozs': float(p.get('home_ozs', 10) or 10)
+            'ozs': float(p.get('home_ozs', 10) or 10),
+            'hdc': float(metrics.get('home_hdc', 5) or 5),
+            'pizzas': float(p.get('home_hd_giveaways', 2) or 2)
         }
         a_stats = {
             'goal_diff': a_score - h_score, 
             'xg_diff': a_xg - h_xg, 
             'corsi_pct': a_corsi, 
             'pdo': a_pdo, 
-            'pp_pct': float(metrics.get('away_power_play_pct', 0) or 0),
+            'pp_pct': a_pp,
+            'pk_pct': a_pk,
             'rush': float(p.get('away_rush', 2) or 2),
             'nzt': float(p.get('away_nzt', 5) or 5),
-            'ozs': float(p.get('away_ozs', 10) or 10)
+            'ozs': float(p.get('away_ozs', 10) or 10),
+            'hdc': float(metrics.get('away_hdc', 5) or 5),
+            'pizzas': float(p.get('away_hd_giveaways', 2) or 2)
         }
         
         tracker.update(home, game_date, h_stats, venue='home', opponent_elo=curr_a_elo)
