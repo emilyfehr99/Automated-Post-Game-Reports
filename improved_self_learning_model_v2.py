@@ -1004,7 +1004,7 @@ class ImprovedSelfLearningModelV2:
             xg_against_avg = safe_mean(venue_data.get('opp_xg', []), 3.0)
             
             # DEBUG: Log calculated averages
-            logger.info(f"   📊 Calculated averages: xg_avg={xg_avg:.2f}, xg_against_avg={xg_against_avg:.2f}, goals_avg={goals_avg:.2f}")
+            logger.debug(f"   📊 Calculated averages: xg_avg={xg_avg:.2f}, xg_against_avg={xg_against_avg:.2f}, goals_avg={goals_avg:.2f}")
             
             gs_avg = safe_mean(venue_data.get('gs', []), 0.0)
             

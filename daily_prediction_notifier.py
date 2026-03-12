@@ -316,7 +316,7 @@ class DailyPredictionNotifier:
                 "avatar_url": "https://cdn-icons-png.flaticon.com/512/3048/3048127.png"
             }
             
-            response = requests.post(webhook_url, json=payload)
+            response = requests.post(webhook_url, json=payload, timeout=10)
             
             if response.status_code == 204:
                 print("✅ Discord notification sent successfully")
