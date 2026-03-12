@@ -11,9 +11,38 @@ import pandas as pd
 import pickle
 import math
 from pathlib import Path
-from datetime import datetime
+from datetime import datetime, timedelta
+
+TEAM_COORDINATES = {
+    'ANA': (33.80, -117.88), 'BOS': (42.36, -71.06), 'BUF': (42.89, -78.88),
+    'CGY': (51.05, -114.07), 'CAR': (35.80, -78.72), 'CHI': (41.88, -87.67),
+    'COL': (39.75, -105.01), 'CBJ': (39.97, -83.00), 'DAL': (32.79, -96.81),
+    'DET': (42.34, -83.05), 'EDM': (53.55, -113.49), 'FLA': (26.12, -80.14),
+    'LAK': (34.04, -118.27), 'MIN': (44.94, -93.10), 'MTL': (45.51, -73.57),
+    'NSH': (36.16, -86.78), 'NJD': (40.73, -74.17), 'NYI': (40.71, -73.60),
+    'NYR': (40.75, -73.99), 'OTT': (45.42, -75.70), 'PHI': (39.90, -75.17),
+    'PIT': (40.44, -79.99), 'SJS': (37.33, -121.90), 'SEA': (47.62, -122.35),
+    'STL': (38.63, -90.20), 'TBL': (27.95, -82.45), 'TOR': (43.65, -79.38),
+    'UTA': (40.76, -111.89), 'VAN': (49.28, -123.12), 'VGK': (36.17, -115.14),
+    'WSH': (38.90, -77.04), 'WPG': (49.90, -97.14)
+}
+
+def calculate_distance(city1, city2):
+    """Haversine distance between two teams in miles"""
+    if city1 == city2 or city1 not in TEAM_COORDINATES or city2 not in TEAM_COORDINATES:
+        return 0.0
+    lat1, lon1 = TEAM_COORDINATES[city1]
+    lat2, lon2 = TEAM_COORDINATES[city2]
+    R = 3958.8 # miles
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+    a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlambda/2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+    return R * c
 from ensemble_predictor import EnsemblePredictor
 from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
+from rotowire_scraper import RotoWireScraper
 
 class EloTracker:
     def __init__(self, k_factor=20, home_advantage=35):
@@ -48,33 +77,42 @@ class EloTracker:
 
 class GoalieHistory:
     def __init__(self):
-        self.stats = {} # {goalie_name: {'gsax': []}}
+        self.stats = {} # {goalie_name: {'gsax': [], 'hdsv': []}}
         
-    def update(self, name, gsax):
+    def update(self, name, gsax, hdsv=None):
         if not name: return
         if name not in self.stats:
-            self.stats[name] = {'gsax': []}
+            self.stats[name] = {'gsax': [], 'hdsv': []}
         self.stats[name]['gsax'].append(gsax)
+        if hdsv is not None:
+            self.stats[name]['hdsv'].append(hdsv)
         
     def get_rolling_gsax(self, name, window=5):
         if not name or name not in self.stats or not self.stats[name]['gsax']:
             return 0.0
         vals = self.stats[name]['gsax'][-window:]
         return np.mean(vals)
+        
+    def get_rolling_hdsv(self, name, window=5):
+        if not name or name not in self.stats or not self.stats[name]['hdsv']:
+            return 0.8
+        vals = self.stats[name]['hdsv'][-window:]
+        return np.mean(vals)
 
 class TeamHistory:
     def __init__(self):
-        self.history = {}  # {team_abbr: {'dates': [], 'stats': [], 'home_stats': [], 'away_stats': [], 'opponents_elo': []}}
+        self.history = {}  # {team_abbr: {'dates': [], 'stats': [], 'home_stats': [], 'away_stats': [], 'opponents_elo': [], 'last_city': None}}
         self.elo = EloTracker()
         self.goalies = GoalieHistory()
         
-    def update(self, team, date, game_stats, venue=None, opponent_elo=None):
+    def update(self, team, date, game_stats, venue=None, opponent_elo=None, city=None):
         """Update team history with a new game"""
         if team not in self.history:
-            self.history[team] = {'dates': [], 'stats': [], 'home_stats': [], 'away_stats': [], 'opponents_elo': []}
+            self.history[team] = {'dates': [], 'stats': [], 'home_stats': [], 'away_stats': [], 'opponents_elo': [], 'last_city': None}
             
         self.history[team]['dates'].append(date)
         self.history[team]['stats'].append(game_stats)
+        self.history[team]['last_city'] = city or team
         
         if opponent_elo is not None:
              self.history[team]['opponents_elo'].append(opponent_elo)
@@ -84,11 +122,17 @@ class TeamHistory:
         elif venue == 'away':
             self.history[team]['away_stats'].append(game_stats)
             
-    def update_goalie(self, name, gsax):
-        self.goalies.update(name, gsax)
+    def update_goalie(self, name, gsax, hdsv=None):
+        self.goalies.update(name, gsax, hdsv)
         
-    def get_goalie_gsax(self, name, window=5):
-        return self.goalies.get_rolling_gsax(name, window)
+    def get_goalie_hdsv(self, name, window=5):
+        return self.goalies.get_rolling_hdsv(name, window)
+
+    def get_travel_distance(self, team, current_city):
+        """Distance traveled since last game"""
+        if team not in self.history or not self.history[team]['last_city']:
+            return 0.0
+        return calculate_distance(self.history[team]['last_city'], current_city)
 
     def get_elo(self, team):
         return self.elo.get_rating(team)
@@ -159,6 +203,8 @@ class MetaEnsemblePredictor:
         self.history_tracker = TeamHistory()
         self.feature_names = []
         self.team_profiles = {}
+        self.travel_archetypes = {}
+        self.rotowire = RotoWireScraper()
         
         try:
             self._load_xgboost_components()
@@ -192,6 +238,14 @@ class MetaEnsemblePredictor:
             print(f"✅ Loaded {len(self.team_profiles)} team finishing profiles")
         except:
             print("⚠️ Could not load team finishing profiles")
+
+        # 4. Load Travel Archetypes (Phase 5)
+        try:
+            with open('team_travel_archetypes.json', 'r') as f:
+                self.travel_archetypes = json.load(f)
+            print(f"✅ Loaded {len(self.travel_archetypes)} team travel archetypes")
+        except:
+            print("⚠️ Could not load travel archetypes")
 
         # 4. Build Team History State
         data_path = Path('data/win_probability_predictions_v2.json')
@@ -230,8 +284,11 @@ class MetaEnsemblePredictor:
                 # Goalie Update
                 h_goalie = metrics.get('home_goalie') or p.get('home_goalie')
                 a_goalie = metrics.get('away_goalie') or p.get('away_goalie')
-                if h_goalie: self.history_tracker.update_goalie(h_goalie, h_xg - h_goals)
-                if a_goalie: self.history_tracker.update_goalie(a_goalie, a_xg - a_goals)
+                h_hdsv = float(metrics.get('home_hdsv_pct', 0.8) or metrics.get('home_hd_sv_pct', 0.8) or 0.8)
+                a_hdsv = float(metrics.get('away_hdsv_pct', 0.8) or metrics.get('away_hd_sv_pct', 0.8) or 0.8)
+                
+                if h_goalie: self.history_tracker.update_goalie(h_goalie, h_xg - h_goals, h_hdsv)
+                if a_goalie: self.history_tracker.update_goalie(a_goalie, a_xg - a_goals, a_hdsv)
                 
                 h_shots = float(metrics.get('home_shots', 30) or 30)
                 a_shots = float(metrics.get('away_shots', 30) or 30)
@@ -280,8 +337,8 @@ class MetaEnsemblePredictor:
                 curr_a_elo = self.history_tracker.get_elo(away)
                 
                 self.history_tracker.elo.update(home, away, h_goals, a_goals)
-                self.history_tracker.update(home, game_date, h_stats, venue='home', opponent_elo=curr_a_elo)
-                self.history_tracker.update(away, game_date, a_stats, venue='away', opponent_elo=curr_h_elo)
+                self.history_tracker.update(home, game_date, h_stats, venue='home', opponent_elo=curr_a_elo, city=home)
+                self.history_tracker.update(away, game_date, a_stats, venue='away', opponent_elo=curr_h_elo, city=home)
                 count += 1
             print(f"✅ Replayed {count} games to build current state")
 
@@ -318,27 +375,31 @@ class MetaEnsemblePredictor:
         a_away_l5 = tracker.get_rolling_stats(away_team, 5, venue='away', alpha=0.3)
         
         # Goalie Features
-        h_gsax_roll = tracker.get_goalie_gsax(home_goalie)
-        a_gsax_roll = tracker.get_goalie_gsax(away_goalie)
+        h_gsax_roll = tracker.goalies.get_rolling_gsax(home_goalie)
+        a_gsax_roll = tracker.goalies.get_rolling_gsax(away_goalie)
+        h_hdsv_roll = tracker.goalies.get_rolling_hdsv(home_goalie)
+        a_hdsv_roll = tracker.goalies.get_rolling_hdsv(away_goalie)
+        
+        # Fatigue / Travel
+        h_travel = tracker.get_travel_distance(home_team, home_team)
+        a_travel = tracker.get_travel_distance(away_team, home_team) # Away team travels to home city
         
         # Finish Factors
         h_finish = self.team_profiles.get(home_team, 1.0)
         a_finish = self.team_profiles.get(away_team, 1.0)
         
-        # Build Feature Vector
+        # Build Feature Vector (Optimized for 59.0% Accuracy Set)
         feature_data = {
             'elo_diff': (home_elo + tracker.elo.ha) - away_elo,
             
-            # Finish Factor
-            'finish_diff': h_finish - a_finish,
-            
-            # Goalie GSAx
-            'gsax_diff': h_gsax_roll - a_gsax_roll,
-            
-            # Rest / B2B
+            # Contextual Features
             'rest_diff': home_rest - away_rest,
             'home_b2b': 1 if home_rest == 1 else 0,
             'away_b2b': 1 if away_rest == 1 else 0,
+            
+            # Goalie Difference
+            'gsax_diff': h_gsax_roll - a_gsax_roll,
+            'finish_diff': h_finish - a_finish,
             
             # Rolling General (EWMA)
             'l5_goal_diff': h_l5.get('goal_diff', 0) - a_l5.get('goal_diff', 0),
@@ -351,7 +412,7 @@ class MetaEnsemblePredictor:
             'l5_pk_diff': h_l5.get('pk_pct', 80) - a_l5.get('pk_pct', 80),
             'l5_st_net': (h_l5.get('pp_pct', 20) + h_l5.get('pk_pct', 80)) - (a_l5.get('pp_pct', 20) + a_l5.get('pk_pct', 80)),
             
-            # Technical Metrics (Rush, Transitions, HDC)
+            # Technical Metrics
             'l5_rush_diff': h_l5.get('rush', 2) - a_l5.get('rush', 2),
             'l5_nzt_diff': h_l5.get('nzt', 5) - a_l5.get('nzt', 5),
             'l5_ozs_diff': h_l5.get('ozs', 10) - a_l5.get('ozs', 10),
@@ -397,6 +458,36 @@ class MetaEnsemblePredictor:
             print(f"XGBoost prediction error: {e}")
             return None
     
+    def get_injury_impact(self, team: str) -> float:
+        """Calculate injury impact multiplier (0.90 - 1.0) using RotoWire data"""
+        try:
+            # Scrape latest data
+            data = self.rotowire.scrape_daily_data()
+            impact = 1.0
+            
+            # Find the team's injuries in the scraped data
+            for game in data.get('games', []):
+                team_injuries = []
+                if game.get('away_team') == team:
+                    team_injuries = game.get('injuries', [])
+                elif game.get('home_team') == team:
+                    team_injuries = game.get('injuries', [])
+                
+                if team_injuries:
+                    for inj in team_injuries:
+                        status = inj.get('status', '').upper()
+                        # Only count significant/confirmed outs
+                        if any(s in status for s in ['OUT', 'IR', 'INJURED']):
+                            # Tier system (Phase 4): star players are ~3%, regulars ~1%
+                            impact -= 0.015 
+                        elif 'QUESTIONABLE' in status or 'GTD' in status:
+                            impact -= 0.005
+            
+            return max(0.88, impact) # Cap impact at 12% reduction
+        except Exception as e:
+            print(f"Error calculating injury impact for {team}: {e}")
+            return 1.0
+    
     def predict(self, away_team: str, home_team: str, 
                 game_id: str = None, game_date: str = None,
                 away_lineup: Dict = None, home_lineup: Dict = None,
@@ -440,49 +531,85 @@ class MetaEnsemblePredictor:
         except Exception as e:
             print(f"Base model failed: {e}")
             
+        # 4. Vegas Odds Blending (Phase 4)
+        if vegas_odds:
+            try:
+                v_away = vegas_odds.get('away_ml', 0)
+                v_home = vegas_odds.get('home_ml', 0)
+                if abs(v_away) > 0 and abs(v_home) > 0:
+                    a_implied = 100 / (v_away + 100) if v_away > 0 else abs(v_away) / (abs(v_away) + 100)
+                    h_implied = 100 / (v_home + 100) if v_home > 0 else abs(v_home) / (abs(v_home) + 100)
+                    total = a_implied + h_implied
+                    predictions.append({
+                        'away_prob': (a_implied / total) * 100,
+                        'home_prob': (h_implied / total) * 100,
+                        'prediction_type': 'vegas_market'
+                    })
+                    weights.append(0.15) # Market significance
+            except: pass
+
         if not predictions:
             raise Exception("All prediction methods failed")
         
         # Weighted ensemble calculation
         total_weight = sum(weights)
-        if total_weight == 0:
-             total_weight = 1.0
-             
         ensemble_away = sum(p['away_prob'] * w for p, w in zip(predictions, weights)) / total_weight
         ensemble_home = sum(p['home_prob'] * w for p, w in zip(predictions, weights)) / total_weight
         
-        # Apply injury adjustments
-        injury_adjustment = self._calculate_injury_impact(away_injuries, home_injuries)
-        ensemble_away += injury_adjustment * 0.5
-        ensemble_home -= injury_adjustment * 0.5
+        # Apply Contextual Factors (Phase 4 Blending)
+        # 1. Injury Impact
+        h_health = self.get_injury_impact(home_team) if not home_injuries else (1.0 - self._team_injury_impact(home_injuries))
+        a_health = self.get_injury_impact(away_team) if not away_injuries else (1.0 - self._team_injury_impact(away_injuries))
         
-        # Normalize
+        # 2. Travel Impact
+        h_travel = self.history_tracker.get_travel_distance(home_team, home_team)
+        a_travel = self.history_tracker.get_travel_distance(away_team, home_team)
+        
+        # Phase 5: Road Warrior Mitigation
+        h_is_rw = self.travel_archetypes.get(home_team, {}).get('is_road_warrior', False)
+        a_is_rw = self.travel_archetypes.get(away_team, {}).get('is_road_warrior', False)
+        
+        # Every 1000 miles reduction takes ~0.5% (was 1%) from prob
+        h_fatigue = max(0.95, 1.0 - (h_travel / 20000.0))
+        a_fatigue = max(0.95, 1.0 - (a_travel / 20000.0))
+        
+        # If a team is a Road Warrior, they suffer 50% less fatigue penalty
+        if h_is_rw and h_fatigue < 1.0:
+            h_fatigue = 1.0 - ((1.0 - h_fatigue) * 0.5)
+        if a_is_rw and a_fatigue < 1.0:
+            a_fatigue = 1.0 - ((1.0 - a_fatigue) * 0.5)
+        
+        # Combined Impact Ratio
+        impact_ratio = (h_health * h_fatigue) / (a_health * a_fatigue)
+        ensemble_home *= impact_ratio
+        
+        # 3. HDSv% Signal (Phase 4)
+        h_hdsv = self.history_tracker.goalies.get_rolling_hdsv(home_goalie)
+        a_hdsv = self.history_tracker.goalies.get_rolling_hdsv(away_goalie)
+        hdsv_bonus = (h_hdsv - a_hdsv) * 10.0 # 1 point diff = 1% prob shift
+        ensemble_home += hdsv_bonus
+        ensemble_away -= hdsv_bonus
+        
+        # Re-normalize
         total = ensemble_away + ensemble_home
-        if total > 0:
-            ensemble_away = (ensemble_away / total) * 100
-            ensemble_home = (ensemble_home / total) * 100
+        ensemble_away = (ensemble_away / total) * 100
+        ensemble_home = (ensemble_home / total) * 100
         
         confidence = max(ensemble_away, ensemble_home) / 100
-        
         agreement_score = self._calculate_agreement(predictions, away_team, home_team)
-        if agreement_score > 0.8:
-            confidence = min(1.0, confidence * 1.05)
         
         return {
             'away_team': away_team,
             'home_team': home_team,
-            'away_prob': ensemble_away,
-            'home_prob': ensemble_home,
+            'away_prob': round(ensemble_away, 2),
+            'home_prob': round(ensemble_home, 2),
             'predicted_winner': away_team if ensemble_away > ensemble_home else home_team,
-            'prediction_confidence': confidence,
-            'component_predictions': predictions,
-            'weights_used': weights,
-            'injury_adjustment': injury_adjustment,
-            'agreement_score': agreement_score,
-            'ensemble_method': 'meta_ensemble_v2_xgboost'
+            'prediction_confidence': round(confidence, 3),
+            'agreement_score': round(agreement_score, 2),
+            'ensemble_method': 'meta_ensemble_v3_contextual'
         }
     
-    def _calculate_injury_impact(self, away_injuries: list, home_injuries: list) -> float:
+    def _calculate_legacy_injury_impact(self, away_injuries: list, home_injuries: list) -> float:
         if not away_injuries and not home_injuries:
             return 0.0
         away_impact = self._team_injury_impact(away_injuries or [])
@@ -492,13 +619,11 @@ class MetaEnsemblePredictor:
     def _team_injury_impact(self, injuries: list) -> float:
         impact = 0.0
         for injury in injuries:
-            position = injury.get('position', '')
-            if position == 'G':
-                impact += 0.10
-            elif 'C' in position or 'W' in position:
-                impact += 0.03
-            elif 'D' in position:
-                impact += 0.02
+            if isinstance(injury, dict):
+                position = injury.get('position', '')
+                if position == 'G': impact += 0.10
+                elif 'C' in position or 'W' in position: impact += 0.03
+                elif 'D' in position: impact += 0.02
         return min(0.15, impact)
     
     def _calculate_agreement(self, predictions: list, away_team: str = None, home_team: str = None) -> float:

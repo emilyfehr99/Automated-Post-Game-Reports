@@ -137,8 +137,8 @@ class DailyPredictionNotifier:
                     vegas_odds=vegas_odds
                 )
                 
-                # Only include if meets confidence threshold (50%)
-                if self.meta_ensemble.should_predict(pred):
+                # Include all games as requested by user
+                if True: # was: if self.meta_ensemble.should_predict(pred):
                     # Attach Game ID
                     key = f"{game['away_team']}@{game['home_team']}"
                     game_id = schedule_map.get(key)

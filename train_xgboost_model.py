@@ -9,6 +9,34 @@ import pickle
 import math
 from datetime import datetime, timedelta
 
+TEAM_COORDINATES = {
+    'ANA': (33.80, -117.88), 'BOS': (42.36, -71.06), 'BUF': (42.89, -78.88),
+    'CGY': (51.05, -114.07), 'CAR': (35.80, -78.72), 'CHI': (41.88, -87.67),
+    'COL': (39.75, -105.01), 'CBJ': (39.97, -83.00), 'DAL': (32.79, -96.81),
+    'DET': (42.34, -83.05), 'EDM': (53.55, -113.49), 'FLA': (26.12, -80.14),
+    'LAK': (34.04, -118.27), 'MIN': (44.94, -93.10), 'MTL': (45.51, -73.57),
+    'NSH': (36.16, -86.78), 'NJD': (40.73, -74.17), 'NYI': (40.71, -73.60),
+    'NYR': (40.75, -73.99), 'OTT': (45.42, -75.70), 'PHI': (39.90, -75.17),
+    'PIT': (40.44, -79.99), 'SJS': (37.33, -121.90), 'SEA': (47.62, -122.35),
+    'STL': (38.63, -90.20), 'TBL': (27.95, -82.45), 'TOR': (43.65, -79.38),
+    'UTA': (40.76, -111.89), 'VAN': (49.28, -123.12), 'VGK': (36.17, -115.14),
+    'WSH': (38.90, -77.04), 'WPG': (49.90, -97.14)
+}
+
+def calculate_distance(city1, city2):
+    """Haversine distance between two teams in miles"""
+    if city1 == city2 or city1 not in TEAM_COORDINATES or city2 not in TEAM_COORDINATES:
+        return 0.0
+    lat1, lon1 = TEAM_COORDINATES[city1]
+    lat2, lon2 = TEAM_COORDINATES[city2]
+    R = 3958.8 # miles
+    phi1, phi2 = math.radians(lat1), math.radians(lat2)
+    dphi = math.radians(lat2 - lat1)
+    dlambda = math.radians(lon2 - lon1)
+    a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlambda/2)**2
+    c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
+    return R * c
+
 def normalize_side(val, home_team, away_team):
     """Normalize a value (team name, 'home', 'away') to 'home' or 'away'"""
     if not val:
@@ -69,36 +97,51 @@ class EloTracker:
 
 class GoalieHistory:
     def __init__(self):
-        self.stats = {} # {goalie_name: {'gsax': []}}
+        self.stats = {} # {goalie_name: {'gsax': [], 'hdsv': []}}
         
-    def update(self, name, gsax):
+    def update(self, name, gsax, hdsv=None):
         if not name: return
         if name not in self.stats:
-            self.stats[name] = {'gsax': []}
+            self.stats[name] = {'gsax': [], 'hdsv': []}
         self.stats[name]['gsax'].append(gsax)
+        if hdsv is not None:
+            self.stats[name]['hdsv'].append(hdsv)
         
     def get_rolling_gsax(self, name, window=5):
         if not name or name not in self.stats or not self.stats[name]['gsax']:
             return 0.0
         vals = self.stats[name]['gsax'][-window:]
         return np.mean(vals)
+        
+    def get_rolling_hdsv(self, name, window=5):
+        if not name or name not in self.stats or not self.stats[name]['hdsv']:
+            return 0.8 # Default NHL avg HDSv%
+        vals = self.stats[name]['hdsv'][-window:]
+        return np.mean(vals)
 
 class TeamHistory:
     def __init__(self):
-        self.history = {}  # {team_abbr: {'dates': [], 'stats': [], 'home_stats': [], 'away_stats': [], 'opponents_elo': []}}
+        self.history = {}  # {team_abbr: {'dates': [], 'stats': [], 'home_stats': [], 'away_stats': [], 'opponents_elo': [], 'last_city': None}}
         self.elo = EloTracker()
         self.goalies = GoalieHistory()
         
-    def update(self, team, date, game_stats, venue=None, opponent_elo=None):
+    def update(self, team, date, game_stats, venue=None, opponent_elo=None, city=None):
         """Update team history with a new game"""
         if team not in self.history:
-            self.history[team] = {'dates': [], 'stats': [], 'home_stats': [], 'away_stats': [], 'opponents_elo': []}
+            self.history[team] = {'dates': [], 'stats': [], 'home_stats': [], 'away_stats': [], 'opponents_elo': [], 'last_city': None}
             
         self.history[team]['dates'].append(date)
         self.history[team]['stats'].append(game_stats)
+        self.history[team]['last_city'] = city or team # Default to home city if not provided
         
         if opponent_elo is not None:
             self.history[team]['opponents_elo'].append(opponent_elo)
+
+    def get_travel_distance(self, team, current_city):
+        """Distance traveled since last game"""
+        if team not in self.history or not self.history[team]['last_city']:
+            return 0.0
+        return calculate_distance(self.history[team]['last_city'], current_city)
         
         if venue == 'home':
             self.history[team]['home_stats'].append(game_stats)
@@ -230,8 +273,14 @@ def extract_features_chronologically(predictions):
         # Goalie Features
         h_goalie = metrics.get('home_goalie') or p.get('home_goalie')
         a_goalie = metrics.get('away_goalie') or p.get('away_goalie')
-        h_gsax_roll = tracker.get_goalie_gsax(h_goalie)
-        a_gsax_roll = tracker.get_goalie_gsax(a_goalie)
+        h_gsax_roll = tracker.goalies.get_rolling_gsax(h_goalie)
+        a_gsax_roll = tracker.goalies.get_rolling_gsax(a_goalie)
+        h_hdsv_roll = tracker.goalies.get_rolling_hdsv(h_goalie)
+        a_hdsv_roll = tracker.goalies.get_rolling_hdsv(a_goalie)
+        
+        # Fatigue / Travel (Phase 4)
+        h_travel = tracker.get_travel_distance(home, home) # Home is always 0 travel in simple home game
+        a_travel = tracker.get_travel_distance(away, home) # Away team travels to home city
         
         # Finish Factors
         h_finish = profiles.get(home, 1.0)
@@ -243,19 +292,17 @@ def extract_features_chronologically(predictions):
                 'date': game_date,
                 'target': 1 if winner_side == 'home' else 0,
                 
-                # ELO
+                # elo_diff
                 'elo_diff': (home_elo + tracker.elo.ha) - away_elo,
                 
-                # Finish Factor
-                'finish_diff': h_finish - a_finish,
-                
-                # Goalie GSAx
-                'gsax_diff': h_gsax_roll - a_gsax_roll,
-                
-                # Rest / B2B
+                # Contextual Features
                 'rest_diff': home_rest - away_rest,
                 'home_b2b': 1 if home_rest == 1 else 0,
                 'away_b2b': 1 if away_rest == 1 else 0,
+                
+                # Goalie Difference
+                'gsax_diff': h_gsax_roll - a_gsax_roll,
+                'finish_diff': h_finish - a_finish,
                 
                 # Rolling General (EWMA)
                 'l5_goal_diff': h_l5.get('goal_diff', 0) - a_l5.get('goal_diff', 0),
@@ -268,7 +315,7 @@ def extract_features_chronologically(predictions):
                 'l5_pk_diff': h_l5.get('pk_pct', 80) - a_l5.get('pk_pct', 80),
                 'l5_st_net': (h_l5.get('pp_pct', 20) + h_l5.get('pk_pct', 80)) - (a_l5.get('pp_pct', 20) + a_l5.get('pk_pct', 80)),
                 
-                # Technical Metrics (Rush, Transitions, HDC)
+                # Technical Metrics
                 'l5_rush_diff': h_l5.get('rush', 2) - a_l5.get('rush', 2),
                 'l5_nzt_diff': h_l5.get('nzt', 5) - a_l5.get('nzt', 5),
                 'l5_ozs_diff': h_l5.get('ozs', 10) - a_l5.get('ozs', 10),
@@ -304,9 +351,14 @@ def extract_features_chronologically(predictions):
         h_xg = float(metrics.get('home_xg', h_score) or h_score)
         a_xg = float(metrics.get('away_xg', a_score) or a_score)
         
-        # Goalie Update (GSAx = xG - Goals)
-        tracker.update_goalie(h_goalie, h_xg - h_score)
-        tracker.update_goalie(a_goalie, a_xg - a_score)
+        # Goalie Update (GSAx = xG - Goals, HDSV from metrics)
+        h_gsax = h_xg - h_score
+        a_gsax = a_xg - a_score
+        h_hdsv = float(metrics.get('home_hdsv_pct', 0.8) or 0.8)
+        a_hdsv = float(metrics.get('away_hdsv_pct', 0.8) or 0.8)
+        
+        tracker.goalies.update(h_goalie, h_gsax, h_hdsv)
+        tracker.goalies.update(a_goalie, a_gsax, a_hdsv)
         
         h_shots = float(metrics.get('home_shots', 30) or 30)
         a_shots = float(metrics.get('away_shots', 30) or 30)
@@ -350,8 +402,8 @@ def extract_features_chronologically(predictions):
             'pizzas': float(p.get('away_hd_giveaways', 2) or 2)
         }
         
-        tracker.update(home, game_date, h_stats, venue='home', opponent_elo=curr_a_elo)
-        tracker.update(away, game_date, a_stats, venue='away', opponent_elo=curr_h_elo)
+        tracker.update(home, game_date, h_stats, venue='home', opponent_elo=curr_a_elo, city=home)
+        tracker.update(away, game_date, a_stats, venue='away', opponent_elo=curr_h_elo, city=home)
         
     return pd.DataFrame(training_data)
 
@@ -393,6 +445,11 @@ def train_optimized_model():
         eval_metric='logloss',
         random_state=42
     )
+    
+    # Cross-Validation for stability
+    from sklearn.model_selection import cross_val_score
+    cv_scores = cross_val_score(model, X_train, y_train, cv=5)
+    print(f"\n📈 Cross-Validation Accuracy (5-fold): {cv_scores.mean():.1%} (+/- {cv_scores.std():.1%})")
     
     model.fit(X_train, y_train)
     
