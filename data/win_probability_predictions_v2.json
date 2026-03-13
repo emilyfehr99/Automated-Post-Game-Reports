@@ -114284,7 +114284,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "SJS",
+      "actual_away_score": 4,
+      "actual_home_score": 2,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-03-12",
@@ -114299,7 +114303,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "WSH",
+      "actual_away_score": 2,
+      "actual_home_score": 1,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-03-12",
@@ -114314,7 +114322,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "STL",
+      "actual_away_score": 3,
+      "actual_home_score": 1,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-03-12",
@@ -114329,7 +114341,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "FLA",
+      "actual_away_score": 1,
+      "actual_home_score": 2,
+      "prediction_accuracy": 1.0
     },
     {
       "date": "2026-03-12",
@@ -114344,7 +114360,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "CGY",
+      "actual_away_score": 5,
+      "actual_home_score": 4,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-03-12",
@@ -114359,7 +114379,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "TOR",
+      "actual_away_score": 4,
+      "actual_home_score": 6,
+      "prediction_accuracy": 1.0
     },
     {
       "date": "2026-03-12",
@@ -114374,7 +114398,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "TBL",
+      "actual_away_score": 1,
+      "actual_home_score": 4,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-03-12",
@@ -114389,7 +114417,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "DAL",
+      "actual_away_score": 2,
+      "actual_home_score": 7,
+      "prediction_accuracy": 1.0
     },
     {
       "date": "2026-03-12",
@@ -114404,7 +114436,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "PHI",
+      "actual_away_score": 3,
+      "actual_home_score": 2,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-03-12",
@@ -114419,7 +114455,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "NYR",
+      "actual_away_score": 6,
+      "actual_home_score": 3,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-03-12",
@@ -114434,7 +114474,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "CHI",
+      "actual_away_score": 3,
+      "actual_home_score": 2,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-03-12",
@@ -114449,7 +114493,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "COL",
+      "actual_away_score": 5,
+      "actual_home_score": 1,
+      "prediction_accuracy": 0.0
     },
     {
       "date": "2026-03-12",
@@ -114464,7 +114512,11 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "VAN",
+      "actual_away_score": 3,
+      "actual_home_score": 4,
+      "prediction_accuracy": 1.0
     },
     {
       "date": "2026-03-12",
@@ -114475,6 +114527,40 @@
       "home_win_prob": 0.5291573133519581,
       "away_win_prob": 0.47084268664804185,
       "model_confidence": 0.555615179019556,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "VGK",
+      "actual_away_score": 2,
+      "actual_home_score": 6,
+      "prediction_accuracy": 1.0
+    },
+    {
+      "date": "2026-03-13",
+      "game_id": 2025021041,
+      "home_team": "NYI",
+      "away_team": "LAK",
+      "predicted_winner": "NYI",
+      "home_win_prob": 0.5843,
+      "away_win_prob": 0.4157,
+      "model_confidence": 0.584,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run"
+    },
+    {
+      "date": "2026-03-13",
+      "game_id": 2025021042,
+      "home_team": "STL",
+      "away_team": "EDM",
+      "predicted_winner": "STL",
+      "home_win_prob": 0.5131,
+      "away_win_prob": 0.4869,
+      "model_confidence": 0.513,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -114528,10 +114614,10 @@
   },
   "last_updated": "2025-12-17T12:00:05.316190",
   "model_performance": {
-    "total_games": 772,
-    "correct_predictions": 384,
-    "accuracy": 0.49740932642487046,
-    "recent_accuracy": 0.5333333333333333
+    "total_games": 786,
+    "correct_predictions": 389,
+    "accuracy": 0.494910941475827,
+    "recent_accuracy": 0.4666666666666667
   },
   "calibration_points": [
     [
@@ -114584,7 +114670,7 @@
     ]
   ],
   "calibration_metadata": {
-    "updated_at": "2026-03-12T17:08:03.889639",
+    "updated_at": "2026-03-13T13:18:32.909277",
     "sample_size": 547,
     "num_bins": 12,
     "bucket_samples": {
