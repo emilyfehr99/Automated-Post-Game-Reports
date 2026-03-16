@@ -156,7 +156,8 @@ class DailyPredictionNotifier:
                         'home_goalie': game.get('home_goalie', 'TBD'),
                         'start_time': game.get('game_time', ''),
                         'contexts': pred.get('contexts_used', []),
-                        'game_id': game_id  # Critical for tracking
+                        'game_id': game_id,  # Critical for tracking
+                        'confidence_tier': pred.get('confidence_tier', 'Standard')
                     })
             except Exception as e:
                 print(f"Error predicting {game['away_team']} @ {game['home_team']}: {e}")
@@ -220,7 +221,7 @@ class DailyPredictionNotifier:
             
             summary += f"**Game {i}**: {away} @ {home}\n"
             summary += f"  🏆 Prediction: **{winner} wins** ({away_score}-{home_score})\n"
-            summary += f"  ⭐ Confidence: {confidence:.1f}%\n"
+            summary += f"  ⭐ Confidence: {confidence:.1f}% ({pred.get('confidence_tier', 'Standard')})\n"
 
             # Add In-Depth Analysis
             # Add In-Depth Analysis

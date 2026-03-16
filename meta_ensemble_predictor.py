@@ -201,6 +201,7 @@ class MetaEnsemblePredictor:
         # Load XGBoost Components
         self.xgb_model = None
         self.calibrated_model = None
+        self.confidence_model = None # Phase 10: Meta-Confidence Model
         self.history_tracker = TeamHistory()
         self.feature_names = []
         self.team_profiles = {}
@@ -243,6 +244,15 @@ class MetaEnsemblePredictor:
             print("⚠️ feature definitions not found, XGBoost disabled")
             self.xgb_model = None
             return
+
+        # Phase 10: Meta-Confidence Model
+        try:
+            with open('meta_confidence_model.pkl', 'rb') as f:
+                self.confidence_model = pickle.load(f)
+            print("✅ Loaded Phase 10 Meta-Confidence Model")
+        except Exception as e:
+            print(f"⚠️ Could not load meta-confidence model: {e}")
+            self.confidence_model = None
 
         # 3. Load Finishing Profiles
         try:

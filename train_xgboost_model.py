@@ -4,6 +4,7 @@ import numpy as np
 from pathlib import Path
 from sklearn.model_selection import train_test_split, TimeSeriesSplit, GridSearchCV
 from sklearn.metrics import accuracy_score, log_loss, classification_report
+from sklearn.model_selection import GridSearchCV, TimeSeriesSplit, cross_val_predict, KFold
 from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import VotingClassifier, RandomForestClassifier
 from sklearn.linear_model import RidgeClassifier, LogisticRegression
@@ -628,14 +629,32 @@ def train_optimized_model():
     print("\nTop Phase 9 Predictors:")
     print(imp.head(12))
     
-    # 4. SAVE MODEL
+    # 3c. Meta-Labeling (Phase 10: Model for the Model)
+    print("\n🏗️ Training Phase 10 Meta-Confidence Model...")
+    # Get out-of-sample predictions to create meta-targets
+    # Use standard KFold for meta-labels to avoid TimeSeriesSplit partition issues
+    kf = KFold(n_splits=5, shuffle=True, random_state=42)
+    y_pred_cv = cross_val_predict(best_model, X_train, y_train, cv=kf, method='predict')
+    y_meta = (y_pred_cv == y_train).astype(int)
+    
+    # Train a "Confidence Model" to predict if the primary model is right
+    confidence_model = RandomForestClassifier(n_estimators=100, max_depth=5, random_state=42)
+    confidence_model.fit(X_train, y_meta)
+    
+    meta_acc = accuracy_score([1]*len(y_test), (calibrated_model.predict(X_test) == y_test).astype(int))
+    print(f"✅ Meta-Model trained. Baseline Accuracy predicted: {meta_acc:.1%}")
+    
+    # 4. SAVE MODELS
     # Since CalibratedClassifierCV is a wrapper, we save it as a pickle
-    # We still save the underlying booster as JSON for legacy compatibility
     if acc >= 0.50:
         # Save calibrated model (pickle contains the entire stack + calibrator)
         with open("xgb_calibrated_model.pkl", "wb") as f:
             pickle.dump(calibrated_model, f)
         
+        # Save the meta-confidence model
+        with open('meta_confidence_model.pkl', 'wb') as f:
+            pickle.dump(confidence_model, f)
+
         # Also save booster as JSON (uncalibrated) for legacy code
         best_xgb.save_model("xgb_nhl_model.json")
         
