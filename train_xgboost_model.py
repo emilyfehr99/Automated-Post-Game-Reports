@@ -309,6 +309,8 @@ def extract_features_chronologically(predictions):
         metrics = p.get('metrics_used', {})
         
         winner_side = normalize_side(p.get('actual_winner'), home, away)
+        h_score_final = float(metrics.get('home_goals', 0) or p.get('actual_home_score', 0) or 0)
+        a_score_final = float(metrics.get('away_goals', 0) or p.get('actual_away_score', 0) or 0)
         
         # 1. CALCULATE FEATURES (Before updating history)
         home_elo = tracker.get_elo(home)
@@ -347,6 +349,7 @@ def extract_features_chronologically(predictions):
                 'game_id': game_id,
                 'date': game_date,
                 'target': 1 if winner_side == 'home' else 0,
+                'margin': h_score_final - a_score_final,
                 'home_team': home,
                 'away_team': away,
                 
@@ -502,11 +505,13 @@ def train_optimized_model():
     train_df = df.iloc[:split_idx]
     test_df = df.iloc[split_idx:]
     
-    features = [c for c in df.columns if c not in ['game_id', 'date', 'target']]
+    features = [c for c in df.columns if c not in ['game_id', 'date', 'target', 'margin']]
     X_train = train_df[features].copy()
     y_train = train_df['target']
+    y_margin_train = train_df['margin']
     X_test = test_df[features].copy()
     y_test = test_df['target']
+    y_margin_test = test_df['margin']
     
     # 1. Target Encoding (Advanced DS Concept)
     # Learn team win rates from training data to identify "Home Strong" or "Away resilient" teams
@@ -663,6 +668,20 @@ def train_optimized_model():
     meta_acc = accuracy_score([1]*len(y_test), (calibrated_model.predict(X_test) == y_test).astype(int))
     print(f"✅ Meta-Model trained. Baseline Accuracy predicted: {meta_acc:.1%}")
     
+    # 3d. Goal Margin Regression (Phase 12)
+    print("\n🏗️ Training Phase 12 Goal Margin Regressor...")
+    margin_model = xgb.XGBRegressor(
+        objective='reg:squarederror',
+        n_estimators=100,
+        max_depth=3,
+        learning_rate=0.05,
+        random_state=42
+    )
+    margin_model.fit(X_train, y_margin_train, sample_weight=sample_weights)
+    margin_preds = margin_model.predict(X_test)
+    margin_mae = np.mean(np.abs(margin_preds - y_margin_test))
+    print(f"✅ Margin Regressor trained. MAE: {margin_mae:.2f} goals")
+    
     # 4. SAVE MODELS
     # Since CalibratedClassifierCV is a wrapper, we save it as a pickle
     if acc >= 0.50:
@@ -673,6 +692,10 @@ def train_optimized_model():
         # Save the meta-confidence model
         with open('meta_confidence_model.pkl', 'wb') as f:
             pickle.dump(confidence_model, f)
+            
+        # Save the margin regression model
+        with open('margin_regression_model.pkl', 'wb') as f:
+            pickle.dump(margin_model, f)
 
         # Also save booster as JSON (uncalibrated) for legacy code
         best_xgb.save_model("xgb_nhl_model.json")

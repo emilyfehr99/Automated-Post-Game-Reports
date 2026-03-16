@@ -254,6 +254,20 @@ class MetaEnsemblePredictor:
             print(f"⚠️ Could not load meta-confidence model: {e}")
             self.confidence_model = None
 
+        # Phase 12: Goal Margin Regression Model
+        try:
+            margin_path = Path("margin_regression_model.pkl")
+            if margin_path.exists():
+                with open(margin_path, "rb") as f:
+                    self.margin_model = pickle.load(f)
+                print(f"✅ Loaded Phase 12 Goal Margin Regression model from {margin_path}")
+            else:
+                self.margin_model = None
+                print("⚠️ Goal Margin Regression model not found")
+        except Exception as e:
+            print(f"⚠️ Error loading goal margin model: {e}")
+            self.margin_model = None
+
         # 3. Load Finishing Profiles
         try:
             with open('team_scoring_profiles.json', 'r') as f:
@@ -552,11 +566,33 @@ class MetaEnsemblePredictor:
             away_prob = (1 - prob) * 100
             home_prob = prob * 100
             
+            # 5. Goal Margin Prediction (Phase 12)
+            predicted_margin = 0.0
+            if self.margin_model is not None:
+                try:
+                    predicted_margin = float(self.margin_model.predict(df)[0])
+                except Exception as e:
+                    print(f"Margin prediction error: {e}")
+            
+            # 6. Meta-Confidence Tiers (Phase 10)
+            confidence_tier = "Standard"
+            if self.confidence_model is not None:
+                try:
+                    is_correct = self.confidence_model.predict(df)[0]
+                    if is_correct == 1 and max(away_prob, home_prob) > 55:
+                        confidence_tier = "🔥 High Confidence"
+                    elif is_correct == 0 or max(away_prob, home_prob) < 52:
+                        confidence_tier = "⚠️ High Risk"
+                except:
+                    pass
+            
             return {
                 'away_team': away_team,
                 'home_team': home_team,
                 'away_prob': away_prob,
                 'home_prob': home_prob,
+                'predicted_margin': predicted_margin,
+                'confidence_tier': confidence_tier,
                 'prediction_type': 'xgboost_ml'
             }
         except Exception as e:
@@ -605,9 +641,11 @@ class MetaEnsemblePredictor:
         
         # 1. XGBoost ML Model (50% Weight - Highest Accuracy Component)
         xgb_pred = self._predict_xgboost(away_team, home_team, game_date, away_goalie, home_goalie)
+        xgb_margin = 0.0
         if xgb_pred:
             predictions.append(xgb_pred)
             weights.append(0.50)
+            xgb_margin = xgb_pred.get('predicted_margin', 0.0)
         
         # 2. Specialized ensemble (25% weight)
         try:
@@ -700,15 +738,27 @@ class MetaEnsemblePredictor:
         ensemble_away = (ensemble_away / total) * 100
         ensemble_home = (ensemble_home / total) * 100
         
+        # 4. Final Aggregation
         confidence = max(ensemble_away, ensemble_home) / 100
         agreement_score = self._calculate_agreement(predictions, away_team, home_team)
         
+        # Phase 10/12: Signal Alignment
+        confidence_tier = xgb_pred.get('confidence_tier', 'Standard') if xgb_pred else "Standard"
+        
+        # If margin and win prob both agree on a blowout, bump confidence
+        if xgb_margin > 1.5 and ensemble_home > 55:
+            confidence_tier = "🔥 High Confidence"
+        elif xgb_margin < -1.5 and ensemble_away > 55:
+            confidence_tier = "🔥 High Confidence"
+
         return {
             'away_team': away_team,
             'home_team': home_team,
             'away_prob': round(ensemble_away, 2),
             'home_prob': round(ensemble_home, 2),
             'predicted_winner': away_team if ensemble_away > ensemble_home else home_team,
+            'predicted_margin': round(xgb_margin, 2),
+            'confidence_tier': confidence_tier,
             'prediction_confidence': round(confidence, 3),
             'agreement_score': round(agreement_score, 2),
             'ensemble_method': 'meta_ensemble_v3_contextual'

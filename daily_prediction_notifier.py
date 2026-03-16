@@ -157,7 +157,8 @@ class DailyPredictionNotifier:
                         'start_time': game.get('game_time', ''),
                         'contexts': pred.get('contexts_used', []),
                         'game_id': game_id,  # Critical for tracking
-                        'confidence_tier': pred.get('confidence_tier', 'Standard')
+                        'confidence_tier': pred.get('confidence_tier', 'Standard'),
+                        'predicted_margin': pred.get('predicted_margin', 0.0)
                     })
             except Exception as e:
                 print(f"Error predicting {game['away_team']} @ {game['home_team']}: {e}")
@@ -222,6 +223,10 @@ class DailyPredictionNotifier:
             summary += f"**Game {i}**: {away} @ {home}\n"
             summary += f"  🏆 Prediction: **{winner} wins** ({away_score}-{home_score})\n"
             summary += f"  ⭐ Confidence: {confidence:.1f}% ({pred.get('confidence_tier', 'Standard')})\n"
+            
+            if 'predicted_margin' in pred and abs(pred['predicted_margin']) > 0.1:
+                side = "Home" if pred['predicted_margin'] > 0 else "Away"
+                summary += f"  📏 Margin Model: **{side} {abs(pred['predicted_margin']):.1f}** goals\n"
 
             # Add In-Depth Analysis
             # Add In-Depth Analysis
