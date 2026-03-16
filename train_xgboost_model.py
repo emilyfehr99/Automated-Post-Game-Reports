@@ -4,6 +4,7 @@ import numpy as np
 from pathlib import Path
 from sklearn.model_selection import train_test_split, TimeSeriesSplit, GridSearchCV
 from sklearn.metrics import accuracy_score, log_loss, classification_report
+from sklearn.calibration import CalibratedClassifierCV
 import xgboost as xgb
 import pickle
 import math
@@ -455,7 +456,7 @@ def extract_features_chronologically(predictions):
     return pd.DataFrame(training_data)
 
 def train_optimized_model():
-    print("🚀 STARTING ELO + ADVANCED MODEL TRAINING")
+    print("🚀 STARTING ADVANCED DATA SCIENCE OPTIMIZATION (PHASE 7)")
     print("=" * 60)
     
     raw_preds = load_data()
@@ -465,7 +466,7 @@ def train_optimized_model():
         print("⚠️ Not enough samples for training.")
         return
         
-    print(f"✅ Extracted {len(df)} training samples with Elo + Goalie + PDO")
+    print(f"✅ Extracted {len(df)} training samples")
     df = df.sort_values('date')
     
     # Use 90/10 split for small dataset
@@ -479,43 +480,87 @@ def train_optimized_model():
     X_test = test_df[features]
     y_test = test_df['target']
     
-    print(f"Training on {len(X_train)} older games, Testing on {len(X_test)} most recent games")
+    # 1. Sample Weighting: Recent games have more weight (form factor)
+    # Give recent 20% of training data 2x weight of older data
+    sample_weights = np.ones(len(y_train))
+    recent_split = int(len(y_train) * 0.8)
+    sample_weights[recent_split:] = 1.5 # 50% more weight to recent form
     
-    # Fixed stable parameters for small dataset
-    model = xgb.XGBClassifier(
-        n_estimators=100,
-        learning_rate=0.05,
-        max_depth=3,
-        subsample=0.8,
-        colsample_bytree=0.8,
+    print(f"Training on {len(X_train)} games, Testing on {len(X_test)} games")
+    
+    # 2. Hyperparameter Tuning using TimeSeriesSplit
+    tscv = TimeSeriesSplit(n_splits=5)
+    
+    param_grid = {
+        'max_depth': [3, 4],
+        'learning_rate': [0.01, 0.05, 0.1],
+        'n_estimators': [50, 100, 150],
+        'subsample': [0.7, 0.8, 0.9],
+        'colsample_bytree': [0.7, 0.8]
+    }
+    
+    base_xgb = xgb.XGBClassifier(
         objective='binary:logistic',
         eval_metric='logloss',
         random_state=42
     )
     
-    # Cross-Validation for stability
-    from sklearn.model_selection import cross_val_score
-    cv_scores = cross_val_score(model, X_train, y_train, cv=5)
-    print(f"\n📈 Cross-Validation Accuracy (5-fold): {cv_scores.mean():.1%} (+/- {cv_scores.std():.1%})")
+    print("\n🔍 Running Grid Search with TimeSeriesSplit...")
+    grid_search = GridSearchCV(
+        estimator=base_xgb,
+        param_grid=param_grid,
+        cv=tscv,
+        scoring='accuracy',
+        n_jobs=-1,
+        verbose=1
+    )
     
-    model.fit(X_train, y_train)
+    grid_search.fit(X_train, y_train, sample_weight=sample_weights)
+    best_model = grid_search.best_estimator_
+    print(f"✅ Best Params: {grid_search.best_params_}")
+    print(f"✅ Best CV Score: {grid_search.best_score_:.1%}")
     
-    y_pred = model.predict(X_test)
+    # 3. Probability Calibration (Sigmoid for small samples)
+    print("\n⚖️ Calibrating probabilities...")
+    calibrated_model = CalibratedClassifierCV(
+        estimator=best_model,
+        method='sigmoid',
+        cv=tscv # Use same time-series split for calibration
+    )
+    calibrated_model.fit(X_train, y_train, sample_weight=sample_weights)
+    
+    # Evaluate on Holdout
+    y_pred = calibrated_model.predict(X_test)
+    y_prob = calibrated_model.predict_proba(X_test)[:, 1]
+    
     acc = accuracy_score(y_test, y_pred)
+    loss = log_loss(y_test, y_prob)
     
     print("\n" + "="*30)
-    print(f"HOLDOUT RESULTS (Last {len(X_test)} games):")
+    print(f"FINAL OPTIMIZED RESULTS (Phase 7):")
     print(f"Accuracy: {acc:.1%}")
+    print(f"Log Loss: {loss:.4f}")
     print("="*30)
     
-    imp = pd.Series(model.feature_importances_, index=features).sort_values(ascending=False)
-    print("\nTop Predictors:")
+    # Feature Importance (from the underlying XGBoost model)
+    imp = pd.Series(best_model.feature_importances_, index=features).sort_values(ascending=False)
+    print("\nTop Optimized Predictors:")
     print(imp.head(10))
     
-    # Save if accuracy is reasonable (> 50% which is baseline)
+    # 4. SAVE MODEL
+    # Since CalibratedClassifierCV is a wrapper, we save it as a pickle
+    # We still save the underlying booster as JSON for legacy compatibility
     if acc >= 0.50:
-        model.save_model("xgb_nhl_model.json")
-        print("\n💾 Saved optimized model to xgb_nhl_model.json")
+        # Save calibrated model (pickle contains both xgboost and the calibrator)
+        with open("xgb_calibrated_model.pkl", "wb") as f:
+            pickle.dump(calibrated_model, f)
+        
+        # Also save booster as JSON (uncalibrated) for legacy code
+        best_model.save_model("xgb_nhl_model.json")
+        
+        print("\n💾 Saved calibrated model to xgb_calibrated_model.pkl")
+        print("💾 Saved underlying booster to xgb_nhl_model.json")
+        
         with open("xgb_features.pkl", "wb") as f:
             pickle.dump(features, f)
     else:

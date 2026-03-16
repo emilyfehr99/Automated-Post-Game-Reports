@@ -200,6 +200,7 @@ class MetaEnsemblePredictor:
         
         # Load XGBoost Components
         self.xgb_model = None
+        self.calibrated_model = None
         self.history_tracker = TeamHistory()
         self.feature_names = []
         self.team_profiles = {}
@@ -214,12 +215,22 @@ class MetaEnsemblePredictor:
 
     def _load_xgboost_components(self):
         """Load model, features list, and build history state"""
-        # 1. Load Model
+        # 1. Load Calibrated Model (Preferred)
+        cal_model_path = Path("xgb_calibrated_model.pkl")
+        if cal_model_path.exists():
+            try:
+                with open(cal_model_path, "rb") as f:
+                    self.calibrated_model = pickle.load(f)
+                print(f"✅ Loaded Calibrated XGBoost model from {cal_model_path}")
+            except Exception as e:
+                print(f"⚠️ Failed to load calibrated model: {e}")
+
+        # 1b. Load Standard Model (Fallback/Legacy)
         model_path = Path("xgb_nhl_model.json")
         if model_path.exists():
             self.xgb_model = xgb.XGBClassifier()
             self.xgb_model.load_model(str(model_path))
-            print(f"✅ Loaded XGBoost model from {model_path}")
+            print(f"✅ Loaded XGBoost model from {model_path} (Fallback)")
             
         # 2. Load Feature Names
         feat_path = Path("xgb_features.pkl")
@@ -477,12 +488,19 @@ class MetaEnsemblePredictor:
             for name in self.feature_names:
                 vector.append(feature_data.get(name, 0.0))
                 
-            # Predict
+            # 4. Make Prediction
             df = pd.DataFrame([vector], columns=self.feature_names)
-            probs = self.xgb_model.predict_proba(df)[0]
             
-            away_prob = probs[0] * 100
-            home_prob = probs[1] * 100
+            # Prefer calibrated model for better probability accuracy
+            if self.calibrated_model is not None:
+                prob = self.calibrated_model.predict_proba(df)[0][1] # Probability of home win
+            elif self.xgb_model is not None:
+                prob = self.xgb_model.predict_proba(df)[0][1] # Probability of home win
+            else:
+                return None
+            
+            away_prob = (1 - prob) * 100
+            home_prob = prob * 100
             
             return {
                 'away_team': away_team,

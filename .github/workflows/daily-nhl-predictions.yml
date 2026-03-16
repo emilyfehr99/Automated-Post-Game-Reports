@@ -213,6 +213,11 @@ jobs:
              FILES_TO_COMMIT="$FILES_TO_COMMIT xgb_features.pkl"
           fi
 
+          if [ -f "xgb_calibrated_model.pkl" ]; then
+             git add --force xgb_calibrated_model.pkl
+             FILES_TO_COMMIT="$FILES_TO_COMMIT xgb_calibrated_model.pkl"
+          fi
+
           if [ -f "team_travel_archetypes.json" ]; then
              echo "📦 Adding travel archetypes..."
              git add --force team_travel_archetypes.json
