@@ -513,7 +513,12 @@ class MetaEnsemblePredictor:
             # Phase 9: Automated Interaction Discovery
             'home_win_rate_away_sos': self.team_encodings.get('home_map', {}).get(home_team, 0.5) * self.history_tracker.get_sos(away_team, 5),
             'away_b2b_home_strength': (1 if away_rest == 1 else 0) * h_finish,
-            'l10_xg_st_inter': (h_l10.get('xg_diff', 0) - a_l10.get('xg_diff', 0)) * ((h_l5.get('pp_pct', 20) + h_l5.get('pk_pct', 80)) - (a_l5.get('pp_pct', 20) + a_l5.get('pk_pct', 80)))
+            'l10_xg_st_inter': (h_l10.get('xg_diff', 0) - a_l10.get('xg_diff', 0)) * ((h_l5.get('pp_pct', 20) + h_l5.get('pk_pct', 80)) - (a_l5.get('pp_pct', 20) + a_l5.get('pk_pct', 80))),
+            
+            # Phase 11: Symbolic Feature Discovery
+            'pressure_index': (h_l5.get('xg_avg', 2.5) / (a_l5.get('xg_avg', 2.5) + 0.1)) * ((home_elo + self.history_tracker.elo.ha) / (away_elo + 0.1)),
+            'xg_efficiency': (h_l5.get('xg_avg', 2.5) * (self.history_tracker.get_sos(home_team, 5) / 1500)) - (a_l5.get('xg_avg', 2.5) * (self.history_tracker.get_sos(away_team, 5) / 1500)),
+            'power_momentum': ((home_elo + self.history_tracker.elo.ha) - away_elo) * (h_l10.get('xg_diff', 0) - a_l10.get('xg_diff', 0))
         }
         
         # Prune noisy features (Phase 9 Elite Pruning)

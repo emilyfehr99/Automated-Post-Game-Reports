@@ -401,6 +401,12 @@ def extract_features_chronologically(predictions):
                 # Interaction Features (Phase 8 Advanced DS)
                 'elo_rest_inter': ((home_elo + tracker.elo.ha) - away_elo) * (home_rest - away_rest),
                 'speed_finish_inter': (edge_data.get(home, {}).get('edge_top_speed', 21.0) - edge_data.get(away, {}).get('edge_top_speed', 21.0)) * (h_finish - a_finish),
+                
+                # Raw Components for Phase 11 Symbolic Features
+                'home_xg': h_l5.get('xg_avg', 2.5),
+                'away_xg': a_l5.get('xg_avg', 2.5),
+                'home_elo': home_elo + tracker.elo.ha,
+                'away_elo': away_elo
             }
             training_data.append(row)
             
@@ -530,6 +536,19 @@ def train_optimized_model():
     X_test['home_win_rate_away_sos'] = X_test['home_win_rate'] * test_df['away_sos']
     X_train['away_b2b_home_strength'] = train_df['away_b2b'] * train_df['finish_diff']
     X_test['away_b2b_home_strength'] = test_df['away_b2b'] * test_df['finish_diff']
+    
+    # Phase 11: Symbolic Feature Discovery
+    # 1. Pressure Index: Compounding offensive threat with team quality
+    X_train['pressure_index'] = (train_df['home_xg'] / (train_df['away_xg'] + 0.1)) * (train_df['home_elo'] / (train_df['away_elo'] + 0.1))
+    X_test['pressure_index'] = (test_df['home_xg'] / (test_df['away_xg'] + 0.1)) * (test_df['home_elo'] / (test_df['away_elo'] + 0.1))
+    
+    # 2. xG Efficiency: xG relative to opponent strength
+    X_train['xg_efficiency'] = (train_df['home_xg'] * (train_df['home_sos'] / 1500)) - (train_df['away_xg'] * (train_df['away_sos'] / 1500))
+    X_test['xg_efficiency'] = (test_df['home_xg'] * (test_df['home_sos'] / 1500)) - (test_df['away_xg'] * (test_df['away_sos'] / 1500))
+    
+    # 3. Power Momentum: Synergy of talent and recent offensive form
+    X_train['power_momentum'] = train_df['elo_diff'] * train_df['l10_xg_diff']
+    X_test['power_momentum'] = test_df['elo_diff'] * test_df['l10_xg_diff']
     
     # Final drop of low-impact or redundant columns (Phase 9 Elite Pruning)
     final_prune = [
