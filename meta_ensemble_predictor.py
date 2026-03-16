@@ -498,14 +498,20 @@ class MetaEnsemblePredictor:
             
             # Team Win Rates (Target Encoding Phase 8.1)
             'home_win_rate': self.team_encodings.get('home_map', {}).get(home_team, self.team_encodings.get('home_prior', 0.5)),
-            'away_win_rate': self.team_encodings.get('away_map', {}).get(away_team, self.team_encodings.get('away_prior', 0.5))
+            'away_win_rate': self.team_encodings.get('away_map', {}).get(away_team, self.team_encodings.get('away_prior', 0.5)),
+
+            # Phase 9: Automated Interaction Discovery
+            'home_win_rate_away_sos': self.team_encodings.get('home_map', {}).get(home_team, 0.5) * self.history_tracker.get_sos(away_team, 5),
+            'away_b2b_home_strength': (1 if away_rest == 1 else 0) * h_finish,
+            'l10_xg_st_inter': (h_l10.get('xg_diff', 0) - a_l10.get('xg_diff', 0)) * ((h_l5.get('pp_pct', 20) + h_l5.get('pk_pct', 80)) - (a_l5.get('pp_pct', 20) + a_l5.get('pk_pct', 80)))
         }
         
-        # Prune noisy features (Phase 8 SHAP analysis)
+        # Prune noisy features (Phase 9 Elite Pruning)
         prune_features = [
-            'l5_ozs_diff', 'l5_nzt_diff', 'l5_pizza_diff', 
-            'home_venue_goal_diff', 'away_venue_goal_diff', 
-            'gsax_diff', 'l5_rush_diff'
+            'home_win_rate', 'home_b2b', 'rest_diff', 'gsax_diff', 'away_b2b',
+            'home_venue_goal_diff', 'away_venue_goal_diff', 'l5_pizza_diff',
+            'l5_nzt_diff', 'l5_rush_diff', 'l5_pk_diff', 'l5_pp_diff', 
+            'l5_ozs_diff', 'l5_hdc_diff'
         ]
         for f in prune_features:
             if f in feature_data:

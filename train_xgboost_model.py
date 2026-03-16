@@ -8,6 +8,7 @@ from sklearn.calibration import CalibratedClassifierCV
 from sklearn.ensemble import VotingClassifier, RandomForestClassifier
 from sklearn.linear_model import RidgeClassifier, LogisticRegression
 import xgboost as xgb
+import lightgbm as lgb
 import pickle
 import math
 from datetime import datetime, timedelta
@@ -398,7 +399,7 @@ def extract_features_chronologically(predictions):
                 
                 # Interaction Features (Phase 8 Advanced DS)
                 'elo_rest_inter': ((home_elo + tracker.elo.ha) - away_elo) * (home_rest - away_rest),
-                'speed_finish_inter': (edge_data.get(home, {}).get('edge_top_speed', 21.0) - edge_data.get(away, {}).get('edge_top_speed', 21.0)) * (h_finish - a_finish)
+                'speed_finish_inter': (edge_data.get(home, {}).get('edge_top_speed', 21.0) - edge_data.get(away, {}).get('edge_top_speed', 21.0)) * (h_finish - a_finish),
             }
             training_data.append(row)
             
@@ -522,8 +523,25 @@ def train_optimized_model():
     # Drop team names from feature sets
     X_train = X_train.drop(columns=['home_team', 'away_team'])
     X_test = X_test.drop(columns=['home_team', 'away_team'])
-    features = [f for f in features if f not in ['home_team', 'away_team']]
-    features += ['home_win_rate', 'away_win_rate']
+    
+    # NEW: Final feature sync for interaction terms
+    X_train['home_win_rate_away_sos'] = X_train['home_win_rate'] * train_df['away_sos']
+    X_test['home_win_rate_away_sos'] = X_test['home_win_rate'] * test_df['away_sos']
+    X_train['away_b2b_home_strength'] = train_df['away_b2b'] * train_df['finish_diff']
+    X_test['away_b2b_home_strength'] = test_df['away_b2b'] * test_df['finish_diff']
+    
+    # Final drop of low-impact or redundant columns (Phase 9 Elite Pruning)
+    final_prune = [
+        'home_win_rate', 'home_b2b', 'rest_diff', 'gsax_diff', 'away_b2b',
+        'home_venue_goal_diff', 'away_venue_goal_diff', 'l5_pizza_diff',
+        'l5_nzt_diff', 'l5_rush_diff', 'l5_pk_diff', 'l5_pp_diff', 
+        'l5_ozs_diff', 'l5_hdc_diff'
+    ]
+    for p in final_prune:
+        if p in X_train.columns: X_train.drop(columns=[p], inplace=True)
+        if p in X_test.columns: X_test.drop(columns=[p], inplace=True)
+
+    features = [f for f in X_train.columns]
     
     # Sample Weighting: Recent games have more weight (form factor)
     # Give recent 20% of training data 2x weight of older data
@@ -560,15 +578,34 @@ def train_optimized_model():
     grid_search.fit(X_train, y_train, sample_weight=sample_weights)
     best_xgb = grid_search.best_estimator_
     
-    # 3. Build Optimized Model (Phase 8 Refined)
-    print("\n🏗️ Training optimized XGBoost with Interaction Features...")
-    best_model = best_xgb # From tuning above
+    # 3. Build Optimized Model (Phase 9 Refined)
+    print("\n🏗️ Training highly-tuned XGBoost with Power Index Interaction...")
+    
+    param_grid = {
+        'max_depth': [3, 4, 5],
+        'learning_rate': [0.01, 0.03, 0.05],
+        'n_estimators': [100, 150, 200],
+        'subsample': [0.8, 0.9],
+        'colsample_bytree': [0.8, 0.9],
+        'gamma': [0, 0.1, 0.2]
+    }
+    
+    grid_search = GridSearchCV(
+        estimator=xgb.XGBClassifier(objective='binary:logistic', eval_metric='logloss', random_state=42),
+        param_grid=param_grid,
+        cv=tscv,
+        scoring='accuracy',
+        n_jobs=-1
+    )
+    grid_search.fit(X_train, y_train, sample_weight=sample_weights)
+    best_model = grid_search.best_estimator_
+    print(f"✅ Best Params: {grid_search.best_params_}")
     
     # 3b. Probability Calibration
-    print("\n⚖️ Calibrating probabilities (Isotonic for better fit)...")
+    print("\n⚖️ Calibrating probabilities (Isotonic Phase 9 Refined)...")
     calibrated_model = CalibratedClassifierCV(
         estimator=best_model,
-        method='isotonic', # More advanced than Sigmoid
+        method='isotonic',
         cv=tscv
     )
     calibrated_model.fit(X_train, y_train, sample_weight=sample_weights)
@@ -581,15 +618,15 @@ def train_optimized_model():
     loss = log_loss(y_test, y_prob)
     
     print("\n" + "="*30)
-    print(f"FINAL STACKED RESULTS (Phase 8):")
+    print(f"FINAL PHASE 9 RESULTS:")
     print(f"Accuracy: {acc:.1%}")
     print(f"Log Loss: {loss:.4f}")
     print("="*30)
     
-    # Feature Importance (from the underlying XGBoost component)
-    imp = pd.Series(best_xgb.feature_importances_, index=features).sort_values(ascending=False)
-    print("\nTop Predictors (XGB component):")
-    print(imp.head(10))
+    # Feature Importance
+    imp = pd.Series(best_model.feature_importances_, index=features).sort_values(ascending=False)
+    print("\nTop Phase 9 Predictors:")
+    print(imp.head(12))
     
     # 4. SAVE MODEL
     # Since CalibratedClassifierCV is a wrapper, we save it as a pickle
