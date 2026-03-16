@@ -206,6 +206,7 @@ class MetaEnsemblePredictor:
         self.team_profiles = {}
         self.travel_archetypes = {}
         self.edge_profiles = {}
+        self.team_encodings = {}
         self.rotowire = RotoWireScraper()
         
         try:
@@ -290,6 +291,16 @@ class MetaEnsemblePredictor:
                 print(f"✅ Loaded {len(self.edge_profiles)} team Edge profiles")
         except Exception as e:
             print(f"⚠️ Could not load NHL Edge profiles: {e}")
+
+        # 6. Load Team win rate encodings (Phase 8.1)
+        try:
+            enc_path = Path("team_encodings.json")
+            if enc_path.exists():
+                with open(enc_path, "r") as f:
+                    self.team_encodings = json.load(f)
+                print(f"✅ Loaded Phase 8.1 Team Encodings")
+        except Exception as e:
+            print(f"⚠️ Could not load team encodings: {e}")
 
         # 4. Build Team History State
         data_path = Path('data/win_probability_predictions_v2.json')
@@ -480,7 +491,25 @@ class MetaEnsemblePredictor:
             
             'l10_goal_diff': h_l10.get('goal_diff', 0) - a_l10.get('goal_diff', 0),
             'l10_xg_diff': h_l10.get('xg_diff', 0) - a_l10.get('xg_diff', 0),
+            
+            # Interaction Features (Phase 8 Advanced DS)
+            'elo_rest_inter': ((home_elo + self.history_tracker.elo.ha) - away_elo) * (home_rest - away_rest),
+            'speed_finish_inter': (self.edge_profiles.get(home_team, {}).get('edge_top_speed', 21.0) - self.edge_profiles.get(away_team, {}).get('edge_top_speed', 21.0)) * (h_finish - a_finish),
+            
+            # Team Win Rates (Target Encoding Phase 8.1)
+            'home_win_rate': self.team_encodings.get('home_map', {}).get(home_team, self.team_encodings.get('home_prior', 0.5)),
+            'away_win_rate': self.team_encodings.get('away_map', {}).get(away_team, self.team_encodings.get('away_prior', 0.5))
         }
+        
+        # Prune noisy features (Phase 8 SHAP analysis)
+        prune_features = [
+            'l5_ozs_diff', 'l5_nzt_diff', 'l5_pizza_diff', 
+            'home_venue_goal_diff', 'away_venue_goal_diff', 
+            'gsax_diff', 'l5_rush_diff'
+        ]
+        for f in prune_features:
+            if f in feature_data:
+                del feature_data[f]
         
         # Ensure ordered columns match training
         try:

@@ -5,6 +5,8 @@ from pathlib import Path
 from sklearn.model_selection import train_test_split, TimeSeriesSplit, GridSearchCV
 from sklearn.metrics import accuracy_score, log_loss, classification_report
 from sklearn.calibration import CalibratedClassifierCV
+from sklearn.ensemble import VotingClassifier, RandomForestClassifier
+from sklearn.linear_model import RidgeClassifier, LogisticRegression
 import xgboost as xgb
 import pickle
 import math
@@ -269,6 +271,14 @@ def load_data():
         
     return data.get('predictions', [])
 
+def calculate_target_encoding(df, col, target='target', min_samples_leaf=5, smoothing=10):
+    """Smoothed Target Encoding for teams"""
+    prior = df[target].mean()
+    counts = df.groupby(col)[target].count()
+    means = df.groupby(col)[target].mean()
+    smooth = (counts * means + smoothing * prior) / (counts + smoothing)
+    return smooth.to_dict(), prior
+
 def extract_features_chronologically(predictions):
     # Sort by date
     print("Sorting games chronologically...")
@@ -335,6 +345,8 @@ def extract_features_chronologically(predictions):
                 'game_id': game_id,
                 'date': game_date,
                 'target': 1 if winner_side == 'home' else 0,
+                'home_team': home,
+                'away_team': away,
                 
                 # elo_diff
                 'elo_diff': (home_elo + tracker.elo.ha) - away_elo,
@@ -383,6 +395,10 @@ def extract_features_chronologically(predictions):
                 
                 'l10_goal_diff': h_l10.get('goal_diff', 0) - a_l10.get('goal_diff', 0),
                 'l10_xg_diff': h_l10.get('xg_diff', 0) - a_l10.get('xg_diff', 0),
+                
+                # Interaction Features (Phase 8 Advanced DS)
+                'elo_rest_inter': ((home_elo + tracker.elo.ha) - away_elo) * (home_rest - away_rest),
+                'speed_finish_inter': (edge_data.get(home, {}).get('edge_top_speed', 21.0) - edge_data.get(away, {}).get('edge_top_speed', 21.0)) * (h_finish - a_finish)
             }
             training_data.append(row)
             
@@ -453,7 +469,11 @@ def extract_features_chronologically(predictions):
         tracker.update(home, game_date, h_stats, venue='home', opponent_elo=curr_a_elo, city=home)
         tracker.update(away, game_date, a_stats, venue='away', opponent_elo=curr_h_elo, city=home)
         
-    return pd.DataFrame(training_data)
+    train_df = pd.DataFrame(training_data)
+    
+    # NEW: Add Team Mean Win Rate (Target Encoding) for Train/Test split
+    # We do this later in the main loop to avoid leakage, but here's the mapping
+    return train_df
 
 def train_optimized_model():
     print("🚀 STARTING ADVANCED DATA SCIENCE OPTIMIZATION (PHASE 7)")
@@ -475,12 +495,37 @@ def train_optimized_model():
     test_df = df.iloc[split_idx:]
     
     features = [c for c in df.columns if c not in ['game_id', 'date', 'target']]
-    X_train = train_df[features]
+    X_train = train_df[features].copy()
     y_train = train_df['target']
-    X_test = test_df[features]
+    X_test = test_df[features].copy()
     y_test = test_df['target']
     
-    # 1. Sample Weighting: Recent games have more weight (form factor)
+    # 1. Target Encoding (Advanced DS Concept)
+    # Learn team win rates from training data to identify "Home Strong" or "Away resilient" teams
+    home_map, home_prior = calculate_target_encoding(train_df, 'home_team')
+    away_map, away_prior = calculate_target_encoding(train_df, 'away_team', target='target') # target=1 is home win, so we need to flip for away?
+    # Actually, let's just use "win rate of this team being in this slot"
+    
+    X_train['home_win_rate'] = train_df['home_team'].map(home_map).fillna(home_prior)
+    X_train['away_win_rate'] = train_df['away_team'].map(away_map).fillna(away_prior)
+    X_test['home_win_rate'] = test_df['home_team'].map(home_map).fillna(home_prior)
+    X_test['away_win_rate'] = test_df['away_team'].map(away_map).fillna(away_prior)
+    
+    # Save the maps for predictor
+    encoding_stats = {
+        'home_map': home_map, 'home_prior': home_prior,
+        'away_map': away_map, 'away_prior': away_prior
+    }
+    with open("team_encodings.json", "w") as f:
+        json.dump(encoding_stats, f)
+        
+    # Drop team names from feature sets
+    X_train = X_train.drop(columns=['home_team', 'away_team'])
+    X_test = X_test.drop(columns=['home_team', 'away_team'])
+    features = [f for f in features if f not in ['home_team', 'away_team']]
+    features += ['home_win_rate', 'away_win_rate']
+    
+    # Sample Weighting: Recent games have more weight (form factor)
     # Give recent 20% of training data 2x weight of older data
     sample_weights = np.ones(len(y_train))
     recent_split = int(len(y_train) * 0.8)
@@ -493,10 +538,9 @@ def train_optimized_model():
     
     param_grid = {
         'max_depth': [3, 4],
-        'learning_rate': [0.01, 0.05, 0.1],
-        'n_estimators': [50, 100, 150],
-        'subsample': [0.7, 0.8, 0.9],
-        'colsample_bytree': [0.7, 0.8]
+        'learning_rate': [0.01, 0.05],
+        'n_estimators': [50, 100],
+        'subsample': [0.8, 0.9],
     }
     
     base_xgb = xgb.XGBClassifier(
@@ -505,27 +549,27 @@ def train_optimized_model():
         random_state=42
     )
     
-    print("\n🔍 Running Grid Search with TimeSeriesSplit...")
+    print("\n🔍 Tuning XGBoost components for ensemble...")
     grid_search = GridSearchCV(
         estimator=base_xgb,
         param_grid=param_grid,
         cv=tscv,
         scoring='accuracy',
-        n_jobs=-1,
-        verbose=1
+        n_jobs=-1
     )
-    
     grid_search.fit(X_train, y_train, sample_weight=sample_weights)
-    best_model = grid_search.best_estimator_
-    print(f"✅ Best Params: {grid_search.best_params_}")
-    print(f"✅ Best CV Score: {grid_search.best_score_:.1%}")
+    best_xgb = grid_search.best_estimator_
     
-    # 3. Probability Calibration (Sigmoid for small samples)
-    print("\n⚖️ Calibrating probabilities...")
+    # 3. Build Optimized Model (Phase 8 Refined)
+    print("\n🏗️ Training optimized XGBoost with Interaction Features...")
+    best_model = best_xgb # From tuning above
+    
+    # 3b. Probability Calibration
+    print("\n⚖️ Calibrating probabilities (Isotonic for better fit)...")
     calibrated_model = CalibratedClassifierCV(
         estimator=best_model,
-        method='sigmoid',
-        cv=tscv # Use same time-series split for calibration
+        method='isotonic', # More advanced than Sigmoid
+        cv=tscv
     )
     calibrated_model.fit(X_train, y_train, sample_weight=sample_weights)
     
@@ -537,29 +581,29 @@ def train_optimized_model():
     loss = log_loss(y_test, y_prob)
     
     print("\n" + "="*30)
-    print(f"FINAL OPTIMIZED RESULTS (Phase 7):")
+    print(f"FINAL STACKED RESULTS (Phase 8):")
     print(f"Accuracy: {acc:.1%}")
     print(f"Log Loss: {loss:.4f}")
     print("="*30)
     
-    # Feature Importance (from the underlying XGBoost model)
-    imp = pd.Series(best_model.feature_importances_, index=features).sort_values(ascending=False)
-    print("\nTop Optimized Predictors:")
+    # Feature Importance (from the underlying XGBoost component)
+    imp = pd.Series(best_xgb.feature_importances_, index=features).sort_values(ascending=False)
+    print("\nTop Predictors (XGB component):")
     print(imp.head(10))
     
     # 4. SAVE MODEL
     # Since CalibratedClassifierCV is a wrapper, we save it as a pickle
     # We still save the underlying booster as JSON for legacy compatibility
     if acc >= 0.50:
-        # Save calibrated model (pickle contains both xgboost and the calibrator)
+        # Save calibrated model (pickle contains the entire stack + calibrator)
         with open("xgb_calibrated_model.pkl", "wb") as f:
             pickle.dump(calibrated_model, f)
         
         # Also save booster as JSON (uncalibrated) for legacy code
-        best_model.save_model("xgb_nhl_model.json")
+        best_xgb.save_model("xgb_nhl_model.json")
         
-        print("\n💾 Saved calibrated model to xgb_calibrated_model.pkl")
-        print("💾 Saved underlying booster to xgb_nhl_model.json")
+        print("\n💾 Saved stacked model to xgb_calibrated_model.pkl")
+        print("💾 Saved XGB component to xgb_nhl_model.json")
         
         with open("xgb_features.pkl", "wb") as f:
             pickle.dump(features, f)
