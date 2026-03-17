@@ -823,12 +823,24 @@ class MetaEnsemblePredictor:
         ensemble_home += hdsv_bonus
         ensemble_away -= hdsv_bonus
         
-        # Re-normalize
-        total = ensemble_away + ensemble_home
-        ensemble_away = (ensemble_away / total) * 100
-        ensemble_home = (ensemble_home / total) * 100
-        
-        # 4. Final Aggregation
+        # 4. Market Edge Calculation (+EV Tracking - Phase 16)
+        edge_away = 0.0
+        edge_home = 0.0
+        if vegas_odds:
+            try:
+                v_away = vegas_odds.get('away_ml')
+                v_home = vegas_odds.get('home_ml')
+                if v_away and v_home:
+                    # Convert to implied probability
+                    implied_away = 100 / (v_away + 100) if v_away > 0 else abs(v_away) / (abs(v_away) + 100)
+                    implied_home = 100 / (v_home + 100) if v_home > 0 else abs(v_home) / (abs(v_home) + 100)
+                    
+                    # Calculate Edge: (Model Prob - Implied Prob) / Implied Prob * 100
+                    edge_away = (ensemble_away / 100.0 - implied_away) / implied_away * 100 if implied_away > 0 else 0
+                    edge_home = (ensemble_home / 100.0 - implied_home) / implied_home * 100 if implied_home > 0 else 0
+            except: pass
+
+        # 5. Final Aggregation
         confidence = max(ensemble_away, ensemble_home) / 100
         agreement_score = self._calculate_agreement(predictions, away_team, home_team)
         
