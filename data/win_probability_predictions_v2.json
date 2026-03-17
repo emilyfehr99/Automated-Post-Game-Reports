@@ -115041,6 +115041,159 @@
         "away_xg": 0
       },
       "prediction_reason": "Meta-Ensemble Daily Run"
+    },
+    {
+      "date": "2026-03-17",
+      "game_id": 2025021070,
+      "home_team": "CBJ",
+      "away_team": "CAR",
+      "predicted_winner": "CAR",
+      "home_win_prob": 0.48646723954682836,
+      "away_win_prob": 0.5238749627890402,
+      "model_confidence": 0.5238749627890402,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "suggested_units": 0.0,
+      "odds_taken": 0
+    },
+    {
+      "date": "2026-03-17",
+      "game_id": 2025021069,
+      "home_team": "MTL",
+      "away_team": "BOS",
+      "predicted_winner": "MTL",
+      "home_win_prob": 0.5552095581204526,
+      "away_win_prob": 0.4493938259960368,
+      "model_confidence": 0.5552095581204526,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "suggested_units": 0.0,
+      "odds_taken": 0
+    },
+    {
+      "date": "2026-03-17",
+      "game_id": 2025021068,
+      "home_team": "TOR",
+      "away_team": "NYI",
+      "predicted_winner": "NYI",
+      "home_win_prob": 0.39385305889923017,
+      "away_win_prob": 0.595868708179325,
+      "model_confidence": 0.595868708179325,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "suggested_units": 0.0,
+      "odds_taken": null
+    },
+    {
+      "date": "2026-03-17",
+      "game_id": 2025021072,
+      "home_team": "CHI",
+      "away_team": "MIN",
+      "predicted_winner": "MIN",
+      "home_win_prob": 0.4231676376663694,
+      "away_win_prob": 0.55840019959563,
+      "model_confidence": 0.55840019959563,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "suggested_units": 0.0,
+      "odds_taken": null
+    },
+    {
+      "date": "2026-03-17",
+      "game_id": 2025021071,
+      "home_team": "WPG",
+      "away_team": "NSH",
+      "predicted_winner": "WPG",
+      "home_win_prob": 0.6015675255585325,
+      "away_win_prob": 0.4095885435788289,
+      "model_confidence": 0.6015675255585325,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "suggested_units": 0.0,
+      "odds_taken": null
+    },
+    {
+      "date": "2026-03-17",
+      "game_id": 2025021073,
+      "home_team": "EDM",
+      "away_team": "SJS",
+      "predicted_winner": "EDM",
+      "home_win_prob": 0.6282220675026241,
+      "away_win_prob": 0.40318903587250715,
+      "model_confidence": 0.6282220675026241,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "suggested_units": 0.0,
+      "odds_taken": 0
+    },
+    {
+      "date": "2026-03-17",
+      "game_id": 2025021076,
+      "home_team": "SEA",
+      "away_team": "TBL",
+      "predicted_winner": "SEA",
+      "home_win_prob": 0.5767608483573429,
+      "away_win_prob": 0.45207719406052427,
+      "model_confidence": 0.5767608483573429,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "suggested_units": 0.0,
+      "odds_taken": 0
+    },
+    {
+      "date": "2026-03-17",
+      "game_id": 2025021074,
+      "home_team": "VAN",
+      "away_team": "FLA",
+      "predicted_winner": "FLA",
+      "home_win_prob": 0.46646902928974837,
+      "away_win_prob": 0.5349303784794265,
+      "model_confidence": 0.5349303784794265,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "suggested_units": 0.0,
+      "odds_taken": null
+    },
+    {
+      "date": "2026-03-17",
+      "game_id": 2025021075,
+      "home_team": "VGK",
+      "away_team": "BUF",
+      "predicted_winner": "BUF",
+      "home_win_prob": 0.4959937216718178,
+      "away_win_prob": 0.5164061213699777,
+      "model_confidence": 0.5164061213699777,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "suggested_units": 0.0,
+      "odds_taken": null
     }
   ],
   "model_weights": {
@@ -115089,10 +115242,10 @@
   },
   "last_updated": "2025-12-17T12:00:05.316190",
   "model_performance": {
-    "total_games": 802,
-    "correct_predictions": 401,
-    "accuracy": 0.5,
-    "recent_accuracy": 0.5666666666666667
+    "total_games": 808,
+    "correct_predictions": 405,
+    "accuracy": 0.5012376237623762,
+    "recent_accuracy": 0.6333333333333333
   },
   "calibration_points": [
     [
@@ -115145,7 +115298,7 @@
     ]
   ],
   "calibration_metadata": {
-    "updated_at": "2026-03-16T08:26:26.609670",
+    "updated_at": "2026-03-17T08:04:26.571920",
     "sample_size": 547,
     "num_bins": 12,
     "bucket_samples": {
