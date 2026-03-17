@@ -113,6 +113,42 @@ def update_game_outcomes():
                     # Normalize abbreviations if needed (sometimes API uses different ones)
                     # We trust the prediction record's team abbrevs for consistency
                     
+                    # NEW: Track Period 1 Leader (Phase 20)
+                    lead_after_p1 = 0 # 0=Tie, 1=Home, -1=Away
+                    try:
+                        # Landing endpoint has period-by-period scoring summary
+                        landing_url = f"https://api-web.nhle.com/v1/gamecenter/{game_id}/landing"
+                        landing_resp = client.session.get(landing_url, timeout=10)
+                        if landing_resp.status_code == 200:
+                            landing_data = landing_resp.json()
+                            p1_away = 0
+                            p1_home = 0
+                            away_abbr = pred.get('away_team')
+                            home_abbr = pred.get('home_team')
+                            
+                            scoring = landing_data.get('summary', {}).get('scoring', [])
+                            for period_data in scoring:
+                                if period_data.get('periodDescriptor', {}).get('number') == 1:
+                                    for goal in period_data.get('goals', []):
+                                        goal_team = goal.get('teamAbbrev', {}).get('default')
+                                        if goal_team == away_abbr:
+                                            p1_away += 1
+                                        elif goal_team == home_abbr:
+                                            p1_home += 1
+                            
+                            if p1_home > p1_away:
+                                lead_after_p1 = 1
+                            elif p1_away > p1_home:
+                                lead_after_p1 = -1
+                                
+                            # Update lead_after_p1 in metrics if it exists, otherwise in root
+                            if 'metrics_used' not in pred:
+                                pred['metrics_used'] = {}
+                            pred['metrics_used']['lead_after_p1'] = lead_after_p1
+                            logger.info(f"   P1 Score: {away_abbr} {p1_away} - {p1_home} {home_abbr} (Lead: {lead_after_p1})")
+                    except Exception as e:
+                        logger.warning(f"   Could not determine P1 lead for {game_id}: {e}")
+
                     # Update the prediction record
                     pred['actual_winner'] = actual_winner
                     pred['actual_away_score'] = away_score

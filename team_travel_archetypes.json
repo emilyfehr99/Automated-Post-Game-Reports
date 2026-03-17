@@ -1,0 +1,194 @@
+{
+    "PIT": {
+        "high_travel_win_rate": 0.333,
+        "low_travel_win_rate": 0.174,
+        "high_travel_count": 3,
+        "is_road_warrior": true
+    },
+    "COL": {
+        "high_travel_win_rate": 0.273,
+        "low_travel_win_rate": 0.176,
+        "high_travel_count": 11,
+        "is_road_warrior": true
+    },
+    "VAN": {
+        "high_travel_win_rate": 0.167,
+        "low_travel_win_rate": 0.0,
+        "high_travel_count": 6,
+        "is_road_warrior": true
+    },
+    "ANA": {
+        "high_travel_win_rate": 0.222,
+        "low_travel_win_rate": 0.056,
+        "high_travel_count": 9,
+        "is_road_warrior": true
+    },
+    "EDM": {
+        "high_travel_win_rate": 0.333,
+        "low_travel_win_rate": 0.043,
+        "high_travel_count": 6,
+        "is_road_warrior": true
+    },
+    "BOS": {
+        "high_travel_win_rate": 0.0,
+        "low_travel_win_rate": 0.048,
+        "high_travel_count": 5,
+        "is_road_warrior": false
+    },
+    "DET": {
+        "high_travel_win_rate": 0.333,
+        "low_travel_win_rate": 0.13,
+        "high_travel_count": 6,
+        "is_road_warrior": true
+    },
+    "FLA": {
+        "high_travel_win_rate": 0.167,
+        "low_travel_win_rate": 0.167,
+        "high_travel_count": 6,
+        "is_road_warrior": true
+    },
+    "NJD": {
+        "high_travel_win_rate": 0.5,
+        "low_travel_win_rate": 0.091,
+        "high_travel_count": 2,
+        "is_road_warrior": false
+    },
+    "NYI": {
+        "high_travel_win_rate": 0.25,
+        "low_travel_win_rate": 0.273,
+        "high_travel_count": 4,
+        "is_road_warrior": true
+    },
+    "OTT": {
+        "high_travel_win_rate": 0.0,
+        "low_travel_win_rate": 0.261,
+        "high_travel_count": 5,
+        "is_road_warrior": false
+    },
+    "LAK": {
+        "high_travel_win_rate": 0.125,
+        "low_travel_win_rate": 0.227,
+        "high_travel_count": 8,
+        "is_road_warrior": false
+    },
+    "BUF": {
+        "high_travel_win_rate": 0.5,
+        "low_travel_win_rate": 0.211,
+        "high_travel_count": 6,
+        "is_road_warrior": true
+    },
+    "MIN": {
+        "high_travel_win_rate": 0.5,
+        "low_travel_win_rate": 0.062,
+        "high_travel_count": 6,
+        "is_road_warrior": true
+    },
+    "WPG": {
+        "high_travel_win_rate": 0.125,
+        "low_travel_win_rate": 0.062,
+        "high_travel_count": 8,
+        "is_road_warrior": true
+    },
+    "SJS": {
+        "high_travel_win_rate": 0.0,
+        "low_travel_win_rate": 0.15,
+        "high_travel_count": 7,
+        "is_road_warrior": false
+    },
+    "NYR": {
+        "high_travel_win_rate": 0.2,
+        "low_travel_win_rate": 0.095,
+        "high_travel_count": 5,
+        "is_road_warrior": true
+    },
+    "CAR": {
+        "high_travel_win_rate": 0.0,
+        "low_travel_win_rate": 0.273,
+        "high_travel_count": 3,
+        "is_road_warrior": false
+    },
+    "CBJ": {
+        "high_travel_win_rate": 0.0,
+        "low_travel_win_rate": 0.231,
+        "high_travel_count": 1,
+        "is_road_warrior": false
+    },
+    "STL": {
+        "high_travel_win_rate": 0.333,
+        "low_travel_win_rate": 0.174,
+        "high_travel_count": 3,
+        "is_road_warrior": true
+    },
+    "TBL": {
+        "high_travel_win_rate": 0.0,
+        "low_travel_win_rate": 0.095,
+        "high_travel_count": 4,
+        "is_road_warrior": false
+    },
+    "TOR": {
+        "high_travel_win_rate": 0.0,
+        "low_travel_win_rate": 0.143,
+        "high_travel_count": 2,
+        "is_road_warrior": false
+    },
+    "CHI": {
+        "high_travel_win_rate": 0.143,
+        "low_travel_win_rate": 0.1,
+        "high_travel_count": 7,
+        "is_road_warrior": true
+    },
+    "MTL": {
+        "high_travel_win_rate": 0.0,
+        "low_travel_win_rate": 0.2,
+        "high_travel_count": 3,
+        "is_road_warrior": false
+    },
+    "CGY": {
+        "high_travel_win_rate": 0.125,
+        "low_travel_win_rate": 0.05,
+        "high_travel_count": 8,
+        "is_road_warrior": true
+    },
+    "PHI": {
+        "high_travel_win_rate": 0.5,
+        "low_travel_win_rate": 0.235,
+        "high_travel_count": 2,
+        "is_road_warrior": false
+    },
+    "DAL": {
+        "high_travel_win_rate": 0.286,
+        "low_travel_win_rate": 0.188,
+        "high_travel_count": 7,
+        "is_road_warrior": true
+    },
+    "UTA": {
+        "high_travel_win_rate": 0.143,
+        "low_travel_win_rate": 0.25,
+        "high_travel_count": 7,
+        "is_road_warrior": false
+    },
+    "VGK": {
+        "high_travel_win_rate": 0.0,
+        "low_travel_win_rate": 0.1,
+        "high_travel_count": 6,
+        "is_road_warrior": false
+    },
+    "WSH": {
+        "high_travel_win_rate": 0.25,
+        "low_travel_win_rate": 0.1,
+        "high_travel_count": 4,
+        "is_road_warrior": true
+    },
+    "NSH": {
+        "high_travel_win_rate": 0.333,
+        "low_travel_win_rate": 0.05,
+        "high_travel_count": 3,
+        "is_road_warrior": true
+    },
+    "SEA": {
+        "high_travel_win_rate": 0.0,
+        "low_travel_win_rate": 0.214,
+        "high_travel_count": 5,
+        "is_road_warrior": false
+    }
+}
