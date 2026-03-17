@@ -59,7 +59,9 @@ class DailyPredictionNotifier:
                             'away_xg': pred.get('away_xg', 0),
                             # Add other metrics if available from meta_ensemble
                         },
-                        'prediction_reason': "Meta-Ensemble Daily Run"
+                        'prediction_reason': "Meta-Ensemble Daily Run",
+                        'suggested_units': pred.get('suggested_units', 0.0),
+                        'odds_taken': pred.get('odds_taken', 0)
                     }
                     data['predictions'].append(record)
                     existing_ids.add(pred['game_id'])
@@ -137,6 +139,10 @@ class DailyPredictionNotifier:
                     vegas_odds=vegas_odds
                 )
                 
+                # Attach odds taken for ROI tracking
+                if vegas_odds:
+                    pred['odds_taken'] = vegas_odds.get('home_ml') if pred['home_prob'] > pred['away_prob'] else vegas_odds.get('away_ml')
+
                 # Include all games as requested by user
                 if True: # was: if self.meta_ensemble.should_predict(pred):
                     # Attach Game ID
@@ -156,9 +162,16 @@ class DailyPredictionNotifier:
                         'home_goalie': game.get('home_goalie', 'TBD'),
                         'start_time': game.get('game_time', ''),
                         'contexts': pred.get('contexts_used', []),
-                        'game_id': game_id,  # Critical for tracking
+                        'game_id': game_id,
                         'confidence_tier': pred.get('confidence_tier', 'Standard'),
-                        'predicted_margin': pred.get('predicted_margin', 0.0)
+                        'predicted_margin': pred.get('predicted_margin', 0.0),
+                        'edge_away': pred.get('edge_away', 0.0),
+                        'edge_home': pred.get('edge_home', 0.0),
+                        'is_plus_ev_away': pred.get('is_plus_ev_away', False),
+                        'is_plus_ev_home': pred.get('is_plus_ev_home', False),
+                        'suggested_units': pred.get('suggested_units', 0.0),
+                        'odds_taken': pred.get('odds_taken', 0),
+                        'p1_home_prob': pred.get('p1_home_prob', 50.0)
                     })
             except Exception as e:
                 print(f"Error predicting {game['away_team']} @ {game['home_team']}: {e}")
@@ -222,8 +235,25 @@ class DailyPredictionNotifier:
             
             summary += f"**Game {i}**: {away} @ {home}\n"
             summary += f"  🏆 Prediction: **{winner} wins** ({away_score}-{home_score})\n"
+            
+            # Phase 17: Period 1 Prediction
+            p1_home_prob = pred.get('p1_home_prob', 50.0)
+            p1_winner = home if p1_home_prob > 55 else (away if p1_home_prob < 45 else None)
+            if p1_winner:
+                p1_conf = max(p1_home_prob, 100 - p1_home_prob)
+                summary += f"  🕐 1st Period: **{p1_winner}** favored ({p1_conf:.1f}%)\n"
+            
             summary += f"  ⭐ Confidence: {confidence:.1f}% ({pred.get('confidence_tier', 'Standard')})\n"
             
+            # Phase 16: Market Value Overlay
+            edge = pred.get('edge_home') if winner == home else pred.get('edge_away')
+            if edge and edge > 5.0:
+                summary += f"  💰 **+EV Value**: Edge of **{edge:.1f}%** detected vs Market\n"
+                if pred.get('suggested_units', 0) > 0:
+                    summary += f"  📏 **Bet Size**: Suggested **{pred['suggested_units']} units** (Kelly Criterion)\n"
+            elif edge and edge > 1.0:
+                summary += f"  ⚖️ Market Alignment: Edge of {edge:.1f}%\n"
+
             if 'predicted_margin' in pred and abs(pred['predicted_margin']) > 0.1:
                 side = "Home" if pred['predicted_margin'] > 0 else "Away"
                 summary += f"  📏 Margin Model: **{side} {abs(pred['predicted_margin']):.1f}** goals\n"

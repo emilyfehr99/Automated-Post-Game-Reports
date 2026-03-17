@@ -207,6 +207,7 @@ class PredictionInterface:
                                     # Calculate zone metrics (needed for both game-level and period-level)
                                     away_zone_metrics = {}
                                     home_zone_metrics = {}
+                                    # Calculate zone and tactical metrics
                                     try:
                                         away_zone_metrics = self.report_generator._calculate_zone_metrics(game_data, away_team_id, 'away')
                                         home_zone_metrics = self.report_generator._calculate_zone_metrics(game_data, home_team_id, 'home')
@@ -226,30 +227,77 @@ class PredictionInterface:
                                         metrics_used['home_dzs'] = sum(home_zone_metrics.get('dz_originating_shots', [0, 0, 0]))
                                         metrics_used['home_fc'] = sum(home_zone_metrics.get('fc_cycle_sog', [0, 0, 0]))
                                         metrics_used['home_rush'] = sum(home_zone_metrics.get('rush_sog', [0, 0, 0]))
+
+                                        # Phase 13: Tactical Signals
+                                        analyzer = AdvancedMetricsAnalyzer(game_data.get('play_by_play', {}))
+                                        
+                                        # Pressure
+                                        away_pressure = analyzer.calculate_pressure_metrics(away_team_id)
+                                        home_pressure = analyzer.calculate_pressure_metrics(home_team_id)
+                                        metrics_used['away_pressure'] = away_pressure.get('sustained_pressure_sequences', 0)
+                                        metrics_used['home_pressure'] = home_pressure.get('sustained_pressure_sequences', 0)
+                                        
+                                        # Rebounds
+                                        away_rebounds = analyzer.calculate_rebounds_by_period(away_team_id)
+                                        home_rebounds = analyzer.calculate_rebounds_by_period(home_team_id)
+                                        metrics_used['away_rebounds'] = sum(away_rebounds.get('rebounds_by_period', {}).values())
+                                        metrics_used['home_rebounds'] = sum(home_rebounds.get('rebounds_by_period', {}).values())
+
+                                        # Phase 15: Momentum Metrics
+                                        momentum = analyzer.calculate_momentum_metrics(away_team_id, home_team_id)
+                                        metrics_used['p1_xg_away'] = momentum['p1_xg']['away']
+                                        metrics_used['p1_xg_home'] = momentum['p1_xg']['home']
+                                        metrics_used['p2_xg_away'] = momentum['p2_xg']['away']
+                                        metrics_used['p2_xg_home'] = momentum['p2_xg']['home']
+                                        metrics_used['p3_xg_away'] = momentum['p3_xg']['away']
+                                        metrics_used['p3_xg_home'] = momentum['p3_xg']['home']
+                                        metrics_used['p1_goals_away'] = momentum['p1_goals']['away']
+                                        metrics_used['p1_goals_home'] = momentum['p1_goals']['home']
+                                        metrics_used['p2_goals_away'] = momentum['p2_goals']['away']
+                                        metrics_used['p2_goals_home'] = momentum['p2_goals']['home']
+                                        metrics_used['p3_goals_away'] = momentum['p3_goals']['away']
+                                        metrics_used['p3_goals_home'] = momentum['p3_goals']['home']
+                                        metrics_used['lead_after_p1'] = momentum['lead_after_p1']
+                                        metrics_used['lead_after_p2'] = momentum['lead_after_p2']
+
+                                        # Phase 18: Transition Analytics
+                                        away_trans = analyzer.calculate_transition_metrics(away_team_id)
+                                        home_trans = analyzer.calculate_transition_metrics(home_team_id)
+                                        metrics_used['away_nzt_possession'] = away_trans.get('nzt_possession_pct', 50.0)
+                                        metrics_used['home_nzt_possession'] = home_trans.get('nzt_possession_pct', 50.0)
+                                        metrics_used['away_ca_shots'] = away_trans.get('counter_attack_shots', 0)
+                                        metrics_used['home_ca_shots'] = home_trans.get('counter_attack_shots', 0)
+                                        metrics_used['away_rush_sv_pct'] = away_trans.get('rush_save_pct', 90.0)
+                                        metrics_used['home_rush_sv_pct'] = home_trans.get('rush_save_pct', 90.0)
+
                                     except Exception as e:
-                                        print(f"    ⚠️  Error calculating zone metrics: {e}")
+                                        print(f"    ⚠️  Error calculating zone/tactical metrics: {e}")
                                         for key in ['away_nzt', 'away_nztsa', 'away_ozs', 'away_nzs', 'away_dzs', 'away_fc', 'away_rush',
-                                                   'home_nzt', 'home_nztsa', 'home_ozs', 'home_nzs', 'home_dzs', 'home_fc', 'home_rush']:
+                                                   'home_nzt', 'home_nztsa', 'home_ozs', 'home_nzs', 'home_dzs', 'home_fc', 'home_rush',
+                                                   'away_pressure', 'home_pressure', 'away_rebounds', 'home_rebounds']:
                                             metrics_used[key] = 0
                                     
                                     # Calculate movement metrics
                                     try:
                                         if 'play_by_play' in game_data:
-                                            analyzer = AdvancedMetricsAnalyzer(game_data.get('play_by_play', {}))
-                                            
+                                            # Already initialized analyzer above
                                             away_movement = analyzer.calculate_pre_shot_movement_metrics(away_team_id)
                                             home_movement = analyzer.calculate_pre_shot_movement_metrics(home_team_id)
                                             
                                             metrics_used['away_lateral'] = away_movement['lateral_movement'].get('avg_delta_y', 0.0)
                                             metrics_used['away_longitudinal'] = away_movement['longitudinal_movement'].get('avg_delta_x', 0.0)
+                                            metrics_used['away_royal_road'] = away_movement['royal_road_proxy'].get('attempts', 0)
                                             
                                             metrics_used['home_lateral'] = home_movement['lateral_movement'].get('avg_delta_y', 0.0)
                                             metrics_used['home_longitudinal'] = home_movement['longitudinal_movement'].get('avg_delta_x', 0.0)
+                                            metrics_used['home_royal_road'] = home_movement['royal_road_proxy'].get('attempts', 0)
                                         else:
                                             metrics_used['away_lateral'] = 0.0
                                             metrics_used['away_longitudinal'] = 0.0
+                                            metrics_used['away_royal_road'] = 0
                                             metrics_used['home_lateral'] = 0.0
                                             metrics_used['home_longitudinal'] = 0.0
+                                            metrics_used['home_royal_road'] = 0
                                     except Exception as e:
                                         print(f"    ⚠️  Error calculating movement metrics: {e}")
                                         for key in ['away_lateral', 'away_longitudinal', 'home_lateral', 'home_longitudinal']:

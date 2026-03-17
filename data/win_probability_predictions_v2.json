@@ -114854,7 +114854,13 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "home",
+      "actual_winner_side": "home",
+      "actual_winner_team": "WPG",
+      "actual_away_score": 2,
+      "actual_home_score": 3,
+      "result_updated_at": "2026-03-16T08:35:04.215335"
     },
     {
       "date": "2026-03-15",
@@ -114869,7 +114875,13 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "home",
+      "actual_winner_side": "home",
+      "actual_winner_team": "OTT",
+      "actual_away_score": 4,
+      "actual_home_score": 7,
+      "result_updated_at": "2026-03-16T08:35:04.416370"
     },
     {
       "date": "2026-03-15",
@@ -114884,7 +114896,13 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "away",
+      "actual_winner_side": "away",
+      "actual_winner_team": "ANA",
+      "actual_away_score": 4,
+      "actual_home_score": 3,
+      "result_updated_at": "2026-03-16T08:35:04.719376"
     },
     {
       "date": "2026-03-15",
@@ -114899,7 +114917,13 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "away",
+      "actual_winner_side": "away",
+      "actual_winner_team": "TOR",
+      "actual_away_score": 4,
+      "actual_home_score": 2,
+      "result_updated_at": "2026-03-16T08:35:04.950303"
     },
     {
       "date": "2026-03-15",
@@ -114914,7 +114938,13 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "home",
+      "actual_winner_side": "home",
+      "actual_winner_team": "EDM",
+      "actual_away_score": 1,
+      "actual_home_score": 3,
+      "result_updated_at": "2026-03-16T08:35:05.247640"
     },
     {
       "date": "2026-03-15",
@@ -114929,7 +114959,13 @@
         "home_xg": 0,
         "away_xg": 0
       },
-      "prediction_reason": "Meta-Ensemble Daily Run"
+      "prediction_reason": "Meta-Ensemble Daily Run",
+      "actual_winner": "home",
+      "actual_winner_side": "home",
+      "actual_winner_team": "SEA",
+      "actual_away_score": 2,
+      "actual_home_score": 6,
+      "result_updated_at": "2026-03-16T08:35:05.454732"
     },
     {
       "date": "2026-03-16",

@@ -13,6 +13,7 @@ import lightgbm as lgb
 import pickle
 import math
 from datetime import datetime, timedelta
+from standings_tracker import StandingsTracker
 
 TEAM_COORDINATES = {
     'ANA': (33.80, -117.88), 'BOS': (42.36, -71.06), 'BUF': (42.89, -78.88),
@@ -179,21 +180,21 @@ class TeamHistory:
             
         self.history[team]['dates'].append(date)
         self.history[team]['stats'].append(game_stats)
-        self.history[team]['last_city'] = city or team # Default to home city if not provided
+        self.history[team]['last_city'] = city or team
         
         if opponent_elo is not None:
             self.history[team]['opponents_elo'].append(opponent_elo)
+
+        if venue == 'home':
+            self.history[team]['home_stats'].append(game_stats)
+        elif venue == 'away':
+            self.history[team]['away_stats'].append(game_stats)
 
     def get_travel_distance(self, team, current_city):
         """Distance traveled since last game"""
         if team not in self.history or not self.history[team]['last_city']:
             return 0.0
         return calculate_distance(self.history[team]['last_city'], current_city)
-        
-        if venue == 'home':
-            self.history[team]['home_stats'].append(game_stats)
-        elif venue == 'away':
-            self.history[team]['away_stats'].append(game_stats)
             
     def update_goalie(self, name, gsax):
         self.goalies.update(name, gsax)
@@ -212,6 +213,18 @@ class TeamHistory:
         last_date = self.history[team]['dates'][-1]
         delta = (current_date - last_date).days
         return max(1, delta)
+
+    def get_rolling_rate(self, team, condition_key, target_key, window=20):
+        """Calculate the success rate of a target condition (e.g., win_rate when leading_after_p2)"""
+        if team not in self.history or not self.history[team]['stats']:
+            return 0.5
+        
+        relevant_games = [g for g in self.history[team]['stats'][-window:] if g.get(condition_key) == 1]
+        if not relevant_games:
+            return 0.5
+            
+        successes = [g for g in relevant_games if g.get(target_key) == 1]
+        return len(successes) / len(relevant_games)
         
     def get_rolling_stats(self, team, window=5, venue=None, alpha=None):
         """Calculate averages with optional venue filter and exponential decay (alpha)"""
@@ -287,6 +300,7 @@ def extract_features_chronologically(predictions):
     sorted_preds = sorted(predictions, key=lambda x: x['date'])
     
     tracker = TeamHistory()
+    standings = StandingsTracker()
     profiles = load_profiles() # Load finishing profiles
     edge_data = load_edge_data() # Load NHL Edge speed profiles
     training_data = []
@@ -349,6 +363,7 @@ def extract_features_chronologically(predictions):
                 'game_id': game_id,
                 'date': game_date,
                 'target': 1 if winner_side == 'home' else 0,
+                'p1_target': 1 if metrics.get('lead_after_p1') == 1 else 0, # Home leads after P1
                 'margin': h_score_final - a_score_final,
                 'home_team': home,
                 'away_team': away,
@@ -387,6 +402,27 @@ def extract_features_chronologically(predictions):
                 'l5_hdc_diff': h_l5.get('hdc', 5) - a_l5.get('hdc', 5),
                 'l5_pizza_diff': h_l5.get('pizzas', 2) - a_l5.get('pizzas', 2),
                 
+                # Phase 13: Tactical Signals
+                'l5_royal_road_diff': h_l5.get('royal_road', 1) - a_l5.get('royal_road', 1),
+                'l5_pressure_diff': h_l5.get('pressure', 2) - a_l5.get('pressure', 2),
+                'l5_rebound_diff': h_l5.get('rebounds', 1) - a_l5.get('rebounds', 1),
+                'l5_lateral_diff': h_l5.get('lateral', 5.0) - a_l5.get('lateral', 5.0),
+                
+                # Phase 15: Momentum & Game Flow
+                'p1_xg_diff': h_l5.get('p1_xg', 0.8) - a_l5.get('p1_xg', 0.8),
+                'p2_xg_diff': h_l5.get('p2_xg', 0.8) - a_l5.get('p2_xg', 0.8),
+                'p3_xg_diff': h_l5.get('p3_xg', 0.8) - a_l5.get('p3_xg', 0.8),
+                'p1_p2_dominance': (h_l10.get('p1_xg', 0.8) + h_l10.get('p2_xg', 0.8)) - (a_l10.get('p1_xg', 0.8) + a_l10.get('p2_xg', 0.8)),
+                'h_preservation_rate': tracker.get_rolling_rate(home, 'led_after_p2', 'won_game', window=20),
+                'a_preservation_rate': tracker.get_rolling_rate(away, 'led_after_p2', 'won_game', window=20),
+                'h_comeback_rate': tracker.get_rolling_rate(home, 'trailed_after_p2', 'won_game', window=20),
+                'a_comeback_rate': tracker.get_rolling_rate(away, 'trailed_after_p2', 'won_game', window=20),
+                
+                # Phase 18: Advanced Transition Analytics
+                'l5_nzt_possession_diff': h_l5.get('nzt_possession', 50) - a_l5.get('nzt_possession', 50),
+                'l5_ca_shots_diff': h_l5.get('ca_shots', 0) - a_l5.get('ca_shots', 0),
+                'l5_rush_sv_pct_diff': h_l5.get('rush_sv_pct', 90) - a_l5.get('rush_sv_pct', 90),
+                
                 # Venue Specific
                 'home_venue_goal_diff': h_home_l5.get('goal_diff', 0),
                 'away_venue_goal_diff': a_away_l5.get('goal_diff', 0),
@@ -404,6 +440,12 @@ def extract_features_chronologically(predictions):
                 # Interaction Features (Phase 8 Advanced DS)
                 'elo_rest_inter': ((home_elo + tracker.elo.ha) - away_elo) * (home_rest - away_rest),
                 'speed_finish_inter': (edge_data.get(home, {}).get('edge_top_speed', 21.0) - edge_data.get(away, {}).get('edge_top_speed', 21.0)) * (h_finish - a_finish),
+                
+                # Phase 14: Season-Phase Context
+                'season_month': game_date.month,
+                'is_late_season': 1 if game_date.month in [3, 4] else 0,
+                'h_desperation': standings.calculate_desperation_index(home, game_date.strftime('%Y-%m-%d')),
+                'a_desperation': standings.calculate_desperation_index(away, game_date.strftime('%Y-%m-%d')),
                 
                 # Raw Components for Phase 11 Symbolic Features
                 'home_xg': h_l5.get('xg_avg', 2.5),
@@ -456,25 +498,51 @@ def extract_features_chronologically(predictions):
             'corsi_pct': h_corsi, 
             'pdo': h_pdo, 
             'pp_pct': h_pp,
-            'pk_pct': h_pk,
-            'rush': float(p.get('home_rush', 2) or 2),
-            'nzt': float(p.get('home_nzt', 5) or 5),
-            'ozs': float(p.get('home_ozs', 10) or 10),
-            'hdc': float(metrics.get('home_hdc', 5) or 5),
-            'pizzas': float(p.get('home_hd_giveaways', 2) or 2)
+            'pressure': float(metrics.get('home_pressure', 2) or 2),
+            'rebounds': float(metrics.get('home_rebounds', 1) or 1),
+            'lateral': float(metrics.get('home_lateral', 5.0) or 5.0),
+            # Phase 15
+            'p1_xg': float(metrics.get('p1_xg_home', 0.8) or 0.8),
+            'p2_xg': float(metrics.get('p2_xg_home', 0.8) or 0.8),
+            'p3_xg': float(metrics.get('p3_xg_home', 0.8) or 0.8),
+            'led_after_p1': 1 if metrics.get('lead_after_p1') == 1 else 0,
+            'led_after_p2': 1 if metrics.get('lead_after_p2') == 1 else 0,
+            'trailed_after_p2': 1 if metrics.get('lead_after_p2') == -1 else 0,
+            'won_game': 1 if h_score > a_score else 0,
+            # Phase 18
+            'nzt_possession': float(metrics.get('home_nzt_possession', 50.0) or 50.0),
+            'ca_shots': float(metrics.get('home_ca_shots', 0) or 0),
+            'rush_sv_pct': float(metrics.get('home_rush_sv_pct', 90.0) or 90.0)
         }
         a_stats = {
             'goal_diff': a_score - h_score, 
             'xg_diff': a_xg - h_xg, 
             'corsi_pct': a_corsi, 
             'pdo': a_pdo, 
-            'pp_pct': a_pp,
+            'pp_pct': a_pp, 
             'pk_pct': a_pk,
-            'rush': float(p.get('away_rush', 2) or 2),
-            'nzt': float(p.get('away_nzt', 5) or 5),
-            'ozs': float(p.get('away_ozs', 10) or 10),
+            'rush': float(metrics.get('away_rush', 2) or 2),
+            'nzt': float(metrics.get('away_nzt', 5) or 5),
+            'ozs': float(metrics.get('away_ozs', 10) or 10),
             'hdc': float(metrics.get('away_hdc', 5) or 5),
-            'pizzas': float(p.get('away_hd_giveaways', 2) or 2)
+            'pizzas': float(metrics.get('away_hd_giveaways', 2) or 2),
+            # Phase 13
+            'royal_road': float(metrics.get('away_royal_road', 1) or 1),
+            'pressure': float(metrics.get('away_pressure', 2) or 2),
+            'rebounds': float(metrics.get('away_rebounds', 1) or 1),
+            'lateral': float(metrics.get('away_lateral', 5.0) or 5.0),
+            # Phase 15
+            'p1_xg': float(metrics.get('p1_xg_away', 0.8) or 0.8),
+            'p2_xg': float(metrics.get('p2_xg_away', 0.8) or 0.8),
+            'p3_xg': float(metrics.get('p3_xg_away', 0.8) or 0.8),
+            'led_after_p1': 1 if metrics.get('lead_after_p1') == -1 else 0,
+            'led_after_p2': 1 if metrics.get('lead_after_p2') == -1 else 0,
+            'trailed_after_p2': 1 if metrics.get('lead_after_p1') == 1 else 0,
+            'won_game': 1 if a_score > h_score else 0,
+            # Phase 18
+            'nzt_possession': float(metrics.get('away_nzt_possession', 50.0) or 50.0),
+            'ca_shots': float(metrics.get('away_ca_shots', 0) or 0),
+            'rush_sv_pct': float(metrics.get('away_rush_sv_pct', 90.0) or 90.0)
         }
         
         tracker.update(home, game_date, h_stats, venue='home', opponent_elo=curr_a_elo, city=home)
@@ -568,11 +636,16 @@ def train_optimized_model():
 
     features = [f for f in X_train.columns]
     
-    # Sample Weighting: Recent games have more weight (form factor)
-    # Give recent 20% of training data 2x weight of older data
+    # Phase 14: Adaptive Sample Weighting
+    # Recent games AND Late-season games (March/April) get more weight
     sample_weights = np.ones(len(y_train))
     recent_split = int(len(y_train) * 0.8)
-    sample_weights[recent_split:] = 1.5 # 50% more weight to recent form
+    sample_weights[recent_split:] *= 1.5 # 50% more weight to recent form
+    
+    # Extra emphasis on March/April games for "Playoff Push" intensity
+    # (Checking season_month in the corresponding indices of y_train)
+    late_season_mask = (train_df['season_month'].isin([3, 4])).values
+    sample_weights[late_season_mask] *= 1.25 # 25% extra weight for playoff push context
     
     print(f"Training on {len(X_train)} games, Testing on {len(X_test)} games")
     
@@ -682,6 +755,28 @@ def train_optimized_model():
     margin_mae = np.mean(np.abs(margin_preds - y_margin_test))
     print(f"✅ Margin Regressor trained. MAE: {margin_mae:.2f} goals")
     
+    # 3e. Period 1 Meta-Model (Phase 17)
+    print("\n🏗️ Training Phase 17 Period 1 Meta-Model...")
+    y_p1_train = train_df['p1_target'].values
+    y_p1_test = test_df['p1_target'].values
+    
+    # Only train if we have both classes (Home lead vs No lead)
+    if len(np.unique(y_p1_train)) > 1:
+        p1_model = xgb.XGBClassifier(
+            objective='binary:logistic',
+            eval_metric='logloss',
+            n_estimators=100,
+            max_depth=4,
+            learning_rate=0.03,
+            random_state=42
+        )
+        p1_model.fit(X_train, y_p1_train, sample_weight=sample_weights)
+        p1_acc = accuracy_score(y_p1_test, p1_model.predict(X_test))
+        print(f"✅ Period 1 Model trained. Accuracy: {p1_acc:.1%}")
+    else:
+        print("⚠️ Not enough P1 data (single class detected), skipping P1 model training.")
+        p1_model = None
+    
     # 4. SAVE MODELS
     # Since CalibratedClassifierCV is a wrapper, we save it as a pickle
     if acc >= 0.50:
@@ -696,6 +791,10 @@ def train_optimized_model():
         # Save the margin regression model
         with open('margin_regression_model.pkl', 'wb') as f:
             pickle.dump(margin_model, f)
+            
+        # Save the Period 1 meta-model
+        with open('p1_outcome_model.pkl', 'wb') as f:
+            pickle.dump(p1_model, f)
 
         # Also save booster as JSON (uncalibrated) for legacy code
         best_xgb.save_model("xgb_nhl_model.json")

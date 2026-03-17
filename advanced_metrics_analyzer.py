@@ -143,9 +143,86 @@ class AdvancedMetricsAnalyzer:
             shot_quality['shooting_percentage'] = shot_quality['goals'] / shot_quality['shots_on_goal']
         
         # Calculate expected goals using advanced model
-        shot_quality['expected_goals'] = self._calculate_expected_goals(team_id)
-        
         return shot_quality
+    
+    def calculate_transition_metrics(self, team_id: int) -> dict:
+        """
+        Calculate Phase 18: Advanced Transition Analytics
+        Tracks Neutral Zone Transitions (NZT), Counter-Attacks, and Rush Response
+        """
+        metrics = {
+            'nzt_entries': 0,
+            'nzt_possession_pct': 0.0,
+            'counter_attack_shots': 0,
+            'rush_save_pct': 0.0,
+            'avg_entry_speed_proxy': 0.0
+        }
+        
+        possession_entries = 0
+        total_entries = 0
+        ca_shots = 0
+        rush_saves = 0
+        rush_shots_faced = 0
+        
+        # Track last turnover to detect counter-attacks
+        last_turnover_time = None
+        last_turnover_team = None
+        
+        for i, play in enumerate(self.plays):
+            details = play.get('details', {})
+            event_type = play.get('typeDescKey', '')
+            event_team = details.get('eventOwnerTeamId')
+            
+            # 1. Turnover Detection (for Counter-Attack Index)
+            if event_type in ['giveaway', 'takeaway']:
+                last_turnover_time = play.get('timeInPeriod', '00:00')
+                last_turnover_team = event_team if event_type == 'takeaway' else (details.get('awayTeamId') if event_team == details.get('homeTeamId') else details.get('homeTeamId'))
+            
+            # 2. Neutral Zone Transition (NZT) & Entry Success
+            # We look for events in the Offensive Zone (O) following Neutral Zone (N) context
+            if event_team == team_id and details.get('zoneCode') == 'O':
+                # Check previous play
+                if i > 0:
+                    prev_play = self.plays[i-1]
+                    prev_details = prev_play.get('details', {})
+                    if prev_details.get('zoneCode') == 'N':
+                        total_entries += 1
+                        # If the event is a shot or pass, it's a "possession entry"
+                        if event_type in ['shot-on-goal', 'goal']:
+                            possession_entries += 1
+                
+                # Check for Counter-Attack (Shot within 8 seconds of a turnover)
+                if event_type in ['shot-on-goal', 'goal'] and last_turnover_team == team_id:
+                    curr_time = self._time_to_seconds(play.get('timeInPeriod', '00:00'))
+                    prev_time = self._time_to_seconds(last_turnover_time or '00:00')
+                    if 0 < (curr_time - prev_time) <= 8:
+                        ca_shots += 1
+            
+            # 3. Rush Response (Goalie resistance to transitional rush shots)
+            # Find shots against the team's goalie that are tagged as 'rush'
+            if event_team != team_id and event_type in ['shot-on-goal', 'goal']:
+                # Simple rush proxy: shot in O zone within 4 seconds of N zone activity
+                if i > 0:
+                    prev_play = self.plays[i-1]
+                    if prev_play.get('details', {}).get('zoneCode') == 'N':
+                        rush_shots_faced += 1
+                        if event_type == 'shot-on-goal':
+                            rush_saves += 1
+        
+        metrics['nzt_entries'] = total_entries
+        metrics['nzt_possession_pct'] = (possession_entries / total_entries * 100) if total_entries > 0 else 50.0
+        metrics['counter_attack_shots'] = ca_shots
+        metrics['rush_save_pct'] = (rush_saves / rush_shots_faced * 100) if rush_shots_faced > 0 else 90.0
+        
+        return metrics
+
+    def _time_to_seconds(self, time_str: str) -> int:
+        """Convert MM:SS to total seconds"""
+        try:
+            m, s = map(int, time_str.split(':'))
+            return m * 60 + s
+        except:
+            return 0
     
     def _calculate_expected_goals(self, team_id: int) -> float:
         """Calculate expected goals using improved xG model with rebounds, rushes, and context"""
@@ -218,37 +295,95 @@ class AdvancedMetricsAnalyzer:
     def _get_current_score(self) -> Dict:
         """Get final game score to track score state throughout game"""
         score = {'away': 0, 'home': 0}
-        for play in self.plays:
-            if play.get('typeDescKey') == 'goal':
-                details = play.get('details', {})
-                scoring_team = details.get('eventOwnerTeamId')
-                # We'll build running score in _get_score_differential
+        # Correctly identify away/home teams from roster/plays
+        # In the new API, shots/goals usually have 'eventOwnerTeamId'
+        # and we can deduce the status from the boxscore if we had it.
+        # But we only have plays here.
         return score
     
-    def _get_score_differential(self, current_play: Dict, team_id: int, game_score: Dict) -> int:
-        """
-        Calculate score differential at time of shot from team's perspective
-        Positive = leading, Negative = trailing, 0 = tied
-        """
-        # Build running score up to this play
-        away_goals = 0
-        home_goals = 0
+    def calculate_momentum_metrics(self, away_team_id: int, home_team_id: int) -> dict:
+        """Calculate momentum and game-flow metrics (Lead Preservation, xG by period)"""
+        momentum = {
+            'p1_xg': {'away': 0.0, 'home': 0.0},
+            'p2_xg': {'away': 0.0, 'home': 0.0},
+            'p3_xg': {'away': 0.0, 'home': 0.0},
+            'p1_goals': {'away': 0, 'home': 0},
+            'p2_goals': {'away': 0, 'home': 0},
+            'p3_goals': {'away': 0, 'home': 0},
+            'lead_after_p1': 0, # 1 if home leading, -1 if away, 0 if tied
+            'lead_after_p2': 0
+        }
         
-        current_play_idx = self.plays.index(current_play)
+        running_away_goals = 0
+        running_home_goals = 0
         
-        for play in self.plays[:current_play_idx]:
-            if play.get('typeDescKey') == 'goal':
-                details = play.get('details', {})
-                scoring_team = details.get('eventOwnerTeamId')
+        for i, play in enumerate(self.plays):
+            details = play.get('details', {})
+            event_type = play.get('typeDescKey', '')
+            event_team = details.get('eventOwnerTeamId')
+            period = play.get('period', 1)
+            
+            if event_type == 'goal':
+                if event_team == away_team_id:
+                    running_away_goals += 1
+                    if period == 1: momentum['p1_goals']['away'] += 1
+                    elif period == 2: momentum['p2_goals']['away'] += 1
+                    elif period == 3: momentum['p3_goals']['away'] += 1
+                elif event_team == home_team_id:
+                    running_home_goals += 1
+                    if period == 1: momentum['p1_goals']['home'] += 1
+                    elif period == 2: momentum['p2_goals']['home'] += 1
+                    elif period == 3: momentum['p3_goals']['home'] += 1
+            
+            if event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot']:
+                # Calculate xG for this shot
+                x_coord = details.get('xCoord', 0)
+                y_coord = details.get('yCoord', 0)
+                shot_type = details.get('shotType', 'wrist')
+                situation_code = play.get('situationCode', '1551')
+                time_in_period = play.get('timeInPeriod', '00:00')
                 
-                # Determine if scoring team is away or home
-                # This is a simplification - in real implementation, we'd track team IDs better
-                if scoring_team == team_id:
-                    # Goal for this team
-                    pass
-                    
-        # Simplified: return 0 for tied (we can improve this with game data)
-        # In production, we'd track actual running score
+                shot_data = {
+                    'x_coord': x_coord,
+                    'y_coord': y_coord,
+                    'shot_type': shot_type,
+                    'event_type': event_type,
+                    'time_in_period': time_in_period,
+                    'period': period,
+                    'strength_state': self._parse_strength_state(situation_code),
+                    'score_differential': running_home_goals - running_away_goals if event_team == home_team_id else running_away_goals - running_home_goals,
+                    'team_id': event_team
+                }
+                
+                # Use limited previous events context
+                start_idx = max(0, i - 5)
+                previous_events = self.plays[start_idx:i]
+                
+                xG = self.xg_model.calculate_xg(shot_data, previous_events)
+                
+                p_key = f'p{min(period, 3)}_xg'
+                side = 'away' if event_team == away_team_id else 'home'
+                if side in momentum[p_key]:
+                    momentum[p_key][side] += xG
+
+        # Determine Lead Status
+        p1_away = momentum['p1_goals']['away']
+        p1_home = momentum['p1_goals']['home']
+        if p1_home > p1_away: 
+            momentum['lead_after_p1'] = 1
+        elif p1_away > p1_home: 
+            momentum['lead_after_p1'] = -1
+            
+        p2_away = p1_away + momentum['p2_goals']['away']
+        p2_home = p1_home + momentum['p2_goals']['home']
+        if p2_home > p2_away: 
+            momentum['lead_after_p2'] = 1
+        elif p2_away > p2_home: 
+            momentum['lead_after_p2'] = -1
+            
+        return momentum
+
+    def _get_score_differential(self, current_play: Dict, team_id: int, game_score: Dict) -> int:
         return 0
     
     def _calculate_single_shot_xG(self, x_coord: float, y_coord: float, zone: str, shot_type: str, event_type: str) -> float:

@@ -43,6 +43,7 @@ def calculate_distance(city1, city2):
 from ensemble_predictor import EnsemblePredictor
 from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
 from rotowire_scraper import RotoWireScraper
+from standings_tracker import StandingsTracker
 
 class EloTracker:
     def __init__(self, k_factor=20, home_advantage=35):
@@ -125,6 +126,9 @@ class TeamHistory:
     def update_goalie(self, name, gsax, hdsv=None):
         self.goalies.update(name, gsax, hdsv)
         
+    def get_goalie_gsax(self, name, window=5):
+        return self.goalies.get_rolling_gsax(name, window)
+
     def get_goalie_hdsv(self, name, window=5):
         return self.goalies.get_rolling_hdsv(name, window)
 
@@ -145,6 +149,18 @@ class TeamHistory:
         last_date = self.history[team]['dates'][-1]
         delta = (current_date - last_date).days
         return max(1, delta)
+
+    def get_rolling_rate(self, team, condition_key, target_key, window=20):
+        """Calculate the success rate of a target condition (e.g., win_rate when leading_after_p2)"""
+        if team not in self.history or not self.history[team]['stats']:
+            return 0.5
+        
+        relevant_games = [g for g in self.history[team]['stats'][-window:] if g.get(condition_key) == 1]
+        if not relevant_games:
+            return 0.5
+            
+        successes = [g for g in relevant_games if g.get(target_key) == 1]
+        return len(successes) / len(relevant_games)
         
     def get_rolling_stats(self, team, window=5, venue=None, alpha=None):
         """Calculate averages for specified window with optional venue filter and exponential decay (alpha)"""
@@ -209,6 +225,7 @@ class MetaEnsemblePredictor:
         self.edge_profiles = {}
         self.team_encodings = {}
         self.rotowire = RotoWireScraper()
+        self.standings = StandingsTracker()
         
         try:
             self._load_xgboost_components()
@@ -262,11 +279,24 @@ class MetaEnsemblePredictor:
                     self.margin_model = pickle.load(f)
                 print(f"✅ Loaded Phase 12 Goal Margin Regression model from {margin_path}")
             else:
-                self.margin_model = None
                 print("⚠️ Goal Margin Regression model not found")
         except Exception as e:
             print(f"⚠️ Error loading goal margin model: {e}")
             self.margin_model = None
+
+        # Phase 17: Period 1 Meta-Model
+        try:
+            p1_model_path = Path("p1_outcome_model.pkl")
+            if p1_model_path.exists():
+                with open(p1_model_path, "rb") as f:
+                    self.p1_model = pickle.load(f)
+                print(f"✅ Loaded Phase 17 Period 1 Meta-Model from {p1_model_path}")
+            else:
+                self.p1_model = None
+                print("⚠️ Period 1 Meta-Model not found")
+        except Exception as e:
+            print(f"⚠️ Error loading P1 model: {e}")
+            self.p1_model = None
 
         # 3. Load Finishing Profiles
         try:
@@ -392,11 +422,15 @@ class MetaEnsemblePredictor:
                     'pdo': h_pdo, 
                     'pp_pct': h_pp,
                     'pk_pct': h_pk,
-                    'rush': float(p.get('home_rush', 2) or 2),
-                    'nzt': float(p.get('home_nzt', 5) or 5),
-                    'ozs': float(p.get('home_ozs', 10) or 10),
-                    'hdc': float(metrics.get('home_hdc', 5) or 5),
-                    'pizzas': float(p.get('home_hd_giveaways', 2) or 2)
+                    'lateral': float(metrics.get('home_lateral', 5.0) or 5.0),
+                    # Phase 15
+                    'p1_xg': float(metrics.get('p1_xg_home', 0.8) or 0.8),
+                    'p2_xg': float(metrics.get('p2_xg_home', 0.8) or 0.8),
+                    'p3_xg': float(metrics.get('p3_xg_home', 0.8) or 0.8),
+                    'led_after_p1': 1 if metrics.get('lead_after_p1') == 1 else 0,
+                    'led_after_p2': 1 if metrics.get('lead_after_p2') == 1 else 0,
+                    'trailed_after_p2': 1 if metrics.get('lead_after_p2') == -1 else 0,
+                    'won_game': 1 if h_goals > a_goals else 0
                 }
                 a_stats = {
                     'goal_diff': a_goals - h_goals, 
@@ -405,11 +439,24 @@ class MetaEnsemblePredictor:
                     'pdo': a_pdo, 
                     'pp_pct': a_pp,
                     'pk_pct': a_pk,
-                    'rush': float(p.get('away_rush', 2) or 2),
-                    'nzt': float(p.get('away_nzt', 5) or 5),
-                    'ozs': float(p.get('away_ozs', 10) or 10),
+                    'rush': float(metrics.get('away_rush', 2) or 2),
+                    'nzt': float(metrics.get('away_nzt', 5) or 5),
+                    'ozs': float(metrics.get('away_ozs', 10) or 10),
                     'hdc': float(metrics.get('away_hdc', 5) or 5),
-                    'pizzas': float(p.get('away_hd_giveaways', 2) or 2)
+                    'pizzas': float(metrics.get('away_hd_giveaways', 2) or 2),
+                    # Phase 13
+                    'royal_road': float(metrics.get('away_royal_road', 1) or 1),
+                    'pressure': float(metrics.get('away_pressure', 2) or 2),
+                    'rebounds': float(metrics.get('away_rebounds', 1) or 1),
+                    'lateral': float(metrics.get('away_lateral', 5.0) or 5.0),
+                    # Phase 15
+                    'p1_xg': float(metrics.get('p1_xg_away', 0.8) or 0.8),
+                    'p2_xg': float(metrics.get('p2_xg_away', 0.8) or 0.8),
+                    'p3_xg': float(metrics.get('p3_xg_away', 0.8) or 0.8),
+                    'led_after_p1': 1 if metrics.get('lead_after_p1') == -1 else 0,
+                    'led_after_p2': 1 if metrics.get('lead_after_p2') == -1 else 0,
+                    'trailed_after_p2': 1 if metrics.get('lead_after_p1') == 1 else 0,
+                    'won_game': 1 if a_goals > h_goals else 0
                 }
                 
                 curr_h_elo = self.history_tracker.get_elo(home)
@@ -502,9 +549,36 @@ class MetaEnsemblePredictor:
             'l5_hdc_diff': h_l5.get('hdc', 5) - a_l5.get('hdc', 5),
             'l5_pizza_diff': h_l5.get('pizzas', 2) - a_l5.get('pizzas', 2),
             
-            # Venue Specific
+            # Phase 13: Tactical Signals
+            'l5_royal_road_diff': h_l5.get('royal_road', 1) - a_l5.get('royal_road', 1),
+            'l5_pressure_diff': h_l5.get('pressure', 2) - a_l5.get('pressure', 2),
+            'l5_rebound_diff': h_l5.get('rebounds', 1) - a_l5.get('rebounds', 1),
+            'l5_lateral_diff': h_l5.get('lateral', 5.0) - a_l5.get('lateral', 5.0),
+            
+            # Phase 15: Momentum Features
+            'p1_xg_diff': h_l5.get('p1_xg', 0.8) - a_l5.get('p1_xg', 0.8),
+            'p2_xg_diff': h_l5.get('p2_xg', 0.8) - a_l5.get('p2_xg', 0.8),
+            'p3_xg_diff': h_l5.get('p3_xg', 0.8) - a_l5.get('p3_xg', 0.8),
+            'p1_p2_dominance': (h_l10.get('p1_xg', 0.8) + h_l10.get('p2_xg', 0.8)) - (a_l10.get('p1_xg', 0.8) + a_l10.get('p2_xg', 0.8)),
+            'h_preservation_rate': tracker.get_rolling_rate(home_team, 'led_after_p2', 'won_game', window=20),
+            'a_preservation_rate': tracker.get_rolling_rate(away_team, 'led_after_p2', 'won_game', window=20),
+            'h_comeback_rate': tracker.get_rolling_rate(home_team, 'trailed_after_p2', 'won_game', window=20),
+            'a_comeback_rate': tracker.get_rolling_rate(away_team, 'trailed_after_p2', 'won_game', window=20),
+
+            # Phase 18 Features
+            'l5_nzt_possession_diff': h_l5.get('nzt_possession', 50) - a_l5.get('nzt_possession', 50),
+            'l5_ca_shots_diff': h_l5.get('ca_shots', 0) - a_l5.get('ca_shots', 0),
+            'l5_rush_sv_pct_diff': h_l5.get('rush_sv_pct', 90) - a_l5.get('rush_sv_pct', 90),
+            
+            # Venue Indicators
             'home_venue_goal_diff': h_home_l5.get('goal_diff', 0),
-            'away_venue_goal_diff': a_away_l5.get('goal_diff', 0),
+            # Phase 14: Season-Phase Context
+            'season_month': datetime.now().month,
+            'is_late_season': 1 if datetime.now().month in [3, 4] else 0,
+            'h_desperation': self.standings.calculate_desperation_index(home_team),
+            'a_desperation': self.standings.calculate_desperation_index(away_team),
+            
+            # Venue Specific
             
             # Strength of Schedule (SoS)
             'home_sos': tracker.get_sos(home_team, 5),
@@ -519,6 +593,12 @@ class MetaEnsemblePredictor:
             # Interaction Features (Phase 8 Advanced DS)
             'elo_rest_inter': ((home_elo + self.history_tracker.elo.ha) - away_elo) * (home_rest - away_rest),
             'speed_finish_inter': (self.edge_profiles.get(home_team, {}).get('edge_top_speed', 21.0) - self.edge_profiles.get(away_team, {}).get('edge_top_speed', 21.0)) * (h_finish - a_finish),
+            
+            # Phase 14: Season-Phase Context
+            'season_month': datetime.now().month,
+            'is_late_season': 1 if datetime.now().month in [3, 4] else 0,
+            'h_desperation': self.standings.calculate_desperation_index(home_team),
+            'a_desperation': self.standings.calculate_desperation_index(away_team),
             
             # Team Win Rates (Target Encoding Phase 8.1)
             'home_win_rate': self.team_encodings.get('home_map', {}).get(home_team, self.team_encodings.get('home_prior', 0.5)),
@@ -586,6 +666,14 @@ class MetaEnsemblePredictor:
                 except:
                     pass
             
+            # 7. Period 1 Outcome Model (Phase 17)
+            p1_win_prob = 0.5
+            if self.p1_model is not None:
+                try:
+                    p1_win_prob = self.p1_model.predict_proba(df)[0][1]
+                except Exception as e:
+                    print(f"P1 prediction error: {e}")
+            
             return {
                 'away_team': away_team,
                 'home_team': home_team,
@@ -593,6 +681,7 @@ class MetaEnsemblePredictor:
                 'home_prob': home_prob,
                 'predicted_margin': predicted_margin,
                 'confidence_tier': confidence_tier,
+                'p1_home_prob': p1_win_prob * 100,
                 'prediction_type': 'xgboost_ml'
             }
         except Exception as e:
@@ -646,6 +735,7 @@ class MetaEnsemblePredictor:
             predictions.append(xgb_pred)
             weights.append(0.50)
             xgb_margin = xgb_pred.get('predicted_margin', 0.0)
+            xgb_p1_prob = xgb_pred.get('p1_home_prob', 50.0)
         
         # 2. Specialized ensemble (25% weight)
         try:
@@ -750,18 +840,46 @@ class MetaEnsemblePredictor:
             confidence_tier = "🔥 High Confidence"
         elif xgb_margin < -1.5 and ensemble_away > 55:
             confidence_tier = "🔥 High Confidence"
+        
+        # Phase 17: Bankroll Management & Kelly Criterion
+        suggested_units = 0.0
+        edge = edge_home if ensemble_home > ensemble_away else edge_away
+        if edge > 0:
+            # Kelly Criterion: f = (p*b - q) / b
+            # f = fraction of bankroll
+            # p = probability of winning (model_prob)
+            # b = net odds (decimal odds - 1)
+            # q = probability of losing (1 - p)
+            try:
+                # Convert moneyline to decimal
+                ml = vegas_odds.get('home_ml') if ensemble_home > ensemble_away else vegas_odds.get('away_ml')
+                if ml:
+                    decimal_odds = (ml / 100 + 1) if ml > 0 else (100 / abs(ml) + 1)
+                    b = decimal_odds - 1
+                    p = max(ensemble_home, ensemble_away) / 100.0
+                    q = 1 - p
+                    f = (p * b - q) / b
+                    # Apply Fractional Kelly (usually 0.25 to stay conservative)
+                    suggested_units = max(0, f * 0.25 * 10.0) # Scale to a 10-unit scale
+                    suggested_units = round(suggested_units, 1)
+            except: pass
 
         return {
             'away_team': away_team,
             'home_team': home_team,
-            'away_prob': round(ensemble_away, 2),
-            'home_prob': round(ensemble_home, 2),
+            'away_prob': ensemble_away,
+            'home_prob': ensemble_home,
             'predicted_winner': away_team if ensemble_away > ensemble_home else home_team,
-            'predicted_margin': round(xgb_margin, 2),
-            'confidence_tier': confidence_tier,
-            'prediction_confidence': round(confidence, 3),
-            'agreement_score': round(agreement_score, 2),
-            'ensemble_method': 'meta_ensemble_v3_contextual'
+            'prediction_confidence': max(ensemble_away, ensemble_home) / 100.0,
+            'confidence_tier': xgb_pred.get('confidence_tier', 'Standard') if xgb_pred else 'Standard',
+            'predicted_margin': xgb_margin,
+            'edge_away': edge_away,
+            'edge_home': edge_home,
+            'is_plus_ev_away': edge_away > 5.0,
+            'is_plus_ev_home': edge_home > 5.0,
+            'suggested_units': suggested_units,
+            'p1_home_prob': xgb_p1_prob,
+            'contexts_used': xgb_pred.get('contexts_used', []) if xgb_pred else []
         }
     
     def _calculate_legacy_injury_impact(self, away_injuries: list, home_injuries: list) -> float:

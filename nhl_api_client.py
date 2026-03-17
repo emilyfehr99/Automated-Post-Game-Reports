@@ -295,3 +295,11 @@ class NHLAPIClient:
             }
         
         return None
+
+    def get_standings(self):
+        """Get current league standings"""
+        url = f"{self.base_url}/standings/now"
+        response = self.session.get(url)
+        if response.status_code == 200:
+            return response.json()
+        return None

@@ -5,15 +5,38 @@ Tracks NHL standings and calculates playoff race desperation index
 """
 from typing import Dict, Optional
 from datetime import datetime
+import json
+from pathlib import Path
 from nhl_api_client import NHLAPIClient
 
 class StandingsTracker:
-    def __init__(self):
+    def __init__(self, cache_path: str = "data/standings_cache.json"):
         self.api = NHLAPIClient()
-        self.standings_cache = {}
+        self.cache_path = Path(cache_path)
+        self.standings_cache = self._load_cache()
+    
+    def _load_cache(self) -> Dict:
+        if self.cache_path.exists():
+            try:
+                with open(self.cache_path, 'r') as f:
+                    return json.load(f)
+            except Exception as e:
+                print(f"Error loading standings cache: {e}")
+        return {}
+
+    def _save_cache(self):
+        try:
+            self.cache_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(self.cache_path, 'w') as f:
+                json.dump(self.standings_cache, f, indent=2)
+        except Exception as e:
+            print(f"Error saving standings cache: {e}")
     
     def get_current_standings(self, date: str = None) -> Dict:
         """Get current NHL standings"""
+        if hasattr(date, 'strftime'):
+            date = date.strftime('%Y-%m-%d')
+            
         # Check cache
         cache_key = date or datetime.now().strftime('%Y-%m-%d')
         if cache_key in self.standings_cache:
@@ -45,6 +68,7 @@ class StandingsTracker:
             
             # Cache the result
             self.standings_cache[cache_key] = standings
+            self._save_cache()
             return standings
             
         except Exception as e:

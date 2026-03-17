@@ -223,6 +223,21 @@ jobs:
              FILES_TO_COMMIT="$FILES_TO_COMMIT team_encodings.json"
           fi
 
+          if [ -f "meta_confidence_model.pkl" ]; then
+             git add --force meta_confidence_model.pkl
+             FILES_TO_COMMIT="$FILES_TO_COMMIT meta_confidence_model.pkl"
+          fi
+
+          if [ -f "margin_regression_model.pkl" ]; then
+             git add --force margin_regression_model.pkl
+             FILES_TO_COMMIT="$FILES_TO_COMMIT margin_regression_model.pkl"
+          fi
+
+          if [ -f "p1_outcome_model.pkl" ]; then
+             git add --force p1_outcome_model.pkl
+             FILES_TO_COMMIT="$FILES_TO_COMMIT p1_outcome_model.pkl"
+          fi
+
           if [ -f "team_travel_archetypes.json" ]; then
              echo "📦 Adding travel archetypes..."
              git add --force team_travel_archetypes.json
