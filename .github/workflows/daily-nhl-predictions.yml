@@ -6,8 +6,8 @@ concurrency:
 
 on:
   schedule:
-    # 6am Central Time (handles both CST and CDT automatically)
-    - cron: '0 12 * * *'
+    # 5:30am Central Time (ensures predictions are ready around 6:00am given GitHub cron delays)
+    - cron: '30 10 * * *'
   workflow_dispatch: {}
 
 permissions:
