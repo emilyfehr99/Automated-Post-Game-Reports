@@ -97,8 +97,919 @@ class ScorePredictionModel:
             print(f"✅ Score model v3: {len(self.team_averages)} teams, "
                   f"{len(self.prediction_history)} predictions, "
                   f"{n_h2h} H2H records")
+
+            # Learn a win-prob calibration curve from historical outcomes.
+            # This adjusts the winner decision boundary away from a pure
+            # Poisson assumption (helps reach higher winner accuracy).
+            self._win_calibration = self._build_win_calibration()
+
+            # OT-scale / blend tuning (time-split validation).
+            # We blend calibrated P(win) with a Poisson+OT tie allocation
+            # model. This lets OT-like variance influence winner decisions.
+            # Also estimate a dispersion parameter for Negative Binomial
+            # (more realistic scoring variance than Poisson).
+            self._dispersion_k = self._estimate_dispersion_k()
+
+            self._ot_scale = 0.75
+            self._ot_blend = 0.85
+            self._ot_tie_gamma = 1.0
+            self._max_goals = 10
+            self._tune_ot_scale_and_blend()
+            self._tune_max_goals()
         else:
             print("⚠️  No team stats found, using league averages")
+            self._win_calibration = None
+            self._ot_scale = 0.75
+            self._ot_blend = 0.85
+            self._dispersion_k = 20.0
+            self._ot_tie_gamma = 1.0
+            self._max_goals = 10
+
+    def _poisson_win_probs(self, away_lam: float, home_lam: float, max_goals: int = 15) -> Tuple[float, float, float]:
+        """Return (p_away_reg_win, p_home_reg_win, p_tie_reg) from two Poissons."""
+        import math
+
+        away_lam = max(0.01, float(away_lam))
+        home_lam = max(0.01, float(home_lam))
+
+        pmf_away = [
+            math.exp(-away_lam) * (away_lam ** k) / math.factorial(k)
+            for k in range(max_goals + 1)
+        ]
+        pmf_home = [
+            math.exp(-home_lam) * (home_lam ** k) / math.factorial(k)
+            for k in range(max_goals + 1)
+        ]
+
+        p_away_win = 0.0
+        p_home_win = 0.0
+        p_tie = 0.0
+
+        for a in range(max_goals + 1):
+            pa = pmf_away[a]
+            if pa == 0.0:
+                continue
+            for h in range(max_goals + 1):
+                ph = pmf_home[h]
+                if a > h:
+                    p_away_win += pa * ph
+                elif h > a:
+                    p_home_win += pa * ph
+                else:
+                    p_tie += pa * ph
+
+        return p_away_win, p_home_win, p_tie
+
+    def _poisson_away_win_with_ot(self, away_lam: float, home_lam: float, ot_scale: float) -> float:
+        """Poisson win prob with OT-like tie reallocation using OT_SCALE."""
+        import math
+
+        p_away_win, _p_home_win, p_tie = self._poisson_win_probs(away_lam, home_lam, max_goals=12)
+        # Bias OT toward the higher-lambda side; OT_SCALE controls randomness.
+        # ot_scale -> small => near-deterministic OT; large => near coin-flip.
+        denom = max(1e-6, float(ot_scale))
+        diff = float(away_lam) - float(home_lam)
+        away_ot_share = 0.5 + 0.5 * math.tanh(diff / denom)
+        away_ot_share = max(0.01, min(0.99, away_ot_share))
+        return float(p_away_win + p_tie * away_ot_share)
+
+    def _estimate_dispersion_k(self, max_bins: int = 6, min_bin_n: int = 40) -> float:
+        """
+        Estimate an overdispersion parameter k for Negative Binomial.
+        Uses moment matching inside quantile bins of expected goals mu:
+          Var[goals | mu] = mu + mu^2 / k  =>  k = mu^2 / (Var - mu)
+        """
+        try:
+            mus: List[float] = []
+            ys: List[int] = []
+            total_mus: List[float] = []
+
+            # Replicate each game's total context for away/home samples.
+            for p in self.prediction_history:
+                away = p.get("away_team")
+                home = p.get("home_team")
+                a = p.get("actual_away_score")
+                h = p.get("actual_home_score")
+                if not (away and home and a is not None and h is not None):
+                    continue
+                if a == h:
+                    continue
+
+                sp = self.predict_score(away, home, use_calibration=False)
+                mu_a = float(sp["away_expected"])
+                mu_h = float(sp["home_expected"])
+                total_mu = mu_a + mu_h
+
+                for mu_i, y_i in [(mu_a, int(a)), (mu_h, int(h))]:
+                    mus.append(float(mu_i))
+                    ys.append(int(y_i))
+                    total_mus.append(float(total_mu))
+
+            if len(mus) < 250:
+                self._dispersion_k_by_total_edges = None
+                self._dispersion_k_by_total_values = None
+                return 20.0
+
+            mus_arr = np.array(mus, dtype=float)
+            ys_arr = np.array(ys, dtype=float)
+            total_mus_arr = np.array(total_mus, dtype=float)
+
+            # --- Global k ---
+            qs = np.linspace(0.0, 1.0, max_bins + 1)
+            edges_mu = np.quantile(mus_arr, qs)
+            edges_mu = np.unique(edges_mu)
+            if edges_mu.size < 3:
+                global_k = 20.0
+            else:
+                ks: List[float] = []
+                weights: List[int] = []
+                for i in range(edges_mu.size - 1):
+                    lo = edges_mu[i]
+                    hi = edges_mu[i + 1]
+                    if i == edges_mu.size - 2:
+                        mask = (mus_arr >= lo) & (mus_arr <= hi)
+                    else:
+                        mask = (mus_arr >= lo) & (mus_arr < hi)
+                    n = int(mask.sum())
+                    if n < min_bin_n:
+                        continue
+                    # Use observed goal mean for moment matching (empirically stable).
+                    m = float(ys_arr[mask].mean())
+                    v = float(ys_arr[mask].var(ddof=0))
+                    if v <= m + 1e-6:
+                        k_i = 1e6
+                    else:
+                        k_i = (m * m) / max(1e-6, (v - m))
+                    if np.isfinite(k_i) and k_i > 0:
+                        ks.append(float(k_i))
+                        weights.append(n)
+
+                if not ks:
+                    global_k = 20.0
+                else:
+                    global_k = float(np.average(np.array(ks), weights=np.array(weights)))
+                    global_k = float(max(0.5, min(50.0, global_k)))
+
+            # --- Context-varying k by total expected goals only ---
+            edges_total = None
+            values_total = None
+            try:
+                edges_total = np.unique(np.quantile(total_mus_arr, np.linspace(0.0, 1.0, max_bins + 1)))
+                if edges_total.size >= 3:
+                    values_total = np.full(edges_total.size - 1, np.nan, dtype=float)
+                    max_k = 300.0
+                    for i in range(edges_total.size - 1):
+                        lo_t = float(edges_total[i])
+                        hi_t = float(edges_total[i + 1])
+                        if i == edges_total.size - 2:
+                            mask = (total_mus_arr >= lo_t) & (total_mus_arr <= hi_t)
+                        else:
+                            mask = (total_mus_arr >= lo_t) & (total_mus_arr < hi_t)
+                        n = int(mask.sum())
+                        if n < min_bin_n:
+                            continue
+                        m = float(ys_arr[mask].mean())
+                        v = float(ys_arr[mask].var(ddof=0))
+                        if v <= m + 1e-6:
+                            kval = float(global_k)
+                        else:
+                            kval = (m * m) / max(1e-6, (v - m))
+                        if not np.isfinite(kval) or kval <= 0:
+                            kval = float(global_k)
+                        # Keep k in a realistic range; very large k collapses NB->Poisson.
+                        kval = float(max(0.5, min(50.0, kval)))
+                        values_total[i] = kval
+            except Exception:
+                edges_total = None
+                values_total = None
+
+            self._dispersion_k_by_total_edges = edges_total
+            self._dispersion_k_by_total_values = values_total
+            return float(global_k)
+        except Exception:
+            self._dispersion_k_by_total_edges = None
+            self._dispersion_k_by_total_values = None
+            return 20.0
+
+    def _get_dispersion_k(
+        self,
+        away_team: str,
+        home_team: str,
+        away_mu: float,
+        home_mu: float,
+    ) -> float:
+        """Return dispersion k selected by total xG bucket."""
+        try:
+            total_edges = getattr(self, "_dispersion_k_by_total_edges", None)
+            values = getattr(self, "_dispersion_k_by_total_values", None)
+            if total_edges is None or values is None:
+                return float(getattr(self, "_dispersion_k", 20.0))
+
+            total_mu = float(away_mu) + float(home_mu)
+            if not np.isfinite(total_mu):
+                return float(getattr(self, "_dispersion_k", 20.0))
+            idx = int(np.searchsorted(total_edges, total_mu, side="right") - 1)
+            idx = max(0, min(idx, int(len(values) - 1)))
+            kval = float(values[idx])
+            if np.isfinite(kval) and kval > 0.0:
+                return kval
+            return float(getattr(self, "_dispersion_k", 20.0))
+        except Exception:
+            return float(getattr(self, "_dispersion_k", 20.0))
+
+    def _neg_bin_pmf(self, n: int, mu: float, k: float) -> float:
+        """
+        Negative binomial pmf for counts with mean mu and dispersion k.
+        Parameterization: r=k, p=r/(r+mu)
+          pmf(n) = C(n+r-1,n) * p^r * (1-p)^n
+        """
+        import math
+        mu = max(1e-9, float(mu))
+        k = max(1e-9, float(k))
+        p = k / (k + mu)
+        # log pmf using lgamma for stability
+        logc = math.lgamma(n + k) - math.lgamma(k) - math.lgamma(n + 1)
+        logpmf = logc + (k * math.log(p)) + (n * math.log(1.0 - p))
+        return float(math.exp(logpmf))
+
+    def _neg_bin_win_probs(self, away_mu: float, home_mu: float, k: float, max_goals: int = 12) -> Tuple[float, float, float]:
+        """Return (p_away_reg_win, p_home_reg_win, p_tie_reg) from NB goals."""
+        import math
+
+        away_mu = float(away_mu)
+        home_mu = float(home_mu)
+        k = float(k)
+
+        pmf_away = [self._neg_bin_pmf(g, away_mu, k) for g in range(max_goals + 1)]
+        pmf_home = [self._neg_bin_pmf(g, home_mu, k) for g in range(max_goals + 1)]
+
+        p_away_win = 0.0
+        p_home_win = 0.0
+        p_tie = 0.0
+
+        for a in range(max_goals + 1):
+            pa = pmf_away[a]
+            if pa == 0.0:
+                continue
+            for h in range(max_goals + 1):
+                ph = pmf_home[h]
+                if a > h:
+                    p_away_win += pa * ph
+                elif h > a:
+                    p_home_win += pa * ph
+                else:
+                    p_tie += pa * ph
+
+        return float(p_away_win), float(p_home_win), float(p_tie)
+
+    def _neg_bin_away_win_with_ot(
+        self,
+        away_mu: float,
+        home_mu: float,
+        ot_scale: float,
+        k: float,
+        tie_gamma: float = 1.0,
+    ) -> float:
+        """
+        Regulation win probs from NB, and OT allocation:
+        - OT additional scoring uses NB with mean scaled by ot_scale.
+        - Sudden-death approximation: after a regulation tie, we allocate the
+          remaining tie mass to the side with higher OT mean, with special
+          casing for zero-goal outcomes.
+        """
+        import math
+
+        # Regulation win/tie
+        p_away_win_reg, _p_home_win_reg, p_tie_reg = self._neg_bin_win_probs(
+            away_mu, home_mu, k, max_goals=12
+        )
+
+        # OT additional expected goals (scaled)
+        away_ot_mu = max(0.01, float(away_mu) * float(ot_scale))
+        home_ot_mu = max(0.01, float(home_mu) * float(ot_scale))
+
+        # P(OT goals == 0) under NB: (k/(k+mu))^k
+        def nb_p0(mu_ot: float) -> float:
+            kk = max(1e-9, float(k))
+            return float((kk / (kk + mu_ot)) ** kk)
+
+        away0 = nb_p0(away_ot_mu)
+        home0 = nb_p0(home_ot_mu)
+
+        away_scored = max(0.0, 1.0 - away0)
+        home_scored = max(0.0, 1.0 - home0)
+
+        total_ot_mu = away_ot_mu + home_ot_mu
+        away_share = float(away_ot_mu / total_ot_mu) if total_ot_mu > 0 else 0.5
+        away_share = max(0.01, min(0.99, away_share))
+        # Bias how strongly we allocate OT tie mass by expected OT scoring.
+        # tie_gamma=1.0 keeps the original proportional allocation.
+        # tie_gamma<1.0 moves toward a more neutral 50/50 split.
+        # tie_gamma>1.0 concentrates tie mass more heavily to the higher-OT side.
+        tie_gamma = float(tie_gamma)
+        if tie_gamma != 1.0:
+            away_share = 0.5 + (away_share - 0.5) * tie_gamma
+            away_share = max(0.01, min(0.99, float(away_share)))
+
+        # If exactly one side scores in OT, that side wins.
+        # If both score or both score 0, we approximate by sharing by away_share.
+        p_away_win_ot_cond = (home0 * away_scored) + away_share * (
+            (away0 * home0) + (away_scored * home_scored)
+        )
+        p_away_win_ot_cond = max(0.0, min(1.0, p_away_win_ot_cond))
+
+        return float(p_away_win_reg + p_tie_reg * p_away_win_ot_cond)
+
+    def _tune_ot_scale_and_blend(self) -> None:
+        """Tune OT_SCALE and blend weight via time-split validation."""
+        if not self.prediction_history or not self._win_calibration:
+            return
+
+        # Build completed list with timestamps.
+        completed = []
+        for p in self.prediction_history:
+            away = p.get("away_team")
+            home = p.get("home_team")
+            a = p.get("actual_away_score")
+            h = p.get("actual_home_score")
+            if not (away and home):
+                continue
+            if a is None or h is None:
+                continue
+            try:
+                a_i = int(a)
+                h_i = int(h)
+            except (TypeError, ValueError):
+                continue
+            if a_i == h_i:
+                continue  # rare in stored data
+
+            away_b2b = bool(p.get("away_back_to_back", False))
+            home_b2b = bool(p.get("home_back_to_back", False))
+
+            ts = p.get("timestamp")
+            ts_val = None
+            if isinstance(ts, (int, float)):
+                ts_val = float(ts)
+            elif isinstance(ts, str):
+                try:
+                    ts_val = float(ts)
+                except ValueError:
+                    ts_val = None
+            completed.append((ts_val, away, home, a_i, h_i, away_b2b, home_b2b))
+
+        if len(completed) < 200:
+            return
+
+        has_ts = any(ts_val is not None for ts_val, *_ in completed)
+        if has_ts:
+            completed.sort(key=lambda x: x[0] if x[0] is not None else float("inf"))
+
+        # Use multiple rolling time splits to reduce overfitting.
+        # Only safe when we have timestamps; otherwise fall back to a single split.
+        if not has_ts:
+            train_frac = 0.7
+            train_n = max(50, int(len(completed) * train_frac))
+            val = completed[train_n:]
+            if len(val) < 80:
+                return
+            val_splits = [val]
+        else:
+            total_n = len(completed)
+            candidate_train_fracs = [0.55, 0.6, 0.65, 0.7, 0.75]
+            val_splits = []
+            for tf in candidate_train_fracs:
+                train_n = max(50, int(total_n * tf))
+                val = completed[train_n:]
+                # Require enough validation rows for a stable estimate.
+                if len(val) >= 80 and train_n >= 200:
+                    val_splits.append(val)
+            # If we ended up with too few splits, fall back to one.
+            if not val_splits:
+                train_frac = 0.7
+                train_n = max(50, int(len(completed) * train_frac))
+                val = completed[train_n:]
+                if len(val) < 80:
+                    return
+                val_splits = [val]
+
+        # Precompute expected-goal features on each validation split.
+        val_split_features = []
+        for val in val_splits:
+            away_expected_list = []
+            home_expected_list = []
+            p_cal_list = []
+            y_list = []
+            away_team_list = []
+            home_team_list = []
+            for _ts, away, home, a_i, h_i, away_b2b, home_b2b in val:
+                sp = self.predict_score(
+                    away,
+                    home,
+                    use_calibration=False,
+                    away_b2b=away_b2b,
+                    home_b2b=home_b2b,
+                )
+                away_expected = float(sp["away_expected"])
+                home_expected = float(sp["home_expected"])
+                diff = away_expected - home_expected
+                total = away_expected + home_expected
+                p_cal = self._calibrated_away_win_prob(diff, total)
+                y = 1.0 if a_i > h_i else 0.0
+                away_expected_list.append(away_expected)
+                home_expected_list.append(home_expected)
+                p_cal_list.append(float(p_cal))
+                y_list.append(float(y))
+                away_team_list.append(str(away))
+                home_team_list.append(str(home))
+
+            val_split_features.append(
+                {
+                    "away_expected": np.array(away_expected_list, dtype=float),
+                    "home_expected": np.array(home_expected_list, dtype=float),
+                    "p_cal": np.array(p_cal_list, dtype=float),
+                    "y": np.array(y_list, dtype=float),
+                    "away_team": away_team_list,
+                    "home_team": home_team_list,
+                }
+            )
+
+        # Keep tie allocation proportional (tie_gamma=1.0) for stability.
+        ot_scales = [0.25, 0.5, 0.75, 1.0, 1.5, 2.0]
+        blends = [0.6, 0.7, 0.8, 0.85, 0.9, 1.0]  # blend toward calibration
+        tie_gammas = [1.0]
+
+        best_mean_acc = -1.0
+        best_median_acc = -1.0
+        best_mean_brier = float("inf")
+        best_mean_logloss = float("inf")
+        best_ot = self._ot_scale
+        best_blend = self._ot_blend
+        best_tie_gamma = float(getattr(self, "_ot_tie_gamma", 1.0))
+        th = float(getattr(self, "_win_calibration", {}).get("threshold", 0.5))
+
+        for tie_gamma in tie_gammas:
+            for ot in ot_scales:
+                # Precompute p_nb for each validation split (depends on ot + tie_gamma).
+                p_nb_splits = []
+                for feats in val_split_features:
+                    away_mu = feats["away_expected"]
+                    home_mu = feats["home_expected"]
+                    away_teams = feats["away_team"]
+                    home_teams = feats["home_team"]
+                    p_nb = np.array(
+                        [
+                            self._neg_bin_away_win_with_ot(
+                                float(away_mu[i]),
+                                float(home_mu[i]),
+                                ot,
+                                self._get_dispersion_k(
+                                    away_teams[i],
+                                    home_teams[i],
+                                    float(away_mu[i]),
+                                    float(home_mu[i]),
+                                ),
+                                tie_gamma=float(tie_gamma),
+                            )
+                            for i in range(len(away_mu))
+                        ],
+                        dtype=float,
+                    )
+                    p_nb_splits.append(p_nb)
+
+                for blend in blends:
+                    accs = []
+                    briers = []
+                    loglosses = []
+                    for s_idx, feats in enumerate(val_split_features):
+                        p_final = float(blend) * feats["p_cal"] + (1.0 - float(blend)) * p_nb_splits[s_idx]
+                        p_final = np.clip(p_final, 0.0, 1.0)
+                        y_true = feats["y"]
+
+                        preds = p_final >= th
+                        accs.append(float(np.mean(preds == (y_true >= 0.5))))
+
+                        briers.append(float(np.mean((p_final - y_true) ** 2)))
+                        eps = 1e-6
+                        p_safe = np.clip(p_final, eps, 1.0 - eps)
+                        ll = -float(np.mean(y_true * np.log(p_safe) + (1.0 - y_true) * np.log(1.0 - p_safe)))
+                        loglosses.append(ll)
+
+                    mean_acc = float(np.mean(accs)) if accs else -1.0
+                    median_acc = float(np.median(accs)) if accs else -1.0
+                    mean_brier = float(np.mean(briers)) if briers else float("inf")
+                    mean_logloss = float(np.mean(loglosses)) if loglosses else float("inf")
+
+                    improved = False
+                    eps = 1e-9
+                    # Primary objective: maximize winner accuracy on the
+                    # validation splits (matches backtest metric).
+                    if mean_acc > best_mean_acc + eps:
+                        improved = True
+                    elif abs(mean_acc - best_mean_acc) <= eps:
+                        if median_acc > best_median_acc + eps:
+                            improved = True
+                        elif abs(median_acc - best_median_acc) <= eps:
+                            if mean_logloss < best_mean_logloss - eps:
+                                improved = True
+                            elif abs(mean_logloss - best_mean_logloss) <= eps:
+                                if mean_brier < best_mean_brier - eps:
+                                    improved = True
+
+                    if improved:
+                        best_mean_acc = mean_acc
+                        best_median_acc = median_acc
+                        best_mean_brier = mean_brier
+                        best_mean_logloss = mean_logloss
+                        best_ot = ot
+                        best_blend = blend
+                        best_tie_gamma = float(tie_gamma)
+
+        self._ot_scale = float(best_ot)
+        self._ot_blend = float(best_blend)
+        self._ot_tie_gamma = float(best_tie_gamma)
+        print(
+            f"✅ Tuned OT/Blend (multi-split): OT_SCALE={self._ot_scale} "
+            f"OT_BLEND={self._ot_blend} OT_TIE_GAMMA={self._ot_tie_gamma} (mean acc={best_mean_acc:.3f}, "
+            f"median acc={best_median_acc:.3f}, mean brier={best_mean_brier:.4f}, mean logloss={best_mean_logloss:.4f})"
+        )
+
+    def _tune_max_goals(self) -> None:
+        """Tune deterministic scoreline cap for winner accuracy."""
+        if not self.prediction_history:
+            return
+
+        # We only compare winner side; ties are ignored for stability,
+        # consistent with the rest of the winner-centric tuning code.
+        completed = []
+        for p in self.prediction_history:
+            away = p.get("away_team")
+            home = p.get("home_team")
+            a = p.get("actual_away_score")
+            h = p.get("actual_home_score")
+            if not (away and home and a is not None and h is not None):
+                continue
+            try:
+                a_i = int(a)
+                h_i = int(h)
+            except (TypeError, ValueError):
+                continue
+            if a_i == h_i:
+                continue
+
+            away_b2b = bool(p.get("away_back_to_back", False))
+            home_b2b = bool(p.get("home_back_to_back", False))
+
+            ts = p.get("timestamp")
+            ts_val = None
+            if isinstance(ts, (int, float)):
+                ts_val = float(ts)
+            elif isinstance(ts, str):
+                try:
+                    ts_val = float(ts)
+                except ValueError:
+                    ts_val = None
+
+            completed.append((ts_val, away, home, a_i, h_i, away_b2b, home_b2b))
+
+        if len(completed) < 200:
+            return
+
+        has_ts = any(ts_val is not None for ts_val, *_ in completed)
+        if has_ts:
+            completed.sort(key=lambda x: x[0] if x[0] is not None else float("inf"))
+
+        candidate_train_fracs = [0.55, 0.6, 0.65, 0.7, 0.75]
+        val_splits = []
+        if has_ts:
+            total_n = len(completed)
+            for tf in candidate_train_fracs:
+                train_n = max(50, int(total_n * tf))
+                val = completed[train_n:]
+                if len(val) >= 80 and train_n >= 200:
+                    val_splits.append(val)
+            if not val_splits:
+                train_n = max(50, int(total_n * 0.7))
+                val_splits = [completed[train_n:]] if len(completed[train_n:]) >= 80 else [completed[train_n:total_n]]
+        else:
+            train_n = max(50, int(len(completed) * 0.7))
+            val_splits = [completed[train_n:]]
+
+        max_goals_candidates = [9, 10, 11, 12]
+        best_mg = int(getattr(self, "_max_goals", 10))
+        best_mean_acc = -1.0
+        best_mean_med_acc = -1.0
+
+        # Validate each cap using recomputed predictions.
+        current_mg = int(getattr(self, "_max_goals", 10))
+        try:
+            for mg in max_goals_candidates:
+                self._max_goals = int(mg)
+                split_accs = []
+                for val in val_splits:
+                    correct = 0
+                    n = 0
+                    for _ts, away, home, a_i, h_i, away_b2b, home_b2b in val:
+                        pred = self.predict_score(
+                            away,
+                            home,
+                            use_calibration=True,
+                            away_b2b=away_b2b,
+                            home_b2b=home_b2b,
+                        )
+                        pred_away_score = int(pred.get("away_score", 0))
+                        pred_home_score = int(pred.get("home_score", 0))
+                        pred_winner_is_away = pred_away_score > pred_home_score
+                        actual_winner_is_away = a_i > h_i
+                        if pred_winner_is_away == actual_winner_is_away:
+                            correct += 1
+                        n += 1
+
+                    split_accs.append(correct / n if n else 0.0)
+
+                mean_acc = float(np.mean(split_accs)) if split_accs else -1.0
+                median_acc = float(np.median(split_accs)) if split_accs else -1.0
+
+                if mean_acc > best_mean_acc + 1e-9 or (abs(mean_acc - best_mean_acc) <= 1e-9 and median_acc > best_mean_med_acc):
+                    best_mean_acc = mean_acc
+                    best_mean_med_acc = median_acc
+                    best_mg = mg
+
+            self._max_goals = best_mg
+            print(f"✅ Tuned max_goals: max_goals={self._max_goals} (mean acc={best_mean_acc:.3f})")
+        finally:
+            self._max_goals = best_mg
+
+    def _build_win_calibration(
+        self,
+        num_total_bins: int = 7,
+        num_diff_bins: int = 18,
+        alpha: float = 1.0,
+        train_frac: float = 0.7,
+        min_samples: int = 250,
+    ):
+        """
+        Build a 2D empirical calibration:
+          feature_1 = diff  = away_expected - home_expected
+          feature_2 = total = away_expected + home_expected
+          target     = P(away_wins | diff, total)
+
+        Implementation:
+          - Split training data into quantile bins over `total`
+          - For each total-bin, build quantile bins over `diff`
+          - Use Laplace smoothing in each (total-bin, diff-bin)
+          - Keep a global 1D fallback calibration for sparsity.
+        """
+        if not self.prediction_history:
+            return None
+
+        completed = []
+        for p in self.prediction_history:
+            away = p.get("away_team")
+            home = p.get("home_team")
+            a = p.get("actual_away_score")
+            h = p.get("actual_home_score")
+            if not away or not home:
+                continue
+            if a is None or h is None:
+                continue
+            try:
+                a_i = int(a)
+                h_i = int(h)
+            except (TypeError, ValueError):
+                continue
+            if a_i == h_i:
+                continue  # ignore rare ties
+
+            away_b2b = bool(p.get("away_back_to_back", False))
+            home_b2b = bool(p.get("home_back_to_back", False))
+
+            ts = p.get("timestamp")
+            ts_val = None
+            if isinstance(ts, (int, float)):
+                ts_val = float(ts)
+            elif isinstance(ts, str):
+                # Try numeric timestamp first
+                try:
+                    ts_val = float(ts)
+                except ValueError:
+                    ts_val = None
+
+            completed.append((ts_val, away, home, a_i, h_i, away_b2b, home_b2b))
+
+        if len(completed) < min_samples:
+            return None
+
+        # Time-based split (if timestamps exist).
+        has_ts = any(ts_val is not None for ts_val, *_ in completed)
+        if has_ts:
+            completed.sort(key=lambda x: x[0] if x[0] is not None else float("inf"))
+        train_n = max(50, int(len(completed) * train_frac))
+        train = completed[:train_n]
+        val = completed[train_n:]
+
+        def build_features(rows):
+            d = []
+            t = []
+            y = []
+            for _ts, away, home, a_i, h_i, away_b2b, home_b2b in rows:
+                # Expected-goals from the model itself (no calibration for feature building).
+                sp = self.predict_score(
+                    away,
+                    home,
+                    use_calibration=False,
+                    away_b2b=away_b2b,
+                    home_b2b=home_b2b,
+                )
+                diff = float(sp["away_expected"]) - float(sp["home_expected"])
+                total = float(sp["away_expected"]) + float(sp["home_expected"])
+                d.append(diff)
+                t.append(total)
+                y.append(1.0 if a_i > h_i else 0.0)
+            return np.array(d, dtype=float), np.array(t, dtype=float), np.array(y, dtype=float)
+
+        diffs_train, totals_train, labels_train = build_features(train)
+        diffs_val, totals_val, labels_val = build_features(val) if val else (np.array([]), np.array([]), np.array([]))
+
+        if diffs_train.size < min_samples or diffs_val.size < 80:
+            # Not enough validation signal; fall back to the provided defaults.
+            pass
+
+        if diffs_train.size < 50:
+            return None
+
+        def build_1d_calibration(x: np.ndarray, y: np.ndarray, bins: int, a: float):
+            qs = np.linspace(0.0, 1.0, bins + 1)
+            edges = np.quantile(x, qs)
+            edges = np.unique(edges)
+            if edges.size < 3:
+                dmin = float(np.min(x))
+                dmax = float(np.max(x))
+                if dmax - dmin < 1e-6:
+                    return None
+                edges = np.linspace(dmin, dmax, bins + 1)
+
+            rates = []
+            counts = []
+            global_rate = (float(y.sum()) + a) / (float(y.size) + 2.0 * a)
+
+            for i in range(edges.size - 1):
+                lo = edges[i]
+                hi = edges[i + 1]
+                if i == edges.size - 2:
+                    mask = (x >= lo) & (x <= hi)
+                else:
+                    mask = (x >= lo) & (x < hi)
+                c = int(mask.sum())
+                if c == 0:
+                    rates.append(global_rate)
+                    counts.append(0)
+                    continue
+                w = float(y[mask].sum())
+                rate = (w + a) / (c + 2.0 * a)
+                rates.append(float(rate))
+                counts.append(c)
+
+            return {
+                "edges": edges.astype(float).tolist(),
+                "rates": rates,
+                "counts": counts,
+                "alpha": a,
+            }
+
+        def build_2d_calibration(dt, tt, y, n_total_bins: int, n_diff_bins: int, a: float):
+            global_cal = build_1d_calibration(dt, y, n_diff_bins, a)
+            if not global_cal:
+                return None
+
+            total_qs = np.linspace(0.0, 1.0, n_total_bins + 1)
+            total_edges = np.quantile(tt, total_qs)
+            total_edges = np.unique(total_edges)
+            if total_edges.size < 3:
+                return global_cal
+
+            total_bins = []
+            for i in range(total_edges.size - 1):
+                lo_t = total_edges[i]
+                hi_t = total_edges[i + 1]
+                if i == total_edges.size - 2:
+                    t_mask = (tt >= lo_t) & (tt <= hi_t)
+                else:
+                    t_mask = (tt >= lo_t) & (tt < hi_t)
+
+                c_total = int(t_mask.sum())
+                if c_total < 50:
+                    total_bins.append({"diff_cal": global_cal, "counts": c_total})
+                    continue
+
+                diff_slice = dt[t_mask]
+                label_slice = y[t_mask]
+                diff_cal = build_1d_calibration(diff_slice, label_slice, n_diff_bins, a)
+                if not diff_cal:
+                    diff_cal = global_cal
+
+                total_bins.append({"diff_cal": diff_cal, "counts": c_total})
+
+            return {
+                "total_edges": total_edges.astype(float).tolist(),
+                "total_bins": total_bins,
+                "alpha": a,
+                "fallback": global_cal,
+            }
+
+        def prob_from_cal(cal, diff: float, total: float) -> float:
+            # 1D fallback calibration
+            if "edges" in cal and "rates" in cal:
+                edges = np.array(cal["edges"], dtype=float)
+                rates = np.array(cal["rates"], dtype=float)
+                if edges.size < 3:
+                    return 0.5
+                idx = int(np.searchsorted(edges, diff, side="right") - 1)
+                idx = max(0, min(idx, rates.size - 1))
+                return float(max(0.01, min(0.99, rates[idx])))
+
+            total_edges = np.array(cal.get("total_edges", []), dtype=float)
+            total_bins = cal.get("total_bins", [])
+            fallback = cal.get("fallback")
+            if total_edges.size < 3 or not total_bins or fallback is None:
+                return 0.5
+
+            t_idx = int(np.searchsorted(total_edges, total, side="right") - 1)
+            t_idx = max(0, min(t_idx, len(total_bins) - 1))
+            diff_cal = total_bins[t_idx].get("diff_cal") or fallback
+            if not diff_cal or "edges" not in diff_cal:
+                return 0.5
+
+            edges = np.array(diff_cal.get("edges", []), dtype=float)
+            rates = np.array(diff_cal.get("rates", []), dtype=float)
+            if edges.size < 3:
+                return 0.5
+            d_idx = int(np.searchsorted(edges, diff, side="right") - 1)
+            d_idx = max(0, min(d_idx, rates.size - 1))
+            return float(max(0.01, min(0.99, rates[d_idx])))
+
+        # Build the 2D calibration directly (fixed bin counts). This is the
+        # most stable/accurate configuration observed in backtests.
+        best_cal = build_2d_calibration(
+            diffs_train,
+            totals_train,
+            labels_train,
+            num_total_bins,
+            num_diff_bins,
+            alpha,
+        )
+        if not best_cal:
+            return None
+
+        best_cal["threshold"] = 0.5
+        return best_cal
+
+    def _calibrated_away_win_prob(self, diff: float, total: float) -> float:
+        """Map (diff, total) -> calibrated P(away wins)."""
+        cal = getattr(self, "_win_calibration", None)
+        if not cal:
+            return 0.5
+        # Backward compatibility if calibration is 1D-only
+        if "edges" in cal and "rates" in cal:
+            edges = np.array(cal["edges"], dtype=float)
+            rates = np.array(cal["rates"], dtype=float)
+            if edges.size < 3:
+                return 0.5
+            idx = int(np.searchsorted(edges, diff, side="right") - 1)
+            idx = max(0, min(idx, rates.size - 1))
+            return float(max(0.01, min(0.99, rates[idx])))
+
+        total_edges = np.array(cal.get("total_edges", []), dtype=float)
+        total_bins = cal.get("total_bins", [])
+        fallback = cal.get("fallback")
+
+        if total_edges.size < 3 or not total_bins or fallback is None:
+            # Use fallback 1D calibration (diff only)
+            if "edges" in fallback and "rates" in fallback:
+                edges = np.array(fallback["edges"], dtype=float)
+                rates = np.array(fallback["rates"], dtype=float)
+                if edges.size < 3:
+                    return 0.5
+                d_idx = int(np.searchsorted(edges, diff, side="right") - 1)
+                d_idx = max(0, min(d_idx, rates.size - 1))
+                return float(max(0.01, min(0.99, rates[d_idx])))
+            return 0.5
+
+        # Pick total bin
+        t_idx = int(np.searchsorted(total_edges, total, side="right") - 1)
+        t_idx = max(0, min(t_idx, len(total_bins) - 1))
+        diff_cal = total_bins[t_idx].get("diff_cal") or fallback
+        if not diff_cal:
+            return 0.5
+
+        edges = np.array(diff_cal.get("edges", []), dtype=float)
+        rates = np.array(diff_cal.get("rates", []), dtype=float)
+        if edges.size < 3:
+            return 0.5
+
+        d_idx = int(np.searchsorted(edges, diff, side="right") - 1)
+        d_idx = max(0, min(d_idx, rates.size - 1))
+        return float(max(0.01, min(0.99, rates[d_idx])))
     
     def _recency_weight(self, values: list, half_life: int = 10) -> float:
         """Weighted average with exponential recency decay.
@@ -291,7 +1202,8 @@ class ScorePredictionModel:
                      away_goalie: str = None, home_goalie: str = None,
                      game_date: str = None,
                      away_b2b: bool = False, home_b2b: bool = False,
-                     vegas_odds: Dict = None) -> Dict:
+                     vegas_odds: Dict = None,
+                     use_calibration: bool = True) -> Dict:
         """
         Predict realistic game score.
         
@@ -436,8 +1348,14 @@ class ScorePredictionModel:
         home_expected += home_momentum_adj
         
         # ─── Clamp to realistic range ───
-        away_expected = max(1.5, min(4.5, away_expected))
-        home_expected = max(1.5, min(4.5, home_expected))
+        # Previous cap of 4.5 was pushing Poisson lambdas high enough that
+        # "7-goal" outcomes showed up too often. Lower the cap to reduce
+        # the tail while still allowing occasional high-scoring games.
+        # Expected-goals cap controls how often we can generate higher
+        # (rare) scorelines. We allow occasional 6-goal team totals while
+        # keeping 7+ extremely unlikely with deterministic rounding.
+        away_expected = max(1.0, min(5.5, away_expected))
+        home_expected = max(1.0, min(5.5, home_expected))
         
         # ─── 14. Vegas Odds Integration (Phase 3 Improvement) ───
         # Blend expected goals output slightly toward Vegas implied probabilities if provided
@@ -459,8 +1377,102 @@ class ScorePredictionModel:
                 away_expected = total_x * blended_away_prob
                 home_expected = total_x * blended_home_prob
         
-        # ─── Poisson-sampled scores for realistic variance ───
-        away_score, home_score = self._poisson_score(away_expected, home_expected)
+        # ─── Winner selection ───
+        # If calibration is available, use it to learn the empirical win
+        # probability vs (away_expected - home_expected). Otherwise fall back
+        # to the Poisson-based win probability heuristic.
+        max_goals = int(getattr(self, "_max_goals", 10))
+
+        winner_side = None
+        away_win_prob_final = None
+        home_win_prob_final = None
+        if use_calibration and getattr(self, "_win_calibration", None):
+            diff = float(away_expected - home_expected)
+            total = float(away_expected + home_expected)
+            p_cal = self._calibrated_away_win_prob(diff, total)
+            # Blend calibration with an OT-aware Negative Binomial model.
+            # This captures systematic OT variance and overdispersion not
+            # fully represented by pure expected-goals calibration.
+            p_nb_ot = self._neg_bin_away_win_with_ot(
+                away_expected,
+                home_expected,
+                float(getattr(self, "_ot_scale", 0.75)),
+                float(self._get_dispersion_k(away, home, away_expected, home_expected)),
+                tie_gamma=float(getattr(self, "_ot_tie_gamma", 1.0)),
+            )
+            blend = float(getattr(self, "_ot_blend", 0.85))
+            away_win_prob = blend * p_cal + (1.0 - blend) * p_nb_ot
+            th = float(getattr(self, "_win_calibration", {}).get("threshold", 0.5))
+            winner_side = "away" if away_win_prob >= th else "home"
+            away_win_prob_final = float(max(0.0, min(1.0, away_win_prob)))
+            home_win_prob_final = float(1.0 - away_win_prob_final)
+        else:
+            # Poisson-based win probability (with proportional tie allocation)
+            import math
+
+            max_prob_goals = 15
+            away_lam = float(away_expected)
+            home_lam = float(home_expected)
+
+            pmf_away = [
+                math.exp(-away_lam) * (away_lam ** k) / math.factorial(k)
+                for k in range(max_prob_goals + 1)
+            ]
+            pmf_home = [
+                math.exp(-home_lam) * (home_lam ** k) / math.factorial(k)
+                for k in range(max_prob_goals + 1)
+            ]
+
+            p_away_win = 0.0
+            p_home_win = 0.0
+            p_tie = 0.0
+
+            for a in range(max_prob_goals + 1):
+                pa = pmf_away[a]
+                if pa == 0.0:
+                    continue
+                for h in range(max_prob_goals + 1):
+                    ph = pmf_home[h]
+                    if a > h:
+                        p_away_win += pa * ph
+                    elif h > a:
+                        p_home_win += pa * ph
+                    else:
+                        p_tie += pa * ph
+
+            tie_total = p_tie
+            total_lam = away_lam + home_lam
+            if total_lam > 0:
+                away_ot_share = away_lam / total_lam
+                home_ot_share = home_lam / total_lam
+            else:
+                away_ot_share = 0.5
+                home_ot_share = 0.5
+
+            away_win_total = p_away_win + tie_total * away_ot_share
+            home_win_total = p_home_win + tie_total * home_ot_share
+            winner_side = "away" if away_win_total > home_win_total else "home"
+            away_win_prob_final = float(max(0.0, min(1.0, away_win_total)))
+            home_win_prob_final = float(max(0.0, min(1.0, home_win_total)))
+
+        away_lam = float(away_expected)
+        home_lam = float(home_expected)
+        away_score = max(1, min(max_goals, int(round(away_lam))))
+        home_score = max(1, min(max_goals, int(round(home_lam))))
+
+        # No ties: force the displayed scores to agree with the probability winner.
+        if winner_side == 'away':
+            if away_score <= home_score:
+                if away_score < max_goals:
+                    away_score = home_score + 1
+                elif home_score > 1:
+                    home_score -= 1
+        else:
+            if home_score <= away_score:
+                if home_score < max_goals:
+                    home_score = away_score + 1
+                elif away_score > 1:
+                    away_score -= 1
         
         # ─── Generate analysis factors ───
         factors = self._generate_factors(
@@ -480,6 +1492,10 @@ class ScorePredictionModel:
             'home_score': home_score,
             'away_xg': round(away_expected, 2),
             'home_xg': round(home_expected, 2),
+            'away_expected': away_expected,
+            'home_expected': home_expected,
+            'away_win_prob': away_win_prob_final if away_win_prob_final is not None else 0.5,
+            'home_win_prob': home_win_prob_final if home_win_prob_final is not None else 0.5,
             'total_goals': away_score + home_score,
             'confidence': confidence,
             'factors': factors,
@@ -706,18 +1722,29 @@ class ScorePredictionModel:
         seed_str = f"{date_str}_{away_lambda:.4f}_{home_lambda:.4f}"
         seed = int(hashlib.md5(seed_str.encode()).hexdigest()[:8], 16)
         rng = np.random.RandomState(seed)
-        
-        away_score = max(1, min(7, int(rng.poisson(away_lambda))))
-        home_score = max(1, min(7, int(rng.poisson(home_lambda))))
-        
+
+        # Hard-clamping Poisson draws to a small max goal value artificially inflates
+        # the top score (e.g. lots of "7" predictions). Use a higher cap so "7+"
+        # distributes across realistic high-score outcomes.
+        max_goals = 10
+
+        away_score = max(1, min(max_goals, int(rng.poisson(away_lambda))))
+        home_score = max(1, min(max_goals, int(rng.poisson(home_lambda))))
+
+        # Ensure definitive winner (no ties). If we're already at max_goals for both
+        # sides, nudge the lower-probability side down to break the tie.
         if away_score == home_score:
-            if away_lambda > home_lambda:
-                away_score += 1
-            elif home_lambda > away_lambda:
-                home_score += 1
+            if away_lambda >= home_lambda:
+                if away_score < max_goals:
+                    away_score += 1
+                elif home_score > 1:
+                    home_score -= 1
             else:
-                home_score += 1
-        
+                if home_score < max_goals:
+                    home_score += 1
+                elif away_score > 1:
+                    away_score -= 1
+
         return away_score, home_score
     
     def _calculate_confidence(self, away: str, home: str,

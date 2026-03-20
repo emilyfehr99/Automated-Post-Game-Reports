@@ -682,6 +682,11 @@ class MetaEnsemblePredictor:
                 'predicted_margin': predicted_margin,
                 'confidence_tier': confidence_tier,
                 'p1_home_prob': p1_win_prob * 100,
+                # Fatigue signals for downstream score model calibration/OT modeling
+                'away_back_to_back': 1 if away_rest == 1 else 0,
+                'home_back_to_back': 1 if home_rest == 1 else 0,
+                'away_rest_value': float(away_rest),
+                'home_rest_value': float(home_rest),
                 'prediction_type': 'xgboost_ml'
             }
         except Exception as e:
