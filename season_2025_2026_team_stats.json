@@ -1,7 +1,7 @@
 {
   "season": "2025-2026",
-  "generated_at": "2026-03-21T22:57:36.722196",
-  "total_games": 154,
+  "generated_at": "2026-03-21T23:49:50.804866",
+  "total_games": 156,
   "teams": {
     "SJS": {
       "games_played": 6,
@@ -76,13 +76,13 @@
       "gs_avg": 5.375
     },
     "CBJ": {
-      "games_played": 4,
-      "xg_sum": 15.384420303545006,
-      "hdc_sum": 53.0,
-      "gs_sum": 19.975,
-      "xg_avg": 3.8461050758862516,
-      "hdc_avg": 13.25,
-      "gs_avg": 4.99375
+      "games_played": 5,
+      "xg_sum": 18.123052029392507,
+      "hdc_sum": 62.0,
+      "gs_sum": 25.950000000000003,
+      "xg_avg": 3.6246104058785016,
+      "hdc_avg": 12.4,
+      "gs_avg": 5.19
     },
     "FLA": {
       "games_played": 5,
@@ -247,13 +247,13 @@
       "gs_avg": 4.865
     },
     "SEA": {
-      "games_played": 5,
-      "xg_sum": 12.820982033833504,
-      "hdc_sum": 31.0,
-      "gs_sum": 20.650000000000006,
-      "xg_avg": 2.5641964067667007,
-      "hdc_avg": 6.2,
-      "gs_avg": 4.130000000000001
+      "games_played": 6,
+      "xg_sum": 15.353593014446005,
+      "hdc_sum": 36.0,
+      "gs_sum": 23.475000000000005,
+      "xg_avg": 2.558932169074334,
+      "hdc_avg": 6.0,
+      "gs_avg": 3.912500000000001
     },
     "LAK": {
       "games_played": 5,
