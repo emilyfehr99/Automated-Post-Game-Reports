@@ -1,5 +1,5 @@
 {
-  "scraped_at": "2026-03-26T11:29:33.518419",
+  "scraped_at": "2026-03-27T11:25:09.739613",
   "total_players": 830,
   "player_data": [
     {
@@ -2906,13 +2906,13 @@
       "Player": "Josh Morrissey",
       "Team": "WPG",
       "Pos": "D",
-      "GP": 41,
+      "GP": 67,
       "Top Speed": 21.86,
-      "Distance Skated": 148.0,
-      "Average Speed": 8.84,
+      "Distance Skated": 242.3,
+      "Average Speed": 8.88,
       "Bursts>20 per mile": 0.19,
-      "ES Dist. Skated": 124.21,
-      "ES Avg. Speed": 8.94
+      "ES Dist. Skated": 206.61,
+      "ES Avg. Speed": 8.95
     },
     {
       "": "",
@@ -14017,13 +14017,13 @@
           "Player": "Josh Morrissey",
           "Team": "WPG",
           "Pos": "D",
-          "GP": 41,
+          "GP": 67,
           "Top Speed": 21.86,
-          "Distance Skated": 148.0,
-          "Average Speed": 8.84,
+          "Distance Skated": 242.3,
+          "Average Speed": 8.88,
           "Bursts>20 per mile": 0.19,
-          "ES Dist. Skated": 124.21,
-          "ES Avg. Speed": 8.94
+          "ES Dist. Skated": 206.61,
+          "ES Avg. Speed": 8.95
         },
         {
           "": "",
@@ -14208,17 +14208,17 @@
           "ES Avg. Speed": ""
         }
       ],
-      "total_distance": 1767.74,
-      "avg_speed": 8.077999999999998,
+      "total_distance": 1862.0400000000002,
+      "avg_speed": 8.0796,
       "max_speed": 23.44,
       "total_bursts": 8.66,
       "player_count": 25,
-      "avg_distance": 70.7096,
+      "avg_distance": 74.48160000000001,
       "avg_bursts": 0.3464,
-      "speed_score": 0.8077999999999997,
+      "speed_score": 0.8079599999999999,
       "distance_score": 1.0,
       "burst_score": 0.1732,
-      "edge_advantage": 0.7385399999999999
+      "edge_advantage": 0.7386199999999999
     },
     "ANA": {
       "players": [
