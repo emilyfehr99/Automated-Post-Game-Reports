@@ -60,6 +60,14 @@ class NHLAPIClient:
             return combined_data
         return None
     
+    def get_game_landing(self, game_id):
+        """Get game landing summary"""
+        url = f"{self.base_url}/gamecenter/{game_id}/landing"
+        response = self.session.get(url)
+        if response.status_code == 200:
+            return response.json()
+        return None
+    
     def get_game_boxscore(self, game_id):
         """Get game boxscore"""
         url = f"{self.base_url}/gamecenter/{game_id}/boxscore"
@@ -130,10 +138,12 @@ class NHLAPIClient:
         game_center = self.get_game_center(game_id)
         boxscore = self.get_game_boxscore(game_id)
         play_by_play = self.get_play_by_play(game_id)
+        landing = self.get_game_landing(game_id)
         
         print(f"Debug - Game Center data: {game_center is not None}")
         print(f"Debug - Boxscore data: {boxscore is not None}")
         print(f"Debug - Play-by-play data: {play_by_play is not None}")
+        print(f"Debug - Landing data: {landing is not None}")
         
         # If we have boxscore but no game_center, create a minimal game_center from boxscore
         if boxscore is not None and game_center is None:
@@ -166,7 +176,8 @@ class NHLAPIClient:
         return {
             'game_center': game_center,
             'boxscore': boxscore,
-            'play_by_play': play_by_play
+            'play_by_play': play_by_play,
+            'landing': landing
         }
 
     def get_team_recent_games(self, team_abbr, limit=5):
