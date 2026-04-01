@@ -77,6 +77,28 @@ class ScheduleAnalyzer:
             logger.error(f"Error checking fatigue for {team_abbr}: {e}")
             return False
 
+    def get_game_count_in_window(self, team_abbr, current_date_str, window_days=4):
+        """
+        Returns the number of games played by a team in the window_days leading up to current_date_str.
+        Used to detect 3-in-4, 4-in-6 fatigue states.
+        """
+        try:
+            curr = datetime.strptime(current_date_str, "%Y-%m-%d")
+            count = 0
+            # Check today and the previous (window_days - 1) days
+            for i in range(window_days):
+                check_date = (curr - timedelta(days=i)).strftime("%Y-%m-%d")
+                if check_date in self.games_by_date:
+                    for game in self.games_by_date[check_date]:
+                        a_team = game.get('awayTeam', {}).get('abbrev')
+                        h_team = game.get('homeTeam', {}).get('abbrev')
+                        if team_abbr == a_team or team_abbr == h_team:
+                            count += 1
+            return count
+        except Exception as e:
+            logger.error(f"Error checking game count window for {team_abbr}: {e}")
+            return 0
+
     def get_recent_games(self, team_abbr, before_date_str, n=10):
         """
         Returns the last n COMPLETED games for a team BEFORE the given date.

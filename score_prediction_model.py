@@ -34,15 +34,25 @@ DIVISIONS = {
 }
 TEAM_TO_DIV = {t: d for d, teams in DIVISIONS.items() for t in teams}
 
+# Phase 4: Time Zone Mapping (UTC Offsets)
+TEAM_TIMEZONES = {
+    'ANA': -8, 'LAK': -8, 'SJS': -8, 'VAN': -8, 'SEA': -8, 'VGK': -8,
+    'UTA': -7, 'CGY': -7, 'EDM': -7, 'COL': -7,
+    'CHI': -6, 'DAL': -6, 'MIN': -6, 'NSH': -6, 'STL': -6, 'WPG': -6,
+    'BOS': -5, 'BUF': -5, 'MTL': -5, 'OTT': -5, 'TOR': -5, 'CAR': -5, 'NJD': -5, 
+    'NYI': -5, 'NYR': -5, 'PHI': -5, 'PIT': -5, 'WSH': -5, 'FLA': -5, 'TBL': -5, 
+    'DET': -5, 'CBJ': -5
+}
+
 
 class ScorePredictionModel:
     """Optimized score prediction using correlation-validated features."""
     
     # League-wide constants from 2025-26 analysis
     LEAGUE_AVG_GF = 3.03
-    HOME_ICE_BOOST = 0.21
+    HOME_ICE_BOOST = 0.11
     XG_LUCK_REGRESSION = 0.35
-    B2B_PENALTY = 0.30  # Teams score ~0.3 fewer goals on back-to-backs
+    B2B_PENALTY = 0.42  # Teams score ~0.42 fewer goals on back-to-backs (late season adjusted)
     
     # Feature weights (from correlation analysis)
     W_GS = 0.30
@@ -1202,6 +1212,7 @@ class ScorePredictionModel:
                      away_goalie: str = None, home_goalie: str = None,
                      game_date: str = None,
                      away_b2b: bool = False, home_b2b: bool = False,
+                     away_3_in_4: bool = False, home_3_in_4: bool = False,
                      vegas_odds: Dict = None,
                      use_calibration: bool = True) -> Dict:
         """
@@ -1347,6 +1358,19 @@ class ScorePredictionModel:
         home_expected += home_goalie_adj
         home_expected += home_momentum_adj
         
+        # ─── 14. Phase 3: 3-in-4 Fatigue (Context Only) ───
+        # Note: Triangulation Audit (N=923) showed that a hard goal penalty
+        # for 3-in-4 reduces winner accuracy by ~5%. We now handle this
+        # via the High-Risk alerting in DailyPredictionNotifier rather than
+        # a hard goal offset.
+        pass
+        
+        # ─── 15. Phase 4: Time Zone Jet Lag (Context Only) ───
+        # Note: Triangulation Audit (N=923) showed that a hard goal penalty
+        # for Jet Lag reduces winner accuracy by ~4%. We keep TEAM_TIMEZONES
+        # for ML context, but remove the hard goal offset.
+        pass
+        
         # ─── Clamp to realistic range ───
         # Previous cap of 4.5 was pushing Poisson lambdas high enough that
         # "7-goal" outcomes showed up too often. Lower the cap to reduce
@@ -1356,26 +1380,6 @@ class ScorePredictionModel:
         # keeping 7+ extremely unlikely with deterministic rounding.
         away_expected = max(1.0, min(5.5, away_expected))
         home_expected = max(1.0, min(5.5, home_expected))
-        
-        # ─── 14. Vegas Odds Integration (Phase 3 Improvement) ───
-        # Blend expected goals output slightly toward Vegas implied probabilities if provided
-        if vegas_odds:
-            v_away = vegas_odds.get('away_prob', 0.5)
-            v_home = vegas_odds.get('home_prob', 0.5)
-            
-            # Convert current xG to a win probability (rough estimate for blending)
-            total_x = away_expected + home_expected
-            if total_x > 0:
-                m_away_prob = away_expected / total_x
-                m_home_prob = home_expected / total_x
-                
-                # Blend: 65% Model, 35% Vegas (Wisdom of Crowds)
-                blended_away_prob = (m_away_prob * 0.65) + (v_away * 0.35)
-                blended_home_prob = (m_home_prob * 0.65) + (v_home * 0.35)
-                
-                # Convert back to xG scale while preserving total goals
-                away_expected = total_x * blended_away_prob
-                home_expected = total_x * blended_home_prob
         
         # ─── Winner selection ───
         # If calibration is available, use it to learn the empirical win

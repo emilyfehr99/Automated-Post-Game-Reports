@@ -27,6 +27,16 @@ TEAM_COORDINATES = {
     'WSH': (38.90, -77.04), 'WPG': (49.90, -97.14)
 }
 
+# Phase 4: Time Zone Mapping (UTC Offsets)
+TEAM_TIMEZONES = {
+    'ANA': -8, 'LAK': -8, 'SJS': -8, 'VAN': -8, 'SEA': -8, 'VGK': -8,
+    'UTA': -7, 'CGY': -7, 'EDM': -7, 'COL': -7,
+    'CHI': -6, 'DAL': -6, 'MIN': -6, 'NSH': -6, 'STL': -6, 'WPG': -6,
+    'BOS': -5, 'BUF': -5, 'MTL': -5, 'OTT': -5, 'TOR': -5, 'CAR': -5, 'NJD': -5, 
+    'NYI': -5, 'NYR': -5, 'PHI': -5, 'PIT': -5, 'WSH': -5, 'FLA': -5, 'TBL': -5, 
+    'DET': -5, 'CBJ': -5
+}
+
 def calculate_distance(city1, city2):
     """Haversine distance between two teams in miles"""
     if city1 == city2 or city1 not in TEAM_COORDINATES or city2 not in TEAM_COORDINATES:
@@ -160,7 +170,20 @@ class TeamHistory:
             return 0.5
             
         successes = [g for g in relevant_games if g.get(target_key) == 1]
-        return len(successes) / len(relevant_games)
+        return float(len(successes)) / float(len(relevant_games))
+
+    def get_game_count_in_window(self, team, current_date, window=4):
+        """Phase 3: Count games in a rolling window (e.g. 3-in-4)"""
+        if team not in self.history or not self.history[team]['dates']:
+            return 1
+        dates = self.history[team]['dates']
+        count = 0
+        for d in reversed(dates):
+            if (current_date - d).days < window:
+                count += 1
+            else:
+                break
+        return int(count + 1) # Current game counts as 1
         
     def get_rolling_stats(self, team, window=5, venue=None, alpha=None):
         """Calculate averages for specified window with optional venue filter and exponential decay (alpha)"""
@@ -500,9 +523,14 @@ class MetaEnsemblePredictor:
         h_home_l5 = tracker.get_rolling_stats(home_team, 5, venue='home', alpha=0.3)
         a_away_l5 = tracker.get_rolling_stats(away_team, 5, venue='away', alpha=0.3)
         
-        # Goalie Features
+        # Goalie Features (with B2B fatigue penalty)
         h_gsax_roll = tracker.goalies.get_rolling_gsax(home_goalie)
         a_gsax_roll = tracker.goalies.get_rolling_gsax(away_goalie)
+        
+        # Phase 2: Apply 15% penalty to goalies on back-to-backs (rest == 1)
+        if home_rest == 1: h_gsax_roll *= 0.85
+        if away_rest == 1: a_gsax_roll *= 0.85
+        
         h_hdsv_roll = tracker.goalies.get_rolling_hdsv(home_goalie)
         a_hdsv_roll = tracker.goalies.get_rolling_hdsv(away_goalie)
         
@@ -537,10 +565,18 @@ class MetaEnsemblePredictor:
             'l5_corsi_diff': h_l5.get('corsi_pct', 50) - a_l5.get('corsi_pct', 50),
             'l5_pdo_diff': h_l5.get('pdo', 100) - a_l5.get('pdo', 100),
             
-            # Special Teams
+            # Special Teams (Matchup-Adjusted Phase 3)
             'l5_pp_diff': h_l5.get('pp_pct', 20) - a_l5.get('pp_pct', 20),
             'l5_pk_diff': h_l5.get('pk_pct', 80) - a_l5.get('pk_pct', 80),
             'l5_st_net': (h_l5.get('pp_pct', 20) + h_l5.get('pk_pct', 80)) - (a_l5.get('pp_pct', 20) + a_l5.get('pk_pct', 80)),
+            'h_pp_edge': h_l5.get('pp_pct', 20) - a_l5.get('pk_pct', 80), # Home PP vs Away PK
+            'a_pp_edge': a_l5.get('pp_pct', 20) - h_l5.get('pk_pct', 80), # Away PP vs Home PK
+            'h_discipline_target': a_l5.get('pim', 8.0), # How many PIMs does opponent take?
+            'a_discipline_target': h_l5.get('pim', 8.0),
+            
+            # Phase 3 Fatigue Density
+            'h_3_in_4': 1 if tracker.get_game_count_in_window(home_team, datetime.now(), 4) >= 3 else 0,
+            'a_3_in_4': 1 if tracker.get_game_count_in_window(away_team, datetime.now(), 4) >= 3 else 0,
             
             # Technical Metrics
             'l5_rush_diff': h_l5.get('rush', 2) - a_l5.get('rush', 2),
@@ -577,6 +613,9 @@ class MetaEnsemblePredictor:
             'is_late_season': 1 if datetime.now().month in [3, 4] else 0,
             'h_desperation': self.standings.calculate_desperation_index(home_team),
             'a_desperation': self.standings.calculate_desperation_index(away_team),
+            
+            # Phase 4: Travel Jet Lag (TZ Delta)
+            'tz_delta': TEAM_TIMEZONES.get(away_team, -5) - TEAM_TIMEZONES.get(home_team, -5),
             
             # Venue Specific
             
@@ -616,8 +655,9 @@ class MetaEnsemblePredictor:
         }
         
         # Prune noisy features (Phase 9 Elite Pruning)
+        # RESTORED: 'home_win_rate', 'home_b2b', 'rest_diff', 'gsax_diff', 'away_b2b'
+        # These are high-signal in late season/playoff push.
         prune_features = [
-            'home_win_rate', 'home_b2b', 'rest_diff', 'gsax_diff', 'away_b2b',
             'home_venue_goal_diff', 'away_venue_goal_diff', 'l5_pizza_diff',
             'l5_nzt_diff', 'l5_rush_diff', 'l5_pk_diff', 'l5_pp_diff', 
             'l5_ozs_diff', 'l5_hdc_diff'

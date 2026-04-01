@@ -22,11 +22,19 @@ class DailyPredictionNotifier:
         self.predictor = PredictionInterface()  # Keep for compatibility
         self.meta_ensemble = MetaEnsemblePredictor()
         self.rotowire = RotoWireScraper()
+        from schedule_analyzer import ScheduleAnalyzer
+        self.schedule = ScheduleAnalyzer()
+
+        # Phase 2: Centralize Vegas odds for 3-way blending
+        from vegas_odds_scraper import scrape_vegas_odds
+        self._market_odds = scrape_vegas_odds() if getattr(self, "_use_vegas", True) else {}
+        if self._market_odds:
+            print(f"✅ Loaded {len(self._market_odds)} games from Vegas market")
 
         # Contextual MOE tuning: learn blend weight w(score_model, meta_model)
         # as a function of matchup "distance" (abs(diff in expected goals)).
         # This is tuned once at initialization using your stored history.
-        self._moe_default_w = 0.989
+        self._moe_default_w = 0.72 # Balanced blend: 72% Score Model / 28% Meta-Ensemble
         self._moe_absdiff_edges = None
         self._moe_absdiff_w_map = None
         # Contextual MOE (per-bucket w) was found to overfit and reduce
@@ -328,8 +336,9 @@ class DailyPredictionNotifier:
         score_p = np.array([r[3] for r in rows], dtype=float)
         delta = score_p - meta_p
 
-        # Keep search tight around the currently-known best.
-        w_candidates = [0.97 + i * 0.001 for i in range(0, 26)]  # 0.970..0.995
+        # Widened search range to allow Meta-Ensemble (XGBoost) more influence.
+        # Previously capped at 0.97-0.99, which caused a circular bias.
+        w_candidates = [0.50 + i * 0.02 for i in range(0, 26)]  # 0.50..1.00
         train_fracs = [0.6, 0.7, 0.75]
 
         best_w = float(self._moe_default_w)
@@ -387,8 +396,9 @@ class DailyPredictionNotifier:
                         'home_team': pred['home_team'],
                         'away_team': pred['away_team'],
                         'predicted_winner': pred['predicted_winner'],
-                        'home_win_prob': pred['home_prob'] / 100.0,
-                        'away_win_prob': pred['away_prob'] / 100.0,
+                        # Use BLENDED probabilities for history tracking to match the decision
+                        'home_win_prob': (1.0 - pred['blended_away_prob']) if 'blended_away_prob' in pred else (pred['home_prob'] / 100.0),
+                        'away_win_prob': pred['blended_away_prob'] if 'blended_away_prob' in pred else (pred['away_prob'] / 100.0),
                         'model_confidence': pred['confidence'] / 100.0,
                         # Store fatigue signals when available
                         'away_back_to_back': pred.get('away_back_to_back', False),
@@ -506,6 +516,8 @@ class DailyPredictionNotifier:
                         home_goalie=game.get('home_goalie'),
                         away_b2b=pred.get('away_back_to_back', False),
                         home_b2b=pred.get('home_back_to_back', False),
+                        away_3_in_4=self.schedule.get_game_count_in_window(game['away_team'], datetime.now().strftime('%Y-%m-%d'), 4) >= 3,
+                        home_3_in_4=self.schedule.get_game_count_in_window(game['home_team'], datetime.now().strftime('%Y-%m-%d'), 4) >= 3,
                     )
                     away_score = score_pred['away_score']
                     home_score = score_pred['home_score']
@@ -538,6 +550,14 @@ class DailyPredictionNotifier:
                         meta_away_win_prob /= s_meta
 
                     blended_away_win_prob = (w_score * score_away_win_prob) + ((1.0 - w_score) * meta_away_win_prob)
+                    
+                    # Phase 2: Incorporate Vegas as a standalone "Expert"
+                    v_odds = self._market_odds.get(f"{game['away_team']}@{game['home_team']}", {})
+                    if v_odds and 'away_prob' in v_odds:
+                        v_away_prob = v_odds['away_prob']
+                        # 70% Internal Model / 30% Market Wisdom
+                        blended_away_win_prob = (blended_away_win_prob * 0.70) + (v_away_prob * 0.30)
+                        
                     blended_winner = game['away_team'] if blended_away_win_prob >= 0.5 else game['home_team']
 
                     # Force displayed scoreline to match blended winner.
@@ -558,12 +578,14 @@ class DailyPredictionNotifier:
                         'home_team': game['home_team'],
                         'away_prob': pred['away_prob'],
                         'home_prob': pred['home_prob'],
+                        'blended_away_prob': blended_away_win_prob,
                         'predicted_winner': blended_winner,
-                        'confidence': max(blended_away_win_prob, 1.0 - blended_away_win_prob) * 100,
+                        'confidence': max(blended_away_win_prob, 1.0 - blended_away_win_prob) * 100 * (0.95 if (game.get('away_goalie_status') != 'Confirmed' or game.get('home_goalie_status') != 'Confirmed') else 1.0),
                         'away_score': away_score,
                         'home_score': home_score,
                         'away_goalie': game.get('away_goalie', 'TBD'),
                         'home_goalie': game.get('home_goalie', 'TBD'),
+                        'goalie_confirmed': (game.get('away_goalie_status') == 'Confirmed' and game.get('home_goalie_status') == 'Confirmed'),
                         'away_back_to_back': pred.get('away_back_to_back', False),
                         'home_back_to_back': pred.get('home_back_to_back', False),
                         'away_rest_value': pred.get('away_rest_value', 0.0),
@@ -571,7 +593,7 @@ class DailyPredictionNotifier:
                         'start_time': game.get('game_time', ''),
                         'contexts': pred.get('contexts_used', []),
                         'game_id': game_id,
-                        'confidence_tier': pred.get('confidence_tier', 'Standard'),
+                        'confidence_tier': "⚠️ High Risk" if 0.47 <= blended_away_win_prob <= 0.53 else pred.get('confidence_tier', 'Standard'),
                         'predicted_margin': pred.get('predicted_margin', 0.0),
                         'edge_away': pred.get('edge_away', 0.0),
                         'edge_home': pred.get('edge_home', 0.0),
