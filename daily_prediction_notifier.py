@@ -15,6 +15,7 @@ from meta_ensemble_predictor import MetaEnsemblePredictor
 from rotowire_scraper import RotoWireScraper
 import os
 from pathlib import Path
+from playoff_predictor import PlayoffSeriesPredictor
 
 class DailyPredictionNotifier:
     def __init__(self):
@@ -24,6 +25,7 @@ class DailyPredictionNotifier:
         self.rotowire = RotoWireScraper()
         from schedule_analyzer import ScheduleAnalyzer
         self.schedule = ScheduleAnalyzer()
+        self.playoff_predictor = PlayoffSeriesPredictor()
 
         # Phase 2: Centralize Vegas odds for 3-way blending
         from vegas_odds_scraper import scrape_vegas_odds
@@ -463,7 +465,11 @@ class DailyPredictionNotifier:
                 
                 if away_abbr and home_abbr:
                     key = f"{away_abbr}@{home_abbr}"
-                    schedule_map[key] = g['id']
+                    schedule_map[key] = {
+                        'id': g['id'],
+                        'gameType': g.get('gameType', 2),
+                        'series_status': g.get('seriesStatus') # Available in some API versions
+                    }
         
         if not games:
             # Fallback to prediction interface
@@ -504,9 +510,9 @@ class DailyPredictionNotifier:
                 if True: # was: if self.meta_ensemble.should_predict(pred):
                     # Attach Game ID
                     key = f"{game['away_team']}@{game['home_team']}"
-                    game_id = schedule_map.get(key)
-                    if not game_id:
-                        print(f"⚠️  Could not find game_id for {key}. Keys in map: {list(schedule_map.keys())[:5]}...")
+                    game_info = schedule_map.get(key, {})
+                    game_id = game_info.get('id')
+                    is_playoff = (game_info.get('gameType') == 3)
                     
                     # Score model score + win prob
                     score_pred = score_model.predict_score(
@@ -601,7 +607,9 @@ class DailyPredictionNotifier:
                         'is_plus_ev_home': pred.get('is_plus_ev_home', False),
                         'suggested_units': pred.get('suggested_units', 0.0),
                         'odds_taken': pred.get('odds_taken', 0),
-                        'p1_home_prob': pred.get('p1_home_prob', 50.0)
+                        'p1_home_prob': pred.get('p1_home_prob', 50.0),
+                        'is_playoff': is_playoff,
+                        'series_info': self.playoff_predictor.simulate_series(game['away_team'], game['home_team']) if is_playoff else None
                     })
             except Exception as e:
                 print(f"Error predicting {game['away_team']} @ {game['home_team']}: {e}")
@@ -652,6 +660,12 @@ class DailyPredictionNotifier:
                 summary += f"  🕐 1st Period: **{p1_winner}** favored ({p1_conf:.1f}%)\n"
             
             summary += f"  ⭐ Confidence: {confidence:.1f}% ({pred.get('confidence_tier', 'Standard')})\n"
+            
+            # Phase 25: Playoff Series Probability
+            if pred.get('is_playoff') and pred.get('series_info'):
+                si = pred['series_info']
+                summary += f"  🏆 **SERIES WIN PROB**: {si['winner_projection']} ({max(si['away_series_win_prob'], si['home_series_win_prob']):.1%})\n"
+                summary += f"  📊 Series Project: {si['winner_projection']} in {si['avg_remaining_games'] + 1:.0f} total games\n"
             
             # Phase 16: Market Value Overlay
             edge = pred.get('edge_home') if winner == home else pred.get('edge_away')

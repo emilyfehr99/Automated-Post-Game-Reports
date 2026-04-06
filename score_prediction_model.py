@@ -86,15 +86,27 @@ class ScorePredictionModel:
                 self.prediction_history = pred_data.get('predictions', [])
                 break
         
-        # Load comprehensive goalie stats
-        for p in [Path('data/goalie_stats.json'), Path('goalie_stats.json')]:
+        # Load comprehensive goalie stats from high-fidelity metrics source
+        # This now contains xG-based GSAX from the ImprovedXGModel
+        for p in [Path('data/team_advanced_metrics.json'), Path('team_advanced_metrics.json')]:
             if p.exists():
                 with open(p) as f:
-                    g_data = json.load(f)
-                self.goalie_stats = g_data.get('goalies', {})
+                    metrics_data = json.load(f)
+                self.goalie_stats = metrics_data.get('goalies', {})
                 # Create a name -> ID layout for easy lookup
                 self.goalie_names = {v['name']: k for k, v in self.goalie_stats.items()}
+                print(f"🧤 Loaded {len(self.goalie_stats)} high-fidelity goalies (xG-based GSAX)")
                 break
+        
+        # Fallback to legacy goalie_stats if above failed
+        if not self.goalie_stats:
+            for p in [Path('data/goalie_stats.json'), Path('goalie_stats.json')]:
+                if p.exists():
+                    with open(p) as f:
+                        g_data = json.load(f)
+                    self.goalie_stats = g_data.get('goalies', {})
+                    self.goalie_names = {v['name']: k for k, v in self.goalie_stats.items()}
+                    break
         
         # NOTE: Finishing profiles (team_scoring_profiles.json) removed —
         # 29/32 teams were above 1.2x (noise), and xG luck regression

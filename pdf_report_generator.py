@@ -110,10 +110,12 @@ class BackgroundPageTemplate(PageTemplate):
 
 class PostGameReportGenerator:
     def __init__(self):
+        """Initialize report generator and analyzer"""
+        self.is_high_fidelity = True  # Tracks if tactical comparisons were successful
         self.styles = getSampleStyleSheet()
         self.register_fonts()
         self.setup_custom_styles()
-        self.xg_model = ImprovedXGModel()  # Initialize improved xG model for period-by-period calculations
+        self.xg_model = ImprovedXGModel()
     
     def register_fonts(self):
         """Register custom fonts with ReportLab"""
@@ -1540,6 +1542,7 @@ class PostGameReportGenerator:
             
         except Exception as e:
             print(f"Error creating team stats comparison: {e}")
+            self.is_high_fidelity = False
             story.append(Paragraph("Team statistics comparison could not be generated.", self.normal_style))
         
         return story
@@ -1636,6 +1639,7 @@ class PostGameReportGenerator:
             elements.append(Spacer(1, 20))
             
         except Exception as e:
+            self.is_high_fidelity = False
             elements.append(Paragraph(f"Error generating goalie analytics: {str(e)}", self.styles['Normal']))
             
         return elements

@@ -278,6 +278,12 @@ class GitHubActionsRunner:
             generator = PostGameReportGenerator()
             pdf_path = generator.generate_report(game_data, output_filename, game_id)
             
+            if not generator.is_high_fidelity:
+                print(f"⚠️  Low-fidelity report detected for game {game_id} (Comparison failed).")
+                print(f"   Suppressed social media posts per integrity standards.")
+                # Mark as processed anyway so we don't keep trying failed archival games
+                return True
+            
             if not pdf_path or not Path(pdf_path).exists():
                 print(f"❌ Report generation failed")
                 return False
