@@ -3,6 +3,15 @@ Automated Twitter Posting System for NHL Post-Game Reports
 Posts generated reports to Twitter with proper team hashtags and threading
 """
 
+import sys, os
+_module_dirs = ['models', 'analyzers', 'scrapers', 'utils']
+_base_dir = os.path.dirname(os.path.abspath(__file__))
+for _d in _module_dirs:
+    _p = os.path.join(_base_dir, _d)
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
+
 import os
 import sys
 import tweepy
