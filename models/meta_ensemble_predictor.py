@@ -772,6 +772,7 @@ class MetaEnsemblePredictor:
         """Meta-ensemble prediction combining all methods"""
         predictions = []
         weights = []
+        xgb_p1_prob = 50.0
         
         # 1. XGBoost ML Model (50% Weight - Highest Accuracy Component)
         xgb_pred = self._predict_xgboost(away_team, home_team, game_date, away_goalie, home_goalie)
@@ -791,10 +792,10 @@ class MetaEnsemblePredictor:
             print(f"Specialized ensemble failed: {e}")
         
         # 3. Player-level model (15% weight)
-        if away_lineup and home_lineup:
+        if away_lineup and home_lineup and hasattr(self.base_model, 'predict_game_with_lineup'):
             try:
                 player_pred = self.base_model.predict_game_with_lineup(
-                    away_team, home_team, away_lineup, home_lineup, game_id, game_date, vegas_odds=vegas_odds
+                    away_team, home_team, away_lineup, home_lineup, game_id, game_date
                 )
                 predictions.append(player_pred)
                 weights.append(0.15)
@@ -803,7 +804,7 @@ class MetaEnsemblePredictor:
         
         # 4. Base model (10% weight - reduced due to lower accuracy)
         try:
-            base_pred = self.base_model.predict_game(away_team, home_team, game_id=game_id, game_date=game_date, vegas_odds=vegas_odds)
+            base_pred = self.base_model.predict_game(away_team, home_team, game_id=game_id, game_date=game_date)
             predictions.append(base_pred)
             weights.append(0.10)
         except Exception as e:

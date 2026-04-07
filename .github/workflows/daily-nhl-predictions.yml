@@ -92,7 +92,7 @@ jobs:
           echo "Looking for scraper:"
           find . -name "daily_edge_data_scraper.py" -type f
           echo "Running scraper:"
-          PYTHONPATH=".:analyzers:utils:api:models:scrapers" python3 scrapers/daily_edge_data_scraper.py
+          PYTHONPATH=".:models:analyzers:utils:scrapers:api" python3 scrapers/daily_edge_data_scraper.py
 
       - name: Validate edge data exists
         if: steps.check_date.outputs.should_run == 'true'
@@ -110,7 +110,7 @@ jobs:
           echo "📊 GENERATING REAL TEAM STATS"
           echo "Current directory: $(pwd)"
           echo "Running team stats generator..."
-          PYTHONPATH=".:analyzers:utils:api:models:scrapers" python3 utils/generate_real_team_stats.py
+          PYTHONPATH=".:models:analyzers:utils:scrapers:api" python3 utils/generate_real_team_stats.py
           echo "✅ Team stats generation complete"
           
           # Check if file was created (script saves to parent directory)
@@ -128,13 +128,13 @@ jobs:
         if: steps.check_date.outputs.should_run == 'true'
         run: |
           echo "📝 UPDATING PAST GAME OUTCOMES"
-          PYTHONPATH=".:analyzers:utils:api:models:scrapers" python3 utils/update_game_outcomes.py
+          PYTHONPATH=".:models:analyzers:utils:scrapers:api" python3 utils/update_game_outcomes.py
 
       - name: Retrain XGBoost Model
         if: steps.check_date.outputs.should_run == 'true'
         run: |
           echo "🧠 RETRAINING MODEL WITH LATEST RESULTS"
-          PYTHONPATH=".:analyzers:utils:api:models:scrapers" python3 models/train_xgboost_model.py
+          PYTHONPATH=".:models:analyzers:utils:scrapers:api" python3 models/train_xgboost_model.py
           if [ -f "xgb_nhl_model.json" ]; then
              echo "✅ Model retrained successfully"
           else
@@ -148,7 +148,7 @@ jobs:
         run: |
           echo "🎯 RUNNING DAILY PREDICTIONS WITH META-ENSEMBLE"
           echo "All data collected, now making predictions..."
-          PYTHONPATH=".:analyzers:utils:api:models:scrapers" python3 daily_prediction_notifier.py
+          PYTHONPATH=".:models:analyzers:utils:scrapers:api" python3 daily_prediction_notifier.py
 
       - name: Commit predictions and edge data changes
         if: steps.check_date.outputs.should_run == 'true'

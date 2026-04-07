@@ -58,4 +58,4 @@ jobs:
         TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
 
       run: |
-        PYTHONPATH=".:analyzers:utils:api:models:scrapers" python utils/repost_yesterdays_reports.py
+        PYTHONPATH=".:models:analyzers:utils:scrapers:api" python utils/repost_yesterdays_reports.py
