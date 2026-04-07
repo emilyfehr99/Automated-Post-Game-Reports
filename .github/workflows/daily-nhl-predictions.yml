@@ -148,7 +148,7 @@ jobs:
         run: |
           echo "🎯 RUNNING DAILY PREDICTIONS WITH META-ENSEMBLE"
           echo "All data collected, now making predictions..."
-          python3 daily_prediction_notifier.py
+          PYTHONPATH=".:analyzers:utils:api:models:scrapers" python3 daily_prediction_notifier.py
 
       - name: Commit predictions and edge data changes
         if: steps.check_date.outputs.should_run == 'true'
