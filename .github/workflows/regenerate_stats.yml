@@ -51,7 +51,7 @@ jobs:
         run: |
           # Increase timeout for the script if needed inside python 
           # The GH runner has 6 hours max
-          PYTHONPATH=. python utils/generate_real_team_stats.py
+          PYTHONPATH=".:analyzers:utils:api:models:scrapers" python utils/generate_real_team_stats.py
         env:
           PYTHONUNBUFFERED: 1
 
