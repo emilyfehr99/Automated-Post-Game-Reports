@@ -250,6 +250,51 @@ class ScorePredictionModel:
                 env_adj = (team_avg - league_avg_total) / 2.0
                 # Cap at +/- 0.4 per team
                 self._team_scoring_env[team] = max(-0.4, min(0.4, env_adj))
+        
+        # ─── Per-team venue splits (home vs away) ───
+        # Learn how each team performs at home vs on the road from actual outcomes.
+        # Replaces the flat HOME_ICE_BOOST with per-team adjustments.
+        from collections import defaultdict as dd2
+        team_home_gf = dd2(list)
+        team_away_gf = dd2(list)
+        team_home_wins = dd2(int)
+        team_home_games = dd2(int)
+        
+        for pred in completed:
+            away = pred.get('away_team', '')
+            home = pred.get('home_team', '')
+            a_s, h_s = pred['actual_away_score'], pred['actual_home_score']
+            
+            if home:
+                team_home_gf[home].append(h_s)
+                team_home_games[home] += 1
+                if h_s > a_s:
+                    team_home_wins[home] += 1
+            if away:
+                team_away_gf[away].append(a_s)
+        
+        self._team_venue_splits = {}
+        league_home_gf = float(np.mean([g['actual_home_score'] for g in completed])) if completed else 3.1
+        league_away_gf = float(np.mean([g['actual_away_score'] for g in completed])) if completed else 3.0
+        
+        all_teams_venue = set(list(team_home_gf.keys()) + list(team_away_gf.keys()))
+        for team in all_teams_venue:
+            h_gf = team_home_gf.get(team, [])
+            a_gf = team_away_gf.get(team, [])
+            if len(h_gf) >= 8 and len(a_gf) >= 8:
+                home_avg = float(np.mean(h_gf))
+                away_avg = float(np.mean(a_gf))
+                # How much better/worse this team scores at home vs away
+                # relative to the league-wide home/away split
+                home_boost = (home_avg - league_home_gf)  # vs league home avg
+                away_boost = (away_avg - league_away_gf)  # vs league away avg
+                home_wp = team_home_wins.get(team, 0) / max(1, team_home_games.get(team, 1))
+                
+                self._team_venue_splits[team] = {
+                    'home_gf_adj': max(-0.5, min(0.5, home_boost)),
+                    'away_gf_adj': max(-0.5, min(0.5, away_boost)),
+                    'home_win_pct': home_wp,
+                }
     
     def _get_team_env_adjustment(self, team: str) -> float:
         """Get a team's scoring environment adjustment from learned data.
@@ -258,6 +303,20 @@ class ScorePredictionModel:
         Negative = this team's games tend to be lower-scoring.
         """
         return getattr(self, '_team_scoring_env', {}).get(team.upper(), 0.0)
+    
+    def _get_venue_adjustment(self, team: str, venue: str) -> float:
+        """Get a team's venue-specific scoring adjustment.
+        
+        Returns how many more/fewer goals this team scores at the given venue
+        compared to the league average for that venue.
+        """
+        splits = getattr(self, '_team_venue_splits', {}).get(team.upper())
+        if not splits:
+            return 0.0
+        if venue == 'home':
+            return splits.get('home_gf_adj', 0.0)
+        else:
+            return splits.get('away_gf_adj', 0.0)
 
     def _poisson_win_probs(self, away_lam: float, home_lam: float, max_goals: int = 15) -> Tuple[float, float, float]:
         """Return (p_away_reg_win, p_home_reg_win, p_tie_reg) from two Poissons."""
@@ -1391,8 +1450,17 @@ class ScorePredictionModel:
         away_luck_adj = -away_luck * self.XG_LUCK_REGRESSION
         home_luck_adj = -home_luck * self.XG_LUCK_REGRESSION
         
-        # ─── 7. Home ice advantage ───
-        home_boost = self.HOME_ICE_BOOST
+        # ─── 7. Home/Away venue adjustment (Self-Learning) ───
+        # Instead of a flat HOME_ICE_BOOST for all teams, use per-team venue
+        # splits learned from actual outcomes. BOS (23-7 at home) gets a big
+        # boost, VAN (8-25 at home) gets penalized.
+        away_venue_adj = self._get_venue_adjustment(away, 'away')
+        home_venue_adj = self._get_venue_adjustment(home, 'home')
+        # Fallback: if no learned data, use the flat league-wide home boost
+        if away_venue_adj == 0.0 and home_venue_adj == 0.0:
+            home_boost = self.HOME_ICE_BOOST
+        else:
+            home_boost = 0.0  # Per-team adjustments replace the flat boost
         
         # ─── 8. Division strength ───
         div_strength = {'Central': 0.10, 'Atlantic': 0.00, 'Metropolitan': 0.00, 'Pacific': -0.10}
@@ -1469,6 +1537,7 @@ class ScorePredictionModel:
         # Apply additive adjustments
         away_expected += away_luck_adj
         away_expected += away_div_adj
+        away_expected += away_venue_adj
         away_expected += away_h2h_adj
         away_expected += away_b2b_adj
         away_expected += away_goalie_adj
@@ -1476,6 +1545,7 @@ class ScorePredictionModel:
         
         home_expected += home_luck_adj
         home_expected += home_div_adj
+        home_expected += home_venue_adj
         home_expected += home_boost
         home_expected += home_h2h_adj
         home_expected += home_b2b_adj
