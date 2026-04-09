@@ -1552,43 +1552,21 @@ class ScorePredictionModel:
             away_win_prob_final = float(max(0.0, min(1.0, away_win_total)))
             home_win_prob_final = float(max(0.0, min(1.0, home_win_total)))
 
-        away_lam = float(away_expected)
-        home_lam = float(home_expected)
-        away_score = max(1, min(max_goals, int(round(away_lam))))
-        home_score = max(1, min(max_goals, int(round(home_lam))))
 
-        # No ties: force displayed scores to agree with the probability winner.
-        # Use the fractional part of the winner's lambda to decide HOW to break
-        # the tie: if the winner was close to rounding up anyway (frac >= 0.3),
-        # bump them up; otherwise subtract from the loser. This produces a
-        # natural mix of 3-2, 4-3, 3-1, 4-2 etc. instead of clustering.
-        if away_score == home_score or (winner_side == 'away' and away_score < home_score) or (winner_side == 'home' and home_score < away_score):
-            if winner_side == 'away':
-                winner_lam, loser_lam = away_lam, home_lam
-                winner_frac = winner_lam - int(winner_lam)
-                if winner_frac >= 0.3 and away_score < max_goals:
-                    away_score = max(away_score, home_score) + 1
-                elif home_score > 1:
-                    home_score = min(away_score, home_score) - 1
-                    if home_score < 1:
-                        home_score = 1
-                    if away_score <= home_score:
-                        away_score = home_score + 1
-                else:
-                    away_score = home_score + 1
-            else:
-                winner_lam, loser_lam = home_lam, away_lam
-                winner_frac = winner_lam - int(winner_lam)
-                if winner_frac >= 0.3 and home_score < max_goals:
-                    home_score = max(away_score, home_score) + 1
-                elif away_score > 1:
-                    away_score = min(away_score, home_score) - 1
-                    if away_score < 1:
-                        away_score = 1
-                    if home_score <= away_score:
-                        home_score = away_score + 1
-                else:
-                    home_score = away_score + 1
+        # ─── Score sampling via Poisson ───
+        # Use Poisson sampling instead of deterministic rounding to produce
+        # natural score variance. This allows 2-1 grinders, 5-2 blowouts,
+        # and 4-3 nail-biters instead of everything clustering at the same
+        # 1-goal differential. The draw is seeded by date+lambdas so
+        # predictions stay stable throughout the day.
+        away_score, home_score = self._poisson_score(float(away_expected), float(home_expected))
+        
+        # Ensure the winner agrees with the probability-based winner side
+        if winner_side == 'away' and away_score <= home_score:
+            # Swap: give away the higher score
+            away_score, home_score = max(away_score, home_score) + 1, min(away_score, home_score)
+        elif winner_side == 'home' and home_score <= away_score:
+            away_score, home_score = min(away_score, home_score), max(away_score, home_score) + 1
         
         # ─── Generate analysis factors ───
         factors = self._generate_factors(
@@ -1842,9 +1820,9 @@ class ScorePredictionModel:
         rng = np.random.RandomState(seed)
 
         # Hard-clamping Poisson draws to a small max goal value artificially inflates
-        # the top score (e.g. lots of "7" predictions). Use a higher cap so "7+"
-        # distributes across realistic high-score outcomes.
-        max_goals = 10
+        # the top score (e.g. lots of "7" predictions). Use a moderate cap that still
+        # allows blowouts but keeps scores within realistic NHL bounds.
+        max_goals = 7
 
         away_score = max(1, min(max_goals, int(rng.poisson(away_lambda))))
         home_score = max(1, min(max_goals, int(rng.poisson(home_lambda))))
