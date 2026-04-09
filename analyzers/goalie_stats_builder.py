@@ -496,14 +496,14 @@ class GoalieStatsBuilder:
                 continue
             
             # Calculate derived metrics
-            sa = gs['shots_against']
-            ga = gs['goals_against']
+            sa = gs.get('shots_against', 0)
+            ga = gs.get('goals_against', 0)
             
             derived = {
                 'sv_pct': round((sa - ga) / sa, 4) if sa > 0 else 0,
                 'gaa': round(ga / max(1, gs['games']), 2),
-                'gsax_total': round(gs['xg_against'] - ga, 2),
-                'gsax_per_game': round((gs['xg_against'] - ga) / max(1, gs['games']), 3),
+                'gsax_total': round(gs.get('xg_against', 0) - ga, 2),
+                'gsax_per_game': round((gs.get('xg_against', 0) - ga) / max(1, gs.get('games', 1)), 3),
                 
                 # EV splits
                 'ev_sv_pct': round((gs['ev_shots'] - gs['ev_goals']) / gs['ev_shots'], 4) if gs['ev_shots'] > 0 else 0,
@@ -588,15 +588,15 @@ class GoalieStatsBuilder:
                      if gs['games'] >= 10]
         
         # Sort by GSAX per game
-        qualified.sort(key=lambda x: (x[1].get('xg_against', 0) - x[1]['goals_against']) / max(1, x[1]['games']), reverse=True)
+        qualified.sort(key=lambda x: (x[1].get('xg_against', 0) - x[1].get('goals_against', 0)) / max(1, x[1].get('games', 1)), reverse=True)
         
         print(f"{'Goalie':<22} {'GP':>3} {'SV%':>6} {'GAA':>5} {'GSAX':>6} "
               f"{'HDSV%':>6} {'GlvSV%':>7} {'BlkSV%':>7} {'REB%':>5}")
         print("-" * 80)
         
         for gid, gs in qualified[:15]:
-            sa = gs['shots_against']
-            ga = gs['goals_against']
+            sa = gs.get('shots_against', 0)
+            ga = gs.get('goals_against', 0)
             sv_pct = (sa - ga) / sa if sa > 0 else 0
             gaa = ga / max(1, gs['games'])
             gsax = gs.get('xg_against', 0) - ga

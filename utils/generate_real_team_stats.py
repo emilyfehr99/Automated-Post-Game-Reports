@@ -315,7 +315,7 @@ class RealTeamStatsGenerator(TeamReportGenerator):
                         'net_front_traffic_pct': [], 'passes_per_goal': [], 'avg_goal_distance': [],
                         'east_west_play': [], 'north_south_play': [],
                         'zone_entry_carry_pct': [], 'zone_entry_pass_pct': [],
-                        'games': []
+                        'games': [], 'opponents': []
                     },
                     'away': {
                         'gs': [], 'xg': [], 'corsi_pct': [], 'fenwick_pct': [], 'pdo': [],
@@ -328,7 +328,7 @@ class RealTeamStatsGenerator(TeamReportGenerator):
                         'net_front_traffic_pct': [], 'passes_per_goal': [], 'avg_goal_distance': [],
                         'east_west_play': [], 'north_south_play': [],
                         'zone_entry_carry_pct': [], 'zone_entry_pass_pct': [],
-                        'games': []
+                        'games': [], 'opponents': []
                     }
                 }
             
@@ -388,6 +388,11 @@ class RealTeamStatsGenerator(TeamReportGenerator):
                         
                         # Use game_id instead of index for robustness
                         home_stats['games'].append(game_id)
+                        
+                        # Extract opponent
+                        boxscore = game_data.get('boxscore', {})
+                        away_team = boxscore.get('awayTeam', {}).get('abbrev', 'UNK')
+                        home_stats['opponents'].append(away_team)
                         print(f"✓ GS={metrics['gs']:.1f}, xG={metrics['xg']:.2f}")
                     else:
                         print("Failed to calculate metrics - skipping")
@@ -435,6 +440,11 @@ class RealTeamStatsGenerator(TeamReportGenerator):
                                 away_stats[key].append(metrics.get(key, 0))
                         
                         away_stats['games'].append(game_id)
+                        
+                        # Extract opponent
+                        boxscore = game_data.get('boxscore', {})
+                        home_team = boxscore.get('homeTeam', {}).get('abbrev', 'UNK')
+                        away_stats['opponents'].append(home_team)
                         print(f"✓ GS={metrics['gs']:.1f}, xG={metrics['xg']:.2f}")
                     else:
                         print("Failed to calculate metrics - skipping")

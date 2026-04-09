@@ -390,8 +390,8 @@ class TeamAdvancedMetricsBuilder:
             if gs['shots_on_goal'] < 10: continue
             
             summ = gs.copy()
-            summ['gsax'] = round(gs['xg_faced'] - gs['goals_against'], 2)
-            team_games = team_summaries.get(gs['team'], {}).get('games', 1)
+            summ['gsax'] = round(gs.get('xg_faced', 0) - gs.get('goals_against', 0), 2)
+            team_games = team_summaries.get(gs.get('team', ''), {}).get('games', 1)
             summ['gsax_per_game'] = round(summ['gsax'] / team_games, 3)
             goalie_summaries[str(gid)] = summ
 

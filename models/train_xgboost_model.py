@@ -297,7 +297,16 @@ def calculate_target_encoding(df, col, target='target', min_samples_leaf=5, smoo
 def extract_features_chronologically(predictions):
     # Sort by date
     print("Sorting games chronologically...")
-    sorted_preds = sorted(predictions, key=lambda x: x['date'])
+    sorted_preds = sorted(predictions, key=lambda x: x.get('date', ''))
+    
+    # Filter for games with actual outcomes
+    played_games = [p for p in sorted_preds if p.get('actual_winner')]
+    print(f"📊 Total played games in history: {len(played_games)}")
+    
+    # Use only the last 150 games for training to ensure we have high-signal features
+    # and consistent data quality from recent backfills.
+    train_subset = played_games[-150:]
+    print(f"🎯 Training on last {len(train_subset)} games for maximum signal...")
     
     tracker = TeamHistory()
     standings = StandingsTracker()
@@ -305,9 +314,7 @@ def extract_features_chronologically(predictions):
     edge_data = load_edge_data() # Load NHL Edge speed profiles
     training_data = []
     
-    print("Generating rolling features + Elo + Finish Factors...")
-    
-    for p in sorted_preds:
+    for p in train_subset:
         game_id = p.get('game_id')
         date_str = p.get('date')
         if not date_str:
@@ -573,7 +580,7 @@ def train_optimized_model():
     train_df = df.iloc[:split_idx]
     test_df = df.iloc[split_idx:]
     
-    features = [c for c in df.columns if c not in ['game_id', 'date', 'target', 'margin']]
+    features = [c for c in df.columns if c not in ['game_id', 'date', 'target', 'margin', 'p1_target']]
     X_train = train_df[features].copy()
     y_train = train_df['target']
     y_margin_train = train_df['margin']

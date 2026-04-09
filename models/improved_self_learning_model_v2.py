@@ -74,7 +74,7 @@ class ImprovedSelfLearningModelV2:
         
         # Determine paths relative to script location
         self.script_dir = Path(__file__).parent.absolute()
-        self.predictions_file = self.script_dir / "data" / "win_probability_predictions_v2.json"
+        self.predictions_file = self.script_dir.parent / "data" / "win_probability_predictions_v2.json"
         
         # Load existing model data
         self.model_data = self.load_model_data()
