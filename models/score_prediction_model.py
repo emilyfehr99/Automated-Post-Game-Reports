@@ -116,9 +116,18 @@ class ScorePredictionModel:
             self._precompute_averages()
             self._build_h2h_records()
             n_h2h = sum(len(v) for v in self.h2h_cache.values())
+            
+            # Dynamic league average: compute from actual team data instead of hardcoded
+            self._learn_league_avg()
+            
+            # Scoring bias correction: learn from prediction errors
+            self._learn_scoring_bias()
+            
             print(f"✅ Score model v3: {len(self.team_averages)} teams, "
                   f"{len(self.prediction_history)} predictions, "
                   f"{n_h2h} H2H records")
+            print(f"   📊 Dynamic league avg: {self.LEAGUE_AVG_GF:.2f} GF/game, "
+                  f"scoring bias correction: {self._scoring_bias:.3f}")
 
             # Learn a win-prob calibration curve from historical outcomes.
             # This adjusts the winner decision boundary away from a pure
@@ -146,6 +155,73 @@ class ScorePredictionModel:
             self._dispersion_k = 20.0
             self._ot_tie_gamma = 1.0
             self._max_goals = 10
+            self._scoring_bias = 0.0
+
+    def _learn_league_avg(self):
+        """Dynamically compute league average GF/game from actual team data.
+        
+        Instead of relying on a hardcoded 3.03, this uses the actual season
+        data to stay accurate as the season progresses and scoring trends shift.
+        """
+        all_goals = []
+        for team, avgs in self.team_averages.items():
+            combined = avgs.get('combined', {})
+            goals_flat = combined.get('goals_flat')
+            if goals_flat is not None and not np.isnan(goals_flat):
+                all_goals.append(goals_flat)
+        
+        if len(all_goals) >= 10:
+            self.LEAGUE_AVG_GF = float(np.mean(all_goals))
+        # else keep the default 3.03
+    
+    def _learn_scoring_bias(self):
+        """Learn a scoring bias correction from prediction history.
+        
+        Compares predicted total goals (away_xg + home_xg from past predictions
+        that have actual scores) against actual total goals. If the model has been
+        systematically over- or under-predicting totals, applies a correction
+        factor to future predictions.
+        
+        Uses recency weighting so recent errors matter more than old ones.
+        """
+        self._scoring_bias = 0.0
+        
+        # Only use predictions that have actual outcomes
+        completed = [p for p in self.prediction_history 
+                     if p.get('actual_away_score') is not None 
+                     and p.get('actual_home_score') is not None]
+        
+        if len(completed) < 30:
+            return  # Not enough data to learn from
+        
+        # Use last 200 games for the bias calculation (recency)
+        recent = completed[-200:]
+        
+        errors = []  # positive = model predicted too high
+        weights = []
+        n = len(recent)
+        for i, pred in enumerate(recent):
+            actual_total = pred['actual_away_score'] + pred['actual_home_score']
+            
+            # Get predicted total from metrics if available
+            metrics = pred.get('metrics_used', {})
+            pred_away_xg = metrics.get('away_xg', 0)
+            pred_home_xg = metrics.get('home_xg', 0)
+            pred_total = pred_away_xg + pred_home_xg
+            
+            if pred_total > 0:  # Only if we have valid predicted xG
+                error = pred_total - actual_total
+                errors.append(error)
+                # Exponential recency weight: newest gets weight 1.0
+                w = 0.5 ** ((n - 1 - i) / 50)  # half-life of 50 games
+                weights.append(w)
+        
+        if len(errors) >= 20:
+            total_w = sum(weights)
+            if total_w > 0:
+                weighted_bias = sum(e * w for e, w in zip(errors, weights)) / total_w
+                # Cap the bias correction at +/- 0.5 goals per team
+                self._scoring_bias = max(-0.5, min(0.5, weighted_bias / 2.0))
 
     def _poisson_win_probs(self, away_lam: float, home_lam: float, max_goals: int = 15) -> Tuple[float, float, float]:
         """Return (p_away_reg_win, p_home_reg_win, p_tie_reg) from two Poissons."""
@@ -1382,6 +1458,14 @@ class ScorePredictionModel:
         # for Jet Lag reduces winner accuracy by ~4%. We keep TEAM_TIMEZONES
         # for ML context, but remove the hard goal offset.
         pass
+        
+        # ─── 16. Scoring Bias Correction (Self-Learning) ───
+        # If the model has been systematically over-predicting totals,
+        # _scoring_bias will be positive and we subtract it from both sides.
+        # This closes the feedback loop so the model corrects itself over time.
+        if hasattr(self, '_scoring_bias') and self._scoring_bias != 0:
+            away_expected -= self._scoring_bias
+            home_expected -= self._scoring_bias
         
         # ─── Clamp to realistic range ───
         # NHL teams very rarely exceed 4.5 xG in a game. Keeping the cap
