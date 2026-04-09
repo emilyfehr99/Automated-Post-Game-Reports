@@ -1384,14 +1384,11 @@ class ScorePredictionModel:
         pass
         
         # ─── Clamp to realistic range ───
-        # Previous cap of 4.5 was pushing Poisson lambdas high enough that
-        # "7-goal" outcomes showed up too often. Lower the cap to reduce
-        # the tail while still allowing occasional high-scoring games.
-        # Expected-goals cap controls how often we can generate higher
-        # (rare) scorelines. We allow occasional 6-goal team totals while
-        # keeping 7+ extremely unlikely with deterministic rounding.
-        away_expected = max(1.0, min(5.5, away_expected))
-        home_expected = max(1.0, min(5.5, home_expected))
+        # NHL teams very rarely exceed 4.5 xG in a game. Keeping the cap
+        # tight prevents the deterministic rounding from producing
+        # unrealistic 5-4, 6-5 scorelines.
+        away_expected = max(1.5, min(4.5, away_expected))
+        home_expected = max(1.5, min(4.5, home_expected))
         
         # ─── Winner selection ───
         # If calibration is available, use it to learn the empirical win
@@ -1476,19 +1473,38 @@ class ScorePredictionModel:
         away_score = max(1, min(max_goals, int(round(away_lam))))
         home_score = max(1, min(max_goals, int(round(home_lam))))
 
-        # No ties: force the displayed scores to agree with the probability winner.
-        if winner_side == 'away':
-            if away_score <= home_score:
-                if away_score < max_goals:
-                    away_score = home_score + 1
+        # No ties: force displayed scores to agree with the probability winner.
+        # Use the fractional part of the winner's lambda to decide HOW to break
+        # the tie: if the winner was close to rounding up anyway (frac >= 0.3),
+        # bump them up; otherwise subtract from the loser. This produces a
+        # natural mix of 3-2, 4-3, 3-1, 4-2 etc. instead of clustering.
+        if away_score == home_score or (winner_side == 'away' and away_score < home_score) or (winner_side == 'home' and home_score < away_score):
+            if winner_side == 'away':
+                winner_lam, loser_lam = away_lam, home_lam
+                winner_frac = winner_lam - int(winner_lam)
+                if winner_frac >= 0.3 and away_score < max_goals:
+                    away_score = max(away_score, home_score) + 1
                 elif home_score > 1:
-                    home_score -= 1
-        else:
-            if home_score <= away_score:
-                if home_score < max_goals:
-                    home_score = away_score + 1
+                    home_score = min(away_score, home_score) - 1
+                    if home_score < 1:
+                        home_score = 1
+                    if away_score <= home_score:
+                        away_score = home_score + 1
+                else:
+                    away_score = home_score + 1
+            else:
+                winner_lam, loser_lam = home_lam, away_lam
+                winner_frac = winner_lam - int(winner_lam)
+                if winner_frac >= 0.3 and home_score < max_goals:
+                    home_score = max(away_score, home_score) + 1
                 elif away_score > 1:
-                    away_score -= 1
+                    away_score = min(away_score, home_score) - 1
+                    if away_score < 1:
+                        away_score = 1
+                    if home_score <= away_score:
+                        home_score = away_score + 1
+                else:
+                    home_score = away_score + 1
         
         # ─── Generate analysis factors ───
         factors = self._generate_factors(
@@ -1599,8 +1615,10 @@ class ScorePredictionModel:
             else:
                 return backup_penalty
         
-        # If we have no data on the goalie (e.g. NHL debut), assume they are highly vulnerable
-        return 0.50
+        # If we have no data on the goalie (e.g. unconfirmed lineup), assume league-average.
+        # Previously this was +0.50 which inflated both sides by a full goal when
+        # lineups weren't available, causing systemic 5-4 / 4-3 predictions.
+        return 0.0
     
     def _generate_factors(self, away, home, away_exp, home_exp,
                           away_luck, home_luck, away_goalie, home_goalie,
