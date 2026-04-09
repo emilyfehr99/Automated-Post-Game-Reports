@@ -222,6 +222,42 @@ class ScorePredictionModel:
                 weighted_bias = sum(e * w for e, w in zip(errors, weights)) / total_w
                 # Cap the bias correction at +/- 0.5 goals per team
                 self._scoring_bias = max(-0.5, min(0.5, weighted_bias / 2.0))
+        
+        # ─── Per-team scoring environment ───
+        # Some teams consistently play in high-scoring games (bad defense, fast pace)
+        # while others grind out low-scoring games. Learn this from actual outcomes.
+        from collections import defaultdict
+        team_totals = defaultdict(list)
+        league_avg_total = float(np.mean([
+            p['actual_away_score'] + p['actual_home_score'] for p in completed
+        ])) if completed else 6.0
+        
+        for pred in completed:
+            total = pred['actual_away_score'] + pred['actual_home_score']
+            away = pred.get('away_team', '')
+            home = pred.get('home_team', '')
+            if away:
+                team_totals[away].append(total)
+            if home:
+                team_totals[home].append(total)
+        
+        self._team_scoring_env = {}
+        for team, totals in team_totals.items():
+            if len(totals) >= 10:  # Need sufficient sample
+                team_avg = float(np.mean(totals))
+                # Per-team adjustment: how much above/below league avg this team's games run
+                # Split in half since both teams contribute to the total
+                env_adj = (team_avg - league_avg_total) / 2.0
+                # Cap at +/- 0.4 per team
+                self._team_scoring_env[team] = max(-0.4, min(0.4, env_adj))
+    
+    def _get_team_env_adjustment(self, team: str) -> float:
+        """Get a team's scoring environment adjustment from learned data.
+        
+        Positive = this team's games tend to be higher-scoring than average.
+        Negative = this team's games tend to be lower-scoring.
+        """
+        return getattr(self, '_team_scoring_env', {}).get(team.upper(), 0.0)
 
     def _poisson_win_probs(self, away_lam: float, home_lam: float, max_goals: int = 15) -> Tuple[float, float, float]:
         """Return (p_away_reg_win, p_home_reg_win, p_tie_reg) from two Poissons."""
@@ -1466,6 +1502,15 @@ class ScorePredictionModel:
         if hasattr(self, '_scoring_bias') and self._scoring_bias != 0:
             away_expected -= self._scoring_bias
             home_expected -= self._scoring_bias
+        
+        # ─── 17. Per-Team Scoring Environment (Self-Learning) ───
+        # Learned from actual game outcomes: some teams consistently play in
+        # high-scoring games (e.g. PIT avg 7.0 total) while others grind out
+        # low-scoring affairs (e.g. NYR avg 5.76). Apply each team's tendency.
+        away_env = self._get_team_env_adjustment(away)
+        home_env = self._get_team_env_adjustment(home)
+        away_expected += away_env
+        home_expected += home_env
         
         # ─── Clamp to realistic range ───
         # NHL teams very rarely exceed 4.5 xG in a game. Keeping the cap
