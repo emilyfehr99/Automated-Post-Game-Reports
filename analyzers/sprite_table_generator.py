@@ -110,7 +110,7 @@ def get_team_logo(team_abbrev, size=40):
     
     return None
 
-def create_sprite_analysis_tables(sprite_data):
+def create_sprite_analysis_tables(sprite_data, compact: bool = False):
     """
     Create 4 comparison tables for sprite analysis
     matching the existing report style
@@ -142,6 +142,22 @@ def create_sprite_analysis_tables(sprite_data):
     
     flowables = []
     
+    # Compact sizing defaults (tuned to fit on page 1)
+    header_font_size = 6
+    data_font_size = 7
+    header_row_h = 0.15 * inch
+    data_row_h = 0.22 * inch
+    entry_data_row_h = 0.38 * inch
+    spacer_width = 0.15 * inch
+
+    if compact:
+        header_font_size = 5
+        data_font_size = 6
+        header_row_h = 0.13 * inch
+        data_row_h = 0.20 * inch
+        entry_data_row_h = 0.32 * inch
+        spacer_width = 0.08 * inch
+
     # Define table style
     table_style = TableStyle([
         # Header row styling
@@ -157,9 +173,9 @@ def create_sprite_analysis_tables(sprite_data):
         ('ALIGN', (3, 0), (3, -1), 'CENTER'),
         ('VALIGN', (3, 0), (3, -1), 'MIDDLE'),
         ('FONTNAME', (0, 0), (-1, 0), font_name),
-        ('FONTSIZE', (0, 0), (-1, 0), 6),  # Reduced from 7 for better fit
+        ('FONTSIZE', (0, 0), (-1, 0), header_font_size),
         ('FONTNAME', (0, 1), (-1, -1), font_name),
-        ('FONTSIZE', (0, 1), (-1, -1), 7),  # Reduced from 8 for better fit
+        ('FONTSIZE', (0, 1), (-1, -1), data_font_size),
         ('LINEBELOW', (0, 0), (-1, 0), 0.5, colors.grey),
         ('BOX', (0, 0), (-1, -1), 0.5, colors.grey),
         ('INNERGRID', (0, 1), (-1, -1), 0.5, colors.grey),
@@ -345,8 +361,11 @@ def create_sprite_analysis_tables(sprite_data):
         # Save to temp file and return as ReportLab Image
         temp_path = f"/tmp/split_bar_{fill_color_hex}_{int(carry_pct)}_{int(pass_pct)}.png"
         img.save(temp_path)
-        # Increased size significantly for readability
-        return RLImage(temp_path, width=0.75*inch, height=0.35*inch)
+        # Keep compact so sprite block fits on page 1
+        bar_h = 0.35 * inch
+        if compact:
+            bar_h = 0.30 * inch
+        return RLImage(temp_path, width=0.75*inch, height=bar_h)
 
     
     # Generate split-bar images with Team Colors
@@ -360,7 +379,7 @@ def create_sprite_analysis_tables(sprite_data):
          f"{nf_away}%",  # Display as percentage
          home_logo if home_logo else home_abbrev,
          f"{nf_home}%"]  # Display as percentage
-    ], colWidths=[col_width]*4, rowHeights=[0.15*inch, 0.22*inch])  # Increased header height for centering
+    ], colWidths=[col_width]*4, rowHeights=[header_row_h, data_row_h])
     net_front_table.setStyle(table_style)
     net_front_table.setStyle(TableStyle([
         ('TEXTCOLOR', (1, 1), (1, 1), c_nf_away),
@@ -374,7 +393,7 @@ def create_sprite_analysis_tables(sprite_data):
          f"{int(sd_away)} ft",
          home_logo if home_logo else home_abbrev,
          f"{int(sd_home)} ft"]
-    ], colWidths=[col_width]*4, rowHeights=[0.15*inch, 0.22*inch])  # Increased header height for centering
+    ], colWidths=[col_width]*4, rowHeights=[header_row_h, data_row_h])
     shot_dist_table.setStyle(table_style)
     shot_dist_table.setStyle(TableStyle([
         ('TEXTCOLOR', (1, 1), (1, 1), c_sd_away),
@@ -389,7 +408,7 @@ def create_sprite_analysis_tables(sprite_data):
          ze_away_bar,
          home_logo if home_logo else home_abbrev,
          ze_home_bar]
-    ], colWidths=[0.3*inch, 0.75*inch, 0.3*inch, 0.75*inch], rowHeights=[0.15*inch, 0.38*inch])
+    ], colWidths=[0.3*inch, 0.75*inch, 0.3*inch, 0.75*inch], rowHeights=[header_row_h, entry_data_row_h])
     entry_table.setStyle(table_style)
     
     # Table 4: Passes
@@ -399,7 +418,7 @@ def create_sprite_analysis_tables(sprite_data):
          f"{pass_away}",
          home_logo if home_logo else home_abbrev,
          f"{pass_home}"]
-    ], colWidths=[col_width]*4, rowHeights=[0.15*inch, 0.22*inch])  # Increased header height for centering
+    ], colWidths=[col_width]*4, rowHeights=[header_row_h, data_row_h])
     pass_table.setStyle(table_style)
     pass_table.setStyle(TableStyle([
         ('TEXTCOLOR', (1, 1), (1, 1), c_pass_away),
@@ -410,7 +429,6 @@ def create_sprite_analysis_tables(sprite_data):
     from reportlab.platypus import Spacer
     
     # Create a container table with spacers between each table
-    spacer_width = 0.15*inch  # Space between tables
     horizontal_row = Table(
         [[net_front_table, Spacer(spacer_width, 1), shot_dist_table, Spacer(spacer_width, 1), entry_table, Spacer(spacer_width, 1), pass_table]], 
         colWidths=[col_width*4, spacer_width, col_width*4, spacer_width, 2.1*inch, spacer_width, col_width*4]

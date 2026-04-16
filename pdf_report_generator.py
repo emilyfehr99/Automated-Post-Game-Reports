@@ -248,6 +248,7 @@ class PostGameReportGenerator:
                 
                 # Determine game type from API data
                 game_type = "Regular Season"  # Default
+                playoff_game_number = None
                 try:
                     # Get game type from boxscore data
                     if 'boxscore' in game_data and 'gameType' in game_data['boxscore']:
@@ -266,24 +267,49 @@ class PostGameReportGenerator:
                         else:
                             game_type = f"Game Type {api_game_type}"
                     else:
-                        # Fallback: try to determine from game ID if API data not available
+                        # Fallback: derive game type from NHL 10-digit Game ID anatomy (YYYYGGGGGG)
+                        # - digits [4:6] are the game type code: 01 preseason, 02 regular, 03 playoffs, 04 all-star
                         if game_id:
-                            game_number = int(game_id[-2:]) if len(game_id) >= 2 else 0
-                            if game_number >= 1 and game_number <= 4:
-                                game_type = "Playoffs"
-                            elif game_number >= 5 and game_number <= 8:
-                                game_type = "Conference Finals"
-                            elif game_number >= 9 and game_number <= 12:
-                                game_type = "Stanley Cup Finals"
+                            gid = str(game_id)
+                            if len(gid) >= 6:
+                                game_type_code = gid[4:6]
+                                game_type = {
+                                    "01": "Preseason",
+                                    "02": "Regular Season",
+                                    "03": "Playoffs",
+                                    "04": "All-Star Game",
+                                }.get(game_type_code, f"Game Type {game_type_code}")
                 except (ValueError, TypeError, KeyError):
                     game_type = "Regular Season"
                 
+                # If this is a playoff Game ID (YYYY + 03 + RMMG), include "Game X" in the title.
+                # Example: 2024030411 -> Round 4, Matchup 01, Game 1
+                try:
+                    gid = str(game_id) if game_id is not None else ""
+                    if len(gid) >= 10 and gid[4:6] == "03":
+                        playoff_suffix = gid[-4:]
+                        if playoff_suffix.isdigit():
+                            game_num = int(playoff_suffix[-1])
+                            if 1 <= game_num <= 7:
+                                playoff_game_number = game_num
+                except Exception:
+                    playoff_game_number = None
+
                 # Calculate team name text position (left-aligned, moved 3cm right)
                 # For regular season, omit the 'Regular Season:' prefix
                 if game_type == "Regular Season":
                     team_text = f"{away_team} vs {home_team}"
                 else:
-                    team_text = f"{game_type}: {away_team} vs {home_team}"
+                    # For playoffs, omit the "Playoffs" label and use: "Game X: ABB vs ABB"
+                    if game_type == "Playoffs":
+                        if playoff_game_number is not None:
+                            team_text = f"Game {playoff_game_number}: {away_team} vs {home_team}"
+                        else:
+                            team_text = f"{away_team} vs {home_team}"
+                    elif playoff_game_number is not None:
+                        team_text = f"{game_type} — Game {playoff_game_number}: {away_team} vs {home_team}"
+                    else:
+                        team_text = f"{game_type}: {away_team} vs {home_team}"
                 team_bbox = draw.textbbox((0, 0), team_text, font=font)
                 team_text_width = team_bbox[2] - team_bbox[0]
                 team_text_height = team_bbox[3] - team_bbox[1]
@@ -417,6 +443,28 @@ class PostGameReportGenerator:
                     else:
                         # Fallback to game_center data
                         game_date = game_data['game_center']['game']['gameDate']
+
+                    # Format date like "May 1st, 2026"
+                    try:
+                        from datetime import datetime as _dt
+
+                        def _ordinal(n: int) -> str:
+                            if 11 <= (n % 100) <= 13:
+                                suffix = "th"
+                            else:
+                                suffix = {1: "st", 2: "nd", 3: "rd"}.get(n % 10, "th")
+                            return f"{n}{suffix}"
+
+                        _d = None
+                        if isinstance(game_date, str):
+                            _d = _dt.strptime(game_date[:10], "%Y-%m-%d")
+                        elif hasattr(game_date, "year") and hasattr(game_date, "month") and hasattr(game_date, "day"):
+                            _d = game_date
+
+                        if _d is not None:
+                            game_date = f"{_d.strftime('%B')} {_ordinal(_d.day)}, {_d.year}"
+                    except Exception:
+                        pass
                     
                     # Get scores from boxscore (most reliable)
                     boxscore = game_data['boxscore']
@@ -461,10 +509,17 @@ class PostGameReportGenerator:
                 
                 # Calculate subtitle text position (left-aligned below team names, moved up 2cm)
                 # Only add game ending indicator if it's OT or SO
-                if game_ending:
-                    subtitle_text = f"Post Game Report: {game_date} | {away_score}-{home_score} {winner} WINS ({game_ending})"
+                if winner != "TIE":
+                    winner_score = max(away_score, home_score)
+                    loser_score = min(away_score, home_score)
+                    score_str = f"{winner_score}-{loser_score}"
                 else:
-                    subtitle_text = f"Post Game Report: {game_date} | {away_score}-{home_score} {winner} WINS"
+                    score_str = f"{away_score}-{home_score}"
+
+                if game_ending:
+                    subtitle_text = f"{game_date} | {winner} WINS {score_str} ({game_ending})"
+                else:
+                    subtitle_text = f"{game_date} | {winner} WINS {score_str}"
                 subtitle_bbox = draw.textbbox((0, 0), subtitle_text, font=subtitle_font)
                 subtitle_text_width = subtitle_bbox[2] - subtitle_bbox[0]
                 subtitle_text_height = subtitle_bbox[3] - subtitle_bbox[1]
@@ -1547,7 +1602,15 @@ class PostGameReportGenerator:
             stats_table.setStyle(TableStyle(table_style))
         
             story.append(stats_table)
-            story.append(Spacer(1, 10))  # Reduced spacing to move table closer to header
+            # OT-only layout: move everything below this table up (to make room for sprite block on page 1).
+            spacer_after_period_table = 10
+            try:
+                if 'has_ot' in locals() and has_ot:
+                    # Total OT shift: 0.5 cm (~14.175 pt) upward from the original 10pt spacer
+                    spacer_after_period_table = max(0, spacer_after_period_table - 14.175)
+            except Exception:
+                pass
+            story.append(Spacer(1, spacer_after_period_table))  # Reduced spacing to move table closer to header
             
         except Exception as e:
             print(f"Error creating team stats comparison: {e}")
@@ -4258,36 +4321,25 @@ class PostGameReportGenerator:
         
         # Add Sprite Goal Analysis Tables (if data available)
         try:
-            # Check for OT/SO from play-by-play data before generating sprite tables
-            game_ending = ""
+            has_ot_for_layout = False
             try:
-                play_by_play_data = game_data.get('play_by_play', {})
-                if play_by_play_data and 'plays' in play_by_play_data:
-                    for play in play_by_play_data['plays']:
-                        period_type = play.get('periodDescriptor', {}).get('periodType', 'REG')
-                        if period_type == 'SO':
-                            game_ending = "SO"
-                            break
-                        elif period_type == 'OT':
-                            game_ending = "OT"
-                            # Don't break - keep checking for SO
-            except:
-                pass
-                
-            if game_ending in ["OT", "SO"]:
-                print(f"Note: Skipping Sprite analysis because game went to {game_ending}")
-            else:
-                from sprite_goal_analyzer import SpriteGoalAnalyzer
-                from sprite_table_generator import create_sprite_analysis_tables
-                
-                analyzer = SpriteGoalAnalyzer()
-                sprite_data = analyzer.analyze_game_goals_by_team(game_id)
-                
-                if sprite_data:
-                    # Add sprite tables at bottom with spacing
-                    story.append(Spacer(1, -15))  # Moved up 0.5cm (approx 14pts) from -1 to fit on page 1
-                    sprite_tables = create_sprite_analysis_tables(sprite_data)
-                    story.extend(sprite_tables)
+                has_ot_for_layout = self._check_for_ot_period(game_data)
+            except Exception:
+                has_ot_for_layout = False
+
+            # Always attempt sprite analysis (even for OT/SO) and compact it to fit page 1.
+            from sprite_goal_analyzer import SpriteGoalAnalyzer
+            from sprite_table_generator import create_sprite_analysis_tables
+            
+            analyzer = SpriteGoalAnalyzer()
+            sprite_data = analyzer.analyze_game_goals_by_team(game_id)
+            
+            if sprite_data:
+                # Add sprite tables at bottom with spacing.
+                # OT games use a tighter layout to keep sprite on page 1.
+                story.append(Spacer(1, -20.7 if has_ot_for_layout else -15))
+                sprite_tables = create_sprite_analysis_tables(sprite_data, compact=has_ot_for_layout)
+                story.extend(sprite_tables)
         except Exception as e:
             print(f"Note: Sprite analysis not available: {e}")
         
