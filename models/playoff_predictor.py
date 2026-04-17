@@ -1,23 +1,46 @@
 #!/usr/bin/env python3
 import json
 import random
+from typing import Any, Dict, Optional
+
 import numpy as np
 from pathlib import Path
 from score_prediction_model import ScorePredictionModel
+
+# NHL playoff round index (simulate_2026_playoffs_master) -> round-depth model target
+_ROUND_MODEL_TARGET = {
+    1: "won_round_1",
+    2: "won_round_2",
+    3: "won_conference",
+    4: "won_cup",
+}
+
 
 class PlayoffSeriesPredictor:
     """Best-of-7 series simulation based on 'DNA of Playoff Success' Audit weights."""
     
     def __init__(self):
+        base_dir = Path(__file__).resolve().parent.parent  # automated-post-game-reports/
         self.model = ScorePredictionModel()
-        self.metrics_path = Path('data/team_advanced_metrics.json')
-        self.edge_path = Path('data/team_edge_profiles.json')
+        self.metrics_path = base_dir / 'data' / 'team_advanced_metrics.json'
+        self.edge_path = base_dir / 'data' / 'team_edge_profiles.json'
+        self.historical_weights_path = base_dir / 'data' / 'ultimate_tactical_weights.json'
+        self.cup_prior_path = base_dir / 'data' / 'cup_prior_current.json'
+        self.round_models_path = base_dir / 'data' / 'reg_season_playoff_round_models_5yr.json'
+        self.round_features_path = base_dir / 'data' / 'reg_season_team_features_current.json'
         self.advanced_metrics = {}
         self.edge_profiles = {}
         self.starters = {}
+        self.cup_priors = {}
+        self.round_models: Dict[str, Dict[str, Any]] = {}
+        self.round_team_features: Dict[str, Dict[str, float]] = {}
+        self.metric_norms = {}
         self._load_metrics()
         self._load_starters()
         self._load_edge_data()
+        self._load_cup_priors()
+        self._load_round_models()
+        self._load_round_team_features()
         
         # FINAL 5-YEAR CHAMPIONSHIP WEIGHTS (Tactical Audit v2.1 2020-2025)
         # These weights prioritize offensive zone persistence and transition efficiency.
@@ -35,6 +58,77 @@ class PlayoffSeriesPredictor:
             # Possession Starters (Phase 19 Integration)
             'ozone_faceoff_pct': 0.05,      # Clean wins drive immediate persistence
         }
+        self._load_historical_weights()
+        self._compute_metric_norms()
+
+    def _load_historical_weights(self):
+        """
+        If available, prefer learned weights derived from historical playoff outcomes.
+        File format expected:
+          { "weights": { "avg_en_to_s": 0.21, ... }, "updated_at": "YYYY-MM-DD" }
+        """
+        if not self.historical_weights_path.exists():
+            return
+        try:
+            with open(self.historical_weights_path) as f:
+                w = json.load(f)
+            learned = w.get("weights", {})
+            if not isinstance(learned, dict) or not learned:
+                return
+
+            # Only update keys we already understand (avoid silently adding unknown features)
+            for k, v in learned.items():
+                if k in self.PLAYOFF_WEIGHTS and isinstance(v, (int, float)):
+                    self.PLAYOFF_WEIGHTS[k] = float(v)
+            print(f"🏆 Loaded learned historical playoff weights ({w.get('updated_at', 'unknown date')})")
+        except Exception:
+            return
+
+    def _compute_metric_norms(self):
+        """
+        Compute league-wide mean/std for each weighted metric so we apply weights on a
+        comparable scale (z-scores) instead of raw, differently-scaled values.
+        """
+        if not isinstance(self.advanced_metrics, dict) or not self.advanced_metrics:
+            return
+
+        norms = {}
+        for metric in self.PLAYOFF_WEIGHTS.keys():
+            if metric.startswith("edge"):
+                continue
+            vals = []
+            for team, stats in self.advanced_metrics.items():
+                if not isinstance(stats, dict):
+                    continue
+                v = stats.get(metric, None)
+                if isinstance(v, (int, float)):
+                    vals.append(float(v))
+            if len(vals) >= 8:
+                mean = float(np.mean(vals))
+                std = float(np.std(vals))
+                if std <= 1e-9:
+                    std = 1.0
+                norms[metric] = {"mean": mean, "std": std}
+
+        # Edge metrics norms (optional)
+        if isinstance(self.edge_profiles, dict) and self.edge_profiles:
+            speed_vals = []
+            burst_vals = []
+            for team, edge in self.edge_profiles.items():
+                if not isinstance(edge, dict):
+                    continue
+                s = edge.get("avg_top_speed")
+                b = edge.get("avg_burst_frequency")
+                if isinstance(s, (int, float)):
+                    speed_vals.append(float(s))
+                if isinstance(b, (int, float)):
+                    burst_vals.append(float(b))
+            if len(speed_vals) >= 8:
+                norms["edge_avg_top_speed"] = {"mean": float(np.mean(speed_vals)), "std": float(np.std(speed_vals)) or 1.0}
+            if len(burst_vals) >= 8:
+                norms["edge_avg_burst_frequency"] = {"mean": float(np.mean(burst_vals)), "std": float(np.std(burst_vals)) or 1.0}
+
+        self.metric_norms = norms
 
     def _load_metrics(self):
         if self.metrics_path.exists():
@@ -72,31 +166,192 @@ class PlayoffSeriesPredictor:
                 self.edge_profiles = json.load(f)
             print(f"⛸️  Loaded high-fidelity Edge tracking profiles for {len(self.edge_profiles)} teams")
 
-    def get_team_playoff_modifier(self, team_abbr):
-        """Calculate the 'Playoff Integrity' modifier for a team."""
+    def _load_cup_priors(self):
+        """Load regular-season-derived Cup priors (optional)."""
+        if not self.cup_prior_path.exists():
+            return
+        try:
+            with open(self.cup_prior_path) as f:
+                data = json.load(f)
+            teams = data.get("teams", {})
+            if isinstance(teams, dict):
+                self.cup_priors = teams
+                print(f"📌 Loaded Cup priors for {len(self.cup_priors)} teams (regular-season model)")
+        except Exception:
+            return
+
+    def _load_round_models(self):
+        """Load regular-season → playoff-depth logistic models (optional)."""
+        if not self.round_models_path.exists():
+            return
+        try:
+            with open(self.round_models_path) as f:
+                data = json.load(f)
+        except Exception:
+            return
+        targets = data.get("targets", {})
+        if not isinstance(targets, dict):
+            return
+        for key, block in targets.items():
+            if not isinstance(block, dict) or block.get("skipped"):
+                continue
+            pos = block.get("positives")
+            neg = block.get("negatives")
+            try:
+                pos_i = int(pos)
+                neg_i = int(neg)
+            except (TypeError, ValueError):
+                continue
+            if pos_i + neg_i <= 0:
+                continue
+            logistic = block.get("logistic") or {}
+            scaler = block.get("scaler") or {}
+            coef = logistic.get("coef")
+            mean = scaler.get("mean")
+            scale = scaler.get("scale")
+            if not isinstance(coef, dict) or not isinstance(mean, dict) or not isinstance(scale, dict):
+                continue
+            try:
+                intercept = float(logistic.get("intercept", 0.0))
+            except (TypeError, ValueError):
+                continue
+            self.round_models[key] = {
+                "intercept": intercept,
+                "coef": {str(k): float(v) for k, v in coef.items() if isinstance(v, (int, float))},
+                "mean": {str(k): float(v) for k, v in mean.items() if isinstance(v, (int, float))},
+                "scale": {str(k): float(v) for k, v in scale.items() if isinstance(v, (int, float))},
+                "baseline": float(pos_i) / float(pos_i + neg_i),
+            }
+        if self.round_models:
+            print(f"📊 Loaded {len(self.round_models)} regular-season → playoff round models")
+
+    def _load_round_team_features(self):
+        """Per-team feature vector for the current season (from Cup training export)."""
+        if not self.round_features_path.exists():
+            return
+        try:
+            with open(self.round_features_path) as f:
+                data = json.load(f)
+            teams = data.get("teams", {})
+            if not isinstance(teams, dict):
+                return
+            for ab, feats in teams.items():
+                if not isinstance(feats, dict):
+                    continue
+                k = str(ab).strip().upper()
+                self.round_team_features[k] = {
+                    str(fn): float(fv) for fn, fv in feats.items() if isinstance(fv, (int, float))
+                }
+            if self.round_team_features:
+                print(f"📐 Loaded current-season feature rows for {len(self.round_team_features)} teams (round priors)")
+        except Exception:
+            return
+
+    @staticmethod
+    def _logit_delta_vs_baseline(p_model: float, baseline: float, strength: float = 0.03) -> float:
+        p = max(1e-6, min(1.0 - 1e-6, float(p_model)))
+        b = max(1e-6, min(1.0 - 1e-6, float(baseline)))
+        return float(np.log(p / (1.0 - p)) - np.log(b / (1.0 - b))) * strength
+
+    def _round_model_linear_logit(self, team_abbr: str, target: str) -> Optional[float]:
+        m = self.round_models.get(target)
+        if not m:
+            return None
+        feats = self.round_team_features.get(str(team_abbr).strip().upper())
+        if not feats:
+            return None
+        total = float(m["intercept"])
+        for fname, c in m["coef"].items():
+            if abs(c) < 1e-15:
+                continue
+            raw = feats.get(fname)
+            if raw is None:
+                raw = 0.0
+            mean = float(m["mean"].get(fname, 0.0))
+            sc = float(m["scale"].get(fname, 1.0))
+            if sc <= 1e-12:
+                sc = 1.0
+            z = (float(raw) - mean) / sc
+            total += float(c) * z
+        return total
+
+    def get_team_playoff_modifier(self, team_abbr, playoff_round: Optional[int] = None):
+        """
+        Playoff Integrity modifier: tactical DNA (+ optional Cup / round-depth priors).
+
+        ``playoff_round`` 1–4 selects which regular-season→playoff-depth model to blend
+        (R1 … Cup). ``None`` skips round-depth priors (DNA + Cup only).
+        """
         stats = self.advanced_metrics.get(team_abbr, {})
         edge = self.edge_profiles.get(team_abbr, {})
-        
-        if not stats: return 1.0
-            
-        modifier = 0
-        # Tactical PBP Metrics
-        for metric, weight in self.PLAYOFF_WEIGHTS.items():
-            if metric.startswith('edge'): continue # Handle edge separately
-            val = stats.get(metric, 0)
-            modifier += (val * weight)
-            
-        # Edge Tracking Metrics
-        # Baseline Speed: 21.5 mph, Burst: 0.5/mile
-        speed_delta = (edge.get('avg_top_speed', 21.5) - 21.5) * self.PLAYOFF_WEIGHTS['edge_top_speed']
-        burst_delta = (edge.get('avg_burst_frequency', 0.5) - 0.5) * self.PLAYOFF_WEIGHTS['edge_burst_frequency']
-        
-        modifier += speed_delta + burst_delta
-            
-        # Normalization
+
+        modifier = 0.0
+        if stats:
+            # Tactical PBP Metrics
+            for metric, weight in self.PLAYOFF_WEIGHTS.items():
+                if metric.startswith('edge'): continue # Handle edge separately
+                val = stats.get(metric, 0)
+                if not isinstance(val, (int, float)):
+                    continue
+                val = float(val)
+                # z-score normalize if we have league norms
+                if metric in self.metric_norms:
+                    mean = self.metric_norms[metric]["mean"]
+                    std = self.metric_norms[metric]["std"]
+                    val = (val - mean) / std
+                modifier += (val * weight)
+
+            # Edge Tracking Metrics
+            speed = edge.get('avg_top_speed', None)
+            burst = edge.get('avg_burst_frequency', None)
+            if isinstance(speed, (int, float)):
+                speed = float(speed)
+                if "edge_avg_top_speed" in self.metric_norms:
+                    n = self.metric_norms["edge_avg_top_speed"]
+                    speed = (speed - n["mean"]) / n["std"]
+                else:
+                    speed = (speed - 21.5)
+            else:
+                speed = 0.0
+
+            if isinstance(burst, (int, float)):
+                burst = float(burst)
+                if "edge_avg_burst_frequency" in self.metric_norms:
+                    n = self.metric_norms["edge_avg_burst_frequency"]
+                    burst = (burst - n["mean"]) / n["std"]
+                else:
+                    burst = (burst - 0.5)
+            else:
+                burst = 0.0
+
+            speed_delta = speed * self.PLAYOFF_WEIGHTS['edge_top_speed']
+            burst_delta = burst * self.PLAYOFF_WEIGHTS['edge_burst_frequency']
+
+            modifier += speed_delta + burst_delta
+
+        # Regular-season Cup prior (learned from last-5-years): keep this small.
+        prior = None
+        try:
+            prior = float(self.cup_priors.get(team_abbr, {}).get("cup_prior_norm"))
+        except Exception:
+            prior = None
+        if prior is not None and prior > 0:
+            baseline = 1.0 / 32.0
+            modifier += self._logit_delta_vs_baseline(prior, baseline, strength=0.03)
+
+        # Regular-season → depth model for this playoff round (optional)
+        if playoff_round is not None:
+            target = _ROUND_MODEL_TARGET.get(int(playoff_round))
+            if target and target in self.round_models:
+                lin = self._round_model_linear_logit(team_abbr, target)
+                if lin is not None:
+                    p_depth = float(1.0 / (1.0 + np.exp(-lin)))
+                    b_depth = float(self.round_models[target]["baseline"])
+                    modifier += self._logit_delta_vs_baseline(p_depth, b_depth, strength=0.025)
+
         return modifier * 0.1
 
-    def calculate_game_win_prob(self, away_team, home_team):
+    def calculate_game_win_prob(self, away_team, home_team, playoff_round: Optional[int] = None):
         """Calculate the single-game win probability with playoff tuning."""
         # Identify starters
         away_goalie = self.starters.get(away_team)
@@ -111,8 +366,8 @@ class PlayoffSeriesPredictor:
         away_prob = res['away_win_prob']
         
         # Apply Playoff Modifiers
-        away_mod = self.get_team_playoff_modifier(away_team)
-        home_mod = self.get_team_playoff_modifier(home_team)
+        away_mod = self.get_team_playoff_modifier(away_team, playoff_round=playoff_round)
+        home_mod = self.get_team_playoff_modifier(home_team, playoff_round=playoff_round)
         
         # Balance out the shift (if Away has better DNA, they get a boost, and vice-versa)
         net_shift = away_mod - home_mod
@@ -120,7 +375,7 @@ class PlayoffSeriesPredictor:
         final_away_prob = np.clip(away_prob + net_shift, 0.01, 0.99)
         return final_away_prob
 
-    def simulate_series(self, away, home, away_wins=0, home_wins=0, simulations=10000):
+    def simulate_series(self, away, home, away_wins=0, home_wins=0, simulations=10000, playoff_round: Optional[int] = None):
         """
         Simulate a Best-of-7 Series (2-2-1-1-1 Home-Ice Format).
         Supports mid-series simulations if away_wins/home_wins are provided.
@@ -129,8 +384,8 @@ class PlayoffSeriesPredictor:
         total_games_completed = 0
         
         # Pre-calculate win probs for both venues
-        p_away_at_home = self.calculate_game_win_prob(away, home)
-        p_home_at_away = self.calculate_game_win_prob(home, away)
+        p_away_at_home = self.calculate_game_win_prob(away, home, playoff_round=playoff_round)
+        p_home_at_away = self.calculate_game_win_prob(home, away, playoff_round=playoff_round)
         p_away_at_away = 1 - p_home_at_away
         
         # Format: H-H-A-A-H-A-H

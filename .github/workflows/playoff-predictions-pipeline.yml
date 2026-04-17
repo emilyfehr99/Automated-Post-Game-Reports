@@ -1,9 +1,9 @@
 # One-click pipeline: optional 5-season label rebuild → train round + Cup models
 # → export current team features / priors → Monte Carlo bracket sim → optional commit.
 #
-# Requires committed inputs: data/reg_season_cup_5yr.json (unless you enable rebuild_dataset),
-# data/historical/<season>/ for richer microstats in training, and data/team_advanced_metrics.json
-# (and related files) for the simulator — same as local runs.
+# Requires data/reg_season_cup_5yr.json (or .csv) in the repo unless rebuild_dataset is enabled.
+# Optional: data/historical/<season>/team_season_aggregate.json for richer microstats in training.
+# Simulator uses data/team_advanced_metrics.json and related files (same as local runs).
 
 name: Playoff predictions pipeline
 
@@ -57,6 +57,14 @@ jobs:
         run: |
           python -m pip install --upgrade pip
           pip install -r requirements.txt
+
+      - name: Verify 5-season dataset is present
+        if: ${{ !inputs.rebuild_dataset }}
+        run: |
+          if [ ! -f data/reg_season_cup_5yr.json ] && [ ! -f data/reg_season_cup_5yr.csv ]; then
+            echo "::error::Missing data/reg_season_cup_5yr.json (or .csv). Commit it from scripts/build_regular_season_cup_dataset_5yr.py or re-run this workflow with rebuild_dataset enabled."
+            exit 1
+          fi
 
       - name: Rebuild 5-season regular-season + playoff labels (optional)
         if: ${{ inputs.rebuild_dataset }}

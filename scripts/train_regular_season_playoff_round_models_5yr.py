@@ -8,9 +8,13 @@ Targets (from build_regular_season_cup_dataset_5yr.py / playoff-bracket parsing)
   - won_cup: won four series
 
 Requires:
-  - data/reg_season_cup_5yr.json (labels + standings keys for merge)
-  - data/historical/<season>/team_season_aggregate.json (microstats), optionalOutput:
-  - data/reg_season_playoff_round_models_5yr.json
+  - data/reg_season_cup_5yr.json (standings + playoff labels)
+  - data/historical/<season>/team_season_aggregate.json (microstats), optional — merged when present
+
+Writes data/reg_season_playoff_round_models_5yr.json.
+
+For simulations, run scripts/train_regular_season_cup_model_5yr.py to refresh
+data/reg_season_team_features_current.json (same feature columns as these models).
 """
 
 from __future__ import annotations
@@ -32,16 +36,12 @@ _PROJECT_DIR = _SCRIPT_DIR.parent
 _DATA_DIR = _PROJECT_DIR / "data"
 
 sys.path.insert(0, str(_SCRIPT_DIR))
-from train_regular_season_cup_model_5yr import FEATURES, HIST_FEATURE_PREFIXES  # noqa: E402
-
-LABEL_MERGE_COLS = [
-    "made_playoffs",
-    "playoff_series_wins",
-    "won_round_1",
-    "won_round_2",
-    "won_conference",
-    "won_cup",
-]
+from train_regular_season_cup_model_5yr import (  # noqa: E402
+    FEATURES,
+    HIST_FEATURE_PREFIXES,
+    enrich_df_with_historical_microstats,
+    load_reg_season_cup_rows,
+)
 
 TARGETS: List[Tuple[str, str]] = [
     ("won_round_1", "Won at least one playoff series (advanced past R1)"),
@@ -51,50 +51,11 @@ TARGETS: List[Tuple[str, str]] = [
 ]
 
 
-def _load_hist_frame() -> pd.DataFrame:
-    hist_root = _DATA_DIR / "historical"
-    seasons = ["20202021", "20212022", "20222023", "20232024", "20242025"]
-    hist_rows = []
-    for s in seasons:
-        agg_path = hist_root / s / "team_season_aggregate.json"
-        if not agg_path.exists():
-            continue
-        try:
-            agg = json.loads(agg_path.read_text())
-            teams = agg.get("teams", {})
-            for team, feats in teams.items():
-                row = {"season": s, "team": team}
-                for k, v in feats.items():
-                    if isinstance(v, (int, float)) and k != "games":
-                        row[k] = float(v)
-                hist_rows.append(row)
-        except Exception:
-            continue
-    if not hist_rows:
-        raise SystemExit("No data/historical/<season>/team_season_aggregate.json found.")
-    return pd.DataFrame(hist_rows)
-
-
-def _label_frame() -> pd.DataFrame:
-    path = _DATA_DIR / "reg_season_cup_5yr.json"
-    if not path.exists():
-        raise SystemExit("Missing data/reg_season_cup_5yr.json — run build_regular_season_cup_dataset_5yr.py")
-    rows = json.loads(path.read_text()).get("rows", [])
-    if not rows:
-        raise SystemExit("reg_season_cup_5yr.json has no rows")
-    df = pd.DataFrame(rows)
-    keep = ["season", "team"] + [c for c in LABEL_MERGE_COLS if c in df.columns]
-    return df[keep]
-
-
 def main() -> None:
-    df = _load_hist_frame()
-    labels = _label_frame()
-    df["season"] = df["season"].astype(str)
-    df["team"] = df["team"].astype(str)
-    labels["season"] = labels["season"].astype(str)
-    labels["team"] = labels["team"].astype(str)
-    df = df.merge(labels, on=["season", "team"], how="inner")
+    rows = load_reg_season_cup_rows()
+    df = enrich_df_with_historical_microstats(pd.DataFrame(rows))
+    if "made_playoffs" not in df.columns:
+        raise SystemExit("reg_season_cup_5yr rows missing made_playoffs (rebuild dataset).")
     df = df[df["made_playoffs"] == 1].copy()
     if len(df) < 30:
         raise SystemExit(f"Too few playoff-team rows after merge: {len(df)}")

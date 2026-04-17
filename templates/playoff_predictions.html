@@ -3,7 +3,7 @@
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>NHL Playoff Probabilities</title>
+    <title>NHL Playoff Bracket Predictions</title>
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -158,7 +158,7 @@
     
     <div class="container">
         <header>
-            <h1>🏆 Playoff Probabilities</h1>
+            <h1>🏆 Playoff Predictions</h1>
             <div class="nav-links">
                 <a href="/">Daily Predictions</a>
                 <a href="/playoffs" class="active">Playoff Probabilities</a>
@@ -169,36 +169,47 @@
         <div id="error" class="error" style="display: none;"></div>
         <div id="content" style="display: none;">
             <div class="standings-section">
-                <h3>Playoff Probabilities</h3>
-                <p>Probability each team makes the playoffs based on current standings and remaining schedule</p>
-                <div id="probabilities-content"></div>
+                <h3>2026 Stanley Cup Bracket Forecast</h3>
+                <p>Round 1 series win probabilities + round advancement odds (Monte Carlo bracket simulation)</p>
+                <div id="bracket-meta" style="margin: 10px 0 20px; color: #888; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;"></div>
+                <div id="round1-content"></div>
+                <div style="height: 24px;"></div>
+                <div id="cup-odds-content"></div>
+                <div style="height: 24px;"></div>
+                <div id="path-content"></div>
+                <div style="height: 24px;"></div>
+                <div id="regseason-content"></div>
             </div>
         </div>
     </div>
 
     <script>
+        function pct(x) {
+            if (typeof x !== 'number') return '—';
+            return `${(x * 100).toFixed(1)}%`;
+        }
+
         async function loadPredictions() {
             const loading = document.getElementById('loading');
             const error = document.getElementById('error');
             const content = document.getElementById('content');
-            
+
             loading.style.display = 'block';
             error.style.display = 'none';
             content.style.display = 'none';
 
             try {
-                const probResponse = await fetch('/api/playoffs/probabilities');
-                const probData = await probResponse.json();
+                const bracketResponse = await fetch('/api/playoffs/bracket');
+                const bracketJson = await bracketResponse.json();
 
-                if (!probData.success) {
-                    throw new Error(probData.error || 'Failed to load probabilities');
+                if (!bracketJson.success) {
+                    throw new Error(bracketJson.error || 'Failed to load playoff bracket predictions');
                 }
 
-                displayProbabilities(probData.probabilities);
+                displayBracketPredictions(bracketJson.data);
 
                 loading.style.display = 'none';
                 content.style.display = 'block';
-
             } catch (err) {
                 console.error('Error loading predictions:', err);
                 loading.style.display = 'none';
@@ -207,79 +218,293 @@
             }
         }
 
-        function displayProbabilities(probabilities) {
-            const probabilitiesContent = document.getElementById('probabilities-content');
-            
-            if (!probabilities || Object.keys(probabilities).length === 0) {
-                probabilitiesContent.innerHTML = '<p style="color: #888;">No playoff probability data available.</p>';
+        function displayBracketPredictions(data) {
+            const metaEl = document.getElementById('bracket-meta');
+            const r1El = document.getElementById('round1-content');
+            const cupEl = document.getElementById('cup-odds-content');
+            const pathEl = document.getElementById('path-content');
+            const regEl = document.getElementById('regseason-content');
+
+            if (!data || !data.round1_series_odds || !data.advancement_probabilities) {
+                metaEl.textContent = '';
+                r1El.innerHTML = '<p style="color:#888;">No bracket prediction data available.</p>';
+                cupEl.innerHTML = '';
+                pathEl.innerHTML = '';
+                regEl.innerHTML = '';
                 return;
             }
 
-            const sortedTeams = Object.entries(probabilities)
-                .sort((a, b) => (b[1].playoff_probability || 0) - (a[1].playoff_probability || 0));
+            const meta = data.meta || {};
+            metaEl.textContent = `generated_at_utc=${meta.generated_at_utc || 'unknown'} • iterations=${meta.iterations || '—'} • season=${meta.season || '—'}`;
 
-            const eastern = sortedTeams.filter(([team, data]) => 
-                data.conference && data.conference.toLowerCase().includes('east'));
-            const western = sortedTeams.filter(([team, data]) => 
-                data.conference && data.conference.toLowerCase().includes('west'));
-            const unknown = sortedTeams.filter(([team, data]) => 
-                !data.conference || (!data.conference.toLowerCase().includes('east') && !data.conference.toLowerCase().includes('west')));
+            const east = (data.round1_series_odds.East || []);
+            const west = (data.round1_series_odds.West || []);
+            const adv = (data.advancement_probabilities || []).slice().sort((a, b) => (b.cup || 0) - (a.cup || 0));
 
-            let html = '';
+            r1El.innerHTML = `
+                <h4 style="color:#c8102e; margin-top: 10px; margin-bottom: 10px;">Round 1 Series Odds</h4>
+                ${createSeriesTable('Eastern Conference', east)}
+                <div style="height: 18px;"></div>
+                ${createSeriesTable('Western Conference', west)}
+            `;
 
-            if (eastern.length > 0) {
-                html += '<h4 style="color: #c8102e; margin-top: 20px; margin-bottom: 15px;">Eastern Conference</h4>';
-                html += createProbabilitiesTable(eastern);
-            }
+            cupEl.innerHTML = `
+                <h4 style="color:#c8102e; margin-top: 10px; margin-bottom: 10px;">Cup Odds + Advancement</h4>
+                ${createCupOddsTable(adv)}
+            `;
 
-            if (western.length > 0) {
-                html += '<h4 style="color: #c8102e; margin-top: 30px; margin-bottom: 15px;">Western Conference</h4>';
-                html += createProbabilitiesTable(western);
-            }
+            const path = data.path_difficulty || {};
+            const oppPaths = data.opponent_paths || {};
+            pathEl.innerHTML = `
+                <h4 style="color:#c8102e; margin-top: 10px; margin-bottom: 10px;">Path to Cup Difficulty</h4>
+                <p style="color:#888; margin-bottom: 10px;">
+                    Difficulty index = sum of expected \\(-\\ln(P(Win Series))\\) across rounds based on likely opponents.
+                    Higher = harder path.
+                </p>
+                ${createPathDifficultyTable(adv, path, oppPaths)}
+            `;
 
-            if (unknown.length > 0) {
-                html += '<h4 style="color: #c8102e; margin-top: 30px; margin-bottom: 15px;">Other Teams</h4>';
-                html += createProbabilitiesTable(unknown);
-            }
-
-            probabilitiesContent.innerHTML = html;
+            // Kick off regular-season -> Cup model section (async)
+            loadRegSeasonCupModel(regEl);
         }
 
-        function createProbabilitiesTable(teams) {
-            let html = `
+        function createSeriesTable(title, series) {
+            if (!series || series.length === 0) {
+                return `<p style="color:#888;">No series data for ${title}.</p>`;
+            }
+
+            const rows = series.map(s => {
+                const cs = s.current_wins || {};
+                const score = `${s.away} ${cs.away ?? 0} - ${cs.home ?? 0} ${s.home}`;
+                const fav = (s.home_series_win_prob ?? 0) >= (s.away_series_win_prob ?? 0) ? s.home : s.away;
+                const favPct = Math.max(s.home_series_win_prob ?? 0, s.away_series_win_prob ?? 0);
+                return `
+                    <tr>
+                        <td style="font-weight:700; color:#fff;">${s.label || 'R1'}</td>
+                        <td>${score}</td>
+                        <td style="color:#c8102e; font-weight:700;">${fav}</td>
+                        <td>${pct(favPct)}</td>
+                        <td>${pct(s.away_series_win_prob)}</td>
+                        <td>${pct(s.home_series_win_prob)}</td>
+                        <td>${typeof s.avg_remaining_games === 'number' ? s.avg_remaining_games.toFixed(1) : '—'}</td>
+                    </tr>
+                `;
+            }).join('');
+
+            return `
+                <div style="margin: 10px 0 10px; color:#fff; font-weight:700;">${title}</div>
                 <table class="standings-table">
                     <thead>
                         <tr>
-                            <th>Team</th>
-                            <th>Playoff %</th>
-                            <th>Points</th>
-                            <th>Record</th>
-                            <th>GP</th>
-                            <th>Remaining</th>
+                            <th>Series</th>
+                            <th>Current</th>
+                            <th>Projected</th>
+                            <th>Win%</th>
+                            <th>Away win%</th>
+                            <th>Home win%</th>
+                            <th>Avg games left</th>
                         </tr>
                     </thead>
-                    <tbody>
+                    <tbody>${rows}</tbody>
+                </table>
             `;
+        }
 
-            teams.forEach(([team, data]) => {
-                const prob = (data.playoff_probability * 100).toFixed(1);
-                const probColor = prob >= 90 ? '#4ade80' : prob >= 50 ? '#fbbf24' : prob >= 10 ? '#fb923c' : '#ef4444';
-                const record = `${data.wins}-${data.losses}-${data.ot_losses}`;
+        function createCupOddsTable(rows) {
+            if (!rows || rows.length === 0) {
+                return '<p style="color:#888;">No advancement data available.</p>';
+            }
 
-                html += `
+            const top = rows.slice(0, 16);
+            const body = top.map((r, idx) => `
+                <tr>
+                    <td style="font-weight:700; color:#fff;">${idx + 1}</td>
+                    <td style="font-weight:800; color:#fff;">${r.team}</td>
+                    <td>${pct(r.r2)}</td>
+                    <td>${pct(r.r3)}</td>
+                    <td>${pct(r.fin)}</td>
+                    <td style="color:#c8102e; font-weight:800;">${pct(r.cup)}</td>
+                </tr>
+            `).join('');
+
+            return `
+                <table class="standings-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Team</th>
+                            <th>Make R2</th>
+                            <th>Make CF</th>
+                            <th>Make Final</th>
+                            <th>Win Cup</th>
+                        </tr>
+                    </thead>
+                    <tbody>${body}</tbody>
+                </table>
+            `;
+        }
+
+        function topOpponents(dist, k=3) {
+            if (!dist) return [];
+            return Object.entries(dist)
+                .sort((a, b) => (b[1] || 0) - (a[1] || 0))
+                .slice(0, k);
+        }
+
+        function fmtOppList(list) {
+            if (!list || list.length === 0) return '—';
+            return list.map(([t, p]) => `${t} ${(p * 100).toFixed(0)}%`).join(', ');
+        }
+
+        function createPathDifficultyTable(advRows, path, oppPaths) {
+            const teams = (advRows || []).slice().sort((a, b) => {
+                const ia = path?.[a.team]?.index ?? Infinity;
+                const ib = path?.[b.team]?.index ?? Infinity;
+                return ia - ib;
+            }).slice(0, 16);
+
+            const body = teams.map((r, idx) => {
+                const t = r.team;
+                const p = path?.[t] || {};
+                const idxVal = (typeof p.index === 'number') ? p.index.toFixed(3) : '—';
+
+                const r2Opp = fmtOppList(topOpponents(oppPaths?.["2"]?.[t]));
+                const r3Opp = fmtOppList(topOpponents(oppPaths?.["3"]?.[t]));
+                const r4Opp = fmtOppList(topOpponents(oppPaths?.["4"]?.[t]));
+
+                const r2d = p.by_round?.["2"]?.expected_neglog_p;
+                const r3d = p.by_round?.["3"]?.expected_neglog_p;
+                const r4d = p.by_round?.["4"]?.expected_neglog_p;
+
+                const fmtD = (x) => (typeof x === 'number') ? x.toFixed(3) : '—';
+
+                return `
                     <tr>
-                        <td><strong>${team}</strong></td>
-                        <td style="color: ${probColor}; font-weight: 600; font-size: 1.1em;">${prob}%</td>
-                        <td>${data.current_points}</td>
-                        <td>${record}</td>
-                        <td>${data.games_played}</td>
-                        <td>${data.remaining_games}</td>
+                        <td style="font-weight:700; color:#fff;">${idx + 1}</td>
+                        <td style="font-weight:800; color:#fff;">${t}</td>
+                        <td style="color:#c8102e; font-weight:800;">${idxVal}</td>
+                        <td>${fmtD(r2d)}</td>
+                        <td>${fmtD(r3d)}</td>
+                        <td>${fmtD(r4d)}</td>
+                        <td>${r2Opp}</td>
+                        <td>${r3Opp}</td>
+                        <td>${r4Opp}</td>
                     </tr>
                 `;
-            });
+            }).join('');
 
-            html += '</tbody></table>';
-            return html;
+            return `
+                <table class="standings-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Team</th>
+                            <th>Difficulty</th>
+                            <th>R2 Δ</th>
+                            <th>CF Δ</th>
+                            <th>Final Δ</th>
+                            <th>Likely R2 Opp</th>
+                            <th>Likely CF Opp</th>
+                            <th>Likely Final Opp</th>
+                        </tr>
+                    </thead>
+                    <tbody>${body}</tbody>
+                </table>
+            `;
+        }
+
+        async function loadRegSeasonCupModel(containerEl) {
+            try {
+                const r = await fetch('/api/playoffs/reg-season-cup-model');
+                const j = await r.json();
+                if (!j.success) {
+                    containerEl.innerHTML = `<p style="color:#888;">Regular-season model unavailable: ${j.error || 'unknown error'}</p>`;
+                    return;
+                }
+                containerEl.innerHTML = `
+                    <h4 style="color:#c8102e; margin-top: 10px; margin-bottom: 10px;">Regular Season → Cup Success (Last 5 Seasons)</h4>
+                    <div style="color:#888; margin-bottom: 10px;">
+                        Trained on 5 seasons of final standings features; used as a light prior in series simulations.
+                    </div>
+                    ${renderCupModelTable(j.model)}
+                    <div style="height: 16px;"></div>
+                    ${renderCurrentCupPriors(j.priors)}
+                `;
+            } catch (e) {
+                containerEl.innerHTML = `<p style="color:#888;">Regular-season model unavailable.</p>`;
+            }
+        }
+
+        function renderCupModelTable(model) {
+            const coef = model?.logistic?.coef || {};
+            const rows = Object.entries(coef)
+                .sort((a, b) => Math.abs(b[1] || 0) - Math.abs(a[1] || 0))
+                .map(([feat, w]) => `
+                    <tr>
+                        <td style="font-weight:700; color:#fff;">${feat}</td>
+                        <td style="color:#c8102e; font-weight:800;">${(w >= 0 ? '+' : '') + Number(w).toFixed(3)}</td>
+                    </tr>
+                `).join('');
+
+            const ranks = (model?.winner_rank_by_season || []).map(x => `
+                <tr>
+                    <td style="font-weight:700; color:#fff;">${x.season}</td>
+                    <td>${x.winner_rank ?? '—'}</td>
+                </tr>
+            `).join('');
+
+            return `
+                <div style="display:grid; grid-template-columns: 1fr 1fr; gap: 18px;">
+                    <div>
+                        <div style="color:#fff; font-weight:800; margin-bottom: 8px;">Model Coefficients (standardized)</div>
+                        <table class="standings-table">
+                            <thead><tr><th>Feature</th><th>Weight</th></tr></thead>
+                            <tbody>${rows}</tbody>
+                        </table>
+                    </div>
+                    <div>
+                        <div style="color:#fff; font-weight:800; margin-bottom: 8px;">How it ranked the actual Cup winner</div>
+                        <table class="standings-table">
+                            <thead><tr><th>Season</th><th>Winner rank</th></tr></thead>
+                            <tbody>${ranks}</tbody>
+                        </table>
+                    </div>
+                </div>
+            `;
+        }
+
+        function renderCurrentCupPriors(priors) {
+            const teams = priors?.teams || {};
+            const rows = Object.entries(teams)
+                .sort((a, b) => (b[1]?.cup_prior_norm || 0) - (a[1]?.cup_prior_norm || 0))
+                .slice(0, 12)
+                .map(([team, d], i) => `
+                    <tr>
+                        <td style="font-weight:700; color:#fff;">${i + 1}</td>
+                        <td style="font-weight:800; color:#fff;">${team}</td>
+                        <td style="color:#c8102e; font-weight:800;">${pct(d.cup_prior_norm)}</td>
+                        <td>${Number(d.points_pct || 0).toFixed(3)}</td>
+                        <td>${d.goal_diff ?? '—'}</td>
+                        <td>${d.league_rank_points ?? '—'}</td>
+                    </tr>
+                `).join('');
+
+            return `
+                <div style="color:#fff; font-weight:800; margin-bottom: 8px;">Current-season Cup priors (top 12)</div>
+                <table class="standings-table">
+                    <thead>
+                        <tr>
+                            <th>#</th>
+                            <th>Team</th>
+                            <th>Cup prior</th>
+                            <th>Pts%</th>
+                            <th>GD</th>
+                            <th>Pts rank</th>
+                        </tr>
+                    </thead>
+                    <tbody>${rows}</tbody>
+                </table>
+            `;
         }
 
         loadPredictions();

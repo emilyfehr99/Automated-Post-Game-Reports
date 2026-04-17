@@ -8,6 +8,7 @@ treated as a *ranking* / prior model rather than a calibrated probability model.
 Outputs:
   - data/reg_season_cup_model_5yr.json         (coefficients + feature stats)
   - data/cup_prior_current.json               (current-season per-team cup prior)
+  - data/reg_season_team_features_current.json (per-team feature row for round-depth priors in sims)
 """
 
 from __future__ import annotations
@@ -60,6 +61,58 @@ HIST_FEATURE_PREFIXES = [
     "zone_entry_carry_pct", "zone_entry_pass_pct",
 ]
 
+_HIST_MICRO_KEYS = frozenset(HIST_FEATURE_PREFIXES)
+_HIST_SEASONS = ("20202021", "20212022", "20222023", "20232024", "20242025")
+
+
+def load_reg_season_cup_rows() -> List[dict]:
+    """Standings + playoff labels from the 5-season dataset builder (required)."""
+    label_path = _DATA_DIR / "reg_season_cup_5yr.json"
+    if label_path.exists():
+        rows = json.loads(label_path.read_text()).get("rows", [])
+        if rows:
+            return rows
+    ds_path = _DATA_DIR / "reg_season_cup_5yr.csv"
+    if ds_path.exists():
+        return pd.read_csv(ds_path).to_dict(orient="records")
+    raise SystemExit(
+        "Missing data/reg_season_cup_5yr.json (or .csv). Run build_regular_season_cup_dataset_5yr.py."
+    )
+
+
+def enrich_df_with_historical_microstats(df: pd.DataFrame) -> pd.DataFrame:
+    """
+    Left-join microstats from data/historical/<season>/team_season_aggregate.json.
+
+    Training rows always come from reg_season_cup_5yr so Cup labels stay correct even
+    when only some seasons or teams have been backfilled (partial aggregates).
+    """
+    out = df.copy()
+    out["season"] = out["season"].astype(str)
+    out["team"] = out["team"].astype(str).str.strip().str.upper()
+    hist_root = _DATA_DIR / "historical"
+    for s in _HIST_SEASONS:
+        agg_path = hist_root / s / "team_season_aggregate.json"
+        if not agg_path.exists():
+            continue
+        try:
+            agg = json.loads(agg_path.read_text())
+        except Exception:
+            continue
+        teams = agg.get("teams", {})
+        for team, feats in teams.items():
+            ab = str(team).strip().upper()
+            mask = (out["season"] == s) & (out["team"] == ab)
+            if not mask.any():
+                continue
+            for k, v in feats.items():
+                if k == "games" or not isinstance(v, (int, float)):
+                    continue
+                if k not in _HIST_MICRO_KEYS:
+                    continue
+                out.loc[mask, k] = float(v)
+    return out
+
 
 def _http_get_json(url: str, timeout_s: int = 30) -> dict:
     r = requests.get(url, timeout=timeout_s, headers={"User-Agent": "Mozilla/5.0"})
@@ -106,49 +159,25 @@ def sigmoid(x: float) -> float:
 
 
 def main():
-    # Prefer richer historical aggregates if present
-    hist_root = _DATA_DIR / "historical"
-    seasons = ["20202021", "20212022", "20222023", "20232024", "20242025"]
-    hist_rows = []
-    for s in seasons:
-        agg_path = hist_root / s / "team_season_aggregate.json"
-        if not agg_path.exists():
-            continue
-        try:
-            agg = json.loads(agg_path.read_text())
-            teams = agg.get("teams", {})
-            for team, feats in teams.items():
-                row = {"season": s, "team": team}
-                for k, v in feats.items():
-                    if isinstance(v, (int, float)):
-                        row[k] = float(v)
-                hist_rows.append(row)
-        except Exception:
-            continue
+    rows = load_reg_season_cup_rows()
+    df = enrich_df_with_historical_microstats(pd.DataFrame(rows))
 
-    if hist_rows:
-        df = pd.DataFrame(hist_rows)
-        # Create labels from playoff bracket winners derived by the dataset builder JSON (source of truth)
-        label_path = _DATA_DIR / "reg_season_cup_5yr.json"
-        if not label_path.exists():
-            raise SystemExit("Missing data/reg_season_cup_5yr.json (run build_regular_season_cup_dataset_5yr.py).")
-        labels = json.loads(label_path.read_text()).get("rows", [])
-        label_map = {(r["season"], r["team"]): int(r.get("won_cup", 0)) for r in labels}
-        df["won_cup"] = df.apply(lambda r: label_map.get((str(r["season"]), str(r["team"])), 0), axis=1)
+    base_feats = [f for f in FEATURES if f in df.columns]
+    hist_feats = [f for f in HIST_FEATURE_PREFIXES if f in df.columns]
+    used_features = list(dict.fromkeys(base_feats + hist_feats))
+    if len(used_features) < 3:
+        raise SystemExit("Not enough overlapping feature columns to train (check reg_season_cup_5yr dataset).")
 
-        # Use a feature set intersection: core FEATURES + any HIST_FEATURE_PREFIXES that exist
-        base_feats = [f for f in FEATURES if f in df.columns]
-        hist_feats = [f for f in HIST_FEATURE_PREFIXES if f in df.columns]
-        used_features = list(dict.fromkeys(base_feats + hist_feats))
-    else:
-        ds_path = _DATA_DIR / "reg_season_cup_5yr.csv"
-        if not ds_path.exists():
-            raise SystemExit("Missing data/reg_season_cup_5yr.csv. Run build_regular_season_cup_dataset_5yr.py first.")
-        df = pd.read_csv(ds_path)
-        used_features = FEATURES
+    if "won_cup" not in df.columns:
+        raise SystemExit("Dataset is missing won_cup (rebuild reg_season_cup_5yr).")
 
     X = df[used_features].fillna(0.0).astype(float)
     y = df["won_cup"].astype(int)
+    if y.nunique() < 2:
+        raise SystemExit(
+            f"won_cup is single-class after load (positives={int(y.sum())}, rows={len(df)}). "
+            "Rebuild data/reg_season_cup_5yr.json."
+        )
 
     # Regularized logistic regression for interpretability
     pipe = Pipeline(steps=[
@@ -203,8 +232,11 @@ def main():
     # Current-season cup priors from live standings
     current_season = "20252026"
     standings = fetch_standings_by_date("now")
-    rows = extract_rows_from_web_standings(standings, current_season)
-    cur = pd.DataFrame(rows)
+    cur_rows = extract_rows_from_web_standings(standings, current_season)
+    cur = pd.DataFrame(cur_rows)
+    for col in used_features:
+        if col not in cur.columns:
+            cur[col] = 0.0
     curX = cur[used_features].fillna(0.0).astype(float)
     cur["cup_prior_score"] = pipe.predict_proba(curX)[:, 1]
 
@@ -236,7 +268,33 @@ def main():
             "teams": priors,
         }, f, indent=2)
 
-    print("✅ Wrote data/reg_season_cup_model_5yr.json and data/cup_prior_current.json")
+    # Feature rows for current season (standings + optional microstats) — used by
+    # PlayoffSeriesPredictor with reg_season_playoff_round_models_5yr.json.
+    team_feats: Dict[str, Dict[str, float]] = {}
+    for r in cur.to_dict(orient="records"):
+        ta = str(r.get("team", "")).strip().upper()
+        if not ta:
+            continue
+        team_feats[ta] = {k: float(r[k]) for k in used_features if k in r}
+    with (_DATA_DIR / "reg_season_team_features_current.json").open("w") as f:
+        json.dump(
+            {
+                "meta": {
+                    "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+                    "season": current_season,
+                    "features_used": used_features,
+                    "source": "train_regular_season_cup_model_5yr.py",
+                },
+                "teams": team_feats,
+            },
+            f,
+            indent=2,
+        )
+
+    print(
+        "✅ Wrote data/reg_season_cup_model_5yr.json, data/cup_prior_current.json, "
+        "data/reg_season_team_features_current.json"
+    )
 
 
 if __name__ == "__main__":

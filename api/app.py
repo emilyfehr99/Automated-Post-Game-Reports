@@ -710,6 +710,47 @@ def get_playoff_predictions():
         print(f"Error generating playoff predictions: {e}")
         return jsonify([])
 
+
+@app.route('/api/playoffs/bracket', methods=['GET'])
+def get_playoff_bracket_predictions():
+    """Return the latest exported playoff bracket predictions JSON (Round 1 -> Cup)."""
+    try:
+        data = load_json('playoff_predictions_2026.json')
+        if not data:
+            return jsonify({
+                "success": False,
+                "error": "playoff_predictions_2026.json not found (run scripts/simulate_2026_playoffs_master.py)",
+            })
+        return jsonify({
+            "success": True,
+            "data": data,
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
+@app.route('/api/playoffs/reg-season-cup-model', methods=['GET'])
+def get_reg_season_cup_model():
+    """Return the trained regular-season -> Cup model summary + current-season priors."""
+    try:
+        model = load_json('reg_season_cup_model_5yr.json')
+        priors = load_json('cup_prior_current.json')
+        if not model:
+            return jsonify({"success": False, "error": "reg_season_cup_model_5yr.json not found (run scripts/train_regular_season_cup_model_5yr.py)"})
+        if not priors:
+            return jsonify({"success": False, "error": "cup_prior_current.json not found (run scripts/train_regular_season_cup_model_5yr.py)"})
+        round_models = load_json('reg_season_playoff_round_models_5yr.json')
+        team_features = load_json('reg_season_team_features_current.json')
+        return jsonify({
+            "success": True,
+            "model": model,
+            "priors": priors,
+            "round_models": round_models,
+            "team_features_current": team_features,
+        })
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
 @app.route('/api/predictions/game/<game_id>', methods=['GET'])
 def get_game_prediction(game_id):
     """Get prediction for specific game"""
