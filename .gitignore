@@ -62,6 +62,15 @@ src/
 !data/season_2025_2026_schedule.json
 !data/season_2025_2026_team_stats.json
 !data/nhl_edge_data.json
+# Playoff / regular-season training + predictions (repo default ignores *.json)
+!data/reg_season_cup_5yr.json
+!data/reg_season_cup_5yr.csv
+!data/reg_season_cup_model_5yr.json
+!data/cup_prior_current.json
+!data/reg_season_team_features_current.json
+!data/reg_season_playoff_round_models_5yr.json
+!data/playoff_predictions_2026.json
+!data/official_2026_bracket_current.json
 !nhl-analytics/public/data/*.json
 
 # Keep vercel.json for deployment configuration
