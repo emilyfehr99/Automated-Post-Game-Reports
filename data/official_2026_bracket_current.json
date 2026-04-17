@@ -1,0 +1,46 @@
+{
+  "East": [
+    {
+      "away": "OTT",
+      "home": "CAR",
+      "label": "R1-M1"
+    },
+    {
+      "away": "PHI",
+      "home": "PIT",
+      "label": "R1-M2v3"
+    },
+    {
+      "away": "BOS",
+      "home": "BUF",
+      "label": "R1-M2"
+    },
+    {
+      "away": "MTL",
+      "home": "TBL",
+      "label": "R1-A2v3"
+    }
+  ],
+  "West": [
+    {
+      "away": "LAK",
+      "home": "COL",
+      "label": "R1-M1"
+    },
+    {
+      "away": "MIN",
+      "home": "DAL",
+      "label": "R1-C2v3"
+    },
+    {
+      "away": "UTA",
+      "home": "VGK",
+      "label": "R1-M2"
+    },
+    {
+      "away": "ANA",
+      "home": "EDM",
+      "label": "R1-P2v3"
+    }
+  ]
+}

@@ -1,0 +1,87 @@
+{
+  "meta": {
+    "generated_at_utc": "2026-04-17T21:44:45.536913+00:00",
+    "rows": 159,
+    "positives": 5,
+    "seasons": [
+      "20202021",
+      "20212022",
+      "20222023",
+      "20232024",
+      "20242025"
+    ],
+    "source": "train_regular_season_cup_model_5yr.py"
+  },
+  "features": [
+    "points_pct",
+    "goal_diff",
+    "goals_for",
+    "goals_against",
+    "league_rank_points",
+    "division_rank",
+    "conference_rank"
+  ],
+  "features_used": [
+    "points_pct",
+    "goal_diff",
+    "goals_for",
+    "goals_against",
+    "league_rank_points",
+    "division_rank",
+    "conference_rank"
+  ],
+  "scaler": {
+    "mean": {
+      "points_pct": 0.5543616981132075,
+      "goal_diff": 0.0,
+      "goals_for": 237.9685534591195,
+      "goals_against": 237.9685534591195,
+      "league_rank_points": 16.40251572327044,
+      "division_rank": 4.477987421383648,
+      "conference_rank": 26.144654088050313
+    },
+    "scale": {
+      "points_pct": 0.10969642056673566,
+      "goal_diff": 51.16860771111854,
+      "goals_for": 45.86957465509785,
+      "goals_against": 47.452249601543045,
+      "league_rank_points": 9.179632566094075,
+      "division_rank": 2.28155435814051,
+      "conference_rank": 36.09174829958499
+    }
+  },
+  "logistic": {
+    "intercept": -1.7501345448495047,
+    "coef": {
+      "points_pct": 0.3526427454921482,
+      "goal_diff": 0.21408800646068882,
+      "goals_for": -0.5053235390254663,
+      "goals_against": -0.7193244009118462,
+      "league_rank_points": -0.6301352847639732,
+      "division_rank": -0.9592437298422928,
+      "conference_rank": -0.6371229185699879
+    }
+  },
+  "winner_rank_by_season": [
+    {
+      "season": "20202021",
+      "winner_rank": 9
+    },
+    {
+      "season": "20212022",
+      "winner_rank": 3
+    },
+    {
+      "season": "20222023",
+      "winner_rank": 3
+    },
+    {
+      "season": "20232024",
+      "winner_rank": 1
+    },
+    {
+      "season": "20242025",
+      "winner_rank": 9
+    }
+  ]
+}

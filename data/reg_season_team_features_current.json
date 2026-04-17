@@ -1,0 +1,306 @@
+{
+  "meta": {
+    "generated_at_utc": "2026-04-17T21:44:45.697282+00:00",
+    "season": "20252026",
+    "features_used": [
+      "points_pct",
+      "goal_diff",
+      "goals_for",
+      "goals_against",
+      "league_rank_points",
+      "division_rank",
+      "conference_rank"
+    ],
+    "source": "train_regular_season_cup_model_5yr.py"
+  },
+  "teams": {
+    "COL": {
+      "points_pct": 0.737805,
+      "goal_diff": 99.0,
+      "goals_for": 302.0,
+      "goals_against": 203.0,
+      "league_rank_points": 1.0,
+      "division_rank": 1.0,
+      "conference_rank": 1.0
+    },
+    "CAR": {
+      "points_pct": 0.689024,
+      "goal_diff": 56.0,
+      "goals_for": 296.0,
+      "goals_against": 240.0,
+      "league_rank_points": 2.0,
+      "division_rank": 1.0,
+      "conference_rank": 1.0
+    },
+    "DAL": {
+      "points_pct": 0.682927,
+      "goal_diff": 53.0,
+      "goals_for": 279.0,
+      "goals_against": 226.0,
+      "league_rank_points": 3.0,
+      "division_rank": 2.0,
+      "conference_rank": 2.0
+    },
+    "BUF": {
+      "points_pct": 0.664634,
+      "goal_diff": 47.0,
+      "goals_for": 288.0,
+      "goals_against": 241.0,
+      "league_rank_points": 4.0,
+      "division_rank": 1.0,
+      "conference_rank": 2.0
+    },
+    "TBL": {
+      "points_pct": 0.646341,
+      "goal_diff": 59.0,
+      "goals_for": 290.0,
+      "goals_against": 231.0,
+      "league_rank_points": 5.0,
+      "division_rank": 2.0,
+      "conference_rank": 3.0
+    },
+    "MTL": {
+      "points_pct": 0.646341,
+      "goal_diff": 27.0,
+      "goals_for": 283.0,
+      "goals_against": 256.0,
+      "league_rank_points": 6.0,
+      "division_rank": 3.0,
+      "conference_rank": 4.0
+    },
+    "MIN": {
+      "points_pct": 0.634146,
+      "goal_diff": 32.0,
+      "goals_for": 272.0,
+      "goals_against": 240.0,
+      "league_rank_points": 7.0,
+      "division_rank": 3.0,
+      "conference_rank": 3.0
+    },
+    "BOS": {
+      "points_pct": 0.609756,
+      "goal_diff": 22.0,
+      "goals_for": 272.0,
+      "goals_against": 250.0,
+      "league_rank_points": 8.0,
+      "division_rank": 4.0,
+      "conference_rank": 5.0
+    },
+    "OTT": {
+      "points_pct": 0.603659,
+      "goal_diff": 32.0,
+      "goals_for": 278.0,
+      "goals_against": 246.0,
+      "league_rank_points": 9.0,
+      "division_rank": 5.0,
+      "conference_rank": 6.0
+    },
+    "PIT": {
+      "points_pct": 0.597561,
+      "goal_diff": 25.0,
+      "goals_for": 293.0,
+      "goals_against": 268.0,
+      "league_rank_points": 10.0,
+      "division_rank": 2.0,
+      "conference_rank": 7.0
+    },
+    "PHI": {
+      "points_pct": 0.597561,
+      "goal_diff": 7.0,
+      "goals_for": 250.0,
+      "goals_against": 243.0,
+      "league_rank_points": 11.0,
+      "division_rank": 3.0,
+      "conference_rank": 8.0
+    },
+    "WSH": {
+      "points_pct": 0.579268,
+      "goal_diff": 19.0,
+      "goals_for": 263.0,
+      "goals_against": 244.0,
+      "league_rank_points": 12.0,
+      "division_rank": 4.0,
+      "conference_rank": 9.0
+    },
+    "VGK": {
+      "points_pct": 0.579268,
+      "goal_diff": 15.0,
+      "goals_for": 265.0,
+      "goals_against": 250.0,
+      "league_rank_points": 13.0,
+      "division_rank": 1.0,
+      "conference_rank": 4.0
+    },
+    "EDM": {
+      "points_pct": 0.567073,
+      "goal_diff": 13.0,
+      "goals_for": 282.0,
+      "goals_against": 269.0,
+      "league_rank_points": 14.0,
+      "division_rank": 2.0,
+      "conference_rank": 5.0
+    },
+    "UTA": {
+      "points_pct": 0.560976,
+      "goal_diff": 28.0,
+      "goals_for": 268.0,
+      "goals_against": 240.0,
+      "league_rank_points": 15.0,
+      "division_rank": 4.0,
+      "conference_rank": 6.0
+    },
+    "DET": {
+      "points_pct": 0.560976,
+      "goal_diff": -17.0,
+      "goals_for": 241.0,
+      "goals_against": 258.0,
+      "league_rank_points": 16.0,
+      "division_rank": 6.0,
+      "conference_rank": 10.0
+    },
+    "CBJ": {
+      "points_pct": 0.560976,
+      "goal_diff": 0.0,
+      "goals_for": 253.0,
+      "goals_against": 253.0,
+      "league_rank_points": 17.0,
+      "division_rank": 5.0,
+      "conference_rank": 11.0
+    },
+    "ANA": {
+      "points_pct": 0.560976,
+      "goal_diff": -15.0,
+      "goals_for": 273.0,
+      "goals_against": 288.0,
+      "league_rank_points": 18.0,
+      "division_rank": 3.0,
+      "conference_rank": 7.0
+    },
+    "NYI": {
+      "points_pct": 0.554878,
+      "goal_diff": -8.0,
+      "goals_for": 233.0,
+      "goals_against": 241.0,
+      "league_rank_points": 19.0,
+      "division_rank": 6.0,
+      "conference_rank": 12.0
+    },
+    "LAK": {
+      "points_pct": 0.54878,
+      "goal_diff": -22.0,
+      "goals_for": 225.0,
+      "goals_against": 247.0,
+      "league_rank_points": 20.0,
+      "division_rank": 4.0,
+      "conference_rank": 8.0
+    },
+    "NJD": {
+      "points_pct": 0.530488,
+      "goal_diff": -24.0,
+      "goals_for": 230.0,
+      "goals_against": 254.0,
+      "league_rank_points": 21.0,
+      "division_rank": 7.0,
+      "conference_rank": 13.0
+    },
+    "STL": {
+      "points_pct": 0.52439,
+      "goal_diff": -27.0,
+      "goals_for": 231.0,
+      "goals_against": 258.0,
+      "league_rank_points": 22.0,
+      "division_rank": 5.0,
+      "conference_rank": 9.0
+    },
+    "NSH": {
+      "points_pct": 0.52439,
+      "goal_diff": -22.0,
+      "goals_for": 247.0,
+      "goals_against": 269.0,
+      "league_rank_points": 23.0,
+      "division_rank": 6.0,
+      "conference_rank": 10.0
+    },
+    "SJS": {
+      "points_pct": 0.52439,
+      "goal_diff": -41.0,
+      "goals_for": 251.0,
+      "goals_against": 292.0,
+      "league_rank_points": 24.0,
+      "division_rank": 5.0,
+      "conference_rank": 11.0
+    },
+    "FLA": {
+      "points_pct": 0.512195,
+      "goal_diff": -25.0,
+      "goals_for": 251.0,
+      "goals_against": 276.0,
+      "league_rank_points": 25.0,
+      "division_rank": 7.0,
+      "conference_rank": 14.0
+    },
+    "WPG": {
+      "points_pct": 0.5,
+      "goal_diff": -29.0,
+      "goals_for": 231.0,
+      "goals_against": 260.0,
+      "league_rank_points": 26.0,
+      "division_rank": 7.0,
+      "conference_rank": 12.0
+    },
+    "SEA": {
+      "points_pct": 0.481707,
+      "goal_diff": -37.0,
+      "goals_for": 226.0,
+      "goals_against": 263.0,
+      "league_rank_points": 27.0,
+      "division_rank": 6.0,
+      "conference_rank": 13.0
+    },
+    "TOR": {
+      "points_pct": 0.47561,
+      "goal_diff": -46.0,
+      "goals_for": 253.0,
+      "goals_against": 299.0,
+      "league_rank_points": 28.0,
+      "division_rank": 8.0,
+      "conference_rank": 15.0
+    },
+    "CGY": {
+      "points_pct": 0.469512,
+      "goal_diff": -47.0,
+      "goals_for": 212.0,
+      "goals_against": 259.0,
+      "league_rank_points": 29.0,
+      "division_rank": 7.0,
+      "conference_rank": 14.0
+    },
+    "NYR": {
+      "points_pct": 0.469512,
+      "goal_diff": -12.0,
+      "goals_for": 238.0,
+      "goals_against": 250.0,
+      "league_rank_points": 30.0,
+      "division_rank": 8.0,
+      "conference_rank": 16.0
+    },
+    "CHI": {
+      "points_pct": 0.439024,
+      "goal_diff": -62.0,
+      "goals_for": 213.0,
+      "goals_against": 275.0,
+      "league_rank_points": 31.0,
+      "division_rank": 8.0,
+      "conference_rank": 15.0
+    },
+    "VAN": {
+      "points_pct": 0.353659,
+      "goal_diff": -100.0,
+      "goals_for": 216.0,
+      "goals_against": 316.0,
+      "league_rank_points": 32.0,
+      "division_rank": 8.0,
+      "conference_rank": 16.0
+    }
+  }
+}
