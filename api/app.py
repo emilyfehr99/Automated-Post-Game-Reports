@@ -1,4 +1,4 @@
-from flask import Flask, jsonify, request
+from flask import Flask, jsonify, request, render_template
 from flask_cors import CORS
 import json
 import os
@@ -10,7 +10,10 @@ import pytz
 
 # Version: Comprehensive Stats 1.0 (Force Deploy)
 
-app = Flask(__name__)
+# Templates live in project root /templates (this file is api/app.py)
+_DATA_DIR = os.path.dirname(os.path.abspath(__file__))
+_PROJECT_ROOT = os.path.dirname(_DATA_DIR)
+app = Flask(__name__, template_folder=os.path.join(_PROJECT_ROOT, 'templates'))
 # Enable CORS for React frontend - allows Vercel deployment and localhost
 CORS(app, origins=[
     "https://nhl-analytics.vercel.app",  # Production Vercel domain
@@ -19,8 +22,8 @@ CORS(app, origins=[
     "http://localhost:3000"   # Alternative local port
 ], supports_credentials=True)
 
-# Base directory for data files
-DATA_DIR = os.path.dirname(os.path.abspath(__file__))
+# Base directory for data files (api/)
+DATA_DIR = _DATA_DIR
 
 # Initialize predictor
 try:
@@ -42,29 +45,48 @@ _team_metrics_file_mtime = None
 CACHE_DURATION = timedelta(minutes=5)  # Cache for 5 minutes (reduced from 1 hour for debugging)
 
 def load_json(filename):
-    """Load JSON file from data/ subdirectory or current directory"""
+    """Load JSON from repo ``data/`` (scripts write here), then ``api/data/``, then ``api/``."""
+    candidates = [
+        os.path.join(_PROJECT_ROOT, 'data', filename),
+        os.path.join(DATA_DIR, 'data', filename),
+        os.path.join(DATA_DIR, filename),
+    ]
+    file_path = next((p for p in candidates if os.path.isfile(p)), None)
+    if not file_path:
+        print(f"Warning: {filename} not found (tried: {candidates}), returning empty dict")
+        return {}
     try:
-        # Try data/ subdirectory first (Preferred)
-        file_path = os.path.join(DATA_DIR, 'data', filename)
-        if not os.path.exists(file_path):
-            # Try root directory
-            file_path = os.path.join(DATA_DIR, filename)
-            
         with open(file_path, 'r') as f:
             return json.load(f)
-    except FileNotFoundError:
-        print(f"Warning: {filename} not found at {file_path}, returning empty dict")
-        return {}
     except json.JSONDecodeError as e:
         print(f"Error decoding {filename}: {e}")
         return {}
 
 def get_file_mtime(filename):
-    """Get file modification time"""
-    try:
-        return os.path.getmtime(os.path.join(DATA_DIR, filename))
-    except:
-        return None
+    """Get file modification time (same search order as load_json)."""
+    for p in (
+        os.path.join(_PROJECT_ROOT, 'data', filename),
+        os.path.join(DATA_DIR, 'data', filename),
+        os.path.join(DATA_DIR, filename),
+    ):
+        try:
+            if os.path.isfile(p):
+                return os.path.getmtime(p)
+        except OSError:
+            continue
+    return None
+
+@app.route('/playoffs')
+def playoffs_page():
+    """Bracket + playoff model UI (uses /api/playoffs/*)."""
+    return render_template('playoff_predictions.html')
+
+
+@app.route('/')
+def prediction_dashboard():
+    """Main predictions dashboard HTML."""
+    return render_template('prediction_dashboard.html')
+
 
 @app.route('/api/health', methods=['GET'])
 def health():
@@ -1204,6 +1226,8 @@ if __name__ == '__main__':
     print("=" * 50)
     print(f"Data directory: {DATA_DIR}")
     print(f"Available endpoints:")
+    print(f"  GET /")
+    print(f"  GET /playoffs")
     print(f"  GET /api/health")
     print(f"  GET /api/team-stats")
     print(f"  GET /api/team-stats/<team_abbrev>")

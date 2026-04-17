@@ -151,6 +151,186 @@
         .standings-table tr:hover {
             background: #151515;
         }
+
+        /* ---- Visual bracket (logos) ---- */
+        .bracket-visual {
+            display: grid;
+            grid-template-columns: 1fr minmax(120px, 180px) 1fr;
+            gap: 12px 20px;
+            align-items: start;
+            margin: 8px 0 28px;
+            padding: 24px 16px 32px;
+            background:
+                radial-gradient(ellipse 120% 80% at 50% 0%, rgba(200, 16, 46, 0.12), transparent 55%),
+                linear-gradient(180deg, #121c28 0%, #0a1018 100%);
+            border: 1px solid #2a3544;
+            border-radius: 14px;
+            position: relative;
+            overflow-x: auto;
+        }
+
+        .bracket-visual::before {
+            content: "";
+            position: absolute;
+            inset: 0;
+            background: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='80' height='80' viewBox='0 0 80 80'%3E%3Ccircle cx='40' cy='40' r='1.2' fill='%23ffffff' opacity='0.04'/%3E%3C/svg%3E");
+            pointer-events: none;
+            border-radius: 14px;
+        }
+
+        .bracket-col-title {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.85rem;
+            letter-spacing: 0.14em;
+            text-transform: uppercase;
+            color: #7a8fa3;
+            text-align: center;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .bracket-side {
+            display: flex;
+            flex-direction: column;
+            gap: 14px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .bracket-west .bracket-col-title {
+            text-align: left;
+            padding-left: 4px;
+        }
+
+        .bracket-east .bracket-col-title {
+            text-align: right;
+            padding-right: 4px;
+        }
+
+        .series-card {
+            background: linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+            border: 1px solid #2c3540;
+            border-radius: 10px;
+            overflow: hidden;
+            min-width: 220px;
+        }
+
+        .bracket-east .series-card {
+            background: linear-gradient(270deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+        }
+
+        .series-card .series-hd {
+            font-size: 0.68rem;
+            letter-spacing: 0.06em;
+            text-transform: uppercase;
+            color: #6b7c8f;
+            padding: 6px 10px;
+            border-bottom: 1px solid #252d38;
+            background: rgba(0,0,0,0.25);
+        }
+
+        .team-row {
+            display: grid;
+            grid-template-columns: 40px 1fr auto;
+            align-items: center;
+            gap: 10px;
+            padding: 8px 10px;
+            border-bottom: 1px solid #1e2630;
+        }
+
+        .team-row:last-child {
+            border-bottom: none;
+        }
+
+        .team-row.fav {
+            background: rgba(200, 16, 46, 0.08);
+        }
+
+        .team-row .logo {
+            width: 36px;
+            height: 36px;
+            object-fit: contain;
+            filter: drop-shadow(0 1px 2px rgba(0,0,0,0.5));
+        }
+
+        .team-row .who {
+            display: flex;
+            flex-direction: column;
+            gap: 2px;
+        }
+
+        .team-row .abbr {
+            font-weight: 800;
+            font-size: 1rem;
+            color: #fff;
+            letter-spacing: 0.04em;
+        }
+
+        .team-row .role {
+            font-size: 0.65rem;
+            color: #6b7c8f;
+            text-transform: uppercase;
+            letter-spacing: 0.08em;
+        }
+
+        .team-row .pct {
+            font-family: ui-monospace, monospace;
+            font-size: 0.9rem;
+            font-weight: 700;
+            color: #c8102e;
+        }
+
+        .team-row.fav .pct {
+            color: #fff;
+        }
+
+        .bracket-center {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+            padding: 12px 8px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .cup-hub {
+            text-align: center;
+            padding: 16px 12px;
+            border: 1px dashed #3a4555;
+            border-radius: 10px;
+            background: rgba(0,0,0,0.35);
+            max-width: 160px;
+        }
+
+        .cup-hub .nhl-wordmark {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.7rem;
+            letter-spacing: 0.2em;
+            color: #c8102e;
+            margin-bottom: 6px;
+        }
+
+        .cup-hub .hub-title {
+            font-size: 0.75rem;
+            color: #8a9aac;
+            line-height: 1.35;
+        }
+
+        @media (max-width: 960px) {
+            .bracket-visual {
+                grid-template-columns: 1fr;
+            }
+            .bracket-west .bracket-col-title,
+            .bracket-east .bracket-col-title {
+                text-align: center;
+            }
+            .bracket-east .series-card {
+                background: linear-gradient(90deg, rgba(255,255,255,0.06) 0%, rgba(255,255,255,0.02) 100%);
+            }
+        }
     </style>
 </head>
 <body>
@@ -170,9 +350,14 @@
         <div id="content" style="display: none;">
             <div class="standings-section">
                 <h3>2026 Stanley Cup Bracket Forecast</h3>
-                <p>Round 1 series win probabilities + round advancement odds (Monte Carlo bracket simulation)</p>
+                <p>Series-by-series win odds (Rounds 1–4) plus advancement, path difficulty, and Monte Carlo bracket view.</p>
                 <div id="bracket-meta" style="margin: 10px 0 20px; color: #888; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;"></div>
-                <div id="round1-content"></div>
+                <h4 style="color:#c8102e; margin-top: 0; margin-bottom: 12px;">Bracket layout</h4>
+                <p style="color:#888; margin-bottom: 14px; max-width: 720px;">
+                    Matchups from current standings. Logos load from NHL assets; tables below list model series win % for every round on this tree.
+                </p>
+                <div id="visual-bracket"></div>
+                <div id="series-by-round-content"></div>
                 <div style="height: 24px;"></div>
                 <div id="cup-odds-content"></div>
                 <div style="height: 24px;"></div>
@@ -187,6 +372,92 @@
         function pct(x) {
             if (typeof x !== 'number') return '—';
             return `${(x * 100).toFixed(1)}%`;
+        }
+
+        function escapeHtml(str) {
+            const d = document.createElement('div');
+            d.textContent = str == null ? '' : String(str);
+            return d.innerHTML;
+        }
+
+        function nhlLogoUrl(abbr) {
+            const a = String(abbr || '').trim().toUpperCase();
+            if (!a) return '';
+            return `https://assets.nhle.com/logos/nhl/svg/${a}_dark.svg?season=20252026`;
+        }
+
+        function buildRound1OddsMap(round1) {
+            const m = Object.create(null);
+            if (!round1) return m;
+            for (const conf of ['East', 'West']) {
+                for (const s of (round1[conf] || [])) {
+                    if (s && s.away && s.home) {
+                        m[`${s.away}|${s.home}`] = s;
+                    }
+                }
+            }
+            return m;
+        }
+
+        function teamRowBracket(abbr, role, winProb, isFavorite) {
+            const p = typeof winProb === 'number' ? winProb : 0;
+            const favClass = isFavorite ? ' fav' : '';
+            const a = escapeHtml(abbr);
+            return `
+                <div class="team-row${favClass}">
+                    <img class="logo" src="${nhlLogoUrl(abbr)}" alt="${a}" loading="lazy" width="36" height="36"
+                         data-abbr="${a}"
+                         onerror="const t=this.dataset.abbr; this.onerror=null; if(t) this.src='https://a.espncdn.com/i/teamlogos/nhl/500/'+t.toLowerCase()+'.png'" />
+                    <div class="who">
+                        <span class="abbr">${a}</span>
+                        <span class="role">${escapeHtml(role)}</span>
+                    </div>
+                    <span class="pct">${pct(p)}</span>
+                </div>
+            `;
+        }
+
+        function seriesCardHtml(s, oddsMap) {
+            const key = `${s.away}|${s.home}`;
+            const o = oddsMap[key] || {};
+            const pa = typeof o.away_series_win_prob === 'number' ? o.away_series_win_prob : 0.5;
+            const ph = typeof o.home_series_win_prob === 'number' ? o.home_series_win_prob : 0.5;
+            const favAway = pa >= ph;
+            return `
+                <div class="series-card">
+                    <div class="series-hd">${escapeHtml(s.label || 'Round 1')}</div>
+                    ${teamRowBracket(s.away, 'Away', pa, favAway)}
+                    ${teamRowBracket(s.home, 'Home', ph, !favAway)}
+                </div>
+            `;
+        }
+
+        function renderVisualBracket(data) {
+            const b = data && data.bracket;
+            if (!b || !Array.isArray(b.West) || !Array.isArray(b.East)) {
+                return '<p style="color:#888;">Bracket layout unavailable (missing <code>bracket</code> in prediction JSON).</p>';
+            }
+            const oddsMap = buildRound1OddsMap(data.round1_series_odds);
+            const westHtml = b.West.map(s => seriesCardHtml(s, oddsMap)).join('');
+            const eastHtml = b.East.map(s => seriesCardHtml(s, oddsMap)).join('');
+            return `
+                <div class="bracket-visual">
+                    <div class="bracket-side bracket-west">
+                        <div class="bracket-col-title">Western Conference</div>
+                        ${westHtml}
+                    </div>
+                    <div class="bracket-center">
+                        <div class="cup-hub">
+                            <div class="nhl-wordmark">NHL Playoffs</div>
+                            <div class="hub-title">Scroll to <strong>Series win odds by round</strong> for Round 1–Final, series by series.</div>
+                        </div>
+                    </div>
+                    <div class="bracket-side bracket-east">
+                        <div class="bracket-col-title">Eastern Conference</div>
+                        ${eastHtml}
+                    </div>
+                </div>
+            `;
         }
 
         async function loadPredictions() {
@@ -220,14 +491,16 @@
 
         function displayBracketPredictions(data) {
             const metaEl = document.getElementById('bracket-meta');
-            const r1El = document.getElementById('round1-content');
+            const visualEl = document.getElementById('visual-bracket');
+            const seriesEl = document.getElementById('series-by-round-content');
             const cupEl = document.getElementById('cup-odds-content');
             const pathEl = document.getElementById('path-content');
             const regEl = document.getElementById('regseason-content');
 
             if (!data || !data.round1_series_odds || !data.advancement_probabilities) {
                 metaEl.textContent = '';
-                r1El.innerHTML = '<p style="color:#888;">No bracket prediction data available.</p>';
+                if (visualEl) visualEl.innerHTML = '';
+                if (seriesEl) seriesEl.innerHTML = '<p style="color:#888;">No bracket prediction data available.</p>';
                 cupEl.innerHTML = '';
                 pathEl.innerHTML = '';
                 regEl.innerHTML = '';
@@ -237,16 +510,15 @@
             const meta = data.meta || {};
             metaEl.textContent = `generated_at_utc=${meta.generated_at_utc || 'unknown'} • iterations=${meta.iterations || '—'} • season=${meta.season || '—'}`;
 
-            const east = (data.round1_series_odds.East || []);
-            const west = (data.round1_series_odds.West || []);
+            if (visualEl) {
+                visualEl.innerHTML = renderVisualBracket(data);
+            }
+
             const adv = (data.advancement_probabilities || []).slice().sort((a, b) => (b.cup || 0) - (a.cup || 0));
 
-            r1El.innerHTML = `
-                <h4 style="color:#c8102e; margin-top: 10px; margin-bottom: 10px;">Round 1 Series Odds</h4>
-                ${createSeriesTable('Eastern Conference', east)}
-                <div style="height: 18px;"></div>
-                ${createSeriesTable('Western Conference', west)}
-            `;
+            if (seriesEl) {
+                seriesEl.innerHTML = buildSeriesByRoundSection(data);
+            }
 
             cupEl.innerHTML = `
                 <h4 style="color:#c8102e; margin-top: 10px; margin-bottom: 10px;">Cup Odds + Advancement</h4>
@@ -266,6 +538,111 @@
 
             // Kick off regular-season -> Cup model section (async)
             loadRegSeasonCupModel(regEl);
+        }
+
+        function sortConditionalSeriesRows(a, b) {
+            const sa = `${a.slot || ''}|${a.away}|${a.home}`;
+            const sb = `${b.slot || ''}|${b.away}|${b.home}`;
+            return sa.localeCompare(sb);
+        }
+
+        /** Open table: slot, matchup (away @ home), series win % — for R2+ */
+        function openConditionalSeriesTable(list) {
+            if (!list || !list.length) {
+                return '<p style="color:#888;">No rows.</p>';
+            }
+            const sorted = list.slice().sort(sortConditionalSeriesRows);
+            const body = sorted.map((s) => {
+                const conf = s.conference ? `${escapeHtml(s.conference)} · ` : '';
+                const slot = escapeHtml(s.slot || '');
+                const aw = escapeHtml(s.away);
+                const hm = escapeHtml(s.home);
+                const cs = s.current_wins || {};
+                const cur = `${aw} @ ${hm} (${cs.away ?? 0}–${cs.home ?? 0})`;
+                const fav = (s.home_series_win_prob ?? 0) >= (s.away_series_win_prob ?? 0) ? hm : aw;
+                const favP = Math.max(s.home_series_win_prob ?? 0, s.away_series_win_prob ?? 0);
+                return `
+                    <tr>
+                        <td style="font-weight:600; color:#fff;">${conf}${slot}</td>
+                        <td>${cur}</td>
+                        <td style="color:#c8102e; font-weight:700;">${fav}</td>
+                        <td>${pct(favP)}</td>
+                        <td>${pct(s.away_series_win_prob)}</td>
+                        <td>${pct(s.home_series_win_prob)}</td>
+                    </tr>`;
+            }).join('');
+            return `
+                <div style="overflow-x: auto;">
+                    <table class="standings-table">
+                        <thead>
+                            <tr>
+                                <th>Bracket slot</th>
+                                <th>Matchup</th>
+                                <th>Favorite</th>
+                                <th>Fav %</th>
+                                <th>Away win%</th>
+                                <th>Home win%</th>
+                            </tr>
+                        </thead>
+                        <tbody>${body}</tbody>
+                    </table>
+                </div>`;
+        }
+
+        function buildSeriesByRoundSection(data) {
+            const east = (data.round1_series_odds.East || []);
+            const west = (data.round1_series_odds.West || []);
+            const rows = data.conditional_series_predictions;
+            const rsMeta = (data.meta && data.meta.regular_season_to_playoff_series_model) || {};
+            const note = (data.meta && data.meta.conditional_series_note) || '';
+            const rsBlurb = rsMeta.summary
+                ? `<p style="color:#aaa; margin: 12px 0; max-width: 900px;">${escapeHtml(rsMeta.summary)}</p>`
+                : '';
+
+            let html = `
+                <h3 style="color:#fff; font-size:1.35em; margin: 28px 0 10px; border-bottom: 1px solid #333; padding-bottom: 10px;">Series win odds by round</h3>
+                <p style="color:#888; margin-bottom: 6px; max-width: 900px;">
+                    <strong>Round 1</strong> uses the live bracket order (away @ home). <strong>Rounds 2–4</strong> list every series that can occur on this tree before winners are known; each row is its own best-of-7 projection at that playoff round depth.
+                </p>
+                ${rsBlurb}
+                ${note ? `<p style="color:#666; font-size:0.88em; margin-bottom: 16px;">${escapeHtml(note)}</p>` : ''}
+                <h4 style="color:#c8102e; margin-top: 18px; margin-bottom: 10px;">Round 1 — First round</h4>
+                ${createSeriesTable('Eastern Conference', east)}
+                <div style="height: 14px;"></div>
+                ${createSeriesTable('Western Conference', west)}
+            `;
+
+            if (!rows || !rows.length) {
+                html += `
+                    <h4 style="color:#c8102e; margin-top: 28px; margin-bottom: 10px;">Rounds 2, 3, and Stanley Cup Final</h4>
+                    <div style="padding: 16px 18px; background: #1a1515; border: 1px solid #553333; border-radius: 8px; color:#ccc; max-width: 900px;">
+                        <p style="margin-bottom: 10px;"><strong style="color:#ffb4b4;">This JSON file does not include per-series rows for later rounds.</strong></p>
+                        <p style="margin:0; color:#aaa;">Regenerate predictions with a current <code>simulate_2026_playoffs_master.py</code> (or run the GitHub Action <em>Playoff predictions pipeline</em>) so the export includes <code>conditional_series_predictions</code>.</p>
+                    </div>`;
+                return html;
+            }
+
+            const byRound = { 2: [], 3: [], 4: [] };
+            for (const r of rows) {
+                const k = r.playoff_round;
+                if (byRound[k]) byRound[k].push(r);
+            }
+
+            html += `<h4 style="color:#c8102e; margin-top: 28px; margin-bottom: 10px;">Round 2 — Division finals (${byRound[2].length} possible series)</h4>`;
+            html += openConditionalSeriesTable(byRound[2]);
+
+            const ecf = (byRound[3] || []).filter((s) => s.slot === 'ECF');
+            const wcf = (byRound[3] || []).filter((s) => s.slot === 'WCF');
+            html += `<h4 style="color:#c8102e; margin-top: 28px; margin-bottom: 10px;">Round 3 — Conference finals (${byRound[3].length} possible series)</h4>`;
+            html += `<p style="color:#aaa; margin-bottom: 8px; font-weight:600;">Eastern Conference (ECF)</p>`;
+            html += openConditionalSeriesTable(ecf);
+            html += `<p style="color:#aaa; margin: 16px 0 8px; font-weight:600;">Western Conference (WCF)</p>`;
+            html += openConditionalSeriesTable(wcf);
+
+            html += `<h4 style="color:#c8102e; margin-top: 28px; margin-bottom: 10px;">Stanley Cup Final (${byRound[4].length} possible East vs West series; East is away)</h4>`;
+            html += openConditionalSeriesTable(byRound[4]);
+
+            return html;
         }
 
         function createSeriesTable(title, series) {

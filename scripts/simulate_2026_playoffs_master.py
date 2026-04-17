@@ -333,6 +333,113 @@ def run_tournament_monte_carlo(iterations=100000, season: str = "20252026", brac
                 except Exception:
                     pass
 
+        # Every possible later-round series on this bracket topology, with series win %.
+        # Ordering (away/home) matches get_series_winner() in the Monte Carlo loop.
+        cond_sims = min(25000, max(5000, iterations // 4))
+
+        def _append_conditional_series(
+            out_list: list,
+            playoff_round: int,
+            slot: str,
+            conference: str | None,
+            away: str,
+            home: str,
+            feeds_from: list[str],
+        ) -> None:
+            a_w, h_w = get_series_current_wins(away, home)
+            r = predictor.simulate_series(
+                away,
+                home,
+                away_wins=a_w,
+                home_wins=h_w,
+                simulations=cond_sims,
+                playoff_round=playoff_round,
+            )
+            out_list.append(
+                {
+                    "playoff_round": int(playoff_round),
+                    "slot": slot,
+                    "conference": conference,
+                    "feeds_from": feeds_from,
+                    "away": away,
+                    "home": home,
+                    "current_wins": {"away": a_w, "home": h_w},
+                    "away_series_win_prob": r["away_series_win_prob"],
+                    "home_series_win_prob": r["home_series_win_prob"],
+                    "avg_remaining_games": r.get("avg_remaining_games"),
+                    "winner_projection": r.get("winner_projection"),
+                }
+            )
+
+        conditional_series_predictions: list[dict] = []
+        r1e = bracket["East"]
+        r1w = bracket["West"]
+
+        # Round 2 — four divisional finals per conference (2×2 combos each)
+        for conf_name, r1, prefix in [
+            ("East", r1e, "East"),
+            ("West", r1w, "West"),
+        ]:
+            for slot, i0, i1 in [
+                (f"R2-{prefix[0]}1", 0, 1),
+                (f"R2-{prefix[0]}2", 2, 3),
+            ]:
+                for aw in (r1[i0]["away"], r1[i0]["home"]):
+                    for hm in (r1[i1]["away"], r1[i1]["home"]):
+                        _append_conditional_series(
+                            conditional_series_predictions,
+                            2,
+                            slot,
+                            conf_name,
+                            aw,
+                            hm,
+                            [f"{conf_name}.R1[{i0}]", f"{conf_name}.R1[{i1}]"],
+                        )
+
+        # Conference finals — any team that can emerge from each side of the bracket
+        pool_e_r2_1 = {r1e[0]["away"], r1e[0]["home"], r1e[1]["away"], r1e[1]["home"]}
+        pool_e_r2_2 = {r1e[2]["away"], r1e[2]["home"], r1e[3]["away"], r1e[3]["home"]}
+        pool_w_r2_1 = {r1w[0]["away"], r1w[0]["home"], r1w[1]["away"], r1w[1]["home"]}
+        pool_w_r2_2 = {r1w[2]["away"], r1w[2]["home"], r1w[3]["away"], r1w[3]["home"]}
+
+        for aw in sorted(pool_e_r2_1):
+            for hm in sorted(pool_e_r2_2):
+                _append_conditional_series(
+                    conditional_series_predictions,
+                    3,
+                    "ECF",
+                    "East",
+                    aw,
+                    hm,
+                    ["East.R2[0]", "East.R2[1]"],
+                )
+        for aw in sorted(pool_w_r2_1):
+            for hm in sorted(pool_w_r2_2):
+                _append_conditional_series(
+                    conditional_series_predictions,
+                    3,
+                    "WCF",
+                    "West",
+                    aw,
+                    hm,
+                    ["West.R2[0]", "West.R2[1]"],
+                )
+
+        # Stanley Cup Final — East champion away, West champion home (same as get_series_winner(4, ...))
+        east_teams = {t for m in r1e for t in (m["away"], m["home"])}
+        west_teams = {t for m in r1w for t in (m["away"], m["home"])}
+        for aw in sorted(east_teams):
+            for hm in sorted(west_teams):
+                _append_conditional_series(
+                    conditional_series_predictions,
+                    4,
+                    "SCF",
+                    None,
+                    aw,
+                    hm,
+                    ["East.R3[0]", "West.R3[0]"],
+                )
+
         # Build a full bracket format (structure + Round 1 computed odds).
         # Later rounds are represented structurally by the winner-feeds.
         bracket_tree = {
@@ -424,10 +531,33 @@ def run_tournament_monte_carlo(iterations=100000, season: str = "20252026", brac
                 "iterations": int(iterations),
                 "season": season,
                 "source": "simulate_2026_playoffs_master.py",
+                "conditional_series_note": (
+                    "R2–SCF rows list every matchup allowed by this bracket’s feeder slots; "
+                    "away/home matches the tournament sim (East is away in the Final). "
+                    f"Each row used simulate_series(..., playoff_round=N) with N simulations={cond_sims}."
+                ),
+                "regular_season_to_playoff_series_model": {
+                    "summary": (
+                        "Series win probabilities use PlayoffSeriesPredictor: current-season tactical "
+                        "profile plus regular-season-trained priors. For each playoff_round 1–4, "
+                        "game win rates blend cup_prior_current.json (RS→Cup logit) with "
+                        "reg_season_playoff_round_models_5yr.json / reg_season_team_features_current.json "
+                        "(RS→depth-by-round logit) and team_advanced_metrics.json."
+                    ),
+                    "playoff_round_passed_to_game_model": True,
+                    "key_input_files": [
+                        "data/cup_prior_current.json",
+                        "data/reg_season_playoff_round_models_5yr.json",
+                        "data/reg_season_team_features_current.json",
+                        "data/team_advanced_metrics.json",
+                        "data/team_edge_profiles.json",
+                    ],
+                },
             },
             "bracket": bracket,
             "bracket_tree": bracket_tree,
             "round1_series_odds": series_odds,
+            "conditional_series_predictions": conditional_series_predictions,
             "advancement_probabilities": final_results,
             "opponent_paths": opponent_paths,
             "path_difficulty": path_difficulty,
