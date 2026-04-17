@@ -3,20 +3,24 @@ name: Backfill Historical Team Metrics
 on:
   workflow_dispatch:
     inputs:
-      season:
-        description: "Season (YYYYYYYY), e.g. 20222023"
+      end_season:
+        description: "Last season to backfill (YYYYYYYY), e.g. 20242025"
         required: true
-        default: "20222023"
+        default: "20242025"
+      num_seasons:
+        description: "How many seasons to backfill ending at end_season"
+        required: false
+        default: "5"
       start_date:
-        description: "Start date YYYY-MM-DD (optional)"
+        description: "Start date YYYY-MM-DD (optional; only used when num_seasons=1)"
         required: false
         default: ""
       end_date:
-        description: "End date YYYY-MM-DD (optional)"
+        description: "End date YYYY-MM-DD (optional; only used when num_seasons=1)"
         required: false
         default: ""
-      max_games:
-        description: "Max games to process this run (0 = no limit)"
+      max_games_per_season:
+        description: "Max games to process per season (0 = no limit)"
         required: false
         default: "250"
       cache_raw:
@@ -48,24 +52,50 @@ jobs:
           python -m pip install --upgrade pip
           pip install -r requirements.txt
 
-      - name: Run backfill chunk
+      - name: Run backfill (multi-season)
         run: |
           set -e
-          SEASON="${{ inputs.season }}"
-          MAX_GAMES="${{ inputs.max_games }}"
+          END_SEASON="${{ inputs.end_season }}"
+          NUM_SEASONS="${{ inputs.num_seasons }}"
+          MAX_GAMES="${{ inputs.max_games_per_season }}"
           START="${{ inputs.start_date }}"
           END="${{ inputs.end_date }}"
           CACHE_RAW="${{ inputs.cache_raw }}"
 
-          ARGS="--season $SEASON --max-games $MAX_GAMES"
-          if [ -n "$START" ] && [ -n "$END" ]; then
-            ARGS="$ARGS --start-date $START --end-date $END"
-          fi
-          if [ "$CACHE_RAW" = "true" ]; then
-            ARGS="$ARGS --cache-raw"
+          END_START_YEAR="${END_SEASON:0:4}"
+          if ! [[ "$END_START_YEAR" =~ ^[0-9]{4}$ ]]; then
+            echo "Invalid end_season: $END_SEASON"
+            exit 1
           fi
 
-          python3 scripts/backfill_historical_team_metrics.py $ARGS
+          if ! [[ "$NUM_SEASONS" =~ ^[0-9]+$ ]]; then
+            echo "Invalid num_seasons: $NUM_SEASONS"
+            exit 1
+          fi
+
+          START_YEAR=$((10#$END_START_YEAR - (10#$NUM_SEASONS - 1)))
+          if [ "$START_YEAR" -lt 1917 ]; then
+            echo "Refusing to backfill before 1917. Computed start_year=$START_YEAR"
+            exit 1
+          fi
+
+          echo "Backfilling seasons with start years $START_YEAR..$END_START_YEAR"
+
+          for (( y=$START_YEAR; y<=10#$END_START_YEAR; y++ )); do
+            SEASON="$(printf "%04d%04d" "$y" "$((y+1))")"
+            echo ""
+            echo "=== Backfill season $SEASON ==="
+
+            ARGS="--season $SEASON --max-games $MAX_GAMES"
+            if [ "$NUM_SEASONS" = "1" ] && [ -n "$START" ] && [ -n "$END" ]; then
+              ARGS="$ARGS --start-date $START --end-date $END"
+            fi
+            if [ "$CACHE_RAW" = "true" ]; then
+              ARGS="$ARGS --cache-raw"
+            fi
+
+            python3 scripts/backfill_historical_team_metrics.py $ARGS
+          done
 
       - name: Commit and push results
         run: |
@@ -75,7 +105,7 @@ jobs:
           git add -A data/historical || true
 
           if ! git diff --staged --quiet; then
-            git commit -m "data: backfill historical team metrics (${{ inputs.season }}) [skip ci]"
+            git commit -m "data: backfill historical team metrics (${{ inputs.end_season }}, last ${{ inputs.num_seasons }}) [skip ci]"
             git push origin main
           else
             echo "No changes to commit."
