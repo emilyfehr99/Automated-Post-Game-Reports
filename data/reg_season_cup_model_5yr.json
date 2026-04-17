@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at_utc": "2026-04-17T22:31:19.358480+00:00",
+    "generated_at_utc": "2026-04-17T22:37:15.253511+00:00",
     "rows": 159,
     "positives": 5,
     "seasons": [
@@ -53,13 +53,13 @@
   "logistic": {
     "intercept": -1.7501345448495047,
     "coef": {
-      "points_pct": 0.3526427454921482,
-      "goal_diff": 0.21408800646068882,
+      "points_pct": 0.35264274549214947,
+      "goal_diff": 0.21408800646068823,
       "goals_for": -0.5053235390254663,
-      "goals_against": -0.7193244009118462,
-      "league_rank_points": -0.6301352847639732,
-      "division_rank": -0.9592437298422928,
-      "conference_rank": -0.6371229185699879
+      "goals_against": -0.7193244009118468,
+      "league_rank_points": -0.6301352847639721,
+      "division_rank": -0.9592437298422927,
+      "conference_rank": -0.6371229185699882
     }
   },
   "winner_rank_by_season": [
