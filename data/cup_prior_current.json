@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at_utc": "2026-04-17T22:37:15.572198+00:00",
+    "generated_at_utc": "2026-04-17T22:43:49.214151+00:00",
     "season": "20252026",
     "source_model": "data/reg_season_cup_model_5yr.json"
   },
@@ -8,22 +8,22 @@
     "COL": {
       "season": "20252026",
       "cup_prior_score": 0.8851289017832209,
-      "cup_prior_norm": 0.1124706315204443,
+      "cup_prior_norm": 0.11247063152044429,
       "points_pct": 0.737805,
       "goal_diff": 99,
       "league_rank_points": 1
     },
     "CAR": {
       "season": "20252026",
-      "cup_prior_score": 0.7580043597615024,
-      "cup_prior_norm": 0.09631730346379064,
+      "cup_prior_score": 0.7580043597615027,
+      "cup_prior_norm": 0.09631730346379067,
       "points_pct": 0.689024,
       "goal_diff": 56,
       "league_rank_points": 2
     },
     "DAL": {
       "season": "20252026",
-      "cup_prior_score": 0.7315284245050778,
+      "cup_prior_score": 0.7315284245050779,
       "cup_prior_norm": 0.09295308707408138,
       "points_pct": 0.682927,
       "goal_diff": 53,
@@ -31,15 +31,15 @@
     },
     "BUF": {
       "season": "20252026",
-      "cup_prior_score": 0.719853969626883,
-      "cup_prior_norm": 0.0914696496785086,
+      "cup_prior_score": 0.7198539696268832,
+      "cup_prior_norm": 0.09146964967850861,
       "points_pct": 0.664634,
       "goal_diff": 47,
       "league_rank_points": 4
     },
     "TBL": {
       "season": "20252026",
-      "cup_prior_score": 0.6359808956825536,
+      "cup_prior_score": 0.6359808956825537,
       "cup_prior_norm": 0.08081215383233864,
       "points_pct": 0.646341,
       "goal_diff": 59,
@@ -47,40 +47,40 @@
     },
     "MTL": {
       "season": "20252026",
-      "cup_prior_score": 0.405038617541794,
-      "cup_prior_norm": 0.05146702250182567,
+      "cup_prior_score": 0.40503861754179415,
+      "cup_prior_norm": 0.051467022501825686,
       "points_pct": 0.646341,
       "goal_diff": 27,
       "league_rank_points": 6
     },
     "MIN": {
       "season": "20252026",
-      "cup_prior_score": 0.4774988709866706,
-      "cup_prior_norm": 0.06067432603542181,
+      "cup_prior_score": 0.4774988709866707,
+      "cup_prior_norm": 0.060674326035421826,
       "points_pct": 0.634146,
       "goal_diff": 32,
       "league_rank_points": 7
     },
     "BOS": {
       "season": "20252026",
-      "cup_prior_score": 0.29187684927425606,
-      "cup_prior_norm": 0.03708790154511641,
+      "cup_prior_score": 0.2918768492742562,
+      "cup_prior_norm": 0.03708790154511643,
       "points_pct": 0.609756,
       "goal_diff": 22,
       "league_rank_points": 8
     },
     "OTT": {
       "season": "20252026",
-      "cup_prior_score": 0.20161321174480223,
-      "cup_prior_norm": 0.02561837626375067,
+      "cup_prior_score": 0.2016132117448023,
+      "cup_prior_norm": 0.025618376263750676,
       "points_pct": 0.603659,
       "goal_diff": 32,
       "league_rank_points": 9
     },
     "PIT": {
       "season": "20252026",
-      "cup_prior_score": 0.32106711452465814,
-      "cup_prior_norm": 0.0407970195734034,
+      "cup_prior_score": 0.3210671145246583,
+      "cup_prior_norm": 0.04079701957340341,
       "points_pct": 0.597561,
       "goal_diff": 25,
       "league_rank_points": 10
@@ -88,14 +88,14 @@
     "PHI": {
       "season": "20252026",
       "cup_prior_score": 0.38266966209657066,
-      "cup_prior_norm": 0.04862466751792627,
+      "cup_prior_norm": 0.04862466751792626,
       "points_pct": 0.597561,
       "goal_diff": 7,
       "league_rank_points": 11
     },
     "WSH": {
       "season": "20252026",
-      "cup_prior_score": 0.24013542443373817,
+      "cup_prior_score": 0.2401354244337382,
       "cup_prior_norm": 0.030513276407628933,
       "points_pct": 0.579268,
       "goal_diff": 19,
@@ -103,7 +103,7 @@
     },
     "VGK": {
       "season": "20252026",
-      "cup_prior_score": 0.49981568364656287,
+      "cup_prior_score": 0.499815683646563,
       "cup_prior_norm": 0.06351005539452963,
       "points_pct": 0.579268,
       "goal_diff": 15,
@@ -111,32 +111,32 @@
     },
     "EDM": {
       "season": "20252026",
-      "cup_prior_score": 0.2630179841283432,
-      "cup_prior_norm": 0.03342089351794086,
+      "cup_prior_score": 0.2630179841283433,
+      "cup_prior_norm": 0.033420893517940864,
       "points_pct": 0.567073,
       "goal_diff": 13,
       "league_rank_points": 14
     },
     "UTA": {
       "season": "20252026",
-      "cup_prior_score": 0.21073375054679955,
-      "cup_prior_norm": 0.0267772953283081,
+      "cup_prior_score": 0.21073375054679963,
+      "cup_prior_norm": 0.026777295328308106,
       "points_pct": 0.560976,
       "goal_diff": 28,
       "league_rank_points": 15
     },
     "DET": {
       "season": "20252026",
-      "cup_prior_score": 0.07839720379287546,
-      "cup_prior_norm": 0.00996169371744361,
+      "cup_prior_score": 0.07839720379287543,
+      "cup_prior_norm": 0.009961693717443605,
       "points_pct": 0.560976,
       "goal_diff": -17,
       "league_rank_points": 16
     },
     "CBJ": {
       "season": "20252026",
-      "cup_prior_score": 0.10760268561113279,
-      "cup_prior_norm": 0.013672745268625172,
+      "cup_prior_score": 0.10760268561113275,
+      "cup_prior_norm": 0.013672745268625166,
       "points_pct": 0.560976,
       "goal_diff": 0,
       "league_rank_points": 17
@@ -144,55 +144,55 @@
     "ANA": {
       "season": "20252026",
       "cup_prior_score": 0.11043723423765897,
-      "cup_prior_norm": 0.014032922722393242,
+      "cup_prior_norm": 0.01403292272239324,
       "points_pct": 0.560976,
       "goal_diff": -15,
       "league_rank_points": 18
     },
     "NYI": {
       "season": "20252026",
-      "cup_prior_score": 0.0877293279457348,
-      "cup_prior_norm": 0.011147498287585576,
+      "cup_prior_score": 0.08772932794573478,
+      "cup_prior_norm": 0.01114749828758557,
       "points_pct": 0.554878,
       "goal_diff": -8,
       "league_rank_points": 19
     },
     "LAK": {
       "season": "20252026",
-      "cup_prior_score": 0.1708173668837484,
-      "cup_prior_norm": 0.021705242128428268,
+      "cup_prior_score": 0.1708173668837483,
+      "cup_prior_norm": 0.02170524212842825,
       "points_pct": 0.54878,
       "goal_diff": -22,
       "league_rank_points": 20
     },
     "NJD": {
       "season": "20252026",
-      "cup_prior_score": 0.038183352149534895,
-      "cup_prior_norm": 0.004851842168043318,
+      "cup_prior_score": 0.03818335214953488,
+      "cup_prior_norm": 0.004851842168043316,
       "points_pct": 0.530488,
       "goal_diff": -24,
       "league_rank_points": 21
     },
     "STL": {
       "season": "20252026",
-      "cup_prior_score": 0.07674647005922611,
-      "cup_prior_norm": 0.00975194001363662,
+      "cup_prior_score": 0.07674647005922604,
+      "cup_prior_norm": 0.009751940013636612,
       "points_pct": 0.52439,
       "goal_diff": -27,
       "league_rank_points": 22
     },
     "NSH": {
       "season": "20252026",
-      "cup_prior_score": 0.035018878636736056,
-      "cup_prior_norm": 0.00444974216464588,
+      "cup_prior_score": 0.03501887863673604,
+      "cup_prior_norm": 0.004449742164645877,
       "points_pct": 0.52439,
       "goal_diff": -22,
       "league_rank_points": 23
     },
     "SJS": {
       "season": "20252026",
-      "cup_prior_score": 0.03064084547672361,
-      "cup_prior_norm": 0.003893438836021049,
+      "cup_prior_score": 0.03064084547672359,
+      "cup_prior_norm": 0.0038934388360210466,
       "points_pct": 0.52439,
       "goal_diff": -41,
       "league_rank_points": 24
@@ -207,16 +207,16 @@
     },
     "WPG": {
       "season": "20252026",
-      "cup_prior_score": 0.022468940796188837,
-      "cup_prior_norm": 0.002855059817673596,
+      "cup_prior_score": 0.02246894079618882,
+      "cup_prior_norm": 0.0028550598176735934,
       "points_pct": 0.5,
       "goal_diff": -29,
       "league_rank_points": 26
     },
     "SEA": {
       "season": "20252026",
-      "cup_prior_score": 0.028708531463851925,
-      "cup_prior_norm": 0.0036479055844396784,
+      "cup_prior_score": 0.0287085314638519,
+      "cup_prior_norm": 0.003647905584439675,
       "points_pct": 0.481707,
       "goal_diff": -37,
       "league_rank_points": 27
@@ -224,31 +224,31 @@
     "TOR": {
       "season": "20252026",
       "cup_prior_score": 0.00464793029079015,
-      "cup_prior_norm": 0.0005905983343386519,
+      "cup_prior_norm": 0.0005905983343386518,
       "points_pct": 0.47561,
       "goal_diff": -46,
       "league_rank_points": 28
     },
     "CGY": {
       "season": "20252026",
-      "cup_prior_score": 0.01865178667468698,
-      "cup_prior_norm": 0.002370025678813982,
+      "cup_prior_score": 0.018651786674686966,
+      "cup_prior_norm": 0.00237002567881398,
       "points_pct": 0.469512,
       "goal_diff": -47,
       "league_rank_points": 29
     },
     "NYR": {
       "season": "20252026",
-      "cup_prior_score": 0.011085927112925645,
-      "cup_prior_norm": 0.0014086549663765585,
+      "cup_prior_score": 0.011085927112925626,
+      "cup_prior_norm": 0.0014086549663765559,
       "points_pct": 0.469512,
       "goal_diff": -12,
       "league_rank_points": 30
     },
     "CHI": {
       "season": "20252026",
-      "cup_prior_score": 0.007014815238182542,
-      "cup_prior_norm": 0.0008913511899206435,
+      "cup_prior_score": 0.007014815238182537,
+      "cup_prior_norm": 0.0008913511899206428,
       "points_pct": 0.439024,
       "goal_diff": -62,
       "league_rank_points": 31
