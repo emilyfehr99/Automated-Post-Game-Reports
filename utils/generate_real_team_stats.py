@@ -27,8 +27,9 @@ from team_report_generator import TeamReportGenerator
 class RealTeamStatsGenerator(TeamReportGenerator):
     """Generate real team stats using TeamReportGenerator's calculation methods"""
     
-    def __init__(self):
+    def __init__(self, enable_sprites: bool = True):
         super().__init__()
+        self.enable_sprites = enable_sprites
         # Use absolute path for robustness
         script_dir = Path(__file__).parent.absolute()
         project_root = script_dir.parent.absolute()
@@ -189,23 +190,24 @@ class RealTeamStatsGenerator(TeamReportGenerator):
                 forecheck_turnovers = team_metrics.get('forecheck_turnovers', 0)
                 passes_per_goal = team_metrics.get('passes_per_goal', 0.0)
                 
-                # Sprite Goal analysis
-                sprite_analyzer = SpriteGoalAnalyzer(game_data)
-                sprite_results = sprite_analyzer.analyze_goals()
-                
-                # Extract venue-specific sprite stats
-                venue_sprite = sprite_results.get('away' if venue_key == 'away' else 'home', {})
-                net_front_traffic_pct = venue_sprite.get('net_front_traffic_pct', 0.0)
-                avg_goal_distance = venue_sprite.get('avg_goal_distance', 0.0)
-                
-                entry_share = venue_sprite.get('entry_type_share', {})
-                carry_pct = entry_share.get('carry', 0.0)
-                pass_pct = entry_share.get('pass', 0.0)
-                
-                # Movement re-mapping
-                movement = venue_sprite.get('movement_metrics', {})
-                east_west_play = movement.get('east_west', 0.0)
-                north_south_play = movement.get('north_south', 0.0)
+                if self.enable_sprites:
+                    # Sprite Goal analysis (may be blocked historically; optional)
+                    sprite_analyzer = SpriteGoalAnalyzer(game_data)
+                    sprite_results = sprite_analyzer.analyze_goals()
+                    
+                    # Extract venue-specific sprite stats
+                    venue_sprite = sprite_results.get('away' if venue_key == 'away' else 'home', {})
+                    net_front_traffic_pct = venue_sprite.get('net_front_traffic_pct', 0.0)
+                    avg_goal_distance = venue_sprite.get('avg_goal_distance', 0.0)
+                    
+                    entry_share = venue_sprite.get('entry_type_share', {})
+                    carry_pct = entry_share.get('carry', 0.0)
+                    pass_pct = entry_share.get('pass', 0.0)
+                    
+                    # Movement re-mapping
+                    movement = venue_sprite.get('movement_metrics', {})
+                    east_west_play = movement.get('east_west', 0.0)
+                    north_south_play = movement.get('north_south', 0.0)
         except Exception as e:
             print(f"    Error calculating high-signal metrics: {e}")
             
