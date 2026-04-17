@@ -1,8 +1,8 @@
 {
   "meta": {
-    "generated_at_utc": "2026-04-17T22:50:38.647642+00:00",
-    "export_version": 4,
-    "iterations": 75000,
+    "generated_at_utc": "2026-04-17T22:55:38.600415+00:00",
+    "export_version": 5,
+    "iterations": 100000,
     "season": "20252026",
     "source": "simulate_2026_playoffs_master.py"
   },
@@ -69,9 +69,280 @@
     "most_likely_stanley_cup_final": {
       "east": "TBL",
       "west": "COL",
-      "probability_this_exact_final_occurs": 0.16233333333333333,
+      "probability_this_exact_final_occurs": 0.21875,
       "projected_series_winner": "TBL"
     },
     "note": "round1.winner: model favorite in each scheduled first-round series. projected_stanley_cup_champion: highest Cup share in the bracket Monte Carlo. most_likely_stanley_cup_final: (East, West) pair that occurred most often before the Final; projected_series_winner is the favorite in that best-of-7 (East away, West home). R2\u2013ECF/WCF: every possible pairing on this bracket \u2014 see all_series / playoff_series_all.csv."
+  },
+  "projected_bracket_path": {
+    "method": "round_by_round_favorites",
+    "summary": "Single projected bracket path: each round uses the model\u2019s series favorite from the prior step, so matchups are the ones the real bracket would produce if favorites always won. Away/home matches the tournament simulation (East champion is away in the Final). This is not identical to the most likely path from the full Monte Carlo when upsets shift pairings.",
+    "projected_stanley_cup_champion": "COL",
+    "rounds": [
+      {
+        "playoff_round": 1,
+        "round_name": "Round 1",
+        "series": [
+          {
+            "playoff_round": 1,
+            "round_name": "Round 1",
+            "slot": "R1-M1",
+            "conference": "East",
+            "away": "OTT",
+            "home": "CAR",
+            "current_wins": {
+              "away": 0,
+              "home": 0
+            },
+            "away_series_win_prob": 0.36772,
+            "home_series_win_prob": 0.63228,
+            "avg_remaining_games": 5.8,
+            "projected_winner": "CAR"
+          },
+          {
+            "playoff_round": 1,
+            "round_name": "Round 1",
+            "slot": "R1-M2v3",
+            "conference": "East",
+            "away": "PHI",
+            "home": "PIT",
+            "current_wins": {
+              "away": 0,
+              "home": 0
+            },
+            "away_series_win_prob": 0.1094,
+            "home_series_win_prob": 0.8906000000000001,
+            "avg_remaining_games": 5.3,
+            "projected_winner": "PIT"
+          },
+          {
+            "playoff_round": 1,
+            "round_name": "Round 1",
+            "slot": "R1-M2",
+            "conference": "East",
+            "away": "BOS",
+            "home": "BUF",
+            "current_wins": {
+              "away": 0,
+              "home": 0
+            },
+            "away_series_win_prob": 0.8466,
+            "home_series_win_prob": 0.15339999999999998,
+            "avg_remaining_games": 5.5,
+            "projected_winner": "BOS"
+          },
+          {
+            "playoff_round": 1,
+            "round_name": "Round 1",
+            "slot": "R1-A2v3",
+            "conference": "East",
+            "away": "MTL",
+            "home": "TBL",
+            "current_wins": {
+              "away": 0,
+              "home": 0
+            },
+            "away_series_win_prob": 0.35172,
+            "home_series_win_prob": 0.64828,
+            "avg_remaining_games": 5.8,
+            "projected_winner": "TBL"
+          },
+          {
+            "playoff_round": 1,
+            "round_name": "Round 1",
+            "slot": "R1-M1",
+            "conference": "West",
+            "away": "LAK",
+            "home": "COL",
+            "current_wins": {
+              "away": 0,
+              "home": 0
+            },
+            "away_series_win_prob": 0.0346,
+            "home_series_win_prob": 0.9654,
+            "avg_remaining_games": 4.9,
+            "projected_winner": "COL"
+          },
+          {
+            "playoff_round": 1,
+            "round_name": "Round 1",
+            "slot": "R1-C2v3",
+            "conference": "West",
+            "away": "MIN",
+            "home": "DAL",
+            "current_wins": {
+              "away": 0,
+              "home": 0
+            },
+            "away_series_win_prob": 0.37392,
+            "home_series_win_prob": 0.62608,
+            "avg_remaining_games": 5.8,
+            "projected_winner": "DAL"
+          },
+          {
+            "playoff_round": 1,
+            "round_name": "Round 1",
+            "slot": "R1-M2",
+            "conference": "West",
+            "away": "UTA",
+            "home": "VGK",
+            "current_wins": {
+              "away": 0,
+              "home": 0
+            },
+            "away_series_win_prob": 0.66672,
+            "home_series_win_prob": 0.33328,
+            "avg_remaining_games": 5.8,
+            "projected_winner": "UTA"
+          },
+          {
+            "playoff_round": 1,
+            "round_name": "Round 1",
+            "slot": "R1-P2v3",
+            "conference": "West",
+            "away": "ANA",
+            "home": "EDM",
+            "current_wins": {
+              "away": 0,
+              "home": 0
+            },
+            "away_series_win_prob": 0.58432,
+            "home_series_win_prob": 0.41568000000000005,
+            "avg_remaining_games": 5.9,
+            "projected_winner": "ANA"
+          }
+        ]
+      },
+      {
+        "playoff_round": 2,
+        "round_name": "Round 2",
+        "series": [
+          {
+            "playoff_round": 2,
+            "round_name": "Round 2",
+            "slot": "R2-E1",
+            "conference": "East",
+            "away": "CAR",
+            "home": "PIT",
+            "current_wins": {
+              "away": 0,
+              "home": 0
+            },
+            "away_series_win_prob": 0.59528,
+            "home_series_win_prob": 0.40471999999999997,
+            "avg_remaining_games": 5.8,
+            "projected_winner": "CAR"
+          },
+          {
+            "playoff_round": 2,
+            "round_name": "Round 2",
+            "slot": "R2-E2",
+            "conference": "East",
+            "away": "BOS",
+            "home": "TBL",
+            "current_wins": {
+              "away": 0,
+              "home": 0
+            },
+            "away_series_win_prob": 0.05096,
+            "home_series_win_prob": 0.94904,
+            "avg_remaining_games": 5.3,
+            "projected_winner": "TBL"
+          },
+          {
+            "playoff_round": 2,
+            "round_name": "Round 2",
+            "slot": "R2-W1",
+            "conference": "West",
+            "away": "COL",
+            "home": "DAL",
+            "current_wins": {
+              "away": 0,
+              "home": 0
+            },
+            "away_series_win_prob": 0.78516,
+            "home_series_win_prob": 0.21484000000000003,
+            "avg_remaining_games": 5.6,
+            "projected_winner": "COL"
+          },
+          {
+            "playoff_round": 2,
+            "round_name": "Round 2",
+            "slot": "R2-W2",
+            "conference": "West",
+            "away": "UTA",
+            "home": "ANA",
+            "current_wins": {
+              "away": 0,
+              "home": 0
+            },
+            "away_series_win_prob": 0.22452,
+            "home_series_win_prob": 0.77548,
+            "avg_remaining_games": 5.6,
+            "projected_winner": "ANA"
+          }
+        ]
+      },
+      {
+        "playoff_round": 3,
+        "round_name": "Conference finals",
+        "series": [
+          {
+            "playoff_round": 3,
+            "round_name": "Conference finals",
+            "slot": "ECF",
+            "conference": "East",
+            "away": "CAR",
+            "home": "TBL",
+            "current_wins": {
+              "away": 0,
+              "home": 0
+            },
+            "away_series_win_prob": 0.68136,
+            "home_series_win_prob": 0.31864000000000003,
+            "avg_remaining_games": 5.7,
+            "projected_winner": "CAR"
+          },
+          {
+            "playoff_round": 3,
+            "round_name": "Conference finals",
+            "slot": "WCF",
+            "conference": "West",
+            "away": "COL",
+            "home": "ANA",
+            "current_wins": {
+              "away": 0,
+              "home": 0
+            },
+            "away_series_win_prob": 0.9386,
+            "home_series_win_prob": 0.06140000000000001,
+            "avg_remaining_games": 5.2,
+            "projected_winner": "COL"
+          }
+        ]
+      },
+      {
+        "playoff_round": 4,
+        "round_name": "Stanley Cup Final",
+        "series": [
+          {
+            "playoff_round": 4,
+            "round_name": "Stanley Cup Final",
+            "slot": "SCF",
+            "conference": "",
+            "away": "CAR",
+            "home": "COL",
+            "current_wins": {
+              "away": 0,
+              "home": 0
+            },
+            "away_series_win_prob": 0.09424,
+            "home_series_win_prob": 0.90576,
+            "avg_remaining_games": 5.3,
+            "projected_winner": "COL"
+          }
+        ]
+      }
+    ]
   }
 }

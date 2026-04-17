@@ -22,7 +22,7 @@ from playoff_predictor import PlayoffSeriesPredictor
 BASE_URL = 'https://api-web.nhle.com/v1'
 
 # Bump when export shape / meta fields change (check meta.export_version in JSON).
-PLAYOFF_EXPORT_VERSION = 4
+PLAYOFF_EXPORT_VERSION = 5
 
 def fetch_standings(date: str = "now"):
     try:
@@ -306,6 +306,130 @@ def _build_series_winners(
     return out
 
 
+def _build_projected_bracket_path(
+    bracket: dict,
+    series_odds: dict,
+    predictor,
+    get_series_current_wins,
+    cond_sims: int,
+) -> dict:
+    """
+    One full projected schedule on the real bracket: R1 favorites, then R2–SCF for the
+    matchups that path implies (same away/home convention as the tournament sim).
+    """
+    def sim(rnd: int, away: str, home: str) -> dict:
+        a_w, h_w = get_series_current_wins(away, home)
+        return predictor.simulate_series(
+            away,
+            home,
+            away_wins=a_w,
+            home_wins=h_w,
+            simulations=cond_sims,
+            playoff_round=rnd,
+        )
+
+    def row(
+        rnd: int,
+        slot: str,
+        conference: str | None,
+        away: str,
+        home: str,
+        r: dict,
+    ) -> dict:
+        cw = r.get("current_wins")
+        if isinstance(cw, dict) and ("away" in cw or "home" in cw):
+            cur = {"away": int(cw.get("away", 0)), "home": int(cw.get("home", 0))}
+        else:
+            a_w, h_w = get_series_current_wins(away, home)
+            cur = {"away": a_w, "home": h_w}
+        wp = r.get("winner_projection")
+        return {
+            "playoff_round": int(rnd),
+            "round_name": _round_name(rnd),
+            "slot": slot,
+            "conference": conference if conference is not None else "",
+            "away": away,
+            "home": home,
+            "current_wins": cur,
+            "away_series_win_prob": float(r["away_series_win_prob"]),
+            "home_series_win_prob": float(r["home_series_win_prob"]),
+            "avg_remaining_games": r.get("avg_remaining_games"),
+            "projected_winner": wp,
+        }
+
+    r1_series: list[dict] = []
+    for conf in ("East", "West"):
+        for i, m in enumerate(bracket[conf]):
+            item = series_odds[conf][i]
+            r1_series.append(
+                row(
+                    1,
+                    item.get("label") or "",
+                    conf,
+                    item["away"],
+                    item["home"],
+                    {
+                        "current_wins": item.get("current_wins"),
+                        "away_series_win_prob": item["away_series_win_prob"],
+                        "home_series_win_prob": item["home_series_win_prob"],
+                        "avg_remaining_games": item.get("avg_remaining_games"),
+                        "winner_projection": item.get("winner_projection"),
+                    },
+                )
+            )
+
+    e = [series_odds["East"][i]["winner_projection"] for i in range(4)]
+    w = [series_odds["West"][i]["winner_projection"] for i in range(4)]
+
+    r_e1 = sim(2, e[0], e[1])
+    r_e2 = sim(2, e[2], e[3])
+    r_w1 = sim(2, w[0], w[1])
+    r_w2 = sim(2, w[2], w[3])
+    we1 = r_e1.get("winner_projection")
+    we2 = r_e2.get("winner_projection")
+    ww1 = r_w1.get("winner_projection")
+    ww2 = r_w2.get("winner_projection")
+
+    r2_series = [
+        row(2, "R2-E1", "East", e[0], e[1], r_e1),
+        row(2, "R2-E2", "East", e[2], e[3], r_e2),
+        row(2, "R2-W1", "West", w[0], w[1], r_w1),
+        row(2, "R2-W2", "West", w[2], w[3], r_w2),
+    ]
+
+    r_ecf = sim(3, we1, we2)
+    r_wcf = sim(3, ww1, ww2)
+    east_champ = r_ecf.get("winner_projection")
+    west_champ = r_wcf.get("winner_projection")
+
+    r3_series = [
+        row(3, "ECF", "East", we1, we2, r_ecf),
+        row(3, "WCF", "West", ww1, ww2, r_wcf),
+    ]
+
+    r_scf = sim(4, east_champ, west_champ)
+    cup = r_scf.get("winner_projection")
+
+    r4_series = [row(4, "SCF", None, east_champ, west_champ, r_scf)]
+
+    return {
+        "method": "round_by_round_favorites",
+        "summary": (
+            "Single projected bracket path: each round uses the model’s series favorite from the prior step, "
+            "so matchups are the ones the real bracket would produce if favorites always won. "
+            "Away/home matches the tournament simulation (East champion is away in the Final). "
+            "This is not identical to the most likely path from the full Monte Carlo when upsets shift pairings."
+        ),
+        "projected_stanley_cup_champion": cup,
+        "rounds": [
+            {"playoff_round": 1, "round_name": _round_name(1), "series": r1_series},
+            {"playoff_round": 2, "round_name": _round_name(2), "series": r2_series},
+            {"playoff_round": 3, "round_name": _round_name(3), "series": r3_series},
+            {"playoff_round": 4, "round_name": _round_name(4), "series": r4_series},
+        ],
+    }
+
+
 def run_tournament_monte_carlo(
     iterations=100000,
     season: str = "20252026",
@@ -504,6 +628,10 @@ def run_tournament_monte_carlo(
         # Every possible later-round series on this bracket topology, with series win %.
         # Ordering (away/home) matches get_series_winner() in the Monte Carlo loop.
         cond_sims = min(25000, max(5000, iterations // 4))
+
+        projected_bracket_path = _build_projected_bracket_path(
+            bracket, series_odds, predictor, get_series_current_wins, cond_sims
+        )
 
         def _append_conditional_series(
             out_list: list,
@@ -706,6 +834,7 @@ def run_tournament_monte_carlo(
                 "source": "simulate_2026_playoffs_master.py",
             },
             "series_winners": series_winners,
+            "projected_bracket_path": projected_bracket_path,
         }
         with winners_path.open("w") as wf:
             json.dump(winners_payload, wf, indent=2)
@@ -753,6 +882,11 @@ def run_tournament_monte_carlo(
                     "pair occurred in the same bracket simulation before the Final series; "
                     f"probabilities sum to 1.0 over {iterations:,} iterations."
                 ),
+                "projected_bracket_path_note": (
+                    "projected_bracket_path is one coherent schedule: favorites from Round 1, then the four Round 2 "
+                    "series those winners create, ECF/WCF, and SCF — same bracket wiring as the Monte Carlo. "
+                    "See all_series for every conditional matchup, not only this chalk path."
+                ),
                 "regular_season_to_playoff_series_model": {
                     "summary": (
                         "Series win probabilities use PlayoffSeriesPredictor: current-season tactical "
@@ -772,6 +906,7 @@ def run_tournament_monte_carlo(
                 },
             },
             "series_winners": series_winners,
+            "projected_bracket_path": projected_bracket_path,
             "bracket": bracket,
             "bracket_tree": bracket_tree,
             "round1_series_odds": series_odds,

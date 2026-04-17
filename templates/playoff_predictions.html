@@ -754,6 +754,70 @@
             return blocks.join('');
         }
 
+        /** One real bracket path: R1 favorites → R2–SCF implied by that chalk (from projected_bracket_path in JSON). */
+        function buildProjectedBracketPathSection(data) {
+            const p = data.projected_bracket_path;
+            if (!p || !p.rounds || !p.rounds.length) {
+                return '';
+            }
+            const cup = p.projected_stanley_cup_champion
+                ? `<p style="margin-top:10px;color:#e0e0e0;"><strong>Projected Cup winner</strong> (this path): <span style="color:#c8102e;font-weight:800;">${escapeHtml(p.projected_stanley_cup_champion)}</span></p>`
+                : '';
+            const note = p.summary
+                ? `<p style="color:#666;font-size:0.88em;margin-top:12px;max-width:900px;">${escapeHtml(p.summary)}</p>`
+                : '';
+            const metaNote = (data.meta && data.meta.projected_bracket_path_note)
+                ? `<p style="color:#555;font-size:0.82em;margin-top:8px;max-width:900px;">${escapeHtml(data.meta.projected_bracket_path_note)}</p>`
+                : '';
+            const roundsHtml = (p.rounds || []).map((round) => {
+                const title = escapeHtml(round.round_name || `Round ${round.playoff_round}`);
+                const body = (round.series || []).map((s) => {
+                    const slot = escapeHtml(s.slot || '');
+                    const conf = s.conference ? `${escapeHtml(s.conference)} · ` : '';
+                    const aw = escapeHtml(s.away);
+                    const hm = escapeHtml(s.home);
+                    const w = s.projected_winner ? escapeHtml(s.projected_winner) : '—';
+                    const pa = s.away_series_win_prob ?? 0;
+                    const ph = s.home_series_win_prob ?? 0;
+                    return `
+                        <tr>
+                            <td>${conf}${slot}</td>
+                            <td>${aw} @ ${hm}</td>
+                            <td style="color:#c8102e;font-weight:700;">${w}</td>
+                            <td>${pct(pa)}</td>
+                            <td>${pct(ph)}</td>
+                        </tr>`;
+                }).join('');
+                return `
+                    <h5 style="color:#c8102e;margin:18px 0 8px;font-size:1.05em;">${title}</h5>
+                    <div style="overflow-x:auto;">
+                        <table class="standings-table">
+                            <thead>
+                                <tr>
+                                    <th>Slot</th>
+                                    <th>Matchup (away @ home)</th>
+                                    <th>Projected winner</th>
+                                    <th>Away %</th>
+                                    <th>Home %</th>
+                                </tr>
+                            </thead>
+                            <tbody>${body}</tbody>
+                        </table>
+                    </div>`;
+            }).join('');
+            return `
+                <div style="background: linear-gradient(180deg, #151820 0%, #0f0f0f 100%); border: 1px solid #2a3344; border-radius: 12px; padding: 22px 24px; margin-bottom: 8px;">
+                    <h3 style="color:#fff; font-size:1.35em; margin: 0 0 10px; border-bottom: 1px solid #333; padding-bottom: 10px;">Projected schedule (one full bracket path)</h3>
+                    <p style="color:#aaa; margin-bottom: 8px; max-width: 920px;">
+                        This is the model’s <strong>chalk bracket</strong>: Round 1 favorites, then the Round 2 matchups those teams would create, then conference finals and the Stanley Cup Final — <strong>15 total series</strong> on the real tree, not every hypothetical pairing.
+                    </p>
+                    ${cup}
+                    ${roundsHtml}
+                    ${note}
+                    ${metaNote}
+                </div>`;
+        }
+
         function buildSeriesByRoundSection(data) {
             const all = data.all_series;
             const rsMeta = (data.meta && data.meta.regular_season_to_playoff_series_model) || {};
@@ -764,6 +828,8 @@
             if (all && all.length) {
                 const note = (data.meta && data.meta.all_series_note) || '';
                 return `
+                    ${buildProjectedBracketPathSection(data)}
+                    <div style="height: 18px;"></div>
                     ${buildSeriesWinnersSummary(data)}
                     <div style="height: 22px;"></div>
                     <h3 style="color:#fff; font-size:1.35em; margin: 28px 0 10px; border-bottom: 1px solid #333; padding-bottom: 10px;">All series by round (winners + odds)</h3>
@@ -785,6 +851,8 @@
             const note = (data.meta && data.meta.conditional_series_note) || '';
 
             let html = `
+                ${buildProjectedBracketPathSection(data)}
+                <div style="height: 18px;"></div>
                 ${buildSeriesWinnersSummary(data)}
                 <div style="height: 22px;"></div>
                 <h3 style="color:#fff; font-size:1.35em; margin: 28px 0 10px; border-bottom: 1px solid #333; padding-bottom: 10px;">Series win odds by round</h3>
