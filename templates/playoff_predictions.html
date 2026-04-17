@@ -350,7 +350,7 @@
         <div id="content" style="display: none;">
             <div class="standings-section">
                 <h3>2026 Stanley Cup Bracket Forecast</h3>
-                <p>Series-by-series win odds (Rounds 1–4) plus advancement, path difficulty, and Monte Carlo bracket view.</p>
+                <p>Projected series winners at a glance; tables below add win % and later-round hypotheticals.</p>
                 <div id="bracket-meta" style="margin: 10px 0 20px; color: #888; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;"></div>
                 <h4 style="color:#c8102e; margin-top: 0; margin-bottom: 12px;">Bracket layout</h4>
                 <p style="color:#888; margin-bottom: 14px; max-width: 720px;">
@@ -589,17 +589,147 @@
                 </div>`;
         }
 
+        /** Round 1 + Cup favorite from export; falls back to round1 + advancement if no series_winners key. */
+        function getSeriesWinnersPayload(data) {
+            if (data.series_winners && data.series_winners.round1 && data.series_winners.round1.length) {
+                return data.series_winners;
+            }
+            const r1 = data.round1_series_odds;
+            if (!r1) return null;
+            const round1 = [];
+            for (const conf of ['East', 'West']) {
+                for (const s of (r1[conf] || [])) {
+                    round1.push({
+                        conference: conf,
+                        label: s.label,
+                        away: s.away,
+                        home: s.home,
+                        winner: s.winner_projection,
+                    });
+                }
+            }
+            const adv = (data.advancement_probabilities || []).slice().sort((a, b) => (b.cup || 0) - (a.cup || 0));
+            return {
+                round1,
+                projected_stanley_cup_champion: adv[0] && adv[0].team,
+                note: '',
+            };
+        }
+
+        function buildSeriesWinnersSummary(data) {
+            const sw = getSeriesWinnersPayload(data);
+            if (!sw || !sw.round1 || !sw.round1.length) {
+                return '';
+            }
+            const rows = sw.round1.map((r) => `
+                <tr>
+                    <td>${escapeHtml(r.conference)}</td>
+                    <td>${escapeHtml(r.label || '')}</td>
+                    <td>${escapeHtml(r.away)} @ ${escapeHtml(r.home)}</td>
+                    <td style="color:#c8102e; font-weight:800;">${escapeHtml(r.winner || '—')}</td>
+                </tr>
+            `).join('');
+            const cup = sw.projected_stanley_cup_champion
+                ? `<p style="margin-top:14px;color:#e0e0e0;"><strong>Projected Cup winner</strong> (Monte Carlo bracket sim): <span style="color:#c8102e;font-weight:800;">${escapeHtml(sw.projected_stanley_cup_champion)}</span></p>`
+                : '';
+            const note = sw.note ? `<p style="color:#666;font-size:0.88em;margin-top:8px;">${escapeHtml(sw.note)}</p>` : '';
+            return `
+                <h3 style="color:#fff; font-size:1.35em; margin: 0 0 10px; border-bottom: 1px solid #333; padding-bottom: 10px;">Projected series winners</h3>
+                <p style="color:#888; margin-bottom: 12px;">First column is the model favorite for each scheduled Round 1 series.</p>
+                <div style="overflow-x: auto;">
+                    <table class="standings-table">
+                        <thead>
+                            <tr>
+                                <th>Conference</th>
+                                <th>Label</th>
+                                <th>Matchup (away @ home)</th>
+                                <th>Winner</th>
+                            </tr>
+                        </thead>
+                        <tbody>${rows}</tbody>
+                    </table>
+                </div>
+                ${cup}
+                ${note}`;
+        }
+
+        /** One table: Round 1 + every possible R2–SCF row — projected winner per row. */
+        function buildAllSeriesTable(list) {
+            if (!list || !list.length) {
+                return '<p style="color:#888;">No <code>all_series</code> in this file.</p>';
+            }
+            const body = list.map((r) => {
+                const rn = escapeHtml(r.round_name || '');
+                const conf = escapeHtml(r.conference || '—');
+                const slot = escapeHtml(r.slot || '—');
+                const aw = escapeHtml(r.away);
+                const hm = escapeHtml(r.home);
+                const a = r.away_series_win_prob ?? 0;
+                const h = r.home_series_win_prob ?? 0;
+                const win = r.winner
+                    ? escapeHtml(r.winner)
+                    : (h >= a ? hm : aw);
+                return `
+                    <tr>
+                        <td>${rn}</td>
+                        <td>${conf}</td>
+                        <td>${slot}</td>
+                        <td>${aw} @ ${hm}</td>
+                        <td style="color:#c8102e; font-weight:700;">${win}</td>
+                        <td>${pct(a)}</td>
+                        <td>${pct(h)}</td>
+                    </tr>`;
+            }).join('');
+            return `
+                <div style="overflow-x: auto;">
+                    <table class="standings-table">
+                        <thead>
+                            <tr>
+                                <th>Round</th>
+                                <th>Conference</th>
+                                <th>Slot</th>
+                                <th>Matchup</th>
+                                <th>Projected winner</th>
+                                <th>Away %</th>
+                                <th>Home %</th>
+                            </tr>
+                        </thead>
+                        <tbody>${body}</tbody>
+                    </table>
+                </div>`;
+        }
+
         function buildSeriesByRoundSection(data) {
-            const east = (data.round1_series_odds.East || []);
-            const west = (data.round1_series_odds.West || []);
-            const rows = data.conditional_series_predictions;
+            const all = data.all_series;
             const rsMeta = (data.meta && data.meta.regular_season_to_playoff_series_model) || {};
-            const note = (data.meta && data.meta.conditional_series_note) || '';
             const rsBlurb = rsMeta.summary
                 ? `<p style="color:#aaa; margin: 12px 0; max-width: 900px;">${escapeHtml(rsMeta.summary)}</p>`
                 : '';
 
+            if (all && all.length) {
+                const note = (data.meta && data.meta.all_series_note) || '';
+                return `
+                    ${buildSeriesWinnersSummary(data)}
+                    <div style="height: 22px;"></div>
+                    <h3 style="color:#fff; font-size:1.35em; margin: 28px 0 10px; border-bottom: 1px solid #333; padding-bottom: 10px;">All series (winners + odds)</h3>
+                    <p style="color:#888; margin-bottom: 10px; max-width: 900px;">
+                        <code>data/playoff_series_all.csv</code> includes column <code>projected_winner</code>. Round 1 = current bracket; later rounds = if that pairing were played.
+                    </p>
+                    ${rsBlurb}
+                    ${note ? `<p style="color:#666; font-size:0.88em; margin-bottom: 12px;">${escapeHtml(note)}</p>` : ''}
+                    ${buildAllSeriesTable(all)}
+                    ${buildFinalMatchupSection(data)}
+                `;
+            }
+
+            const east = (data.round1_series_odds.East || []);
+            const west = (data.round1_series_odds.West || []);
+            const rows = data.conditional_series_predictions;
+            const note = (data.meta && data.meta.conditional_series_note) || '';
+
             let html = `
+                ${buildSeriesWinnersSummary(data)}
+                <div style="height: 22px;"></div>
                 <h3 style="color:#fff; font-size:1.35em; margin: 28px 0 10px; border-bottom: 1px solid #333; padding-bottom: 10px;">Series win odds by round</h3>
                 <p style="color:#888; margin-bottom: 6px; max-width: 900px;">
                     <strong>Round 1</strong> uses the live bracket order (away @ home). <strong>Rounds 2–4</strong> list every series that can occur on this tree before winners are known; each row is its own best-of-7 projection at that playoff round depth.
@@ -617,8 +747,9 @@
                     <h4 style="color:#c8102e; margin-top: 28px; margin-bottom: 10px;">Rounds 2, 3, and Stanley Cup Final</h4>
                     <div style="padding: 16px 18px; background: #1a1515; border: 1px solid #553333; border-radius: 8px; color:#ccc; max-width: 900px;">
                         <p style="margin-bottom: 10px;"><strong style="color:#ffb4b4;">This JSON file does not include per-series rows for later rounds.</strong></p>
-                        <p style="margin:0; color:#aaa;">Regenerate predictions with a current <code>simulate_2026_playoffs_master.py</code> (or run the GitHub Action <em>Playoff predictions pipeline</em>) so the export includes <code>conditional_series_predictions</code>.</p>
+                        <p style="margin:0; color:#aaa;">Regenerate with <code>simulate_2026_playoffs_master.py</code> or the <em>Playoff predictions pipeline</em> workflow.</p>
                     </div>`;
+                html += buildFinalMatchupSection(data);
                 return html;
             }
 
@@ -640,9 +771,49 @@
             html += openConditionalSeriesTable(wcf);
 
             html += `<h4 style="color:#c8102e; margin-top: 28px; margin-bottom: 10px;">Stanley Cup Final (${byRound[4].length} possible East vs West series; East is away)</h4>`;
+            html += `<p style="color:#aaa; margin-bottom: 10px; max-width: 900px;">These rows are <strong>conditional</strong> best-of-7 win odds if that pairing were played — not the probability that pairing is reached.</p>`;
             html += openConditionalSeriesTable(byRound[4]);
 
+            html += buildFinalMatchupSection(data);
             return html;
+        }
+
+        /** Empirical P(East champion, West champion) from full-bracket Monte Carlo (sums to 100%). */
+        function buildFinalMatchupSection(data) {
+            const list = data.stanley_cup_final_matchup_probabilities;
+            const note = (data.meta && data.meta.stanley_cup_final_matchup_note) || '';
+            let h = `
+                <h4 style="color:#c8102e; margin-top: 28px; margin-bottom: 10px;">Probability each exact Final happens</h4>
+                <p style="color:#888; margin-bottom: 8px; max-width: 900px;">
+                    Joint probability that each team wins its conference and meets the other in the Stanley Cup Final — from the same simulation count as advancement odds.
+                </p>`;
+            if (note) {
+                h += `<p style="color:#666; font-size:0.88em; margin-bottom: 10px;">${escapeHtml(note)}</p>`;
+            }
+            if (!list || !list.length) {
+                h += `<p style="color:#888;">No <code>stanley_cup_final_matchup_probabilities</code> in this file — regenerate with a current <code>simulate_2026_playoffs_master.py</code>.</p>`;
+                return h;
+            }
+            const body = list.map((r) => `
+                <tr>
+                    <td style="font-weight:700; color:#fff;">${escapeHtml(r.east)}</td>
+                    <td style="font-weight:700; color:#fff;">${escapeHtml(r.west)}</td>
+                    <td>${pct(r.probability)}</td>
+                </tr>`).join('');
+            h += `
+                <div style="overflow-x: auto;">
+                    <table class="standings-table">
+                        <thead>
+                            <tr>
+                                <th>East champion</th>
+                                <th>West champion</th>
+                                <th>P(exact Final)</th>
+                            </tr>
+                        </thead>
+                        <tbody>${body}</tbody>
+                    </table>
+                </div>`;
+            return h;
         }
 
         function createSeriesTable(title, series) {

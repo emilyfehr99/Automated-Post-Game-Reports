@@ -6,6 +6,7 @@ import sys
 import argparse
 import hashlib
 import math
+import csv
 from datetime import datetime, timezone
 from pathlib import Path
 from collections import Counter, defaultdict
@@ -19,6 +20,9 @@ sys.path.insert(0, str(_PROJECT_DIR / "models"))
 from playoff_predictor import PlayoffSeriesPredictor
 
 BASE_URL = 'https://api-web.nhle.com/v1'
+
+# Bump when export shape / meta fields change (check meta.export_version in JSON).
+PLAYOFF_EXPORT_VERSION = 3
 
 def fetch_standings(date: str = "now"):
     try:
@@ -149,7 +153,137 @@ def _sha256_file(path: Path) -> str:
     return h.hexdigest()
 
 
-def run_tournament_monte_carlo(iterations=100000, season: str = "20252026", bracket_out: Path | None = None, predictions_out: Path | None = None):
+def _round_name(playoff_round: int) -> str:
+    return {
+        1: "Round 1",
+        2: "Round 2",
+        3: "Conference finals",
+        4: "Stanley Cup Final",
+    }.get(int(playoff_round), f"Round {playoff_round}")
+
+
+def _build_all_series_flat(
+    series_odds: dict,
+    conditional_series_predictions: list[dict],
+) -> list[dict]:
+    """One list: Round 1 (actual bracket) + every possible R2–SCF row from the tree."""
+    out: list[dict] = []
+    for conf in ("East", "West"):
+        for item in series_odds.get(conf, []):
+            out.append(
+                {
+                    "playoff_round": 1,
+                    "round_name": _round_name(1),
+                    "conference": conf,
+                    "slot": item.get("label") or "",
+                    "away": item["away"],
+                    "home": item["home"],
+                    "current_wins": item.get("current_wins") or {},
+                    "away_series_win_prob": item["away_series_win_prob"],
+                    "home_series_win_prob": item["home_series_win_prob"],
+                    "winner": item.get("winner_projection"),
+                }
+            )
+    for row in conditional_series_predictions:
+        pr = int(row["playoff_round"])
+        out.append(
+            {
+                "playoff_round": pr,
+                "round_name": _round_name(pr),
+                "conference": row.get("conference") or "",
+                "slot": row.get("slot") or "",
+                "away": row["away"],
+                "home": row["home"],
+                "current_wins": row.get("current_wins") or {},
+                "away_series_win_prob": row["away_series_win_prob"],
+                "home_series_win_prob": row["home_series_win_prob"],
+                "winner": row.get("winner_projection"),
+            }
+        )
+    out.sort(
+        key=lambda x: (
+            x["playoff_round"],
+            str(x.get("conference")),
+            str(x.get("slot")),
+            x["away"],
+            x["home"],
+        )
+    )
+    return out
+
+
+def _write_series_csv(path: Path, rows: list[dict]) -> None:
+    path.parent.mkdir(parents=True, exist_ok=True)
+    fieldnames = [
+        "playoff_round",
+        "round_name",
+        "conference",
+        "slot",
+        "away",
+        "home",
+        "away_wins",
+        "home_wins",
+        "projected_winner",
+        "away_series_win_prob",
+        "home_series_win_prob",
+    ]
+    with path.open("w", newline="", encoding="utf-8") as f:
+        w = csv.DictWriter(f, fieldnames=fieldnames)
+        w.writeheader()
+        for r in rows:
+            cw = r.get("current_wins") or {}
+            w.writerow(
+                {
+                    "playoff_round": r["playoff_round"],
+                    "round_name": r["round_name"],
+                    "conference": r.get("conference") or "",
+                    "slot": r.get("slot") or "",
+                    "away": r["away"],
+                    "home": r["home"],
+                    "away_wins": cw.get("away", 0),
+                    "home_wins": cw.get("home", 0),
+                    "projected_winner": r.get("winner") or "",
+                    "away_series_win_prob": r["away_series_win_prob"],
+                    "home_series_win_prob": r["home_series_win_prob"],
+                }
+            )
+
+
+def _build_series_winners(series_odds: dict, final_results: list[dict]) -> dict:
+    """Minimal view: Round 1 favorite per real series + highest Cup-share team from bracket sim."""
+    round1: list[dict] = []
+    for conf in ("East", "West"):
+        for it in series_odds.get(conf, []):
+            round1.append(
+                {
+                    "conference": conf,
+                    "label": it.get("label") or "",
+                    "away": it["away"],
+                    "home": it["home"],
+                    "winner": it.get("winner_projection"),
+                }
+            )
+    cup_champ = final_results[0]["team"] if final_results else None
+    return {
+        "round1": round1,
+        "projected_stanley_cup_champion": cup_champ,
+        "note": (
+            "round1.winner is the model favorite in each scheduled first-round series. "
+            "projected_stanley_cup_champion is the team with the highest Cup probability in "
+            "advancement_probabilities (same Monte Carlo as the bracket sim). "
+            "Hypothetical later rounds: see all_series[].winner."
+        ),
+    }
+
+
+def run_tournament_monte_carlo(
+    iterations=100000,
+    season: str = "20252026",
+    bracket_out: Path | None = None,
+    predictions_out: Path | None = None,
+    series_csv_out: Path | None = None,
+    series_winners_out: Path | None = None,
+):
     predictor = PlayoffSeriesPredictor()
     standings = fetch_standings("now")
     if not standings:
@@ -179,7 +313,9 @@ def run_tournament_monte_carlo(iterations=100000, season: str = "20252026", brac
         3: Counter(),
         4: Counter(),
     }
-    
+    # Empirical P(this East champ vs this West champ) before the Stanley Cup Final is played
+    finals_pair_counts: Counter = Counter()
+
     # Pre-cache game win probs to speed up sims
     prob_cache = {}
 
@@ -254,6 +390,8 @@ def run_tournament_monte_carlo(iterations=100000, season: str = "20252026", brac
         
         advancement[e_r3_winner][3] += 1
         advancement[w_r3_winner][3] += 1
+
+        finals_pair_counts[(e_r3_winner, w_r3_winner)] += 1
         
         # Round 4 (Stanley Cup Finals)
         cup_winner = get_series_winner(4, e_r3_winner, w_r3_winner)
@@ -506,6 +644,38 @@ def run_tournament_monte_carlo(iterations=100000, season: str = "20252026", brac
             except Exception:
                 return 0.0
 
+        finals_matchup_probabilities = [
+            {
+                "east": e,
+                "west": w,
+                "count": int(c),
+                "probability": float(c) / float(iterations),
+            }
+            for (e, w), c in finals_pair_counts.most_common()
+        ]
+
+        all_series = _build_all_series_flat(series_odds, conditional_series_predictions)
+        series_winners = _build_series_winners(series_odds, final_results)
+        csv_path = series_csv_out if series_csv_out is not None else Path("data/playoff_series_all.csv")
+        _write_series_csv(csv_path, all_series)
+        print(f"📝 Wrote all-series CSV -> {csv_path}")
+
+        winners_path = series_winners_out if series_winners_out is not None else Path("data/series_winners_2026.json")
+        winners_path.parent.mkdir(parents=True, exist_ok=True)
+        winners_payload = {
+            "meta": {
+                "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+                "export_version": PLAYOFF_EXPORT_VERSION,
+                "iterations": int(iterations),
+                "season": season,
+                "source": "simulate_2026_playoffs_master.py",
+            },
+            "series_winners": series_winners,
+        }
+        with winners_path.open("w") as wf:
+            json.dump(winners_payload, wf, indent=2)
+        print(f"📝 Wrote series winners only -> {winners_path}")
+
         path_difficulty = {}
         for team in advancement.keys():
             idx = 0.0
@@ -528,13 +698,25 @@ def run_tournament_monte_carlo(iterations=100000, season: str = "20252026", brac
         payload = {
             "meta": {
                 "generated_at_utc": datetime.now(timezone.utc).isoformat(),
+                "export_version": PLAYOFF_EXPORT_VERSION,
                 "iterations": int(iterations),
                 "season": season,
                 "source": "simulate_2026_playoffs_master.py",
+                "all_series_note": (
+                    "all_series is every series projection in one list: Round 1 = actual bracket; "
+                    "Rounds 2–4 = all possible pairings on this bracket. "
+                    "Committed CSV: data/playoff_series_all.csv (same rows, spreadsheet-friendly)."
+                ),
                 "conditional_series_note": (
-                    "R2–SCF rows list every matchup allowed by this bracket’s feeder slots; "
-                    "away/home matches the tournament sim (East is away in the Final). "
-                    f"Each row used simulate_series(..., playoff_round=N) with N simulations={cond_sims}."
+                    "R2–SCF rows are hypothetical best-of-7 projections if that pairing occurs; "
+                    "away/home matches the tournament sim (East away in the Final). "
+                    f"Each row uses simulate_series(..., playoff_round=round_depth) with {cond_sims} "
+                    "inner Monte Carlo draws per row — not the chance that pairing is reached."
+                ),
+                "stanley_cup_final_matchup_note": (
+                    "stanley_cup_final_matchup_probabilities counts how often each (East champion, West champion) "
+                    "pair occurred in the same bracket simulation before the Final series; "
+                    f"probabilities sum to 1.0 over {iterations:,} iterations."
                 ),
                 "regular_season_to_playoff_series_model": {
                     "summary": (
@@ -554,10 +736,13 @@ def run_tournament_monte_carlo(iterations=100000, season: str = "20252026", brac
                     ],
                 },
             },
+            "series_winners": series_winners,
             "bracket": bracket,
             "bracket_tree": bracket_tree,
             "round1_series_odds": series_odds,
+            "all_series": all_series,
             "conditional_series_predictions": conditional_series_predictions,
+            "stanley_cup_final_matchup_probabilities": finals_matchup_probabilities,
             "advancement_probabilities": final_results,
             "opponent_paths": opponent_paths,
             "path_difficulty": path_difficulty,
@@ -573,6 +758,18 @@ if __name__ == '__main__':
     parser.add_argument("--season", type=str, default="20252026", help="Season string for playoff-series endpoint (e.g. 20252026)")
     parser.add_argument("--bracket-out", type=str, default="data/official_2026_bracket_current.json")
     parser.add_argument("--predictions-out", type=str, default="data/playoff_predictions_2026.json")
+    parser.add_argument(
+        "--series-csv-out",
+        type=str,
+        default="data/playoff_series_all.csv",
+        help="CSV of every series row (written when --predictions-out is set).",
+    )
+    parser.add_argument(
+        "--series-winners-out",
+        type=str,
+        default="data/series_winners_2026.json",
+        help="Small JSON: Round 1 favorites + projected Cup champion only.",
+    )
     args = parser.parse_args()
 
     sys.setrecursionlimit(2000)
@@ -581,4 +778,10 @@ if __name__ == '__main__':
         season=args.season,
         bracket_out=Path(args.bracket_out) if args.bracket_out else None,
         predictions_out=Path(args.predictions_out) if args.predictions_out else None,
+        series_csv_out=(Path(args.series_csv_out) if args.series_csv_out else None)
+        if args.predictions_out
+        else None,
+        series_winners_out=(Path(args.series_winners_out) if args.series_winners_out else None)
+        if args.predictions_out
+        else None,
     )

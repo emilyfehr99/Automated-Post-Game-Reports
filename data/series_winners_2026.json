@@ -1,0 +1,71 @@
+{
+  "meta": {
+    "generated_at_utc": "2026-04-17T22:40:12.372521+00:00",
+    "export_version": 3,
+    "iterations": 75000,
+    "season": "20252026",
+    "source": "simulate_2026_playoffs_master.py"
+  },
+  "series_winners": {
+    "round1": [
+      {
+        "conference": "East",
+        "label": "R1-M1",
+        "away": "OTT",
+        "home": "CAR",
+        "winner": "CAR"
+      },
+      {
+        "conference": "East",
+        "label": "R1-M2v3",
+        "away": "PHI",
+        "home": "PIT",
+        "winner": "PIT"
+      },
+      {
+        "conference": "East",
+        "label": "R1-M2",
+        "away": "BOS",
+        "home": "BUF",
+        "winner": "BOS"
+      },
+      {
+        "conference": "East",
+        "label": "R1-A2v3",
+        "away": "MTL",
+        "home": "TBL",
+        "winner": "TBL"
+      },
+      {
+        "conference": "West",
+        "label": "R1-M1",
+        "away": "LAK",
+        "home": "COL",
+        "winner": "COL"
+      },
+      {
+        "conference": "West",
+        "label": "R1-C2v3",
+        "away": "MIN",
+        "home": "DAL",
+        "winner": "DAL"
+      },
+      {
+        "conference": "West",
+        "label": "R1-M2",
+        "away": "UTA",
+        "home": "VGK",
+        "winner": "UTA"
+      },
+      {
+        "conference": "West",
+        "label": "R1-P2v3",
+        "away": "ANA",
+        "home": "EDM",
+        "winner": "ANA"
+      }
+    ],
+    "projected_stanley_cup_champion": "COL",
+    "note": "round1.winner is the model favorite in each scheduled first-round series. projected_stanley_cup_champion is the team with the highest Cup probability in advancement_probabilities (same Monte Carlo as the bracket sim). Hypothetical later rounds: see all_series[].winner."
+  }
+}

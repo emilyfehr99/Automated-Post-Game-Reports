@@ -751,6 +751,21 @@ def get_playoff_bracket_predictions():
         return jsonify({"success": False, "error": str(e)})
 
 
+@app.route('/api/playoffs/series-winners', methods=['GET'])
+def get_playoff_series_winners():
+    """Small JSON: Round 1 projected winners + projected Cup champion (see data/series_winners_2026.json)."""
+    try:
+        data = load_json('series_winners_2026.json')
+        if not data:
+            return jsonify({
+                "success": False,
+                "error": "series_winners_2026.json not found (run scripts/simulate_2026_playoffs_master.py)",
+            })
+        return jsonify({"success": True, "data": data})
+    except Exception as e:
+        return jsonify({"success": False, "error": str(e)})
+
+
 @app.route('/api/playoffs/reg-season-cup-model', methods=['GET'])
 def get_reg_season_cup_model():
     """Return the trained regular-season -> Cup model summary + current-season priors."""
