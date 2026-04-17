@@ -26,6 +26,15 @@ on:
         description: "Commit and push generated JSON artifacts"
         type: boolean
         default: true
+  # Also run when playoff-related code lands on main (inputs only exist for workflow_dispatch; steps use defaults below).
+  push:
+    branches: [main]
+    paths:
+      - ".github/workflows/playoff-predictions-pipeline.yml"
+      - "scripts/simulate_2026_playoffs_master.py"
+      - "scripts/train_regular_season_playoff_round_models_5yr.py"
+      - "scripts/train_regular_season_cup_model_5yr.py"
+      - "models/playoff_predictor.py"
 
 permissions:
   contents: write
@@ -59,7 +68,7 @@ jobs:
           pip install -r requirements.txt
 
       - name: Verify 5-season dataset is present
-        if: ${{ !inputs.rebuild_dataset }}
+        if: ${{ !(github.event_name == 'workflow_dispatch' && inputs.rebuild_dataset) }}
         run: |
           if [ ! -f data/reg_season_cup_5yr.json ] && [ ! -f data/reg_season_cup_5yr.csv ]; then
             echo "::error::Missing data/reg_season_cup_5yr.json (or .csv). Commit it from scripts/build_regular_season_cup_dataset_5yr.py or re-run this workflow with rebuild_dataset enabled."
@@ -67,7 +76,7 @@ jobs:
           fi
 
       - name: Rebuild 5-season regular-season + playoff labels (optional)
-        if: ${{ inputs.rebuild_dataset }}
+        if: ${{ github.event_name == 'workflow_dispatch' && inputs.rebuild_dataset }}
         run: |
           echo "=== Rebuilding reg_season_cup_5yr dataset ==="
           python3 scripts/build_regular_season_cup_dataset_5yr.py
@@ -84,15 +93,20 @@ jobs:
 
       - name: Run bracket Monte Carlo and export predictions JSON
         run: |
-          echo "=== simulate_2026_playoffs_master.py (iterations=${{ inputs.iterations }}, season=${{ inputs.season }}) ==="
+          set -e
+          IT='${{ inputs.iterations }}'
+          [ -z "$IT" ] && IT="75000"
+          SEASON='${{ inputs.season }}'
+          [ -z "$SEASON" ] && SEASON="20252026"
+          echo "=== simulate_2026_playoffs_master.py (iterations=${IT}, season=${SEASON}) ==="
           python3 scripts/simulate_2026_playoffs_master.py \
-            --iterations "${{ inputs.iterations }}" \
-            --season "${{ inputs.season }}" \
+            --iterations "$IT" \
+            --season "$SEASON" \
             --bracket-out data/official_2026_bracket_current.json \
             --predictions-out data/playoff_predictions_2026.json
 
       - name: Commit and push artifacts
-        if: ${{ inputs.commit_push }}
+        if: ${{ github.event_name != 'workflow_dispatch' || inputs.commit_push }}
         run: |
           set -e
           git config --local user.email "github-actions[bot]@users.noreply.github.com"
