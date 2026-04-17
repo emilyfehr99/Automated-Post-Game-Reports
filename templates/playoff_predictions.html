@@ -575,6 +575,9 @@
             const ph = s.home_series_win_prob ?? 0;
             const slot = escapeHtml(s.slot || '');
             const cls = isFinal ? 'series-card series-card--compact series-card--final' : 'series-card series-card--compact';
+            const nGames = typeof s.avg_remaining_games === 'number' ? s.avg_remaining_games.toFixed(1) : '—';
+            const gTot = typeof s.projected_total_goals_series === 'number' ? s.projected_total_goals_series.toFixed(1) : '—';
+            const gpg = typeof s.projected_goals_per_game === 'number' ? s.projected_goals_per_game.toFixed(2) : '—';
             return `
                 <div class="${cls}">
                     <div class="series-hd">${slot || (isFinal ? 'Stanley Cup Final' : '')}</div>
@@ -585,6 +588,7 @@
                     </div>
                     <div class="path-winner-row">Advances: <strong>${w}</strong></div>
                     <div class="path-pct">${pct(pa)} away &nbsp;·&nbsp; ${pct(ph)} home</div>
+                    <div class="path-meta" style="font-size:0.78rem;color:#9a9a9a;margin-top:6px;line-height:1.35;">~${nGames} games (series length) · ~${gTot} goals (${gpg} per game)</div>
                 </div>`;
         }
 
@@ -782,6 +786,9 @@
                 const cur = `${aw} @ ${hm} (${cs.away ?? 0}–${cs.home ?? 0})`;
                 const fav = (s.home_series_win_prob ?? 0) >= (s.away_series_win_prob ?? 0) ? hm : aw;
                 const favP = Math.max(s.home_series_win_prob ?? 0, s.away_series_win_prob ?? 0);
+                const ag = typeof s.avg_remaining_games === 'number' ? s.avg_remaining_games.toFixed(1) : '—';
+                const gt = typeof s.projected_total_goals_series === 'number' ? s.projected_total_goals_series.toFixed(1) : '—';
+                const gpg = typeof s.projected_goals_per_game === 'number' ? s.projected_goals_per_game.toFixed(2) : '—';
                 return `
                     <tr>
                         <td style="font-weight:600; color:#fff;">${conf}${slot}</td>
@@ -790,6 +797,9 @@
                         <td>${pct(favP)}</td>
                         <td>${pct(s.away_series_win_prob)}</td>
                         <td>${pct(s.home_series_win_prob)}</td>
+                        <td>${ag}</td>
+                        <td>${gt}</td>
+                        <td>${gpg}</td>
                     </tr>`;
             }).join('');
             return `
@@ -803,6 +813,9 @@
                                 <th>Fav %</th>
                                 <th>Away win%</th>
                                 <th>Home win%</th>
+                                <th>Proj. games</th>
+                                <th>Proj. goals</th>
+                                <th>G/gm</th>
                             </tr>
                         </thead>
                         <tbody>${body}</tbody>
@@ -909,6 +922,9 @@
                 const win = r.winner
                     ? escapeHtml(r.winner)
                     : (h >= a ? hm : aw);
+                const ag = typeof r.avg_remaining_games === 'number' ? r.avg_remaining_games.toFixed(1) : '—';
+                const gt = typeof r.projected_total_goals_series === 'number' ? r.projected_total_goals_series.toFixed(1) : '—';
+                const gpg = typeof r.projected_goals_per_game === 'number' ? r.projected_goals_per_game.toFixed(2) : '—';
                 return `
                     <tr>
                         <td>${conf}</td>
@@ -917,6 +933,9 @@
                         <td style="color:#c8102e; font-weight:700;">${win}</td>
                         <td>${pct(a)}</td>
                         <td>${pct(h)}</td>
+                        <td>${ag}</td>
+                        <td>${gt}</td>
+                        <td>${gpg}</td>
                     </tr>`;
             }).join('');
         }
@@ -944,6 +963,9 @@
                                 <th>Projected winner</th>
                                 <th>Away %</th>
                                 <th>Home %</th>
+                                <th>Proj. games</th>
+                                <th>Proj. goals</th>
+                                <th>G/gm</th>
                             </tr>
                         </thead>`;
             const blocks = [];
@@ -1117,6 +1139,9 @@
                 const score = `${s.away} ${cs.away ?? 0} - ${cs.home ?? 0} ${s.home}`;
                 const fav = (s.home_series_win_prob ?? 0) >= (s.away_series_win_prob ?? 0) ? s.home : s.away;
                 const favPct = Math.max(s.home_series_win_prob ?? 0, s.away_series_win_prob ?? 0);
+                const ag = typeof s.avg_remaining_games === 'number' ? s.avg_remaining_games.toFixed(1) : '—';
+                const gt = typeof s.projected_total_goals_series === 'number' ? s.projected_total_goals_series.toFixed(1) : '—';
+                const gpg = typeof s.projected_goals_per_game === 'number' ? s.projected_goals_per_game.toFixed(2) : '—';
                 return `
                     <tr>
                         <td style="font-weight:700; color:#fff;">${s.label || 'R1'}</td>
@@ -1125,7 +1150,9 @@
                         <td>${pct(favPct)}</td>
                         <td>${pct(s.away_series_win_prob)}</td>
                         <td>${pct(s.home_series_win_prob)}</td>
-                        <td>${typeof s.avg_remaining_games === 'number' ? s.avg_remaining_games.toFixed(1) : '—'}</td>
+                        <td>${ag}</td>
+                        <td>${gt}</td>
+                        <td>${gpg}</td>
                     </tr>
                 `;
             }).join('');
@@ -1141,7 +1168,9 @@
                             <th>Win%</th>
                             <th>Away win%</th>
                             <th>Home win%</th>
-                            <th>Avg games left</th>
+                            <th>Proj. games</th>
+                            <th>Proj. goals</th>
+                            <th>G/gm</th>
                         </tr>
                     </thead>
                     <tbody>${rows}</tbody>

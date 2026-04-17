@@ -375,6 +375,20 @@ class PlayoffSeriesPredictor:
         final_away_prob = np.clip(away_prob + net_shift, 0.01, 0.99)
         return final_away_prob
 
+    def _expected_total_goals_one_game(self, series_away: str, series_home: str, venue: str) -> float:
+        """Expected total goals in one playoff game; venue is 'home' or 'away' for the 2-2-1-1-1 schedule."""
+        ag = self.starters.get(series_away)
+        hg = self.starters.get(series_home)
+        if venue == "home":
+            ps = self.model.predict_score(series_away, series_home, away_goalie=ag, home_goalie=hg)
+        else:
+            ps = self.model.predict_score(
+                series_home, series_away, away_goalie=hg, home_goalie=ag
+            )
+        ae = float(ps.get("away_expected") or 0.0)
+        he = float(ps.get("home_expected") or 0.0)
+        return ae + he
+
     def simulate_series(self, away, home, away_wins=0, home_wins=0, simulations=10000, playoff_round: Optional[int] = None):
         """
         Simulate a Best-of-7 Series (2-2-1-1-1 Home-Ice Format).
@@ -382,7 +396,8 @@ class PlayoffSeriesPredictor:
         """
         away_series_wins = 0
         total_games_completed = 0
-        
+        total_series_goals_sum = 0.0
+
         # Pre-calculate win probs for both venues
         p_away_at_home = self.calculate_game_win_prob(away, home, playoff_round=playoff_round)
         p_home_at_away = self.calculate_game_win_prob(home, away, playoff_round=playoff_round)
@@ -401,38 +416,51 @@ class PlayoffSeriesPredictor:
                 'away_series_win_prob': 1.0 if away_wins >= 4 else 0.0,
                 'home_series_win_prob': 1.0 if home_wins >= 4 else 0.0,
                 'status': 'FINISHED',
-                'winner': away if away_wins >= 4 else home
+                'winner': away if away_wins >= 4 else home,
+                'avg_remaining_games': 0.0,
+                'projected_avg_games_in_series': 0.0,
+                'projected_total_goals_series': None,
+                'projected_goals_per_game': None,
             }
 
         for _ in range(simulations):
             a_w = away_wins
             h_w = home_wins
             sim_games = 0
-            
+            goals_this_series = 0.0
+
             for venue in remaining_venues:
                 sim_games += 1
+                goals_this_series += self._expected_total_goals_one_game(away, home, venue)
                 prob = p_away_at_home if venue == 'home' else p_away_at_away
-                
+
                 if random.random() < prob:
                     a_w += 1
                 else:
                     h_w += 1
-                    
+
                 if a_w == 4 or h_w == 4:
                     break
-            
+
             if a_w == 4:
                 away_series_wins += 1
             total_games_completed += sim_games
-            
+            total_series_goals_sum += goals_this_series
+
         away_series_prob = away_series_wins / simulations
-        
+        avg_games = total_games_completed / simulations
+        avg_total_goals = total_series_goals_sum / simulations
+        gpg = (avg_total_goals / avg_games) if avg_games > 1e-9 else 0.0
+
         return {
             'away': away,
             'home': home,
             'away_series_win_prob': away_series_prob,
             'home_series_win_prob': 1 - away_series_prob,
-            'avg_remaining_games': round(total_games_completed / simulations, 1),
+            'avg_remaining_games': round(avg_games, 1),
+            'projected_avg_games_in_series': round(avg_games, 1),
+            'projected_total_goals_series': round(avg_total_goals, 1),
+            'projected_goals_per_game': round(gpg, 2),
             'current_state': f"{away} {away_wins} - {home_wins} {home}",
             'winner_projection': away if away_series_prob > 0.5 else home
         }

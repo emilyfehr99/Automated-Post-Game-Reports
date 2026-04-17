@@ -22,7 +22,18 @@ from playoff_predictor import PlayoffSeriesPredictor
 BASE_URL = 'https://api-web.nhle.com/v1'
 
 # Bump when export shape / meta fields change (check meta.export_version in JSON).
-PLAYOFF_EXPORT_VERSION = 5
+PLAYOFF_EXPORT_VERSION = 9
+
+
+def _inner_series_simulations(iterations: int) -> int:
+    """
+    Monte Carlo draws per simulate_series() call (series win %, projected games/goals).
+
+    Scales with bracket --iterations; higher = lower variance. Capped so conditional
+    matchup grids stay tractable; floor avoids noisy estimates on tiny --iterations runs.
+    """
+    it = max(1, int(iterations))
+    return int(min(100_000, max(10_000, it // 2)))
 
 def fetch_standings(date: str = "now"):
     try:
@@ -182,6 +193,10 @@ def _build_all_series_flat(
                     "away_series_win_prob": item["away_series_win_prob"],
                     "home_series_win_prob": item["home_series_win_prob"],
                     "winner": item.get("winner_projection"),
+                    "avg_remaining_games": item.get("avg_remaining_games"),
+                    "projected_avg_games_in_series": item.get("projected_avg_games_in_series"),
+                    "projected_total_goals_series": item.get("projected_total_goals_series"),
+                    "projected_goals_per_game": item.get("projected_goals_per_game"),
                 }
             )
     for row in conditional_series_predictions:
@@ -198,6 +213,10 @@ def _build_all_series_flat(
                 "away_series_win_prob": row["away_series_win_prob"],
                 "home_series_win_prob": row["home_series_win_prob"],
                 "winner": row.get("winner_projection"),
+                "avg_remaining_games": row.get("avg_remaining_games"),
+                "projected_avg_games_in_series": row.get("projected_avg_games_in_series"),
+                "projected_total_goals_series": row.get("projected_total_goals_series"),
+                "projected_goals_per_game": row.get("projected_goals_per_game"),
             }
         )
     out.sort(
@@ -226,6 +245,9 @@ def _write_series_csv(path: Path, rows: list[dict]) -> None:
         "projected_winner",
         "away_series_win_prob",
         "home_series_win_prob",
+        "avg_remaining_games",
+        "projected_total_goals_series",
+        "projected_goals_per_game",
     ]
     with path.open("w", newline="", encoding="utf-8") as f:
         w = csv.DictWriter(f, fieldnames=fieldnames)
@@ -245,18 +267,29 @@ def _write_series_csv(path: Path, rows: list[dict]) -> None:
                     "projected_winner": r.get("winner") or "",
                     "away_series_win_prob": r["away_series_win_prob"],
                     "home_series_win_prob": r["home_series_win_prob"],
+                    "avg_remaining_games": r.get("avg_remaining_games"),
+                    "projected_total_goals_series": r.get("projected_total_goals_series"),
+                    "projected_goals_per_game": r.get("projected_goals_per_game"),
                 }
             )
+
+
+def _scf_series_row(
+    conditional_series_predictions: list[dict], east: str, west: str
+) -> dict | None:
+    """East away, West home in SCF rows."""
+    for r in conditional_series_predictions:
+        if int(r.get("playoff_round", 0)) == 4 and r.get("away") == east and r.get("home") == west:
+            return r
+    return None
 
 
 def _scf_series_winner_projection(
     conditional_series_predictions: list[dict], east: str, west: str
 ) -> str | None:
     """East away, West home in SCF rows."""
-    for r in conditional_series_predictions:
-        if int(r.get("playoff_round", 0)) == 4 and r.get("away") == east and r.get("home") == west:
-            return r.get("winner_projection")
-    return None
+    row = _scf_series_row(conditional_series_predictions, east, west)
+    return row.get("winner_projection") if row else None
 
 
 def _build_series_winners(
@@ -276,6 +309,12 @@ def _build_series_winners(
                     "away": it["away"],
                     "home": it["home"],
                     "winner": it.get("winner_projection"),
+                    "avg_remaining_games": it.get("avg_remaining_games"),
+                    "projected_avg_games_in_series": it.get("projected_avg_games_in_series"),
+                    "projected_games_in_series": it.get("projected_avg_games_in_series"),
+                    "projected_total_goals_series": it.get("projected_total_goals_series"),
+                    "projected_goals_in_series": it.get("projected_total_goals_series"),
+                    "projected_goals_per_game": it.get("projected_goals_per_game"),
                 }
             )
     cup_champ = final_results[0]["team"] if final_results else None
@@ -295,12 +334,22 @@ def _build_series_winners(
             wproj = _scf_series_winner_projection(conditional_series_predictions, e, w)
             if wproj:
                 ml["projected_series_winner"] = wproj
+            scf = _scf_series_row(conditional_series_predictions, e, w)
+            if scf:
+                ml["avg_remaining_games"] = scf.get("avg_remaining_games")
+                ml["projected_avg_games_in_series"] = scf.get("projected_avg_games_in_series")
+                ml["projected_games_in_series"] = scf.get("projected_avg_games_in_series")
+                ml["projected_total_goals_series"] = scf.get("projected_total_goals_series")
+                ml["projected_goals_in_series"] = scf.get("projected_total_goals_series")
+                ml["projected_goals_per_game"] = scf.get("projected_goals_per_game")
         out["most_likely_stanley_cup_final"] = ml
     out["note"] = (
-        "round1.winner: model favorite in each scheduled first-round series. "
+        "round1.winner: model favorite in each scheduled first-round series; "
+        "projected_games_in_series / projected_goals_in_series duplicate projected_avg_games_in_series / "
+        "projected_total_goals_series (simulate_series projections for that matchup). "
         "projected_stanley_cup_champion: highest Cup share in the bracket Monte Carlo. "
         "most_likely_stanley_cup_final: (East, West) pair that occurred most often before the Final; "
-        "projected_series_winner is the favorite in that best-of-7 (East away, West home). "
+        "projected_series_winner and projected_* goals/games apply to that SCF if that pairing row exists. "
         "R2–ECF/WCF: every possible pairing on this bracket — see all_series / playoff_series_all.csv."
     )
     return out
@@ -354,6 +403,9 @@ def _build_projected_bracket_path(
             "away_series_win_prob": float(r["away_series_win_prob"]),
             "home_series_win_prob": float(r["home_series_win_prob"]),
             "avg_remaining_games": r.get("avg_remaining_games"),
+            "projected_avg_games_in_series": r.get("projected_avg_games_in_series"),
+            "projected_total_goals_series": r.get("projected_total_goals_series"),
+            "projected_goals_per_game": r.get("projected_goals_per_game"),
             "projected_winner": wp,
         }
 
@@ -373,6 +425,9 @@ def _build_projected_bracket_path(
                         "away_series_win_prob": item["away_series_win_prob"],
                         "home_series_win_prob": item["home_series_win_prob"],
                         "avg_remaining_games": item.get("avg_remaining_games"),
+                        "projected_avg_games_in_series": item.get("projected_avg_games_in_series"),
+                        "projected_total_goals_series": item.get("projected_total_goals_series"),
+                        "projected_goals_per_game": item.get("projected_goals_per_game"),
                         "winner_projection": item.get("winner_projection"),
                     },
                 )
@@ -431,7 +486,7 @@ def _build_projected_bracket_path(
 
 
 def run_tournament_monte_carlo(
-    iterations=100000,
+    iterations=200_000,
     season: str = "20252026",
     bracket_out: Path | None = None,
     predictions_out: Path | None = None,
@@ -587,7 +642,7 @@ def run_tournament_monte_carlo(
                     hm,
                     away_wins=a_w,
                     home_wins=h_w,
-                    simulations=min(25000, max(5000, iterations // 4)),
+                    simulations=_inner_series_simulations(iterations),
                     playoff_round=1,
                 )
                 series_odds[conf].append({
@@ -598,6 +653,9 @@ def run_tournament_monte_carlo(
                     "away_series_win_prob": r["away_series_win_prob"],
                     "home_series_win_prob": r["home_series_win_prob"],
                     "avg_remaining_games": r.get("avg_remaining_games"),
+                    "projected_avg_games_in_series": r.get("projected_avg_games_in_series"),
+                    "projected_total_goals_series": r.get("projected_total_goals_series"),
+                    "projected_goals_per_game": r.get("projected_goals_per_game"),
                     "winner_projection": r.get("winner_projection"),
                 })
 
@@ -627,7 +685,7 @@ def run_tournament_monte_carlo(
 
         # Every possible later-round series on this bracket topology, with series win %.
         # Ordering (away/home) matches get_series_winner() in the Monte Carlo loop.
-        cond_sims = min(25000, max(5000, iterations // 4))
+        cond_sims = _inner_series_simulations(iterations)
 
         projected_bracket_path = _build_projected_bracket_path(
             bracket, series_odds, predictor, get_series_current_wins, cond_sims
@@ -663,6 +721,9 @@ def run_tournament_monte_carlo(
                     "away_series_win_prob": r["away_series_win_prob"],
                     "home_series_win_prob": r["home_series_win_prob"],
                     "avg_remaining_games": r.get("avg_remaining_games"),
+                    "projected_avg_games_in_series": r.get("projected_avg_games_in_series"),
+                    "projected_total_goals_series": r.get("projected_total_goals_series"),
+                    "projected_goals_per_game": r.get("projected_goals_per_game"),
                     "winner_projection": r.get("winner_projection"),
                 }
             )
@@ -785,7 +846,7 @@ def run_tournament_monte_carlo(
                     home_abbr,
                     away_wins=a_w,
                     home_wins=h_w,
-                    simulations=8000,
+                    simulations=cond_sims,
                     playoff_round=rnd,
                 )
                 series_prob_cache[key] = (
@@ -830,6 +891,7 @@ def run_tournament_monte_carlo(
                 "generated_at_utc": datetime.now(timezone.utc).isoformat(),
                 "export_version": PLAYOFF_EXPORT_VERSION,
                 "iterations": int(iterations),
+                "series_monte_carlo_draws": int(cond_sims),
                 "season": season,
                 "source": "simulate_2026_playoffs_master.py",
             },
@@ -864,6 +926,7 @@ def run_tournament_monte_carlo(
                 "generated_at_utc": datetime.now(timezone.utc).isoformat(),
                 "export_version": PLAYOFF_EXPORT_VERSION,
                 "iterations": int(iterations),
+                "series_monte_carlo_draws": int(cond_sims),
                 "season": season,
                 "source": "simulate_2026_playoffs_master.py",
                 "all_series_note": (
@@ -924,7 +987,12 @@ def run_tournament_monte_carlo(
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser(description="Run 2026 NHL playoff bracket simulations and export JSON.")
-    parser.add_argument("--iterations", type=int, default=100000)
+    parser.add_argument(
+        "--iterations",
+        type=int,
+        default=200_000,
+        help="Bracket Monte Carlo iterations (higher = more accurate Cup/advancement estimates; slower).",
+    )
     parser.add_argument("--season", type=str, default="20252026", help="Season string for playoff-series endpoint (e.g. 20252026)")
     parser.add_argument("--bracket-out", type=str, default="data/official_2026_bracket_current.json")
     parser.add_argument("--predictions-out", type=str, default="data/playoff_predictions_2026.json")

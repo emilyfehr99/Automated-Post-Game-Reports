@@ -17,7 +17,7 @@ on:
       iterations:
         description: "Monte Carlo iterations for simulate_2026_playoffs_master.py"
         type: string
-        default: "75000"
+        default: "200000"
       season:
         description: "Season string for playoff-series carousel (e.g. 20252026)"
         type: string
@@ -95,7 +95,7 @@ jobs:
         run: |
           set -e
           IT='${{ inputs.iterations }}'
-          [ -z "$IT" ] && IT="75000"
+          [ -z "$IT" ] && IT="200000"
           SEASON='${{ inputs.season }}'
           [ -z "$SEASON" ] && SEASON="20252026"
           echo "=== simulate_2026_playoffs_master.py (iterations=${IT}, season=${SEASON}) ==="
