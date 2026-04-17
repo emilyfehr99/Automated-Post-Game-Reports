@@ -22,7 +22,7 @@ from playoff_predictor import PlayoffSeriesPredictor
 BASE_URL = 'https://api-web.nhle.com/v1'
 
 # Bump when export shape / meta fields change (check meta.export_version in JSON).
-PLAYOFF_EXPORT_VERSION = 3
+PLAYOFF_EXPORT_VERSION = 4
 
 def fetch_standings(date: str = "now"):
     try:
@@ -249,8 +249,23 @@ def _write_series_csv(path: Path, rows: list[dict]) -> None:
             )
 
 
-def _build_series_winners(series_odds: dict, final_results: list[dict]) -> dict:
-    """Minimal view: Round 1 favorite per real series + highest Cup-share team from bracket sim."""
+def _scf_series_winner_projection(
+    conditional_series_predictions: list[dict], east: str, west: str
+) -> str | None:
+    """East away, West home in SCF rows."""
+    for r in conditional_series_predictions:
+        if int(r.get("playoff_round", 0)) == 4 and r.get("away") == east and r.get("home") == west:
+            return r.get("winner_projection")
+    return None
+
+
+def _build_series_winners(
+    series_odds: dict,
+    final_results: list[dict],
+    finals_matchup_probabilities: list[dict] | None = None,
+    conditional_series_predictions: list[dict] | None = None,
+) -> dict:
+    """Round 1 favorites, Cup leader from bracket sim, and modal Final + that series favorite."""
     round1: list[dict] = []
     for conf in ("East", "West"):
         for it in series_odds.get(conf, []):
@@ -264,16 +279,31 @@ def _build_series_winners(series_odds: dict, final_results: list[dict]) -> dict:
                 }
             )
     cup_champ = final_results[0]["team"] if final_results else None
-    return {
+    out: dict = {
         "round1": round1,
         "projected_stanley_cup_champion": cup_champ,
-        "note": (
-            "round1.winner is the model favorite in each scheduled first-round series. "
-            "projected_stanley_cup_champion is the team with the highest Cup probability in "
-            "advancement_probabilities (same Monte Carlo as the bracket sim). "
-            "Hypothetical later rounds: see all_series[].winner."
-        ),
     }
+    if finals_matchup_probabilities:
+        top = finals_matchup_probabilities[0]
+        e, w = top["east"], top["west"]
+        ml: dict = {
+            "east": e,
+            "west": w,
+            "probability_this_exact_final_occurs": float(top["probability"]),
+        }
+        if conditional_series_predictions:
+            wproj = _scf_series_winner_projection(conditional_series_predictions, e, w)
+            if wproj:
+                ml["projected_series_winner"] = wproj
+        out["most_likely_stanley_cup_final"] = ml
+    out["note"] = (
+        "round1.winner: model favorite in each scheduled first-round series. "
+        "projected_stanley_cup_champion: highest Cup share in the bracket Monte Carlo. "
+        "most_likely_stanley_cup_final: (East, West) pair that occurred most often before the Final; "
+        "projected_series_winner is the favorite in that best-of-7 (East away, West home). "
+        "R2–ECF/WCF: every possible pairing on this bracket — see all_series / playoff_series_all.csv."
+    )
+    return out
 
 
 def run_tournament_monte_carlo(
@@ -655,7 +685,12 @@ def run_tournament_monte_carlo(
         ]
 
         all_series = _build_all_series_flat(series_odds, conditional_series_predictions)
-        series_winners = _build_series_winners(series_odds, final_results)
+        series_winners = _build_series_winners(
+            series_odds,
+            final_results,
+            finals_matchup_probabilities,
+            conditional_series_predictions,
+        )
         csv_path = series_csv_out if series_csv_out is not None else Path("data/playoff_series_all.csv")
         _write_series_csv(csv_path, all_series)
         print(f"📝 Wrote all-series CSV -> {csv_path}")
@@ -768,7 +803,7 @@ if __name__ == '__main__':
         "--series-winners-out",
         type=str,
         default="data/series_winners_2026.json",
-        help="Small JSON: Round 1 favorites + projected Cup champion only.",
+        help="Small JSON: Round 1 favorites, Cup leader, modal Final pairing + that series favorite.",
     )
     args = parser.parse_args()
 

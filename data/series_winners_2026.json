@@ -1,8 +1,8 @@
 {
   "meta": {
-    "generated_at_utc": "2026-04-17T22:43:57.769321+00:00",
-    "export_version": 3,
-    "iterations": 75000,
+    "generated_at_utc": "2026-04-17T22:49:34.822800+00:00",
+    "export_version": 4,
+    "iterations": 100000,
     "season": "20252026",
     "source": "simulate_2026_playoffs_master.py"
   },
@@ -66,6 +66,12 @@
       }
     ],
     "projected_stanley_cup_champion": "COL",
-    "note": "round1.winner is the model favorite in each scheduled first-round series. projected_stanley_cup_champion is the team with the highest Cup probability in advancement_probabilities (same Monte Carlo as the bracket sim). Hypothetical later rounds: see all_series[].winner."
+    "most_likely_stanley_cup_final": {
+      "east": "TBL",
+      "west": "COL",
+      "probability_this_exact_final_occurs": 0.22161,
+      "projected_series_winner": "TBL"
+    },
+    "note": "round1.winner: model favorite in each scheduled first-round series. projected_stanley_cup_champion: highest Cup share in the bracket Monte Carlo. most_likely_stanley_cup_final: (East, West) pair that occurred most often before the Final; projected_series_winner is the favorite in that best-of-7 (East away, West home). R2\u2013ECF/WCF: every possible pairing on this bracket \u2014 see all_series / playoff_series_all.csv."
   }
 }

@@ -632,6 +632,17 @@
             const cup = sw.projected_stanley_cup_champion
                 ? `<p style="margin-top:14px;color:#e0e0e0;"><strong>Projected Cup winner</strong> (Monte Carlo bracket sim): <span style="color:#c8102e;font-weight:800;">${escapeHtml(sw.projected_stanley_cup_champion)}</span></p>`
                 : '';
+            const ml = sw.most_likely_stanley_cup_final;
+            let mlBlock = '';
+            if (ml && ml.east && ml.west) {
+                const p = typeof ml.probability_this_exact_final_occurs === 'number'
+                    ? (100 * ml.probability_this_exact_final_occurs).toFixed(1) + '%'
+                    : '—';
+                const wproj = ml.projected_series_winner
+                    ? escapeHtml(ml.projected_series_winner)
+                    : '—';
+                mlBlock = `<p style="margin-top:12px;color:#e0e0e0;"><strong>Most likely Stanley Cup Final</strong> (modal East vs West before the Final): <span style="color:#fff;">${escapeHtml(ml.east)}</span> vs <span style="color:#fff;">${escapeHtml(ml.west)}</span> — <span style="color:#888;">P(this exact Final pairing)</span> ≈ ${p}. <strong>Projected winner of that series</strong> (East away, West home): <span style="color:#c8102e;font-weight:800;">${wproj}</span></p>`;
+            }
             const note = sw.note ? `<p style="color:#666;font-size:0.88em;margin-top:8px;">${escapeHtml(sw.note)}</p>` : '';
             return `
                 <h3 style="color:#fff; font-size:1.35em; margin: 0 0 10px; border-bottom: 1px solid #333; padding-bottom: 10px;">Projected series winners</h3>
@@ -650,6 +661,7 @@
                     </table>
                 </div>
                 ${cup}
+                ${mlBlock}
                 ${note}`;
         }
 
