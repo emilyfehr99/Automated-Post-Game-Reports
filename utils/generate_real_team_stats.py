@@ -179,7 +179,13 @@ class RealTeamStatsGenerator(TeamReportGenerator):
                      game_id = game_data.get('boxscore', {}).get('id')
                 
                 game_id_str = str(game_id) if game_id else ''
-                exp_analyzer = ExperimentalMetricsAnalyzer(pbp, game_id=game_id_str)
+                # Sprite/WSR frames are not available for many historical games (and may 403).
+                # Only pass game_id when sprite-backed metrics are enabled; otherwise
+                # ExperimentalMetricsAnalyzer skips entry_gap sprite fetches entirely.
+                exp_analyzer = ExperimentalMetricsAnalyzer(
+                    pbp,
+                    game_id=(game_id_str if self.enable_sprites else None),
+                )
                 exp_results = exp_analyzer.calculate_all_experimental_metrics()
                 
                 # Fetch team-specific metrics

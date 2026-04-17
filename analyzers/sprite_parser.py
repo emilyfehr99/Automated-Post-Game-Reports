@@ -1,6 +1,10 @@
 """
 NHL Sprite Data Parser
-Extracts shot release points from frame-by-frame tracking data
+Extracts shot release points from frame-by-frame tracking data.
+
+Sprite JSON at wsr.nhle.com is only present for games where the league published
+tracking frames; coverage is incomplete for older seasons and unauthenticated
+requests often get 403. Callers should treat missing/403 as "no sprite data".
 """
 
 import requests
