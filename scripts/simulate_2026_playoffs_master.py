@@ -22,7 +22,7 @@ from playoff_predictor import PlayoffSeriesPredictor
 BASE_URL = 'https://api-web.nhle.com/v1'
 
 # Bump when export shape / meta fields change (check meta.export_version in JSON).
-PLAYOFF_EXPORT_VERSION = 9
+PLAYOFF_EXPORT_VERSION = 10
 
 
 def _inner_series_simulations(iterations: int) -> int:

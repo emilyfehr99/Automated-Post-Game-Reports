@@ -15,6 +15,10 @@ _ROUND_MODEL_TARGET = {
     4: "won_cup",
 }
 
+# Expected combined goals per game cap for series total / length projections only (playoff pace).
+# Score model can sum two high per-team means; cap keeps series goal totals within a real NHL band.
+_PLAYOFF_EXPECTED_TOTAL_GOALS_PER_GAME_CAP = 6.0
+
 
 class PlayoffSeriesPredictor:
     """Best-of-7 series simulation based on 'DNA of Playoff Success' Audit weights."""
@@ -387,7 +391,21 @@ class PlayoffSeriesPredictor:
             )
         ae = float(ps.get("away_expected") or 0.0)
         he = float(ps.get("home_expected") or 0.0)
-        return ae + he
+        total = ae + he
+        return float(min(total, _PLAYOFF_EXPECTED_TOTAL_GOALS_PER_GAME_CAP))
+
+    @staticmethod
+    def _projected_series_length_games_int(
+        avg_games: float,
+        away_wins: int,
+        home_wins: int,
+        max_additional_games: int,
+    ) -> int:
+        """Whole number of games in the series from this state; best-of-7 is 4–7 from 0–0."""
+        g = int(round(avg_games))
+        lo = max(1, 4 - max(away_wins, home_wins))
+        hi = max_additional_games
+        return max(lo, min(hi, g))
 
     def simulate_series(self, away, home, away_wins=0, home_wins=0, simulations=10000, playoff_round: Optional[int] = None):
         """
@@ -450,17 +468,21 @@ class PlayoffSeriesPredictor:
         away_series_prob = away_series_wins / simulations
         avg_games = total_games_completed / simulations
         avg_total_goals = total_series_goals_sum / simulations
+        games_int = self._projected_series_length_games_int(
+            avg_games, away_wins, home_wins, len(remaining_venues)
+        )
         gpg = (avg_total_goals / avg_games) if avg_games > 1e-9 else 0.0
+        gpg = min(gpg, _PLAYOFF_EXPECTED_TOTAL_GOALS_PER_GAME_CAP + 1e-9)
 
         return {
             'away': away,
             'home': home,
             'away_series_win_prob': away_series_prob,
             'home_series_win_prob': 1 - away_series_prob,
-            'avg_remaining_games': round(avg_games, 1),
-            'projected_avg_games_in_series': round(avg_games, 1),
+            'avg_remaining_games': float(games_int),
+            'projected_avg_games_in_series': float(games_int),
             'projected_total_goals_series': round(avg_total_goals, 1),
-            'projected_goals_per_game': round(gpg, 2),
+            'projected_goals_per_game': round(min(gpg, _PLAYOFF_EXPECTED_TOTAL_GOALS_PER_GAME_CAP), 2),
             'current_state': f"{away} {away_wins} - {home_wins} {home}",
             'winner_projection': away if away_series_prob > 0.5 else home
         }
