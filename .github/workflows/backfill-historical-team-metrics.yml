@@ -27,6 +27,10 @@ on:
         description: "Cache raw gamecenter payloads (true/false)"
         required: false
         default: "false"
+      playoff_teams_only:
+        description: "Only store RS rows for teams in that season's playoff bracket (true/false)"
+        required: false
+        default: "false"
 
 permissions:
   contents: write
@@ -61,6 +65,7 @@ jobs:
           START="${{ inputs.start_date }}"
           END="${{ inputs.end_date }}"
           CACHE_RAW="${{ inputs.cache_raw }}"
+          PLAYOFF_ONLY="${{ inputs.playoff_teams_only }}"
 
           END_START_YEAR="${END_SEASON:0:4}"
           if ! [[ "$END_START_YEAR" =~ ^[0-9]{4}$ ]]; then
@@ -95,6 +100,9 @@ jobs:
             fi
             if [ "$CACHE_RAW" = "true" ]; then
               ARGS="$ARGS --cache-raw"
+            fi
+            if [ "$PLAYOFF_ONLY" = "true" ]; then
+              ARGS="$ARGS --playoff-teams-only"
             fi
 
             python3 scripts/backfill_historical_team_metrics.py $ARGS

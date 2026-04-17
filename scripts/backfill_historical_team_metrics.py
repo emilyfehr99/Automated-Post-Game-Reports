@@ -23,7 +23,9 @@ import json
 import sys
 from datetime import date, datetime, timedelta, timezone
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, List, Optional, Set, Tuple
+
+import requests
 
 # Allow running from repo root without PYTHONPATH
 _SCRIPT_DIR = Path(__file__).resolve().parent
@@ -35,6 +37,7 @@ sys.path.insert(0, str(_PROJECT_DIR / "analyzers"))
 
 from nhl_api_client import NHLAPIClient  # utils/nhl_api_client.py
 from generate_real_team_stats import RealTeamStatsGenerator  # utils/generate_real_team_stats.py
+from playoff_bracket_outcomes import playoff_outcomes_from_bracket
 
 
 WEB_BASE = "https://api-web.nhle.com/v1"
@@ -82,6 +85,13 @@ def append_jsonl(path: Path, rows: List[dict]) -> None:
     with path.open("a") as f:
         for r in rows:
             f.write(json.dumps(r) + "\n")
+
+
+def fetch_playoff_bracket_json(year: int) -> dict:
+    url = f"{WEB_BASE}/playoff-bracket/{year}"
+    r = requests.get(url, timeout=60, headers={"User-Agent": "Mozilla/5.0"})
+    r.raise_for_status()
+    return r.json()
 
 
 def safe_write_json(path: Path, data: dict) -> None:
@@ -168,6 +178,11 @@ def main():
     parser.add_argument("--end-date", default=None, help="YYYY-MM-DD (optional)")
     parser.add_argument("--max-games", type=int, default=0, help="Stop after processing this many games (0 = no limit)")
     parser.add_argument("--cache-raw", action="store_true", help="Cache raw gamecenter payloads under data/historical/<season>/raw/")
+    parser.add_argument(
+        "--playoff-teams-only",
+        action="store_true",
+        help="Only retain regular-season rows for teams that appear in that season's playoff bracket (api-web).",
+    )
     args = parser.parse_args()
 
     season = args.season
@@ -182,6 +197,21 @@ def main():
     api = NHLAPIClient()
     # Historical sprite endpoints often 403; disable sprites to keep backfill clean/fast.
     generator = RealTeamStatsGenerator(enable_sprites=False)
+
+    playoff_teams: Optional[Set[str]] = None
+    if args.playoff_teams_only:
+        year = int(season[4:8])
+        try:
+            bracket = fetch_playoff_bracket_json(year)
+            playoff_teams, _ = playoff_outcomes_from_bracket(bracket)
+            if not playoff_teams:
+                print("WARNING: Bracket returned no teams; including all teams.")
+                playoff_teams = None
+            else:
+                print(f"Playoff-teams-only: {len(playoff_teams)} teams (Cup year {year})")
+        except Exception as e:
+            print(f"WARNING: Could not load playoff bracket for {year}: {e}. Including all teams.")
+            playoff_teams = None
 
     if args.start_date and args.end_date:
         start = parse_date(args.start_date)
@@ -229,24 +259,46 @@ def main():
 
         # Normalize shape into a JSONL "team-game row"
         # Keep metadata minimal; everything else lives under metrics.
-        new_rows.append({
-            "season": season,
-            "game_id": str(gid),
-            "date": (box.get("gameDate") or box.get("gameDateISO") or ""),
-            "team": str(away_abbr),
-            "opponent": str(home_abbr),
-            "venue": "away",
-            "metrics": away_metrics,
-        })
-        new_rows.append({
-            "season": season,
-            "game_id": str(gid),
-            "date": (box.get("gameDate") or box.get("gameDateISO") or ""),
-            "team": str(home_abbr),
-            "opponent": str(away_abbr),
-            "venue": "home",
-            "metrics": home_metrics,
-        })
+        if playoff_teams is not None:
+            if away_abbr in playoff_teams:
+                new_rows.append({
+                    "season": season,
+                    "game_id": str(gid),
+                    "date": (box.get("gameDate") or box.get("gameDateISO") or ""),
+                    "team": str(away_abbr),
+                    "opponent": str(home_abbr),
+                    "venue": "away",
+                    "metrics": away_metrics,
+                })
+            if home_abbr in playoff_teams:
+                new_rows.append({
+                    "season": season,
+                    "game_id": str(gid),
+                    "date": (box.get("gameDate") or box.get("gameDateISO") or ""),
+                    "team": str(home_abbr),
+                    "opponent": str(away_abbr),
+                    "venue": "home",
+                    "metrics": home_metrics,
+                })
+        else:
+            new_rows.append({
+                "season": season,
+                "game_id": str(gid),
+                "date": (box.get("gameDate") or box.get("gameDateISO") or ""),
+                "team": str(away_abbr),
+                "opponent": str(home_abbr),
+                "venue": "away",
+                "metrics": away_metrics,
+            })
+            new_rows.append({
+                "season": season,
+                "game_id": str(gid),
+                "date": (box.get("gameDate") or box.get("gameDateISO") or ""),
+                "team": str(home_abbr),
+                "opponent": str(away_abbr),
+                "venue": "home",
+                "metrics": home_metrics,
+            })
 
         processed.add(str(gid))
         if i % 25 == 0:
