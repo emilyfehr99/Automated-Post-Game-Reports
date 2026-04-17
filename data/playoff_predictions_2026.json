@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at_utc": "2026-04-17T22:16:09.093914+00:00",
+    "generated_at_utc": "2026-04-17T22:20:13.967426+00:00",
     "iterations": 75000,
     "season": "20252026",
     "source": "simulate_2026_playoffs_master.py",
@@ -182,8 +182,8 @@
           "away": 0,
           "home": 0
         },
-        "away_series_win_prob": 0.3601066666666667,
-        "home_series_win_prob": 0.6398933333333333,
+        "away_series_win_prob": 0.3641066666666667,
+        "home_series_win_prob": 0.6358933333333333,
         "avg_remaining_games": 5.8,
         "winner_projection": "CAR"
       },
@@ -195,8 +195,8 @@
           "away": 0,
           "home": 0
         },
-        "away_series_win_prob": 0.10773333333333333,
-        "home_series_win_prob": 0.8922666666666667,
+        "away_series_win_prob": 0.10682666666666667,
+        "home_series_win_prob": 0.8931733333333334,
         "avg_remaining_games": 5.3,
         "winner_projection": "PIT"
       },
@@ -208,8 +208,8 @@
           "away": 0,
           "home": 0
         },
-        "away_series_win_prob": 0.8764266666666667,
-        "home_series_win_prob": 0.12357333333333331,
+        "away_series_win_prob": 0.8805333333333333,
+        "home_series_win_prob": 0.11946666666666672,
         "avg_remaining_games": 5.4,
         "winner_projection": "BOS"
       },
@@ -221,9 +221,9 @@
           "away": 0,
           "home": 0
         },
-        "away_series_win_prob": 0.3178666666666667,
-        "home_series_win_prob": 0.6821333333333333,
-        "avg_remaining_games": 5.7,
+        "away_series_win_prob": 0.31306666666666666,
+        "home_series_win_prob": 0.6869333333333334,
+        "avg_remaining_games": 5.8,
         "winner_projection": "TBL"
       }
     ],
@@ -236,8 +236,8 @@
           "away": 0,
           "home": 0
         },
-        "away_series_win_prob": 0.12768,
-        "home_series_win_prob": 0.87232,
+        "away_series_win_prob": 0.12618666666666667,
+        "home_series_win_prob": 0.8738133333333333,
         "avg_remaining_games": 5.4,
         "winner_projection": "COL"
       },
@@ -249,8 +249,8 @@
           "away": 0,
           "home": 0
         },
-        "away_series_win_prob": 0.28501333333333334,
-        "home_series_win_prob": 0.7149866666666667,
+        "away_series_win_prob": 0.28352,
+        "home_series_win_prob": 0.71648,
         "avg_remaining_games": 5.7,
         "winner_projection": "DAL"
       },
@@ -262,8 +262,8 @@
           "away": 0,
           "home": 0
         },
-        "away_series_win_prob": 0.58,
-        "home_series_win_prob": 0.42000000000000004,
+        "away_series_win_prob": 0.5845333333333333,
+        "home_series_win_prob": 0.41546666666666665,
         "avg_remaining_games": 5.8,
         "winner_projection": "UTA"
       },
@@ -275,8 +275,8 @@
           "away": 0,
           "home": 0
         },
-        "away_series_win_prob": 0.6417066666666666,
-        "home_series_win_prob": 0.35829333333333335,
+        "away_series_win_prob": 0.6452266666666666,
+        "home_series_win_prob": 0.3547733333333334,
         "avg_remaining_games": 5.9,
         "winner_projection": "ANA"
       }
@@ -297,8 +297,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.9964266666666667,
-      "home_series_win_prob": 0.0035733333333333173,
+      "away_series_win_prob": 0.99712,
+      "home_series_win_prob": 0.0028799999999999937,
       "avg_remaining_games": 4.5,
       "winner_projection": "OTT"
     },
@@ -316,8 +316,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.27109333333333335,
-      "home_series_win_prob": 0.7289066666666666,
+      "away_series_win_prob": 0.26224,
+      "home_series_win_prob": 0.73776,
       "avg_remaining_games": 5.7,
       "winner_projection": "PIT"
     },
@@ -335,8 +335,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.8811733333333334,
-      "home_series_win_prob": 0.11882666666666664,
+      "away_series_win_prob": 0.8831466666666666,
+      "home_series_win_prob": 0.11685333333333336,
       "avg_remaining_games": 5.4,
       "winner_projection": "CAR"
     },
@@ -354,8 +354,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.56208,
-      "home_series_win_prob": 0.43792,
+      "away_series_win_prob": 0.56192,
+      "home_series_win_prob": 0.43808,
       "avg_remaining_games": 5.8,
       "winner_projection": "CAR"
     },
@@ -373,8 +373,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.5416,
-      "home_series_win_prob": 0.45840000000000003,
+      "away_series_win_prob": 0.5327466666666667,
+      "home_series_win_prob": 0.4672533333333333,
       "avg_remaining_games": 5.8,
       "winner_projection": "BOS"
     },
@@ -392,8 +392,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.07850666666666667,
-      "home_series_win_prob": 0.9214933333333333,
+      "away_series_win_prob": 0.08117333333333333,
+      "home_series_win_prob": 0.9188266666666667,
       "avg_remaining_games": 5.4,
       "winner_projection": "TBL"
     },
@@ -411,8 +411,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.5233066666666667,
-      "home_series_win_prob": 0.4766933333333333,
+      "away_series_win_prob": 0.5205866666666666,
+      "home_series_win_prob": 0.47941333333333336,
       "avg_remaining_games": 5.8,
       "winner_projection": "BUF"
     },
@@ -430,8 +430,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.47546666666666665,
-      "home_series_win_prob": 0.5245333333333333,
+      "away_series_win_prob": 0.47402666666666665,
+      "home_series_win_prob": 0.5259733333333334,
       "avg_remaining_games": 5.8,
       "winner_projection": "TBL"
     },
@@ -449,8 +449,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.10288,
-      "home_series_win_prob": 0.89712,
+      "away_series_win_prob": 0.09925333333333333,
+      "home_series_win_prob": 0.9007466666666667,
       "avg_remaining_games": 5.3,
       "winner_projection": "MIN"
     },
@@ -468,8 +468,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.07802666666666666,
-      "home_series_win_prob": 0.9219733333333333,
+      "away_series_win_prob": 0.07178666666666667,
+      "home_series_win_prob": 0.9282133333333333,
       "avg_remaining_games": 5.2,
       "winner_projection": "DAL"
     },
@@ -487,8 +487,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.484,
-      "home_series_win_prob": 0.516,
+      "away_series_win_prob": 0.47258666666666665,
+      "home_series_win_prob": 0.5274133333333333,
       "avg_remaining_games": 5.8,
       "winner_projection": "MIN"
     },
@@ -506,8 +506,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.60272,
-      "home_series_win_prob": 0.39727999999999997,
+      "away_series_win_prob": 0.6101333333333333,
+      "home_series_win_prob": 0.3898666666666667,
       "avg_remaining_games": 5.8,
       "winner_projection": "COL"
     },
@@ -525,8 +525,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.20352,
-      "home_series_win_prob": 0.79648,
+      "away_series_win_prob": 0.20490666666666665,
+      "home_series_win_prob": 0.7950933333333333,
       "avg_remaining_games": 5.6,
       "winner_projection": "ANA"
     },
@@ -544,8 +544,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.46058666666666664,
-      "home_series_win_prob": 0.5394133333333333,
+      "away_series_win_prob": 0.45872,
+      "home_series_win_prob": 0.54128,
       "avg_remaining_games": 5.8,
       "winner_projection": "EDM"
     },
@@ -563,8 +563,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.18176,
-      "home_series_win_prob": 0.81824,
+      "away_series_win_prob": 0.17568,
+      "home_series_win_prob": 0.8243199999999999,
       "avg_remaining_games": 5.6,
       "winner_projection": "ANA"
     },
@@ -582,8 +582,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.9223466666666666,
-      "home_series_win_prob": 0.07765333333333335,
+      "away_series_win_prob": 0.9224,
+      "home_series_win_prob": 0.0776,
       "avg_remaining_games": 5.2,
       "winner_projection": "VGK"
     },
@@ -601,8 +601,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.88608,
-      "home_series_win_prob": 0.11392000000000002,
+      "away_series_win_prob": 0.8891733333333334,
+      "home_series_win_prob": 0.11082666666666663,
       "avg_remaining_games": 5.3,
       "winner_projection": "CAR"
     },
@@ -620,8 +620,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.8549333333333333,
-      "home_series_win_prob": 0.14506666666666668,
+      "away_series_win_prob": 0.8562666666666666,
+      "home_series_win_prob": 0.14373333333333338,
       "avg_remaining_games": 5.5,
       "winner_projection": "CAR"
     },
@@ -639,8 +639,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.55424,
-      "home_series_win_prob": 0.44576000000000005,
+      "away_series_win_prob": 0.55568,
+      "home_series_win_prob": 0.44432000000000005,
       "avg_remaining_games": 5.8,
       "winner_projection": "CAR"
     },
@@ -658,8 +658,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.69552,
-      "home_series_win_prob": 0.30448,
+      "away_series_win_prob": 0.7018666666666666,
+      "home_series_win_prob": 0.29813333333333336,
       "avg_remaining_games": 5.7,
       "winner_projection": "CAR"
     },
@@ -677,8 +677,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.83728,
-      "home_series_win_prob": 0.16271999999999998,
+      "away_series_win_prob": 0.8434666666666667,
+      "home_series_win_prob": 0.1565333333333333,
       "avg_remaining_games": 5.5,
       "winner_projection": "OTT"
     },
@@ -696,8 +696,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.5050133333333333,
-      "home_series_win_prob": 0.4949866666666667,
+      "away_series_win_prob": 0.5039466666666667,
+      "home_series_win_prob": 0.49605333333333335,
       "avg_remaining_games": 5.8,
       "winner_projection": "OTT"
     },
@@ -715,8 +715,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.8223466666666667,
-      "home_series_win_prob": 0.17765333333333333,
+      "away_series_win_prob": 0.82432,
+      "home_series_win_prob": 0.17567999999999995,
       "avg_remaining_games": 5.5,
       "winner_projection": "OTT"
     },
@@ -734,8 +734,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.7342933333333334,
-      "home_series_win_prob": 0.26570666666666665,
+      "away_series_win_prob": 0.7376,
+      "home_series_win_prob": 0.26239999999999997,
       "avg_remaining_games": 5.7,
       "winner_projection": "OTT"
     },
@@ -753,8 +753,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.46485333333333334,
-      "home_series_win_prob": 0.5351466666666667,
+      "away_series_win_prob": 0.45957333333333333,
+      "home_series_win_prob": 0.5404266666666666,
       "avg_remaining_games": 5.8,
       "winner_projection": "BOS"
     },
@@ -772,8 +772,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.344,
-      "home_series_win_prob": 0.656,
+      "away_series_win_prob": 0.33530666666666664,
+      "home_series_win_prob": 0.6646933333333334,
       "avg_remaining_games": 5.7,
       "winner_projection": "BUF"
     },
@@ -791,8 +791,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.5498133333333334,
-      "home_series_win_prob": 0.4501866666666666,
+      "away_series_win_prob": 0.5454933333333334,
+      "home_series_win_prob": 0.4545066666666666,
       "avg_remaining_games": 5.8,
       "winner_projection": "PHI"
     },
@@ -810,8 +810,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.01664,
-      "home_series_win_prob": 0.98336,
+      "away_series_win_prob": 0.018186666666666667,
+      "home_series_win_prob": 0.9818133333333333,
       "avg_remaining_games": 4.7,
       "winner_projection": "TBL"
     },
@@ -829,8 +829,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.8601066666666667,
-      "home_series_win_prob": 0.13989333333333331,
+      "away_series_win_prob": 0.85856,
+      "home_series_win_prob": 0.14144,
       "avg_remaining_games": 5.4,
       "winner_projection": "PIT"
     },
@@ -848,8 +848,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.8042133333333333,
-      "home_series_win_prob": 0.19578666666666666,
+      "away_series_win_prob": 0.8,
+      "home_series_win_prob": 0.19999999999999996,
       "avg_remaining_games": 5.7,
       "winner_projection": "PIT"
     },
@@ -867,8 +867,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.6834666666666667,
-      "home_series_win_prob": 0.31653333333333333,
+      "away_series_win_prob": 0.676,
+      "home_series_win_prob": 0.32399999999999995,
       "avg_remaining_games": 5.7,
       "winner_projection": "PIT"
     },
@@ -886,8 +886,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.08154666666666667,
-      "home_series_win_prob": 0.9184533333333333,
+      "away_series_win_prob": 0.08496,
+      "home_series_win_prob": 0.91504,
       "avg_remaining_games": 5.2,
       "winner_projection": "TBL"
     },
@@ -905,8 +905,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.9127466666666667,
-      "home_series_win_prob": 0.0872533333333333,
+      "away_series_win_prob": 0.9141333333333334,
+      "home_series_win_prob": 0.08586666666666665,
       "avg_remaining_games": 5.3,
       "winner_projection": "COL"
     },
@@ -924,8 +924,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.8704533333333333,
-      "home_series_win_prob": 0.1295466666666667,
+      "away_series_win_prob": 0.86416,
+      "home_series_win_prob": 0.13583999999999996,
       "avg_remaining_games": 5.4,
       "winner_projection": "COL"
     },
@@ -943,8 +943,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.9628266666666667,
-      "home_series_win_prob": 0.03717333333333328,
+      "away_series_win_prob": 0.95984,
+      "home_series_win_prob": 0.040159999999999973,
       "avg_remaining_games": 5.0,
       "winner_projection": "COL"
     },
@@ -962,8 +962,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.7881066666666666,
-      "home_series_win_prob": 0.21189333333333338,
+      "away_series_win_prob": 0.7845866666666667,
+      "home_series_win_prob": 0.21541333333333335,
       "avg_remaining_games": 5.6,
       "winner_projection": "COL"
     },
@@ -981,8 +981,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.38309333333333334,
-      "home_series_win_prob": 0.6169066666666667,
+      "away_series_win_prob": 0.38298666666666664,
+      "home_series_win_prob": 0.6170133333333334,
       "avg_remaining_games": 5.8,
       "winner_projection": "ANA"
     },
@@ -1000,8 +1000,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.9766933333333333,
-      "home_series_win_prob": 0.023306666666666698,
+      "away_series_win_prob": 0.97584,
+      "home_series_win_prob": 0.02415999999999996,
       "avg_remaining_games": 4.8,
       "winner_projection": "DAL"
     },
@@ -1019,9 +1019,9 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.87936,
-      "home_series_win_prob": 0.12063999999999997,
-      "avg_remaining_games": 5.4,
+      "away_series_win_prob": 0.8786666666666667,
+      "home_series_win_prob": 0.1213333333333333,
+      "avg_remaining_games": 5.5,
       "winner_projection": "DAL"
     },
     {
@@ -1038,8 +1038,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.5542933333333333,
-      "home_series_win_prob": 0.4457066666666667,
+      "away_series_win_prob": 0.55232,
+      "home_series_win_prob": 0.44767999999999997,
       "avg_remaining_games": 5.8,
       "winner_projection": "DAL"
     },
@@ -1057,8 +1057,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.19637333333333334,
-      "home_series_win_prob": 0.8036266666666667,
+      "away_series_win_prob": 0.19685333333333332,
+      "home_series_win_prob": 0.8031466666666667,
       "avg_remaining_games": 5.6,
       "winner_projection": "ANA"
     },
@@ -1076,8 +1076,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.27781333333333336,
-      "home_series_win_prob": 0.7221866666666666,
+      "away_series_win_prob": 0.2786133333333333,
+      "home_series_win_prob": 0.7213866666666666,
       "avg_remaining_games": 5.7,
       "winner_projection": "EDM"
     },
@@ -1095,8 +1095,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.26544,
-      "home_series_win_prob": 0.73456,
+      "away_series_win_prob": 0.2653333333333333,
+      "home_series_win_prob": 0.7346666666666667,
       "avg_remaining_games": 5.7,
       "winner_projection": "UTA"
     },
@@ -1114,8 +1114,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.14581333333333332,
-      "home_series_win_prob": 0.8541866666666666,
+      "away_series_win_prob": 0.13952,
+      "home_series_win_prob": 0.86048,
       "avg_remaining_games": 5.4,
       "winner_projection": "VGK"
     },
@@ -1133,8 +1133,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.8154133333333333,
-      "home_series_win_prob": 0.18458666666666668,
+      "away_series_win_prob": 0.82192,
+      "home_series_win_prob": 0.17808000000000002,
       "avg_remaining_games": 5.6,
       "winner_projection": "MIN"
     },
@@ -1152,8 +1152,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.9274133333333333,
-      "home_series_win_prob": 0.07258666666666669,
+      "away_series_win_prob": 0.9330666666666667,
+      "home_series_win_prob": 0.06693333333333329,
       "avg_remaining_games": 5.2,
       "winner_projection": "MIN"
     },
@@ -1171,8 +1171,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.5793066666666666,
-      "home_series_win_prob": 0.42069333333333336,
+      "away_series_win_prob": 0.5817066666666667,
+      "home_series_win_prob": 0.4182933333333333,
       "avg_remaining_games": 5.8,
       "winner_projection": "MIN"
     },
@@ -1190,8 +1190,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.7397333333333334,
-      "home_series_win_prob": 0.26026666666666665,
+      "away_series_win_prob": 0.7387733333333333,
+      "home_series_win_prob": 0.2612266666666667,
       "avg_remaining_games": 5.7,
       "winner_projection": "MIN"
     },
@@ -1209,8 +1209,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.24917333333333333,
-      "home_series_win_prob": 0.7508266666666666,
+      "away_series_win_prob": 0.24586666666666668,
+      "home_series_win_prob": 0.7541333333333333,
       "avg_remaining_games": 5.6,
       "winner_projection": "ANA"
     },
@@ -1228,8 +1228,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.061546666666666666,
-      "home_series_win_prob": 0.9384533333333334,
+      "away_series_win_prob": 0.06042666666666666,
+      "home_series_win_prob": 0.9395733333333334,
       "avg_remaining_games": 5.1,
       "winner_projection": "COL"
     },
@@ -1247,8 +1247,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.43584,
-      "home_series_win_prob": 0.56416,
+      "away_series_win_prob": 0.43322666666666665,
+      "home_series_win_prob": 0.5667733333333334,
       "avg_remaining_games": 5.8,
       "winner_projection": "DAL"
     },
@@ -1266,8 +1266,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.6420266666666666,
-      "home_series_win_prob": 0.35797333333333337,
+      "away_series_win_prob": 0.6362666666666666,
+      "home_series_win_prob": 0.36373333333333335,
       "avg_remaining_games": 5.8,
       "winner_projection": "BOS"
     },
@@ -1285,8 +1285,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.8856,
-      "home_series_win_prob": 0.11439999999999995,
+      "away_series_win_prob": 0.8845866666666666,
+      "home_series_win_prob": 0.11541333333333337,
       "avg_remaining_games": 5.3,
       "winner_projection": "BOS"
     },
@@ -1304,8 +1304,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.4341333333333333,
-      "home_series_win_prob": 0.5658666666666667,
+      "away_series_win_prob": 0.43477333333333334,
+      "home_series_win_prob": 0.5652266666666667,
       "avg_remaining_games": 5.8,
       "winner_projection": "MIN"
     },
@@ -1323,8 +1323,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.41818666666666665,
-      "home_series_win_prob": 0.5818133333333333,
+      "away_series_win_prob": 0.41914666666666667,
+      "home_series_win_prob": 0.5808533333333333,
       "avg_remaining_games": 5.9,
       "winner_projection": "UTA"
     },
@@ -1342,8 +1342,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.55232,
-      "home_series_win_prob": 0.44767999999999997,
+      "away_series_win_prob": 0.5541333333333334,
+      "home_series_win_prob": 0.44586666666666663,
       "avg_remaining_games": 5.8,
       "winner_projection": "BOS"
     },
@@ -1361,8 +1361,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.5935466666666667,
-      "home_series_win_prob": 0.40645333333333333,
+      "away_series_win_prob": 0.60464,
+      "home_series_win_prob": 0.39536000000000004,
       "avg_remaining_games": 5.8,
       "winner_projection": "BUF"
     },
@@ -1380,8 +1380,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.03584,
-      "home_series_win_prob": 0.96416,
+      "away_series_win_prob": 0.037013333333333336,
+      "home_series_win_prob": 0.9629866666666667,
       "avg_remaining_games": 4.9,
       "winner_projection": "COL"
     },
@@ -1399,8 +1399,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.18762666666666666,
-      "home_series_win_prob": 0.8123733333333334,
+      "away_series_win_prob": 0.18202666666666667,
+      "home_series_win_prob": 0.8179733333333333,
       "avg_remaining_games": 5.5,
       "winner_projection": "DAL"
     },
@@ -1418,8 +1418,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.8944533333333333,
-      "home_series_win_prob": 0.10554666666666668,
+      "away_series_win_prob": 0.89424,
+      "home_series_win_prob": 0.10575999999999997,
       "avg_remaining_games": 5.3,
       "winner_projection": "BUF"
     },
@@ -1437,8 +1437,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.5110933333333333,
-      "home_series_win_prob": 0.4889066666666667,
+      "away_series_win_prob": 0.51152,
+      "home_series_win_prob": 0.48848,
       "avg_remaining_games": 5.8,
       "winner_projection": "BUF"
     },
@@ -1456,8 +1456,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.3198933333333333,
-      "home_series_win_prob": 0.6801066666666666,
+      "away_series_win_prob": 0.3184,
+      "home_series_win_prob": 0.6816,
       "avg_remaining_games": 5.7,
       "winner_projection": "MIN"
     },
@@ -1475,9 +1475,9 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.18448,
-      "home_series_win_prob": 0.81552,
-      "avg_remaining_games": 5.6,
+      "away_series_win_prob": 0.18538666666666667,
+      "home_series_win_prob": 0.8146133333333333,
+      "avg_remaining_games": 5.7,
       "winner_projection": "UTA"
     },
     {
@@ -1494,8 +1494,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.5469333333333334,
-      "home_series_win_prob": 0.4530666666666666,
+      "away_series_win_prob": 0.5496,
+      "home_series_win_prob": 0.4504,
       "avg_remaining_games": 5.8,
       "winner_projection": "BUF"
     },
@@ -1513,8 +1513,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.89824,
-      "home_series_win_prob": 0.10175999999999996,
+      "away_series_win_prob": 0.8960533333333334,
+      "home_series_win_prob": 0.10394666666666663,
       "avg_remaining_games": 5.3,
       "winner_projection": "CAR"
     },
@@ -1532,8 +1532,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.14101333333333332,
-      "home_series_win_prob": 0.8589866666666667,
+      "away_series_win_prob": 0.13717333333333334,
+      "home_series_win_prob": 0.8628266666666666,
       "avg_remaining_games": 5.4,
       "winner_projection": "COL"
     },
@@ -1551,8 +1551,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.5466666666666666,
-      "home_series_win_prob": 0.45333333333333337,
+      "away_series_win_prob": 0.5401066666666666,
+      "home_series_win_prob": 0.4598933333333334,
       "avg_remaining_games": 5.8,
       "winner_projection": "CAR"
     },
@@ -1570,8 +1570,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.9692266666666667,
-      "home_series_win_prob": 0.03077333333333332,
+      "away_series_win_prob": 0.9675733333333333,
+      "home_series_win_prob": 0.032426666666666715,
       "avg_remaining_games": 4.9,
       "winner_projection": "CAR"
     },
@@ -1589,8 +1589,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.97344,
-      "home_series_win_prob": 0.026560000000000028,
+      "away_series_win_prob": 0.9722133333333334,
+      "home_series_win_prob": 0.027786666666666626,
       "avg_remaining_games": 4.9,
       "winner_projection": "CAR"
     },
@@ -1608,8 +1608,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.5248533333333333,
-      "home_series_win_prob": 0.4751466666666667,
+      "away_series_win_prob": 0.5293333333333333,
+      "home_series_win_prob": 0.4706666666666667,
       "avg_remaining_games": 5.8,
       "winner_projection": "CAR"
     },
@@ -1627,8 +1627,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.9405333333333333,
-      "home_series_win_prob": 0.05946666666666667,
+      "away_series_win_prob": 0.9374933333333333,
+      "home_series_win_prob": 0.06250666666666671,
       "avg_remaining_games": 5.1,
       "winner_projection": "CAR"
     },
@@ -1646,8 +1646,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.7402133333333333,
-      "home_series_win_prob": 0.2597866666666667,
+      "away_series_win_prob": 0.7373866666666666,
+      "home_series_win_prob": 0.26261333333333337,
       "avg_remaining_games": 5.7,
       "winner_projection": "CAR"
     },
@@ -1665,8 +1665,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.37344,
-      "home_series_win_prob": 0.62656,
+      "away_series_win_prob": 0.37616,
+      "home_series_win_prob": 0.62384,
       "avg_remaining_games": 5.8,
       "winner_projection": "ANA"
     },
@@ -1684,9 +1684,9 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.24885333333333334,
-      "home_series_win_prob": 0.7511466666666666,
-      "avg_remaining_games": 5.7,
+      "away_series_win_prob": 0.24421333333333334,
+      "home_series_win_prob": 0.7557866666666666,
+      "avg_remaining_games": 5.6,
       "winner_projection": "COL"
     },
     {
@@ -1703,8 +1703,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.42602666666666666,
-      "home_series_win_prob": 0.5739733333333333,
+      "away_series_win_prob": 0.42944,
+      "home_series_win_prob": 0.57056,
       "avg_remaining_games": 5.8,
       "winner_projection": "DAL"
     },
@@ -1722,8 +1722,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.9738133333333333,
-      "home_series_win_prob": 0.02618666666666669,
+      "away_series_win_prob": 0.9732266666666667,
+      "home_series_win_prob": 0.026773333333333316,
       "avg_remaining_games": 4.9,
       "winner_projection": "MTL"
     },
@@ -1741,8 +1741,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.6336,
-      "home_series_win_prob": 0.36639999999999995,
+      "away_series_win_prob": 0.6338666666666667,
+      "home_series_win_prob": 0.3661333333333333,
       "avg_remaining_games": 5.9,
       "winner_projection": "MTL"
     },
@@ -1760,8 +1760,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.6165866666666666,
-      "home_series_win_prob": 0.3834133333333334,
+      "away_series_win_prob": 0.61872,
+      "home_series_win_prob": 0.38127999999999995,
       "avg_remaining_games": 5.9,
       "winner_projection": "MTL"
     },
@@ -1779,8 +1779,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.9418666666666666,
-      "home_series_win_prob": 0.05813333333333337,
+      "away_series_win_prob": 0.93792,
+      "home_series_win_prob": 0.062080000000000024,
       "avg_remaining_games": 5.1,
       "winner_projection": "MTL"
     },
@@ -1798,8 +1798,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.8716266666666667,
-      "home_series_win_prob": 0.12837333333333334,
+      "away_series_win_prob": 0.8752533333333333,
+      "home_series_win_prob": 0.12474666666666667,
       "avg_remaining_games": 5.4,
       "winner_projection": "MTL"
     },
@@ -1817,8 +1817,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.7264,
-      "home_series_win_prob": 0.27359999999999995,
+      "away_series_win_prob": 0.7330666666666666,
+      "home_series_win_prob": 0.26693333333333336,
       "avg_remaining_games": 5.9,
       "winner_projection": "OTT"
     },
@@ -1836,9 +1836,9 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.1552,
-      "home_series_win_prob": 0.8448,
-      "avg_remaining_games": 5.5,
+      "away_series_win_prob": 0.15013333333333334,
+      "home_series_win_prob": 0.8498666666666667,
+      "avg_remaining_games": 5.4,
       "winner_projection": "COL"
     },
     {
@@ -1855,8 +1855,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.19034666666666666,
-      "home_series_win_prob": 0.8096533333333333,
+      "away_series_win_prob": 0.1832,
+      "home_series_win_prob": 0.8168,
       "avg_remaining_games": 5.6,
       "winner_projection": "DAL"
     },
@@ -1874,8 +1874,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.8880533333333334,
-      "home_series_win_prob": 0.11194666666666664,
+      "away_series_win_prob": 0.88592,
+      "home_series_win_prob": 0.11407999999999996,
       "avg_remaining_games": 5.5,
       "winner_projection": "OTT"
     },
@@ -1893,8 +1893,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.8448,
-      "home_series_win_prob": 0.1552,
+      "away_series_win_prob": 0.8418666666666667,
+      "home_series_win_prob": 0.15813333333333335,
       "avg_remaining_games": 5.5,
       "winner_projection": "OTT"
     },
@@ -1912,8 +1912,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.47013333333333335,
-      "home_series_win_prob": 0.5298666666666667,
+      "away_series_win_prob": 0.46848,
+      "home_series_win_prob": 0.53152,
       "avg_remaining_games": 5.9,
       "winner_projection": "MIN"
     },
@@ -1931,8 +1931,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.68176,
-      "home_series_win_prob": 0.31823999999999997,
+      "away_series_win_prob": 0.6911466666666667,
+      "home_series_win_prob": 0.3088533333333333,
       "avg_remaining_games": 5.9,
       "winner_projection": "OTT"
     },
@@ -1950,8 +1950,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.9077333333333333,
-      "home_series_win_prob": 0.09226666666666672,
+      "away_series_win_prob": 0.90912,
+      "home_series_win_prob": 0.09087999999999996,
       "avg_remaining_games": 5.3,
       "winner_projection": "OTT"
     },
@@ -1969,8 +1969,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.12176,
-      "home_series_win_prob": 0.87824,
+      "away_series_win_prob": 0.12101333333333333,
+      "home_series_win_prob": 0.8789866666666667,
       "avg_remaining_games": 5.4,
       "winner_projection": "ANA"
     },
@@ -1988,8 +1988,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.11088,
-      "home_series_win_prob": 0.88912,
+      "away_series_win_prob": 0.11376,
+      "home_series_win_prob": 0.88624,
       "avg_remaining_games": 5.3,
       "winner_projection": "COL"
     },
@@ -2007,8 +2007,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.07445333333333333,
-      "home_series_win_prob": 0.9255466666666666,
+      "away_series_win_prob": 0.07605333333333333,
+      "home_series_win_prob": 0.9239466666666667,
       "avg_remaining_games": 5.2,
       "winner_projection": "DAL"
     },
@@ -2026,8 +2026,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.40096,
-      "home_series_win_prob": 0.59904,
+      "away_series_win_prob": 0.40186666666666665,
+      "home_series_win_prob": 0.5981333333333334,
       "avg_remaining_games": 5.8,
       "winner_projection": "EDM"
     },
@@ -2045,8 +2045,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.49952,
-      "home_series_win_prob": 0.50048,
+      "away_series_win_prob": 0.48906666666666665,
+      "home_series_win_prob": 0.5109333333333334,
       "avg_remaining_games": 5.8,
       "winner_projection": "LAK"
     },
@@ -2064,8 +2064,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.18554666666666667,
-      "home_series_win_prob": 0.8144533333333334,
+      "away_series_win_prob": 0.18469333333333332,
+      "home_series_win_prob": 0.8153066666666666,
       "avg_remaining_games": 5.6,
       "winner_projection": "MIN"
     },
@@ -2083,8 +2083,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.21792,
-      "home_series_win_prob": 0.78208,
+      "away_series_win_prob": 0.21344,
+      "home_series_win_prob": 0.78656,
       "avg_remaining_games": 5.6,
       "winner_projection": "UTA"
     },
@@ -2102,8 +2102,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.4513066666666667,
-      "home_series_win_prob": 0.5486933333333333,
+      "away_series_win_prob": 0.46010666666666666,
+      "home_series_win_prob": 0.5398933333333333,
       "avg_remaining_games": 5.8,
       "winner_projection": "VGK"
     },
@@ -2121,8 +2121,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.6885866666666667,
-      "home_series_win_prob": 0.3114133333333333,
+      "away_series_win_prob": 0.6921066666666666,
+      "home_series_win_prob": 0.30789333333333335,
       "avg_remaining_games": 5.8,
       "winner_projection": "PIT"
     },
@@ -2140,8 +2140,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.3714133333333333,
-      "home_series_win_prob": 0.6285866666666666,
+      "away_series_win_prob": 0.36805333333333334,
+      "home_series_win_prob": 0.6319466666666667,
       "avg_remaining_games": 5.8,
       "winner_projection": "COL"
     },
@@ -2159,8 +2159,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.38464,
-      "home_series_win_prob": 0.61536,
+      "away_series_win_prob": 0.37877333333333335,
+      "home_series_win_prob": 0.6212266666666666,
       "avg_remaining_games": 5.8,
       "winner_projection": "DAL"
     },
@@ -2178,8 +2178,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.8467733333333334,
-      "home_series_win_prob": 0.15322666666666662,
+      "away_series_win_prob": 0.8480533333333333,
+      "home_series_win_prob": 0.15194666666666667,
       "avg_remaining_games": 5.5,
       "winner_projection": "PIT"
     },
@@ -2197,8 +2197,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.7973333333333333,
-      "home_series_win_prob": 0.20266666666666666,
+      "away_series_win_prob": 0.79376,
+      "home_series_win_prob": 0.20623999999999998,
       "avg_remaining_games": 5.6,
       "winner_projection": "PIT"
     },
@@ -2216,8 +2216,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.5210666666666667,
-      "home_series_win_prob": 0.4789333333333333,
+      "away_series_win_prob": 0.5304533333333333,
+      "home_series_win_prob": 0.46954666666666667,
       "avg_remaining_games": 5.9,
       "winner_projection": "PIT"
     },
@@ -2235,8 +2235,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.9554133333333333,
-      "home_series_win_prob": 0.04458666666666666,
+      "away_series_win_prob": 0.9550933333333333,
+      "home_series_win_prob": 0.04490666666666665,
       "avg_remaining_games": 5.0,
       "winner_projection": "PIT"
     },
@@ -2254,8 +2254,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.6752,
-      "home_series_win_prob": 0.3248,
+      "away_series_win_prob": 0.6789333333333334,
+      "home_series_win_prob": 0.3210666666666666,
       "avg_remaining_games": 5.7,
       "winner_projection": "PIT"
     },
@@ -2273,8 +2273,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.6448,
-      "home_series_win_prob": 0.35519999999999996,
+      "away_series_win_prob": 0.6517333333333334,
+      "home_series_win_prob": 0.3482666666666666,
       "avg_remaining_games": 5.9,
       "winner_projection": "TBL"
     },
@@ -2292,8 +2292,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.5965333333333334,
-      "home_series_win_prob": 0.40346666666666664,
+      "away_series_win_prob": 0.59168,
+      "home_series_win_prob": 0.40832,
       "avg_remaining_games": 5.8,
       "winner_projection": "TBL"
     },
@@ -2311,8 +2311,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.7253866666666666,
-      "home_series_win_prob": 0.2746133333333334,
+      "away_series_win_prob": 0.7364266666666667,
+      "home_series_win_prob": 0.2635733333333333,
       "avg_remaining_games": 5.7,
       "winner_projection": "TBL"
     },
@@ -2330,8 +2330,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.9835733333333333,
-      "home_series_win_prob": 0.0164266666666667,
+      "away_series_win_prob": 0.98272,
+      "home_series_win_prob": 0.017279999999999962,
       "avg_remaining_games": 4.8,
       "winner_projection": "TBL"
     },
@@ -2349,8 +2349,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.9671466666666667,
-      "home_series_win_prob": 0.03285333333333329,
+      "away_series_win_prob": 0.9639466666666666,
+      "home_series_win_prob": 0.03605333333333338,
       "avg_remaining_games": 4.9,
       "winner_projection": "TBL"
     },
@@ -2368,8 +2368,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.9006933333333333,
-      "home_series_win_prob": 0.09930666666666665,
+      "away_series_win_prob": 0.90128,
+      "home_series_win_prob": 0.09872000000000003,
       "avg_remaining_games": 5.3,
       "winner_projection": "TBL"
     },
@@ -2387,8 +2387,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.9386666666666666,
-      "home_series_win_prob": 0.06133333333333335,
+      "away_series_win_prob": 0.9335466666666666,
+      "home_series_win_prob": 0.06645333333333336,
       "avg_remaining_games": 5.1,
       "winner_projection": "TBL"
     },
@@ -2406,8 +2406,8 @@
         "away": 0,
         "home": 0
       },
-      "away_series_win_prob": 0.96512,
-      "home_series_win_prob": 0.03488000000000002,
+      "away_series_win_prob": 0.96016,
+      "home_series_win_prob": 0.03983999999999999,
       "avg_remaining_games": 5.0,
       "winner_projection": "TBL"
     }
@@ -2415,115 +2415,115 @@
   "advancement_probabilities": [
     {
       "team": "COL",
-      "r2": 0.8740266666666666,
-      "r3": 0.5012,
-      "fin": 0.44625333333333334,
-      "cup": 0.29133333333333333
+      "r2": 0.8725866666666666,
+      "r3": 0.50316,
+      "fin": 0.44937333333333335,
+      "cup": 0.2933866666666667
     },
     {
       "team": "TBL",
-      "r2": 0.6870933333333333,
-      "r3": 0.5986133333333333,
-      "fin": 0.36008,
-      "cup": 0.25261333333333336
+      "r2": 0.6895733333333334,
+      "r3": 0.5990533333333333,
+      "fin": 0.36005333333333334,
+      "cup": 0.25192
     },
     {
       "team": "CAR",
-      "r2": 0.6345866666666666,
-      "r3": 0.38016,
-      "fin": 0.2745066666666667,
-      "cup": 0.12124
+      "r2": 0.6387733333333333,
+      "r3": 0.3832,
+      "fin": 0.2750666666666667,
+      "cup": 0.12061333333333334
     },
     {
       "team": "DAL",
-      "r2": 0.71812,
-      "r3": 0.32832,
-      "fin": 0.18881333333333333,
-      "cup": 0.08753333333333334
+      "r2": 0.7158666666666667,
+      "r3": 0.3247333333333333,
+      "fin": 0.18850666666666666,
+      "cup": 0.08730666666666667
     },
     {
       "team": "PIT",
-      "r2": 0.8906533333333333,
-      "r3": 0.4836933333333333,
-      "fin": 0.1764,
-      "cup": 0.08345333333333334
+      "r2": 0.89096,
+      "r3": 0.4812533333333333,
+      "fin": 0.17801333333333333,
+      "cup": 0.08385333333333334
     },
     {
       "team": "MIN",
-      "r2": 0.28188,
-      "r3": 0.16018666666666667,
-      "fin": 0.12448,
-      "cup": 0.044026666666666665
+      "r2": 0.28413333333333335,
+      "r3": 0.16204,
+      "fin": 0.1258,
+      "cup": 0.04364
     },
     {
       "team": "ANA",
-      "r2": 0.6433466666666666,
-      "r3": 0.51736,
-      "fin": 0.14776,
-      "cup": 0.04305333333333333
+      "r2": 0.6436933333333333,
+      "r3": 0.5201466666666666,
+      "fin": 0.1452,
+      "cup": 0.041826666666666665
     },
     {
       "team": "OTT",
-      "r2": 0.3654133333333333,
-      "r3": 0.12733333333333333,
-      "fin": 0.09662666666666667,
-      "cup": 0.033466666666666665
+      "r2": 0.36122666666666664,
+      "r3": 0.12714666666666666,
+      "fin": 0.09541333333333334,
+      "cup": 0.03358666666666667
     },
     {
       "team": "MTL",
-      "r2": 0.31290666666666667,
-      "r3": 0.14404,
-      "fin": 0.050493333333333335,
-      "cup": 0.020066666666666667
+      "r2": 0.3104266666666667,
+      "r3": 0.14224,
+      "fin": 0.04972,
+      "cup": 0.01976
     },
     {
       "team": "VGK",
-      "r2": 0.41733333333333333,
-      "r3": 0.18845333333333333,
-      "fin": 0.057146666666666665,
-      "cup": 0.009733333333333333
+      "r2": 0.4219466666666667,
+      "r3": 0.18772,
+      "fin": 0.055733333333333336,
+      "cup": 0.01032
     },
     {
       "team": "BOS",
-      "r2": 0.8764133333333334,
-      "r3": 0.19688,
-      "fin": 0.026613333333333333,
-      "cup": 0.006853333333333334
+      "r2": 0.8776666666666667,
+      "r3": 0.19878666666666667,
+      "fin": 0.027146666666666666,
+      "cup": 0.007213333333333334
     },
     {
       "team": "BUF",
-      "r2": 0.12358666666666666,
-      "r3": 0.06046666666666667,
-      "fin": 0.013426666666666667,
-      "cup": 0.002746666666666667
+      "r2": 0.12233333333333334,
+      "r3": 0.05992,
+      "fin": 0.012893333333333333,
+      "cup": 0.00308
     },
     {
       "team": "UTA",
-      "r2": 0.5826666666666667,
-      "r3": 0.17204,
-      "fin": 0.02252,
-      "cup": 0.00256
+      "r2": 0.5780533333333333,
+      "r3": 0.16933333333333334,
+      "fin": 0.022466666666666666,
+      "cup": 0.0025466666666666667
     },
     {
       "team": "EDM",
-      "r2": 0.3566533333333333,
-      "r3": 0.12214666666666667,
-      "fin": 0.011026666666666667,
-      "cup": 0.00076
-    },
-    {
-      "team": "PHI",
-      "r2": 0.10934666666666666,
-      "r3": 0.008813333333333333,
-      "fin": 0.0018533333333333334,
-      "cup": 0.00032
+      "r2": 0.35630666666666666,
+      "r3": 0.1228,
+      "fin": 0.010906666666666667,
+      "cup": 0.0006266666666666666
     },
     {
       "team": "LAK",
-      "r2": 0.12597333333333333,
-      "r3": 0.010293333333333333,
-      "fin": 0.002,
-      "cup": 0.00024
+      "r2": 0.12741333333333332,
+      "r3": 0.010066666666666666,
+      "fin": 0.002013333333333333,
+      "cup": 0.0002
+    },
+    {
+      "team": "PHI",
+      "r2": 0.10904,
+      "r3": 0.0084,
+      "fin": 0.0016933333333333334,
+      "cup": 0.00012
     }
   ],
   "opponent_paths": {
@@ -2578,697 +2578,697 @@
       }
     },
     "2": {
-      "CAR": {
-        "PIT": 0.8893558011514057,
-        "PHI": 0.11064419884859436
+      "OTT": {
+        "PIT": 0.8918130813524288,
+        "PHI": 0.10818691864757124
       },
       "PIT": {
-        "CAR": 0.6336621805715654,
-        "OTT": 0.3663378194284346
+        "OTT": 0.36157253599114064,
+        "CAR": 0.6384274640088593
       },
       "BOS": {
-        "TBL": 0.6864949567175306,
-        "MTL": 0.3135050432824695
+        "TBL": 0.6895556399544246,
+        "MTL": 0.3104443600455754
       },
       "TBL": {
-        "BOS": 0.8756500815027556,
-        "BUF": 0.12434991849724443
+        "BOS": 0.8776441471054565,
+        "BUF": 0.12235585289454348
       },
       "COL": {
-        "DAL": 0.7181321698804003,
-        "MIN": 0.2818678301195997
+        "DAL": 0.7172238860705336,
+        "MIN": 0.2827761139294664
       },
       "DAL": {
-        "COL": 0.8740414786758016,
-        "LAK": 0.12595852132419838
+        "COL": 0.8742410132240641,
+        "LAK": 0.12575898677593592
       },
       "VGK": {
-        "ANA": 0.642332268370607,
-        "EDM": 0.35766773162939297
+        "ANA": 0.6445364343044935,
+        "EDM": 0.3554635656955065
       },
       "ANA": {
-        "VGK": 0.4166753020662784,
-        "UTA": 0.5833246979337215
+        "VGK": 0.42249932680158253,
+        "UTA": 0.5775006731984175
       },
-      "MIN": {
-        "COL": 0.8739889314601959,
-        "LAK": 0.12601106853980418
-      },
-      "EDM": {
-        "VGK": 0.41852031851658006,
-        "UTA": 0.5814796814834199
-      },
-      "UTA": {
-        "ANA": 0.6440732265446224,
-        "EDM": 0.3559267734553776
-      },
-      "LAK": {
-        "DAL": 0.7180355630821338,
-        "MIN": 0.2819644369178662
-      },
-      "BUF": {
-        "TBL": 0.6913367137771065,
-        "MTL": 0.3086632862228935
-      },
-      "OTT": {
-        "PIT": 0.8929066627745749,
-        "PHI": 0.10709333722542509
+      "CAR": {
+        "PIT": 0.8904775820322285,
+        "PHI": 0.10952241796777157
       },
       "MTL": {
-        "BOS": 0.8780893131072098,
-        "BUF": 0.12191068689279018
+        "BOS": 0.8777166910059273,
+        "BUF": 0.12228330899407268
+      },
+      "UTA": {
+        "ANA": 0.6430779166858883,
+        "EDM": 0.35692208331411174
+      },
+      "EDM": {
+        "UTA": 0.5790517531714253,
+        "VGK": 0.4209482468285746
       },
       "PHI": {
-        "CAR": 0.6421168150225582,
-        "OTT": 0.35788318497744176
+        "CAR": 0.6415994130594277,
+        "OTT": 0.35840058694057225
+      },
+      "MIN": {
+        "COL": 0.8684185828249648,
+        "LAK": 0.1315814171750352
+      },
+      "LAK": {
+        "DAL": 0.7065717873587275,
+        "MIN": 0.2934282126412725
+      },
+      "BUF": {
+        "MTL": 0.31029972752043594,
+        "TBL": 0.689700272479564
       }
     },
     "3": {
-      "PIT": {
-        "TBL": 0.599884224164071,
-        "BOS": 0.19604708217327785,
-        "MTL": 0.14414091573173085,
-        "BUF": 0.05992777793092042
+      "OTT": {
+        "TBL": 0.6011954697986577,
+        "BOS": 0.19735738255033558,
+        "MTL": 0.14450503355704697,
+        "BUF": 0.05694211409395973
       },
       "TBL": {
-        "PIT": 0.4847202423378475,
-        "CAR": 0.37843014967925875,
-        "OTT": 0.12856379187455452,
-        "PHI": 0.008285816108339273
+        "OTT": 0.12760132653742573,
+        "CAR": 0.38474036813639295,
+        "PIT": 0.4794230897638496,
+        "PHI": 0.008235215562331678
       },
       "DAL": {
-        "ANA": 0.5123050682261209,
-        "VGK": 0.18908382066276802,
-        "UTA": 0.1730019493177388,
-        "EDM": 0.1256091617933723
+        "ANA": 0.5158694313282693,
+        "EDM": 0.12543625538903716,
+        "UTA": 0.17068363785670293,
+        "VGK": 0.18801067542599056
       },
       "ANA": {
-        "DAL": 0.3251121076233184,
-        "MIN": 0.1622596773362198,
-        "COL": 0.5015720839132003,
-        "LAK": 0.011056131127261481
+        "DAL": 0.32206300786957526,
+        "COL": 0.5047807028786753,
+        "MIN": 0.16197995437184384,
+        "LAK": 0.011176334879905667
       },
-      "MIN": {
-        "ANA": 0.5240552688530048,
-        "VGK": 0.1903612452139171,
-        "EDM": 0.11561511569835192,
-        "UTA": 0.16996837023472616
-      },
-      "VGK": {
-        "DAL": 0.32941842365926133,
-        "COL": 0.4993632375831329,
-        "LAK": 0.009409933493703128,
-        "MIN": 0.16180840526390264
-      },
-      "COL": {
-        "ANA": 0.5177440808725725,
-        "VGK": 0.18776270284650173,
-        "UTA": 0.17222665602553872,
-        "EDM": 0.12226656025538707
-      },
-      "CAR": {
-        "TBL": 0.5958894500561167,
-        "BOS": 0.19844276094276095,
-        "MTL": 0.1440796857463524,
-        "BUF": 0.06158810325476992
+      "PIT": {
+        "BOS": 0.20031030088103285,
+        "TBL": 0.5967750872721228,
+        "MTL": 0.14273840527511497,
+        "BUF": 0.060176206571729375
       },
       "BOS": {
-        "CAR": 0.38317757009345793,
-        "PIT": 0.48164702695381284,
-        "OTT": 0.12650684003792495,
-        "PHI": 0.00866856291480428
+        "PIT": 0.4849419813535448,
+        "OTT": 0.12623247702729895,
+        "CAR": 0.38070963847340533,
+        "PHI": 0.00811590314575089
       },
-      "LAK": {
-        "VGK": 0.172279792746114,
-        "ANA": 0.555699481865285,
-        "UTA": 0.1645077720207254,
-        "EDM": 0.10751295336787564
+      "COL": {
+        "ANA": 0.521822084426425,
+        "UTA": 0.17038980311100513,
+        "EDM": 0.121366298327901,
+        "VGK": 0.1864218141346689
       },
-      "MTL": {
-        "CAR": 0.3802647412755716,
-        "PIT": 0.4840322132740905,
-        "OTT": 0.12515042117930206,
-        "PHI": 0.010552624271035824
-      },
-      "OTT": {
-        "TBL": 0.6043979057591623,
-        "BOS": 0.1956020942408377,
-        "BUF": 0.058429319371727746,
-        "MTL": 0.14157068062827224
+      "CAR": {
+        "TBL": 0.6014613778705636,
+        "MTL": 0.14053583855254,
+        "BOS": 0.19749478079331942,
+        "BUF": 0.060508002783576896
       },
       "UTA": {
-        "COL": 0.5017437805161591,
-        "DAL": 0.3301557777261102,
-        "MIN": 0.15825776951096643,
-        "LAK": 0.009842672246764318
+        "COL": 0.5062992125984253,
+        "DAL": 0.3273228346456693,
+        "MIN": 0.15748031496062992,
+        "LAK": 0.00889763779527559
       },
       "EDM": {
-        "COL": 0.5016919550267438,
-        "MIN": 0.1516210020740094,
-        "DAL": 0.3376268966270058,
-        "LAK": 0.009060146272241021
+        "COL": 0.49728555917481,
+        "DAL": 0.3317046688382193,
+        "LAK": 0.009120521172638436,
+        "MIN": 0.16188925081433225
       },
-      "BUF": {
-        "PIT": 0.47938257993384786,
-        "CAR": 0.3872105843439912,
-        "OTT": 0.12304299889746417,
-        "PHI": 0.010363836824696803
+      "MIN": {
+        "ANA": 0.5199539208425903,
+        "VGK": 0.19279190323376943,
+        "UTA": 0.16456841932033242,
+        "EDM": 0.12268575660330783
+      },
+      "VGK": {
+        "COL": 0.4996803750266354,
+        "DAL": 0.3252361673414305,
+        "MIN": 0.16641806946516088,
+        "LAK": 0.008665388166773208
+      },
+      "MTL": {
+        "PIT": 0.48293963254593175,
+        "CAR": 0.37860892388451445,
+        "OTT": 0.1291713535808024,
+        "PHI": 0.009280089988751405
+      },
+      "LAK": {
+        "EDM": 0.11125827814569536,
+        "ANA": 0.5774834437086093,
+        "VGK": 0.16158940397350993,
+        "UTA": 0.14966887417218544
       },
       "PHI": {
-        "BOS": 0.19364599092284418,
-        "TBL": 0.5627836611195158,
-        "BUF": 0.07110438729198185,
-        "MTL": 0.17246596066565809
+        "BUF": 0.06349206349206349,
+        "TBL": 0.5873015873015873,
+        "BOS": 0.19206349206349208,
+        "MTL": 0.15714285714285714
+      },
+      "BUF": {
+        "PHI": 0.008900756564307966,
+        "PIT": 0.4833110814419226,
+        "CAR": 0.3869603916332888,
+        "OTT": 0.12082777036048065
       }
     },
     "4": {
-      "TBL": {
-        "ANA": 0.14744871510034807,
-        "MIN": 0.12263941346367474,
-        "DAL": 0.18743982818632896,
-        "COL": 0.44834481226394135,
-        "VGK": 0.05820928682514997,
-        "UTA": 0.023994667851588537,
-        "EDM": 0.009812634229430496,
-        "LAK": 0.0021106420795378804
-      },
-      "ANA": {
-        "TBL": 0.35932142212597007,
-        "PIT": 0.17857787402995848,
-        "OTT": 0.09402634903447031,
-        "CAR": 0.27513084280815736,
-        "MTL": 0.05269806894062443,
-        "BUF": 0.013896408590507128,
-        "BOS": 0.025266197437285687,
-        "PHI": 0.0010828370330265296
-      },
-      "MIN": {
-        "TBL": 0.35475578406169667,
-        "BOS": 0.027420736932305057,
-        "PIT": 0.17566409597257926,
-        "OTT": 0.0972579263067695,
-        "CAR": 0.2814910025706941,
-        "MTL": 0.048414738646101116,
-        "BUF": 0.013603256212510711,
-        "PHI": 0.001392459297343616
+      "OTT": {
+        "DAL": 0.19060927892677473,
+        "COL": 0.44284516489659026,
+        "ANA": 0.14197875908328675,
+        "VGK": 0.05925097820011179,
+        "MIN": 0.12828395751816657,
+        "UTA": 0.024315259921743992,
+        "EDM": 0.010480715483510341,
+        "LAK": 0.0022358859698155395
       },
       "DAL": {
-        "TBL": 0.3574606313113481,
-        "CAR": 0.2725796200833274,
-        "PIT": 0.17809476731869217,
-        "MTL": 0.049290304357036935,
-        "OTT": 0.09992232186992445,
-        "BOS": 0.026834263117011512,
-        "BUF": 0.013205282112845138,
-        "PHI": 0.0026128098298142787
-      },
-      "COL": {
-        "TBL": 0.361767605844214,
-        "CAR": 0.27270011055006127,
-        "OTT": 0.09599928291852161,
-        "PIT": 0.17595386775822403,
-        "BOS": 0.026561893095102932,
-        "MTL": 0.05115181212465266,
-        "BUF": 0.013833696853805014,
-        "PHI": 0.002031730855418447
-      },
-      "CAR": {
-        "COL": 0.4433164950456577,
-        "DAL": 0.18748785700408005,
-        "VGK": 0.057072080823780846,
-        "ANA": 0.14809597823975132,
-        "MIN": 0.12764717311054982,
-        "UTA": 0.023071692247911404,
-        "LAK": 0.0017971633961530989,
-        "EDM": 0.011511560132115796
-      },
-      "BOS": {
-        "VGK": 0.0531062124248497,
-        "MIN": 0.1282565130260521,
-        "COL": 0.4453907815631262,
-        "ANA": 0.1402805611222445,
-        "DAL": 0.1903807615230461,
-        "UTA": 0.029559118236472944,
-        "LAK": 0.002004008016032064,
-        "EDM": 0.011022044088176353
-      },
-      "VGK": {
-        "BOS": 0.024731684554363042,
-        "TBL": 0.3667755482967802,
-        "PIT": 0.1735884274381708,
-        "CAR": 0.27414839010732617,
-        "MTL": 0.052496500233317776,
-        "OTT": 0.0970601959869342,
-        "BUF": 0.00979934671021932,
-        "PHI": 0.0013999066728884741
+        "OTT": 0.09647757815815533,
+        "TBL": 0.36702503890224925,
+        "CAR": 0.2718206252652426,
+        "PIT": 0.17378695713679446,
+        "BUF": 0.013792615645777337,
+        "MTL": 0.04682416183335691,
+        "BOS": 0.028575470363559202,
+        "PHI": 0.0016975526948649032
       },
       "PIT": {
-        "ANA": 0.14958427815570674,
-        "DAL": 0.19062736205593347,
-        "COL": 0.445124716553288,
-        "VGK": 0.05623582766439909,
-        "MIN": 0.12396069538926682,
-        "UTA": 0.019954648526077097,
-        "EDM": 0.01216931216931217,
-        "LAK": 0.002343159486016629
+        "COL": 0.4507527526028013,
+        "ANA": 0.14837839862182609,
+        "VGK": 0.05737397947719272,
+        "MIN": 0.12351134746460939,
+        "DAL": 0.18403115871470302,
+        "UTA": 0.023219234514268595,
+        "EDM": 0.010935510448655532,
+        "LAK": 0.001797618155943375
       },
-      "OTT": {
-        "COL": 0.44335587139506,
-        "ANA": 0.14378363460742377,
-        "MIN": 0.1252932247826687,
-        "VGK": 0.057403063336553053,
-        "DAL": 0.19525320822409273,
-        "UTA": 0.020974196219125156,
-        "EDM": 0.012556920104870981,
-        "LAK": 0.0013798813302056023
+      "COL": {
+        "PIT": 0.17855977212711036,
+        "CAR": 0.27510904073821324,
+        "TBL": 0.3604130196124974,
+        "OTT": 0.09402723793134142,
+        "MTL": 0.05219119959647509,
+        "PHI": 0.0016615731537251877,
+        "BOS": 0.02539833249265644,
+        "BUF": 0.012639824347980892
       },
-      "MTL": {
-        "DAL": 0.1843147610245577,
-        "VGK": 0.059413783997887507,
-        "COL": 0.4520728809083707,
-        "ANA": 0.1542117771322947,
-        "MIN": 0.11935569052020069,
-        "UTA": 0.018220227092685504,
-        "EDM": 0.010562450488513335,
-        "LAK": 0.0018484288354898336
+      "CAR": {
+        "COL": 0.44944255937954436,
+        "ANA": 0.14745516238487638,
+        "MIN": 0.1256907416383907,
+        "VGK": 0.055841008240426565,
+        "DAL": 0.18628211342704798,
+        "EDM": 0.011778962675714977,
+        "UTA": 0.021231216674745517,
+        "LAK": 0.0022782355792535145
       },
-      "BUF": {
-        "COL": 0.45978152929493543,
-        "ANA": 0.1529294935451837,
-        "MIN": 0.12611717974180736,
-        "DAL": 0.18570009930486595,
-        "VGK": 0.041708043694141016,
-        "EDM": 0.009930486593843098,
-        "UTA": 0.019860973187686197,
-        "LAK": 0.003972194637537239
+      "TBL": {
+        "COL": 0.4498222485557695,
+        "EDM": 0.010442897348540956,
+        "DAL": 0.19215671752332988,
+        "ANA": 0.1427195970967264,
+        "VGK": 0.054399348244704486,
+        "UTA": 0.021626425714708932,
+        "MIN": 0.1269441564212709,
+        "LAK": 0.0018886090949488965
       },
-      "PHI": {
-        "COL": 0.4892086330935252,
-        "DAL": 0.26618705035971224,
-        "ANA": 0.08633093525179857,
-        "VGK": 0.04316546762589928,
-        "UTA": 0.014388489208633094,
-        "MIN": 0.09352517985611511,
-        "EDM": 0.007194244604316547
+      "ANA": {
+        "CAR": 0.2793388429752066,
+        "OTT": 0.09329660238751147,
+        "BOS": 0.02874196510560147,
+        "PIT": 0.18191000918273645,
+        "TBL": 0.3539026629935721,
+        "MTL": 0.047015610651974286,
+        "BUF": 0.013590449954086318,
+        "PHI": 0.0022038567493112946
       },
-      "UTA": {
-        "TBL": 0.3836589698046181,
-        "PIT": 0.15630550621669628,
-        "CAR": 0.2812314979277679,
-        "OTT": 0.08999407933688573,
-        "MTL": 0.04085257548845471,
-        "BOS": 0.03493191237418591,
-        "BUF": 0.011841326228537596,
-        "PHI": 0.0011841326228537595
+      "MIN": {
+        "CAR": 0.274827768945416,
+        "OTT": 0.0972972972972973,
+        "PIT": 0.17477477477477477,
+        "TBL": 0.3633280339162692,
+        "BUF": 0.0118706942236354,
+        "MTL": 0.047164811870694226,
+        "BOS": 0.029358770535241125,
+        "PHI": 0.001377848436671966
       },
       "EDM": {
-        "TBL": 0.32043530834340994,
-        "PIT": 0.1946795646916566,
-        "OTT": 0.11003627569528417,
-        "CAR": 0.28657799274486095,
-        "MTL": 0.04836759371221282,
-        "BUF": 0.012091898428053204,
-        "BOS": 0.026602176541717048,
-        "PHI": 0.0012091898428053204
+        "TBL": 0.34474327628361856,
+        "PIT": 0.1784841075794621,
+        "OTT": 0.09168704156479218,
+        "CAR": 0.29706601466992666,
+        "BOS": 0.029339853300733496,
+        "BUF": 0.011002444987775062,
+        "MTL": 0.04645476772616137,
+        "PHI": 0.0012224938875305623
+      },
+      "BOS": {
+        "ANA": 0.1537328094302554,
+        "COL": 0.4204322200392927,
+        "UTA": 0.026522593320235755,
+        "VGK": 0.05157170923379175,
+        "DAL": 0.19842829076620824,
+        "MIN": 0.13605108055009824,
+        "EDM": 0.011787819253438114,
+        "LAK": 0.0014734774066797642
+      },
+      "VGK": {
+        "OTT": 0.10143540669856459,
+        "CAR": 0.2755980861244019,
+        "PIT": 0.18325358851674642,
+        "TBL": 0.3514354066985646,
+        "BOS": 0.025119617224880382,
+        "MTL": 0.04904306220095694,
+        "BUF": 0.01291866028708134,
+        "PHI": 0.0011961722488038277
+      },
+      "MTL": {
+        "COL": 0.47170823277017965,
+        "UTA": 0.02654867256637168,
+        "ANA": 0.13730222579780102,
+        "MIN": 0.1193349423437919,
+        "DAL": 0.17752748726200054,
+        "VGK": 0.054974524001072674,
+        "EDM": 0.010190399570930545,
+        "LAK": 0.002413515687851971
+      },
+      "PHI": {
+        "COL": 0.4409448818897638,
+        "DAL": 0.1889763779527559,
+        "ANA": 0.1889763779527559,
+        "EDM": 0.007874015748031496,
+        "UTA": 0.031496062992125984,
+        "VGK": 0.03937007874015748,
+        "MIN": 0.10236220472440945
+      },
+      "BUF": {
+        "DAL": 0.20165460186142709,
+        "MIN": 0.11582213029989659,
+        "COL": 0.4405377456049638,
+        "ANA": 0.15305067218200621,
+        "UTA": 0.022750775594622543,
+        "VGK": 0.055842812823164424,
+        "EDM": 0.009307135470527405,
+        "LAK": 0.001034126163391934
+      },
+      "UTA": {
+        "TBL": 0.34658753709198814,
+        "MTL": 0.05875370919881306,
+        "PIT": 0.18397626112759644,
+        "OTT": 0.10326409495548962,
+        "BOS": 0.032047477744807124,
+        "CAR": 0.2599406528189911,
+        "BUF": 0.013056379821958458,
+        "PHI": 0.002373887240356083
       },
       "LAK": {
-        "TBL": 0.38,
-        "CAR": 0.24666666666666667,
-        "PIT": 0.20666666666666667,
-        "MTL": 0.04666666666666667,
-        "BOS": 0.02666666666666667,
-        "BUF": 0.02666666666666667,
-        "OTT": 0.06666666666666667
+        "PIT": 0.15894039735099338,
+        "CAR": 0.31125827814569534,
+        "OTT": 0.10596026490066225,
+        "TBL": 0.33774834437086093,
+        "BOS": 0.019867549668874173,
+        "MTL": 0.059602649006622516,
+        "BUF": 0.006622516556291391
       }
     }
   },
   "path_difficulty": {
-    "CAR": {
-      "index": 2.423036005012814,
+    "OTT": {
+      "index": 3.558133877689502,
       "by_round": {
         "1": {
-          "expected_neglog_p": 0.4881675998734067,
-          "expected_opp_strength": 0.08629892319454824
+          "expected_neglog_p": 0.9276044917744286,
+          "expected_opp_strength": 0.00041205899389301984
         },
         "2": {
-          "expected_neglog_p": 0.5263915523994144,
-          "expected_opp_strength": 0.009290965421760198
+          "expected_neglog_p": 1.1847162197493624,
+          "expected_opp_strength": 0.009370866782304891
         },
         "3": {
-          "expected_neglog_p": 0.3344109206106947,
-          "expected_opp_strength": 0.05357186246497292
+          "expected_neglog_p": 0.2679754516862884,
+          "expected_opp_strength": 0.05452417217862495
         },
         "4": {
-          "expected_neglog_p": 1.074065932129298,
-          "expected_opp_strength": 0.0151051370715637
+          "expected_neglog_p": 1.1778377144794228,
+          "expected_opp_strength": 0.015655762173169947
         }
       }
     },
     "PIT": {
-      "index": 3.3785053500369195,
+      "index": 3.2641118708920005,
       "by_round": {
         "1": {
-          "expected_neglog_p": 0.11372876532834296,
+          "expected_neglog_p": 0.11079190565503325,
           "expected_opp_strength": -0.019627486161712213
         },
         "2": {
-          "expected_neglog_p": 0.6399898283015687,
-          "expected_opp_strength": 0.031875665542707134
+          "expected_neglog_p": 0.6250253953164107,
+          "expected_opp_strength": 0.03146639029125064
         },
         "3": {
-          "expected_neglog_p": 1.6431106489219525,
-          "expected_opp_strength": 0.05409553300015147
+          "expected_neglog_p": 1.5568036168679842,
+          "expected_opp_strength": 0.053702481176208745
         },
         "4": {
-          "expected_neglog_p": 0.9816761074850552,
-          "expected_opp_strength": 0.015282757328678464
+          "expected_neglog_p": 0.9714909530525727,
+          "expected_opp_strength": 0.01490524108337107
         }
       }
     },
     "BOS": {
-      "index": 5.903006153272073,
+      "index": 5.836847800608025,
       "by_round": {
         "1": {
-          "expected_neglog_p": 0.12783337150988489,
+          "expected_neglog_p": 0.13438890303865186,
           "expected_opp_strength": -0.09959051124896869
         },
         "2": {
-          "expected_neglog_p": 1.892490903273898,
-          "expected_opp_strength": 0.07841250246491754
+          "expected_neglog_p": 1.903323319034971,
+          "expected_opp_strength": 0.07849414047585021
         },
         "3": {
-          "expected_neglog_p": 2.09473604055316,
-          "expected_opp_strength": 0.017112953868557407
+          "expected_neglog_p": 2.077445665661061,
+          "expected_opp_strength": 0.017141574676781665
         },
         "4": {
-          "expected_neglog_p": 1.7879458379351298,
-          "expected_opp_strength": 0.015382596406038814
+          "expected_neglog_p": 1.7216899128733414,
+          "expected_opp_strength": 0.01518217123669199
         }
       }
     },
     "TBL": {
-      "index": 1.4742375677104604,
+      "index": 1.5022060805367021,
       "by_round": {
         "1": {
-          "expected_neglog_p": 0.37287691851501287,
+          "expected_neglog_p": 0.3696154552144671,
           "expected_opp_strength": 0.060101531206551276
         },
         "2": {
-          "expected_neglog_p": 0.15528659235754355,
-          "expected_opp_strength": -0.01530549847480216
+          "expected_neglog_p": 0.15472622535582134,
+          "expected_opp_strength": -0.01511356125199309
         },
         "3": {
-          "expected_neglog_p": 0.6572811240336661,
-          "expected_opp_strength": 0.017335632463692487
+          "expected_neglog_p": 0.6936953399300512,
+          "expected_opp_strength": 0.01718789271783947
         },
         "4": {
-          "expected_neglog_p": 0.2887929328042378,
-          "expected_opp_strength": 0.015174288520597032
+          "expected_neglog_p": 0.28416906003636266,
+          "expected_opp_strength": 0.01594049457079274
         }
       }
     },
     "COL": {
-      "index": 1.3172481217553254,
+      "index": 1.312030581137174,
       "by_round": {
         "1": {
-          "expected_neglog_p": 0.11765804346823246,
+          "expected_neglog_p": 0.12230888688778377,
           "expected_opp_strength": 0.00212766656050054
         },
         "2": {
-          "expected_neglog_p": 0.563936856447872,
-          "expected_opp_strength": 0.057321847570311314
+          "expected_neglog_p": 0.5547539503912554,
+          "expected_opp_strength": 0.05728808887332795
         },
         "3": {
-          "expected_neglog_p": 0.09701243940339992,
-          "expected_opp_strength": -0.045114704348324
+          "expected_neglog_p": 0.0964380373901155,
+          "expected_opp_strength": -0.04512940090351175
         },
         "4": {
-          "expected_neglog_p": 0.538640782435821,
-          "expected_opp_strength": 0.04362518219397152
+          "expected_neglog_p": 0.5385297064680195,
+          "expected_opp_strength": 0.04356454678735934
         }
       }
     },
     "DAL": {
-      "index": 2.560102000054431,
+      "index": 2.601904588266812,
       "by_round": {
         "1": {
-          "expected_neglog_p": 0.26331471600348655,
+          "expected_neglog_p": 0.24670009073016058,
           "expected_opp_strength": 0.030630623909113086
         },
         "2": {
-          "expected_neglog_p": 0.821855813182358,
-          "expected_opp_strength": 0.015488644356439494
+          "expected_neglog_p": 0.8423354313367365,
+          "expected_opp_strength": 0.015491694528237858
         },
         "3": {
-          "expected_neglog_p": 0.6289358490991991,
-          "expected_opp_strength": -0.045194990267138795
+          "expected_neglog_p": 0.6352639872539266,
+          "expected_opp_strength": -0.04522186526263252
         },
         "4": {
-          "expected_neglog_p": 0.8459956217693871,
-          "expected_opp_strength": 0.04355593456009907
+          "expected_neglog_p": 0.8776050789459885,
+          "expected_opp_strength": 0.0438382135829507
         }
       }
     },
     "VGK": {
-      "index": 5.278532236283054,
+      "index": 5.2107512312047435,
       "by_round": {
         "1": {
-          "expected_neglog_p": 0.8503859569864367,
+          "expected_neglog_p": 0.8812856226754647,
           "expected_opp_strength": -0.057910504976177404
         },
         "2": {
-          "expected_neglog_p": 0.9797877878380696,
-          "expected_opp_strength": -0.06343471542785596
+          "expected_neglog_p": 0.9954282617597568,
+          "expected_opp_strength": -0.06334060244965864
         },
         "3": {
-          "expected_neglog_p": 1.2763908338981902,
-          "expected_opp_strength": 0.03600624779752639
+          "expected_neglog_p": 1.2706457141776053,
+          "expected_opp_strength": 0.035867833805980326
         },
         "4": {
-          "expected_neglog_p": 2.1719676575603573,
-          "expected_opp_strength": 0.044622517761720694
+          "expected_neglog_p": 2.063391632591917,
+          "expected_opp_strength": 0.04327862033234189
         }
       }
     },
     "ANA": {
-      "index": 4.142102875838071,
+      "index": 4.1353520484399535,
       "by_round": {
         "1": {
-          "expected_neglog_p": 0.43908652661101405,
+          "expected_neglog_p": 0.4437512581016698,
           "expected_opp_strength": -0.09086087324983437
         },
         "2": {
-          "expected_neglog_p": 0.2700596984819808,
-          "expected_opp_strength": -0.03177354397810607
+          "expected_neglog_p": 0.26473858858893207,
+          "expected_opp_strength": -0.031408218011811505
         },
         "3": {
-          "expected_neglog_p": 1.8421802010452681,
-          "expected_opp_strength": 0.03577007775002405
+          "expected_neglog_p": 1.8451074266859775,
+          "expected_opp_strength": 0.03561091719023857
         },
         "4": {
-          "expected_neglog_p": 1.5907764496998082,
-          "expected_opp_strength": 0.04338710909802147
+          "expected_neglog_p": 1.5817547750633743,
+          "expected_opp_strength": 0.04255394970136578
         }
       }
     },
-    "MIN": {
-      "index": 3.6032328546919716,
+    "CAR": {
+      "index": 2.4855466296345465,
       "by_round": {
         "1": {
-          "expected_neglog_p": 1.4631754054558481,
-          "expected_opp_strength": 0.06779818829443154
+          "expected_neglog_p": 0.5033536089272896,
+          "expected_opp_strength": 0.08629892319454824
         },
         "2": {
-          "expected_neglog_p": 0.5899880623355174,
-          "expected_opp_strength": 0.015487841096871067
+          "expected_neglog_p": 0.541764311692217,
+          "expected_opp_strength": 0.009327441448618448
         },
         "3": {
-          "expected_neglog_p": 0.3028777648428011,
-          "expected_opp_strength": -0.04467101926972276
+          "expected_neglog_p": 0.32473434042436394,
+          "expected_opp_strength": 0.053953104486182984
         },
         "4": {
-          "expected_neglog_p": 1.247191622057805,
-          "expected_opp_strength": 0.042993370201446654
-        }
-      }
-    },
-    "EDM": {
-      "index": 8.64707607196165,
-      "by_round": {
-        "1": {
-          "expected_neglog_p": 1.0345817090109732,
-          "expected_opp_strength": -0.04816309957025594
-        },
-        "2": {
-          "expected_neglog_p": 1.5349670070297374,
-          "expected_opp_strength": -0.03165781088146416
-        },
-        "3": {
-          "expected_neglog_p": 2.721269824588368,
-          "expected_opp_strength": 0.03629052916796488
-        },
-        "4": {
-          "expected_neglog_p": 3.356257531332571,
-          "expected_opp_strength": 0.041519172385773115
-        }
-      }
-    },
-    "UTA": {
-      "index": 6.797013803138979,
-      "by_round": {
-        "1": {
-          "expected_neglog_p": 0.5573059576485322,
-          "expected_opp_strength": 0.0048169013962642586
-        },
-        "2": {
-          "expected_neglog_p": 1.2292633896625889,
-          "expected_opp_strength": -0.06336038038975624
-        },
-        "3": {
-          "expected_neglog_p": 2.4654482261803907,
-          "expected_opp_strength": 0.035989856617943385
-        },
-        "4": {
-          "expected_neglog_p": 2.5449962296474675,
-          "expected_opp_strength": 0.04432496179465937
-        }
-      }
-    },
-    "LAK": {
-      "index": 9.22130858147263,
-      "by_round": {
-        "1": {
-          "expected_neglog_p": 2.198225077669803,
-          "expected_opp_strength": 0.01741410103976716
-        },
-        "2": {
-          "expected_neglog_p": 2.793899282879464,
-          "expected_opp_strength": 0.05731825693091669
-        },
-        "3": {
-          "expected_neglog_p": 1.4650729674335348,
-          "expected_opp_strength": -0.045229803680890454
-        },
-        "4": {
-          "expected_neglog_p": 2.7641112534898284,
-          "expected_opp_strength": 0.04155296144394723
-        }
-      }
-    },
-    "BUF": {
-      "index": 6.385245710102728,
-      "by_round": {
-        "1": {
-          "expected_neglog_p": 2.120263536200091,
-          "expected_opp_strength": -0.0033362944623728757
-        },
-        "2": {
-          "expected_neglog_p": 0.7341824396666181,
-          "expected_opp_strength": 0.078541647294738
-        },
-        "3": {
-          "expected_neglog_p": 1.3442062241463626,
-          "expected_opp_strength": 0.01675323022265995
-        },
-        "4": {
-          "expected_neglog_p": 2.1865935100896556,
-          "expected_opp_strength": 0.01525120515190869
-        }
-      }
-    },
-    "OTT": {
-      "index": 3.551752707953076,
-      "by_round": {
-        "1": {
-          "expected_neglog_p": 0.9512704507701819,
-          "expected_opp_strength": 0.00041205899389301984
-        },
-        "2": {
-          "expected_neglog_p": 1.156697005884923,
-          "expected_opp_strength": 0.009406425870543788
-        },
-        "3": {
-          "expected_neglog_p": 0.2812907070086307,
-          "expected_opp_strength": 0.05448344800422146
-        },
-        "4": {
-          "expected_neglog_p": 1.1624945442893406,
-          "expected_opp_strength": 0.0157950836565472
+          "expected_neglog_p": 1.1156943685906762,
+          "expected_opp_strength": 0.015178386753145789
         }
       }
     },
     "MTL": {
-      "index": 4.053105984943964,
+      "index": 4.0896072686217995,
       "by_round": {
         "1": {
-          "expected_neglog_p": 1.1671588312032195,
+          "expected_neglog_p": 1.1744140020843916,
           "expected_opp_strength": 0.08677466416869277
         },
         "2": {
-          "expected_neglog_p": 0.7628125898251017,
-          "expected_opp_strength": -0.015070712147154306
+          "expected_neglog_p": 0.769761198448874,
+          "expected_opp_strength": -0.015106578595670628
         },
         "3": {
-          "expected_neglog_p": 1.1170404473919104,
-          "expected_opp_strength": 0.016988458667735566
+          "expected_neglog_p": 1.1399427873754366,
+          "expected_opp_strength": 0.01734567322241819
         },
         "4": {
-          "expected_neglog_p": 1.0060941165237327,
-          "expected_opp_strength": 0.014872538942228042
+          "expected_neglog_p": 1.005489280713097,
+          "expected_opp_strength": 0.015099406180904214
+        }
+      }
+    },
+    "UTA": {
+      "index": 6.860790968147631,
+      "by_round": {
+        "1": {
+          "expected_neglog_p": 0.534862201594232,
+          "expected_opp_strength": 0.0048169013962642586
+        },
+        "2": {
+          "expected_neglog_p": 1.2426858839636434,
+          "expected_opp_strength": -0.06340287790484553
+        },
+        "3": {
+          "expected_neglog_p": 2.498975811956454,
+          "expected_opp_strength": 0.03585129232796989
+        },
+        "4": {
+          "expected_neglog_p": 2.584267070633302,
+          "expected_opp_strength": 0.043542304648436336
+        }
+      }
+    },
+    "EDM": {
+      "index": 8.648953412067074,
+      "by_round": {
+        "1": {
+          "expected_neglog_p": 1.0261753547786032,
+          "expected_opp_strength": -0.04816309957025594
+        },
+        "2": {
+          "expected_neglog_p": 1.5118145217346906,
+          "expected_opp_strength": -0.03150551323559452
+        },
+        "3": {
+          "expected_neglog_p": 2.723232798037195,
+          "expected_opp_strength": 0.03612693075365816
+        },
+        "4": {
+          "expected_neglog_p": 3.387730737516586,
+          "expected_opp_strength": 0.04182469305413402
         }
       }
     },
     "PHI": {
-      "index": 10.654530370904471,
+      "index": 10.59944053977616,
       "by_round": {
         "1": {
-          "expected_neglog_p": 2.2302644314144198,
+          "expected_neglog_p": 2.2549861141947667,
           "expected_opp_strength": 0.012888691892147783
         },
         "2": {
-          "expected_neglog_p": 3.483709411312252,
-          "expected_opp_strength": 0.03114952350174853
+          "expected_neglog_p": 3.4068649684454773,
+          "expected_opp_strength": 0.03119396153389307
         },
         "3": {
-          "expected_neglog_p": 2.709703682179656,
-          "expected_opp_strength": 0.05147344918065854
+          "expected_neglog_p": 2.7770801943381005,
+          "expected_opp_strength": 0.05344343690787149
         },
         "4": {
-          "expected_neglog_p": 2.230852845998143,
-          "expected_opp_strength": 0.02399390128596352
+          "expected_neglog_p": 2.160509262797815,
+          "expected_opp_strength": 0.012174893797263173
+        }
+      }
+    },
+    "MIN": {
+      "index": 3.6669903961653043,
+      "by_round": {
+        "1": {
+          "expected_neglog_p": 1.520397345643371,
+          "expected_opp_strength": 0.06779818829443154
+        },
+        "2": {
+          "expected_neglog_p": 0.5837502375768212,
+          "expected_opp_strength": 0.015402690327431936
+        },
+        "3": {
+          "expected_neglog_p": 0.29894735626441554,
+          "expected_opp_strength": -0.04479150811987641
+        },
+        "4": {
+          "expected_neglog_p": 1.2638954566806964,
+          "expected_opp_strength": 0.043817659290412474
+        }
+      }
+    },
+    "LAK": {
+      "index": 9.292765822969255,
+      "by_round": {
+        "1": {
+          "expected_neglog_p": 2.1617367844066657,
+          "expected_opp_strength": 0.01741410103976716
+        },
+        "2": {
+          "expected_neglog_p": 2.842376608653483,
+          "expected_opp_strength": 0.056892176308618134
+        },
+        "3": {
+          "expected_neglog_p": 1.4526965417218658,
+          "expected_opp_strength": -0.04581145676500859
+        },
+        "4": {
+          "expected_neglog_p": 2.8359558881872404,
+          "expected_opp_strength": 0.04348543316598341
+        }
+      }
+    },
+    "BUF": {
+      "index": 6.160120376945119,
+      "by_round": {
+        "1": {
+          "expected_neglog_p": 2.0734594700022884,
+          "expected_opp_strength": -0.0033362944623728757
+        },
+        "2": {
+          "expected_neglog_p": 0.7246397082351839,
+          "expected_opp_strength": 0.07849799827842391
+        },
+        "3": {
+          "expected_neglog_p": 1.3177288982802668,
+          "expected_opp_strength": 0.016641305124231454
+        },
+        "4": {
+          "expected_neglog_p": 2.0442923004273794,
+          "expected_opp_strength": 0.0156277210703331
         }
       }
     }
   },
   "inputs": {
     "data/season_2025_2026_team_stats.json": {
-      "mtime_utc": "2026-04-17T22:15:20.845074+00:00",
+      "mtime_utc": "2026-04-17T22:19:31.362586+00:00",
       "sha256": "cc239bdbbcc880d04d0aed436594914f0c97825f66041908494d32ffa2c5d473",
       "bytes": 1936109
     },
     "data/team_advanced_metrics.json": {
-      "mtime_utc": "2026-04-17T22:15:20.847074+00:00",
+      "mtime_utc": "2026-04-17T22:19:31.365586+00:00",
       "sha256": "4cb52b6f8c5420fc62b313123975db219f55b2caf221d5bf2ff80ce312753604",
       "bytes": 341160
     },
     "data/nhl_edge_data.json": {
-      "mtime_utc": "2026-04-17T22:15:20.839074+00:00",
+      "mtime_utc": "2026-04-17T22:19:31.355586+00:00",
       "sha256": "9e8d282cec2e9b96ae31ce475f07e4f8556f71c5611bf4bf0f85ad934122ffba",
       "bytes": 547897
     },
     "data/cup_prior_current.json": {
-      "mtime_utc": "2026-04-17T22:15:59.075842+00:00",
-      "sha256": "c690f1e954a2a2c73a697802ea18e1b0caa185fc6fa26a32ac44c1e06bf5f811",
+      "mtime_utc": "2026-04-17T22:20:04.058856+00:00",
+      "sha256": "a5c255ada7590c251f9a26132760b18f88b1468ca65d83bda19cc2df5cb34c12",
       "bytes": 7326
     },
     "data/reg_season_playoff_round_models_5yr.json": {
-      "mtime_utc": "2026-04-17T22:15:57.737597+00:00",
-      "sha256": "90a65293e8d08bdef06240a02ea40a3850beb9b58b77086f83e0e198f0fa22eb",
+      "mtime_utc": "2026-04-17T22:20:02.697296+00:00",
+      "sha256": "d3b61b5767d958c16e37e6a73f1bfd7858249fac032dc994f40898274f646de8",
       "bytes": 5389
     },
     "data/reg_season_team_features_current.json": {
-      "mtime_utc": "2026-04-17T22:15:59.077653+00:00",
-      "sha256": "3b4814580193aca603c18148c89accee20e1422b7bbf28ce81d9913a8ff737e8",
+      "mtime_utc": "2026-04-17T22:20:04.061398+00:00",
+      "sha256": "89ef39837263f58717ac9faaa2a805fd09067640c6a03abdb80b32c0134e3547",
       "bytes": 7475
     }
   }
