@@ -1,0 +1,115 @@
+# One-click pipeline: optional 5-season label rebuild → train round + Cup models
+# → export current team features / priors → Monte Carlo bracket sim → optional commit.
+#
+# Requires committed inputs: data/reg_season_cup_5yr.json (unless you enable rebuild_dataset),
+# data/historical/<season>/ for richer microstats in training, and data/team_advanced_metrics.json
+# (and related files) for the simulator — same as local runs.
+
+name: Playoff predictions pipeline
+
+on:
+  workflow_dispatch:
+    inputs:
+      rebuild_dataset:
+        description: "Run build_regular_season_cup_dataset_5yr.py (slow; hits NHL API)"
+        type: boolean
+        default: false
+      iterations:
+        description: "Monte Carlo iterations for simulate_2026_playoffs_master.py"
+        type: string
+        default: "75000"
+      season:
+        description: "Season string for playoff-series carousel (e.g. 20252026)"
+        type: string
+        default: "20252026"
+      commit_push:
+        description: "Commit and push generated JSON artifacts"
+        type: boolean
+        default: true
+
+permissions:
+  contents: write
+
+concurrency:
+  group: playoff-predictions-pipeline-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      PYTHONUNBUFFERED: "1"
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+          cache: pip
+          cache-dependency-path: requirements.txt
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Rebuild 5-season regular-season + playoff labels (optional)
+        if: ${{ inputs.rebuild_dataset }}
+        run: |
+          echo "=== Rebuilding reg_season_cup_5yr dataset ==="
+          python3 scripts/build_regular_season_cup_dataset_5yr.py
+
+      - name: Train playoff round-depth models
+        run: |
+          echo "=== train_regular_season_playoff_round_models_5yr.py ==="
+          python3 scripts/train_regular_season_playoff_round_models_5yr.py
+
+      - name: Train Cup model + export priors and team feature rows
+        run: |
+          echo "=== train_regular_season_cup_model_5yr.py ==="
+          python3 scripts/train_regular_season_cup_model_5yr.py
+
+      - name: Run bracket Monte Carlo and export predictions JSON
+        run: |
+          echo "=== simulate_2026_playoffs_master.py (iterations=${{ inputs.iterations }}, season=${{ inputs.season }}) ==="
+          python3 scripts/simulate_2026_playoffs_master.py \
+            --iterations "${{ inputs.iterations }}" \
+            --season "${{ inputs.season }}" \
+            --bracket-out data/official_2026_bracket_current.json \
+            --predictions-out data/playoff_predictions_2026.json
+
+      - name: Commit and push artifacts
+        if: ${{ inputs.commit_push }}
+        run: |
+          set -e
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "GitHub Actions Bot"
+
+          for f in \
+            data/reg_season_cup_5yr.json \
+            data/reg_season_cup_5yr.csv \
+            data/reg_season_cup_model_5yr.json \
+            data/cup_prior_current.json \
+            data/reg_season_team_features_current.json \
+            data/reg_season_playoff_round_models_5yr.json \
+            data/playoff_predictions_2026.json \
+            data/official_2026_bracket_current.json
+          do
+            if [ -f "$f" ]; then
+              git add -f "$f"
+              echo "staged: $f"
+            fi
+          done
+
+          if git diff --staged --quiet; then
+            echo "No artifact changes to commit."
+          else
+            git commit -m "data: playoff pipeline — models + predictions [skip ci]"
+            git pull --rebase origin "${{ github.ref_name }}"
+            git push origin "${{ github.ref_name }}"
+          fi
