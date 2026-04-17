@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at_utc": "2026-04-17T22:43:47.900674+00:00",
+    "generated_at_utc": "2026-04-17T22:50:29.032655+00:00",
     "rows_playoff_teams": 80,
     "seasons": [
       "20202021",
@@ -26,15 +26,15 @@
       "positives": 40,
       "negatives": 40,
       "logistic": {
-        "intercept": -0.02156867223385976,
+        "intercept": -0.02156867223385682,
         "coef": {
-          "points_pct": -0.5647822013481049,
-          "goal_diff": 0.48870701900196306,
-          "goals_for": 0.18713024180662888,
-          "goals_against": -0.1351556043593207,
-          "league_rank_points": -0.5597314813398964,
-          "division_rank": -0.5250477857643486,
-          "conference_rank": 0.15830896764722802
+          "points_pct": -0.5647822013481058,
+          "goal_diff": 0.4887070190019625,
+          "goals_for": 0.18713024180662913,
+          "goals_against": -0.13515560435932025,
+          "league_rank_points": -0.5597314813399016,
+          "division_rank": -0.5250477857643462,
+          "conference_rank": 0.15830896764722824
         }
       },
       "scaler": {
@@ -63,15 +63,15 @@
       "positives": 20,
       "negatives": 60,
       "logistic": {
-        "intercept": -0.052420083010773603,
+        "intercept": -0.05242008301077359,
         "coef": {
           "points_pct": -0.3833292058602948,
-          "goal_diff": 0.2136499213336441,
-          "goals_for": -0.030580433768143303,
-          "goals_against": -0.18977451588733854,
-          "league_rank_points": -0.04970515599019861,
-          "division_rank": -0.44886692672392403,
-          "conference_rank": -0.07505323983340825
+          "goal_diff": 0.21364992133364397,
+          "goals_for": -0.030580433768143216,
+          "goals_against": -0.18977451588733857,
+          "league_rank_points": -0.04970515599019849,
+          "division_rank": -0.4488669267239242,
+          "conference_rank": -0.07505323983340821
         }
       },
       "scaler": {
@@ -100,15 +100,15 @@
       "positives": 10,
       "negatives": 70,
       "logistic": {
-        "intercept": -0.05041962618480004,
+        "intercept": -0.05041962618480013,
         "coef": {
-          "points_pct": -0.3674565472158792,
-          "goal_diff": 0.2388391700745426,
-          "goals_for": 0.17521819911734468,
-          "goals_against": 0.03135033371879958,
-          "league_rank_points": 0.3004591309161467,
-          "division_rank": -0.38427409082189784,
-          "conference_rank": 0.20989046695895627
+          "points_pct": -0.3674565472158791,
+          "goal_diff": 0.23883917007454294,
+          "goals_for": 0.17521819911734474,
+          "goals_against": 0.031350333718799674,
+          "league_rank_points": 0.30045913091614673,
+          "division_rank": -0.38427409082189745,
+          "conference_rank": 0.20989046695895594
         }
       },
       "scaler": {
@@ -139,13 +139,13 @@
       "logistic": {
         "intercept": -0.27773285400802833,
         "coef": {
-          "points_pct": 0.059530063315666286,
-          "goal_diff": -0.006183243310190928,
+          "points_pct": 0.05953006331566636,
+          "goal_diff": -0.006183243310191303,
           "goals_for": -0.3311750738600487,
-          "goals_against": -0.38063382091782283,
-          "league_rank_points": -0.16572274574087495,
+          "goals_against": -0.3806338209178229,
+          "league_rank_points": -0.16572274574087534,
           "division_rank": -0.5658701351997638,
-          "conference_rank": -0.4194043882860909
+          "conference_rank": -0.4194043882860911
         }
       },
       "scaler": {
