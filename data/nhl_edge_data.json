@@ -1,6 +1,6 @@
 {
-  "scraped_at": "2026-04-16T11:39:29.761787",
-  "total_players": 830,
+  "scraped_at": "2026-04-17T11:32:21.334897",
+  "total_players": 831,
   "player_data": [
     {
       "": "",
@@ -6345,6 +6345,19 @@
       "Bursts>20 per mile": 0.19,
       "ES Dist. Skated": 113.5,
       "ES Avg. Speed": 8.3
+    },
+    {
+      "": "",
+      "Player": "Bo Groulx",
+      "Team": "TOR",
+      "Pos": "C",
+      "GP": 13,
+      "Top Speed": 22.09,
+      "Distance Skated": 31.13,
+      "Average Speed": 9.16,
+      "Bursts>20 per mile": 0.77,
+      "ES Dist. Skated": 25.48,
+      "ES Avg. Speed": 9.47
     },
     {
       "": "",
@@ -19400,6 +19413,19 @@
         },
         {
           "": "",
+          "Player": "Bo Groulx",
+          "Team": "TOR",
+          "Pos": "C",
+          "GP": 13,
+          "Top Speed": 22.09,
+          "Distance Skated": 31.13,
+          "Average Speed": 9.16,
+          "Bursts>20 per mile": 0.77,
+          "ES Dist. Skated": 25.48,
+          "ES Avg. Speed": 9.47
+        },
+        {
+          "": "",
           "Player": "Simon Benoit",
           "Team": "TOR",
           "Pos": "D",
@@ -19503,17 +19529,17 @@
           "ES Avg. Speed": 10.1
         }
       ],
-      "total_distance": 1669.0900000000001,
-      "avg_speed": 7.694230769230771,
+      "total_distance": 1700.2200000000003,
+      "avg_speed": 7.7485185185185195,
       "max_speed": 24.25,
-      "total_bursts": 9.32,
-      "player_count": 26,
-      "avg_distance": 64.19576923076923,
-      "avg_bursts": 0.3584615384615385,
-      "speed_score": 0.7694230769230771,
+      "total_bursts": 10.090000000000002,
+      "player_count": 27,
+      "avg_distance": 62.97111111111112,
+      "avg_bursts": 0.37370370370370376,
+      "speed_score": 0.7748518518518519,
       "distance_score": 1.0,
-      "burst_score": 0.17923076923076925,
-      "edge_advantage": 0.7205576923076924
+      "burst_score": 0.18685185185185188,
+      "edge_advantage": 0.7247962962962963
     },
     "STL": {
       "players": [
