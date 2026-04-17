@@ -665,13 +665,20 @@
                 ${note}`;
         }
 
-        /** One table: Round 1 + every possible R2–SCF row — projected winner per row. */
-        function buildAllSeriesTable(list) {
-            if (!list || !list.length) {
-                return '<p style="color:#888;">No <code>all_series</code> in this file.</p>';
-            }
-            const body = list.map((r) => {
-                const rn = escapeHtml(r.round_name || '');
+        /** Labels for playoff_round 1–4 (matches JSON round_name intent). */
+        function allSeriesRoundHeading(playoffRound) {
+            const pr = Number(playoffRound);
+            const labels = {
+                1: 'Round 1 — First round (16 teams → 8)',
+                2: 'Round 2 — Second round (8 → 4)',
+                3: 'Round 3 — Conference finals (4 → 2)',
+                4: 'Stanley Cup Final (2 → 1 champion)',
+            };
+            return labels[pr] || `Round ${pr}`;
+        }
+
+        function oneAllSeriesTableBody(rows) {
+            return rows.map((r) => {
                 const conf = escapeHtml(r.conference || '—');
                 const slot = escapeHtml(r.slot || '—');
                 const aw = escapeHtml(r.away);
@@ -683,7 +690,6 @@
                     : (h >= a ? hm : aw);
                 return `
                     <tr>
-                        <td>${rn}</td>
                         <td>${conf}</td>
                         <td>${slot}</td>
                         <td>${aw} @ ${hm}</td>
@@ -692,23 +698,60 @@
                         <td>${pct(h)}</td>
                     </tr>`;
             }).join('');
-            return `
-                <div style="overflow-x: auto;">
-                    <table class="standings-table">
+        }
+
+        /** Round 1–4: separate section per round (R1 real bracket; R2–4 all possible pairings on this tree). */
+        function buildAllSeriesTable(list) {
+            if (!list || !list.length) {
+                return '<p style="color:#888;">No <code>all_series</code> in this file.</p>';
+            }
+            const byRound = { 1: [], 2: [], 3: [], 4: [], other: [] };
+            for (const r of list) {
+                const pr = Number(r.playoff_round);
+                if (pr >= 1 && pr <= 4) {
+                    byRound[pr].push(r);
+                } else {
+                    byRound.other.push(r);
+                }
+            }
+            const thead = `
                         <thead>
                             <tr>
-                                <th>Round</th>
                                 <th>Conference</th>
                                 <th>Slot</th>
-                                <th>Matchup</th>
+                                <th>Matchup (away @ home)</th>
                                 <th>Projected winner</th>
                                 <th>Away %</th>
                                 <th>Home %</th>
                             </tr>
-                        </thead>
+                        </thead>`;
+            const blocks = [];
+            for (let pr = 1; pr <= 4; pr += 1) {
+                const chunk = byRound[pr];
+                if (!chunk.length) continue;
+                const body = oneAllSeriesTableBody(chunk);
+                const title = escapeHtml(allSeriesRoundHeading(pr));
+                blocks.push(`
+                <h4 style="color:#c8102e; margin-top: ${pr === 1 ? '0' : '24px'}; margin-bottom: 10px;">${title}</h4>
+                <div style="overflow-x: auto;">
+                    <table class="standings-table">
+                        ${thead}
                         <tbody>${body}</tbody>
                     </table>
-                </div>`;
+                </div>`);
+            }
+            if (byRound.other.length) {
+                const body = oneAllSeriesTableBody(byRound.other);
+                blocks.push(`
+                <h4 style="color:#888; margin-top: 24px; margin-bottom: 10px;">Other rounds</h4>
+                <div style="overflow-x: auto;">
+                    <table class="standings-table">
+                        ${thead}
+                        <tbody>${body}</tbody>
+                    </table>
+                </div>`);
+            }
+            return blocks.join('');
         }
 
         function buildSeriesByRoundSection(data) {
@@ -723,9 +766,11 @@
                 return `
                     ${buildSeriesWinnersSummary(data)}
                     <div style="height: 22px;"></div>
-                    <h3 style="color:#fff; font-size:1.35em; margin: 28px 0 10px; border-bottom: 1px solid #333; padding-bottom: 10px;">All series (winners + odds)</h3>
+                    <h3 style="color:#fff; font-size:1.35em; margin: 28px 0 10px; border-bottom: 1px solid #333; padding-bottom: 10px;">All series by round (winners + odds)</h3>
                     <p style="color:#888; margin-bottom: 10px; max-width: 900px;">
-                        <code>data/playoff_series_all.csv</code> includes column <code>projected_winner</code>. Round 1 = current bracket; later rounds = if that pairing were played.
+                        Full playoff path: <strong>Round 1</strong> → <strong>Round 2</strong> → <strong>Round 3</strong> (conference finals) → <strong>Stanley Cup Final</strong>.
+                        Round 1 is the live bracket. Rounds 2–4 list every pairing that can occur on this tree; each row is a best-of-7 projection if that matchup happens.
+                        <code>data/playoff_series_all.csv</code> mirrors this (column <code>projected_winner</code>).
                     </p>
                     ${rsBlurb}
                     ${note ? `<p style="color:#666; font-size:0.88em; margin-bottom: 12px;">${escapeHtml(note)}</p>` : ''}
