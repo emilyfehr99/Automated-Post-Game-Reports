@@ -319,6 +319,136 @@
             line-height: 1.35;
         }
 
+        .bracket-full {
+            display: flex;
+            flex-direction: column;
+            gap: 28px;
+        }
+
+        .bracket-stage-label {
+            font-family: 'Space Grotesk', sans-serif;
+            font-size: 0.78rem;
+            letter-spacing: 0.12em;
+            text-transform: uppercase;
+            color: #9aacbf;
+            margin: 0 0 10px 4px;
+            text-align: center;
+        }
+
+        .bracket-visual--stage {
+            align-items: stretch;
+            margin-bottom: 0;
+            padding-top: 18px;
+            padding-bottom: 22px;
+        }
+
+        .bracket-final-span {
+            grid-column: 1 / -1;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            gap: 14px;
+            width: 100%;
+        }
+
+        .series-card--compact {
+            min-width: 180px;
+            max-width: 260px;
+        }
+
+        .series-card--compact .path-lines {
+            padding: 10px 10px 4px;
+            font-size: 0.92rem;
+            font-weight: 700;
+            color: #e8eef5;
+            display: flex;
+            flex-wrap: wrap;
+            align-items: baseline;
+            gap: 4px;
+        }
+
+        .series-card--compact .path-at {
+            color: #6b7c8f;
+            font-weight: 500;
+            font-size: 0.8rem;
+        }
+
+        .series-card--compact .path-winner-row {
+            padding: 0 10px 8px;
+            font-size: 0.8rem;
+            color: #aab6c4;
+        }
+
+        .series-card--compact .path-winner-row strong {
+            color: #c8102e;
+            font-weight: 800;
+        }
+
+        .series-card--compact .path-pct {
+            padding: 0 10px 10px;
+            font-family: ui-monospace, monospace;
+            font-size: 0.72rem;
+            color: #6b7c8f;
+        }
+
+        .series-card--final {
+            max-width: 320px;
+            margin: 0 auto;
+            border-color: #4a3540;
+            box-shadow: 0 0 24px rgba(200, 16, 46, 0.12);
+        }
+
+        .series-card--final .path-winner-row {
+            font-size: 1rem;
+        }
+
+        .cup-hub--path {
+            max-width: 200px;
+        }
+
+        .cup-hub--path .hub-champ {
+            margin-top: 8px;
+            font-size: 1.05rem;
+            font-weight: 800;
+            color: #c8102e;
+            letter-spacing: 0.06em;
+        }
+
+        details.advanced-conditional {
+            margin: 24px 0 8px;
+            border: 1px solid #333;
+            border-radius: 10px;
+            padding: 12px 16px;
+            background: rgba(0,0,0,0.2);
+        }
+
+        details.advanced-conditional > summary {
+            cursor: pointer;
+            color: #9aacbf;
+            font-weight: 600;
+            font-size: 1.02em;
+            list-style: none;
+        }
+
+        details.advanced-conditional > summary::-webkit-details-marker {
+            display: none;
+        }
+
+        details.advanced-conditional > summary::before {
+            content: '▸ ';
+            color: #c8102e;
+        }
+
+        details.advanced-conditional[open] > summary::before {
+            content: '▾ ';
+        }
+
+        .advanced-conditional-inner {
+            margin-top: 16px;
+            padding-top: 12px;
+            border-top: 1px solid #2a2a2a;
+        }
+
         @media (max-width: 960px) {
             .bracket-visual {
                 grid-template-columns: 1fr;
@@ -350,11 +480,11 @@
         <div id="content" style="display: none;">
             <div class="standings-section">
                 <h3>2026 Stanley Cup Bracket Forecast</h3>
-                <p>Projected series winners at a glance; tables below add win % and later-round hypotheticals.</p>
+                <p><strong>16 teams</strong> — first-round matchups from the current bracket; the diagram shows one <strong>projected path</strong> (series favorites at each round) through the Cup Final. Open <em>Advanced</em> below for the full conditional matchup grid.</p>
                 <div id="bracket-meta" style="margin: 10px 0 20px; color: #888; font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, 'Liberation Mono', 'Courier New', monospace;"></div>
-                <h4 style="color:#c8102e; margin-top: 0; margin-bottom: 12px;">Bracket layout</h4>
-                <p style="color:#888; margin-bottom: 14px; max-width: 720px;">
-                    Matchups from current standings. Logos load from NHL assets; tables below list model series win % for every round on this tree.
+                <h4 style="color:#c8102e; margin-top: 0; margin-bottom: 12px;">Bracket</h4>
+                <p style="color:#888; margin-bottom: 14px; max-width: 820px;">
+                    Round 1 uses away @ home from the API. Later rounds advance the model’s favorite each time so you see a single coherent playoff tree — not every possible pairing.
                 </p>
                 <div id="visual-bracket"></div>
                 <div id="series-by-round-content"></div>
@@ -432,6 +562,32 @@
             `;
         }
 
+        function getPathRoundByNum(pbp, pr) {
+            if (!pbp || !Array.isArray(pbp.rounds)) return null;
+            return pbp.rounds.find((r) => Number(r.playoff_round) === Number(pr)) || null;
+        }
+
+        function compactPathCard(s, isFinal) {
+            const aw = escapeHtml(s.away);
+            const hm = escapeHtml(s.home);
+            const w = s.projected_winner ? escapeHtml(s.projected_winner) : '—';
+            const pa = s.away_series_win_prob ?? 0;
+            const ph = s.home_series_win_prob ?? 0;
+            const slot = escapeHtml(s.slot || '');
+            const cls = isFinal ? 'series-card series-card--compact series-card--final' : 'series-card series-card--compact';
+            return `
+                <div class="${cls}">
+                    <div class="series-hd">${slot || (isFinal ? 'Stanley Cup Final' : '')}</div>
+                    <div class="path-lines">
+                        <span class="path-away">${aw}</span>
+                        <span class="path-at">@</span>
+                        <span class="path-home">${hm}</span>
+                    </div>
+                    <div class="path-winner-row">Advances: <strong>${w}</strong></div>
+                    <div class="path-pct">${pct(pa)} away &nbsp;·&nbsp; ${pct(ph)} home</div>
+                </div>`;
+        }
+
         function renderVisualBracket(data) {
             const b = data && data.bracket;
             if (!b || !Array.isArray(b.West) || !Array.isArray(b.East)) {
@@ -440,24 +596,88 @@
             const oddsMap = buildRound1OddsMap(data.round1_series_odds);
             const westHtml = b.West.map(s => seriesCardHtml(s, oddsMap)).join('');
             const eastHtml = b.East.map(s => seriesCardHtml(s, oddsMap)).join('');
-            return `
+            const pbp = data.projected_bracket_path;
+
+            const hubR1 = pbp && pbp.rounds
+                ? `<div class="cup-hub cup-hub--path">
+                        <div class="nhl-wordmark">Projected path</div>
+                        <div class="hub-title">Favorites advance each round into the real bracket slots. Cup winner at the bottom.</div>
+                   </div>`
+                : `<div class="cup-hub">
+                        <div class="nhl-wordmark">NHL Playoffs</div>
+                        <div class="hub-title">Regenerate predictions JSON to see the full path here. Open <strong>Advanced</strong> below for conditional matchup tables.</div>
+                   </div>`;
+
+            let stages = `
                 <div class="bracket-visual">
                     <div class="bracket-side bracket-west">
-                        <div class="bracket-col-title">Western Conference</div>
+                        <div class="bracket-col-title">Western Conference — Round 1</div>
                         ${westHtml}
                     </div>
                     <div class="bracket-center">
-                        <div class="cup-hub">
-                            <div class="nhl-wordmark">NHL Playoffs</div>
-                            <div class="hub-title">Scroll to <strong>Series win odds by round</strong> for Round 1–Final, series by series.</div>
-                        </div>
+                        ${hubR1}
                     </div>
                     <div class="bracket-side bracket-east">
-                        <div class="bracket-col-title">Eastern Conference</div>
+                        <div class="bracket-col-title">Eastern Conference — Round 1</div>
                         ${eastHtml}
                     </div>
-                </div>
-            `;
+                </div>`;
+
+            if (pbp && pbp.rounds) {
+                const r2 = getPathRoundByNum(pbp, 2);
+                const r3 = getPathRoundByNum(pbp, 3);
+                const r4 = getPathRoundByNum(pbp, 4);
+                const s2 = (r2 && r2.series) ? r2.series : [];
+                const s3 = (r3 && r3.series) ? r3.series : [];
+                const s4 = (r4 && r4.series) ? r4.series : [];
+                const slotOrder = (a, b) => String(a.slot || '').localeCompare(String(b.slot || ''));
+                const w2 = s2.filter((x) => (x.conference || '') === 'West').slice().sort(slotOrder);
+                const e2 = s2.filter((x) => (x.conference || '') === 'East').slice().sort(slotOrder);
+                const wcf = s3.find((x) => (x.slot || '') === 'WCF');
+                const ecf = s3.find((x) => (x.slot || '') === 'ECF');
+                const scf = s4[0];
+                const champ = pbp.projected_stanley_cup_champion
+                    ? `<div class="hub-champ">${escapeHtml(pbp.projected_stanley_cup_champion)}</div>`
+                    : '';
+
+                stages += `
+                    <div class="bracket-stage-label">Round 2</div>
+                    <div class="bracket-visual bracket-visual--stage">
+                        <div class="bracket-side bracket-west">
+                            <div class="bracket-col-title">West</div>
+                            ${w2.map((s) => compactPathCard(s, false)).join('')}
+                        </div>
+                        <div class="bracket-center"><div class="cup-hub cup-hub--path"><div class="nhl-wordmark">Division finals</div></div></div>
+                        <div class="bracket-side bracket-east">
+                            <div class="bracket-col-title">East</div>
+                            ${e2.map((s) => compactPathCard(s, false)).join('')}
+                        </div>
+                    </div>
+                    <div class="bracket-stage-label">Conference finals</div>
+                    <div class="bracket-visual bracket-visual--stage">
+                        <div class="bracket-side bracket-west">
+                            <div class="bracket-col-title">WCF</div>
+                            ${wcf ? compactPathCard(wcf, false) : '<p style="color:#888;">—</p>'}
+                        </div>
+                        <div class="bracket-center"><div class="cup-hub cup-hub--path"><div class="nhl-wordmark">Conference</div><div class="hub-title">champions</div></div></div>
+                        <div class="bracket-side bracket-east">
+                            <div class="bracket-col-title">ECF</div>
+                            ${ecf ? compactPathCard(ecf, false) : '<p style="color:#888;">—</p>'}
+                        </div>
+                    </div>
+                    <div class="bracket-stage-label">Stanley Cup Final</div>
+                    <div class="bracket-visual bracket-visual--stage">
+                        <div class="bracket-final-span">
+                            ${scf ? compactPathCard(scf, true) : '<p style="color:#888;">—</p>'}
+                            <div class="cup-hub cup-hub--path">
+                                <div class="nhl-wordmark">Projected champion</div>
+                                ${champ || '<div class="hub-title">—</div>'}
+                            </div>
+                        </div>
+                    </div>`;
+            }
+
+            return `<div class="bracket-full">${stages}</div>`;
         }
 
         async function loadPredictions() {
@@ -508,7 +728,8 @@
             }
 
             const meta = data.meta || {};
-            metaEl.textContent = `generated_at_utc=${meta.generated_at_utc || 'unknown'} • iterations=${meta.iterations || '—'} • season=${meta.season || '—'}`;
+            const ev = meta.export_version != null ? meta.export_version : '—';
+            metaEl.textContent = `generated_at_utc=${meta.generated_at_utc || 'unknown'} • export_version=${ev} • iterations=${meta.iterations || '—'} • season=${meta.season || '—'} • diagram = chalk path`;
 
             if (visualEl) {
                 visualEl.innerHTML = renderVisualBracket(data);
@@ -754,70 +975,6 @@
             return blocks.join('');
         }
 
-        /** One real bracket path: R1 favorites → R2–SCF implied by that chalk (from projected_bracket_path in JSON). */
-        function buildProjectedBracketPathSection(data) {
-            const p = data.projected_bracket_path;
-            if (!p || !p.rounds || !p.rounds.length) {
-                return '';
-            }
-            const cup = p.projected_stanley_cup_champion
-                ? `<p style="margin-top:10px;color:#e0e0e0;"><strong>Projected Cup winner</strong> (this path): <span style="color:#c8102e;font-weight:800;">${escapeHtml(p.projected_stanley_cup_champion)}</span></p>`
-                : '';
-            const note = p.summary
-                ? `<p style="color:#666;font-size:0.88em;margin-top:12px;max-width:900px;">${escapeHtml(p.summary)}</p>`
-                : '';
-            const metaNote = (data.meta && data.meta.projected_bracket_path_note)
-                ? `<p style="color:#555;font-size:0.82em;margin-top:8px;max-width:900px;">${escapeHtml(data.meta.projected_bracket_path_note)}</p>`
-                : '';
-            const roundsHtml = (p.rounds || []).map((round) => {
-                const title = escapeHtml(round.round_name || `Round ${round.playoff_round}`);
-                const body = (round.series || []).map((s) => {
-                    const slot = escapeHtml(s.slot || '');
-                    const conf = s.conference ? `${escapeHtml(s.conference)} · ` : '';
-                    const aw = escapeHtml(s.away);
-                    const hm = escapeHtml(s.home);
-                    const w = s.projected_winner ? escapeHtml(s.projected_winner) : '—';
-                    const pa = s.away_series_win_prob ?? 0;
-                    const ph = s.home_series_win_prob ?? 0;
-                    return `
-                        <tr>
-                            <td>${conf}${slot}</td>
-                            <td>${aw} @ ${hm}</td>
-                            <td style="color:#c8102e;font-weight:700;">${w}</td>
-                            <td>${pct(pa)}</td>
-                            <td>${pct(ph)}</td>
-                        </tr>`;
-                }).join('');
-                return `
-                    <h5 style="color:#c8102e;margin:18px 0 8px;font-size:1.05em;">${title}</h5>
-                    <div style="overflow-x:auto;">
-                        <table class="standings-table">
-                            <thead>
-                                <tr>
-                                    <th>Slot</th>
-                                    <th>Matchup (away @ home)</th>
-                                    <th>Projected winner</th>
-                                    <th>Away %</th>
-                                    <th>Home %</th>
-                                </tr>
-                            </thead>
-                            <tbody>${body}</tbody>
-                        </table>
-                    </div>`;
-            }).join('');
-            return `
-                <div style="background: linear-gradient(180deg, #151820 0%, #0f0f0f 100%); border: 1px solid #2a3344; border-radius: 12px; padding: 22px 24px; margin-bottom: 8px;">
-                    <h3 style="color:#fff; font-size:1.35em; margin: 0 0 10px; border-bottom: 1px solid #333; padding-bottom: 10px;">Projected schedule (one full bracket path)</h3>
-                    <p style="color:#aaa; margin-bottom: 8px; max-width: 920px;">
-                        This is the model’s <strong>chalk bracket</strong>: Round 1 favorites, then the Round 2 matchups those teams would create, then conference finals and the Stanley Cup Final — <strong>15 total series</strong> on the real tree, not every hypothetical pairing.
-                    </p>
-                    ${cup}
-                    ${roundsHtml}
-                    ${note}
-                    ${metaNote}
-                </div>`;
-        }
-
         function buildSeriesByRoundSection(data) {
             const all = data.all_series;
             const rsMeta = (data.meta && data.meta.regular_season_to_playoff_series_model) || {};
@@ -828,19 +985,22 @@
             if (all && all.length) {
                 const note = (data.meta && data.meta.all_series_note) || '';
                 return `
-                    ${buildProjectedBracketPathSection(data)}
-                    <div style="height: 18px;"></div>
-                    ${buildSeriesWinnersSummary(data)}
-                    <div style="height: 22px;"></div>
-                    <h3 style="color:#fff; font-size:1.35em; margin: 28px 0 10px; border-bottom: 1px solid #333; padding-bottom: 10px;">All series by round (winners + odds)</h3>
-                    <p style="color:#888; margin-bottom: 10px; max-width: 900px;">
-                        Full playoff path: <strong>Round 1</strong> → <strong>Round 2</strong> → <strong>Round 3</strong> (conference finals) → <strong>Stanley Cup Final</strong>.
-                        Round 1 is the live bracket. Rounds 2–4 list every pairing that can occur on this tree; each row is a best-of-7 projection if that matchup happens.
-                        <code>data/playoff_series_all.csv</code> mirrors this (column <code>projected_winner</code>).
-                    </p>
                     ${rsBlurb}
-                    ${note ? `<p style="color:#666; font-size:0.88em; margin-bottom: 12px;">${escapeHtml(note)}</p>` : ''}
-                    ${buildAllSeriesTable(all)}
+                    <details class="advanced-conditional">
+                        <summary>Advanced: all conditional matchups (full grid)</summary>
+                        <div class="advanced-conditional-inner">
+                            ${buildSeriesWinnersSummary(data)}
+                            <div style="height: 22px;"></div>
+                            <h3 style="color:#fff; font-size:1.35em; margin: 28px 0 10px; border-bottom: 1px solid #333; padding-bottom: 10px;">All series by round (winners + odds)</h3>
+                            <p style="color:#888; margin-bottom: 10px; max-width: 900px;">
+                                Full playoff path: <strong>Round 1</strong> → <strong>Round 2</strong> → <strong>Round 3</strong> (conference finals) → <strong>Stanley Cup Final</strong>.
+                                Round 1 is the live bracket. Rounds 2–4 list every pairing that can occur on this tree; each row is a best-of-7 projection if that matchup happens.
+                                <code>data/playoff_series_all.csv</code> mirrors this (column <code>projected_winner</code>).
+                            </p>
+                            ${note ? `<p style="color:#666; font-size:0.88em; margin-bottom: 12px;">${escapeHtml(note)}</p>` : ''}
+                            ${buildAllSeriesTable(all)}
+                        </div>
+                    </details>
                     ${buildFinalMatchupSection(data)}
                 `;
             }
@@ -851,20 +1011,21 @@
             const note = (data.meta && data.meta.conditional_series_note) || '';
 
             let html = `
-                ${buildProjectedBracketPathSection(data)}
-                <div style="height: 18px;"></div>
-                ${buildSeriesWinnersSummary(data)}
-                <div style="height: 22px;"></div>
-                <h3 style="color:#fff; font-size:1.35em; margin: 28px 0 10px; border-bottom: 1px solid #333; padding-bottom: 10px;">Series win odds by round</h3>
-                <p style="color:#888; margin-bottom: 6px; max-width: 900px;">
-                    <strong>Round 1</strong> uses the live bracket order (away @ home). <strong>Rounds 2–4</strong> list every series that can occur on this tree before winners are known; each row is its own best-of-7 projection at that playoff round depth.
-                </p>
                 ${rsBlurb}
-                ${note ? `<p style="color:#666; font-size:0.88em; margin-bottom: 16px;">${escapeHtml(note)}</p>` : ''}
-                <h4 style="color:#c8102e; margin-top: 18px; margin-bottom: 10px;">Round 1 — First round</h4>
-                ${createSeriesTable('Eastern Conference', east)}
-                <div style="height: 14px;"></div>
-                ${createSeriesTable('Western Conference', west)}
+                <details class="advanced-conditional">
+                    <summary>Advanced: all conditional matchups (full grid)</summary>
+                    <div class="advanced-conditional-inner">
+                        ${buildSeriesWinnersSummary(data)}
+                        <div style="height: 22px;"></div>
+                        <h3 style="color:#fff; font-size:1.35em; margin: 28px 0 10px; border-bottom: 1px solid #333; padding-bottom: 10px;">Series win odds by round</h3>
+                        <p style="color:#888; margin-bottom: 6px; max-width: 900px;">
+                            <strong>Round 1</strong> uses the live bracket order (away @ home). <strong>Rounds 2–4</strong> list every series that can occur on this tree before winners are known; each row is its own best-of-7 projection at that playoff round depth.
+                        </p>
+                        ${note ? `<p style="color:#666; font-size:0.88em; margin-bottom: 16px;">${escapeHtml(note)}</p>` : ''}
+                        <h4 style="color:#c8102e; margin-top: 18px; margin-bottom: 10px;">Round 1 — First round</h4>
+                        ${createSeriesTable('Eastern Conference', east)}
+                        <div style="height: 14px;"></div>
+                        ${createSeriesTable('Western Conference', west)}
             `;
 
             if (!rows || !rows.length) {
@@ -873,7 +1034,9 @@
                     <div style="padding: 16px 18px; background: #1a1515; border: 1px solid #553333; border-radius: 8px; color:#ccc; max-width: 900px;">
                         <p style="margin-bottom: 10px;"><strong style="color:#ffb4b4;">This JSON file does not include per-series rows for later rounds.</strong></p>
                         <p style="margin:0; color:#aaa;">Regenerate with <code>simulate_2026_playoffs_master.py</code> or the <em>Playoff predictions pipeline</em> workflow.</p>
-                    </div>`;
+                    </div>
+                    </div>
+                </details>`;
                 html += buildFinalMatchupSection(data);
                 return html;
             }
@@ -899,6 +1062,9 @@
             html += `<p style="color:#aaa; margin-bottom: 10px; max-width: 900px;">These rows are <strong>conditional</strong> best-of-7 win odds if that pairing were played — not the probability that pairing is reached.</p>`;
             html += openConditionalSeriesTable(byRound[4]);
 
+            html += `
+                    </div>
+                </details>`;
             html += buildFinalMatchupSection(data);
             return html;
         }
