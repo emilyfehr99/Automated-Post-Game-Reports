@@ -104,8 +104,10 @@ jobs:
             if [ "$PLAYOFF_ONLY" = "true" ]; then
               ARGS="$ARGS --playoff-teams-only"
             fi
+            ARGS="$ARGS --log-each-game"
 
             python3 scripts/backfill_historical_team_metrics.py $ARGS
+            echo "=== Workflow: finished backfill step for season ${SEASON} ==="
 
             # Persist after each season so cancel/timeout does not lose prior seasons.
             git add -A data/historical || true

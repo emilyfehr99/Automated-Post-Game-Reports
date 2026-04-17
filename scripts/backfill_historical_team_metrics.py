@@ -22,6 +22,13 @@ import argparse
 import json
 import sys
 from datetime import date, datetime, timedelta, timezone
+
+# Line-buffered logs in CI (GitHub Actions)
+if hasattr(sys.stdout, "reconfigure"):
+    try:
+        sys.stdout.reconfigure(line_buffering=True)
+    except Exception:
+        pass
 from pathlib import Path
 from typing import Dict, List, Optional, Set, Tuple
 
@@ -183,6 +190,11 @@ def main():
         action="store_true",
         help="Only retain regular-season rows for teams that appear in that season's playoff bracket (api-web).",
     )
+    parser.add_argument(
+        "--log-each-game",
+        action="store_true",
+        help="Print one line per game extracted (progress i/total, matchup). Use in CI to follow the run.",
+    )
     args = parser.parse_args()
 
     season = args.season
@@ -230,10 +242,31 @@ def main():
     if args.max_games and args.max_games > 0:
         to_process = to_process[: args.max_games]
 
+    n_already = len(processed)
+    n_unique_scheduled = len(game_ids)
+    n_queue = len(to_process)
+    # Full RS: each team plays 82 games -> team-game sides = 82 * N_teams; unique games = that / 2
+    print(
+        f"\n{'='*72}\n"
+        f"Season {season} | schedule scan: {n_unique_scheduled} regular-season games in date window\n"
+        f"  Already processed (checkpoint): {n_already}\n"
+        f"  Queued this run: {n_queue}\n"
+        f"  (Full league ballpark: 32 teams x 82 GP => 2624 team-game sides, 1312 unique games; varies by season.)\n"
+        f"{'='*72}\n",
+        flush=True,
+    )
+    if n_queue == 0:
+        print(f"Season {season}: nothing left to process; all scheduled games already in checkpoint.", flush=True)
+
     new_rows: List[dict] = []
+    skipped: List[str] = []
+    extracted_this_run = 0
     for i, gid in enumerate(to_process, 1):
         game_data = api.get_game_center(gid)
         if not game_data or "boxscore" not in game_data:
+            skipped.append(f"{gid}: missing boxscore")
+            if args.log_each_game:
+                print(f"[{season}] {i}/{n_queue} game_id={gid} SKIP (no boxscore)", flush=True)
             continue
 
         if args.cache_raw:
@@ -249,12 +282,20 @@ def main():
         home_abbr = home.get("abbrev")
 
         if not away_id or not home_id or not away_abbr or not home_abbr:
+            skipped.append(f"{gid}: incomplete boxscore teams")
+            if args.log_each_game:
+                print(f"[{season}] {i}/{n_queue} game_id={gid} SKIP (incomplete boxscore)", flush=True)
             continue
+
+        gdate = box.get("gameDate") or box.get("gameDateISO") or ""
 
         # Extract the same metrics used in the current season stats generator
         away_metrics = generator.calculate_game_metrics(game_data, away_id, is_home=False)
         home_metrics = generator.calculate_game_metrics(game_data, home_id, is_home=True)
         if not away_metrics or not home_metrics:
+            skipped.append(f"{gid}: metrics extraction failed")
+            if args.log_each_game:
+                print(f"[{season}] {i}/{n_queue} game_id={gid} {away_abbr} @ {home_abbr} SKIP (metrics)", flush=True)
             continue
 
         # Normalize shape into a JSONL "team-game row"
@@ -300,6 +341,26 @@ def main():
                 "metrics": home_metrics,
             })
 
+        if playoff_teams is not None:
+            rows_this_game = (1 if away_abbr in playoff_teams else 0) + (1 if home_abbr in playoff_teams else 0)
+        else:
+            rows_this_game = 2
+        if rows_this_game > 0:
+            extracted_this_run += 1
+        if args.log_each_game:
+            if rows_this_game > 0:
+                print(
+                    f"[{season}] {i}/{n_queue} game_id={gid} {gdate} {away_abbr} @ {home_abbr} "
+                    f"OK (+{rows_this_game} team-rows)",
+                    flush=True,
+                )
+            else:
+                print(
+                    f"[{season}] {i}/{n_queue} game_id={gid} {gdate} {away_abbr} @ {home_abbr} "
+                    f"SKIP (playoff-teams-only: no playoff club in this game)",
+                    flush=True,
+                )
+
         processed.add(str(gid))
         if i % 25 == 0:
             append_jsonl(rows_path, new_rows)
@@ -314,14 +375,59 @@ def main():
     agg = build_team_season_aggregate(rows_path)
     safe_write_json(agg_path, agg)
 
+    teams_meta = agg.get("teams", {}) if isinstance(agg, dict) else {}
+    gp_list = [int(t.get("games", 0)) for t in teams_meta.values() if isinstance(t, dict)]
+    meta_games = 0
+    try:
+        meta_games = sum(1 for _ in rows_path.open() if _.strip())
+    except Exception:
+        meta_games = 0
+
+    total_ck = len(load_processed_ids(processed_path))
+    season_fully_checkpointed = n_unique_scheduled > 0 and total_ck >= n_unique_scheduled
+
     safe_write_json(meta_path, {
         "season": season,
         "updated_at_utc": datetime.now(timezone.utc).isoformat(),
         "date_window": {"start": start.isoformat(), "end": end.isoformat()},
         "rows_path": str(rows_path),
+        "schedule_games_in_window": n_unique_scheduled,
+        "checkpoint_games_before_run": n_already,
+        "games_queued_this_run": n_queue,
+        "games_extracted_ok_this_run": extracted_this_run,
+        "games_skipped_this_run": len(skipped),
+        "checkpoint_games_after_run": total_ck,
+        "season_checkpoint_full": season_fully_checkpointed,
+        "jsonl_row_count": meta_games,
+        "aggregate_team_count": len(teams_meta),
+        "aggregate_gp_min": min(gp_list) if gp_list else 0,
+        "aggregate_gp_max": max(gp_list) if gp_list else 0,
     })
 
-    print(f"✅ Backfill complete for season={season}. Rows: {rows_path} | Aggregate: {agg_path}")
+    ck_note = (
+        "FULL — all scheduled games checkpointed"
+        if season_fully_checkpointed
+        else "PARTIAL — re-run with same args to finish"
+    )
+    print(
+        f"\n{'='*72}\n"
+        f"SEASON {season} COMPLETE\n"
+        f"  Schedule (RS games in window): {n_unique_scheduled}\n"
+        f"  Checkpoint games now: {total_ck} ({ck_note})\n"
+        f"  This run: queued {n_queue} | extracted OK {extracted_this_run} | skipped {len(skipped)}\n"
+        f"  JSONL rows (total lines): {meta_games} | aggregate teams: {len(teams_meta)} "
+        f"| GP min/max: {min(gp_list) if gp_list else 0}/{max(gp_list) if gp_list else 0}\n"
+        f"  Files: {rows_path} | {agg_path}\n"
+        f"{'='*72}\n",
+        flush=True,
+    )
+    if skipped and not args.log_each_game:
+        print(
+            f"  Tip: {len(skipped)} game(s) had skip/errors; use --log-each-game for per-game lines.",
+            flush=True,
+        )
+
+    print(f"Backfill finished for season={season}.", flush=True)
 
 
 if __name__ == "__main__":
