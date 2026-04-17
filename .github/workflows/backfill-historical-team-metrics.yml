@@ -81,6 +81,9 @@ jobs:
 
           echo "Backfilling seasons with start years $START_YEAR..$END_START_YEAR"
 
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "GitHub Actions Bot"
+
           for (( y=$START_YEAR; y<=10#$END_START_YEAR; y++ )); do
             SEASON="$(printf "%04d%04d" "$y" "$((y+1))")"
             echo ""
@@ -95,19 +98,15 @@ jobs:
             fi
 
             python3 scripts/backfill_historical_team_metrics.py $ARGS
+
+            # Persist after each season so cancel/timeout does not lose prior seasons.
+            git add -A data/historical || true
+            if ! git diff --staged --quiet; then
+              git commit -m "data: historical backfill ${SEASON} [skip ci]"
+              git pull --rebase origin main
+              git push origin main
+            else
+              echo "No new data to commit for ${SEASON} (already up to date)."
+            fi
           done
-
-      - name: Commit and push results
-        run: |
-          git config --local user.email "github-actions[bot]@users.noreply.github.com"
-          git config --local user.name "GitHub Actions Bot"
-
-          git add -A data/historical || true
-
-          if ! git diff --staged --quiet; then
-            git commit -m "data: backfill historical team metrics (${{ inputs.end_season }}, last ${{ inputs.num_seasons }}) [skip ci]"
-            git push origin main
-          else
-            echo "No changes to commit."
-          fi
 
