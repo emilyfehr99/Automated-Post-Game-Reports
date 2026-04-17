@@ -306,6 +306,8 @@ class ExperimentalMetricsAnalyzer:
         gap_counts = 0
         
         game_id = self._get_game_id()
+        if not game_id:
+            return "None"
         
         # Only analyze goals since Sprite data is only available for goals
         # Use FIRST frame to capture entry moment, not final goal moment
@@ -396,6 +398,8 @@ class ExperimentalMetricsAnalyzer:
             
     def _get_sprite_with_throttling(self, game_id, event_id):
         """Fetch sprite data with a small delay to avoid 403 blocks"""
+        if not game_id:
+            return None
         if event_id in self._sprite_cache:
             return self._sprite_cache[event_id]
             
@@ -412,5 +416,9 @@ class ExperimentalMetricsAnalyzer:
         return data
 
     def _get_game_id(self) -> str:
-        # Return the stored game_id or a reasonable fallback
-        return getattr(self, 'game_id', "2024020088")
+        # If game_id wasn't provided, treat sprite-backed metrics as disabled.
+        gid = getattr(self, 'game_id', None)
+        if gid is None:
+            return ""
+        gid = str(gid).strip()
+        return gid
