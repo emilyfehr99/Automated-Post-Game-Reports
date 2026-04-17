@@ -1,6 +1,6 @@
 {
   "meta": {
-    "generated_at_utc": "2026-04-17T22:56:51.049401+00:00",
+    "generated_at_utc": "2026-04-17T23:04:28.012632+00:00",
     "export_version": 5,
     "iterations": 75000,
     "season": "20252026",
@@ -69,7 +69,7 @@
     "most_likely_stanley_cup_final": {
       "east": "TBL",
       "west": "COL",
-      "probability_this_exact_final_occurs": 0.15917333333333333,
+      "probability_this_exact_final_occurs": 0.16008,
       "projected_series_winner": "TBL"
     },
     "note": "round1.winner: model favorite in each scheduled first-round series. projected_stanley_cup_champion: highest Cup share in the bracket Monte Carlo. most_likely_stanley_cup_final: (East, West) pair that occurred most often before the Final; projected_series_winner is the favorite in that best-of-7 (East away, West home). R2\u2013ECF/WCF: every possible pairing on this bracket \u2014 see all_series / playoff_series_all.csv."
@@ -94,8 +94,8 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.36202666666666666,
-            "home_series_win_prob": 0.6379733333333333,
+            "away_series_win_prob": 0.36672,
+            "home_series_win_prob": 0.6332800000000001,
             "avg_remaining_games": 5.8,
             "projected_winner": "CAR"
           },
@@ -110,8 +110,8 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.1112,
-            "home_series_win_prob": 0.8888,
+            "away_series_win_prob": 0.1048,
+            "home_series_win_prob": 0.8952,
             "avg_remaining_games": 5.3,
             "projected_winner": "PIT"
           },
@@ -126,8 +126,8 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.8816533333333333,
-            "home_series_win_prob": 0.11834666666666671,
+            "away_series_win_prob": 0.8741333333333333,
+            "home_series_win_prob": 0.12586666666666668,
             "avg_remaining_games": 5.4,
             "projected_winner": "BOS"
           },
@@ -142,9 +142,9 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.3141333333333333,
-            "home_series_win_prob": 0.6858666666666666,
-            "avg_remaining_games": 5.8,
+            "away_series_win_prob": 0.30965333333333334,
+            "home_series_win_prob": 0.6903466666666667,
+            "avg_remaining_games": 5.7,
             "projected_winner": "TBL"
           },
           {
@@ -158,8 +158,8 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.12464,
-            "home_series_win_prob": 0.87536,
+            "away_series_win_prob": 0.12176,
+            "home_series_win_prob": 0.87824,
             "avg_remaining_games": 5.4,
             "projected_winner": "COL"
           },
@@ -174,8 +174,8 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.28336,
-            "home_series_win_prob": 0.7166399999999999,
+            "away_series_win_prob": 0.28048,
+            "home_series_win_prob": 0.7195199999999999,
             "avg_remaining_games": 5.7,
             "projected_winner": "DAL"
           },
@@ -190,8 +190,8 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.5826666666666667,
-            "home_series_win_prob": 0.41733333333333333,
+            "away_series_win_prob": 0.57808,
+            "home_series_win_prob": 0.42191999999999996,
             "avg_remaining_games": 5.8,
             "projected_winner": "UTA"
           },
@@ -206,8 +206,8 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.6423466666666666,
-            "home_series_win_prob": 0.3576533333333334,
+            "away_series_win_prob": 0.6475733333333333,
+            "home_series_win_prob": 0.35242666666666667,
             "avg_remaining_games": 5.9,
             "projected_winner": "ANA"
           }
@@ -228,8 +228,8 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.5608,
-            "home_series_win_prob": 0.43920000000000003,
+            "away_series_win_prob": 0.5638933333333334,
+            "home_series_win_prob": 0.43610666666666664,
             "avg_remaining_games": 5.8,
             "projected_winner": "CAR"
           },
@@ -244,8 +244,8 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.08138666666666666,
-            "home_series_win_prob": 0.9186133333333333,
+            "away_series_win_prob": 0.08048,
+            "home_series_win_prob": 0.91952,
             "avg_remaining_games": 5.4,
             "projected_winner": "TBL"
           },
@@ -260,8 +260,8 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.6038933333333333,
-            "home_series_win_prob": 0.3961066666666667,
+            "away_series_win_prob": 0.60896,
+            "home_series_win_prob": 0.39104000000000005,
             "avg_remaining_games": 5.8,
             "projected_winner": "COL"
           },
@@ -276,8 +276,8 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.20426666666666668,
-            "home_series_win_prob": 0.7957333333333333,
+            "away_series_win_prob": 0.20458666666666667,
+            "home_series_win_prob": 0.7954133333333333,
             "avg_remaining_games": 5.6,
             "projected_winner": "ANA"
           }
@@ -298,8 +298,8 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.7002133333333334,
-            "home_series_win_prob": 0.29978666666666665,
+            "away_series_win_prob": 0.6998933333333334,
+            "home_series_win_prob": 0.30010666666666663,
             "avg_remaining_games": 5.7,
             "projected_winner": "CAR"
           },
@@ -314,8 +314,8 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.9160533333333334,
-            "home_series_win_prob": 0.08394666666666661,
+            "away_series_win_prob": 0.91024,
+            "home_series_win_prob": 0.08975999999999995,
             "avg_remaining_games": 5.3,
             "projected_winner": "COL"
           }
@@ -336,8 +336,8 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.13946666666666666,
-            "home_series_win_prob": 0.8605333333333334,
+            "away_series_win_prob": 0.13754666666666668,
+            "home_series_win_prob": 0.8624533333333333,
             "avg_remaining_games": 5.4,
             "projected_winner": "COL"
           }
