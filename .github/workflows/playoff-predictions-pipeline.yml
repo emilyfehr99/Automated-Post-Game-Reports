@@ -101,6 +101,7 @@ jobs:
           echo "=== simulate_2026_playoffs_master.py (iterations=${IT}, season=${SEASON}) ==="
           python3 scripts/simulate_2026_playoffs_master.py \
             --iterations "$IT" \
+            --fast \
             --season "$SEASON" \
             --bracket-out data/official_2026_bracket_current.json \
             --predictions-out data/playoff_predictions_2026.json

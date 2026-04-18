@@ -25,15 +25,34 @@ BASE_URL = 'https://api-web.nhle.com/v1'
 PLAYOFF_EXPORT_VERSION = 10
 
 
-def _inner_series_simulations(iterations: int) -> int:
+def _inner_series_simulations(iterations: int, fast: bool = False) -> int:
     """
     Monte Carlo draws per simulate_series() call (series win %, projected games/goals).
 
-    Scales with bracket --iterations; higher = lower variance. Capped so conditional
-    matchup grids stay tractable; floor avoids noisy estimates on tiny --iterations runs.
+    The conditional R2–SCF grid calls this hundreds of times — large values dominate
+    runtime. Defaults favor speed; use --accurate or higher --iterations for tighter
+    estimates, or set --inner-series-sims explicitly.
     """
     it = max(1, int(iterations))
-    return int(min(100_000, max(10_000, it // 2)))
+    if fast:
+        return int(min(4_000, max(1_200, it // 20)))
+    return int(min(20_000, max(3_000, it // 5)))
+
+
+def _resolve_inner_series_sims(
+    iterations: int,
+    fast: bool = False,
+    accurate: bool = False,
+    override: int | None = None,
+) -> int:
+    """Inner MC draws per simulate_series; override wins, then --accurate, then default/--fast."""
+    if override is not None and int(override) > 0:
+        return int(override)
+    it = max(1, int(iterations))
+    if accurate:
+        return int(min(80_000, max(12_000, it // 2)))
+    return _inner_series_simulations(iterations, fast=fast)
+
 
 def fetch_standings(date: str = "now"):
     try:
@@ -486,12 +505,15 @@ def _build_projected_bracket_path(
 
 
 def run_tournament_monte_carlo(
-    iterations=200_000,
+    iterations=50_000,
     season: str = "20252026",
     bracket_out: Path | None = None,
     predictions_out: Path | None = None,
     series_csv_out: Path | None = None,
     series_winners_out: Path | None = None,
+    fast: bool = False,
+    accurate: bool = False,
+    inner_series_sims: int | None = None,
 ):
     predictor = PlayoffSeriesPredictor()
     standings = fetch_standings("now")
@@ -630,6 +652,14 @@ def run_tournament_monte_carlo(
 
     # Export JSON for consumption
     if predictions_out:
+        cond_sims = _resolve_inner_series_sims(
+            iterations, fast=fast, accurate=accurate, override=inner_series_sims
+        )
+        print(
+            f"📎 Inner series MC draws per matchup: {cond_sims:,} "
+            f"(bracket iterations={iterations:,}; use --fast / --accurate / --inner-series-sims to tune)"
+        )
+
         # Round 1 series odds (computed via simulate_series, respecting current wins)
         series_odds = {"East": [], "West": []}
         for conf in ["East", "West"]:
@@ -642,7 +672,7 @@ def run_tournament_monte_carlo(
                     hm,
                     away_wins=a_w,
                     home_wins=h_w,
-                    simulations=_inner_series_simulations(iterations),
+                    simulations=cond_sims,
                     playoff_round=1,
                 )
                 series_odds[conf].append({
@@ -685,7 +715,6 @@ def run_tournament_monte_carlo(
 
         # Every possible later-round series on this bracket topology, with series win %.
         # Ordering (away/home) matches get_series_winner() in the Monte Carlo loop.
-        cond_sims = _inner_series_simulations(iterations)
 
         projected_bracket_path = _build_projected_bracket_path(
             bracket, series_odds, predictor, get_series_current_wins, cond_sims
@@ -990,8 +1019,25 @@ if __name__ == '__main__':
     parser.add_argument(
         "--iterations",
         type=int,
-        default=200_000,
-        help="Bracket Monte Carlo iterations (higher = more accurate Cup/advancement estimates; slower).",
+        default=50_000,
+        help="Bracket Monte Carlo iterations (full tournament sims; higher = stabler Cup %).",
+    )
+    parser.add_argument(
+        "--fast",
+        action="store_true",
+        help="Much faster exports: fewer inner MC draws per simulate_series (conditional grid is the slow part).",
+    )
+    parser.add_argument(
+        "--accurate",
+        action="store_true",
+        help="Slower: more inner MC draws per series (overrides --fast).",
+    )
+    parser.add_argument(
+        "--inner-series-sims",
+        type=int,
+        default=None,
+        metavar="N",
+        help="Override inner simulate_series draw count (default: scales with --iterations and --fast).",
     )
     parser.add_argument("--season", type=str, default="20252026", help="Season string for playoff-series endpoint (e.g. 20252026)")
     parser.add_argument("--bracket-out", type=str, default="data/official_2026_bracket_current.json")
@@ -1022,4 +1068,7 @@ if __name__ == '__main__':
         series_winners_out=(Path(args.series_winners_out) if args.series_winners_out else None)
         if args.predictions_out
         else None,
+        fast=bool(args.fast),
+        accurate=bool(args.accurate),
+        inner_series_sims=args.inner_series_sims,
     )
