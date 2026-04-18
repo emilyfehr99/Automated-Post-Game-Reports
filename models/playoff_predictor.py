@@ -15,9 +15,9 @@ _ROUND_MODEL_TARGET = {
     4: "won_cup",
 }
 
-# Expected combined goals per game cap for series total / length projections only (playoff pace).
-# Score model can sum two high per-team means; cap keeps series goal totals within a real NHL band.
-_PLAYOFF_EXPECTED_TOTAL_GOALS_PER_GAME_CAP = 6.0
+# Expected combined (both teams) goals per game — cap for series total / length projections only.
+# Poisson/xG tails can sum to ~7+; real playoff hockey is usually ~5.0–5.5 combined GPG league-wide.
+_PLAYOFF_EXPECTED_TOTAL_GOALS_PER_GAME_CAP = 5.3
 
 
 class PlayoffSeriesPredictor:
