@@ -17,7 +17,7 @@ on:
       iterations:
         description: "Monte Carlo iterations for simulate_2026_playoffs_master.py"
         type: string
-        default: "200000"
+        default: "100000"
       season:
         description: "Season string for playoff-series carousel (e.g. 20252026)"
         type: string
@@ -27,9 +27,9 @@ on:
         type: boolean
         default: true
       inner_series_sims:
-        description: "Inner MC draws per simulate_series (export grid); lower = faster. Default 1200 for CI speed."
+        description: "Inner MC draws per simulate_series (export grid); lower = faster. Default 400 for CI."
         type: string
-        default: "1200"
+        default: "400"
   # Also run when playoff-related code lands on main (inputs only exist for workflow_dispatch; steps use defaults below).
   push:
     branches: [main]
@@ -98,13 +98,11 @@ jobs:
       - name: Run bracket Monte Carlo and export predictions JSON
         run: |
           set -e
-          IT='${{ inputs.iterations }}'
-          [ -z "$IT" ] && IT="200000"
-          SEASON='${{ inputs.season }}'
-          [ -z "$SEASON" ] && SEASON="20252026"
-          # Inner MC draws dominate wall time (hundreds of conditional series × draws).
-          # ~1200 vs ~4000 (--fast at 200k iter) cuts export phase roughly ~3×. Push runs use default.
-          INNER="${{ github.event.inputs.inner_series_sims || 1200 }}"
+          # github.event.inputs is only set for workflow_dispatch; || defaults apply on push.
+          IT="${{ github.event.inputs.iterations || '100000' }}"
+          SEASON="${{ github.event.inputs.season || '20252026' }}"
+          # Export wall time scales with inner draws × ~170 simulate_series calls; 400 is a good CI default.
+          INNER="${{ github.event.inputs.inner_series_sims || '400' }}"
           echo "=== simulate_2026_playoffs_master.py (iterations=${IT}, inner_series_sims=${INNER}, season=${SEASON}) ==="
           python3 scripts/simulate_2026_playoffs_master.py \
             --iterations "$IT" \

@@ -407,6 +407,51 @@ class PlayoffSeriesPredictor:
         hi = max_additional_games
         return max(lo, min(hi, g))
 
+    def _simulate_series_numpy_batch(
+        self,
+        away: str,
+        home: str,
+        away_wins: int,
+        home_wins: int,
+        simulations: int,
+        remaining_venues: list,
+        p_away_at_home: float,
+        p_away_at_away: float,
+    ) -> tuple[int, float, float]:
+        """
+        Same distribution as the scalar loop: Bernoulli game outcomes, 2-2-1-1-1 schedule.
+        All ``simulations`` series are advanced in parallel (one venue step at a time).
+        """
+        rng = np.random.default_rng()
+        n = int(simulations)
+        a_w = np.full(n, away_wins, dtype=np.int32)
+        h_w = np.full(n, home_wins, dtype=np.int32)
+        g_per_game = np.array(
+            [self._expected_total_goals_one_game(away, home, v) for v in remaining_venues],
+            dtype=np.float64,
+        )
+        total_games = np.zeros(n, dtype=np.float64)
+        total_goals = np.zeros(n, dtype=np.float64)
+
+        for gi, venue in enumerate(remaining_venues):
+            mask = (a_w < 4) & (h_w < 4)
+            if not np.any(mask):
+                break
+            p = float(p_away_at_home if venue == "home" else p_away_at_away)
+            u = rng.random(n)
+            away_win = u < p
+            inc_a = (mask & away_win).astype(np.int32)
+            inc_h = (mask & ~away_win).astype(np.int32)
+            a_w = a_w + inc_a
+            h_w = h_w + inc_h
+            total_games += mask.astype(np.float64)
+            total_goals += np.where(mask, g_per_game[gi], 0.0)
+
+        away_series_wins = int(np.sum(a_w == 4))
+        total_games_completed = float(np.sum(total_games))
+        total_series_goals_sum = float(np.sum(total_goals))
+        return away_series_wins, total_games_completed, total_series_goals_sum
+
     def simulate_series(self, away, home, away_wins=0, home_wins=0, simulations=10000, playoff_round: Optional[int] = None):
         """
         Simulate a Best-of-7 Series (2-2-1-1-1 Home-Ice Format).
@@ -441,29 +486,44 @@ class PlayoffSeriesPredictor:
                 'projected_goals_per_game': None,
             }
 
-        for _ in range(simulations):
-            a_w = away_wins
-            h_w = home_wins
-            sim_games = 0
-            goals_this_series = 0.0
+        # Vectorized path: dominates export runtime when simulations is large (hundreds of series × N).
+        if simulations >= 64:
+            away_series_wins, total_games_completed, total_series_goals_sum = (
+                self._simulate_series_numpy_batch(
+                    away,
+                    home,
+                    away_wins,
+                    home_wins,
+                    simulations,
+                    remaining_venues,
+                    p_away_at_home,
+                    p_away_at_away,
+                )
+            )
+        else:
+            for _ in range(simulations):
+                a_w = away_wins
+                h_w = home_wins
+                sim_games = 0
+                goals_this_series = 0.0
 
-            for venue in remaining_venues:
-                sim_games += 1
-                goals_this_series += self._expected_total_goals_one_game(away, home, venue)
-                prob = p_away_at_home if venue == 'home' else p_away_at_away
+                for venue in remaining_venues:
+                    sim_games += 1
+                    goals_this_series += self._expected_total_goals_one_game(away, home, venue)
+                    prob = p_away_at_home if venue == 'home' else p_away_at_away
 
-                if random.random() < prob:
-                    a_w += 1
-                else:
-                    h_w += 1
+                    if random.random() < prob:
+                        a_w += 1
+                    else:
+                        h_w += 1
 
-                if a_w == 4 or h_w == 4:
-                    break
+                    if a_w == 4 or h_w == 4:
+                        break
 
-            if a_w == 4:
-                away_series_wins += 1
-            total_games_completed += sim_games
-            total_series_goals_sum += goals_this_series
+                if a_w == 4:
+                    away_series_wins += 1
+                total_games_completed += sim_games
+                total_series_goals_sum += goals_this_series
 
         away_series_prob = away_series_wins / simulations
         avg_games = total_games_completed / simulations
