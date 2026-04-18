@@ -674,7 +674,8 @@ class DailyPredictionNotifier:
             if pred.get('is_playoff') and pred.get('series_info'):
                 si = pred['series_info']
                 summary += f"  🏆 **SERIES WIN PROB**: {si['winner_projection']} ({max(si['away_series_win_prob'], si['home_series_win_prob']):.1%})\n"
-                summary += f"  📊 Series Project: {si['winner_projection']} in {si['avg_remaining_games'] + 1:.0f} total games\n"
+                mean_g = si.get("projected_mean_games_in_series", si.get("avg_remaining_games", 0))
+                summary += f"  📊 Series Project: {si['winner_projection']} in ~{float(mean_g):.1f} games (avg length)\n"
             
             # Phase 16: Market Value Overlay
             edge = pred.get('edge_home') if winner == home else pred.get('edge_away')

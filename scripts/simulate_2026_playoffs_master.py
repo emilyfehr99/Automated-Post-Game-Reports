@@ -22,7 +22,20 @@ from playoff_predictor import PlayoffSeriesPredictor
 BASE_URL = 'https://api-web.nhle.com/v1'
 
 # Bump when export shape / meta fields change (check meta.export_version in JSON).
-PLAYOFF_EXPORT_VERSION = 14
+PLAYOFF_EXPORT_VERSION = 15
+
+
+def _series_projection_fields(r: dict) -> dict:
+    """Subset of simulate_series() return for JSON/CSV (series length distribution + goals)."""
+    return {
+        "avg_remaining_games": r.get("avg_remaining_games"),
+        "projected_avg_games_in_series": r.get("projected_avg_games_in_series"),
+        "projected_mean_games_in_series": r.get("projected_mean_games_in_series"),
+        "projected_rounded_games_in_series": r.get("projected_rounded_games_in_series"),
+        "prob_series_goes_seven": r.get("prob_series_goes_seven"),
+        "projected_total_goals_series": r.get("projected_total_goals_series"),
+        "projected_goals_per_game": r.get("projected_goals_per_game"),
+    }
 
 
 def _inner_series_simulations(iterations: int, fast: bool = False) -> int:
@@ -212,10 +225,7 @@ def _build_all_series_flat(
                     "away_series_win_prob": item["away_series_win_prob"],
                     "home_series_win_prob": item["home_series_win_prob"],
                     "winner": item.get("winner_projection"),
-                    "avg_remaining_games": item.get("avg_remaining_games"),
-                    "projected_avg_games_in_series": item.get("projected_avg_games_in_series"),
-                    "projected_total_goals_series": item.get("projected_total_goals_series"),
-                    "projected_goals_per_game": item.get("projected_goals_per_game"),
+                    **_series_projection_fields(item),
                 }
             )
     for row in conditional_series_predictions:
@@ -232,10 +242,7 @@ def _build_all_series_flat(
                 "away_series_win_prob": row["away_series_win_prob"],
                 "home_series_win_prob": row["home_series_win_prob"],
                 "winner": row.get("winner_projection"),
-                "avg_remaining_games": row.get("avg_remaining_games"),
-                "projected_avg_games_in_series": row.get("projected_avg_games_in_series"),
-                "projected_total_goals_series": row.get("projected_total_goals_series"),
-                "projected_goals_per_game": row.get("projected_goals_per_game"),
+                **_series_projection_fields(row),
             }
         )
     out.sort(
@@ -265,6 +272,10 @@ def _write_series_csv(path: Path, rows: list[dict]) -> None:
         "away_series_win_prob",
         "home_series_win_prob",
         "avg_remaining_games",
+        "projected_avg_games_in_series",
+        "projected_mean_games_in_series",
+        "projected_rounded_games_in_series",
+        "prob_series_goes_seven",
         "projected_total_goals_series",
         "projected_goals_per_game",
     ]
@@ -287,6 +298,10 @@ def _write_series_csv(path: Path, rows: list[dict]) -> None:
                     "away_series_win_prob": r["away_series_win_prob"],
                     "home_series_win_prob": r["home_series_win_prob"],
                     "avg_remaining_games": r.get("avg_remaining_games"),
+                    "projected_avg_games_in_series": r.get("projected_avg_games_in_series"),
+                    "projected_mean_games_in_series": r.get("projected_mean_games_in_series"),
+                    "projected_rounded_games_in_series": r.get("projected_rounded_games_in_series"),
+                    "prob_series_goes_seven": r.get("prob_series_goes_seven"),
                     "projected_total_goals_series": r.get("projected_total_goals_series"),
                     "projected_goals_per_game": r.get("projected_goals_per_game"),
                 }
@@ -328,12 +343,9 @@ def _build_series_winners(
                     "away": it["away"],
                     "home": it["home"],
                     "winner": it.get("winner_projection"),
-                    "avg_remaining_games": it.get("avg_remaining_games"),
-                    "projected_avg_games_in_series": it.get("projected_avg_games_in_series"),
-                    "projected_games_in_series": it.get("projected_avg_games_in_series"),
-                    "projected_total_goals_series": it.get("projected_total_goals_series"),
+                    **_series_projection_fields(it),
+                    "projected_games_in_series": it.get("projected_mean_games_in_series", it.get("projected_avg_games_in_series")),
                     "projected_goals_in_series": it.get("projected_total_goals_series"),
-                    "projected_goals_per_game": it.get("projected_goals_per_game"),
                 }
             )
     cup_champ = final_results[0]["team"] if final_results else None
@@ -355,20 +367,19 @@ def _build_series_winners(
                 ml["projected_series_winner"] = wproj
             scf = _scf_series_row(conditional_series_predictions, e, w)
             if scf:
-                ml["avg_remaining_games"] = scf.get("avg_remaining_games")
-                ml["projected_avg_games_in_series"] = scf.get("projected_avg_games_in_series")
-                ml["projected_games_in_series"] = scf.get("projected_avg_games_in_series")
-                ml["projected_total_goals_series"] = scf.get("projected_total_goals_series")
+                ml.update(_series_projection_fields(scf))
+                ml["projected_games_in_series"] = scf.get("projected_mean_games_in_series", scf.get("projected_avg_games_in_series"))
                 ml["projected_goals_in_series"] = scf.get("projected_total_goals_series")
-                ml["projected_goals_per_game"] = scf.get("projected_goals_per_game")
         out["most_likely_stanley_cup_final"] = ml
     out["note"] = (
         "round1.winner: model favorite in each scheduled first-round series; "
-        "projected_games_in_series / projected_goals_in_series duplicate projected_avg_games_in_series / "
-        "projected_total_goals_series (simulate_series projections for that matchup). "
+        "projected_mean_games_in_series / projected_avg_games_in_series: Monte Carlo mean games (from current state); "
+        "projected_rounded_games_in_series: round(mean) clamped to 4–7; "
+        "prob_series_goes_seven: fraction of inner MC draws where the series went 7 games; "
+        "projected_games_in_series duplicates projected_mean_games_in_series; projected_goals_in_series duplicates projected_total_goals_series. "
         "projected_stanley_cup_champion: highest Cup share in the bracket Monte Carlo. "
         "most_likely_stanley_cup_final: (East, West) pair that occurred most often before the Final; "
-        "projected_series_winner and projected_* goals/games apply to that SCF if that pairing row exists. "
+        "projected_series_winner and projection fields apply to that SCF if that pairing row exists. "
         "R2–ECF/WCF: every possible pairing on this bracket — see all_series / playoff_series_all.csv."
     )
     return out
@@ -421,10 +432,7 @@ def _build_projected_bracket_path(
             "current_wins": cur,
             "away_series_win_prob": float(r["away_series_win_prob"]),
             "home_series_win_prob": float(r["home_series_win_prob"]),
-            "avg_remaining_games": r.get("avg_remaining_games"),
-            "projected_avg_games_in_series": r.get("projected_avg_games_in_series"),
-            "projected_total_goals_series": r.get("projected_total_goals_series"),
-            "projected_goals_per_game": r.get("projected_goals_per_game"),
+            **_series_projection_fields(r),
             "projected_winner": wp,
         }
 
@@ -443,11 +451,8 @@ def _build_projected_bracket_path(
                         "current_wins": item.get("current_wins"),
                         "away_series_win_prob": item["away_series_win_prob"],
                         "home_series_win_prob": item["home_series_win_prob"],
-                        "avg_remaining_games": item.get("avg_remaining_games"),
-                        "projected_avg_games_in_series": item.get("projected_avg_games_in_series"),
-                        "projected_total_goals_series": item.get("projected_total_goals_series"),
-                        "projected_goals_per_game": item.get("projected_goals_per_game"),
                         "winner_projection": item.get("winner_projection"),
+                        **_series_projection_fields(item),
                     },
                 )
             )
@@ -682,11 +687,8 @@ def run_tournament_monte_carlo(
                     "current_wins": {"away": a_w, "home": h_w},
                     "away_series_win_prob": r["away_series_win_prob"],
                     "home_series_win_prob": r["home_series_win_prob"],
-                    "avg_remaining_games": r.get("avg_remaining_games"),
-                    "projected_avg_games_in_series": r.get("projected_avg_games_in_series"),
-                    "projected_total_goals_series": r.get("projected_total_goals_series"),
-                    "projected_goals_per_game": r.get("projected_goals_per_game"),
                     "winner_projection": r.get("winner_projection"),
+                    **_series_projection_fields(r),
                 })
 
         predictions_out.parent.mkdir(parents=True, exist_ok=True)
@@ -749,11 +751,8 @@ def run_tournament_monte_carlo(
                     "current_wins": {"away": a_w, "home": h_w},
                     "away_series_win_prob": r["away_series_win_prob"],
                     "home_series_win_prob": r["home_series_win_prob"],
-                    "avg_remaining_games": r.get("avg_remaining_games"),
-                    "projected_avg_games_in_series": r.get("projected_avg_games_in_series"),
-                    "projected_total_goals_series": r.get("projected_total_goals_series"),
-                    "projected_goals_per_game": r.get("projected_goals_per_game"),
                     "winner_projection": r.get("winner_projection"),
+                    **_series_projection_fields(r),
                 }
             )
 
@@ -1002,7 +1001,9 @@ def run_tournament_monte_carlo(
                     "the combined predict_score λ for that venue, scaled by empirical NHL playoff combined goals "
                     "versus the model's mean combined λ (data/playoff_scoring_calibration.json from "
                     "scripts/build_playoff_scoring_calibration.py), then clipped to data-derived floor/ceiling. "
-                    "Projected games and total goals are Monte Carlo means (inner draw count = series_monte_carlo_draws)."
+                    "Exports include projected_mean_games_in_series (MC mean), projected_rounded_games_in_series, "
+                    "and prob_series_goes_seven (share of inner draws that reached game 7). "
+                    "Projected total goals are MC means (inner draw count = series_monte_carlo_draws)."
                 ),
             },
             "series_winners": series_winners,

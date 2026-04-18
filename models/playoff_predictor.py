@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 import json
 import random
-from typing import Any, Dict, Optional
+from typing import Any, Dict, List, Optional
 
 import numpy as np
 from pathlib import Path
@@ -451,10 +451,11 @@ class PlayoffSeriesPredictor:
         remaining_venues: list,
         p_away_at_home: float,
         p_away_at_away: float,
-    ) -> tuple[int, float, float]:
+    ) -> tuple[int, float, float, float]:
         """
         Same distribution as the scalar loop: Bernoulli game outcomes, 2-2-1-1-1 schedule.
         All ``simulations`` series are advanced in parallel (one venue step at a time).
+        Returns also P(series length == 7) from the same draws.
         """
         rng = np.random.default_rng()
         n = int(simulations)
@@ -492,7 +493,8 @@ class PlayoffSeriesPredictor:
         away_series_wins = int(np.sum(a_w == 4))
         total_games_completed = float(np.sum(total_games))
         total_series_goals_sum = float(np.sum(total_goals))
-        return away_series_wins, total_games_completed, total_series_goals_sum
+        prob_seven = float(np.mean(total_games == 7.0))
+        return away_series_wins, total_games_completed, total_series_goals_sum, prob_seven
 
     def simulate_series(self, away, home, away_wins=0, home_wins=0, simulations=10000, playoff_round: Optional[int] = None):
         """
@@ -530,13 +532,17 @@ class PlayoffSeriesPredictor:
                 'winner': away if away_wins >= 4 else home,
                 'avg_remaining_games': 0.0,
                 'projected_avg_games_in_series': 0.0,
+                'projected_mean_games_in_series': 0.0,
+                'projected_rounded_games_in_series': 0,
+                'prob_series_goes_seven': None,
                 'projected_total_goals_series': None,
                 'projected_goals_per_game': None,
             }
 
+        prob_seven = 0.0
         # Vectorized path: dominates export runtime when simulations is large (hundreds of series × N).
         if simulations >= 64:
-            away_series_wins, total_games_completed, total_series_goals_sum = (
+            away_series_wins, total_games_completed, total_series_goals_sum, prob_seven = (
                 self._simulate_series_numpy_batch(
                     away,
                     home,
@@ -550,6 +556,7 @@ class PlayoffSeriesPredictor:
             )
         else:
             rng_small = np.random.default_rng()
+            games_per_sim: List[int] = []
             for _ in range(simulations):
                 a_w = away_wins
                 h_w = home_wins
@@ -571,10 +578,13 @@ class PlayoffSeriesPredictor:
                     if a_w == 4 or h_w == 4:
                         break
 
+                games_per_sim.append(sim_games)
                 if a_w == 4:
                     away_series_wins += 1
                 total_games_completed += sim_games
                 total_series_goals_sum += goals_this_series
+            if games_per_sim:
+                prob_seven = float(sum(1 for g in games_per_sim if g == 7)) / float(len(games_per_sim))
 
         away_series_prob = away_series_wins / simulations
         avg_games = total_games_completed / simulations
@@ -582,6 +592,7 @@ class PlayoffSeriesPredictor:
         games_int = self._projected_series_length_games_int(
             avg_games, away_wins, home_wins, len(remaining_venues)
         )
+        mean_games_rounded = round(float(avg_games), 2)
         gpg = (avg_total_goals / avg_games) if avg_games > 1e-9 else 0.0
 
         return {
@@ -589,8 +600,11 @@ class PlayoffSeriesPredictor:
             'home': home,
             'away_series_win_prob': away_series_prob,
             'home_series_win_prob': 1 - away_series_prob,
-            'avg_remaining_games': float(games_int),
-            'projected_avg_games_in_series': float(games_int),
+            'avg_remaining_games': mean_games_rounded,
+            'projected_avg_games_in_series': mean_games_rounded,
+            'projected_mean_games_in_series': mean_games_rounded,
+            'projected_rounded_games_in_series': int(games_int),
+            'prob_series_goes_seven': round(prob_seven, 4),
             'projected_total_goals_series': round(avg_total_goals, 1),
             'projected_goals_per_game': round(gpg, 2),
             'current_state': f"{away} {away_wins} - {home_wins} {home}",
