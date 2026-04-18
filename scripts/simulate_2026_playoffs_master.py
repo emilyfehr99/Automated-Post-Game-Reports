@@ -22,7 +22,7 @@ from playoff_predictor import PlayoffSeriesPredictor
 BASE_URL = 'https://api-web.nhle.com/v1'
 
 # Bump when export shape / meta fields change (check meta.export_version in JSON).
-PLAYOFF_EXPORT_VERSION = 15
+PLAYOFF_EXPORT_VERSION = 16
 
 
 def _series_projection_fields(r: dict) -> dict:
@@ -33,6 +33,9 @@ def _series_projection_fields(r: dict) -> dict:
         "projected_mean_games_in_series": r.get("projected_mean_games_in_series"),
         "projected_rounded_games_in_series": r.get("projected_rounded_games_in_series"),
         "prob_series_goes_seven": r.get("prob_series_goes_seven"),
+        "historical_mean_games_per_series_5yr": r.get("historical_mean_games_per_series_5yr"),
+        "historical_prob_series_goes_seven_5yr": r.get("historical_prob_series_goes_seven_5yr"),
+        "historical_mean_total_goals_per_series_5yr": r.get("historical_mean_total_goals_per_series_5yr"),
         "projected_total_goals_series": r.get("projected_total_goals_series"),
         "projected_goals_per_game": r.get("projected_goals_per_game"),
     }
@@ -276,6 +279,9 @@ def _write_series_csv(path: Path, rows: list[dict]) -> None:
         "projected_mean_games_in_series",
         "projected_rounded_games_in_series",
         "prob_series_goes_seven",
+        "historical_mean_games_per_series_5yr",
+        "historical_prob_series_goes_seven_5yr",
+        "historical_mean_total_goals_per_series_5yr",
         "projected_total_goals_series",
         "projected_goals_per_game",
     ]
@@ -302,6 +308,9 @@ def _write_series_csv(path: Path, rows: list[dict]) -> None:
                     "projected_mean_games_in_series": r.get("projected_mean_games_in_series"),
                     "projected_rounded_games_in_series": r.get("projected_rounded_games_in_series"),
                     "prob_series_goes_seven": r.get("prob_series_goes_seven"),
+                    "historical_mean_games_per_series_5yr": r.get("historical_mean_games_per_series_5yr"),
+                    "historical_prob_series_goes_seven_5yr": r.get("historical_prob_series_goes_seven_5yr"),
+                    "historical_mean_total_goals_per_series_5yr": r.get("historical_mean_total_goals_per_series_5yr"),
                     "projected_total_goals_series": r.get("projected_total_goals_series"),
                     "projected_goals_per_game": r.get("projected_goals_per_game"),
                 }
@@ -376,6 +385,7 @@ def _build_series_winners(
         "projected_mean_games_in_series / projected_avg_games_in_series: Monte Carlo mean games (from current state); "
         "projected_rounded_games_in_series: round(mean) clamped to 4–7; "
         "prob_series_goes_seven: fraction of inner MC draws where the series went 7 games; "
+        "historical_* fields: 5-year league marginals from data/playoff_series_historical_5yr.json; "
         "projected_games_in_series duplicates projected_mean_games_in_series; projected_goals_in_series duplicates projected_total_goals_series. "
         "projected_stanley_cup_champion: highest Cup share in the bracket Monte Carlo. "
         "most_likely_stanley_cup_final: (East, West) pair that occurred most often before the Final; "
@@ -997,13 +1007,12 @@ def run_tournament_monte_carlo(
                 },
                 "series_length_and_goals_model": (
                     "Each simulated game: winner from Bernoulli(p) with p = calculate_game_win_prob "
-                    "(calibrated win model + playoff modifiers). Goals in that game: Poisson(μ) where μ is "
-                    "the combined predict_score λ for that venue, scaled by empirical NHL playoff combined goals "
-                    "versus the model's mean combined λ (data/playoff_scoring_calibration.json from "
-                    "scripts/build_playoff_scoring_calibration.py), then clipped to data-derived floor/ceiling. "
-                    "Exports include projected_mean_games_in_series (MC mean), projected_rounded_games_in_series, "
-                    "and prob_series_goes_seven (share of inner draws that reached game 7). "
-                    "Projected total goals are MC means (inner draw count = series_monte_carlo_draws)."
+                    "(cup_prior_current.json + reg_season_playoff_round_models_5yr.json / team features, 5yr RS-trained). "
+                    "Goals per game: Poisson(μ) with μ from 5-year NHL playoff empirical per-game combined goals "
+                    "(data/playoff_series_historical_5yr.json, scripts/build_playoff_series_historical_5yr.py). "
+                    "Simulated series length (mean games, prob game 7) comes from Monte Carlo on that schedule; "
+                    "historical_* fields are 5-year league marginals from the same JSON. "
+                    "Inner draw count = series_monte_carlo_draws."
                 ),
             },
             "series_winners": series_winners,

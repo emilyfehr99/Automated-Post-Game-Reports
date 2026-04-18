@@ -20,7 +20,7 @@ class PlayoffSeriesPredictor:
     
     def __init__(self):
         base_dir = Path(__file__).resolve().parent.parent  # automated-post-game-reports/
-        self._playoff_scoring_calibration = self._load_playoff_scoring_calibration(base_dir)
+        self._playoff_series_historical_5yr = self._load_playoff_series_historical_5yr(base_dir)
         self.model = ScorePredictionModel()
         self.metrics_path = base_dir / 'data' / 'team_advanced_metrics.json'
         self.edge_path = base_dir / 'data' / 'team_edge_profiles.json'
@@ -61,9 +61,9 @@ class PlayoffSeriesPredictor:
         self._load_historical_weights()
         self._compute_metric_norms()
 
-    def _load_playoff_scoring_calibration(self, base_dir: Path) -> Dict[str, Any]:
-        """NHL API + model anchor from data/playoff_scoring_calibration.json (see build_playoff_scoring_calibration.py)."""
-        p = base_dir / "data" / "playoff_scoring_calibration.json"
+    def _load_playoff_series_historical_5yr(self, base_dir: Path) -> Dict[str, Any]:
+        """5 seasons of NHL playoff empiricals; built by scripts/build_playoff_series_historical_5yr.py."""
+        p = base_dir / "data" / "playoff_series_historical_5yr.json"
         if not p.exists():
             return {}
         try:
@@ -72,6 +72,26 @@ class PlayoffSeriesPredictor:
             return out if isinstance(out, dict) else {}
         except Exception:
             return {}
+
+    def _historical_poisson_mean_combined_goals(self) -> float:
+        """Per-game combined goals: 5yr NHL playoff mean, clipped (not matchup-specific)."""
+        h = self._playoff_series_historical_5yr
+        pg = h.get("per_game_combined_goals") or {}
+        ps = h.get("poisson_series_game") or {}
+        m = float(pg.get("mean") or 5.5)
+        lo = float(ps.get("poisson_mean_floor") or 1.75)
+        hi = float(ps.get("poisson_mean_ceiling") or 8.25)
+        return float(max(lo, min(m, hi)))
+
+    def _historical_series_length_refs(self) -> tuple[float, float, float]:
+        """Mean games per series, P(7), mean total goals per series from 5yr JSON (reference)."""
+        h = self._playoff_series_historical_5yr
+        sl = h.get("series_length_games") or {}
+        st = h.get("series_total_goals") or {}
+        mg = float(sl.get("mean") or 0.0)
+        p7 = float(sl.get("prob_series_goes_seven") or 0.0)
+        tgt = float(st.get("mean") or 0.0)
+        return mg, p7, tgt
 
     def _load_historical_weights(self):
         """
@@ -387,47 +407,6 @@ class PlayoffSeriesPredictor:
         final_away_prob = np.clip(away_prob + net_shift, 0.01, 0.99)
         return final_away_prob
 
-    def _regulation_lambdas_for_series_game(
-        self, series_away: str, series_home: str, venue: str
-    ) -> tuple[float, float]:
-        """
-        Poisson rates (expected goals) for each team in one regulation game.
-        venue 'home' => series_home has home ice; 'away' => series_away has home ice.
-        Uses the same predict_score() calibration as single-game predictions (clamped 1.5–4.5 per side).
-        """
-        ag = self.starters.get(series_away)
-        hg = self.starters.get(series_home)
-        if venue == "home":
-            ps = self.model.predict_score(series_away, series_home, away_goalie=ag, home_goalie=hg)
-            return float(ps.get("away_expected") or 0.0), float(ps.get("home_expected") or 0.0)
-        ps = self.model.predict_score(series_home, series_away, away_goalie=hg, home_goalie=ag)
-        # Call lists series_home as away, series_away as home in the arena.
-        return float(ps.get("home_expected") or 0.0), float(ps.get("away_expected") or 0.0)
-
-    def _poisson_mean_total_goals_for_series_game(self, lam_sa: float, lam_sh: float) -> float:
-        """
-        Poisson mean for **total goals in one regulation game** used only in series MC.
-
-        ``predict_score`` can sum to ~9 combined λ; NHL playoff combined goals are lower on average.
-        We scale raw = λ_away+λ_home by (empirical NHL playoff mean) / (mean model combined λ over
-        all matchups), then clip to data-derived floor/ceiling — see data/playoff_scoring_calibration.json.
-        """
-        raw = float(lam_sa + lam_sh)
-        cal = self._playoff_scoring_calibration.get("calibration") or {}
-        nhl = self._playoff_scoring_calibration.get("nhl_playoff_combined_goals") or {}
-        model_m = self._playoff_scoring_calibration.get("model_combined_lambda_mean")
-        scale = float(cal.get("scale_raw_lambda_to_match_nhl_mean") or 0.0)
-        if scale <= 0:
-            em = nhl.get("mean")
-            if isinstance(em, (int, float)) and isinstance(model_m, (int, float)) and float(model_m) > 1e-9:
-                scale = float(em) / float(model_m)
-        if scale <= 0:
-            scale = 1.0
-        floor_v = float(cal.get("poisson_mean_floor", 1.75))
-        ceiling_v = float(cal.get("poisson_mean_ceiling", 8.25))
-        lam_eff = raw * scale
-        return float(max(floor_v, min(lam_eff, ceiling_v)))
-
     @staticmethod
     def _projected_series_length_games_int(
         avg_games: float,
@@ -461,15 +440,8 @@ class PlayoffSeriesPredictor:
         n = int(simulations)
         a_w = np.full(n, away_wins, dtype=np.int32)
         h_w = np.full(n, home_wins, dtype=np.int32)
-        lam_totals = np.array(
-            [
-                self._poisson_mean_total_goals_for_series_game(
-                    *self._regulation_lambdas_for_series_game(away, home, v)
-                )
-                for v in remaining_venues
-            ],
-            dtype=np.float64,
-        )
+        mu_combined = self._historical_poisson_mean_combined_goals()
+        lam_totals = np.full(len(remaining_venues), mu_combined, dtype=np.float64)
         total_games = np.zeros(n, dtype=np.float64)
         total_goals = np.zeros(n, dtype=np.float64)
 
@@ -485,7 +457,7 @@ class PlayoffSeriesPredictor:
             a_w = a_w + inc_a
             h_w = h_w + inc_h
             total_games += mask.astype(np.float64)
-            # Poisson(mean); mean is playoff-calibrated sum of model λ's (see _poisson_mean_total_goals_for_series_game).
+            # Poisson(mean); mean = 5yr NHL playoff per-game combined goals (historical JSON).
             lt = max(lam_totals[gi], 1e-6)
             sampled = rng.poisson(lt, size=n).astype(np.float64)
             total_goals += np.where(mask, sampled, 0.0)
@@ -502,10 +474,12 @@ class PlayoffSeriesPredictor:
 
         - **Who wins each game**: Bernoulli draws using ``calculate_game_win_prob`` (same calibration +
           playoff DNA as the rest of the stack).
-        - **Goals in each game**: Poisson with mean = playoff-calibrated combined λ (from
-          ``predict_score``, scaled/clipped using ``data/playoff_scoring_calibration.json``).
+        - **Goals in each game**: Poisson with mean from **5-year NHL playoff** per-game combined
+          goals (``data/playoff_series_historical_5yr.json``). Single-game win rates still use
+          ``cup_prior_current.json`` + ``reg_season_playoff_round_models_5yr.json`` (RS-trained on 5 seasons).
 
         Series length and total goals are **Monte Carlo** expectations over those draws.
+        ``historical_*`` fields summarize the same JSON (reference marginals).
         """
         away_series_wins = 0
         total_games_completed = 0
@@ -535,6 +509,9 @@ class PlayoffSeriesPredictor:
                 'projected_mean_games_in_series': 0.0,
                 'projected_rounded_games_in_series': 0,
                 'prob_series_goes_seven': None,
+                'historical_mean_games_per_series_5yr': None,
+                'historical_prob_series_goes_seven_5yr': None,
+                'historical_mean_total_goals_per_series_5yr': None,
                 'projected_total_goals_series': None,
                 'projected_goals_per_game': None,
             }
@@ -565,8 +542,7 @@ class PlayoffSeriesPredictor:
 
                 for venue in remaining_venues:
                     sim_games += 1
-                    lam_sa, lam_sh = self._regulation_lambdas_for_series_game(away, home, venue)
-                    lt = self._poisson_mean_total_goals_for_series_game(lam_sa, lam_sh)
+                    lt = self._historical_poisson_mean_combined_goals()
                     goals_this_series += float(rng_small.poisson(max(lt, 1e-6)))
                     prob = p_away_at_home if venue == 'home' else p_away_at_away
 
@@ -594,6 +570,7 @@ class PlayoffSeriesPredictor:
         )
         mean_games_rounded = round(float(avg_games), 2)
         gpg = (avg_total_goals / avg_games) if avg_games > 1e-9 else 0.0
+        h_mg, h_p7, h_tg = self._historical_series_length_refs()
 
         return {
             'away': away,
@@ -605,6 +582,9 @@ class PlayoffSeriesPredictor:
             'projected_mean_games_in_series': mean_games_rounded,
             'projected_rounded_games_in_series': int(games_int),
             'prob_series_goes_seven': round(prob_seven, 4),
+            'historical_mean_games_per_series_5yr': round(h_mg, 4) if h_mg > 0 else None,
+            'historical_prob_series_goes_seven_5yr': round(h_p7, 6) if h_mg > 0 else None,
+            'historical_mean_total_goals_per_series_5yr': round(h_tg, 4) if h_tg > 0 else None,
             'projected_total_goals_series': round(avg_total_goals, 1),
             'projected_goals_per_game': round(gpg, 2),
             'current_state': f"{away} {away_wins} - {home_wins} {home}",

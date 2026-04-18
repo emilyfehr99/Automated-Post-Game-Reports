@@ -176,8 +176,9 @@ def main() -> None:
             ),
             "games_goals_projection_note": (
                 "Projected series length and goals (avg_remaining_games, projected_total_goals_series, "
-                "projected_goals_per_game) are produced in models/playoff_predictor.simulate_series and "
-                "exported by scripts/simulate_2026_playoffs_master.py — not from this historical table."
+                "projected_goals_per_game) are produced in models/playoff_predictor.simulate_series using "
+                "5-year data/playoff_series_historical_5yr.json for goals and 5yr RS-trained priors for win rates; "
+                "exported by scripts/simulate_2026_playoffs_master.py — not from this correlation table."
             ),
         },
         "all_teams": [_correlation_block(df, t, metrics) for t in TARGETS],

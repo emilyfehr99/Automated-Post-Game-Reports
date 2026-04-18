@@ -1,0 +1,66 @@
+{
+  "source": "scripts/build_playoff_series_historical_5yr.py",
+  "meta": {
+    "seasons_covered": [
+      "20202021",
+      "20212022",
+      "20222023",
+      "20232024",
+      "20242025"
+    ],
+    "nhl_schedule_api": "https://api-web.nhle.com/v1/schedule/{date}",
+    "playoff_windows_utc": [
+      [
+        "2021-05-16",
+        "2021-07-12"
+      ],
+      [
+        "2022-04-18",
+        "2022-06-28"
+      ],
+      [
+        "2023-04-17",
+        "2023-06-28"
+      ],
+      [
+        "2024-04-17",
+        "2024-06-28"
+      ],
+      [
+        "2025-04-18",
+        "2025-06-28"
+      ]
+    ],
+    "note": "Empirical playoff distributions from NHL schedule API. Series keys use seriesStatus top/bottom seeds (seriesUrl flips order between games). Win probabilities in PlayoffSeriesPredictor come from cup_prior_current.json + reg_season_playoff_round_models_5yr.json (5yr RS-trained)."
+  },
+  "per_game_combined_goals": {
+    "n_games": 434,
+    "mean": 6.0092,
+    "std": 2.3051,
+    "p05": 3.0,
+    "p50": 6.0,
+    "p95": 9.35
+  },
+  "series_length_games": {
+    "n_series": 75,
+    "mean": 5.7867,
+    "std": 0.9701,
+    "histogram_p": {
+      "4": 0.12,
+      "5": 0.24,
+      "6": 0.37333333333333335,
+      "7": 0.26666666666666666
+    },
+    "prob_series_goes_seven": 0.266667
+  },
+  "series_total_goals": {
+    "n_series": 75,
+    "mean": 34.7733,
+    "std": 8.5472
+  },
+  "poisson_series_game": {
+    "method": "Series goal draws use Poisson(mu) per regulation game with mu = per_game_combined_goals.mean, clipped to [floor, ceiling] from mean \u00b1 2*std.",
+    "poisson_mean_floor": 1.75,
+    "poisson_mean_ceiling": 8.25
+  }
+}
