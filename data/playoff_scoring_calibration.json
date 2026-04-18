@@ -1,0 +1,38 @@
+{
+  "source": "scripts/build_playoff_scoring_calibration.py",
+  "nhl_schedule_api": "https://api-web.nhle.com/v1/schedule/{date}",
+  "playoff_windows_utc": [
+    [
+      "2022-04-18",
+      "2022-06-28"
+    ],
+    [
+      "2023-04-17",
+      "2023-06-28"
+    ],
+    [
+      "2024-04-17",
+      "2024-06-28"
+    ],
+    [
+      "2025-04-18",
+      "2025-06-28"
+    ]
+  ],
+  "nhl_playoff_combined_goals": {
+    "n_games": 351,
+    "mean": 6.1339,
+    "std": 2.2975,
+    "p05": 3.0,
+    "p50": 6.0,
+    "p95": 10.0
+  },
+  "model_combined_lambda_mean": 6.6165,
+  "model_combined_lambda_n_pairs": 992,
+  "calibration": {
+    "scale_raw_lambda_to_match_nhl_mean": 0.927065,
+    "poisson_mean_floor": 1.75,
+    "poisson_mean_ceiling": 8.25,
+    "method": "lam_eff = clip(raw * (nhl_mean / model_lambda_mean), floor, ceiling); raw = \u03bb_away+\u03bb_home from predict_score"
+  }
+}

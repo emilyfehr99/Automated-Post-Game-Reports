@@ -69,6 +69,7 @@ src/
 !data/cup_prior_current.json
 !data/reg_season_team_features_current.json
 !data/reg_season_playoff_round_models_5yr.json
+!data/playoff_scoring_calibration.json
 !data/playoff_predictions_2026.json
 !data/playoff_series_all.csv
 !data/series_winners_2026.json

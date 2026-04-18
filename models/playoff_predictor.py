@@ -15,19 +15,12 @@ _ROUND_MODEL_TARGET = {
     4: "won_cup",
 }
 
-# Single-game score model allows up to ~4.5 expected goals per team (9.0 combined). Playoff games
-# are lower-event; we calibrate the Poisson mean for *series* goal projections into an NHL
-# playoff band (~5.0–5.6 combined GPG) without changing win probabilities (Bernoulli path).
-_PLAYOFF_SERIES_COMBINED_LAM_MIN = 2.75
-# Upper bound on E[combined goals] for Poisson draws in *series* projections only (playoff pace).
-_PLAYOFF_SERIES_COMBINED_LAM_MAX = 5.5
-
-
 class PlayoffSeriesPredictor:
     """Best-of-7 series simulation based on 'DNA of Playoff Success' Audit weights."""
     
     def __init__(self):
         base_dir = Path(__file__).resolve().parent.parent  # automated-post-game-reports/
+        self._playoff_scoring_calibration = self._load_playoff_scoring_calibration(base_dir)
         self.model = ScorePredictionModel()
         self.metrics_path = base_dir / 'data' / 'team_advanced_metrics.json'
         self.edge_path = base_dir / 'data' / 'team_edge_profiles.json'
@@ -67,6 +60,18 @@ class PlayoffSeriesPredictor:
         }
         self._load_historical_weights()
         self._compute_metric_norms()
+
+    def _load_playoff_scoring_calibration(self, base_dir: Path) -> Dict[str, Any]:
+        """NHL API + model anchor from data/playoff_scoring_calibration.json (see build_playoff_scoring_calibration.py)."""
+        p = base_dir / "data" / "playoff_scoring_calibration.json"
+        if not p.exists():
+            return {}
+        try:
+            with open(p) as f:
+                out = json.load(f)
+            return out if isinstance(out, dict) else {}
+        except Exception:
+            return {}
 
     def _load_historical_weights(self):
         """
@@ -399,16 +404,29 @@ class PlayoffSeriesPredictor:
         # Call lists series_home as away, series_away as home in the arena.
         return float(ps.get("home_expected") or 0.0), float(ps.get("away_expected") or 0.0)
 
-    @staticmethod
-    def _poisson_mean_total_goals_for_series_game(lam_sa: float, lam_sh: float) -> float:
+    def _poisson_mean_total_goals_for_series_game(self, lam_sa: float, lam_sh: float) -> float:
         """
         Poisson mean for **total goals in one regulation game** used only in series MC.
 
-        ``predict_score`` allows up to ~4.5 λ per team (9.0 combined). Real playoff combined
-        GPG is ~5.0–5.5; we clamp the sum so Poisson draws stay in that band.
+        ``predict_score`` can sum to ~9 combined λ; NHL playoff combined goals are lower on average.
+        We scale raw = λ_away+λ_home by (empirical NHL playoff mean) / (mean model combined λ over
+        all matchups), then clip to data-derived floor/ceiling — see data/playoff_scoring_calibration.json.
         """
-        raw = max(float(lam_sa + lam_sh), _PLAYOFF_SERIES_COMBINED_LAM_MIN)
-        return float(min(raw, _PLAYOFF_SERIES_COMBINED_LAM_MAX))
+        raw = float(lam_sa + lam_sh)
+        cal = self._playoff_scoring_calibration.get("calibration") or {}
+        nhl = self._playoff_scoring_calibration.get("nhl_playoff_combined_goals") or {}
+        model_m = self._playoff_scoring_calibration.get("model_combined_lambda_mean")
+        scale = float(cal.get("scale_raw_lambda_to_match_nhl_mean") or 0.0)
+        if scale <= 0:
+            em = nhl.get("mean")
+            if isinstance(em, (int, float)) and isinstance(model_m, (int, float)) and float(model_m) > 1e-9:
+                scale = float(em) / float(model_m)
+        if scale <= 0:
+            scale = 1.0
+        floor_v = float(cal.get("poisson_mean_floor", 1.75))
+        ceiling_v = float(cal.get("poisson_mean_ceiling", 8.25))
+        lam_eff = raw * scale
+        return float(max(floor_v, min(lam_eff, ceiling_v)))
 
     @staticmethod
     def _projected_series_length_games_int(
@@ -483,7 +501,7 @@ class PlayoffSeriesPredictor:
         - **Who wins each game**: Bernoulli draws using ``calculate_game_win_prob`` (same calibration +
           playoff DNA as the rest of the stack).
         - **Goals in each game**: Poisson with mean = playoff-calibrated combined λ (from
-          ``predict_score``, clamped to ~5.5 combined GPG so totals match NHL playoff scoring).
+          ``predict_score``, scaled/clipped using ``data/playoff_scoring_calibration.json``).
 
         Series length and total goals are **Monte Carlo** expectations over those draws.
         """
