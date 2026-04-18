@@ -1,7 +1,7 @@
 {
   "meta": {
-    "generated_at_utc": "2026-04-18T01:08:11.154569+00:00",
-    "export_version": 13,
+    "generated_at_utc": "2026-04-18T01:18:06.076759+00:00",
+    "export_version": 14,
     "iterations": 100000,
     "series_monte_carlo_draws": 400,
     "season": "20252026",
@@ -18,9 +18,9 @@
         "avg_remaining_games": 6.0,
         "projected_avg_games_in_series": 6.0,
         "projected_games_in_series": 6.0,
-        "projected_total_goals_series": 31.3,
-        "projected_goals_in_series": 31.3,
-        "projected_goals_per_game": 5.5
+        "projected_total_goals_series": 43.4,
+        "projected_goals_in_series": 43.4,
+        "projected_goals_per_game": 7.6
       },
       {
         "conference": "East",
@@ -31,9 +31,9 @@
         "avg_remaining_games": 5.0,
         "projected_avg_games_in_series": 5.0,
         "projected_games_in_series": 5.0,
-        "projected_total_goals_series": 28.7,
-        "projected_goals_in_series": 28.7,
-        "projected_goals_per_game": 5.47
+        "projected_total_goals_series": 38.5,
+        "projected_goals_in_series": 38.5,
+        "projected_goals_per_game": 7.11
       },
       {
         "conference": "East",
@@ -44,9 +44,9 @@
         "avg_remaining_games": 5.0,
         "projected_avg_games_in_series": 5.0,
         "projected_games_in_series": 5.0,
-        "projected_total_goals_series": 29.4,
-        "projected_goals_in_series": 29.4,
-        "projected_goals_per_game": 5.49
+        "projected_total_goals_series": 39.1,
+        "projected_goals_in_series": 39.1,
+        "projected_goals_per_game": 7.34
       },
       {
         "conference": "East",
@@ -57,9 +57,9 @@
         "avg_remaining_games": 6.0,
         "projected_avg_games_in_series": 6.0,
         "projected_games_in_series": 6.0,
-        "projected_total_goals_series": 31.4,
-        "projected_goals_in_series": 31.4,
-        "projected_goals_per_game": 5.51
+        "projected_total_goals_series": 39.8,
+        "projected_goals_in_series": 39.8,
+        "projected_goals_per_game": 6.88
       },
       {
         "conference": "West",
@@ -70,9 +70,9 @@
         "avg_remaining_games": 5.0,
         "projected_avg_games_in_series": 5.0,
         "projected_games_in_series": 5.0,
-        "projected_total_goals_series": 29.1,
-        "projected_goals_in_series": 29.1,
-        "projected_goals_per_game": 5.49
+        "projected_total_goals_series": 33.4,
+        "projected_goals_in_series": 33.4,
+        "projected_goals_per_game": 6.16
       },
       {
         "conference": "West",
@@ -83,9 +83,9 @@
         "avg_remaining_games": 6.0,
         "projected_avg_games_in_series": 6.0,
         "projected_games_in_series": 6.0,
-        "projected_total_goals_series": 30.9,
-        "projected_goals_in_series": 30.9,
-        "projected_goals_per_game": 5.46
+        "projected_total_goals_series": 37.8,
+        "projected_goals_in_series": 37.8,
+        "projected_goals_per_game": 6.65
       },
       {
         "conference": "West",
@@ -96,9 +96,9 @@
         "avg_remaining_games": 6.0,
         "projected_avg_games_in_series": 6.0,
         "projected_games_in_series": 6.0,
-        "projected_total_goals_series": 32.3,
-        "projected_goals_in_series": 32.3,
-        "projected_goals_per_game": 5.5
+        "projected_total_goals_series": 35.6,
+        "projected_goals_in_series": 35.6,
+        "projected_goals_per_game": 6.09
       },
       {
         "conference": "West",
@@ -109,23 +109,23 @@
         "avg_remaining_games": 6.0,
         "projected_avg_games_in_series": 6.0,
         "projected_games_in_series": 6.0,
-        "projected_total_goals_series": 32.1,
-        "projected_goals_in_series": 32.1,
-        "projected_goals_per_game": 5.49
+        "projected_total_goals_series": 48.2,
+        "projected_goals_in_series": 48.2,
+        "projected_goals_per_game": 8.24
       }
     ],
     "projected_stanley_cup_champion": "COL",
     "most_likely_stanley_cup_final": {
       "east": "TBL",
       "west": "COL",
-      "probability_this_exact_final_occurs": 0.16179,
+      "probability_this_exact_final_occurs": 0.16092,
       "projected_series_winner": "TBL",
       "avg_remaining_games": 6.0,
       "projected_avg_games_in_series": 6.0,
       "projected_games_in_series": 6.0,
-      "projected_total_goals_series": 32.4,
-      "projected_goals_in_series": 32.4,
-      "projected_goals_per_game": 5.5
+      "projected_total_goals_series": 40.0,
+      "projected_goals_in_series": 40.0,
+      "projected_goals_per_game": 6.81
     },
     "note": "round1.winner: model favorite in each scheduled first-round series; projected_games_in_series / projected_goals_in_series duplicate projected_avg_games_in_series / projected_total_goals_series (simulate_series projections for that matchup). projected_stanley_cup_champion: highest Cup share in the bracket Monte Carlo. most_likely_stanley_cup_final: (East, West) pair that occurred most often before the Final; projected_series_winner and projected_* goals/games apply to that SCF if that pairing row exists. R2\u2013ECF/WCF: every possible pairing on this bracket \u2014 see all_series / playoff_series_all.csv."
   },
@@ -149,12 +149,12 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.365,
-            "home_series_win_prob": 0.635,
+            "away_series_win_prob": 0.3825,
+            "home_series_win_prob": 0.6174999999999999,
             "avg_remaining_games": 6.0,
             "projected_avg_games_in_series": 6.0,
-            "projected_total_goals_series": 31.3,
-            "projected_goals_per_game": 5.5,
+            "projected_total_goals_series": 43.4,
+            "projected_goals_per_game": 7.6,
             "projected_winner": "CAR"
           },
           {
@@ -168,12 +168,12 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.12,
-            "home_series_win_prob": 0.88,
+            "away_series_win_prob": 0.115,
+            "home_series_win_prob": 0.885,
             "avg_remaining_games": 5.0,
             "projected_avg_games_in_series": 5.0,
-            "projected_total_goals_series": 28.7,
-            "projected_goals_per_game": 5.47,
+            "projected_total_goals_series": 38.5,
+            "projected_goals_per_game": 7.11,
             "projected_winner": "PIT"
           },
           {
@@ -187,12 +187,12 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.8875,
-            "home_series_win_prob": 0.11250000000000004,
+            "away_series_win_prob": 0.8525,
+            "home_series_win_prob": 0.14749999999999996,
             "avg_remaining_games": 5.0,
             "projected_avg_games_in_series": 5.0,
-            "projected_total_goals_series": 29.4,
-            "projected_goals_per_game": 5.49,
+            "projected_total_goals_series": 39.1,
+            "projected_goals_per_game": 7.34,
             "projected_winner": "BOS"
           },
           {
@@ -206,12 +206,12 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.2825,
-            "home_series_win_prob": 0.7175,
+            "away_series_win_prob": 0.2775,
+            "home_series_win_prob": 0.7224999999999999,
             "avg_remaining_games": 6.0,
             "projected_avg_games_in_series": 6.0,
-            "projected_total_goals_series": 31.4,
-            "projected_goals_per_game": 5.51,
+            "projected_total_goals_series": 39.8,
+            "projected_goals_per_game": 6.88,
             "projected_winner": "TBL"
           },
           {
@@ -225,12 +225,12 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.1,
-            "home_series_win_prob": 0.9,
+            "away_series_win_prob": 0.135,
+            "home_series_win_prob": 0.865,
             "avg_remaining_games": 5.0,
             "projected_avg_games_in_series": 5.0,
-            "projected_total_goals_series": 29.1,
-            "projected_goals_per_game": 5.49,
+            "projected_total_goals_series": 33.4,
+            "projected_goals_per_game": 6.16,
             "projected_winner": "COL"
           },
           {
@@ -244,12 +244,12 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.2675,
-            "home_series_win_prob": 0.7324999999999999,
+            "away_series_win_prob": 0.2875,
+            "home_series_win_prob": 0.7125,
             "avg_remaining_games": 6.0,
             "projected_avg_games_in_series": 6.0,
-            "projected_total_goals_series": 30.9,
-            "projected_goals_per_game": 5.46,
+            "projected_total_goals_series": 37.8,
+            "projected_goals_per_game": 6.65,
             "projected_winner": "DAL"
           },
           {
@@ -263,12 +263,12 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.59,
-            "home_series_win_prob": 0.41000000000000003,
+            "away_series_win_prob": 0.595,
+            "home_series_win_prob": 0.405,
             "avg_remaining_games": 6.0,
             "projected_avg_games_in_series": 6.0,
-            "projected_total_goals_series": 32.3,
-            "projected_goals_per_game": 5.5,
+            "projected_total_goals_series": 35.6,
+            "projected_goals_per_game": 6.09,
             "projected_winner": "UTA"
           },
           {
@@ -282,12 +282,12 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.6275,
-            "home_series_win_prob": 0.37250000000000005,
+            "away_series_win_prob": 0.615,
+            "home_series_win_prob": 0.385,
             "avg_remaining_games": 6.0,
             "projected_avg_games_in_series": 6.0,
-            "projected_total_goals_series": 32.1,
-            "projected_goals_per_game": 5.49,
+            "projected_total_goals_series": 48.2,
+            "projected_goals_per_game": 8.24,
             "projected_winner": "ANA"
           }
         ]
@@ -307,12 +307,12 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.5575,
-            "home_series_win_prob": 0.4425,
+            "away_series_win_prob": 0.5825,
+            "home_series_win_prob": 0.4175,
             "avg_remaining_games": 6.0,
             "projected_avg_games_in_series": 6.0,
-            "projected_total_goals_series": 32.3,
-            "projected_goals_per_game": 5.46,
+            "projected_total_goals_series": 46.8,
+            "projected_goals_per_game": 8.07,
             "projected_winner": "CAR"
           },
           {
@@ -326,12 +326,12 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.075,
-            "home_series_win_prob": 0.925,
-            "avg_remaining_games": 6.0,
-            "projected_avg_games_in_series": 6.0,
-            "projected_total_goals_series": 31.2,
-            "projected_goals_per_game": 5.56,
+            "away_series_win_prob": 0.05,
+            "home_series_win_prob": 0.95,
+            "avg_remaining_games": 5.0,
+            "projected_avg_games_in_series": 5.0,
+            "projected_total_goals_series": 37.4,
+            "projected_goals_per_game": 6.95,
             "projected_winner": "TBL"
           },
           {
@@ -345,12 +345,12 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.6275,
-            "home_series_win_prob": 0.37250000000000005,
+            "away_series_win_prob": 0.5825,
+            "home_series_win_prob": 0.4175,
             "avg_remaining_games": 6.0,
             "projected_avg_games_in_series": 6.0,
-            "projected_total_goals_series": 31.1,
-            "projected_goals_per_game": 5.47,
+            "projected_total_goals_series": 35.7,
+            "projected_goals_per_game": 6.1,
             "projected_winner": "COL"
           },
           {
@@ -364,12 +364,12 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.205,
-            "home_series_win_prob": 0.795,
+            "away_series_win_prob": 0.22,
+            "home_series_win_prob": 0.78,
             "avg_remaining_games": 6.0,
             "projected_avg_games_in_series": 6.0,
-            "projected_total_goals_series": 31.5,
-            "projected_goals_per_game": 5.61,
+            "projected_total_goals_series": 42.8,
+            "projected_goals_per_game": 7.64,
             "projected_winner": "ANA"
           }
         ]
@@ -389,12 +389,12 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.705,
-            "home_series_win_prob": 0.29500000000000004,
+            "away_series_win_prob": 0.695,
+            "home_series_win_prob": 0.30500000000000005,
             "avg_remaining_games": 6.0,
             "projected_avg_games_in_series": 6.0,
-            "projected_total_goals_series": 31.4,
-            "projected_goals_per_game": 5.48,
+            "projected_total_goals_series": 42.6,
+            "projected_goals_per_game": 7.52,
             "projected_winner": "CAR"
           },
           {
@@ -408,12 +408,12 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.905,
-            "home_series_win_prob": 0.09499999999999997,
+            "away_series_win_prob": 0.9075,
+            "home_series_win_prob": 0.09250000000000003,
             "avg_remaining_games": 5.0,
             "projected_avg_games_in_series": 5.0,
-            "projected_total_goals_series": 28.6,
-            "projected_goals_per_game": 5.46,
+            "projected_total_goals_series": 38.6,
+            "projected_goals_per_game": 7.32,
             "projected_winner": "COL"
           }
         ]
@@ -433,12 +433,12 @@
               "away": 0,
               "home": 0
             },
-            "away_series_win_prob": 0.17,
-            "home_series_win_prob": 0.83,
+            "away_series_win_prob": 0.1325,
+            "home_series_win_prob": 0.8674999999999999,
             "avg_remaining_games": 5.0,
             "projected_avg_games_in_series": 5.0,
-            "projected_total_goals_series": 29.3,
-            "projected_goals_per_game": 5.42,
+            "projected_total_goals_series": 38.5,
+            "projected_goals_per_game": 7.27,
             "projected_winner": "COL"
           }
         ]
