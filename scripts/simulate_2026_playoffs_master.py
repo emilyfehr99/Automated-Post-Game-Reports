@@ -22,7 +22,7 @@ from playoff_predictor import PlayoffSeriesPredictor
 BASE_URL = 'https://api-web.nhle.com/v1'
 
 # Bump when export shape / meta fields change (check meta.export_version in JSON).
-PLAYOFF_EXPORT_VERSION = 11
+PLAYOFF_EXPORT_VERSION = 12
 
 
 def _inner_series_simulations(iterations: int, fast: bool = False) -> int:
@@ -996,6 +996,13 @@ def run_tournament_monte_carlo(
                         "data/team_edge_profiles.json",
                     ],
                 },
+                "series_length_and_goals_model": (
+                    "Each simulated game: winner from Bernoulli(p) with p = calculate_game_win_prob "
+                    "(Poisson/calibrated win model + playoff modifiers). Goals in that game: "
+                    "Poisson(λ_away+λ_home) using predict_score per-team λ for that venue/schedule slot. "
+                    "Series projected games and total goals are Monte Carlo means over those draws "
+                    "(inner draw count = series_monte_carlo_draws)."
+                ),
             },
             "series_winners": series_winners,
             "projected_bracket_path": projected_bracket_path,

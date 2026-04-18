@@ -15,11 +15,6 @@ _ROUND_MODEL_TARGET = {
     4: "won_cup",
 }
 
-# Expected combined (both teams) goals per game — cap for series total / length projections only.
-# Poisson/xG tails can sum to ~7+; real playoff hockey is usually ~5.0–5.5 combined GPG league-wide.
-_PLAYOFF_EXPECTED_TOTAL_GOALS_PER_GAME_CAP = 5.3
-
-
 class PlayoffSeriesPredictor:
     """Best-of-7 series simulation based on 'DNA of Playoff Success' Audit weights."""
     
@@ -379,20 +374,22 @@ class PlayoffSeriesPredictor:
         final_away_prob = np.clip(away_prob + net_shift, 0.01, 0.99)
         return final_away_prob
 
-    def _expected_total_goals_one_game(self, series_away: str, series_home: str, venue: str) -> float:
-        """Expected total goals in one playoff game; venue is 'home' or 'away' for the 2-2-1-1-1 schedule."""
+    def _regulation_lambdas_for_series_game(
+        self, series_away: str, series_home: str, venue: str
+    ) -> tuple[float, float]:
+        """
+        Poisson rates (expected goals) for each team in one regulation game.
+        venue 'home' => series_home has home ice; 'away' => series_away has home ice.
+        Uses the same predict_score() calibration as single-game predictions (clamped 1.5–4.5 per side).
+        """
         ag = self.starters.get(series_away)
         hg = self.starters.get(series_home)
         if venue == "home":
             ps = self.model.predict_score(series_away, series_home, away_goalie=ag, home_goalie=hg)
-        else:
-            ps = self.model.predict_score(
-                series_home, series_away, away_goalie=hg, home_goalie=ag
-            )
-        ae = float(ps.get("away_expected") or 0.0)
-        he = float(ps.get("home_expected") or 0.0)
-        total = ae + he
-        return float(min(total, _PLAYOFF_EXPECTED_TOTAL_GOALS_PER_GAME_CAP))
+            return float(ps.get("away_expected") or 0.0), float(ps.get("home_expected") or 0.0)
+        ps = self.model.predict_score(series_home, series_away, away_goalie=hg, home_goalie=ag)
+        # Call lists series_home as away, series_away as home in the arena.
+        return float(ps.get("home_expected") or 0.0), float(ps.get("away_expected") or 0.0)
 
     @staticmethod
     def _projected_series_length_games_int(
@@ -426,8 +423,11 @@ class PlayoffSeriesPredictor:
         n = int(simulations)
         a_w = np.full(n, away_wins, dtype=np.int32)
         h_w = np.full(n, home_wins, dtype=np.int32)
-        g_per_game = np.array(
-            [self._expected_total_goals_one_game(away, home, v) for v in remaining_venues],
+        lam_totals = np.array(
+            [
+                sum(self._regulation_lambdas_for_series_game(away, home, v))
+                for v in remaining_venues
+            ],
             dtype=np.float64,
         )
         total_games = np.zeros(n, dtype=np.float64)
@@ -445,7 +445,10 @@ class PlayoffSeriesPredictor:
             a_w = a_w + inc_a
             h_w = h_w + inc_h
             total_games += mask.astype(np.float64)
-            total_goals += np.where(mask, g_per_game[gi], 0.0)
+            # Total goals ~ Poisson(λ_away+λ_home); independent of Bernoulli winner (marginal match).
+            lt = max(lam_totals[gi], 1e-6)
+            sampled = rng.poisson(lt, size=n).astype(np.float64)
+            total_goals += np.where(mask, sampled, 0.0)
 
         away_series_wins = int(np.sum(a_w == 4))
         total_games_completed = float(np.sum(total_games))
@@ -454,8 +457,15 @@ class PlayoffSeriesPredictor:
 
     def simulate_series(self, away, home, away_wins=0, home_wins=0, simulations=10000, playoff_round: Optional[int] = None):
         """
-        Simulate a Best-of-7 Series (2-2-1-1-1 Home-Ice Format).
-        Supports mid-series simulations if away_wins/home_wins are provided.
+        Best-of-7 on the 2-2-1-1-1 schedule.
+
+        - **Who wins each game**: Bernoulli draws using ``calculate_game_win_prob`` (same calibration +
+          playoff DNA as the rest of the stack).
+        - **Goals in each game**: independent Poisson samples with mean ``λ_away + λ_home`` from
+          ``predict_score`` for that matchup/venue (same λ's as the score model; sum is Poisson).
+
+        Series length and total goals are **Monte Carlo** expectations over those draws; projected
+        games/goals are **not** deterministic sums of point estimates.
         """
         away_series_wins = 0
         total_games_completed = 0
@@ -501,6 +511,7 @@ class PlayoffSeriesPredictor:
                 )
             )
         else:
+            rng_small = np.random.default_rng()
             for _ in range(simulations):
                 a_w = away_wins
                 h_w = home_wins
@@ -509,7 +520,8 @@ class PlayoffSeriesPredictor:
 
                 for venue in remaining_venues:
                     sim_games += 1
-                    goals_this_series += self._expected_total_goals_one_game(away, home, venue)
+                    lam_sa, lam_sh = self._regulation_lambdas_for_series_game(away, home, venue)
+                    goals_this_series += float(rng_small.poisson(max(lam_sa + lam_sh, 1e-6)))
                     prob = p_away_at_home if venue == 'home' else p_away_at_away
 
                     if random.random() < prob:
@@ -532,7 +544,6 @@ class PlayoffSeriesPredictor:
             avg_games, away_wins, home_wins, len(remaining_venues)
         )
         gpg = (avg_total_goals / avg_games) if avg_games > 1e-9 else 0.0
-        gpg = min(gpg, _PLAYOFF_EXPECTED_TOTAL_GOALS_PER_GAME_CAP + 1e-9)
 
         return {
             'away': away,
@@ -542,7 +553,7 @@ class PlayoffSeriesPredictor:
             'avg_remaining_games': float(games_int),
             'projected_avg_games_in_series': float(games_int),
             'projected_total_goals_series': round(avg_total_goals, 1),
-            'projected_goals_per_game': round(min(gpg, _PLAYOFF_EXPECTED_TOTAL_GOALS_PER_GAME_CAP), 2),
+            'projected_goals_per_game': round(gpg, 2),
             'current_state': f"{away} {away_wins} - {home_wins} {home}",
             'winner_projection': away if away_series_prob > 0.5 else home
         }
