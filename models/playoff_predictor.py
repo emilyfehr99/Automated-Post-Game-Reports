@@ -15,6 +15,14 @@ _ROUND_MODEL_TARGET = {
     4: "won_cup",
 }
 
+# Single-game score model allows up to ~4.5 expected goals per team (9.0 combined). Playoff games
+# are lower-event; we calibrate the Poisson mean for *series* goal projections into an NHL
+# playoff band (~5.0–5.6 combined GPG) without changing win probabilities (Bernoulli path).
+_PLAYOFF_SERIES_COMBINED_LAM_MIN = 2.75
+# Upper bound on E[combined goals] for Poisson draws in *series* projections only (playoff pace).
+_PLAYOFF_SERIES_COMBINED_LAM_MAX = 5.5
+
+
 class PlayoffSeriesPredictor:
     """Best-of-7 series simulation based on 'DNA of Playoff Success' Audit weights."""
     
@@ -392,6 +400,17 @@ class PlayoffSeriesPredictor:
         return float(ps.get("home_expected") or 0.0), float(ps.get("away_expected") or 0.0)
 
     @staticmethod
+    def _poisson_mean_total_goals_for_series_game(lam_sa: float, lam_sh: float) -> float:
+        """
+        Poisson mean for **total goals in one regulation game** used only in series MC.
+
+        ``predict_score`` allows up to ~4.5 λ per team (9.0 combined). Real playoff combined
+        GPG is ~5.0–5.5; we clamp the sum so Poisson draws stay in that band.
+        """
+        raw = max(float(lam_sa + lam_sh), _PLAYOFF_SERIES_COMBINED_LAM_MIN)
+        return float(min(raw, _PLAYOFF_SERIES_COMBINED_LAM_MAX))
+
+    @staticmethod
     def _projected_series_length_games_int(
         avg_games: float,
         away_wins: int,
@@ -425,7 +444,9 @@ class PlayoffSeriesPredictor:
         h_w = np.full(n, home_wins, dtype=np.int32)
         lam_totals = np.array(
             [
-                sum(self._regulation_lambdas_for_series_game(away, home, v))
+                self._poisson_mean_total_goals_for_series_game(
+                    *self._regulation_lambdas_for_series_game(away, home, v)
+                )
                 for v in remaining_venues
             ],
             dtype=np.float64,
@@ -445,7 +466,7 @@ class PlayoffSeriesPredictor:
             a_w = a_w + inc_a
             h_w = h_w + inc_h
             total_games += mask.astype(np.float64)
-            # Total goals ~ Poisson(λ_away+λ_home); independent of Bernoulli winner (marginal match).
+            # Poisson(mean); mean is playoff-calibrated sum of model λ's (see _poisson_mean_total_goals_for_series_game).
             lt = max(lam_totals[gi], 1e-6)
             sampled = rng.poisson(lt, size=n).astype(np.float64)
             total_goals += np.where(mask, sampled, 0.0)
@@ -461,11 +482,10 @@ class PlayoffSeriesPredictor:
 
         - **Who wins each game**: Bernoulli draws using ``calculate_game_win_prob`` (same calibration +
           playoff DNA as the rest of the stack).
-        - **Goals in each game**: independent Poisson samples with mean ``λ_away + λ_home`` from
-          ``predict_score`` for that matchup/venue (same λ's as the score model; sum is Poisson).
+        - **Goals in each game**: Poisson with mean = playoff-calibrated combined λ (from
+          ``predict_score``, clamped to ~5.5 combined GPG so totals match NHL playoff scoring).
 
-        Series length and total goals are **Monte Carlo** expectations over those draws; projected
-        games/goals are **not** deterministic sums of point estimates.
+        Series length and total goals are **Monte Carlo** expectations over those draws.
         """
         away_series_wins = 0
         total_games_completed = 0
@@ -521,7 +541,8 @@ class PlayoffSeriesPredictor:
                 for venue in remaining_venues:
                     sim_games += 1
                     lam_sa, lam_sh = self._regulation_lambdas_for_series_game(away, home, venue)
-                    goals_this_series += float(rng_small.poisson(max(lam_sa + lam_sh, 1e-6)))
+                    lt = self._poisson_mean_total_goals_for_series_game(lam_sa, lam_sh)
+                    goals_this_series += float(rng_small.poisson(max(lt, 1e-6)))
                     prob = p_away_at_home if venue == 'home' else p_away_at_away
 
                     if random.random() < prob:

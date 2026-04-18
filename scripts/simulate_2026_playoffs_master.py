@@ -22,7 +22,7 @@ from playoff_predictor import PlayoffSeriesPredictor
 BASE_URL = 'https://api-web.nhle.com/v1'
 
 # Bump when export shape / meta fields change (check meta.export_version in JSON).
-PLAYOFF_EXPORT_VERSION = 12
+PLAYOFF_EXPORT_VERSION = 13
 
 
 def _inner_series_simulations(iterations: int, fast: bool = False) -> int:
@@ -998,10 +998,10 @@ def run_tournament_monte_carlo(
                 },
                 "series_length_and_goals_model": (
                     "Each simulated game: winner from Bernoulli(p) with p = calculate_game_win_prob "
-                    "(Poisson/calibrated win model + playoff modifiers). Goals in that game: "
-                    "Poisson(λ_away+λ_home) using predict_score per-team λ for that venue/schedule slot. "
-                    "Series projected games and total goals are Monte Carlo means over those draws "
-                    "(inner draw count = series_monte_carlo_draws)."
+                    "(calibrated win model + playoff modifiers). Goals in that game: Poisson(μ) where μ is "
+                    "the sum of predict_score per-team λ for that venue, clamped to a playoff combined-GPG "
+                    "ceiling (~5.5) so series goal totals stay in an NHL playoff band (raw model sums can reach ~9)."
+                    " Projected games and total goals are Monte Carlo means (inner draw count = series_monte_carlo_draws)."
                 ),
             },
             "series_winners": series_winners,
