@@ -128,9 +128,16 @@ class GoalieStatsBuilder:
             self.processed_games = set(data.get('processed_games', []))
             
             # Restore goalie stats
+            # IMPORTANT: merge into the default schema so newly-added keys
+            # (e.g. 'xg_against', 'ev_shots') always exist. Older cached
+            # files may not include all fields, which would otherwise cause
+            # KeyErrors during refresh/save.
             for gid, stats in data.get('goalies', {}).items():
-                self.goalie_stats[gid] = stats
-                self.goalie_names[gid] = stats.get('name', '')
+                base = self.goalie_stats[str(gid)]  # initializes default keys
+                if isinstance(stats, dict):
+                    base.update(stats)
+                self.goalie_stats[str(gid)] = base
+                self.goalie_names[str(gid)] = base.get('name', '')
             
             print(f"📂 Loaded existing stats: {len(self.goalie_stats)} goalies, "
                   f"{len(self.processed_games)} games processed")

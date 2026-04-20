@@ -109,9 +109,12 @@ class TeamAdvancedMetricsBuilder:
                     base.update(stats)
                     self.team_stats[abbrev] = base
                 
-                # Load goalie stats if they exist
+                # Load goalie stats if they exist (schema-merge for backward compatibility)
                 for gid, stats in data.get('goalies', {}).items():
-                    self.goalie_stats[int(gid)].update(stats)
+                    base = self.goalie_stats[int(gid)]  # initializes defaults
+                    if isinstance(stats, dict):
+                        base.update(stats)
+                    self.goalie_stats[int(gid)] = base
                 
                 print(f"📂 Loaded existing advanced stats: {len(self.team_stats)} teams, "
                       f"{len(self.goalie_stats)} goalies, {len(self.processed_games)} games processed")

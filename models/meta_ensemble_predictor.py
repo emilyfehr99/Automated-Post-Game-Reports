@@ -782,6 +782,21 @@ class MetaEnsemblePredictor:
             weights.append(0.50)
             xgb_margin = xgb_pred.get('predicted_margin', 0.0)
             xgb_p1_prob = xgb_pred.get('p1_home_prob', 50.0)
+
+        # 1b. Elo baseline (stacking-safe, stable)
+        # Adds a strong, low-variance prior that helps when feature quality is degraded
+        # (e.g. missing goalie confirmations, partial advanced-metrics refresh).
+        try:
+            elo_home = float(self.history_tracker.elo.get_win_prob(home_team, away_team))  # P(home)
+            elo_home = max(0.01, min(0.99, elo_home))
+            predictions.append({
+                'away_prob': (1.0 - elo_home) * 100.0,
+                'home_prob': elo_home * 100.0,
+                'prediction_type': 'elo_baseline'
+            })
+            weights.append(0.10)
+        except Exception as e:
+            print(f"Elo baseline failed: {e}")
         
         # 2. Specialized ensemble (25% weight)
         try:

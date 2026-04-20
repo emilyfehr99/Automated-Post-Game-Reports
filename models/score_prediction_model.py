@@ -1668,20 +1668,17 @@ class ScorePredictionModel:
             home_win_prob_final = float(max(0.0, min(1.0, home_win_total)))
 
 
-        # ─── Score sampling via Poisson ───
-        # Use Poisson sampling instead of deterministic rounding to produce
-        # natural score variance. This allows 2-1 grinders, 5-2 blowouts,
-        # and 4-3 nail-biters instead of everything clustering at the same
-        # 1-goal differential. The draw is seeded by date+lambdas so
-        # predictions stay stable throughout the day.
-        away_score, home_score = self._poisson_score(float(away_expected), float(home_expected))
-        
-        # Ensure the winner agrees with the probability-based winner side
-        if winner_side == 'away' and away_score <= home_score:
-            # Swap: give away the higher score
-            away_score, home_score = max(away_score, home_score) + 1, min(away_score, home_score)
-        elif winner_side == 'home' and home_score <= away_score:
-            away_score, home_score = min(away_score, home_score), max(away_score, home_score) + 1
+        # ─── Deterministic scoreline (MAP under NB) ───
+        # Winner accuracy should be driven by `away_win_prob` / `winner_side`,
+        # not by a random score draw. We therefore emit a *deterministic* most-
+        # likely scoreline under an overdispersed (Negative Binomial) goal model.
+        away_score, home_score = self._map_scoreline_nb(
+            away=away,
+            home=home,
+            away_mu=float(away_expected),
+            home_mu=float(home_expected),
+            winner_side=str(winner_side) if winner_side else None,
+        )
         
         # ─── Generate analysis factors ───
         factors = self._generate_factors(
@@ -1927,36 +1924,74 @@ class ScorePredictionModel:
         
         return factors
     
-    def _poisson_score(self, away_lambda: float, home_lambda: float) -> Tuple[int, int]:
-        """Poisson-sampled scores for realistic variance."""
-        date_str = time.strftime('%Y-%m-%d')
-        seed_str = f"{date_str}_{away_lambda:.4f}_{home_lambda:.4f}"
-        seed = int(hashlib.md5(seed_str.encode()).hexdigest()[:8], 16)
-        rng = np.random.RandomState(seed)
+    def _map_scoreline_nb(
+        self,
+        away: str,
+        home: str,
+        away_mu: float,
+        home_mu: float,
+        winner_side: Optional[str],
+        max_goals: int = 11,
+    ) -> Tuple[int, int]:
+        """Return the most-likely (MAP) scoreline under independent NB goals.
 
-        # Hard-clamping Poisson draws to a small max goal value artificially inflates
-        # the top score (e.g. lots of "7" predictions). Use a moderate cap that still
-        # allows blowouts but keeps scores within realistic NHL bounds.
-        max_goals = 7
+        This is deterministic and avoids injecting random noise into the product.
+        If the MAP outcome is tied, we convert it to an OT/SO final by awarding
+        +1 goal to `winner_side` (or the higher-mean side if not provided).
+        """
+        away_u = str(away).upper()
+        home_u = str(home).upper()
+        away_mu = float(max(0.01, away_mu))
+        home_mu = float(max(0.01, home_mu))
 
-        away_score = max(1, min(max_goals, int(rng.poisson(away_lambda))))
-        home_score = max(1, min(max_goals, int(rng.poisson(home_lambda))))
+        desired = (winner_side or "").lower()
+        if desired not in {"away", "home", ""}:
+            desired = ""
 
-        # Ensure definitive winner (no ties). If we're already at max_goals for both
-        # sides, nudge the lower-probability side down to break the tie.
-        if away_score == home_score:
-            if away_lambda >= home_lambda:
-                if away_score < max_goals:
-                    away_score += 1
-                elif home_score > 1:
-                    home_score -= 1
+        k = float(self._get_dispersion_k(away_u, home_u, away_mu, home_mu))
+        k = float(max(0.25, k))
+
+        # Compute NB pmfs for 0..max_goals and pick joint argmax.
+        pmf_a = [self._neg_bin_pmf(g, away_mu, k) for g in range(int(max_goals) + 1)]
+        pmf_h = [self._neg_bin_pmf(g, home_mu, k) for g in range(int(max_goals) + 1)]
+
+        best_a = 0
+        best_h = 0
+        best_p = -1.0
+        for a in range(int(max_goals) + 1):
+            pa = pmf_a[a]
+            if pa <= 0.0:
+                continue
+            for h in range(int(max_goals) + 1):
+                ph = pmf_h[h]
+                p = pa * ph
+                if p > best_p:
+                    best_p = p
+                    best_a = a
+                    best_h = h
+
+        a = int(best_a)
+        h = int(best_h)
+
+        # Convert regulation tie to OT/SO result (winner gets +1).
+        if a == h:
+            if desired == "away":
+                a = min(int(max_goals), a + 1)
+            elif desired == "home":
+                h = min(int(max_goals), h + 1)
             else:
-                if home_score < max_goals:
-                    home_score += 1
-                elif away_score > 1:
-                    away_score -= 1
+                if away_mu >= home_mu:
+                    a = min(int(max_goals), a + 1)
+                else:
+                    h = min(int(max_goals), h + 1)
 
-        return away_score, home_score
+        # If a specific winner is requested but MAP disagrees, nudge minimally.
+        if desired == "away" and a < h:
+            a = min(int(max_goals), h + 1)
+        elif desired == "home" and h < a:
+            h = min(int(max_goals), a + 1)
+
+        return int(a), int(h)
     
     def _calculate_confidence(self, away: str, home: str,
                               away_exp: float, home_exp: float) -> float:

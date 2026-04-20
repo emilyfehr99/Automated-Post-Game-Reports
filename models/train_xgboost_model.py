@@ -14,6 +14,7 @@ import pickle
 import math
 from datetime import datetime, timedelta
 from standings_tracker import StandingsTracker
+from typing import Dict
 
 TEAM_COORDINATES = {
     'ANA': (33.80, -117.88), 'BOS': (42.36, -71.06), 'BUF': (42.89, -78.88),
@@ -303,10 +304,11 @@ def extract_features_chronologically(predictions):
     played_games = [p for p in sorted_preds if p.get('actual_winner')]
     print(f"📊 Total played games in history: {len(played_games)}")
     
-    # Use only the last 150 games for training to ensure we have high-signal features
-    # and consistent data quality from recent backfills.
-    train_subset = played_games[-150:]
-    print(f"🎯 Training on last {len(train_subset)} games for maximum signal...")
+    # Train on all completed games for maximum stability.
+    # (We rely on time-split evaluation + recency weighting to keep the model
+    # responsive to recent form without overfitting small windows.)
+    train_subset = played_games
+    print(f"🎯 Training on all completed games: {len(train_subset)} samples")
     
     tracker = TeamHistory()
     standings = StandingsTracker()
@@ -575,7 +577,7 @@ def train_optimized_model():
     print(f"✅ Extracted {len(df)} training samples")
     df = df.sort_values('date')
     
-    # Use 90/10 split for small dataset
+    # Time-based holdout (last 10%) to simulate real forecasting.
     split_idx = int(len(df) * 0.90)
     train_df = df.iloc[:split_idx]
     test_df = df.iloc[split_idx:]
@@ -643,11 +645,18 @@ def train_optimized_model():
 
     features = [f for f in X_train.columns]
     
-    # Phase 14: Adaptive Sample Weighting
-    # Recent games AND Late-season games (March/April) get more weight
-    sample_weights = np.ones(len(y_train))
-    recent_split = int(len(y_train) * 0.8)
-    sample_weights[recent_split:] *= 1.5 # 50% more weight to recent form
+    # Phase 14: Adaptive Sample Weighting (Recency, time-aware)
+    # Exponential recency weights: newest game weight=1.0, half-life ~60 games.
+    # This keeps the model current while still learning from the full season.
+    n_train = len(train_df)
+    if n_train > 1:
+        half_life_games = 60.0
+        ages = np.arange(n_train - 1, -1, -1, dtype=float)  # 0=oldest? we want newest=0
+        # Make newest index have age=0
+        ages = (n_train - 1) - np.arange(n_train, dtype=float)
+        sample_weights = 0.5 ** (ages / half_life_games)
+    else:
+        sample_weights = np.ones(len(y_train))
     
     # Extra emphasis on March/April games for "Playoff Push" intensity
     # (Checking season_month in the corresponding indices of y_train)
@@ -732,6 +741,31 @@ def train_optimized_model():
     imp = pd.Series(best_model.feature_importances_, index=features).sort_values(ascending=False)
     print("\nTop Phase 9 Predictors:")
     print(imp.head(12))
+
+    # --- Correct evaluation: rolling forward splits ---
+    # Report how the calibrated model performs when repeatedly training on the past
+    # and predicting the future (matches production usage).
+    try:
+        print("\n📈 Rolling forward evaluation (time-split)")
+        print("-" * 60)
+        roll = rolling_time_split_eval(
+            df=df,
+            base_model=best_model,
+            calibrated=True,
+            n_splits=6,
+        )
+        print(
+            f"XGB(cal) mean acc={roll['mean_acc']:.3f}  "
+            f"mean logloss={roll['mean_logloss']:.4f}  "
+            f"mean brier={roll['mean_brier']:.4f}  "
+            f"splits={roll['n_splits_used']}"
+        )
+        print(
+            f"Elo baseline mean acc={roll['elo_mean_acc']:.3f}  "
+            f"mean logloss={roll['elo_mean_logloss']:.4f}"
+        )
+    except Exception as e:
+        print(f"⚠️ Rolling evaluation failed: {e}")
     
     # 3c. Meta-Labeling (Phase 10: Model for the Model)
     print("\n🏗️ Training Phase 10 Meta-Confidence Model...")
@@ -813,6 +847,139 @@ def train_optimized_model():
             pickle.dump(features, f)
     else:
          print("\n⚠️ Holdout accuracy too low, did not save model.")
+
+def rolling_time_split_eval(
+    df: pd.DataFrame,
+    base_model,
+    calibrated: bool = True,
+    n_splits: int = 6,
+) -> Dict[str, float]:
+    """Forward-chaining evaluation on the full season dataset.
+
+    Trains on earlier games and evaluates on later games for each split.
+    Also reports an Elo-only baseline built from results up to that point.
+    """
+    from sklearn.metrics import brier_score_loss
+
+    df = df.sort_values("date").reset_index(drop=True)
+    features_all = [c for c in df.columns if c not in ["game_id", "date", "target", "margin", "p1_target"]]
+
+    # Build encodings using only training folds inside each split to avoid leakage.
+    tscv = TimeSeriesSplit(n_splits=max(2, int(n_splits)))
+
+    accs = []
+    lls = []
+    briers = []
+    elo_accs = []
+    elo_lls = []
+
+    # Elo tracker for baseline (updated only with training fold results)
+    elo = EloTracker()
+
+    splits_used = 0
+    for train_idx, test_idx in tscv.split(df):
+        train_df = df.iloc[train_idx].copy()
+        test_df = df.iloc[test_idx].copy()
+        if len(test_df) < 30 or len(train_df) < 200:
+            continue
+
+        # Target encodings learned on train only
+        home_map, home_prior = calculate_target_encoding(train_df, "home_team")
+        away_map, away_prior = calculate_target_encoding(train_df, "away_team", target="target")
+
+        def build_X(dframe: pd.DataFrame) -> pd.DataFrame:
+            X = dframe[features_all].copy()
+            X["home_win_rate"] = dframe["home_team"].map(home_map).fillna(home_prior)
+            X["away_win_rate"] = dframe["away_team"].map(away_map).fillna(away_prior)
+            X = X.drop(columns=["home_team", "away_team"])
+            # Minimal interactions used in training
+            if "away_sos" in dframe.columns:
+                X["home_win_rate_away_sos"] = X["home_win_rate"] * dframe["away_sos"]
+            if "away_b2b" in dframe.columns and "finish_diff" in dframe.columns:
+                X["away_b2b_home_strength"] = dframe["away_b2b"] * dframe["finish_diff"]
+            # Symbolic features if available
+            if all(k in dframe.columns for k in ["home_xg", "away_xg", "home_elo", "away_elo", "home_sos", "away_sos", "elo_diff", "l10_xg_diff"]):
+                X["pressure_index"] = (dframe["home_xg"] / (dframe["away_xg"] + 0.1)) * (dframe["home_elo"] / (dframe["away_elo"] + 0.1))
+                X["xg_efficiency"] = (dframe["home_xg"] * (dframe["home_sos"] / 1500.0)) - (dframe["away_xg"] * (dframe["away_sos"] / 1500.0))
+                X["power_momentum"] = dframe["elo_diff"] * dframe["l10_xg_diff"]
+            # Keep prune list consistent
+            prune = [
+                "home_venue_goal_diff", "away_venue_goal_diff", "l5_pizza_diff",
+                "l5_nzt_diff", "l5_rush_diff", "l5_pk_diff", "l5_pp_diff",
+                "l5_ozs_diff", "l5_hdc_diff",
+            ]
+            for col in prune:
+                if col in X.columns:
+                    X.drop(columns=[col], inplace=True)
+            return X
+
+        X_train = build_X(train_df)
+        y_train = train_df["target"].astype(int).values
+        X_test = build_X(test_df)
+        y_test = test_df["target"].astype(int).values
+
+        # Recency weights inside train fold
+        n_train = len(train_df)
+        ages = (n_train - 1) - np.arange(n_train, dtype=float)
+        w = 0.5 ** (ages / 60.0)
+        late_mask = train_df["season_month"].isin([3, 4]).values if "season_month" in train_df.columns else np.zeros(n_train, dtype=bool)
+        w[late_mask] *= 1.25
+
+        # Fit model (clone-ish by re-instantiating when possible)
+        model = xgb.XGBClassifier(
+            objective="binary:logistic",
+            eval_metric="logloss",
+            random_state=42,
+            **{k: getattr(base_model, k) for k in ["max_depth", "learning_rate", "n_estimators", "subsample", "colsample_bytree", "gamma"] if hasattr(base_model, k)},
+        )
+        model.fit(X_train, y_train, sample_weight=w)
+
+        if calibrated:
+            cal = CalibratedClassifierCV(estimator=model, method="isotonic", cv=3)
+            cal.fit(X_train, y_train, sample_weight=w)
+            p = cal.predict_proba(X_test)[:, 1]
+        else:
+            p = model.predict_proba(X_test)[:, 1]
+
+        preds = (p >= 0.5).astype(int)
+        accs.append(float(accuracy_score(y_test, preds)))
+        lls.append(float(log_loss(y_test, np.clip(p, 1e-6, 1 - 1e-6))))
+        briers.append(float(brier_score_loss(y_test, p)))
+
+        # Elo baseline: update Elo with training fold results, then predict test fold.
+        elo = EloTracker()
+        for _, row in train_df.iterrows():
+            # target==1 => home win
+            home = row["home_team"]
+            away = row["away_team"]
+            # Update with a synthetic 1-goal margin just to record outcome
+            if int(row["target"]) == 1:
+                elo.update(home, away, 2, 1)
+            else:
+                elo.update(home, away, 1, 2)
+
+        elo_p = []
+        for _, row in test_df.iterrows():
+            home = row["home_team"]
+            away = row["away_team"]
+            elo_home = float(elo.get_win_prob(home, away))
+            elo_p.append(elo_home)
+        elo_p = np.array(elo_p, dtype=float)
+        elo_preds = (elo_p >= 0.5).astype(int)
+        elo_accs.append(float(np.mean(elo_preds == y_test)))
+        elo_lls.append(float(log_loss(y_test, np.clip(elo_p, 1e-6, 1 - 1e-6))))
+
+        splits_used += 1
+
+    return {
+        "mean_acc": float(np.mean(accs)) if accs else float("nan"),
+        "mean_logloss": float(np.mean(lls)) if lls else float("nan"),
+        "mean_brier": float(np.mean(briers)) if briers else float("nan"),
+        "n_splits_used": int(splits_used),
+        "elo_mean_acc": float(np.mean(elo_accs)) if elo_accs else float("nan"),
+        "elo_mean_logloss": float(np.mean(elo_lls)) if elo_lls else float("nan"),
+    }
+
 
 if __name__ == "__main__":
     train_optimized_model()
