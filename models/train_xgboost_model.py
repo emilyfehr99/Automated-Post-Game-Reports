@@ -577,15 +577,21 @@ def train_optimized_model():
     print(f"✅ Extracted {len(df)} training samples")
     df = df.sort_values('date')
     
-    # Time-based holdout (last 10%) to simulate real forecasting.
-    split_idx = int(len(df) * 0.90)
-    train_df = df.iloc[:split_idx]
-    test_df = df.iloc[split_idx:]
+    # Time-based split with a dedicated calibration fold:
+    # train -> calibrate (future) -> final test (further future)
+    n = len(df)
+    train_end = int(n * 0.80)
+    cal_end = int(n * 0.90)
+    train_df = df.iloc[:train_end]
+    cal_df = df.iloc[train_end:cal_end]
+    test_df = df.iloc[cal_end:]
     
     features = [c for c in df.columns if c not in ['game_id', 'date', 'target', 'margin', 'p1_target']]
     X_train = train_df[features].copy()
     y_train = train_df['target']
     y_margin_train = train_df['margin']
+    X_cal = cal_df[features].copy()
+    y_cal = cal_df['target']
     X_test = test_df[features].copy()
     y_test = test_df['target']
     y_margin_test = test_df['margin']
@@ -598,6 +604,8 @@ def train_optimized_model():
     
     X_train['home_win_rate'] = train_df['home_team'].map(home_map).fillna(home_prior)
     X_train['away_win_rate'] = train_df['away_team'].map(away_map).fillna(away_prior)
+    X_cal['home_win_rate'] = cal_df['home_team'].map(home_map).fillna(home_prior)
+    X_cal['away_win_rate'] = cal_df['away_team'].map(away_map).fillna(away_prior)
     X_test['home_win_rate'] = test_df['home_team'].map(home_map).fillna(home_prior)
     X_test['away_win_rate'] = test_df['away_team'].map(away_map).fillna(away_prior)
     
@@ -611,25 +619,31 @@ def train_optimized_model():
         
     # Drop team names from feature sets
     X_train = X_train.drop(columns=['home_team', 'away_team'])
+    X_cal = X_cal.drop(columns=['home_team', 'away_team'])
     X_test = X_test.drop(columns=['home_team', 'away_team'])
     
     # NEW: Final feature sync for interaction terms
     X_train['home_win_rate_away_sos'] = X_train['home_win_rate'] * train_df['away_sos']
+    X_cal['home_win_rate_away_sos'] = X_cal['home_win_rate'] * cal_df['away_sos']
     X_test['home_win_rate_away_sos'] = X_test['home_win_rate'] * test_df['away_sos']
     X_train['away_b2b_home_strength'] = train_df['away_b2b'] * train_df['finish_diff']
+    X_cal['away_b2b_home_strength'] = cal_df['away_b2b'] * cal_df['finish_diff']
     X_test['away_b2b_home_strength'] = test_df['away_b2b'] * test_df['finish_diff']
     
     # Phase 11: Symbolic Feature Discovery
     # 1. Pressure Index: Compounding offensive threat with team quality
     X_train['pressure_index'] = (train_df['home_xg'] / (train_df['away_xg'] + 0.1)) * (train_df['home_elo'] / (train_df['away_elo'] + 0.1))
+    X_cal['pressure_index'] = (cal_df['home_xg'] / (cal_df['away_xg'] + 0.1)) * (cal_df['home_elo'] / (cal_df['away_elo'] + 0.1))
     X_test['pressure_index'] = (test_df['home_xg'] / (test_df['away_xg'] + 0.1)) * (test_df['home_elo'] / (test_df['away_elo'] + 0.1))
     
     # 2. xG Efficiency: xG relative to opponent strength
     X_train['xg_efficiency'] = (train_df['home_xg'] * (train_df['home_sos'] / 1500)) - (train_df['away_xg'] * (train_df['away_sos'] / 1500))
+    X_cal['xg_efficiency'] = (cal_df['home_xg'] * (cal_df['home_sos'] / 1500)) - (cal_df['away_xg'] * (cal_df['away_sos'] / 1500))
     X_test['xg_efficiency'] = (test_df['home_xg'] * (test_df['home_sos'] / 1500)) - (test_df['away_xg'] * (test_df['away_sos'] / 1500))
     
     # 3. Power Momentum: Synergy of talent and recent offensive form
     X_train['power_momentum'] = train_df['elo_diff'] * train_df['l10_xg_diff']
+    X_cal['power_momentum'] = cal_df['elo_diff'] * cal_df['l10_xg_diff']
     X_test['power_momentum'] = test_df['elo_diff'] * test_df['l10_xg_diff']
     
     # Final drop of low-impact or redundant columns (Phase 9 Elite Pruning)
@@ -641,6 +655,7 @@ def train_optimized_model():
     ]
     for p in final_prune:
         if p in X_train.columns: X_train.drop(columns=[p], inplace=True)
+        if p in X_cal.columns: X_cal.drop(columns=[p], inplace=True)
         if p in X_test.columns: X_test.drop(columns=[p], inplace=True)
 
     features = [f for f in X_train.columns]
@@ -663,7 +678,7 @@ def train_optimized_model():
     late_season_mask = (train_df['season_month'].isin([3, 4])).values
     sample_weights[late_season_mask] *= 1.25 # 25% extra weight for playoff push context
     
-    print(f"Training on {len(X_train)} games, Testing on {len(X_test)} games")
+    print(f"Training on {len(X_train)} games, Calibrating on {len(X_cal)} games, Testing on {len(X_test)} games")
     
     # 2. Hyperparameter Tuning using TimeSeriesSplit
     tscv = TimeSeriesSplit(n_splits=5)
@@ -681,12 +696,12 @@ def train_optimized_model():
         random_state=42
     )
     
-    print("\n🔍 Tuning XGBoost components for ensemble...")
+    print("\n🔍 Tuning XGBoost components for ensemble (optimize log loss)...")
     grid_search = GridSearchCV(
         estimator=base_xgb,
         param_grid=param_grid,
         cv=tscv,
-        scoring='accuracy',
+        scoring='neg_log_loss',
         n_jobs=-1
     )
     grid_search.fit(X_train, y_train, sample_weight=sample_weights)
@@ -708,21 +723,23 @@ def train_optimized_model():
         estimator=xgb.XGBClassifier(objective='binary:logistic', eval_metric='logloss', random_state=42),
         param_grid=param_grid,
         cv=tscv,
-        scoring='accuracy',
+        scoring='neg_log_loss',
         n_jobs=-1
     )
     grid_search.fit(X_train, y_train, sample_weight=sample_weights)
     best_model = grid_search.best_estimator_
     print(f"✅ Best Params: {grid_search.best_params_}")
     
-    # 3b. Probability Calibration
-    print("\n⚖️ Calibrating probabilities (Isotonic Phase 9 Refined)...")
+    # 3b. Probability Calibration (true future holdout)
+    # Fit base model on train, then calibrate on the *next* (future) fold only.
+    print("\n⚖️ Calibrating probabilities (Isotonic, future holdout)...")
+    best_model.fit(X_train, y_train, sample_weight=sample_weights)
     calibrated_model = CalibratedClassifierCV(
         estimator=best_model,
         method='isotonic',
-        cv=tscv
+        cv='prefit'
     )
-    calibrated_model.fit(X_train, y_train, sample_weight=sample_weights)
+    calibrated_model.fit(X_cal, y_cal)
     
     # Evaluate on Holdout
     y_pred = calibrated_model.predict(X_test)
@@ -766,6 +783,22 @@ def train_optimized_model():
         )
     except Exception as e:
         print(f"⚠️ Rolling evaluation failed: {e}")
+
+    # Persist a lightweight performance snapshot so production can downweight
+    # components if they underperform their baselines recently.
+    try:
+        perf_out = {
+            "updated_at_utc": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "xgb_cal_mean_acc": float(roll.get("mean_acc")) if "roll" in locals() else None,
+            "xgb_cal_mean_logloss": float(roll.get("mean_logloss")) if "roll" in locals() else None,
+            "elo_mean_acc": float(roll.get("elo_mean_acc")) if "roll" in locals() else None,
+            "elo_mean_logloss": float(roll.get("elo_mean_logloss")) if "roll" in locals() else None,
+        }
+        with open("model_performance.json", "w") as f:
+            json.dump(perf_out, f, indent=2)
+        print("✅ Saved model_performance.json")
+    except Exception as e:
+        print(f"⚠️ Could not save model_performance.json: {e}")
     
     # 3c. Meta-Labeling (Phase 10: Model for the Model)
     print("\n🏗️ Training Phase 10 Meta-Confidence Model...")
@@ -935,8 +968,19 @@ def rolling_time_split_eval(
         model.fit(X_train, y_train, sample_weight=w)
 
         if calibrated:
-            cal = CalibratedClassifierCV(estimator=model, method="isotonic", cv=3)
-            cal.fit(X_train, y_train, sample_weight=w)
+            # Calibrate on the last 20% of the training fold (future within fold),
+            # then evaluate on the test fold.
+            fold_n = len(X_train)
+            fold_cal_start = int(fold_n * 0.80)
+            X_tr = X_train.iloc[:fold_cal_start]
+            y_tr = y_train[:fold_cal_start]
+            X_ca = X_train.iloc[fold_cal_start:]
+            y_ca = y_train[fold_cal_start:]
+            w_tr = w[:fold_cal_start]
+
+            model.fit(X_tr, y_tr, sample_weight=w_tr)
+            cal = CalibratedClassifierCV(estimator=model, method="isotonic", cv="prefit")
+            cal.fit(X_ca, y_ca)
             p = cal.predict_proba(X_test)[:, 1]
         else:
             p = model.predict_proba(X_test)[:, 1]

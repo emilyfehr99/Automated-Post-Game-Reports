@@ -136,6 +136,17 @@ class GoalieStatsBuilder:
                 base = self.goalie_stats[str(gid)]  # initializes default keys
                 if isinstance(stats, dict):
                     base.update(stats)
+                # Repair common cache-corruption pattern:
+                # older files may have 'games' but missing shot counters.
+                # When that happens, downstream code may treat a goalie as
+                # "qualified" while SV% is computed as 0 due to shots_against=0.
+                # Prefer game_log-derived GP if present; otherwise, drop GP when
+                # we have no evidence of shots.
+                log = base.get("game_log") or []
+                if isinstance(log, list) and len(log) > 0:
+                    base["games"] = int(len(log))
+                if int(base.get("shots_against", 0) or 0) <= 0 and int(base.get("games", 0) or 0) > 0:
+                    base["games"] = 0
                 self.goalie_stats[str(gid)] = base
                 self.goalie_names[str(gid)] = base.get('name', '')
             

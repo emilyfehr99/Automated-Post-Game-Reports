@@ -249,11 +249,44 @@ class MetaEnsemblePredictor:
         self.team_encodings = {}
         self.rotowire = RotoWireScraper()
         self.standings = StandingsTracker()
+        self._component_weights = None
+        self._load_component_weights()
         
         try:
             self._load_xgboost_components()
         except Exception as e:
             print(f"⚠️ Failed to load XGBoost components: {e}")
+
+    def _load_component_weights(self) -> None:
+        """Load dynamic component weights from recent backtests if available."""
+        # Defaults (roughly match existing behavior)
+        self._component_weights = {
+            "xgb": 0.50,
+            "elo": 0.10,
+            "specialized": 0.25,
+            "player": 0.15,
+            "base": 0.10,
+            "vegas": 0.15,
+        }
+        try:
+            p = Path("model_performance.json")
+            if not p.exists():
+                return
+            with open(p, "r") as f:
+                perf = json.load(f)
+            x_ll = perf.get("xgb_cal_mean_logloss")
+            e_ll = perf.get("elo_mean_logloss")
+            if x_ll is None or e_ll is None:
+                return
+
+            # If XGB is worse than Elo by a meaningful margin, reduce its influence.
+            # This is a guardrail for periods where feature refresh degrades quality.
+            margin = 0.01
+            if float(x_ll) > float(e_ll) + margin:
+                self._component_weights["xgb"] = 0.35
+                self._component_weights["elo"] = 0.20
+        except Exception:
+            return
 
     def _load_xgboost_components(self):
         """Load model, features list, and build history state"""
@@ -779,7 +812,7 @@ class MetaEnsemblePredictor:
         xgb_margin = 0.0
         if xgb_pred:
             predictions.append(xgb_pred)
-            weights.append(0.50)
+            weights.append(float(self._component_weights.get("xgb", 0.50)))
             xgb_margin = xgb_pred.get('predicted_margin', 0.0)
             xgb_p1_prob = xgb_pred.get('p1_home_prob', 50.0)
 
@@ -794,7 +827,7 @@ class MetaEnsemblePredictor:
                 'home_prob': elo_home * 100.0,
                 'prediction_type': 'elo_baseline'
             })
-            weights.append(0.10)
+            weights.append(float(self._component_weights.get("elo", 0.10)))
         except Exception as e:
             print(f"Elo baseline failed: {e}")
         
@@ -802,7 +835,7 @@ class MetaEnsemblePredictor:
         try:
             spec_pred = self.specialized_ensemble.predict(away_team, home_team, game_id, game_date)
             predictions.append(spec_pred)
-            weights.append(0.25)
+            weights.append(float(self._component_weights.get("specialized", 0.25)))
         except Exception as e:
             print(f"Specialized ensemble failed: {e}")
         
@@ -813,7 +846,7 @@ class MetaEnsemblePredictor:
                     away_team, home_team, away_lineup, home_lineup, game_id, game_date
                 )
                 predictions.append(player_pred)
-                weights.append(0.15)
+                weights.append(float(self._component_weights.get("player", 0.15)))
             except Exception as e:
                 print(f"Player-level model failed: {e}")
         
@@ -821,7 +854,7 @@ class MetaEnsemblePredictor:
         try:
             base_pred = self.base_model.predict_game(away_team, home_team, game_id=game_id, game_date=game_date)
             predictions.append(base_pred)
-            weights.append(0.10)
+            weights.append(float(self._component_weights.get("base", 0.10)))
         except Exception as e:
             print(f"Base model failed: {e}")
             
@@ -839,7 +872,7 @@ class MetaEnsemblePredictor:
                         'home_prob': (h_implied / total) * 100,
                         'prediction_type': 'vegas_market'
                     })
-                    weights.append(0.15) # Market significance
+                    weights.append(float(self._component_weights.get("vegas", 0.15))) # Market significance
             except: pass
 
         if not predictions:
