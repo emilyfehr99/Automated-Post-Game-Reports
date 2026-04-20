@@ -784,6 +784,29 @@ def train_optimized_model():
     except Exception as e:
         print(f"⚠️ Rolling evaluation failed: {e}")
 
+    # --- Feature leakage audit ---
+    # Ensure we did not accidentally include post-game fields as features.
+    try:
+        _audit_no_postgame_feature_leakage(df)
+        print("✅ Feature leakage audit passed")
+    except Exception as e:
+        print(f"❌ Feature leakage audit failed: {e}")
+        # Hard fail so we don't save a model that looks great due to leakage.
+        raise
+
+    # --- Recent-window evaluation (apples-to-apples vs Elo) ---
+    recent_eval = None
+    try:
+        recent_eval = rolling_recent_eval(df, recent_n=200, n_splits=4)
+        print(
+            f"Recent(200) XGB(cal) logloss={recent_eval['xgb_recent_logloss']:.4f} "
+            f"acc={recent_eval['xgb_recent_acc']:.3f} | "
+            f"Elo logloss={recent_eval['elo_recent_logloss']:.4f} "
+            f"acc={recent_eval['elo_recent_acc']:.3f}"
+        )
+    except Exception as e:
+        print(f"⚠️ Recent-window evaluation failed: {e}")
+
     # Persist a lightweight performance snapshot so production can downweight
     # components if they underperform their baselines recently.
     try:
@@ -794,6 +817,8 @@ def train_optimized_model():
             "elo_mean_acc": float(roll.get("elo_mean_acc")) if "roll" in locals() else None,
             "elo_mean_logloss": float(roll.get("elo_mean_logloss")) if "roll" in locals() else None,
         }
+        if isinstance(recent_eval, dict):
+            perf_out.update(recent_eval)
         with open("model_performance.json", "w") as f:
             json.dump(perf_out, f, indent=2)
         print("✅ Saved model_performance.json")
@@ -851,9 +876,33 @@ def train_optimized_model():
         print("⚠️ Not enough P1 data (single class detected), skipping P1 model training.")
         p1_model = None
     
-    # 4. SAVE MODELS
+    # 4. SAVE MODELS (probability-first)
     # Since CalibratedClassifierCV is a wrapper, we save it as a pickle
-    if acc >= 0.50:
+    # Gate 1: minimum accuracy sanity check (kept)
+    # Gate 2: must beat Elo logloss on the same final test window OR improve vs prior saved model.
+    elo_test_logloss = None
+    try:
+        elo_test_logloss = elo_logloss_on_test(train_df, test_df)
+        print(f"📉 Elo baseline logloss on final test: {elo_test_logloss:.4f}")
+    except Exception as e:
+        print(f"⚠️ Could not compute Elo test logloss: {e}")
+
+    prior_xgb_ll = None
+    try:
+        p = Path("model_performance.json")
+        if p.exists():
+            with open(p, "r") as f:
+                prior = json.load(f)
+            prior_xgb_ll = prior.get("xgb_recent_logloss") or prior.get("xgb_cal_mean_logloss")
+    except Exception:
+        prior_xgb_ll = None
+
+    beats_elo = (elo_test_logloss is not None) and (loss < float(elo_test_logloss) - 1e-6)
+    improves_prior = (prior_xgb_ll is not None) and (loss < float(prior_xgb_ll) - 1e-6)
+
+    should_save = (acc >= 0.50) and (beats_elo or improves_prior)
+
+    if should_save:
         # Save calibrated model (pickle contains the entire stack + calibrator)
         with open("xgb_calibrated_model.pkl", "wb") as f:
             pickle.dump(calibrated_model, f)
@@ -879,7 +928,8 @@ def train_optimized_model():
         with open("xgb_features.pkl", "wb") as f:
             pickle.dump(features, f)
     else:
-         print("\n⚠️ Holdout accuracy too low, did not save model.")
+         print("\n⚠️ Did not save model (failed probability-first gates).")
+         print(f"  - acc={acc:.3f} loss={loss:.4f} beats_elo={beats_elo} improves_prior={improves_prior}")
 
 def rolling_time_split_eval(
     df: pd.DataFrame,
@@ -1023,6 +1073,191 @@ def rolling_time_split_eval(
         "elo_mean_acc": float(np.mean(elo_accs)) if elo_accs else float("nan"),
         "elo_mean_logloss": float(np.mean(elo_lls)) if elo_lls else float("nan"),
     }
+
+
+def rolling_recent_eval(df: pd.DataFrame, recent_n: int = 200, n_splits: int = 4) -> Dict[str, float]:
+    """Evaluate XGB vs Elo on the same forward windows for the most recent games."""
+    df = df.sort_values("date").reset_index(drop=True)
+    if len(df) < (recent_n + 200):
+        # Need enough history to make training folds meaningful
+        recent_n = min(recent_n, max(0, len(df) - 200))
+    recent_df = df.iloc[-recent_n:].copy()
+    if len(recent_df) < 60:
+        raise ValueError("Not enough rows for recent evaluation")
+
+    tscv = TimeSeriesSplit(n_splits=max(2, int(n_splits)))
+
+    xgb_probs = []
+    xgb_y = []
+    elo_probs = []
+    elo_y = []
+
+    # Use a moderate, non-extreme XGB config to avoid producing saturated
+    # probabilities that can dominate log loss. The goal is apples-to-apples
+    # comparison on identical windows, not micro-optimizing this evaluator.
+    for tr_idx, te_idx in tscv.split(recent_df):
+        tr = recent_df.iloc[tr_idx].copy()
+        te = recent_df.iloc[te_idx].copy()
+        if len(te) < 10 or len(tr) < 80:
+            continue
+
+        # Build train/test matrices with leakage-safe encodings
+        home_map, home_prior = calculate_target_encoding(tr, "home_team")
+        away_map, away_prior = calculate_target_encoding(tr, "away_team", target="target")
+
+        feats = [c for c in df.columns if c not in ["game_id", "date", "target", "margin", "p1_target"]]
+
+        def build_X(dframe: pd.DataFrame) -> pd.DataFrame:
+            X = dframe[feats].copy()
+            X["home_win_rate"] = dframe["home_team"].map(home_map).fillna(home_prior)
+            X["away_win_rate"] = dframe["away_team"].map(away_map).fillna(away_prior)
+            X = X.drop(columns=["home_team", "away_team"])
+            X["home_win_rate_away_sos"] = X["home_win_rate"] * dframe.get("away_sos", 1500)
+            X["away_b2b_home_strength"] = dframe.get("away_b2b", 0) * dframe.get("finish_diff", 0)
+            X["pressure_index"] = (dframe.get("home_xg", 2.5) / (dframe.get("away_xg", 2.5) + 0.1)) * (dframe.get("home_elo", 1500) / (dframe.get("away_elo", 1500) + 0.1))
+            X["xg_efficiency"] = (dframe.get("home_xg", 2.5) * (dframe.get("home_sos", 1500) / 1500.0)) - (dframe.get("away_xg", 2.5) * (dframe.get("away_sos", 1500) / 1500.0))
+            X["power_momentum"] = dframe.get("elo_diff", 0) * dframe.get("l10_xg_diff", 0)
+            prune = [
+                "home_venue_goal_diff", "away_venue_goal_diff", "l5_pizza_diff",
+                "l5_nzt_diff", "l5_rush_diff", "l5_pk_diff", "l5_pp_diff",
+                "l5_ozs_diff", "l5_hdc_diff",
+            ]
+            for col in prune:
+                if col in X.columns:
+                    X.drop(columns=[col], inplace=True)
+            return X
+
+        X_tr_full = build_X(tr)
+        y_tr_full = tr["target"].astype(int).values
+        X_te = build_X(te)
+        y_te = te["target"].astype(int).values
+
+        # Recency weights within the train split
+        ntr = len(tr)
+        ages = (ntr - 1) - np.arange(ntr, dtype=float)
+        w = 0.5 ** (ages / 60.0)
+
+        # Inner-split future calibration
+        cal_start = int(ntr * 0.80)
+        X_tr = X_tr_full.iloc[:cal_start]
+        y_tr = y_tr_full[:cal_start]
+        X_ca = X_tr_full.iloc[cal_start:]
+        y_ca = y_tr_full[cal_start:]
+        w_tr = w[:cal_start]
+
+        model = xgb.XGBClassifier(
+            objective="binary:logistic",
+            eval_metric="logloss",
+            random_state=42,
+            max_depth=3,
+            learning_rate=0.03,
+            n_estimators=80,
+            subsample=0.85,
+            colsample_bytree=0.85,
+            gamma=0.0,
+            reg_lambda=1.0,
+        )
+        model.fit(X_tr, y_tr, sample_weight=w_tr)
+        # Calibrate only if we have a non-degenerate calibration slice.
+        # Isotonic on small/imbalanced slices can produce saturated 0/1 probs,
+        # which makes log loss meaningless for comparison.
+        if len(np.unique(y_ca)) < 2 or len(y_ca) < 30:
+            p = model.predict_proba(X_te)[:, 1]
+        else:
+            cal = CalibratedClassifierCV(estimator=model, method="sigmoid", cv="prefit")
+            cal.fit(X_ca, y_ca)
+            p = cal.predict_proba(X_te)[:, 1]
+
+        xgb_probs.extend(p.tolist())
+        xgb_y.extend(y_te.tolist())
+
+        # Elo baseline on the same windows: train Elo on tr outcomes, predict te.
+        elo = EloTracker()
+        for _, row in tr.iterrows():
+            home = row["home_team"]
+            away = row["away_team"]
+            if int(row["target"]) == 1:
+                elo.update(home, away, 2, 1)
+            else:
+                elo.update(home, away, 1, 2)
+
+        elo_p = []
+        for _, row in te.iterrows():
+            elo_p.append(float(elo.get_win_prob(row["home_team"], row["away_team"])))
+        elo_probs.extend(elo_p)
+        elo_y.extend(y_te.tolist())
+
+    if not xgb_probs or not elo_probs:
+        raise ValueError("Recent evaluation produced no predictions")
+
+    xgb_probs = np.clip(np.array(xgb_probs, dtype=float), 1e-6, 1 - 1e-6)
+    elo_probs = np.clip(np.array(elo_probs, dtype=float), 1e-6, 1 - 1e-6)
+    y = np.array(xgb_y, dtype=int)
+    y2 = np.array(elo_y, dtype=int)
+    # Sanity: align lengths
+    m = min(len(y), len(y2), len(xgb_probs), len(elo_probs))
+    y = y[:m]
+    y2 = y2[:m]
+    xgb_probs = xgb_probs[:m]
+    elo_probs = elo_probs[:m]
+
+    out = {
+        "recent_n": int(recent_n),
+        "xgb_recent_logloss": float(log_loss(y, xgb_probs)),
+        "xgb_recent_acc": float(np.mean((xgb_probs >= 0.5) == (y >= 0.5))),
+        "elo_recent_logloss": float(log_loss(y2, elo_probs)),
+        "elo_recent_acc": float(np.mean((elo_probs >= 0.5) == (y2 >= 0.5))),
+    }
+    # Diagnostic percentiles to sanity-check calibration/overconfidence
+    out["xgb_recent_p05"] = float(np.quantile(xgb_probs, 0.05))
+    out["xgb_recent_p50"] = float(np.quantile(xgb_probs, 0.50))
+    out["xgb_recent_p95"] = float(np.quantile(xgb_probs, 0.95))
+    return out
+
+
+def elo_logloss_on_test(train_df: pd.DataFrame, test_df: pd.DataFrame) -> float:
+    """Compute Elo log loss on `test_df`, with Elo fit on `train_df` only."""
+    elo = EloTracker()
+    train_df = train_df.sort_values("date")
+    test_df = test_df.sort_values("date")
+    for _, row in train_df.iterrows():
+        home = row["home_team"]
+        away = row["away_team"]
+        if int(row["target"]) == 1:
+            elo.update(home, away, 2, 1)
+        else:
+            elo.update(home, away, 1, 2)
+    probs = []
+    y = []
+    for _, row in test_df.iterrows():
+        probs.append(float(elo.get_win_prob(row["home_team"], row["away_team"])))
+        y.append(int(row["target"]))
+    probs = np.clip(np.array(probs, dtype=float), 1e-6, 1 - 1e-6)
+    return float(log_loss(np.array(y, dtype=int), probs))
+
+
+def _audit_no_postgame_feature_leakage(df: pd.DataFrame) -> None:
+    """Fail fast if any obviously post-game fields appear in features."""
+    forbidden = {
+        "actual_home_score",
+        "actual_away_score",
+        "home_goals",
+        "away_goals",
+        "home_score",
+        "away_score",
+        "final_score",
+        "actual_winner",
+        "home_shots_final",
+        "away_shots_final",
+    }
+    cols = set(df.columns)
+    leaked = sorted([c for c in forbidden if c in cols])
+    if leaked:
+        raise ValueError(f"Post-game columns present in training dataframe: {leaked}")
+
+    # Ensure we never accidentally keep team identifiers as numeric leak channels.
+    if "home_team" not in cols or "away_team" not in cols:
+        raise ValueError("Expected team id columns missing (audit cannot validate encoding path)")
 
 
 if __name__ == "__main__":

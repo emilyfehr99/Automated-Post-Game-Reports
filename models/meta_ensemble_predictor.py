@@ -274,8 +274,9 @@ class MetaEnsemblePredictor:
                 return
             with open(p, "r") as f:
                 perf = json.load(f)
-            x_ll = perf.get("xgb_cal_mean_logloss")
-            e_ll = perf.get("elo_mean_logloss")
+            # Prefer recent-window metrics when present; fall back to mean-over-splits.
+            x_ll = perf.get("xgb_recent_logloss") or perf.get("xgb_cal_mean_logloss")
+            e_ll = perf.get("elo_recent_logloss") or perf.get("elo_mean_logloss")
             if x_ll is None or e_ll is None:
                 return
 

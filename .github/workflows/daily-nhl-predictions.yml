@@ -18,6 +18,8 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      # Set true if you explicitly want model binaries committed (avoids frequent conflicts)
+      PUSH_MODEL_ARTIFACTS: "false"
     steps:
       - name: Check Season Resume Date
         run: |
@@ -209,13 +211,17 @@ jobs:
           fi
           
           if [ -f "xgb_features.pkl" ]; then
-             git add --force xgb_features.pkl
-             FILES_TO_COMMIT="$FILES_TO_COMMIT xgb_features.pkl"
+             if [ "${PUSH_MODEL_ARTIFACTS}" = "true" ]; then
+               git add --force xgb_features.pkl
+               FILES_TO_COMMIT="$FILES_TO_COMMIT xgb_features.pkl"
+             fi
           fi
 
           if [ -f "xgb_calibrated_model.pkl" ]; then
-             git add --force xgb_calibrated_model.pkl
-             FILES_TO_COMMIT="$FILES_TO_COMMIT xgb_calibrated_model.pkl"
+             if [ "${PUSH_MODEL_ARTIFACTS}" = "true" ]; then
+               git add --force xgb_calibrated_model.pkl
+               FILES_TO_COMMIT="$FILES_TO_COMMIT xgb_calibrated_model.pkl"
+             fi
           fi
 
           if [ -f "team_encodings.json" ]; then
@@ -224,18 +230,24 @@ jobs:
           fi
 
           if [ -f "meta_confidence_model.pkl" ]; then
-             git add --force meta_confidence_model.pkl
-             FILES_TO_COMMIT="$FILES_TO_COMMIT meta_confidence_model.pkl"
+             if [ "${PUSH_MODEL_ARTIFACTS}" = "true" ]; then
+               git add --force meta_confidence_model.pkl
+               FILES_TO_COMMIT="$FILES_TO_COMMIT meta_confidence_model.pkl"
+             fi
           fi
 
           if [ -f "margin_regression_model.pkl" ]; then
-             git add --force margin_regression_model.pkl
-             FILES_TO_COMMIT="$FILES_TO_COMMIT margin_regression_model.pkl"
+             if [ "${PUSH_MODEL_ARTIFACTS}" = "true" ]; then
+               git add --force margin_regression_model.pkl
+               FILES_TO_COMMIT="$FILES_TO_COMMIT margin_regression_model.pkl"
+             fi
           fi
 
           if [ -f "p1_outcome_model.pkl" ]; then
-             git add --force p1_outcome_model.pkl
-             FILES_TO_COMMIT="$FILES_TO_COMMIT p1_outcome_model.pkl"
+             if [ "${PUSH_MODEL_ARTIFACTS}" = "true" ]; then
+               git add --force p1_outcome_model.pkl
+               FILES_TO_COMMIT="$FILES_TO_COMMIT p1_outcome_model.pkl"
+             fi
           fi
 
           if [ -f "team_travel_archetypes.json" ]; then

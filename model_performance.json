@@ -1,7 +1,15 @@
 {
-  "updated_at_utc": "2026-04-20T14:19:36Z",
+  "updated_at_utc": "2026-04-20T14:29:17Z",
   "xgb_cal_mean_acc": 0.5285714285714287,
   "xgb_cal_mean_logloss": 0.8859199356388828,
   "elo_mean_acc": 0.5493506493506495,
-  "elo_mean_logloss": 0.6836639197975485
+  "elo_mean_logloss": 0.6836639197975485,
+  "recent_n": 200,
+  "xgb_recent_logloss": 0.7496860573715334,
+  "xgb_recent_acc": 0.5416666666666666,
+  "elo_recent_logloss": 0.6818889526546551,
+  "elo_recent_acc": 0.5583333333333333,
+  "xgb_recent_p05": 0.16905536204576493,
+  "xgb_recent_p50": 0.5216081273599616,
+  "xgb_recent_p95": 0.8750442445278168
 }
