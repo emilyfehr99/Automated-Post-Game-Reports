@@ -1,15 +1,15 @@
 {
-  "updated_at_utc": "2026-04-20T14:29:17Z",
-  "xgb_cal_mean_acc": 0.5285714285714287,
-  "xgb_cal_mean_logloss": 0.8859199356388828,
-  "elo_mean_acc": 0.5493506493506495,
-  "elo_mean_logloss": 0.6836639197975485,
+  "updated_at_utc": "2026-04-21T18:41:55Z",
+  "xgb_cal_mean_acc": 0.5337662337662338,
+  "xgb_cal_mean_logloss": 0.8200954800821607,
+  "elo_mean_acc": 0.5558441558441558,
+  "elo_mean_logloss": 0.6828085011515628,
   "recent_n": 200,
-  "xgb_recent_logloss": 0.7496860573715334,
-  "xgb_recent_acc": 0.5416666666666666,
-  "elo_recent_logloss": 0.6818889526546551,
-  "elo_recent_acc": 0.5583333333333333,
-  "xgb_recent_p05": 0.16905536204576493,
-  "xgb_recent_p50": 0.5216081273599616,
-  "xgb_recent_p95": 0.8750442445278168
+  "xgb_recent_logloss": 0.7326017001978199,
+  "xgb_recent_acc": 0.5666666666666667,
+  "elo_recent_logloss": 0.6780239997477374,
+  "elo_recent_acc": 0.575,
+  "xgb_recent_p05": 0.1790838621556759,
+  "xgb_recent_p50": 0.49767360530418003,
+  "xgb_recent_p95": 0.8723980665206909
 }

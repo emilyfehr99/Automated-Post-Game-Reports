@@ -658,6 +658,17 @@ def train_optimized_model():
         if p in X_cal.columns: X_cal.drop(columns=[p], inplace=True)
         if p in X_test.columns: X_test.drop(columns=[p], inplace=True)
 
+    # --- Stability pruning (reduce overfit + broken upstream signals) ---
+    # Drop features that are missing/constant/mostly-zero in the most recent window.
+    try:
+        X_train, X_cal, X_test, dropped = prune_unstable_features(
+            X_train, X_cal, X_test, recent_n=200
+        )
+        if dropped:
+            print(f"🧹 Stability prune: dropped {len(dropped)} unstable features")
+    except Exception as e:
+        print(f"⚠️ Stability pruning skipped: {e}")
+
     features = [f for f in X_train.columns]
     
     # Phase 14: Adaptive Sample Weighting (Recency, time-aware)
@@ -748,6 +759,21 @@ def train_optimized_model():
     acc = accuracy_score(y_test, y_pred)
     loss = log_loss(y_test, y_prob)
     
+    # Confidence bucket reporting on final test window
+    try:
+        bucket = confidence_bucket_report(
+            y_true=(y_test.values if hasattr(y_test, "values") else y_test),
+            p_home=y_prob,
+        )
+        print("\n🎚️ Confidence buckets (final test)")
+        for b in bucket["buckets"]:
+            print(
+                f"  conf≥{b['min_conf']:.2f}: n={b['n']:>3} acc={b['acc']:.3f} "
+                f"logloss={b['logloss']:.4f}"
+            )
+    except Exception as e:
+        print(f"⚠️ Confidence-bucket report failed: {e}")
+
     print("\n" + "="*30)
     print(f"FINAL PHASE 9 RESULTS:")
     print(f"Accuracy: {acc:.1%}")
@@ -1258,6 +1284,88 @@ def _audit_no_postgame_feature_leakage(df: pd.DataFrame) -> None:
     # Ensure we never accidentally keep team identifiers as numeric leak channels.
     if "home_team" not in cols or "away_team" not in cols:
         raise ValueError("Expected team id columns missing (audit cannot validate encoding path)")
+
+
+def prune_unstable_features(
+    X_train: pd.DataFrame,
+    X_cal: pd.DataFrame,
+    X_test: pd.DataFrame,
+    recent_n: int = 200,
+    max_missing: float = 0.15,
+    max_zero_frac: float = 0.90,
+    min_std: float = 1e-8,
+) -> tuple[pd.DataFrame, pd.DataFrame, pd.DataFrame, list]:
+    """Drop features that look broken/unstable in the most recent window."""
+    if not isinstance(X_train, pd.DataFrame):
+        raise TypeError("X_train must be a DataFrame")
+    if X_train.empty:
+        return X_train, X_cal, X_test, []
+
+    recent = X_train.tail(int(recent_n)) if len(X_train) > recent_n else X_train
+    dropped = []
+
+    for col in list(X_train.columns):
+        s = recent[col]
+        # Missingness
+        miss = float(s.isna().mean())
+        if miss > float(max_missing):
+            dropped.append(col)
+            continue
+        # Zero fraction (for numeric)
+        try:
+            zero_frac = float((s.fillna(0) == 0).mean())
+        except Exception:
+            zero_frac = 0.0
+        if zero_frac > float(max_zero_frac):
+            dropped.append(col)
+            continue
+        # Near-constant
+        try:
+            sd = float(np.nanstd(s.astype(float).values))
+        except Exception:
+            sd = float("inf")
+        if sd < float(min_std):
+            dropped.append(col)
+
+    if dropped:
+        X_train = X_train.drop(columns=dropped, errors="ignore")
+        X_cal = X_cal.drop(columns=dropped, errors="ignore")
+        X_test = X_test.drop(columns=dropped, errors="ignore")
+
+    return X_train, X_cal, X_test, dropped
+
+
+def confidence_bucket_report(y_true, p_home, min_conf_levels=None) -> Dict[str, object]:
+    """Report accuracy/logloss by confidence bucket using P(max side)."""
+    y = np.array(y_true, dtype=int)
+    p = np.clip(np.array(p_home, dtype=float), 1e-6, 1 - 1e-6)
+    if y.size != p.size:
+        raise ValueError("y_true and p_home must have same length")
+
+    conf = np.maximum(p, 1.0 - p)
+    if min_conf_levels is None:
+        min_conf_levels = [0.50, 0.55, 0.60, 0.65, 0.70]
+
+    buckets = []
+    for thr in min_conf_levels:
+        mask = conf >= float(thr)
+        n = int(mask.sum())
+        if n == 0:
+            buckets.append({"min_conf": float(thr), "n": 0, "acc": None, "logloss": None})
+            continue
+        p_sub = p[mask]
+        y_sub = y[mask]
+        preds = (p_sub >= 0.5).astype(int)
+        buckets.append(
+            {
+                "min_conf": float(thr),
+                "n": n,
+                "acc": float(np.mean(preds == y_sub)),
+                "logloss": float(log_loss(y_sub, p_sub)),
+            }
+        )
+
+    return {"buckets": buckets}
 
 
 if __name__ == "__main__":
