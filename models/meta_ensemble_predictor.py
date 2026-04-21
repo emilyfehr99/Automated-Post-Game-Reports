@@ -268,6 +268,8 @@ class MetaEnsemblePredictor:
             "base": 0.10,
             "vegas": 0.15,
         }
+        self._model_mode = "ensemble"
+        self._shrink_alpha = 1.0
         try:
             p = Path("model_performance.json")
             if not p.exists():
@@ -285,16 +287,33 @@ class MetaEnsemblePredictor:
             # If XGB is worse than Elo by a meaningful margin, reduce its influence.
             # This is a guardrail for periods where feature refresh degrades quality.
             margin = 0.01
-            if float(x_ll) > float(e_ll) + margin:
-                self._component_weights["xgb"] = 0.35
-                self._component_weights["elo"] = 0.20
+            gap = float(x_ll) - float(e_ll)
+            if gap > margin:
+                # Champion/challenger: if Elo is better on recent windows, treat
+                # Elo as the champion and aggressively suppress XGB.
+                self._model_mode = "elo_champion"
+                self._component_weights["xgb"] = 0.0
+                self._component_weights["elo"] = 0.35
+                # Keep other signals but reduce their influence vs Elo
+                self._component_weights["specialized"] = min(self._component_weights["specialized"], 0.15)
+                self._component_weights["player"] = min(self._component_weights["player"], 0.10)
+                self._component_weights["base"] = min(self._component_weights["base"], 0.05)
                 adjusted = True
             else:
                 adjusted = False
 
+            # Additional shrinkage toward Elo when XGB underperforms.
+            # Alpha=1 => no shrink. Alpha closer to 0 => mostly Elo.
+            # If Elo is better by 0.03 logloss, alpha ~ 0.4.
+            if gap > 0:
+                self._shrink_alpha = float(max(0.2, min(1.0, 1.0 - (gap * 20.0))))
+            else:
+                self._shrink_alpha = 1.0
+
             print(
                 "📌 Loaded model_performance.json "
-                f"(xgb_ll={float(x_ll):.4f}, elo_ll={float(e_ll):.4f}, adjusted={adjusted}) "
+                f"(xgb_ll={float(x_ll):.4f}, elo_ll={float(e_ll):.4f}, gap={gap:+.4f}, "
+                f"mode={self._model_mode}, shrink_alpha={self._shrink_alpha:.2f}, adjusted={adjusted}) "
                 f"weights={self._component_weights}"
             )
         except Exception:
@@ -894,6 +913,19 @@ class MetaEnsemblePredictor:
         total_weight = sum(weights)
         ensemble_away = sum(p['away_prob'] * w for p, w in zip(predictions, weights)) / total_weight
         ensemble_home = sum(p['home_prob'] * w for p, w in zip(predictions, weights)) / total_weight
+
+        # --- Final shrink toward Elo champion (stability + accuracy) ---
+        # If recent evaluation shows Elo outperforming XGB, we shrink the final
+        # probabilities toward Elo to reduce overconfident misses.
+        try:
+            alpha = float(getattr(self, "_shrink_alpha", 1.0))
+            if alpha < 0.999:
+                elo_home = float(self.history_tracker.elo.get_win_prob(home_team, away_team)) * 100.0
+                elo_away = 100.0 - elo_home
+                ensemble_home = alpha * ensemble_home + (1.0 - alpha) * elo_home
+                ensemble_away = alpha * ensemble_away + (1.0 - alpha) * elo_away
+        except Exception:
+            pass
         
         # Apply Contextual Factors (Phase 4 Blending)
         # 1. Injury Impact

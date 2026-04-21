@@ -906,6 +906,7 @@ def train_optimized_model():
     # Since CalibratedClassifierCV is a wrapper, we save it as a pickle
     # Gate 1: minimum accuracy sanity check (kept)
     # Gate 2: must beat Elo logloss on the same final test window OR improve vs prior saved model.
+    # Gate 3: must not underperform Elo on recent-window logloss (last ~200 games).
     elo_test_logloss = None
     try:
         elo_test_logloss = elo_logloss_on_test(train_df, test_df)
@@ -926,7 +927,17 @@ def train_optimized_model():
     beats_elo = (elo_test_logloss is not None) and (loss < float(elo_test_logloss) - 1e-6)
     improves_prior = (prior_xgb_ll is not None) and (loss < float(prior_xgb_ll) - 1e-6)
 
-    should_save = (acc >= 0.50) and (beats_elo or improves_prior)
+    recent_ok = True
+    try:
+        if isinstance(recent_eval, dict):
+            x_recent = float(recent_eval.get("xgb_recent_logloss"))
+            e_recent = float(recent_eval.get("elo_recent_logloss"))
+            if np.isfinite(x_recent) and np.isfinite(e_recent):
+                recent_ok = x_recent <= (e_recent + 1e-6)
+    except Exception:
+        recent_ok = True
+
+    should_save = (acc >= 0.50) and (beats_elo or improves_prior) and recent_ok
 
     if should_save:
         # Save calibrated model (pickle contains the entire stack + calibrator)
@@ -955,7 +966,7 @@ def train_optimized_model():
             pickle.dump(features, f)
     else:
          print("\n⚠️ Did not save model (failed probability-first gates).")
-         print(f"  - acc={acc:.3f} loss={loss:.4f} beats_elo={beats_elo} improves_prior={improves_prior}")
+         print(f"  - acc={acc:.3f} loss={loss:.4f} beats_elo={beats_elo} improves_prior={improves_prior} recent_ok={recent_ok}")
 
 def rolling_time_split_eval(
     df: pd.DataFrame,
