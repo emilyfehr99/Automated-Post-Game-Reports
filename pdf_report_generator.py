@@ -4156,9 +4156,9 @@ class PostGameReportGenerator:
                 # Row 8: Avg Shots per Sequence - higher is better
                 ('TEXTCOLOR', (2, 8), (2, 8), colors.HexColor('#008000') if (sum(away_pressure['shot_attempts_per_sequence'])/len(away_pressure['shot_attempts_per_sequence']) if away_pressure['shot_attempts_per_sequence'] else 0) > (sum(home_pressure['shot_attempts_per_sequence'])/len(home_pressure['shot_attempts_per_sequence']) if home_pressure['shot_attempts_per_sequence'] else 0) else colors.HexColor('#DC143C')),
                 ('TEXTCOLOR', (3, 8), (3, 8), colors.HexColor('#008000') if (sum(home_pressure['shot_attempts_per_sequence'])/len(home_pressure['shot_attempts_per_sequence']) if home_pressure['shot_attempts_per_sequence'] else 0) > (sum(away_pressure['shot_attempts_per_sequence'])/len(away_pressure['shot_attempts_per_sequence']) if away_pressure['shot_attempts_per_sequence'] else 0) else colors.HexColor('#DC143C')),
-                # Row 9: Blocked Shots - higher is better
-                ('TEXTCOLOR', (2, 9), (2, 9), colors.HexColor('#008000') if away_defense['blocked_shots'] > home_defense['blocked_shots'] else colors.HexColor('#DC143C')),
-                ('TEXTCOLOR', (3, 9), (3, 9), colors.HexColor('#008000') if home_defense['blocked_shots'] > away_defense['blocked_shots'] else colors.HexColor('#DC143C')),
+                # Row 9: Blocked Shots - LOWER is better
+                ('TEXTCOLOR', (2, 9), (2, 9), colors.HexColor('#008000') if away_defense['blocked_shots'] < home_defense['blocked_shots'] else colors.HexColor('#DC143C')),
+                ('TEXTCOLOR', (3, 9), (3, 9), colors.HexColor('#008000') if home_defense['blocked_shots'] < away_defense['blocked_shots'] else colors.HexColor('#DC143C')),
                 # Row 10: Takeaways - higher is better
                 ('TEXTCOLOR', (2, 10), (2, 10), colors.HexColor('#008000') if away_defense['takeaways'] > home_defense['takeaways'] else colors.HexColor('#DC143C')),
                 ('TEXTCOLOR', (3, 10), (3, 10), colors.HexColor('#008000') if home_defense['takeaways'] > away_defense['takeaways'] else colors.HexColor('#DC143C')),
