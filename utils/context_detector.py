@@ -4,8 +4,14 @@ Context Detector
 Determines which specialized model(s) to use for a given game
 """
 from typing import List, Tuple
-from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
-from standings_tracker import StandingsTracker
+try:
+    from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
+except Exception:
+    from models.improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
+try:
+    from standings_tracker import StandingsTracker
+except Exception:
+    from models.standings_tracker import StandingsTracker
 
 class ContextDetector:
     def __init__(self):

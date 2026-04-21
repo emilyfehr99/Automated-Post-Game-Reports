@@ -7,7 +7,13 @@ from typing import Dict, Optional
 from datetime import datetime
 import json
 from pathlib import Path
-from nhl_api_client import NHLAPIClient
+try:
+    from nhl_api_client import NHLAPIClient
+except Exception:
+    try:
+        from api.nhl_api_client import NHLAPIClient
+    except Exception:
+        from utils.nhl_api_client import NHLAPIClient
 
 class StandingsTracker:
     def __init__(self, cache_path: str = "data/standings_cache.json"):

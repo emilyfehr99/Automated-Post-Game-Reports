@@ -10,7 +10,14 @@ from datetime import datetime, timedelta
 from pathlib import Path
 from typing import Dict, List, Tuple, Optional
 import logging
-from correlation_model import CorrelationModel
+try:
+    from correlation_model import CorrelationModel
+except Exception:
+    from models.correlation_model import CorrelationModel
+try:
+    from standings_tracker import StandingsTracker
+except Exception:
+    from models.standings_tracker import StandingsTracker
 
 # Set up logging
 logging.basicConfig(level=logging.INFO)
@@ -1930,7 +1937,6 @@ class ImprovedSelfLearningModelV2:
         
         # SITUATIONAL CONTEXT: Apply playoff race, rivalry, and travel adjustments
         try:
-            from standings_tracker import StandingsTracker
             tracker = StandingsTracker()
             
             # Playoff desperation

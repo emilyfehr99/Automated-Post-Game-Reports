@@ -50,10 +50,22 @@ def calculate_distance(city1, city2):
     a = math.sin(dphi/2)**2 + math.cos(phi1)*math.cos(phi2)*math.sin(dlambda/2)**2
     c = 2 * math.atan2(math.sqrt(a), math.sqrt(1-a))
     return R * c
-from ensemble_predictor import EnsemblePredictor
-from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
-from rotowire_scraper import RotoWireScraper
-from standings_tracker import StandingsTracker
+try:
+    from ensemble_predictor import EnsemblePredictor
+except Exception:
+    from models.ensemble_predictor import EnsemblePredictor
+try:
+    from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
+except Exception:
+    from models.improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
+try:
+    from rotowire_scraper import RotoWireScraper
+except Exception:
+    from scrapers.rotowire_scraper import RotoWireScraper
+try:
+    from standings_tracker import StandingsTracker
+except Exception:
+    from models.standings_tracker import StandingsTracker
 
 class EloTracker:
     def __init__(self, k_factor=20, home_advantage=35):
@@ -321,8 +333,24 @@ class MetaEnsemblePredictor:
 
     def _load_xgboost_components(self):
         """Load model, features list, and build history state"""
+        # Prefer the current champion (full vs recent) when available.
+        champ = None
+        try:
+            p = Path("model_performance.json")
+            if p.exists():
+                with open(p, "r") as f:
+                    perf = json.load(f)
+                champ = perf.get("xgb_champion")
+                if champ not in ("full", "recent"):
+                    champ = None
+        except Exception:
+            champ = None
+
+        suffix = f"_{champ}" if champ else ""
+
         # 1. Load Calibrated Model (Preferred)
-        cal_model_path = Path("xgb_calibrated_model.pkl")
+        cal_model_path = Path(f"xgb_calibrated_model{suffix}.pkl")
+        legacy_cal_model_path = Path("xgb_calibrated_model.pkl")
         if cal_model_path.exists():
             try:
                 with open(cal_model_path, "rb") as f:
@@ -330,18 +358,35 @@ class MetaEnsemblePredictor:
                 print(f"✅ Loaded Calibrated XGBoost model from {cal_model_path}")
             except Exception as e:
                 print(f"⚠️ Failed to load calibrated model: {e}")
+        elif legacy_cal_model_path.exists():
+            try:
+                with open(legacy_cal_model_path, "rb") as f:
+                    self.calibrated_model = pickle.load(f)
+                print(f"✅ Loaded Calibrated XGBoost model from {legacy_cal_model_path}")
+            except Exception as e:
+                print(f"⚠️ Failed to load calibrated model: {e}")
 
         # 1b. Load Standard Model (Fallback/Legacy)
-        model_path = Path("xgb_nhl_model.json")
+        model_path = Path(f"xgb_nhl_model{suffix}.json")
+        legacy_model_path = Path("xgb_nhl_model.json")
         if model_path.exists():
             self.xgb_model = xgb.XGBClassifier()
             self.xgb_model.load_model(str(model_path))
             print(f"✅ Loaded XGBoost model from {model_path} (Fallback)")
+        elif legacy_model_path.exists():
+            self.xgb_model = xgb.XGBClassifier()
+            self.xgb_model.load_model(str(legacy_model_path))
+            print(f"✅ Loaded XGBoost model from {legacy_model_path} (Fallback)")
             
         # 2. Load Feature Names
-        feat_path = Path("xgb_features.pkl")
+        feat_path = Path(f"xgb_features{suffix}.pkl")
+        legacy_feat_path = Path("xgb_features.pkl")
         if feat_path.exists():
             with open(feat_path, "rb") as f:
+                self.feature_names = pickle.load(f)
+            print(f"✅ Loaded {len(self.feature_names)} feature definitions")
+        elif legacy_feat_path.exists():
+            with open(legacy_feat_path, "rb") as f:
                 self.feature_names = pickle.load(f)
             print(f"✅ Loaded {len(self.feature_names)} feature definitions")
         else:
@@ -435,9 +480,14 @@ class MetaEnsemblePredictor:
 
         # 6. Load Team win rate encodings (Phase 8.1)
         try:
-            enc_path = Path("team_encodings.json")
+            enc_path = Path(f"team_encodings{suffix}.json")
+            legacy_enc_path = Path("team_encodings.json")
             if enc_path.exists():
                 with open(enc_path, "r") as f:
+                    self.team_encodings = json.load(f)
+                print(f"✅ Loaded Phase 8.1 Team Encodings")
+            elif legacy_enc_path.exists():
+                with open(legacy_enc_path, "r") as f:
                     self.team_encodings = json.load(f)
                 print(f"✅ Loaded Phase 8.1 Team Encodings")
         except Exception as e:

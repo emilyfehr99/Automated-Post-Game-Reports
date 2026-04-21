@@ -4,7 +4,10 @@ Specialized Models
 Contains context-specific prediction models optimized for different game types
 """
 from typing import Dict
-from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
+try:
+    from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
+except Exception:
+    from models.improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
 
 class HighScoringGameModel(ImprovedSelfLearningModelV2):
     """Optimized for high-scoring games (O/U > 6)"""

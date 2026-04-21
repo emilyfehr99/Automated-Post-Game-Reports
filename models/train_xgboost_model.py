@@ -12,9 +12,13 @@ import xgboost as xgb
 import lightgbm as lgb
 import pickle
 import math
+import shutil
 from datetime import datetime, timedelta
-from standings_tracker import StandingsTracker
-from typing import Dict
+try:
+    from standings_tracker import StandingsTracker
+except Exception:
+    from models.standings_tracker import StandingsTracker
+from typing import Dict, Optional
 
 TEAM_COORDINATES = {
     'ANA': (33.80, -117.88), 'BOS': (42.36, -71.06), 'BUF': (42.89, -78.88),
@@ -563,6 +567,252 @@ def extract_features_chronologically(predictions):
     # We do this later in the main loop to avoid leakage, but here's the mapping
     return train_df
 
+
+def split_train_cal_test(df: pd.DataFrame, train_frac: float = 0.80, cal_frac: float = 0.10):
+    """Chronological train->calibrate->test split using fixed fractions."""
+    df = df.sort_values("date").reset_index(drop=True)
+    n = len(df)
+    train_end = int(n * float(train_frac))
+    cal_end = int(n * float(train_frac + cal_frac))
+    train_df = df.iloc[:train_end].copy()
+    cal_df = df.iloc[train_end:cal_end].copy()
+    test_df = df.iloc[cal_end:].copy()
+    return train_df, cal_df, test_df
+
+
+def _build_matrices_and_sidecars(
+    train_df: pd.DataFrame,
+    cal_df: pd.DataFrame,
+    test_df: pd.DataFrame,
+    *,
+    stability_recent_n: int = 200,
+):
+    """Prepare X/y matrices consistently (leakage-safe target encoding, same transforms)."""
+    base_features = [
+        c
+        for c in train_df.columns
+        if c not in ["game_id", "date", "target", "margin", "p1_target"]
+    ]
+
+    X_train = train_df[base_features].copy()
+    y_train = train_df["target"].astype(int)
+    y_margin_train = train_df["margin"] if "margin" in train_df.columns else None
+
+    X_cal = cal_df[base_features].copy()
+    y_cal = cal_df["target"].astype(int)
+
+    X_test = test_df[base_features].copy()
+    y_test = test_df["target"].astype(int)
+    y_margin_test = test_df["margin"] if "margin" in test_df.columns else None
+
+    # Target encodings learned on train only (saved for predictor)
+    home_map, home_prior = calculate_target_encoding(train_df, "home_team")
+    away_map, away_prior = calculate_target_encoding(train_df, "away_team", target="target")
+
+    for X, dframe in [(X_train, train_df), (X_cal, cal_df), (X_test, test_df)]:
+        X["home_win_rate"] = dframe["home_team"].map(home_map).fillna(home_prior)
+        X["away_win_rate"] = dframe["away_team"].map(away_map).fillna(away_prior)
+        X.drop(columns=["home_team", "away_team"], inplace=True)
+
+        # Interactions
+        if "away_sos" in dframe.columns:
+            X["home_win_rate_away_sos"] = X["home_win_rate"] * dframe["away_sos"]
+        if "away_b2b" in dframe.columns and "finish_diff" in dframe.columns:
+            X["away_b2b_home_strength"] = dframe["away_b2b"] * dframe["finish_diff"]
+
+        # Symbolic features (if present)
+        if all(k in dframe.columns for k in ["home_xg", "away_xg", "home_elo", "away_elo"]):
+            X["pressure_index"] = (dframe["home_xg"] / (dframe["away_xg"] + 0.1)) * (
+                dframe["home_elo"] / (dframe["away_elo"] + 0.1)
+            )
+        if all(k in dframe.columns for k in ["home_xg", "away_xg", "home_sos", "away_sos"]):
+            X["xg_efficiency"] = (dframe["home_xg"] * (dframe["home_sos"] / 1500.0)) - (
+                dframe["away_xg"] * (dframe["away_sos"] / 1500.0)
+            )
+        if all(k in dframe.columns for k in ["elo_diff", "l10_xg_diff"]):
+            X["power_momentum"] = dframe["elo_diff"] * dframe["l10_xg_diff"]
+
+        prune = [
+            "home_win_rate",  # intentionally not used directly
+            "home_venue_goal_diff",
+            "away_venue_goal_diff",
+            "l5_pizza_diff",
+            "l5_nzt_diff",
+            "l5_rush_diff",
+            "l5_pk_diff",
+            "l5_pp_diff",
+            "l5_ozs_diff",
+            "l5_hdc_diff",
+        ]
+        for col in prune:
+            if col in X.columns:
+                X.drop(columns=[col], inplace=True)
+
+    # Stability pruning (shared across all splits)
+    try:
+        X_train, X_cal, X_test, dropped = prune_unstable_features(
+            X_train, X_cal, X_test, recent_n=int(stability_recent_n)
+        )
+        if dropped:
+            print(f"🧹 Stability prune: dropped {len(dropped)} unstable features")
+    except Exception as e:
+        print(f"⚠️ Stability pruning skipped: {e}")
+
+    # Recency weights on train (newest games heavier)
+    n_train = len(train_df)
+    if n_train > 1:
+        ages = (n_train - 1) - np.arange(n_train, dtype=float)
+        sample_weights = 0.5 ** (ages / 60.0)
+    else:
+        sample_weights = np.ones(n_train, dtype=float)
+
+    if "season_month" in train_df.columns:
+        late_mask = train_df["season_month"].isin([3, 4]).values
+        sample_weights[late_mask] *= 1.25
+
+    encoding_stats = {
+        "home_map": home_map,
+        "home_prior": float(home_prior),
+        "away_map": away_map,
+        "away_prior": float(away_prior),
+    }
+
+    feature_names = list(X_train.columns)
+    return {
+        "X_train": X_train,
+        "y_train": y_train,
+        "y_margin_train": y_margin_train,
+        "X_cal": X_cal,
+        "y_cal": y_cal,
+        "X_test": X_test,
+        "y_test": y_test,
+        "y_margin_test": y_margin_test,
+        "sample_weights": sample_weights,
+        "feature_names": feature_names,
+        "encoding_stats": encoding_stats,
+    }
+
+
+def train_calibrate_evaluate_variant(
+    *,
+    name: str,
+    train_df: pd.DataFrame,
+    cal_df: pd.DataFrame,
+    test_df: pd.DataFrame,
+    do_grid_search: bool,
+    fixed_params: Optional[Dict] = None,
+):
+    """Train -> calibrate -> evaluate, writing variant-prefixed artifacts."""
+    mats = _build_matrices_and_sidecars(train_df, cal_df, test_df)
+    X_train = mats["X_train"]
+    y_train = mats["y_train"]
+    X_cal = mats["X_cal"]
+    y_cal = mats["y_cal"]
+    X_test = mats["X_test"]
+    y_test = mats["y_test"]
+    w = mats["sample_weights"]
+
+    print(f"\n🧠 Training XGB variant={name} (grid_search={do_grid_search})")
+    print(f"  train={len(X_train)} cal={len(X_cal)} test={len(X_test)} feats={X_train.shape[1]}")
+
+    best_params = None
+    if do_grid_search:
+        tscv = TimeSeriesSplit(n_splits=5)
+        param_grid = {
+            "max_depth": [3, 4, 5],
+            "learning_rate": [0.01, 0.03, 0.05],
+            "n_estimators": [100, 150, 200],
+            "subsample": [0.8, 0.9],
+            "colsample_bytree": [0.8, 0.9],
+            "gamma": [0, 0.1, 0.2],
+        }
+        base = xgb.XGBClassifier(
+            objective="binary:logistic",
+            eval_metric="logloss",
+            random_state=42,
+        )
+        grid = GridSearchCV(
+            estimator=base,
+            param_grid=param_grid,
+            cv=tscv,
+            scoring="neg_log_loss",
+            n_jobs=-1,
+        )
+        grid.fit(X_train, y_train, sample_weight=w)
+        best_model = grid.best_estimator_
+        best_params = dict(grid.best_params_ or {})
+        print(f"✅ {name} best params: {best_params}")
+    else:
+        params = fixed_params or {}
+        if not params:
+            params = {
+                "max_depth": 4,
+                "learning_rate": 0.03,
+                "n_estimators": 150,
+                "subsample": 0.85,
+                "colsample_bytree": 0.85,
+                "gamma": 0.0,
+            }
+        best_params = dict(params)
+        best_model = xgb.XGBClassifier(
+            objective="binary:logistic",
+            eval_metric="logloss",
+            random_state=42,
+            **best_params,
+        )
+        best_model.fit(X_train, y_train, sample_weight=w)
+
+    # Calibrate on true future fold
+    best_model.fit(X_train, y_train, sample_weight=w)
+    cal = CalibratedClassifierCV(estimator=best_model, method="isotonic", cv="prefit")
+    cal.fit(X_cal, y_cal)
+
+    # Evaluate on test window (identical across variants)
+    y_prob = np.clip(cal.predict_proba(X_test)[:, 1], 1e-6, 1 - 1e-6)
+    y_pred = (y_prob >= 0.5).astype(int)
+    acc = float(accuracy_score(y_test, y_pred))
+    loss = float(log_loss(y_test, y_prob))
+    print(f"📊 {name} test acc={acc:.3f} logloss={loss:.4f}")
+
+    # Save sidecars for predictor
+    with open(f"team_encodings_{name}.json", "w") as f:
+        json.dump(mats["encoding_stats"], f)
+    with open(f"xgb_features_{name}.pkl", "wb") as f:
+        pickle.dump(mats["feature_names"], f)
+    with open(f"xgb_calibrated_model_{name}.pkl", "wb") as f:
+        pickle.dump(cal, f)
+
+    # Booster JSON for any legacy code paths
+    try:
+        best_model.save_model(f"xgb_nhl_model_{name}.json")
+    except Exception as e:
+        print(f"⚠️ Could not save booster JSON for {name}: {e}")
+
+    # Shared recent evaluator (apples-to-apples vs Elo)
+    recent_eval = None
+    try:
+        recent_eval = rolling_recent_eval(
+            pd.concat([train_df, cal_df, test_df], ignore_index=True),
+            recent_n=200,
+            n_splits=4,
+        )
+    except Exception as e:
+        print(f"⚠️ Recent-window evaluation failed for {name}: {e}")
+
+    return {
+        "name": name,
+        "best_params": best_params,
+        "test_acc": acc,
+        "test_logloss": loss,
+        "recent_eval": recent_eval,
+        "artifacts": {
+            "calibrated_model": f"xgb_calibrated_model_{name}.pkl",
+            "features": f"xgb_features_{name}.pkl",
+            "encodings": f"team_encodings_{name}.json",
+            "booster_json": f"xgb_nhl_model_{name}.json",
+        },
+    }
+
 def train_optimized_model():
     print("🚀 STARTING ADVANCED DATA SCIENCE OPTIMIZATION (PHASE 7)")
     print("=" * 60)
@@ -576,6 +826,93 @@ def train_optimized_model():
         
     print(f"✅ Extracted {len(df)} training samples")
     df = df.sort_values('date')
+
+    # --- Feature leakage audit (hard fail) ---
+    _audit_no_postgame_feature_leakage(df)
+
+    # --- Build identical forward windows for all variants ---
+    # We always evaluate on the same future calibration + test windows.
+    train_df_full, cal_df, test_df = split_train_cal_test(df, train_frac=0.80, cal_frac=0.10)
+    # Recent-300 challenger: train only on the most recent N games *from the train block*
+    recent_n = 300
+    train_df_recent = train_df_full.tail(recent_n).copy() if len(train_df_full) > recent_n else train_df_full.copy()
+    print(f"🏷️ Variants: full_train={len(train_df_full)} recent_train={len(train_df_recent)} cal={len(cal_df)} test={len(test_df)}")
+
+    # Train FULL variant (includes hyperparam search)
+    full_res = train_calibrate_evaluate_variant(
+        name="full",
+        train_df=train_df_full,
+        cal_df=cal_df,
+        test_df=test_df,
+        do_grid_search=True,
+    )
+
+    # Train RECENT variant (reuse full params for speed/stability)
+    recent_res = train_calibrate_evaluate_variant(
+        name="recent",
+        train_df=train_df_recent,
+        cal_df=cal_df,
+        test_df=test_df,
+        do_grid_search=False,
+        fixed_params=full_res.get("best_params"),
+    )
+
+    # Pick champion by forward test log loss (lower is better)
+    champ = "full"
+    try:
+        if float(recent_res["test_logloss"]) < float(full_res["test_logloss"]) - 1e-6:
+            champ = "recent"
+    except Exception:
+        champ = "full"
+
+    print(f"🏆 XGB champion={champ} (full_ll={full_res.get('test_logloss'):.4f}, recent_ll={recent_res.get('test_logloss'):.4f})")
+
+    # Write legacy artifact filenames to keep the rest of the pipeline stable.
+    try:
+        chosen = full_res if champ == "full" else recent_res
+        art = chosen.get("artifacts", {}) if isinstance(chosen, dict) else {}
+        # Calibrated model + features are pickles; booster + encodings are JSON.
+        if art.get("calibrated_model") and Path(str(art["calibrated_model"])).exists():
+            shutil.copyfile(str(art["calibrated_model"]), "xgb_calibrated_model.pkl")
+        if art.get("features") and Path(str(art["features"])).exists():
+            shutil.copyfile(str(art["features"]), "xgb_features.pkl")
+        if art.get("encodings") and Path(str(art["encodings"])).exists():
+            shutil.copyfile(str(art["encodings"]), "team_encodings.json")
+        if art.get("booster_json") and Path(str(art["booster_json"])).exists():
+            shutil.copyfile(str(art["booster_json"]), "xgb_nhl_model.json")
+        print("✅ Wrote legacy champion artifacts (xgb_* + team_encodings.json)")
+    except Exception as e:
+        print(f"⚠️ Could not write legacy champion artifacts: {e}")
+
+    # Persist performance snapshot (including champion)
+    perf_out = {
+        "updated_at_utc": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+        "xgb_champion": champ,
+        "variants": {
+            "full": {
+                "train_n": int(len(train_df_full)),
+                "test_acc": float(full_res.get("test_acc")),
+                "test_logloss": float(full_res.get("test_logloss")),
+                "recent_eval": full_res.get("recent_eval"),
+            },
+            "recent": {
+                "train_n": int(len(train_df_recent)),
+                "test_acc": float(recent_res.get("test_acc")),
+                "test_logloss": float(recent_res.get("test_logloss")),
+                "recent_eval": recent_res.get("recent_eval"),
+            },
+        },
+        # Keep top-level fields for backward compatibility with guardrails
+        "xgb_recent_logloss": float((recent_res.get("recent_eval") or {}).get("xgb_recent_logloss") or (full_res.get("recent_eval") or {}).get("xgb_recent_logloss") or float("nan")),
+        "elo_recent_logloss": float((recent_res.get("recent_eval") or {}).get("elo_recent_logloss") or (full_res.get("recent_eval") or {}).get("elo_recent_logloss") or float("nan")),
+    }
+    with open("model_performance.json", "w") as f:
+        json.dump(perf_out, f, indent=2)
+    print("✅ Saved model_performance.json (with xgb_champion)")
+
+    # NOTE: The rest of the previous monolithic training flow remains below for now,
+    # but is bypassed because we return early after producing artifacts.
+    return
     
     # Time-based split with a dedicated calibration fold:
     # train -> calibrate (future) -> final test (further future)

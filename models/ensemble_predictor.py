@@ -4,14 +4,28 @@ Ensemble Predictor
 Combines specialized models based on game context for maximum accuracy
 """
 from typing import Dict
-from context_detector import ContextDetector
-from specialized_models import (
-    HighScoringGameModel,
-    DefensiveMatchupModel,
-    PlayoffRaceModel,
-    RivalryGameModel
-)
-from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
+try:
+    from context_detector import ContextDetector
+except Exception:
+    from utils.context_detector import ContextDetector
+try:
+    from specialized_models import (
+        HighScoringGameModel,
+        DefensiveMatchupModel,
+        PlayoffRaceModel,
+        RivalryGameModel,
+    )
+except Exception:
+    from models.specialized_models import (
+        HighScoringGameModel,
+        DefensiveMatchupModel,
+        PlayoffRaceModel,
+        RivalryGameModel,
+    )
+try:
+    from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
+except Exception:
+    from models.improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
 
 class EnsemblePredictor:
     def __init__(self):
