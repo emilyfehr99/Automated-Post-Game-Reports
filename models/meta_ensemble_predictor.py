@@ -271,6 +271,7 @@ class MetaEnsemblePredictor:
         try:
             p = Path("model_performance.json")
             if not p.exists():
+                print("ℹ️  No model_performance.json found; using default ensemble weights")
                 return
             with open(p, "r") as f:
                 perf = json.load(f)
@@ -278,6 +279,7 @@ class MetaEnsemblePredictor:
             x_ll = perf.get("xgb_recent_logloss") or perf.get("xgb_cal_mean_logloss")
             e_ll = perf.get("elo_recent_logloss") or perf.get("elo_mean_logloss")
             if x_ll is None or e_ll is None:
+                print("ℹ️  model_performance.json missing logloss fields; using default ensemble weights")
                 return
 
             # If XGB is worse than Elo by a meaningful margin, reduce its influence.
@@ -286,6 +288,15 @@ class MetaEnsemblePredictor:
             if float(x_ll) > float(e_ll) + margin:
                 self._component_weights["xgb"] = 0.35
                 self._component_weights["elo"] = 0.20
+                adjusted = True
+            else:
+                adjusted = False
+
+            print(
+                "📌 Loaded model_performance.json "
+                f"(xgb_ll={float(x_ll):.4f}, elo_ll={float(e_ll):.4f}, adjusted={adjusted}) "
+                f"weights={self._component_weights}"
+            )
         except Exception:
             return
 

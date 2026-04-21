@@ -228,6 +228,12 @@ jobs:
              git add --force team_encodings.json
              FILES_TO_COMMIT="$FILES_TO_COMMIT team_encodings.json"
           fi
+          
+          # Add performance snapshot (guardrails)
+          if [ -f "model_performance.json" ]; then
+             git add --force model_performance.json
+             FILES_TO_COMMIT="$FILES_TO_COMMIT model_performance.json"
+          fi
 
           if [ -f "meta_confidence_model.pkl" ]; then
              if [ "${PUSH_MODEL_ARTIFACTS}" = "true" ]; then
