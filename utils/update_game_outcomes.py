@@ -31,7 +31,8 @@ def update_game_outcomes():
     
     if not predictions_file.exists():
         logger.error(f"Predictions file not found at {predictions_file}")
-        return False
+        print("OUTCOMES_UPDATED=0")
+        return 0
         
     logger.info(f"Checking for game updates in {predictions_file}...")
     
@@ -184,8 +185,11 @@ def update_game_outcomes():
         logger.info("Successfully saved updates.")
     else:
         logger.info("No completed games found needing updates.")
-        
-    return True
+
+    # Machine-readable output for CI/workflows
+    print(f"OUTCOMES_UPDATED={updated_count}")
+    return int(updated_count)
 
 if __name__ == "__main__":
+    # Always exit 0 so the workflow can decide whether to retrain.
     update_game_outcomes()

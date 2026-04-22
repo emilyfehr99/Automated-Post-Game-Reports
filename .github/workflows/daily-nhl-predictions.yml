@@ -62,9 +62,20 @@ jobs:
 
       - name: Set up Python
         if: steps.check_date.outputs.should_run == 'true'
+        id: setup_python
         uses: actions/setup-python@v6
         with:
           python-version: '3.10'
+
+      - name: Cache pip
+        if: steps.check_date.outputs.should_run == 'true'
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-py310-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-py310-
+            ${{ runner.os }}-pip-
 
       - name: Install dependencies
         if: steps.check_date.outputs.should_run == 'true'
@@ -94,7 +105,7 @@ jobs:
           echo "Looking for scraper:"
           find . -name "daily_edge_data_scraper.py" -type f
           echo "Running scraper:"
-          PYTHONPATH=".:models:analyzers:utils:scrapers:api" python3 scrapers/daily_edge_data_scraper.py
+          PYTHONPATH=".:models:analyzers:utils:scrapers" python3 scrapers/daily_edge_data_scraper.py
 
       - name: Validate edge data exists
         if: steps.check_date.outputs.should_run == 'true'
@@ -112,7 +123,7 @@ jobs:
           echo "📊 GENERATING REAL TEAM STATS"
           echo "Current directory: $(pwd)"
           echo "Running team stats generator..."
-          PYTHONPATH=".:models:analyzers:utils:scrapers:api" python3 utils/generate_real_team_stats.py
+          PYTHONPATH=".:models:analyzers:utils:scrapers" python3 utils/generate_real_team_stats.py
           echo "✅ Team stats generation complete"
           
           # Check if file was created (script saves to parent directory)
@@ -128,15 +139,19 @@ jobs:
 
       - name: Update game outcomes
         if: steps.check_date.outputs.should_run == 'true'
+        id: outcomes
         run: |
           echo "📝 UPDATING PAST GAME OUTCOMES"
-          PYTHONPATH=".:models:analyzers:utils:scrapers:api" python3 utils/update_game_outcomes.py
+          # Update outcomes, emit OUTCOMES_UPDATED=N, and persist to step output.
+          set -e
+          PYTHONPATH=".:models:analyzers:utils:scrapers" python3 utils/update_game_outcomes.py | tee /tmp/outcomes.log
+          updated="$(python3 - <<'PY'\nimport re\nfrom pathlib import Path\nm = re.search(r'OUTCOMES_UPDATED=(\\d+)', Path('/tmp/outcomes.log').read_text())\nprint(int(m.group(1)) if m else 0)\nPY\n)\"\n          echo \"outcomes_updated=${updated}\" >> \"$GITHUB_OUTPUT\"
 
       - name: Retrain XGBoost Model
-        if: steps.check_date.outputs.should_run == 'true'
+        if: steps.check_date.outputs.should_run == 'true' && steps.outcomes.outputs.outcomes_updated != '0'
         run: |
           echo "🧠 RETRAINING MODEL WITH LATEST RESULTS"
-          PYTHONPATH=".:models:analyzers:utils:scrapers:api" python3 models/train_xgboost_model.py
+          PYTHONPATH=".:models:analyzers:utils:scrapers" python3 models/train_xgboost_model.py
           if [ -f "xgb_nhl_model.json" ]; then
              echo "✅ Model retrained successfully"
           else
@@ -150,7 +165,7 @@ jobs:
         run: |
           echo "🎯 RUNNING DAILY PREDICTIONS WITH META-ENSEMBLE"
           echo "All data collected, now making predictions..."
-          PYTHONPATH=".:models:analyzers:utils:scrapers:api" python3 daily_prediction_notifier.py
+          PYTHONPATH=".:models:analyzers:utils:scrapers" python3 daily_prediction_notifier.py
 
       - name: Commit predictions and edge data changes
         if: steps.check_date.outputs.should_run == 'true'

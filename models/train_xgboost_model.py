@@ -655,8 +655,26 @@ def _build_matrices_and_sidecars(
         )
         if dropped:
             print(f"🧹 Stability prune: dropped {len(dropped)} unstable features")
+            # Print names to make diagnosing upstream feature drift easy in CI logs.
+            print("   dropped:", ", ".join(dropped[:50]) + (" ..." if len(dropped) > 50 else ""))
     except Exception as e:
         print(f"⚠️ Stability pruning skipped: {e}")
+
+    # Feature health: missingness in the most recent window
+    try:
+        import pandas as _pd
+        X_all = _pd.concat([X_train, X_cal, X_test], axis=0, ignore_index=True)
+        recent = X_all.tail(int(stability_recent_n))
+        miss = recent.isna().mean().sort_values(ascending=False)
+        top = miss[miss > 0.0].head(20)
+        if len(top) > 0:
+            print(f"🩺 Feature health (missing rate) on last {len(recent)} rows:")
+            for name, frac in top.items():
+                print(f"  - {name}: {frac:.1%}")
+        else:
+            print(f"🩺 Feature health: no missing values in last {len(recent)} rows")
+    except Exception as e:
+        print(f"⚠️ Feature health report failed: {e}")
 
     # Recency weights on train (newest games heavier)
     n_train = len(train_df)
