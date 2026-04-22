@@ -385,6 +385,23 @@ class PostGameReportGenerator:
                     # Position home logo to the right of away logo
                     home_logo_x = header_img.width - 519  # Further right (moved 9.5cm/269px total inward)
                     home_logo_y = team_y - 81  # Moved down 0.8cm total (25px) from -106 to -81
+                    # Add a white badge behind the home logo for contrast on dark backgrounds (e.g., TBL).
+                    try:
+                        pad = 14
+                        badge_w = home_logo.width + (pad * 2)
+                        badge_h = home_logo.height + (pad * 2)
+                        badge = PILImage.new("RGBA", (badge_w, badge_h), (0, 0, 0, 0))
+                        bd = ImageDraw.Draw(badge)
+                        # Slightly translucent white with a subtle outline
+                        bd.ellipse(
+                            (0, 0, badge_w - 1, badge_h - 1),
+                            fill=(255, 255, 255, 235),
+                            outline=(255, 255, 255, 255),
+                            width=2,
+                        )
+                        header_img.paste(badge, (home_logo_x - pad, home_logo_y - pad), badge)
+                    except Exception:
+                        pass
                     header_img.paste(home_logo, (home_logo_x, home_logo_y), home_logo)
                 
                 # Draw NHL logo under the team logos if available
@@ -3804,6 +3821,26 @@ class PostGameReportGenerator:
                     # Resize logo to fit center ice circle
                     logo_size = 12  # 12 feet diameter in coordinate units
                     home_logo = home_logo.resize((logo_size, logo_size), PILImage.Resampling.LANCZOS)
+                    # Add white badge behind logo for contrast on light/dark rink textures.
+                    try:
+                        pad = 2
+                        badge_w = home_logo.width + (pad * 2)
+                        badge_h = home_logo.height + (pad * 2)
+                        badge = PILImage.new("RGBA", (badge_w, badge_h), (0, 0, 0, 0))
+                        bd = PILImage.new("RGBA", (badge_w, badge_h), (0, 0, 0, 0))
+                        from PIL import ImageDraw as _ImageDraw
+                        d = _ImageDraw.Draw(bd)
+                        d.ellipse(
+                            (0, 0, badge_w - 1, badge_h - 1),
+                            fill=(255, 255, 255, 220),
+                            outline=(255, 255, 255, 255),
+                            width=1,
+                        )
+                        badge = bd
+                        badge.paste(home_logo, (pad, pad), home_logo)
+                        home_logo = badge
+                    except Exception:
+                        pass
                     
                     # Convert to numpy array for matplotlib
                     import numpy as np
