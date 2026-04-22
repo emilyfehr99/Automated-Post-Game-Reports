@@ -164,6 +164,11 @@ jobs:
           echo "All data collected, now making predictions..."
           PYTHONPATH=".:models:analyzers:utils:scrapers" python3 daily_prediction_notifier.py
 
+      - name: Smoke test (imports + prediction schema)
+        if: steps.check_date.outputs.should_run == 'true'
+        run: |
+          PYTHONPATH=".:models:analyzers:utils:scrapers" python3 -m pytest -q tests/test_smoke_daily_predictions.py
+
       - name: "Guardrail: ensure we don't use XGB when worse than Elo"
         if: steps.check_date.outputs.should_run == 'true'
         run: |
@@ -176,20 +181,35 @@ jobs:
           perf = json.loads(p.read_text())
           x_ll = perf.get("xgb_recent_logloss") or perf.get("xgb_cal_mean_logloss")
           e_ll = perf.get("elo_recent_logloss") or perf.get("elo_mean_logloss")
-          mode = perf.get("ensemble_mode")
-          weights = perf.get("ensemble_weights") or {}
           if x_ll is None or e_ll is None:
               print("Guardrail skipped: missing logloss fields")
               raise SystemExit(0)
           gap = float(x_ll) - float(e_ll)
           margin = 0.01
           if gap > margin:
-              # When XGB is worse, we require elo_champion and xgb weight 0.
-              if mode != "elo_champion":
-                  raise SystemExit(f"Guardrail failed: xgb worse by {gap:.4f} but ensemble_mode={mode}")
-              if float(weights.get("xgb", 1.0)) != 0.0:
-                  raise SystemExit(f"Guardrail failed: xgb worse by {gap:.4f} but xgb weight={weights.get('xgb')}")
-          print(f"Guardrail OK (gap={gap:+.4f}, mode={mode}, xgb_w={weights.get('xgb')})")
+              # When XGB is worse, require that today's saved predictions indicate Elo-champion mode.
+              hist = Path("data/win_probability_predictions_v2.json")
+              if not hist.exists():
+                  hist = Path("win_probability_predictions_v2.json")
+              if not hist.exists():
+                  raise SystemExit("Guardrail failed: predictions history missing")
+              d = json.loads(hist.read_text())
+              preds = d.get("predictions", [])
+              if not preds:
+                  raise SystemExit("Guardrail failed: no predictions in history")
+              today = preds[-1].get("date")
+              todays = [r for r in preds if r.get("date") == today]
+              if not todays:
+                  raise SystemExit("Guardrail failed: could not find today's predictions in history")
+              bad = []
+              for r in todays:
+                  mode = r.get("ensemble_mode")
+                  w = (r.get("ensemble_weights") or {})
+                  if mode != "elo_champion" or float(w.get("xgb", 1.0)) != 0.0:
+                      bad.append((r.get("game_id"), mode, w.get("xgb")))
+              if bad:
+                  raise SystemExit(f\"Guardrail failed: xgb worse by {gap:.4f} but found non-elo-champion rows: {bad[:5]}\")
+          print(f\"Guardrail OK (gap={gap:+.4f})\")
           PY
 
       - name: Commit predictions and edge data changes
@@ -219,6 +239,16 @@ jobs:
             echo "✅ win_probability_predictions_v2.json added"
           else
             echo "⚠️  win_probability_predictions_v2.json not found in data/"
+          fi
+
+          # Only commit model_performance.json when we actually retrained.
+          if [ "${{ steps.outcomes.outputs.outcomes_updated }}" != "0" ] && [ -f "model_performance.json" ]; then
+            echo "📦 Adding model_performance.json (retrain day)..."
+            git add --force model_performance.json
+            FILES_TO_COMMIT="$FILES_TO_COMMIT model_performance.json"
+            echo "✅ model_performance.json added"
+          else
+            echo "ℹ️  Skipping model_performance.json commit (no retrain)"
           fi
           
           # Add season_2025_2026_team_stats.json if it exists

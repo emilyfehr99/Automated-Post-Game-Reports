@@ -253,6 +253,7 @@ class MetaEnsemblePredictor:
         self.xgb_model = None
         self.calibrated_model = None
         self.confidence_model = None # Phase 10: Meta-Confidence Model
+        self.total_goals_model = None  # Scoreline backbone (total goals)
         self.history_tracker = TeamHistory()
         self.feature_names = []
         self.team_profiles = {}
@@ -328,17 +329,6 @@ class MetaEnsemblePredictor:
                 f"mode={self._model_mode}, shrink_alpha={self._shrink_alpha:.2f}, adjusted={adjusted}) "
                 f"weights={self._component_weights}"
             )
-
-            # Persist current mode/weights back into model_performance.json so workflows
-            # can assert we are not using XGB when it underperforms Elo.
-            try:
-                perf["ensemble_mode"] = self._model_mode
-                perf["ensemble_weights"] = self._component_weights
-                perf["ensemble_shrink_alpha"] = float(self._shrink_alpha)
-                with open(p, "w") as f:
-                    json.dump(perf, f, indent=2)
-            except Exception:
-                pass
         except Exception:
             return
 
@@ -426,6 +416,19 @@ class MetaEnsemblePredictor:
         except Exception as e:
             print(f"⚠️ Error loading goal margin model: {e}")
             self.margin_model = None
+
+        # Total Goals Model (scoreline backbone)
+        try:
+            tg_path = Path("total_goals_model.pkl")
+            if tg_path.exists():
+                with open(tg_path, "rb") as f:
+                    self.total_goals_model = pickle.load(f)
+                print(f"✅ Loaded Total Goals model from {tg_path}")
+            else:
+                self.total_goals_model = None
+        except Exception as e:
+            print(f"⚠️ Error loading total goals model: {e}")
+            self.total_goals_model = None
 
         # Phase 17: Period 1 Meta-Model
         try:
@@ -818,6 +821,36 @@ class MetaEnsemblePredictor:
                     predicted_margin = float(self.margin_model.predict(df)[0])
                 except Exception as e:
                     print(f"Margin prediction error: {e}")
+
+            # 5b. Scoreline: predict total goals + split by margin
+            predicted_total = None
+            try:
+                if self.total_goals_model is not None:
+                    predicted_total = float(self.total_goals_model.predict(df)[0])
+            except Exception as e:
+                print(f"Total goals prediction error: {e}")
+                predicted_total = None
+
+            predicted_home_goals = None
+            predicted_away_goals = None
+            if predicted_total is not None:
+                # Clamp to a sane NHL range (regressor can output extreme tails)
+                predicted_total = float(max(2.0, min(12.0, predicted_total)))
+                # margin is home-away, so:
+                # home = (total + margin)/2, away = (total - margin)/2
+                h = (predicted_total + float(predicted_margin)) / 2.0
+                a = (predicted_total - float(predicted_margin)) / 2.0
+                # avoid negatives
+                h = float(max(0.0, h))
+                a = float(max(0.0, a))
+                predicted_home_goals = int(round(h))
+                predicted_away_goals = int(round(a))
+                # Ensure no ties in final-score display: break ties toward predicted winner.
+                if predicted_home_goals == predicted_away_goals:
+                    if home_prob >= away_prob:
+                        predicted_home_goals += 1
+                    else:
+                        predicted_away_goals += 1
             
             # 6. Meta-Confidence Tiers (Phase 10)
             confidence_tier = "Standard"
@@ -845,6 +878,9 @@ class MetaEnsemblePredictor:
                 'away_prob': away_prob,
                 'home_prob': home_prob,
                 'predicted_margin': predicted_margin,
+                'predicted_total_goals': predicted_total,
+                'predicted_home_goals': predicted_home_goals,
+                'predicted_away_goals': predicted_away_goals,
                 'confidence_tier': confidence_tier,
                 'p1_home_prob': p1_win_prob * 100,
                 # Fatigue signals for downstream score model calibration/OT modeling

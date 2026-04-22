@@ -1,64 +1,15 @@
-import requests
-import json
-from datetime import datetime, timedelta
-import pandas as pd
+"""
+Deprecated shim.
 
-class NHLAPIClient:
-    def __init__(self):
-        self.base_url = "https://api-web.nhle.com/v1"
-        self.session = requests.Session()
-        self.session.headers.update({
-            'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36'
-        })
-    
-    def get_team_info(self, team_id):
-        """Get team information by team ID"""
-        url = f"{self.base_url}/teams/{team_id}"
-        response = self.session.get(url)
-        if response.status_code == 200:
-            return response.json()
-        return None
-    
-    def get_team_roster(self, team_abbr):
-        """Get team roster by team abbreviation"""
-        url = f"{self.base_url}/roster/{team_abbr}/current"
-        response = self.session.get(url)
-        if response.status_code == 200:
-            return response.json()
-        return None
-    
-    def get_game_schedule(self, date=None):
-        """Get game schedule for a specific date"""
-        if date is None:
-            date = datetime.now().strftime("%Y-%m-%d")
-        
-        url = f"{self.base_url}/schedule/{date}"
-        response = self.session.get(url)
-        if response.status_code == 200:
-            return response.json()
-        return None
-    
-    def get_game_center(self, game_id):
-        """Get detailed game information by combining boxscore and play-by-play"""
-        # Get boxscore data
-        boxscore_url = f"{self.base_url}/gamecenter/{game_id}/boxscore"
-        boxscore_response = self.session.get(boxscore_url)
-        
-        # Get play-by-play data
-        pbp_url = f"{self.base_url}/gamecenter/{game_id}/play-by-play"
-        pbp_response = self.session.get(pbp_url)
-        
-        if boxscore_response.status_code == 200 and pbp_response.status_code == 200:
-            boxscore_data = boxscore_response.json()
-            pbp_data = pbp_response.json()
-            
-            # Combine the data
-            combined_data = {
-                'boxscore': boxscore_data,
-                'play_by_play': pbp_data
-            }
-            return combined_data
-        return None
+The canonical implementation is `utils/nhl_api_client.py`. This file exists
+only to avoid import-path ambiguity and silent drift between duplicate clients.
+"""
+
+try:
+    from utils.nhl_api_client import NHLAPIClient  # type: ignore
+except Exception:
+    # Fallback for environments that put `utils/` on PYTHONPATH directly.
+    from nhl_api_client import NHLAPIClient  # type: ignore
     
     def get_game_landing(self, game_id):
         """Get game landing summary"""

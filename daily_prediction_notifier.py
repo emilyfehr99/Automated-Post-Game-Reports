@@ -411,6 +411,13 @@ class DailyPredictionNotifier:
                         'home_win_prob': (1.0 - pred['blended_away_prob']) if 'blended_away_prob' in pred else (pred['home_prob'] / 100.0),
                         'away_win_prob': pred['blended_away_prob'] if 'blended_away_prob' in pred else (pred['away_prob'] / 100.0),
                         'model_confidence': pred['confidence'] / 100.0,
+                        # Scoreline outputs (if present)
+                        'predicted_home_goals': pred.get("predicted_home_goals"),
+                        'predicted_away_goals': pred.get("predicted_away_goals"),
+                        'predicted_total_goals': pred.get("predicted_total_goals"),
+                        # Ensemble diagnostics (for guardrails / observability)
+                        'ensemble_mode': pred.get("ensemble_mode"),
+                        'ensemble_weights': pred.get("ensemble_weights"),
                         # Store fatigue signals when available
                         'away_back_to_back': pred.get('away_back_to_back', False),
                         'home_back_to_back': pred.get('home_back_to_back', False),
@@ -575,6 +582,16 @@ class DailyPredictionNotifier:
                         
                     blended_winner = game['away_team'] if blended_away_win_prob >= 0.5 else game['home_team']
 
+                    # Prefer meta-model scoreline when available (total-goals model + margin split).
+                    try:
+                        mh = pred.get("predicted_home_goals")
+                        ma = pred.get("predicted_away_goals")
+                        if mh is not None and ma is not None:
+                            home_score = int(mh)
+                            away_score = int(ma)
+                    except Exception:
+                        pass
+
                     # Force displayed scoreline to match blended winner.
                     max_goals = 10
                     if blended_winner == game['away_team']:
@@ -598,6 +615,11 @@ class DailyPredictionNotifier:
                         'confidence': max(blended_away_win_prob, 1.0 - blended_away_win_prob) * 100 * (0.95 if (game.get('away_goalie_status') != 'Confirmed' or game.get('home_goalie_status') != 'Confirmed') else 1.0),
                         'away_score': away_score,
                         'home_score': home_score,
+                        'predicted_home_goals': pred.get("predicted_home_goals"),
+                        'predicted_away_goals': pred.get("predicted_away_goals"),
+                        'predicted_total_goals': pred.get("predicted_total_goals"),
+                        'ensemble_mode': getattr(self.meta_ensemble, "_model_mode", None),
+                        'ensemble_weights': getattr(self.meta_ensemble, "_component_weights", None),
                         'away_goalie': game.get('away_goalie', 'TBD'),
                         'home_goalie': game.get('home_goalie', 'TBD'),
                         'goalie_confirmed': (game.get('away_goalie_status') == 'Confirmed' and game.get('home_goalie_status') == 'Confirmed'),

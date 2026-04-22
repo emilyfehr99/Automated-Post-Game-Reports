@@ -19,6 +19,10 @@ try:
 except Exception:
     from models.standings_tracker import StandingsTracker
 from typing import Dict, Optional
+try:
+    from feature_contract import assert_no_forbidden_features
+except Exception:
+    from models.feature_contract import assert_no_forbidden_features
 
 TEAM_COORDINATES = {
     'ANA': (33.80, -117.88), 'BOS': (42.36, -71.06), 'BUF': (42.89, -78.88),
@@ -378,6 +382,10 @@ def extract_features_chronologically(predictions):
                 'target': 1 if winner_side == 'home' else 0,
                 'p1_target': 1 if metrics.get('lead_after_p1') == 1 else 0, # Home leads after P1
                 'margin': h_score_final - a_score_final,
+                # Scoreline targets (USED ONLY FOR SCORELINE/TOTALS MODELING; never as features)
+                'home_goals_final': h_score_final,
+                'away_goals_final': a_score_final,
+                'total_goals_final': h_score_final + a_score_final,
                 'home_team': home,
                 'away_team': away,
                 
@@ -591,8 +599,21 @@ def _build_matrices_and_sidecars(
     base_features = [
         c
         for c in train_df.columns
-        if c not in ["game_id", "date", "target", "margin", "p1_target"]
+        if c
+        not in [
+            "game_id",
+            "date",
+            "target",
+            "margin",
+            "p1_target",
+            # Scoreline targets (must never become features)
+            "home_goals_final",
+            "away_goals_final",
+            "total_goals_final",
+        ]
     ]
+    # Hard fail on any forbidden postgame/label columns ever reaching the feature matrix.
+    assert_no_forbidden_features(base_features)
 
     X_train = train_df[base_features].copy()
     y_train = train_df["target"].astype(int)
@@ -1198,6 +1219,7 @@ def train_optimized_model():
             "elo_mean_acc": float(roll.get("elo_mean_acc")) if "roll" in locals() else None,
             "elo_mean_logloss": float(roll.get("elo_mean_logloss")) if "roll" in locals() else None,
         }
+        # (Scoreline metrics appended later once total-goals model is trained.)
         if isinstance(recent_eval, dict):
             perf_out.update(recent_eval)
         with open("model_performance.json", "w") as f:
@@ -1234,6 +1256,50 @@ def train_optimized_model():
     margin_preds = margin_model.predict(X_test)
     margin_mae = np.mean(np.abs(margin_preds - y_margin_test))
     print(f"✅ Margin Regressor trained. MAE: {margin_mae:.2f} goals")
+
+    # 3d.1 Total Goals Model (Scoreline backbone)
+    # Predict total goals (home+away) from the SAME feature pipeline as the win model.
+    total_goals_model = None
+    total_goals_mae = None
+    try:
+        if "total_goals_final" in train_df.columns and "total_goals_final" in test_df.columns:
+            y_total_train = train_df["total_goals_final"].astype(float).values
+            y_total_test = test_df["total_goals_final"].astype(float).values
+
+            total_goals_model = xgb.XGBRegressor(
+                objective="count:poisson",
+                n_estimators=250,
+                max_depth=4,
+                learning_rate=0.05,
+                subsample=0.9,
+                colsample_bytree=0.9,
+                reg_lambda=1.0,
+                random_state=42,
+            )
+            total_goals_model.fit(X_train, y_total_train, sample_weight=sample_weights)
+            total_preds = total_goals_model.predict(X_test)
+            total_goals_mae = float(np.mean(np.abs(total_preds - y_total_test)))
+            print(f"✅ Total Goals model trained. MAE: {total_goals_mae:.2f} goals")
+        else:
+            print("⚠️ Total Goals model skipped (missing total_goals_final column)")
+    except Exception as e:
+        print(f"⚠️ Total Goals model training failed: {e}")
+
+    # Append scoreline metrics to model_performance.json (created earlier).
+    try:
+        if total_goals_mae is not None:
+            p = Path("model_performance.json")
+            if p.exists():
+                with open(p, "r") as f:
+                    perf = json.load(f)
+            else:
+                perf = {}
+            perf["total_goals_mae"] = float(total_goals_mae)
+            with open(p, "w") as f:
+                json.dump(perf, f, indent=2)
+            print("✅ Updated model_performance.json with total_goals_mae")
+    except Exception as e:
+        print(f"⚠️ Could not update model_performance.json with scoreline metrics: {e}")
     
     # 3e. Period 1 Meta-Model (Phase 17)
     print("\n🏗️ Training Phase 17 Period 1 Meta-Model...")
@@ -1306,6 +1372,11 @@ def train_optimized_model():
         # Save the margin regression model
         with open('margin_regression_model.pkl', 'wb') as f:
             pickle.dump(margin_model, f)
+
+        # Save the total goals model (if trained)
+        if total_goals_model is not None:
+            with open("total_goals_model.pkl", "wb") as f:
+                pickle.dump(total_goals_model, f)
             
         # Save the Period 1 meta-model
         with open('p1_outcome_model.pkl', 'wb') as f:
