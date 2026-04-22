@@ -13,6 +13,7 @@ import lightgbm as lgb
 import pickle
 import math
 import shutil
+import hashlib
 from datetime import datetime, timedelta
 try:
     from standings_tracker import StandingsTracker
@@ -1314,11 +1315,33 @@ def train_optimized_model():
                 total_within_1 = float(np.mean(np.abs(total_preds - y_total_test) <= 1.0))
             except Exception:
                 total_within_1 = None
+            # Distribution diagnostics: Poisson NLL and dispersion proxy.
+            total_poisson_nll = None
+            total_dispersion_ratio = None
+            try:
+                import numpy as _np
+                from math import lgamma, log
+
+                lam = _np.clip(_np.asarray(total_preds, dtype=float), 0.05, 30.0)
+                y = _np.asarray(y_total_test, dtype=float)
+                # log P(Y=y | lam) = -lam + y*log(lam) - log(y!)
+                ll = (-lam + (y * _np.log(lam)) - _np.vectorize(lgamma)(y + 1.0))
+                total_poisson_nll = float(-_np.mean(ll))
+                # Dispersion proxy: Var(y)/Mean(y); Poisson expects ~1.
+                mu = float(_np.mean(y)) if y.size else None
+                var = float(_np.var(y)) if y.size else None
+                if mu and mu > 1e-9 and var is not None:
+                    total_dispersion_ratio = float(var / mu)
+            except Exception:
+                total_poisson_nll = None
+                total_dispersion_ratio = None
             print(f"✅ Total Goals model trained. MAE: {total_goals_mae:.2f} goals")
         else:
             print("⚠️ Total Goals model skipped (missing total_goals_final column)")
     except Exception as e:
         print(f"⚠️ Total Goals model training failed: {e}")
+        total_poisson_nll = None
+        total_dispersion_ratio = None
 
     # 3d.2 Home/Away Goals Models (true scoreline, not margin algebra)
     home_goals_model = None
@@ -1380,6 +1403,10 @@ def train_optimized_model():
                 perf["total_goals_mae"] = float(total_goals_mae)
             if total_within_1 is not None:
                 perf["total_goals_within_1"] = float(total_within_1)
+            if total_poisson_nll is not None:
+                perf["total_goals_poisson_nll"] = float(total_poisson_nll)
+            if total_dispersion_ratio is not None:
+                perf["total_goals_dispersion_ratio"] = float(total_dispersion_ratio)
             if home_goals_mae is not None:
                 perf["home_goals_mae"] = float(home_goals_mae)
             if away_goals_mae is not None:
@@ -1398,6 +1425,8 @@ def train_optimized_model():
             "elo_recent_logloss": float(recent_eval.get("elo_recent_logloss")) if isinstance(recent_eval, dict) and recent_eval.get("elo_recent_logloss") is not None else None,
             "total_goals_mae": float(total_goals_mae) if total_goals_mae is not None else None,
             "total_goals_within_1": float(total_within_1) if total_within_1 is not None else None,
+            "total_goals_poisson_nll": float(total_poisson_nll) if total_poisson_nll is not None else None,
+            "total_goals_dispersion_ratio": float(total_dispersion_ratio) if total_dispersion_ratio is not None else None,
             "home_goals_mae": float(home_goals_mae) if home_goals_mae is not None else None,
             "away_goals_mae": float(away_goals_mae) if away_goals_mae is not None else None,
         }
@@ -1504,6 +1533,21 @@ def train_optimized_model():
         
         with open("xgb_features.pkl", "wb") as f:
             pickle.dump(features, f)
+
+        # Feature snapshot for strict runtime validation (anti-leakage / drift guard).
+        try:
+            joined = "\n".join([str(x) for x in features]).encode("utf-8")
+            snap = {
+                "updated_at_utc": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "feature_count": int(len(features)),
+                "sha256": hashlib.sha256(joined).hexdigest(),
+                "features": list(features),
+            }
+            with open("model_feature_snapshot.json", "w") as f:
+                json.dump(snap, f, indent=2)
+            print("✅ Wrote model_feature_snapshot.json")
+        except Exception as e:
+            print(f"⚠️ Could not write model_feature_snapshot.json: {e}")
     else:
          print("\n⚠️ Did not save model (failed probability-first gates).")
          print(f"  - acc={acc:.3f} loss={loss:.4f} beats_elo={beats_elo} improves_prior={improves_prior} recent_ok={recent_ok}")

@@ -169,6 +169,7 @@ jobs:
             xgb_nhl_model*.json
             xgb_calibrated_model*.pkl
             xgb_features*.pkl
+            model_feature_snapshot.json
             team_encodings*.json
             meta_confidence_model.pkl
             margin_regression_model.pkl

@@ -381,84 +381,65 @@ class DailyPredictionNotifier:
         self._moe_default_w = float(best_w)
 
     def save_predictions_to_history(self, predictions: list):
-        """Save predictions to the permanent JSON history file for future training"""
+        """Persist predictions as append-only events and regenerate JSON view."""
         # Primary persistence: append-only events log (schema-stable, deterministic training).
         try:
             from utils.event_store import append_prediction_event
         except Exception:
             from event_store import append_prediction_event
+        new_count = 0
+        for pred in predictions:
+            if not pred.get("game_id"):
+                continue
+            record = {
+                'date': datetime.now(pytz.timezone('US/Central')).strftime('%Y-%m-%d'),
+                'game_id': pred['game_id'],
+                'home_team': pred['home_team'],
+                'away_team': pred['away_team'],
+                'predicted_winner': pred['predicted_winner'],
+                # Use BLENDED probabilities for history tracking to match the decision
+                'home_win_prob': (1.0 - pred['blended_away_prob']) if 'blended_away_prob' in pred else (pred['home_prob'] / 100.0),
+                'away_win_prob': pred['blended_away_prob'] if 'blended_away_prob' in pred else (pred['away_prob'] / 100.0),
+                'model_confidence': pred['confidence'] / 100.0,
+                # Scoreline outputs (if present)
+                'predicted_home_goals': pred.get("predicted_home_goals"),
+                'predicted_away_goals': pred.get("predicted_away_goals"),
+                'predicted_total_goals': pred.get("predicted_total_goals"),
+                # Ensemble diagnostics (for guardrails / observability)
+                'ensemble_mode': pred.get("ensemble_mode"),
+                'ensemble_weights': pred.get("ensemble_weights"),
+                # Store fatigue signals when available
+                'away_back_to_back': pred.get('away_back_to_back', False),
+                'home_back_to_back': pred.get('home_back_to_back', False),
+                'away_rest_value': pred.get('away_rest_value', 0.0),
+                'home_rest_value': pred.get('home_rest_value', 0.0),
+                # Store the metrics used for this prediction (crucial for training)
+                'metrics_used': {
+                    'home_xg': pred.get('home_xg', 0),
+                    'away_xg': pred.get('away_xg', 0),
+                },
+                'prediction_reason': "Meta-Ensemble Daily Run",
+                'suggested_units': pred.get('suggested_units', 0.0),
+                'odds_taken': pred.get('odds_taken', 0)
+            }
+            try:
+                append_prediction_event(record)
+                new_count += 1
+            except Exception as e:
+                print(f"❌ Error appending prediction event: {e}")
 
-        history_file = Path('data/win_probability_predictions_v2.json')
-        if not history_file.exists():
-            history_file = Path('win_probability_predictions_v2.json')
-            
-        if not history_file.exists():
-            print("⚠️ Warning: Could not find history file to save predictions.")
-            return
-
+        # Regenerate derived JSON view for dashboard/legacy readers
         try:
-            with open(history_file, 'r') as f:
-                data = json.load(f)
-            
-            existing_ids = {p.get('game_id') for p in data.get('predictions', []) if p.get('game_id')}
-            new_count = 0
-            
-            for pred in predictions:
-                # Only save if we have a game_id and it's not already there
-                if pred.get('game_id') and pred.get('game_id') not in existing_ids:
-                    # Construct record in the format expected by training scripts
-                    record = {
-                        'date': datetime.now(pytz.timezone('US/Central')).strftime('%Y-%m-%d'),
-                        'game_id': pred['game_id'],
-                        'home_team': pred['home_team'],
-                        'away_team': pred['away_team'],
-                        'predicted_winner': pred['predicted_winner'],
-                        # Use BLENDED probabilities for history tracking to match the decision
-                        'home_win_prob': (1.0 - pred['blended_away_prob']) if 'blended_away_prob' in pred else (pred['home_prob'] / 100.0),
-                        'away_win_prob': pred['blended_away_prob'] if 'blended_away_prob' in pred else (pred['away_prob'] / 100.0),
-                        'model_confidence': pred['confidence'] / 100.0,
-                        # Scoreline outputs (if present)
-                        'predicted_home_goals': pred.get("predicted_home_goals"),
-                        'predicted_away_goals': pred.get("predicted_away_goals"),
-                        'predicted_total_goals': pred.get("predicted_total_goals"),
-                        # Ensemble diagnostics (for guardrails / observability)
-                        'ensemble_mode': pred.get("ensemble_mode"),
-                        'ensemble_weights': pred.get("ensemble_weights"),
-                        # Store fatigue signals when available
-                        'away_back_to_back': pred.get('away_back_to_back', False),
-                        'home_back_to_back': pred.get('home_back_to_back', False),
-                        'away_rest_value': pred.get('away_rest_value', 0.0),
-                        'home_rest_value': pred.get('home_rest_value', 0.0),
-                        # Store the metrics used for this prediction (crucial for training)
-                        'metrics_used': {
-                            'home_xg': pred.get('home_xg', 0),
-                            'away_xg': pred.get('away_xg', 0),
-                            # Add other metrics if available from meta_ensemble
-                        },
-                        'prediction_reason': "Meta-Ensemble Daily Run",
-                        'suggested_units': pred.get('suggested_units', 0.0),
-                        'odds_taken': pred.get('odds_taken', 0)
-                    }
-                    data['predictions'].append(record)
-                    existing_ids.add(pred['game_id'])
-                    new_count += 1
+            from utils.build_predictions_history_view import write_view
+            write_view()
+        except Exception:
+            try:
+                from build_predictions_history_view import write_view
+                write_view()
+            except Exception as e:
+                print(f"⚠️ Could not regenerate JSON history view: {e}")
 
-                # Always append the prediction event (even if the JSON history already has it),
-                # since the JSON file is no longer the canonical training store.
-                try:
-                    append_prediction_event(record)
-                except Exception:
-                    pass
-            
-            if new_count > 0:
-                with open(history_file, 'w') as f:
-                    json.dump(data, f, indent=2)
-                print(f"✅ Saved {new_count} new predictions to history file.")
-            else:
-                print("ℹ️  No new predictions to save (all game IDs already exist).")
-                
-        except Exception as e:
-            print(f"❌ Error saving predictions to history: {e}")
+        print(f"✅ Appended {new_count} predictions to events log.")
 
     def get_daily_predictions_summary(self):
         """Get formatted summary of today's predictions using meta-ensemble"""

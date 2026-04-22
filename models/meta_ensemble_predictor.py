@@ -10,6 +10,7 @@ import xgboost as xgb
 import pandas as pd
 import pickle
 import math
+import hashlib
 from pathlib import Path
 from datetime import datetime, timedelta
 
@@ -258,6 +259,7 @@ class MetaEnsemblePredictor:
         self.away_goals_model = None
         self.history_tracker = TeamHistory()
         self.feature_names = []
+        self._feature_snapshot = None
         self.team_profiles = {}
         self.travel_archetypes = {}
         self.edge_profiles = {}
@@ -396,6 +398,17 @@ class MetaEnsemblePredictor:
             print("⚠️ feature definitions not found, XGBoost disabled")
             self.xgb_model = None
             return
+
+        # Feature snapshot (strict anti-leakage / drift validation)
+        try:
+            snap_path = Path("model_feature_snapshot.json")
+            if snap_path.exists():
+                with open(snap_path, "r") as f:
+                    self._feature_snapshot = json.load(f)
+                print("✅ Loaded model_feature_snapshot.json")
+        except Exception as e:
+            print(f"⚠️ Could not load model_feature_snapshot.json: {e}")
+            self._feature_snapshot = None
 
         # Phase 10: Meta-Confidence Model
         try:
@@ -818,6 +831,17 @@ class MetaEnsemblePredictor:
             vector = []
             for name in self.feature_names:
                 vector.append(feature_data.get(name, 0.0))
+
+            # Strict anti-leakage / drift guard: feature list must match training snapshot exactly.
+            if isinstance(self._feature_snapshot, dict) and self._feature_snapshot.get("sha256"):
+                joined = "\n".join([str(x) for x in self.feature_names]).encode("utf-8")
+                cur = hashlib.sha256(joined).hexdigest()
+                exp = str(self._feature_snapshot.get("sha256"))
+                if cur != exp:
+                    raise RuntimeError(
+                        f"Feature snapshot mismatch (runtime={cur} expected={exp}). "
+                        "Refusing XGB prediction due to potential leakage/drift."
+                    )
                 
             # 4. Make Prediction
             df = pd.DataFrame([vector], columns=self.feature_names)

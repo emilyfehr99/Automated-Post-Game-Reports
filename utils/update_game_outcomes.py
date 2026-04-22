@@ -31,22 +31,37 @@ logger = logging.getLogger(__name__)
 
 def update_game_outcomes():
     """Update valid predictions with actual game outcomes"""
-    predictions_file = Path('data/win_probability_predictions_v2.json')
-    if not predictions_file.exists():
-        # Fallback to root directory
-        predictions_file = Path('win_probability_predictions_v2.json')
-    
-    if not predictions_file.exists():
-        logger.error(f"Predictions file not found at {predictions_file}")
-        print("OUTCOMES_UPDATED=0")
-        return 0
-        
-    logger.info(f"Checking for game updates in {predictions_file}...")
-    
-    with open(predictions_file, 'r') as f:
-        data = json.load(f)
-        
-    predictions = data.get('predictions', [])
+    # Canonical: use append-only event logs
+    try:
+        from utils.event_store import load_latest_by_game_id, PREDICTION_EVENTS_PATH, OUTCOME_EVENTS_PATH
+    except Exception:
+        load_latest_by_game_id = None
+        PREDICTION_EVENTS_PATH = None
+        OUTCOME_EVENTS_PATH = None
+
+    predictions: list = []
+    if load_latest_by_game_id is not None and PREDICTION_EVENTS_PATH is not None:
+        preds_by_gid = load_latest_by_game_id(PREDICTION_EVENTS_PATH)
+        outs_by_gid = load_latest_by_game_id(OUTCOME_EVENTS_PATH) if OUTCOME_EVENTS_PATH is not None else {}
+        for gid, p in preds_by_gid.items():
+            # Mark outcomes if already present
+            if outs_by_gid.get(gid, {}).get("actual_winner"):
+                continue
+            predictions.append(p)
+        logger.info(f"Checking for game updates via events log ({len(predictions)} pending games)...")
+    else:
+        # Legacy fallback
+        predictions_file = Path('data/win_probability_predictions_v2.json')
+        if not predictions_file.exists():
+            predictions_file = Path('win_probability_predictions_v2.json')
+        if not predictions_file.exists():
+            logger.error("Predictions file not found (events log missing too)")
+            print("OUTCOMES_UPDATED=0")
+            return 0
+        logger.info(f"Checking for game updates in {predictions_file}...")
+        with open(predictions_file, 'r') as f:
+            data = json.load(f)
+        predictions = data.get('predictions', [])
     updated_count = 0
     
     client = NHLAPIClient()
@@ -157,16 +172,6 @@ def update_game_outcomes():
                     except Exception as e:
                         logger.warning(f"   Could not determine P1 lead for {game_id}: {e}")
 
-                    # Update the prediction record
-                    pred['actual_winner'] = actual_winner
-                    pred['actual_away_score'] = away_score
-                    pred['actual_home_score'] = home_score
-                    
-                    # Calculate accuracy for this single prediction reference
-                    predicted_winner = pred.get('predicted_winner')
-                    is_correct = (predicted_winner == actual_winner)
-                    pred['prediction_accuracy'] = 1.0 if is_correct else 0.0
-                    
                     updated_count += 1
                     logger.info(f"✅ Updated: {pred['away_team']} {away_score}-{home_score} {pred['home_team']} (Winner: {actual_winner})")
 
@@ -191,21 +196,16 @@ def update_game_outcomes():
             continue
             
     if updated_count > 0:
-        logger.info(f"Saving {updated_count} updated game outcomes to {predictions_file}...")
-        
-        # Save backup first
-        backup_file = predictions_file.parent / f"{predictions_file.stem}_backup.json"
+        # Regenerate derived JSON view for legacy readers/dashboard
         try:
-            with open(backup_file, 'w') as f:
-                json.dump(data, f, indent=2)
-        except Exception as e:
-            logger.warning(f"Could not create backup file: {e}")
-            
-        # Save updates
-        with open(predictions_file, 'w') as f:
-            json.dump(data, f, indent=2)
-            
-        logger.info("Successfully saved updates.")
+            from utils.build_predictions_history_view import write_view
+            write_view()
+        except Exception:
+            try:
+                from build_predictions_history_view import write_view
+                write_view()
+            except Exception as e:
+                logger.warning(f"Could not regenerate JSON history view: {e}")
     else:
         logger.info("No completed games found needing updates.")
 
