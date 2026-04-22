@@ -320,8 +320,10 @@ class GitHubActionsRunner:
             output_dir = Path("/tmp/nhl_images")
             output_dir.mkdir(exist_ok=True)
             
-            # Convert PDF to PNG
-            pages = convert_from_path(pdf_path, dpi=300)
+            # Convert PDF to PNG.
+            # These reports are text-dense and get downscaled in the X timeline,
+            # so we render at higher DPI to preserve small table text (especially sprite bars).
+            pages = convert_from_path(pdf_path, dpi=400)
             
             if not pages:
                 print(f"❌ PDF conversion failed - no pages")

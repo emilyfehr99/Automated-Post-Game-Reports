@@ -262,8 +262,11 @@ def create_sprite_analysis_tables(sprite_data, compact: bool = False):
         try:
             base_dir = os.path.dirname(__file__)
             font_path = os.path.join(base_dir, "assets", "RussoOne-Regular.ttf")
-            font = ImageFont.truetype(font_path, 28)
-            label_font = ImageFont.truetype(font_path, 24)
+            # The final report gets rasterized for X; these sprite tables are physically small,
+            # so we intentionally oversize the text in the source image to keep it legible
+            # after PDF->PNG conversion and mobile downscaling.
+            font = ImageFont.truetype(font_path, 40)
+            label_font = ImageFont.truetype(font_path, 26)
         except:
             font = ImageFont.load_default()
             label_font = font
@@ -294,11 +297,17 @@ def create_sprite_analysis_tables(sprite_data, compact: bool = False):
         text_x = (half_width - 2 - text_w) // 2
         text_y = (bar_height - text_h) // 2
         
-        # Draw with outline for readability
-        for offset_x in range(-1, 2):
-            for offset_y in range(-1, 2):
-                if offset_x == 0 and offset_y == 0: continue
-                draw.text((text_x + offset_x, text_y + offset_y), carry_text, font=font, fill='#000000')
+        # Draw with thicker outline for readability after downscaling
+        for offset_x in range(-2, 3):
+            for offset_y in range(-2, 3):
+                if offset_x == 0 and offset_y == 0:
+                    continue
+                draw.text(
+                    (text_x + offset_x, text_y + offset_y),
+                    carry_text,
+                    font=font,
+                    fill="#000000",
+                )
         draw.text((text_x, text_y), carry_text, font=font, fill='#FFFFFF')
         
         # RIGHT SIDE: Pass
@@ -323,11 +332,17 @@ def create_sprite_analysis_tables(sprite_data, compact: bool = False):
         text_x = half_width + 2 + (half_width - 2 - text_w) // 2
         text_y = (bar_height - text_h) // 2
         
-        # Draw with outline
-        for offset_x in range(-1, 2):
-            for offset_y in range(-1, 2):
-                if offset_x == 0 and offset_y == 0: continue
-                draw.text((text_x + offset_x, text_y + offset_y), pass_text, font=font, fill='#000000')
+        # Draw with thicker outline for readability after downscaling
+        for offset_x in range(-2, 3):
+            for offset_y in range(-2, 3):
+                if offset_x == 0 and offset_y == 0:
+                    continue
+                draw.text(
+                    (text_x + offset_x, text_y + offset_y),
+                    pass_text,
+                    font=font,
+                    fill="#000000",
+                )
         draw.text((text_x, text_y), pass_text, font=font, fill='#FFFFFF')
         
         # LABELS AT BOTTOM
