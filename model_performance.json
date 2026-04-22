@@ -1,38 +1,38 @@
 {
-  "updated_at_utc": "2026-04-21T18:57:39Z",
+  "updated_at_utc": "2026-04-22T11:41:15Z",
   "xgb_champion": "full",
   "variants": {
     "full": {
-      "train_n": 865,
+      "train_n": 868,
       "test_acc": 0.5779816513761468,
-      "test_logloss": 0.6829808211715409,
+      "test_logloss": 0.7107871698521743,
       "recent_eval": {
         "recent_n": 200,
-        "xgb_recent_logloss": 0.7318904136701712,
+        "xgb_recent_logloss": 0.705069408677176,
         "xgb_recent_acc": 0.6083333333333333,
-        "elo_recent_logloss": 0.6751350410112702,
-        "elo_recent_acc": 0.5583333333333333,
-        "xgb_recent_p05": 0.19325905814766883,
-        "xgb_recent_p50": 0.4870763700918961,
-        "xgb_recent_p95": 0.878871139883995
+        "elo_recent_logloss": 0.6794464785626685,
+        "elo_recent_acc": 0.5416666666666666,
+        "xgb_recent_p05": 0.1888521857559681,
+        "xgb_recent_p50": 0.618090946487111,
+        "xgb_recent_p95": 0.8858526796102524
       }
     },
     "recent": {
       "train_n": 300,
-      "test_acc": 0.5779816513761468,
-      "test_logloss": 1.36892288825862,
+      "test_acc": 0.5596330275229358,
+      "test_logloss": 1.1146629618274446,
       "recent_eval": {
         "recent_n": 200,
-        "xgb_recent_logloss": 0.7264979429959776,
+        "xgb_recent_logloss": 0.7055880540929278,
         "xgb_recent_acc": 0.6083333333333333,
-        "elo_recent_logloss": 0.6769757657212023,
-        "elo_recent_acc": 0.5416666666666666,
-        "xgb_recent_p05": 0.18978104144334793,
-        "xgb_recent_p50": 0.48313185108060186,
-        "xgb_recent_p95": 0.8871676087379455
+        "elo_recent_logloss": 0.678328569683858,
+        "elo_recent_acc": 0.525,
+        "xgb_recent_p05": 0.18949289247393608,
+        "xgb_recent_p50": 0.5775172367305095,
+        "xgb_recent_p95": 0.8845029681921005
       }
     }
   },
-  "xgb_recent_logloss": 0.7264979429959776,
-  "elo_recent_logloss": 0.6769757657212023
+  "xgb_recent_logloss": 0.7055880540929278,
+  "elo_recent_logloss": 0.678328569683858
 }
