@@ -15,17 +15,38 @@ import requests
 from io import BytesIO
 from PIL import Image as PILImage, ImageDraw, ImageFont
 
+
+def _candidate_font_paths() -> list[str]:
+    """Return candidate font paths (repo + local dev)."""
+    # This file lives in `analyzers/`; the shared report assets live in repo root `assets/`.
+    analyzers_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.abspath(os.path.join(analyzers_dir, os.pardir))
+    return [
+        # Preferred: shared assets used by the rest of the report
+        os.path.join(repo_root, "assets", "RussoOne-Regular.ttf"),
+        # Back-compat: local copies (older layouts)
+        os.path.join(analyzers_dir, "assets", "RussoOne-Regular.ttf"),
+        os.path.join(analyzers_dir, "RussoOne-Regular.ttf"),
+        os.path.join(repo_root, "RussoOne-Regular.ttf"),
+        # Local dev fallback
+        "/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf",
+    ]
+
+
+def _load_pil_font(size: int) -> ImageFont.FreeTypeFont | ImageFont.ImageFont:
+    """Load the same font as the rest of the report, with safe fallback."""
+    for fp in _candidate_font_paths():
+        try:
+            if fp and os.path.exists(fp):
+                return ImageFont.truetype(fp, size)
+        except Exception:
+            continue
+    return ImageFont.load_default()
+
 def register_russo_font():
     """Register RussoOne font for use in tables"""
     try:
-        script_dir = os.path.dirname(os.path.abspath(__file__))
-        font_paths = [
-            os.path.join(script_dir, 'assets', 'RussoOne-Regular.ttf'),
-            os.path.join(script_dir, 'RussoOne-Regular.ttf'),
-            "/Users/emilyfehr8/Library/Fonts/RussoOne-Regular.ttf"
-        ]
-        
-        for font_path in font_paths:
+        for font_path in _candidate_font_paths():
             if os.path.exists(font_path):
                 pdfmetrics.registerFont(TTFont('RussoOne-Regular', font_path))
                 registerFontFamily(
@@ -258,18 +279,12 @@ def create_sprite_analysis_tables(sprite_data, compact: bool = False):
         img = PILImage.new('RGB', (width, height), color='#FFFFFF')  # White background
         draw = ImageDraw.Draw(img)
         
-        # Try to load a font using relative path for CI compatibility
-        try:
-            base_dir = os.path.dirname(__file__)
-            font_path = os.path.join(base_dir, "assets", "RussoOne-Regular.ttf")
-            # The final report gets rasterized for X; these sprite tables are physically small,
-            # so we intentionally oversize the text in the source image to keep it legible
-            # after PDF->PNG conversion and mobile downscaling.
-            font = ImageFont.truetype(font_path, 40)
-            label_font = ImageFont.truetype(font_path, 26)
-        except:
-            font = ImageFont.load_default()
-            label_font = font
+        # Load the same font used elsewhere in the report.
+        # The final report is rasterized for X; these sprite tables are physically small,
+        # so we intentionally oversize the text in the source image to keep it legible
+        # after PDF->PNG conversion and mobile downscaling.
+        font = _load_pil_font(40)
+        label_font = _load_pil_font(26)
         
         half_width = width // 2
         label_height = 35  # Reserve space at bottom for labels
