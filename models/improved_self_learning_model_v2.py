@@ -1797,12 +1797,20 @@ class ImprovedSelfLearningModelV2:
         
         confidence_pct = confidence
         confidence = max(0.0, min(1.0, confidence_pct / 100.0))
+
+        # Provide a reasonable scoreline even in the low-data path.
+        away_xg = float(away_perf.get("xg_avg", away_perf.get("goals_avg", 2.6) or 2.6) or 2.6)
+        home_xg = float(home_perf.get("xg_avg", home_perf.get("goals_avg", 2.8) or 2.8) or 2.8)
+        pred_home_goals, pred_away_goals = self.predict_score_distribution(home_xg=home_xg, away_xg=away_xg)
         
         return {
             'away_prob': away_prob,
             'home_prob': home_prob,
-            'away_score': away_prob,
-            'home_score': home_prob,
+            # Historical code treated away_score/home_score as predicted goals.
+            'away_score': int(pred_away_goals),
+            'home_score': int(pred_home_goals),
+            'predicted_away_goals': int(pred_away_goals),
+            'predicted_home_goals': int(pred_home_goals),
             'away_perf': away_perf,
             'home_perf': home_perf,
             'prediction_confidence': confidence,
@@ -1983,7 +1991,13 @@ class ImprovedSelfLearningModelV2:
         # BETTING ODDS ENSEMBLE: Blend with market consensus if available
         if game_id:
             try:
-                from nhl_api_client import NHLAPIClient
+                try:
+                    from nhl_api_client import NHLAPIClient
+                except Exception:
+                    try:
+                        from api.nhl_api_client import NHLAPIClient
+                    except Exception:
+                        from utils.nhl_api_client import NHLAPIClient
                 api = NHLAPIClient()
                 market_probs = api.get_consensus_betting_probability(game_id)
                 
@@ -2020,6 +2034,19 @@ class ImprovedSelfLearningModelV2:
                 # Silently fall back to model-only prediction if odds unavailable
                 logger.debug(f"Could not fetch betting odds for game {game_id}: {e}")
                 pass
+
+        # Attach predicted goals (scoreline) for downstream consumers.
+        try:
+            away_xg = float(away_perf.get("xg_avg", away_perf.get("goals_avg", 2.6) or 2.6) or 2.6)
+            home_xg = float(home_perf.get("xg_avg", home_perf.get("goals_avg", 2.8) or 2.8) or 2.8)
+            pred_home_goals, pred_away_goals = self.predict_score_distribution(home_xg=home_xg, away_xg=away_xg)
+            result["away_score"] = int(pred_away_goals)
+            result["home_score"] = int(pred_home_goals)
+            result["predicted_away_goals"] = int(pred_away_goals)
+            result["predicted_home_goals"] = int(pred_home_goals)
+        except Exception:
+            # Never allow scoreline issues to break winner predictions
+            pass
         
         return result
     
