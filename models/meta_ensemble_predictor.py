@@ -883,11 +883,30 @@ class MetaEnsemblePredictor:
                 if self.home_goals_model is not None and self.away_goals_model is not None:
                     h = float(self.home_goals_model.predict(df)[0])
                     a = float(self.away_goals_model.predict(df)[0])
-                    # Clamp and round
-                    h = float(max(0.0, min(12.0, h)))
-                    a = float(max(0.0, min(12.0, a)))
-                    predicted_home_goals = int(round(h))
-                    predicted_away_goals = int(round(a))
+                    # Clamp predicted means
+                    h = float(max(0.05, min(12.0, h)))
+                    a = float(max(0.05, min(12.0, a)))
+
+                    # If we have NB dispersion calibration, use NB mode (more realistic variance than rounding means).
+                    nb_size = None
+                    try:
+                        if isinstance(self._scoreline_calibration, dict):
+                            nb_size = self._scoreline_calibration.get("total_goals_nb_size")
+                        nb_size = float(nb_size) if nb_size is not None else None
+                    except Exception:
+                        nb_size = None
+
+                    def _nb_mode(mu: float, size: Optional[float]) -> int:
+                        if size is None or size <= 1.0:
+                            return int(round(mu))
+                        r = float(size)
+                        p = r / (r + float(mu))
+                        # mode = floor((r-1)*(1-p)/p) for r>1
+                        m = int(math.floor(((r - 1.0) * (1.0 - p)) / max(1e-9, p)))
+                        return int(m)
+
+                    predicted_home_goals = int(max(0, min(12, _nb_mode(h, nb_size))))
+                    predicted_away_goals = int(max(0, min(12, _nb_mode(a, nb_size))))
                     predicted_total = float(predicted_home_goals + predicted_away_goals)
             except Exception as e:
                 print(f"Home/away goals prediction error: {e}")

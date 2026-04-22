@@ -15,6 +15,7 @@ import math
 import shutil
 import hashlib
 from datetime import datetime, timedelta
+import os
 try:
     from standings_tracker import StandingsTracker
 except Exception:
@@ -1438,6 +1439,7 @@ def train_optimized_model():
     try:
         metrics_out = {
             "updated_at_utc": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "git_sha": os.environ.get("GITHUB_SHA"),
             "xgb_recent_logloss": float(recent_eval.get("xgb_recent_logloss")) if isinstance(recent_eval, dict) and recent_eval.get("xgb_recent_logloss") is not None else None,
             "elo_recent_logloss": float(recent_eval.get("elo_recent_logloss")) if isinstance(recent_eval, dict) and recent_eval.get("elo_recent_logloss") is not None else None,
             "total_goals_mae": float(total_goals_mae) if total_goals_mae is not None else None,
@@ -1570,6 +1572,7 @@ def train_optimized_model():
             joined = "\n".join([str(x) for x in features]).encode("utf-8")
             snap = {
                 "updated_at_utc": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "git_sha": os.environ.get("GITHUB_SHA"),
                 "feature_count": int(len(features)),
                 "sha256": hashlib.sha256(joined).hexdigest(),
                 "features": list(features),

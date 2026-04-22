@@ -13,6 +13,13 @@ def test_smoke_meta_predictor_builds_prediction_dict():
     for k in ["away_team", "home_team", "away_prob", "home_prob", "predicted_margin"]:
         assert k in out
 
+    # If XGB features are present, we require a matching feature snapshot.
+    from pathlib import Path
+    if Path("xgb_features.pkl").exists():
+        import os
+        if os.environ.get("CI"):
+            assert Path("model_feature_snapshot.json").exists()
+
     # Scoreline fields are optional but, if present, must be sane
     if out.get("predicted_home_goals") is not None:
         assert 0 <= int(out["predicted_home_goals"]) <= 15
