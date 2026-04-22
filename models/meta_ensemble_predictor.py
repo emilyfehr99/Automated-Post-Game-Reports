@@ -328,6 +328,17 @@ class MetaEnsemblePredictor:
                 f"mode={self._model_mode}, shrink_alpha={self._shrink_alpha:.2f}, adjusted={adjusted}) "
                 f"weights={self._component_weights}"
             )
+
+            # Persist current mode/weights back into model_performance.json so workflows
+            # can assert we are not using XGB when it underperforms Elo.
+            try:
+                perf["ensemble_mode"] = self._model_mode
+                perf["ensemble_weights"] = self._component_weights
+                perf["ensemble_shrink_alpha"] = float(self._shrink_alpha)
+                with open(p, "w") as f:
+                    json.dump(perf, f, indent=2)
+            except Exception:
+                pass
         except Exception:
             return
 

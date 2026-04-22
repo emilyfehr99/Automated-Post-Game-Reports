@@ -3226,6 +3226,13 @@ class ImprovedSelfLearningModelV2:
     
     def recalculate_performance_from_scratch(self):
         """Recalculate model performance from all predictions (ensures accuracy after bulk updates)"""
+        # Memoize within a single process to avoid expensive repeated reload/recalc
+        # during the daily workflow (which can call this multiple times).
+        try:
+            cache = getattr(self, "_perf_recalc_cache", None)
+        except Exception:
+            cache = None
+
         # Reload predictions from file to ensure we have the latest data
         # Try multiple possible file locations
         file_paths_to_try = [
@@ -3236,6 +3243,8 @@ class ImprovedSelfLearningModelV2:
         ]
         
         predictions = None
+        chosen_path = None
+        fingerprint = None
         for file_path in file_paths_to_try:
             if file_path.exists():
                 try:
@@ -3245,6 +3254,22 @@ class ImprovedSelfLearningModelV2:
                         # Update in-memory model_data with latest predictions
                         self.model_data["predictions"] = predictions
                         logger.info(f"Reloaded {len(predictions)} predictions from {file_path} for performance recalculation")
+                        chosen_path = str(file_path)
+
+                        # Build a stable fingerprint from prediction content, not file mtime.
+                        # (We rewrite the file at the end of this function, which would
+                        # otherwise defeat mtime-based caching.)
+                        last_completed = None
+                        for p in predictions:
+                            if p.get("actual_winner") and p.get("actual_winner") not in ("", None):
+                                gid = p.get("game_id")
+                                dt = p.get("date") or p.get("game_date") or p.get("timestamp")
+                                last_completed = (gid, dt)
+                        fingerprint = (len(predictions), last_completed)
+
+                        if cache and cache.get("fingerprint") == fingerprint:
+                            logger.info("Performance recalculation skipped (predictions unchanged)")
+                            return
                         break
                 except Exception as e:
                     logger.warning(f"Failed to reload predictions from {file_path}: {e}")
@@ -3334,6 +3359,12 @@ class ImprovedSelfLearningModelV2:
         if updated_samples:
             logger.info(f"Updated calibration model with {updated_samples} samples")
         self.save_model_data()
+
+        # Update memoization cache
+        try:
+            self._perf_recalc_cache = {"path": chosen_path, "fingerprint": fingerprint}
+        except Exception:
+            pass
     
     def get_model_performance(self) -> Dict:
         """Get current model performance"""

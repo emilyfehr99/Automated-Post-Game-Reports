@@ -126,15 +126,12 @@ jobs:
           PYTHONPATH=".:models:analyzers:utils:scrapers" python3 utils/generate_real_team_stats.py
           echo "✅ Team stats generation complete"
           
-          # Check if file was created (script saves to parent directory)
-          if [ -f "../data/season_2025_2026_team_stats.json" ]; then
-            echo "✅ Team stats file created in parent/data directory"
-            ls -lh ../data/season_2025_2026_team_stats.json
-          elif [ -f "data/season_2025_2026_team_stats.json" ]; then
-            echo "✅ Team stats file created in current/data directory"
+          # Check if file was created (normalized location)
+          if [ -f "data/season_2025_2026_team_stats.json" ]; then
+            echo "✅ Team stats file created in data/"
             ls -lh data/season_2025_2026_team_stats.json
           else
-            echo "⚠️  Team stats file not found - checking for errors"
+            echo "❌ Team stats file not found in data/" && exit 1
           fi
 
       - name: Update game outcomes
@@ -166,6 +163,34 @@ jobs:
           echo "🎯 RUNNING DAILY PREDICTIONS WITH META-ENSEMBLE"
           echo "All data collected, now making predictions..."
           PYTHONPATH=".:models:analyzers:utils:scrapers" python3 daily_prediction_notifier.py
+
+      - name: "Guardrail: ensure we don't use XGB when worse than Elo"
+        if: steps.check_date.outputs.should_run == 'true'
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          p = Path("model_performance.json")
+          if not p.exists():
+              raise SystemExit("model_performance.json missing (guardrail)")
+          perf = json.loads(p.read_text())
+          x_ll = perf.get("xgb_recent_logloss") or perf.get("xgb_cal_mean_logloss")
+          e_ll = perf.get("elo_recent_logloss") or perf.get("elo_mean_logloss")
+          mode = perf.get("ensemble_mode")
+          weights = perf.get("ensemble_weights") or {}
+          if x_ll is None or e_ll is None:
+              print("Guardrail skipped: missing logloss fields")
+              raise SystemExit(0)
+          gap = float(x_ll) - float(e_ll)
+          margin = 0.01
+          if gap > margin:
+              # When XGB is worse, we require elo_champion and xgb weight 0.
+              if mode != "elo_champion":
+                  raise SystemExit(f"Guardrail failed: xgb worse by {gap:.4f} but ensemble_mode={mode}")
+              if float(weights.get("xgb", 1.0)) != 0.0:
+                  raise SystemExit(f"Guardrail failed: xgb worse by {gap:.4f} but xgb weight={weights.get('xgb')}")
+          print(f"Guardrail OK (gap={gap:+.4f}, mode={mode}, xgb_w={weights.get('xgb')})")
+          PY
 
       - name: Commit predictions and edge data changes
         if: steps.check_date.outputs.should_run == 'true'

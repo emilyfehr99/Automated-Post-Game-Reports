@@ -34,5 +34,15 @@
     }
   },
   "xgb_recent_logloss": 0.7055880540929278,
-  "elo_recent_logloss": 0.678328569683858
+  "elo_recent_logloss": 0.678328569683858,
+  "ensemble_mode": "elo_champion",
+  "ensemble_weights": {
+    "xgb": 0.0,
+    "elo": 0.35,
+    "specialized": 0.15,
+    "player": 0.1,
+    "base": 0.05,
+    "vegas": 0.15
+  },
+  "ensemble_shrink_alpha": 0.45481031181860443
 }

@@ -1487,41 +1487,49 @@ def rolling_recent_eval(df: pd.DataFrame, recent_n: int = 200, n_splits: int = 4
     # Use a moderate, non-extreme XGB config to avoid producing saturated
     # probabilities that can dominate log loss. The goal is apples-to-apples
     # comparison on identical windows, not micro-optimizing this evaluator.
+
+    def build_X_with_train_encodings(tr_df: pd.DataFrame, dframe: pd.DataFrame) -> pd.DataFrame:
+        """Build feature matrix using the same transforms as training (leakage-safe)."""
+        base_feats = [c for c in tr_df.columns if c not in ["game_id", "date", "target", "margin", "p1_target"]]
+        home_map, home_prior = calculate_target_encoding(tr_df, "home_team")
+        away_map, away_prior = calculate_target_encoding(tr_df, "away_team", target="target")
+        X = dframe[base_feats].copy()
+        X["home_win_rate"] = dframe["home_team"].map(home_map).fillna(home_prior)
+        X["away_win_rate"] = dframe["away_team"].map(away_map).fillna(away_prior)
+        X.drop(columns=["home_team", "away_team"], inplace=True)
+
+        if "away_sos" in dframe.columns:
+            X["home_win_rate_away_sos"] = X["home_win_rate"] * dframe["away_sos"]
+        if "away_b2b" in dframe.columns and "finish_diff" in dframe.columns:
+            X["away_b2b_home_strength"] = dframe["away_b2b"] * dframe["finish_diff"]
+
+        if all(k in dframe.columns for k in ["home_xg", "away_xg", "home_elo", "away_elo"]):
+            X["pressure_index"] = (dframe["home_xg"] / (dframe["away_xg"] + 0.1)) * (dframe["home_elo"] / (dframe["away_elo"] + 0.1))
+        if all(k in dframe.columns for k in ["home_xg", "away_xg", "home_sos", "away_sos"]):
+            X["xg_efficiency"] = (dframe["home_xg"] * (dframe["home_sos"] / 1500.0)) - (dframe["away_xg"] * (dframe["away_sos"] / 1500.0))
+        if all(k in dframe.columns for k in ["elo_diff", "l10_xg_diff"]):
+            X["power_momentum"] = dframe["elo_diff"] * dframe["l10_xg_diff"]
+
+        prune = [
+            "home_win_rate",
+            "home_venue_goal_diff", "away_venue_goal_diff", "l5_pizza_diff",
+            "l5_nzt_diff", "l5_rush_diff", "l5_pk_diff", "l5_pp_diff",
+            "l5_ozs_diff", "l5_hdc_diff",
+        ]
+        for col in prune:
+            if col in X.columns:
+                X.drop(columns=[col], inplace=True)
+        return X
+
     for tr_idx, te_idx in tscv.split(recent_df):
         tr = recent_df.iloc[tr_idx].copy()
         te = recent_df.iloc[te_idx].copy()
         if len(te) < 10 or len(tr) < 80:
             continue
 
-        # Build train/test matrices with leakage-safe encodings
-        home_map, home_prior = calculate_target_encoding(tr, "home_team")
-        away_map, away_prior = calculate_target_encoding(tr, "away_team", target="target")
-
-        feats = [c for c in df.columns if c not in ["game_id", "date", "target", "margin", "p1_target"]]
-
-        def build_X(dframe: pd.DataFrame) -> pd.DataFrame:
-            X = dframe[feats].copy()
-            X["home_win_rate"] = dframe["home_team"].map(home_map).fillna(home_prior)
-            X["away_win_rate"] = dframe["away_team"].map(away_map).fillna(away_prior)
-            X = X.drop(columns=["home_team", "away_team"])
-            X["home_win_rate_away_sos"] = X["home_win_rate"] * dframe.get("away_sos", 1500)
-            X["away_b2b_home_strength"] = dframe.get("away_b2b", 0) * dframe.get("finish_diff", 0)
-            X["pressure_index"] = (dframe.get("home_xg", 2.5) / (dframe.get("away_xg", 2.5) + 0.1)) * (dframe.get("home_elo", 1500) / (dframe.get("away_elo", 1500) + 0.1))
-            X["xg_efficiency"] = (dframe.get("home_xg", 2.5) * (dframe.get("home_sos", 1500) / 1500.0)) - (dframe.get("away_xg", 2.5) * (dframe.get("away_sos", 1500) / 1500.0))
-            X["power_momentum"] = dframe.get("elo_diff", 0) * dframe.get("l10_xg_diff", 0)
-            prune = [
-                "home_venue_goal_diff", "away_venue_goal_diff", "l5_pizza_diff",
-                "l5_nzt_diff", "l5_rush_diff", "l5_pk_diff", "l5_pp_diff",
-                "l5_ozs_diff", "l5_hdc_diff",
-            ]
-            for col in prune:
-                if col in X.columns:
-                    X.drop(columns=[col], inplace=True)
-            return X
-
-        X_tr_full = build_X(tr)
+        X_tr_full = build_X_with_train_encodings(tr, tr)
         y_tr_full = tr["target"].astype(int).values
-        X_te = build_X(te)
+        X_te = build_X_with_train_encodings(tr, te)
         y_te = te["target"].astype(int).values
 
         # Recency weights within the train split
