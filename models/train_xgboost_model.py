@@ -1435,6 +1435,20 @@ def train_optimized_model():
     except Exception as e:
         print(f"⚠️ Could not update model_performance.json with scoreline metrics: {e}")
 
+    # Persist probability calibration points for runtime application (if present)
+    try:
+        if isinstance(recent_eval, dict) and recent_eval.get("xgb_prob_calibration_points"):
+            cal = {
+                "updated_at_utc": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "git_sha": os.environ.get("GITHUB_SHA"),
+                "points": recent_eval.get("xgb_prob_calibration_points"),
+            }
+            with open("xgb_prob_calibration.json", "w") as f:
+                json.dump(cal, f, indent=2)
+            print("✅ Wrote xgb_prob_calibration.json")
+    except Exception as e:
+        print(f"⚠️ Could not write xgb_prob_calibration.json: {e}")
+
     # Also write a minimal tracked metrics file for workflow guardrails.
     try:
         metrics_out = {
@@ -1442,6 +1456,11 @@ def train_optimized_model():
             "git_sha": os.environ.get("GITHUB_SHA"),
             "xgb_recent_logloss": float(recent_eval.get("xgb_recent_logloss")) if isinstance(recent_eval, dict) and recent_eval.get("xgb_recent_logloss") is not None else None,
             "elo_recent_logloss": float(recent_eval.get("elo_recent_logloss")) if isinstance(recent_eval, dict) and recent_eval.get("elo_recent_logloss") is not None else None,
+            # Calibration (prefer holdout-calibrated metrics when available)
+            "xgb_recent_brier": float(recent_eval.get("xgb_recent_brier")) if isinstance(recent_eval, dict) and recent_eval.get("xgb_recent_brier") is not None else None,
+            "xgb_recent_ece": float(recent_eval.get("xgb_recent_ece")) if isinstance(recent_eval, dict) and recent_eval.get("xgb_recent_ece") is not None else None,
+            "xgb_recent_brier_cal": float(recent_eval.get("xgb_recent_brier_cal")) if isinstance(recent_eval, dict) and recent_eval.get("xgb_recent_brier_cal") is not None else None,
+            "xgb_recent_ece_cal": float(recent_eval.get("xgb_recent_ece_cal")) if isinstance(recent_eval, dict) and recent_eval.get("xgb_recent_ece_cal") is not None else None,
             "total_goals_mae": float(total_goals_mae) if total_goals_mae is not None else None,
             "total_goals_within_1": float(total_within_1) if total_within_1 is not None else None,
             "total_goals_poisson_nll": float(total_poisson_nll) if total_poisson_nll is not None else None,
@@ -1900,6 +1919,32 @@ def rolling_recent_eval(df: pd.DataFrame, recent_n: int = 200, n_splits: int = 4
 
         out["xgb_recent_ece"] = float(_ece(y, xgb_probs, bins=10))
         out["elo_recent_ece"] = float(_ece(y2, elo_probs, bins=10))
+    except Exception:
+        pass
+
+    # Train a post-hoc calibrator on an earlier slice and evaluate on the most recent slice.
+    # This helps when calibration regresses even though logloss is OK.
+    try:
+        from sklearn.isotonic import IsotonicRegression
+        n = len(xgb_probs)
+        split = int(n * 0.75)
+        if split >= 50 and (n - split) >= 30:
+            iso = IsotonicRegression(out_of_bounds="clip")
+            iso.fit(xgb_probs[:split], y[:split])
+            p_cal = np.clip(iso.predict(xgb_probs[split:]), 1e-6, 1 - 1e-6)
+            y_cal = y[split:]
+            # Compute calibrated metrics on holdout
+            from sklearn.metrics import brier_score_loss
+            out["xgb_recent_brier_cal"] = float(brier_score_loss(y_cal, p_cal))
+            out["xgb_recent_ece_cal"] = float(_ece(y_cal, p_cal, bins=10))
+
+            # Persist calibrator as piecewise points for runtime (avoid pickle brittleness).
+            try:
+                xs = np.linspace(0.0, 1.0, 101)
+                ys = np.clip(iso.predict(xs), 0.0, 1.0)
+                out["xgb_prob_calibration_points"] = [(float(x), float(yv)) for x, yv in zip(xs, ys)]
+            except Exception:
+                pass
     except Exception:
         pass
     # Diagnostic percentiles to sanity-check calibration/overconfidence

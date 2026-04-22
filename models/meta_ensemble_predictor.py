@@ -67,6 +67,10 @@ try:
     from standings_tracker import StandingsTracker
 except Exception:
     from models.standings_tracker import StandingsTracker
+try:
+    from nb_utils import prob_total_over
+except Exception:
+    from models.nb_utils import prob_total_over
 
 class EloTracker:
     def __init__(self, k_factor=20, home_advantage=35):
@@ -261,6 +265,7 @@ class MetaEnsemblePredictor:
         self.feature_names = []
         self._feature_snapshot = None
         self._scoreline_calibration = None
+        self._prob_calibration = None
         self.team_profiles = {}
         self.travel_archetypes = {}
         self.edge_profiles = {}
@@ -419,6 +424,15 @@ class MetaEnsemblePredictor:
                     self._scoreline_calibration = json.load(f)
         except Exception:
             self._scoreline_calibration = None
+
+        # Probability calibration (post-hoc isotonic points)
+        try:
+            p = Path("xgb_prob_calibration.json")
+            if p.exists():
+                with open(p, "r") as f:
+                    self._prob_calibration = json.load(f)
+        except Exception:
+            self._prob_calibration = None
 
         # Phase 10: Meta-Confidence Model
         try:
@@ -863,6 +877,30 @@ class MetaEnsemblePredictor:
                 prob = self.xgb_model.predict_proba(df)[0][1] # Probability of home win
             else:
                 return None
+
+            # Apply post-hoc calibration mapping if available.
+            try:
+                pts = None
+                if isinstance(self._prob_calibration, dict):
+                    pts = self._prob_calibration.get("points")
+                if pts and isinstance(pts, list) and len(pts) >= 2:
+                    x = float(prob)
+                    pts_sorted = sorted((float(a), float(b)) for a, b in pts)
+                    if x <= pts_sorted[0][0]:
+                        prob = float(pts_sorted[0][1])
+                    elif x >= pts_sorted[-1][0]:
+                        prob = float(pts_sorted[-1][1])
+                    else:
+                        for i in range(1, len(pts_sorted)):
+                            x0, y0 = pts_sorted[i - 1]
+                            x1, y1 = pts_sorted[i]
+                            if x0 <= x <= x1:
+                                t = 0.0 if x1 == x0 else (x - x0) / (x1 - x0)
+                                prob = float(y0 + t * (y1 - y0))
+                                break
+                    prob = float(max(1e-6, min(1.0 - 1e-6, prob)))
+            except Exception:
+                pass
             
             away_prob = (1 - prob) * 100
             home_prob = prob * 100
@@ -948,6 +986,19 @@ class MetaEnsemblePredictor:
                     nb_size = self._scoreline_calibration.get("total_goals_nb_size")
             except Exception:
                 nb_size = None
+
+            # Totals distribution (NB) -> implied O/U probabilities for decision support
+            total_over_5_5 = None
+            total_over_6_5 = None
+            try:
+                if predicted_total is not None and nb_size is not None:
+                    mu_total = float(max(0.1, min(20.0, float(predicted_total))))
+                    sz = float(nb_size)
+                    total_over_5_5 = float(prob_total_over(mu_total, sz, 5.5, max_k=15))
+                    total_over_6_5 = float(prob_total_over(mu_total, sz, 6.5, max_k=15))
+            except Exception:
+                total_over_5_5 = None
+                total_over_6_5 = None
             
             # 6. Meta-Confidence Tiers (Phase 10)
             confidence_tier = "Standard"
@@ -979,6 +1030,10 @@ class MetaEnsemblePredictor:
                 'predicted_home_goals': predicted_home_goals,
                 'predicted_away_goals': predicted_away_goals,
                 'scoreline_nb_size': nb_size,
+                'total_over_5_5': total_over_5_5,
+                'total_under_5_5': (None if total_over_5_5 is None else float(1.0 - total_over_5_5)),
+                'total_over_6_5': total_over_6_5,
+                'total_under_6_5': (None if total_over_6_5 is None else float(1.0 - total_over_6_5)),
                 'confidence_tier': confidence_tier,
                 'p1_home_prob': p1_win_prob * 100,
                 # Fatigue signals for downstream score model calibration/OT modeling

@@ -41,3 +41,28 @@ def nb_nll(y: Iterable[float], mean: Iterable[float], size: float) -> float:
     ll = nb_logpmf(np.asarray(list(y), dtype=float), np.asarray(list(mean), dtype=float), float(size))
     return float(-np.mean(ll))
 
+
+def nb_pmf(mu: float, size: float, max_k: int = 15) -> np.ndarray:
+    """Return NB PMF for k=0..max_k (normalized)."""
+    ks = np.arange(0, int(max_k) + 1, dtype=float)
+    ll = nb_logpmf(ks, np.full_like(ks, float(mu)), float(size))
+    p = np.exp(ll - np.max(ll))
+    s = float(np.sum(p))
+    if s <= 0:
+        out = np.zeros_like(p)
+        out[0] = 1.0
+        return out
+    return p / s
+
+
+def prob_total_over(mu: float, size: float, line: float, max_k: int = 15) -> float:
+    """
+    P(total > line). For half-goal lines (e.g. 5.5), this equals 1 - P(total <= floor(line)).
+    """
+    pmf = nb_pmf(mu, size, max_k=max_k)
+    k = int(math.floor(float(line)))
+    k = max(-1, min(k, len(pmf) - 1))
+    if k < 0:
+        return 1.0
+    return float(1.0 - float(np.sum(pmf[: k + 1])))
+

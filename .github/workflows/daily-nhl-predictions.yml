@@ -184,6 +184,7 @@ jobs:
             xgb_calibrated_model*.pkl
             xgb_features*.pkl
             model_feature_snapshot.json
+            xgb_prob_calibration.json
             team_encodings*.json
             meta_confidence_model.pkl
             margin_regression_model.pkl
@@ -191,6 +192,7 @@ jobs:
             total_goals_model.pkl
             home_goals_model.pkl
             away_goals_model.pkl
+            scoreline_calibration.json
             model_metrics.json
 
       - name: "Guardrail: scoreline metrics must not regress"
@@ -259,12 +261,12 @@ jobs:
               except Exception:
                   return None
 
-          # Allow small noise: Brier +0.003, ECE +0.005.
+          # Prefer calibrated metrics when present. Allow small noise: Brier +0.003, ECE +0.005.
           checks = []
-          for key, tol in [
-              ("xgb_recent_brier", 0.003),
-              ("xgb_recent_ece", 0.005),
-          ]:
+          keys = [("xgb_recent_brier_cal", 0.003), ("xgb_recent_ece_cal", 0.005)]
+          if f(cur.get("xgb_recent_brier_cal")) is None:
+              keys = [("xgb_recent_brier", 0.003), ("xgb_recent_ece", 0.005)]
+          for key, tol in keys:
               c = f(cur.get(key))
               b = f(base.get(key))
               if c is None or b is None:
