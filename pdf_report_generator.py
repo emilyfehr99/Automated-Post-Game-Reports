@@ -2769,7 +2769,9 @@ class PostGameReportGenerator:
             }
             
             # Track turnovers for shot-against analysis
-            team_turnovers = []
+            # Store neutral-zone turnovers committed by this team (or forced by opponent) for NZTSA
+            # so we can attribute a subsequent shot attempt against within a real time window.
+            nzt_events = []  # each: {'period': int, 't': int, 'used': bool}
             
             # Process each play
             for play in play_by_play['plays']:
@@ -2785,6 +2787,7 @@ class PostGameReportGenerator:
                 event_type = play.get('typeDescKey', '')
                 x_coord = details.get('xCoord', 0)
                 y_coord = details.get('yCoord', 0)
+                t = self._parse_time_to_seconds(play.get('timeInPeriod', '00:00'))
                 
                 # Determine zone
                 zone_code = details.get('zoneCode')
@@ -2794,19 +2797,13 @@ class PostGameReportGenerator:
                 if event_team == team_id:
                     # Track turnovers
                     if event_type in ['giveaway', 'turnover']:
-                        team_turnovers.append({
-                            'period': period_index,
-                            'zone': zone,
-                            'x': x_coord,
-                            'y': y_coord
-                        })
-                        
-                        # Count NZ turnovers
-                        if zone == 'neutral':
+                        # Count NZ turnovers committed by this team (NZT)
+                        if zone_code == 'N' or zone == 'neutral':
                             metrics['nz_turnovers'][period_index] += 1
+                            nzt_events.append({'period': period_index, 't': t, 'used': False})
                     
                     # Track shots by originating zone using possession logic
-                    elif event_type in ['shot-on-goal', 'goal']:
+                    elif event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
                         origin_zone = self._get_shot_origin_zone(play, play_by_play['plays'], team_id)
                         
                         if origin_zone == 'offensive':
@@ -2824,14 +2821,25 @@ class PostGameReportGenerator:
                             metrics['fc_cycle_sog'][period_index] += 1
                 
                 # Process opponent shots after turnovers
-                elif event_team != team_id and event_type in ['shot-on-goal', 'goal']:
-                    # Check if this shot came after a team turnover
-                    for turnover in team_turnovers:
-                        if (turnover['period'] == period_index and 
-                            self._is_shot_after_turnover(x_coord, y_coord, turnover, 5)):  # 5 second window
-                            if turnover['zone'] == 'neutral':
+                else:
+                    # Forced NZ turnovers: opponent takeaway in neutral zone implies our turnover.
+                    if event_type == 'takeaway' and event_team != team_id:
+                        if zone_code == 'N' or zone == 'neutral':
+                            metrics['nz_turnovers'][period_index] += 1
+                            nzt_events.append({'period': period_index, 't': t, 'used': False})
+
+                    # NZTSA: opponent shot attempt within 8 seconds of an NZT event (same period).
+                    if event_team != team_id and event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
+                        for ev in nzt_events:
+                            if ev['used']:
+                                continue
+                            if ev['period'] != period_index:
+                                continue
+                            # real time window (seconds within period)
+                            if 0 <= (t - ev['t']) <= 8:
                                 metrics['nz_turnovers_to_shots'][period_index] += 1
-                            break
+                                ev['used'] = True
+                                break
             
             return metrics
             
@@ -3072,7 +3080,11 @@ class PostGameReportGenerator:
             return 'neutral'
     
     def _is_rush_shot(self, current_play, all_plays, team_id):
-        """Determine if a shot is from a rush: N/D zone event followed by OZ shot within 4 seconds"""
+        """Determine if a shot attempt is from a rush.
+
+        Hockey-logic proxy using only available PBP fields:
+        a same-team transition trigger in N/D within ~6-8 seconds before an OZ shot attempt.
+        """
         try:
             current_team = current_play.get('details', {}).get('eventOwnerTeamId')
             current_period = current_play.get('periodDescriptor', {}).get('number', 1)
@@ -3087,8 +3099,9 @@ class PostGameReportGenerator:
             except ValueError:
                 return False
             
-            # Look for N/D zone events within 4 seconds (check last 10 events for efficiency)
-            for i in range(max(0, play_index - 10), play_index):
+            # Look back by time (not fixed event count) up to 8 seconds.
+            # Use zoneCode when present; fall back to transition-like event types.
+            for i in range(play_index - 1, max(-1, play_index - 60), -1):
                 prev_play = all_plays[i]
                 prev_team = prev_play.get('details', {}).get('eventOwnerTeamId')
                 prev_period = prev_play.get('periodDescriptor', {}).get('number', 1)
@@ -3100,14 +3113,15 @@ class PostGameReportGenerator:
                 prev_time_str = prev_play.get('timeInPeriod', '00:00')
                 prev_time_seconds = self._parse_time_to_seconds(prev_time_str)
                 
-                # Check if within 4 seconds
-                time_diff = abs(current_time_seconds - prev_time_seconds)
-                if time_diff > 4:
+                # Check if within 8 seconds
+                time_diff = current_time_seconds - prev_time_seconds
+                if time_diff < 0:
                     continue
+                if time_diff > 8:
+                    break
                 
                 # Check if previous event was in neutral or defensive zone
                 prev_zone = prev_play.get('details', {}).get('zoneCode', '')
-                prev_x = prev_play.get('details', {}).get('xCoord', 0)
                 
                 # Use zone code if available, otherwise use coordinates
                 is_nd_zone = False
@@ -3126,7 +3140,7 @@ class PostGameReportGenerator:
                 # Fallback: check event types that typically happen in N/D zone or transition
                 # If we don't have zone code, we rely on event type + time
                 prev_type = prev_play.get('typeDescKey', '')
-                if prev_type in ['takeaway', 'block-shot', 'hit', 'faceoff'] and time_diff <= 4:
+                if prev_type in ['takeaway', 'giveaway', 'block-shot', 'blocked-shot', 'hit', 'faceoff'] and time_diff <= 8:
                      # This is a heuristic: defensive plays shortly before a shot likely mean transition
                      return True
             

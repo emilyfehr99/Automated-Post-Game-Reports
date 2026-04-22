@@ -756,6 +756,8 @@ class AdvancedMetricsAnalyzer:
             'lateral_movement': {'attempts': 0, 'goals': 0, 'total_delta_y': 0, 'avg_delta_y': 0},
             'longitudinal_movement': {'attempts': 0, 'goals': 0, 'total_delta_x': 0, 'avg_delta_x': 0}
         }
+
+        shot_attempt_types = {'shot-on-goal', 'missed-shot', 'blocked-shot', 'goal'}
         
         for i, play in enumerate(self.plays):
             details = play.get('details', {})
@@ -766,7 +768,7 @@ class AdvancedMetricsAnalyzer:
             if event_team != team_id:
                 continue
             
-            if event_type not in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
+            if event_type not in shot_attempt_types:
                 continue
             
             x_coord = details.get('xCoord')
@@ -781,7 +783,10 @@ class AdvancedMetricsAnalyzer:
             # Convert time to seconds
             current_time = self._time_to_seconds(time_in_period)
             
-            # Look back 4 seconds for Royal Road Proxy and lateral/longitudinal movement
+            # Look back for Royal Road Proxy and lateral/longitudinal movement.
+            # Hockey-logic proxy:
+            # - Prefer a same-team pass shortly before the shot with large east-west movement.
+            # - Fall back to a large y-delta in the recent same-team touch chain.
             royal_road_detected = False
             lateral_delta_y = 0
             longitudinal_delta_x = 0
@@ -809,10 +814,28 @@ class AdvancedMetricsAnalyzer:
                 if prev_x_coord is None or prev_y_coord is None:
                     continue
                 
-                # Check for Royal Road Proxy (sign change in y)
-                if not royal_road_detected and prev_y is not None:
-                    if (prev_y * y_coord < 0) or (prev_y_coord * y_coord < 0):  # Sign change
-                        royal_road_detected = True
+                # Check for Royal Road Proxy.
+                # Prefer explicit passes: a pass in the OZ followed by a shot with large |Δy|.
+                prev_type = prev_play.get('typeDescKey', '')
+                if not royal_road_detected:
+                    prev_zone = prev_details.get('zoneCode', '')
+                    shot_zone = details.get('zoneCode', '')
+                    if prev_type == 'pass' and (prev_zone == 'O' or shot_zone == 'O'):
+                        try:
+                            dy = abs(float(y_coord) - float(prev_y_coord))
+                            # Threshold tuned for NHL coords: across-lane / slot-line movement
+                            if dy >= 18.0:
+                                royal_road_detected = True
+                        except Exception:
+                            pass
+                    # Fallback: any recent large lateral jump (helps when passes aren't reliably labeled)
+                    if not royal_road_detected and prev_y_coord is not None:
+                        try:
+                            dy = abs(float(y_coord) - float(prev_y_coord))
+                            if dy >= 22.0 and (details.get('zoneCode', '') == 'O'):
+                                royal_road_detected = True
+                        except Exception:
+                            pass
                 
                 # Track lateral movement (y-axis changes)
                 if prev_y_coord is not None:
@@ -845,9 +868,12 @@ class AdvancedMetricsAnalyzer:
                 if is_goal:
                     metrics['longitudinal_movement']['goals'] += 1
             
-            # Check for OZ Retrieval to Shot (5 second window)
+            # Check for OZ Retrieval to Shot (8 second window).
+            # Retrieval proxy:
+            # - same-team OZ takeaway/hit/blocked-shot recovery
+            # - or opponent giveaway in OZ immediately before the shot
             oz_retrieval_detected = False
-            for j in range(i - 1, max(-1, i - 25), -1):  # Look back up to 25 plays
+            for j in range(i - 1, max(-1, i - 40), -1):  # Look back up to 40 plays
                 prev_play = self.plays[j]
                 prev_details = prev_play.get('details', {})
                 prev_team = prev_details.get('eventOwnerTeamId')
@@ -856,16 +882,19 @@ class AdvancedMetricsAnalyzer:
                 prev_time_str = prev_play.get('timeInPeriod', '')
                 prev_time = self._time_to_seconds(prev_time_str)
                 
-                if prev_team != team_id:
-                    continue
-                
                 time_diff = current_time - prev_time
-                if time_diff > 5:  # Beyond 5 second window
+                if time_diff > 8:  # Beyond 8 second window
                     break
                 
-                # Check for OZ hit or takeaway
-                if prev_zone == 'O' and prev_type in ['hit', 'takeaway']:
-                    oz_retrieval_detected = True
+                # Check for OZ regain / retrieval events
+                if prev_zone == 'O':
+                    # Same-team regain events
+                    if prev_team == team_id and prev_type in ['hit', 'takeaway', 'blocked-shot', 'block-shot']:
+                        oz_retrieval_detected = True
+                        break
+                    # Opponent giveaway implies we regained possession
+                    if prev_team != team_id and prev_type in ['giveaway', 'turnover']:
+                        oz_retrieval_detected = True
                     break
             
             if oz_retrieval_detected:
