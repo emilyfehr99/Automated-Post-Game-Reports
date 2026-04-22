@@ -24,6 +24,10 @@ try:
     from feature_contract import assert_no_forbidden_features
 except Exception:
     from models.feature_contract import assert_no_forbidden_features
+try:
+    from nb_utils import estimate_nb_size_from_mean_var, nb_nll
+except Exception:
+    from models.nb_utils import estimate_nb_size_from_mean_var, nb_nll
 
 TEAM_COORDINATES = {
     'ANA': (33.80, -117.88), 'BOS': (42.36, -71.06), 'BUF': (42.89, -78.88),
@@ -1315,9 +1319,11 @@ def train_optimized_model():
                 total_within_1 = float(np.mean(np.abs(total_preds - y_total_test) <= 1.0))
             except Exception:
                 total_within_1 = None
-            # Distribution diagnostics: Poisson NLL and dispersion proxy.
+            # Distribution diagnostics: Poisson + NB (dispersion-aware) likelihoods.
             total_poisson_nll = None
             total_dispersion_ratio = None
+            total_nb_nll = None
+            total_nb_size = None
             try:
                 import numpy as _np
                 from math import lgamma, log
@@ -1332,9 +1338,14 @@ def train_optimized_model():
                 var = float(_np.var(y)) if y.size else None
                 if mu and mu > 1e-9 and var is not None:
                     total_dispersion_ratio = float(var / mu)
+                    total_nb_size = estimate_nb_size_from_mean_var(mu, var)
+                    if total_nb_size is not None:
+                        total_nb_nll = nb_nll(y, lam, float(total_nb_size))
             except Exception:
                 total_poisson_nll = None
                 total_dispersion_ratio = None
+                total_nb_nll = None
+                total_nb_size = None
             print(f"✅ Total Goals model trained. MAE: {total_goals_mae:.2f} goals")
         else:
             print("⚠️ Total Goals model skipped (missing total_goals_final column)")
@@ -1342,6 +1353,8 @@ def train_optimized_model():
         print(f"⚠️ Total Goals model training failed: {e}")
         total_poisson_nll = None
         total_dispersion_ratio = None
+        total_nb_nll = None
+        total_nb_size = None
 
     # 3d.2 Home/Away Goals Models (true scoreline, not margin algebra)
     home_goals_model = None
@@ -1407,6 +1420,10 @@ def train_optimized_model():
                 perf["total_goals_poisson_nll"] = float(total_poisson_nll)
             if total_dispersion_ratio is not None:
                 perf["total_goals_dispersion_ratio"] = float(total_dispersion_ratio)
+            if total_nb_nll is not None:
+                perf["total_goals_nb_nll"] = float(total_nb_nll)
+            if total_nb_size is not None:
+                perf["total_goals_nb_size"] = float(total_nb_size)
             if home_goals_mae is not None:
                 perf["home_goals_mae"] = float(home_goals_mae)
             if away_goals_mae is not None:
@@ -1427,6 +1444,8 @@ def train_optimized_model():
             "total_goals_within_1": float(total_within_1) if total_within_1 is not None else None,
             "total_goals_poisson_nll": float(total_poisson_nll) if total_poisson_nll is not None else None,
             "total_goals_dispersion_ratio": float(total_dispersion_ratio) if total_dispersion_ratio is not None else None,
+            "total_goals_nb_nll": float(total_nb_nll) if total_nb_nll is not None else None,
+            "total_goals_nb_size": float(total_nb_size) if total_nb_size is not None else None,
             "home_goals_mae": float(home_goals_mae) if home_goals_mae is not None else None,
             "away_goals_mae": float(away_goals_mae) if away_goals_mae is not None else None,
         }
@@ -1520,6 +1539,18 @@ def train_optimized_model():
         if away_goals_model is not None:
             with open("away_goals_model.pkl", "wb") as f:
                 pickle.dump(away_goals_model, f)
+
+        # Save scoreline distribution calibration (NB dispersion) for runtime usage.
+        try:
+            calib = {
+                "updated_at_utc": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+                "total_goals_nb_size": float(total_nb_size) if total_nb_size is not None else None,
+            }
+            with open("scoreline_calibration.json", "w") as f:
+                json.dump(calib, f, indent=2)
+            print("✅ Wrote scoreline_calibration.json")
+        except Exception as e:
+            print(f"⚠️ Could not write scoreline_calibration.json: {e}")
             
         # Save the Period 1 meta-model
         with open('p1_outcome_model.pkl', 'wb') as f:
@@ -1837,6 +1868,37 @@ def rolling_recent_eval(df: pd.DataFrame, recent_n: int = 200, n_splits: int = 4
         "elo_recent_logloss": float(log_loss(y2, elo_probs)),
         "elo_recent_acc": float(np.mean((elo_probs >= 0.5) == (y2 >= 0.5))),
     }
+    # Calibration diagnostics (recent window)
+    try:
+        from sklearn.metrics import brier_score_loss
+
+        out["xgb_recent_brier"] = float(brier_score_loss(y, xgb_probs))
+        out["elo_recent_brier"] = float(brier_score_loss(y2, elo_probs))
+    except Exception:
+        pass
+
+    try:
+        # Expected Calibration Error (ECE) for binary probs
+        def _ece(y_true: np.ndarray, p: np.ndarray, bins: int = 10) -> float:
+            y_true = np.asarray(y_true, dtype=float)
+            p = np.asarray(p, dtype=float)
+            edges = np.linspace(0.0, 1.0, int(bins) + 1)
+            ece = 0.0
+            n = float(len(p))
+            for i in range(len(edges) - 1):
+                lo, hi = edges[i], edges[i + 1]
+                m = (p >= lo) & (p < hi) if i < len(edges) - 2 else (p >= lo) & (p <= hi)
+                if not np.any(m):
+                    continue
+                acc = float(np.mean(y_true[m]))
+                conf = float(np.mean(p[m]))
+                ece += (float(np.sum(m)) / n) * abs(acc - conf)
+            return float(ece)
+
+        out["xgb_recent_ece"] = float(_ece(y, xgb_probs, bins=10))
+        out["elo_recent_ece"] = float(_ece(y2, elo_probs, bins=10))
+    except Exception:
+        pass
     # Diagnostic percentiles to sanity-check calibration/overconfidence
     out["xgb_recent_p05"] = float(np.quantile(xgb_probs, 0.05))
     out["xgb_recent_p50"] = float(np.quantile(xgb_probs, 0.50))

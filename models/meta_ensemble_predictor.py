@@ -260,6 +260,7 @@ class MetaEnsemblePredictor:
         self.history_tracker = TeamHistory()
         self.feature_names = []
         self._feature_snapshot = None
+        self._scoreline_calibration = None
         self.team_profiles = {}
         self.travel_archetypes = {}
         self.edge_profiles = {}
@@ -409,6 +410,15 @@ class MetaEnsemblePredictor:
         except Exception as e:
             print(f"⚠️ Could not load model_feature_snapshot.json: {e}")
             self._feature_snapshot = None
+
+        # Scoreline distribution calibration (Negative Binomial dispersion)
+        try:
+            p = Path("scoreline_calibration.json")
+            if p.exists():
+                with open(p, "r") as f:
+                    self._scoreline_calibration = json.load(f)
+        except Exception:
+            self._scoreline_calibration = None
 
         # Phase 10: Meta-Confidence Model
         try:
@@ -911,6 +921,14 @@ class MetaEnsemblePredictor:
                     else:
                         predicted_away_goals += 1
                 predicted_total = float(predicted_home_goals + predicted_away_goals)
+
+            # Attach dispersion hint for downstream consumers (optional).
+            nb_size = None
+            try:
+                if isinstance(self._scoreline_calibration, dict):
+                    nb_size = self._scoreline_calibration.get("total_goals_nb_size")
+            except Exception:
+                nb_size = None
             
             # 6. Meta-Confidence Tiers (Phase 10)
             confidence_tier = "Standard"
@@ -941,6 +959,7 @@ class MetaEnsemblePredictor:
                 'predicted_total_goals': predicted_total,
                 'predicted_home_goals': predicted_home_goals,
                 'predicted_away_goals': predicted_away_goals,
+                'scoreline_nb_size': nb_size,
                 'confidence_tier': confidence_tier,
                 'p1_home_prob': p1_win_prob * 100,
                 # Fatigue signals for downstream score model calibration/OT modeling

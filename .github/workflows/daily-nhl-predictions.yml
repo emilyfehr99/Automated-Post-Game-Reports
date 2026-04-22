@@ -144,6 +144,11 @@ jobs:
           PYTHONPATH=".:models:analyzers:utils:scrapers" python3 utils/update_game_outcomes.py | tee /tmp/outcomes.log
           updated="$(python3 - <<'PY'\nimport re\nfrom pathlib import Path\nm = re.search(r'OUTCOMES_UPDATED=(\\d+)', Path('/tmp/outcomes.log').read_text())\nprint(int(m.group(1)) if m else 0)\nPY\n)\"\n          echo \"outcomes_updated=${updated}\" >> \"$GITHUB_OUTPUT\"
 
+      - name: Compact events logs
+        if: steps.check_date.outputs.should_run == 'true'
+        run: |
+          PYTHONPATH=".:models:analyzers:utils:scrapers" python3 utils/compact_event_logs.py
+
       - name: Retrain XGBoost Model
         if: steps.check_date.outputs.should_run == 'true' && steps.outcomes.outputs.outcomes_updated != '0'
         run: |
@@ -226,6 +231,42 @@ jobs:
           print("Scoreline guardrail OK")
           PY
 
+      - name: "Guardrail: calibration must not regress"
+        if: steps.check_date.outputs.should_run == 'true' && steps.outcomes.outputs.outcomes_updated != '0'
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          cur_p = Path("model_metrics.json")
+          if not cur_p.exists():
+              raise SystemExit("model_metrics.json missing after retrain")
+          cur = json.loads(cur_p.read_text())
+          base_p = Path("/tmp/model_metrics_baseline.json")
+          base = json.loads(base_p.read_text()) if base_p.exists() else {}
+
+          def f(x):
+              try:
+                  return float(x)
+              except Exception:
+                  return None
+
+          # Allow small noise: Brier +0.003, ECE +0.005.
+          checks = []
+          for key, tol in [
+              ("xgb_recent_brier", 0.003),
+              ("xgb_recent_ece", 0.005),
+          ]:
+              c = f(cur.get(key))
+              b = f(base.get(key))
+              if c is None or b is None:
+                  continue
+              if c > b + tol:
+                  checks.append(f"{key} regressed: {c:.4f} > {b:.4f}+{tol}")
+          if checks:
+              raise SystemExit("Calibration guardrail failed: " + " | ".join(checks))
+          print("Calibration guardrail OK")
+          PY
+
       - name: Run daily predictions
         if: steps.check_date.outputs.should_run == 'true'
         env:
@@ -233,6 +274,10 @@ jobs:
         run: |
           echo "🎯 RUNNING DAILY PREDICTIONS WITH META-ENSEMBLE"
           echo "All data collected, now making predictions..."
+          # Ensure model artifacts exist even on non-retrain days.
+          if [ ! -f "xgb_calibrated_model.pkl" ] && [ -n "${GITHUB_TOKEN}" ]; then
+            python3 scripts/download_latest_model_artifact.py || true
+          fi
           PYTHONPATH=".:models:analyzers:utils:scrapers" python3 daily_prediction_notifier.py
 
       - name: Smoke test (imports + prediction schema)

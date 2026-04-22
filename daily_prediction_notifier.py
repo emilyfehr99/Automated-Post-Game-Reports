@@ -25,6 +25,10 @@ from rotowire_scraper import RotoWireScraper
 import os
 from pathlib import Path
 from playoff_predictor import PlayoffSeriesPredictor
+try:
+    from utils.timing import timed
+except Exception:
+    from timing import timed
 
 class DailyPredictionNotifier:
     def __init__(self):
@@ -444,17 +448,20 @@ class DailyPredictionNotifier:
     def get_daily_predictions_summary(self):
         """Get formatted summary of today's predictions using meta-ensemble"""
         # Get today's games from RotoWire
-        rotowire_data = self.rotowire.scrape_daily_data()
+        with timed("rotowire scrape"):
+            rotowire_data = self.rotowire.scrape_daily_data()
         games = rotowire_data.get('games', [])
-        
+
         # Fetch Vegas odds
         from vegas_odds_scraper import scrape_vegas_odds
-        market_odds = scrape_vegas_odds()
-        
+        with timed("vegas odds scrape"):
+            market_odds = scrape_vegas_odds()
+
         # Get NHL Schedule for Game IDs
         from nhl_api_client import NHLAPIClient
         nhl_client = NHLAPIClient()
-        schedule = nhl_client.get_game_schedule()  # Defaults to today
+        with timed("nhl schedule fetch"):
+            schedule = nhl_client.get_game_schedule()  # Defaults to today
         schedule_map = {} # 'AWAY@HOME' -> game_id
         
         if schedule:

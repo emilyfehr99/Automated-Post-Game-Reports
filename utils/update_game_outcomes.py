@@ -15,6 +15,10 @@ from pathlib import Path
 from datetime import datetime
 from nhl_api_client import NHLAPIClient
 try:
+    from utils.timing import timed
+except Exception:
+    from timing import timed
+try:
     from utils.event_store import append_outcome_event
 except Exception:
     try:
@@ -31,48 +35,49 @@ logger = logging.getLogger(__name__)
 
 def update_game_outcomes():
     """Update valid predictions with actual game outcomes"""
-    # Canonical: use append-only event logs
-    try:
-        from utils.event_store import load_latest_by_game_id, PREDICTION_EVENTS_PATH, OUTCOME_EVENTS_PATH
-    except Exception:
-        load_latest_by_game_id = None
-        PREDICTION_EVENTS_PATH = None
-        OUTCOME_EVENTS_PATH = None
+    with timed("update_game_outcomes total"):
+        # Canonical: use append-only event logs
+        try:
+            from utils.event_store import load_latest_by_game_id, PREDICTION_EVENTS_PATH, OUTCOME_EVENTS_PATH
+        except Exception:
+            load_latest_by_game_id = None
+            PREDICTION_EVENTS_PATH = None
+            OUTCOME_EVENTS_PATH = None
 
-    predictions: list = []
-    if load_latest_by_game_id is not None and PREDICTION_EVENTS_PATH is not None:
-        preds_by_gid = load_latest_by_game_id(PREDICTION_EVENTS_PATH)
-        outs_by_gid = load_latest_by_game_id(OUTCOME_EVENTS_PATH) if OUTCOME_EVENTS_PATH is not None else {}
-        for gid, p in preds_by_gid.items():
-            # Mark outcomes if already present
-            if outs_by_gid.get(gid, {}).get("actual_winner"):
+        predictions: list = []
+        if load_latest_by_game_id is not None and PREDICTION_EVENTS_PATH is not None:
+            preds_by_gid = load_latest_by_game_id(PREDICTION_EVENTS_PATH)
+            outs_by_gid = load_latest_by_game_id(OUTCOME_EVENTS_PATH) if OUTCOME_EVENTS_PATH is not None else {}
+            for gid, p in preds_by_gid.items():
+                # Mark outcomes if already present
+                if outs_by_gid.get(gid, {}).get("actual_winner"):
+                    continue
+                predictions.append(p)
+            logger.info(f"Checking for game updates via events log ({len(predictions)} pending games)...")
+        else:
+            # Legacy fallback
+            predictions_file = Path('data/win_probability_predictions_v2.json')
+            if not predictions_file.exists():
+                predictions_file = Path('win_probability_predictions_v2.json')
+            if not predictions_file.exists():
+                logger.error("Predictions file not found (events log missing too)")
+                print("OUTCOMES_UPDATED=0")
+                return 0
+            logger.info(f"Checking for game updates in {predictions_file}...")
+            with open(predictions_file, 'r') as f:
+                data = json.load(f)
+            predictions = data.get('predictions', [])
+
+        updated_count = 0
+        client = NHLAPIClient()
+
+        # Identify games that need updates (past date, no actual_winner)
+        today = datetime.now().strftime('%Y-%m-%d')
+
+        for pred in predictions:
+            # Skip if already has an outcome (checking actual_winner explicitly)
+            if pred.get('actual_winner'):
                 continue
-            predictions.append(p)
-        logger.info(f"Checking for game updates via events log ({len(predictions)} pending games)...")
-    else:
-        # Legacy fallback
-        predictions_file = Path('data/win_probability_predictions_v2.json')
-        if not predictions_file.exists():
-            predictions_file = Path('win_probability_predictions_v2.json')
-        if not predictions_file.exists():
-            logger.error("Predictions file not found (events log missing too)")
-            print("OUTCOMES_UPDATED=0")
-            return 0
-        logger.info(f"Checking for game updates in {predictions_file}...")
-        with open(predictions_file, 'r') as f:
-            data = json.load(f)
-        predictions = data.get('predictions', [])
-    updated_count = 0
-    
-    client = NHLAPIClient()
-    
-    # Identify games that need updates (past date, no actual_winner)
-    today = datetime.now().strftime('%Y-%m-%d')
-    
-    for pred in predictions:
-        # Skip if already has an outcome (checking actual_winner explicitly)
-        if pred.get('actual_winner'):
-            continue
             
         game_date = pred.get('date')
         game_id = pred.get('game_id')
@@ -197,15 +202,16 @@ def update_game_outcomes():
             
     if updated_count > 0:
         # Regenerate derived JSON view for legacy readers/dashboard
-        try:
-            from utils.build_predictions_history_view import write_view
-            write_view()
-        except Exception:
+        with timed("rebuild predictions JSON view"):
             try:
-                from build_predictions_history_view import write_view
+                from utils.build_predictions_history_view import write_view
                 write_view()
-            except Exception as e:
-                logger.warning(f"Could not regenerate JSON history view: {e}")
+            except Exception:
+                try:
+                    from build_predictions_history_view import write_view
+                    write_view()
+                except Exception as e:
+                    logger.warning(f"Could not regenerate JSON history view: {e}")
     else:
         logger.info("No completed games found needing updates.")
 
