@@ -281,6 +281,36 @@ class TeamHistory:
         return np.mean(self.history[team]['opponents_elo'][-window:])
 
 def load_data():
+    # Preferred: append-only events store (deterministic, schema-stable)
+    try:
+        from utils.event_store import load_latest_by_game_id, PREDICTION_EVENTS_PATH, OUTCOME_EVENTS_PATH
+    except Exception:
+        load_latest_by_game_id = None
+        PREDICTION_EVENTS_PATH = None
+        OUTCOME_EVENTS_PATH = None
+
+    if load_latest_by_game_id is not None and PREDICTION_EVENTS_PATH is not None:
+        preds_by_gid = load_latest_by_game_id(PREDICTION_EVENTS_PATH)
+        outs_by_gid = load_latest_by_game_id(OUTCOME_EVENTS_PATH) if OUTCOME_EVENTS_PATH is not None else {}
+        if preds_by_gid:
+            merged = []
+            for gid, p in preds_by_gid.items():
+                o = outs_by_gid.get(gid, {})
+                row = dict(p)
+                # Overlay any outcome fields when present
+                for k in ["actual_winner", "actual_away_score", "actual_home_score"]:
+                    if k in o and o.get(k) is not None:
+                        row[k] = o.get(k)
+                # Nested metrics field for training compatibility
+                if "metrics_used" not in row:
+                    row["metrics_used"] = row.get("metrics_used", {}) or {}
+                if "lead_after_p1" in o and o.get("lead_after_p1") is not None:
+                    row["metrics_used"]["lead_after_p1"] = o.get("lead_after_p1")
+                merged.append(row)
+            if merged:
+                print(f"Loading predictions from append-only events ({len(merged)} games)...")
+                return merged
+
     file_path = Path('data/win_probability_predictions_v2.json')
     if not file_path.exists():
         file_path = Path('win_probability_predictions_v2.json')
@@ -1261,6 +1291,7 @@ def train_optimized_model():
     # Predict total goals (home+away) from the SAME feature pipeline as the win model.
     total_goals_model = None
     total_goals_mae = None
+    total_within_1 = None
     try:
         if "total_goals_final" in train_df.columns and "total_goals_final" in test_df.columns:
             y_total_train = train_df["total_goals_final"].astype(float).values
@@ -1279,27 +1310,102 @@ def train_optimized_model():
             total_goals_model.fit(X_train, y_total_train, sample_weight=sample_weights)
             total_preds = total_goals_model.predict(X_test)
             total_goals_mae = float(np.mean(np.abs(total_preds - y_total_test)))
+            try:
+                total_within_1 = float(np.mean(np.abs(total_preds - y_total_test) <= 1.0))
+            except Exception:
+                total_within_1 = None
             print(f"✅ Total Goals model trained. MAE: {total_goals_mae:.2f} goals")
         else:
             print("⚠️ Total Goals model skipped (missing total_goals_final column)")
     except Exception as e:
         print(f"⚠️ Total Goals model training failed: {e}")
 
+    # 3d.2 Home/Away Goals Models (true scoreline, not margin algebra)
+    home_goals_model = None
+    away_goals_model = None
+    home_goals_mae = None
+    away_goals_mae = None
+    try:
+        if "home_goals_final" in train_df.columns and "away_goals_final" in train_df.columns:
+            y_h_train = train_df["home_goals_final"].astype(float).values
+            y_a_train = train_df["away_goals_final"].astype(float).values
+            y_h_test = test_df["home_goals_final"].astype(float).values
+            y_a_test = test_df["away_goals_final"].astype(float).values
+
+            home_goals_model = xgb.XGBRegressor(
+                objective="count:poisson",
+                n_estimators=250,
+                max_depth=4,
+                learning_rate=0.05,
+                subsample=0.9,
+                colsample_bytree=0.9,
+                reg_lambda=1.0,
+                random_state=42,
+            )
+            away_goals_model = xgb.XGBRegressor(
+                objective="count:poisson",
+                n_estimators=250,
+                max_depth=4,
+                learning_rate=0.05,
+                subsample=0.9,
+                colsample_bytree=0.9,
+                reg_lambda=1.0,
+                random_state=43,
+            )
+
+            home_goals_model.fit(X_train, y_h_train, sample_weight=sample_weights)
+            away_goals_model.fit(X_train, y_a_train, sample_weight=sample_weights)
+
+            h_pred = home_goals_model.predict(X_test)
+            a_pred = away_goals_model.predict(X_test)
+            home_goals_mae = float(np.mean(np.abs(h_pred - y_h_test)))
+            away_goals_mae = float(np.mean(np.abs(a_pred - y_a_test)))
+            print(f"✅ Home Goals model trained. MAE: {home_goals_mae:.2f} goals")
+            print(f"✅ Away Goals model trained. MAE: {away_goals_mae:.2f} goals")
+        else:
+            print("⚠️ Home/Away goals models skipped (missing *_goals_final columns)")
+    except Exception as e:
+        print(f"⚠️ Home/Away goals model training failed: {e}")
+
     # Append scoreline metrics to model_performance.json (created earlier).
     try:
-        if total_goals_mae is not None:
+        if total_goals_mae is not None or home_goals_mae is not None or away_goals_mae is not None:
             p = Path("model_performance.json")
             if p.exists():
                 with open(p, "r") as f:
                     perf = json.load(f)
             else:
                 perf = {}
-            perf["total_goals_mae"] = float(total_goals_mae)
+            if total_goals_mae is not None:
+                perf["total_goals_mae"] = float(total_goals_mae)
+            if total_within_1 is not None:
+                perf["total_goals_within_1"] = float(total_within_1)
+            if home_goals_mae is not None:
+                perf["home_goals_mae"] = float(home_goals_mae)
+            if away_goals_mae is not None:
+                perf["away_goals_mae"] = float(away_goals_mae)
             with open(p, "w") as f:
                 json.dump(perf, f, indent=2)
-            print("✅ Updated model_performance.json with total_goals_mae")
+            print("✅ Updated model_performance.json with scoreline metrics")
     except Exception as e:
         print(f"⚠️ Could not update model_performance.json with scoreline metrics: {e}")
+
+    # Also write a minimal tracked metrics file for workflow guardrails.
+    try:
+        metrics_out = {
+            "updated_at_utc": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "xgb_recent_logloss": float(recent_eval.get("xgb_recent_logloss")) if isinstance(recent_eval, dict) and recent_eval.get("xgb_recent_logloss") is not None else None,
+            "elo_recent_logloss": float(recent_eval.get("elo_recent_logloss")) if isinstance(recent_eval, dict) and recent_eval.get("elo_recent_logloss") is not None else None,
+            "total_goals_mae": float(total_goals_mae) if total_goals_mae is not None else None,
+            "total_goals_within_1": float(total_within_1) if total_within_1 is not None else None,
+            "home_goals_mae": float(home_goals_mae) if home_goals_mae is not None else None,
+            "away_goals_mae": float(away_goals_mae) if away_goals_mae is not None else None,
+        }
+        with open("model_metrics.json", "w") as f:
+            json.dump(metrics_out, f, indent=2)
+        print("✅ Wrote model_metrics.json")
+    except Exception as e:
+        print(f"⚠️ Could not write model_metrics.json: {e}")
     
     # 3e. Period 1 Meta-Model (Phase 17)
     print("\n🏗️ Training Phase 17 Period 1 Meta-Model...")
@@ -1377,6 +1483,14 @@ def train_optimized_model():
         if total_goals_model is not None:
             with open("total_goals_model.pkl", "wb") as f:
                 pickle.dump(total_goals_model, f)
+
+        # Save home/away goals models (if trained)
+        if home_goals_model is not None:
+            with open("home_goals_model.pkl", "wb") as f:
+                pickle.dump(home_goals_model, f)
+        if away_goals_model is not None:
+            with open("away_goals_model.pkl", "wb") as f:
+                pickle.dump(away_goals_model, f)
             
         # Save the Period 1 meta-model
         with open('p1_outcome_model.pkl', 'wb') as f:

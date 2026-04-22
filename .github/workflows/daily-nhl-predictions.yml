@@ -148,12 +148,82 @@ jobs:
         if: steps.check_date.outputs.should_run == 'true' && steps.outcomes.outputs.outcomes_updated != '0'
         run: |
           echo "🧠 RETRAINING MODEL WITH LATEST RESULTS"
+          # Capture baseline metrics (from repo checkout) for regression guardrails.
+          if [ -f "model_metrics.json" ]; then
+            cp model_metrics.json /tmp/model_metrics_baseline.json
+          fi
           PYTHONPATH=".:models:analyzers:utils:scrapers" python3 models/train_xgboost_model.py
           if [ -f "xgb_nhl_model.json" ]; then
              echo "✅ Model retrained successfully"
           else
              echo "⚠️ Model training failed or didn't save (accuracy threshold not met?)"
           fi
+
+      - name: Upload model artifacts (Actions artifact)
+        if: steps.check_date.outputs.should_run == 'true' && steps.outcomes.outputs.outcomes_updated != '0'
+        uses: actions/upload-artifact@v4
+        with:
+          name: nhl-model-artifacts
+          if-no-files-found: warn
+          path: |
+            xgb_nhl_model*.json
+            xgb_calibrated_model*.pkl
+            xgb_features*.pkl
+            team_encodings*.json
+            meta_confidence_model.pkl
+            margin_regression_model.pkl
+            p1_outcome_model.pkl
+            total_goals_model.pkl
+            home_goals_model.pkl
+            away_goals_model.pkl
+            model_metrics.json
+
+      - name: "Guardrail: scoreline metrics must not regress"
+        if: steps.check_date.outputs.should_run == 'true' && steps.outcomes.outputs.outcomes_updated != '0'
+        run: |
+          python3 - <<'PY'
+          import json
+          from pathlib import Path
+          cur_p = Path("model_metrics.json")
+          if not cur_p.exists():
+              raise SystemExit("model_metrics.json missing after retrain")
+          cur = json.loads(cur_p.read_text())
+          # Baseline captured before retrain. If missing, don't fail.
+          base_p = Path("/tmp/model_metrics_baseline.json")
+          base = None
+          try:
+              base = json.loads(base_p.read_text())
+          except Exception:
+              base = None
+
+          def f(x):
+              try:
+                  return float(x)
+              except Exception:
+                  return None
+
+          # Only enforce if we have both baseline and current numeric values.
+          # Allow tiny noise: MAE +0.05, within_1 -0.02.
+          checks = []
+          for key, direction, tol in [
+              ("home_goals_mae", "lower", 0.05),
+              ("away_goals_mae", "lower", 0.05),
+              ("total_goals_mae", "lower", 0.05),
+              ("total_goals_within_1", "higher", 0.02),
+          ]:
+              c = f(cur.get(key))
+              b = f(base.get(key)) if isinstance(base, dict) else None
+              if c is None or b is None:
+                  continue
+              if direction == "lower" and c > b + tol:
+                  checks.append(f"{key} regressed: {c:.3f} > {b:.3f}+{tol}")
+              if direction == "higher" and c < b - tol:
+                  checks.append(f"{key} regressed: {c:.3f} < {b:.3f}-{tol}")
+
+          if checks:
+              raise SystemExit("Scoreline guardrail failed: " + " | ".join(checks))
+          print("Scoreline guardrail OK")
+          PY
 
       - name: Run daily predictions
         if: steps.check_date.outputs.should_run == 'true'
@@ -241,14 +311,11 @@ jobs:
             echo "⚠️  win_probability_predictions_v2.json not found in data/"
           fi
 
-          # Only commit model_performance.json when we actually retrained.
-          if [ "${{ steps.outcomes.outputs.outcomes_updated }}" != "0" ] && [ -f "model_performance.json" ]; then
-            echo "📦 Adding model_performance.json (retrain day)..."
-            git add --force model_performance.json
-            FILES_TO_COMMIT="$FILES_TO_COMMIT model_performance.json"
-            echo "✅ model_performance.json added"
-          else
-            echo "ℹ️  Skipping model_performance.json commit (no retrain)"
+          # Commit minimal tracked metrics on retrain days (used by guardrails).
+          if [ "${{ steps.outcomes.outputs.outcomes_updated }}" != "0" ] && [ -f "model_metrics.json" ]; then
+            echo "📦 Adding model_metrics.json (retrain day)..."
+            git add --force model_metrics.json
+            FILES_TO_COMMIT="$FILES_TO_COMMIT model_metrics.json"
           fi
           
           # Add season_2025_2026_team_stats.json if it exists
@@ -273,57 +340,16 @@ jobs:
             FILES_TO_COMMIT="$FILES_TO_COMMIT data/team_advanced_metrics.json"
           fi
 
-          # Add XGBoost Model Artifacts
-          if [ -f "xgb_nhl_model.json" ]; then
-            echo "📦 Adding updated XGBoost model..."
-            git add --force xgb_nhl_model.json
-            FILES_TO_COMMIT="$FILES_TO_COMMIT xgb_nhl_model.json"
-          fi
-          
-          if [ -f "xgb_features.pkl" ]; then
-             if [ "${PUSH_MODEL_ARTIFACTS}" = "true" ]; then
-               git add --force xgb_features.pkl
-               FILES_TO_COMMIT="$FILES_TO_COMMIT xgb_features.pkl"
-             fi
-          fi
+          # Model artifacts are uploaded as Actions artifacts by default (not committed).
 
-          if [ -f "xgb_calibrated_model.pkl" ]; then
-             if [ "${PUSH_MODEL_ARTIFACTS}" = "true" ]; then
-               git add --force xgb_calibrated_model.pkl
-               FILES_TO_COMMIT="$FILES_TO_COMMIT xgb_calibrated_model.pkl"
-             fi
+          # Append-only events (schema-stable training store)
+          if [ -f "data/prediction_events.jsonl" ]; then
+            git add --force data/prediction_events.jsonl
+            FILES_TO_COMMIT="$FILES_TO_COMMIT data/prediction_events.jsonl"
           fi
-
-          if [ -f "team_encodings.json" ]; then
-             git add --force team_encodings.json
-             FILES_TO_COMMIT="$FILES_TO_COMMIT team_encodings.json"
-          fi
-          
-          # Add performance snapshot (guardrails)
-          if [ -f "model_performance.json" ]; then
-             git add --force model_performance.json
-             FILES_TO_COMMIT="$FILES_TO_COMMIT model_performance.json"
-          fi
-
-          if [ -f "meta_confidence_model.pkl" ]; then
-             if [ "${PUSH_MODEL_ARTIFACTS}" = "true" ]; then
-               git add --force meta_confidence_model.pkl
-               FILES_TO_COMMIT="$FILES_TO_COMMIT meta_confidence_model.pkl"
-             fi
-          fi
-
-          if [ -f "margin_regression_model.pkl" ]; then
-             if [ "${PUSH_MODEL_ARTIFACTS}" = "true" ]; then
-               git add --force margin_regression_model.pkl
-               FILES_TO_COMMIT="$FILES_TO_COMMIT margin_regression_model.pkl"
-             fi
-          fi
-
-          if [ -f "p1_outcome_model.pkl" ]; then
-             if [ "${PUSH_MODEL_ARTIFACTS}" = "true" ]; then
-               git add --force p1_outcome_model.pkl
-               FILES_TO_COMMIT="$FILES_TO_COMMIT p1_outcome_model.pkl"
-             fi
+          if [ -f "data/outcome_events.jsonl" ]; then
+            git add --force data/outcome_events.jsonl
+            FILES_TO_COMMIT="$FILES_TO_COMMIT data/outcome_events.jsonl"
           fi
 
           if [ -f "team_travel_archetypes.json" ]; then

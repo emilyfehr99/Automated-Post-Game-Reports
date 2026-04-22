@@ -78,6 +78,7 @@ src/
 
 # Keep model performance snapshot (guardrails)
 !model_performance.json
+!model_metrics.json
 
 # Keep vercel.json for deployment configuration
 !nhl-analytics/vercel.json

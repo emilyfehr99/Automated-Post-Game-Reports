@@ -382,6 +382,12 @@ class DailyPredictionNotifier:
 
     def save_predictions_to_history(self, predictions: list):
         """Save predictions to the permanent JSON history file for future training"""
+        # Primary persistence: append-only events log (schema-stable, deterministic training).
+        try:
+            from utils.event_store import append_prediction_event
+        except Exception:
+            from event_store import append_prediction_event
+
         history_file = Path('data/win_probability_predictions_v2.json')
         if not history_file.exists():
             history_file = Path('win_probability_predictions_v2.json')
@@ -436,6 +442,13 @@ class DailyPredictionNotifier:
                     data['predictions'].append(record)
                     existing_ids.add(pred['game_id'])
                     new_count += 1
+
+                # Always append the prediction event (even if the JSON history already has it),
+                # since the JSON file is no longer the canonical training store.
+                try:
+                    append_prediction_event(record)
+                except Exception:
+                    pass
             
             if new_count > 0:
                 with open(history_file, 'w') as f:

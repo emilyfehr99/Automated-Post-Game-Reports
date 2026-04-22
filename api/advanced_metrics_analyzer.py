@@ -1,36 +1,14 @@
 """
-Advanced NHL Metrics Analyzer
-Creates custom hockey analytics from play-by-play data
+Deprecated shim.
+
+The canonical implementation is `analyzers/advanced_metrics_analyzer.py`.
+This file exists only to prevent import ambiguity and silent drift.
 """
 
-import json
-import csv
-import os
-from datetime import datetime
-from collections import defaultdict
-from typing import Dict, List, Tuple, Optional
-from improved_xg_model import ImprovedXGModel
-
-class AdvancedMetricsAnalyzer:
-    def __init__(self, play_by_play_data: dict):
-        self.plays = play_by_play_data.get('plays', [])
-        self.roster_map = self._create_roster_map(play_by_play_data)
-        self.xg_model = ImprovedXGModel()  # Initialize improved xG model
-        
-    def _create_roster_map(self, play_by_play_data: dict) -> dict:
-        """Create a mapping of player IDs to player info"""
-        roster_map = {}
-        if 'rosterSpots' in play_by_play_data:
-            for player in play_by_play_data['rosterSpots']:
-                player_id = player['playerId']
-                roster_map[player_id] = {
-                    'firstName': player['firstName']['default'],
-                    'lastName': player['lastName']['default'],
-                    'sweaterNumber': player['sweaterNumber'],
-                    'positionCode': player['positionCode'],
-                    'teamId': player['teamId']
-                }
-        return roster_map
+try:
+    from analyzers.advanced_metrics_analyzer import *  # type: ignore
+except Exception:
+    from advanced_metrics_analyzer import *  # type: ignore
     
     def get_available_metrics(self) -> dict:
         """Get all available metrics from the play-by-play data"""

@@ -1,42 +1,14 @@
-#!/usr/bin/env python3
 """
-Team Report Generator - Creates comprehensive PDF reports for NHL teams
+Deprecated shim.
+
+The canonical implementation is `team_report_generator.py` at repo root.
+This file exists only to prevent import ambiguity and silent drift.
 """
 
-from reportlab.lib.pagesizes import letter
-from reportlab.platypus import BaseDocTemplate, Paragraph, Spacer, Table, TableStyle, Image, PageTemplate, Flowable
-from reportlab.lib.styles import getSampleStyleSheet
-from reportlab.lib.units import inch
-from reportlab.lib import colors
-from pdf_report_generator import PostGameReportGenerator, HeaderFlowable, BackgroundPageTemplate
-from nhl_api_client import NHLAPIClient
-from advanced_metrics_analyzer import AdvancedMetricsAnalyzer
-from collections import defaultdict
-import numpy as np
-import json
-from pathlib import Path
-from datetime import datetime, timedelta
-from io import BytesIO, StringIO
-import os
-import requests
-import csv
-
-class TeamReportGenerator(PostGameReportGenerator):
-    """Generate comprehensive team reports aggregating data across all games"""
-    
-    def __init__(self):
-        super().__init__()
-        self.api = NHLAPIClient()
-        self._moneypuck_cache = None
-        self._moneypuck_cache_date = None
-    
-    def fetch_moneypuck_data(self, season_year: int = 2025):
-        """Fetch MoneyPuck team data for the specified season. Caches data to disk for 24 hours (refreshes once per day)."""
-        import json
-        import tempfile
-        
-        # Use file-based cache so it persists across script runs
-        cache_file = os.path.join(tempfile.gettempdir(), f'nhl_moneypuck_cache_{season_year}.json')
+try:
+    from team_report_generator import TeamReportGenerator  # type: ignore
+except Exception:
+    from ..team_report_generator import TeamReportGenerator  # type: ignore
         
         # Try to load from disk cache first
         if os.path.exists(cache_file):

@@ -254,6 +254,8 @@ class MetaEnsemblePredictor:
         self.calibrated_model = None
         self.confidence_model = None # Phase 10: Meta-Confidence Model
         self.total_goals_model = None  # Scoreline backbone (total goals)
+        self.home_goals_model = None
+        self.away_goals_model = None
         self.history_tracker = TeamHistory()
         self.feature_names = []
         self.team_profiles = {}
@@ -429,6 +431,23 @@ class MetaEnsemblePredictor:
         except Exception as e:
             print(f"⚠️ Error loading total goals model: {e}")
             self.total_goals_model = None
+
+        # Home/Away Goals Models (preferred scoreline)
+        try:
+            hp = Path("home_goals_model.pkl")
+            ap = Path("away_goals_model.pkl")
+            if hp.exists():
+                with open(hp, "rb") as f:
+                    self.home_goals_model = pickle.load(f)
+                print(f"✅ Loaded Home Goals model from {hp}")
+            if ap.exists():
+                with open(ap, "rb") as f:
+                    self.away_goals_model = pickle.load(f)
+                print(f"✅ Loaded Away Goals model from {ap}")
+        except Exception as e:
+            print(f"⚠️ Error loading home/away goals models: {e}")
+            self.home_goals_model = None
+            self.away_goals_model = None
 
         # Phase 17: Period 1 Meta-Model
         try:
@@ -822,35 +841,52 @@ class MetaEnsemblePredictor:
                 except Exception as e:
                     print(f"Margin prediction error: {e}")
 
-            # 5b. Scoreline: predict total goals + split by margin
+            # 5b. Scoreline: prefer direct home/away goals models when available.
             predicted_total = None
-            try:
-                if self.total_goals_model is not None:
-                    predicted_total = float(self.total_goals_model.predict(df)[0])
-            except Exception as e:
-                print(f"Total goals prediction error: {e}")
-                predicted_total = None
-
             predicted_home_goals = None
             predicted_away_goals = None
-            if predicted_total is not None:
-                # Clamp to a sane NHL range (regressor can output extreme tails)
-                predicted_total = float(max(2.0, min(12.0, predicted_total)))
-                # margin is home-away, so:
-                # home = (total + margin)/2, away = (total - margin)/2
-                h = (predicted_total + float(predicted_margin)) / 2.0
-                a = (predicted_total - float(predicted_margin)) / 2.0
-                # avoid negatives
-                h = float(max(0.0, h))
-                a = float(max(0.0, a))
-                predicted_home_goals = int(round(h))
-                predicted_away_goals = int(round(a))
-                # Ensure no ties in final-score display: break ties toward predicted winner.
+            try:
+                if self.home_goals_model is not None and self.away_goals_model is not None:
+                    h = float(self.home_goals_model.predict(df)[0])
+                    a = float(self.away_goals_model.predict(df)[0])
+                    # Clamp and round
+                    h = float(max(0.0, min(12.0, h)))
+                    a = float(max(0.0, min(12.0, a)))
+                    predicted_home_goals = int(round(h))
+                    predicted_away_goals = int(round(a))
+                    predicted_total = float(predicted_home_goals + predicted_away_goals)
+            except Exception as e:
+                print(f"Home/away goals prediction error: {e}")
+                predicted_home_goals = None
+                predicted_away_goals = None
+                predicted_total = None
+
+            # Fallback: total-goals model + margin split
+            if predicted_total is None:
+                try:
+                    if self.total_goals_model is not None:
+                        predicted_total = float(self.total_goals_model.predict(df)[0])
+                except Exception as e:
+                    print(f"Total goals prediction error: {e}")
+                    predicted_total = None
+
+                if predicted_total is not None:
+                    predicted_total = float(max(2.0, min(12.0, predicted_total)))
+                    h = (predicted_total + float(predicted_margin)) / 2.0
+                    a = (predicted_total - float(predicted_margin)) / 2.0
+                    h = float(max(0.0, h))
+                    a = float(max(0.0, a))
+                    predicted_home_goals = int(round(h))
+                    predicted_away_goals = int(round(a))
+
+            # Ensure no ties in displayed final: break ties toward predicted winner.
+            if predicted_home_goals is not None and predicted_away_goals is not None:
                 if predicted_home_goals == predicted_away_goals:
                     if home_prob >= away_prob:
                         predicted_home_goals += 1
                     else:
                         predicted_away_goals += 1
+                predicted_total = float(predicted_home_goals + predicted_away_goals)
             
             # 6. Meta-Confidence Tiers (Phase 10)
             confidence_tier = "Standard"

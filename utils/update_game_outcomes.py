@@ -14,6 +14,13 @@ import logging
 from pathlib import Path
 from datetime import datetime
 from nhl_api_client import NHLAPIClient
+try:
+    from utils.event_store import append_outcome_event
+except Exception:
+    try:
+        from event_store import append_outcome_event
+    except Exception:
+        append_outcome_event = None
 
 # Configure logging
 logging.basicConfig(
@@ -162,6 +169,22 @@ def update_game_outcomes():
                     
                     updated_count += 1
                     logger.info(f"✅ Updated: {pred['away_team']} {away_score}-{home_score} {pred['home_team']} (Winner: {actual_winner})")
+
+                    # Append outcome event for deterministic retraining (append-only).
+                    if append_outcome_event is not None:
+                        try:
+                            append_outcome_event(
+                                game_id=str(game_id),
+                                date=game_date,
+                                away_team=pred.get("away_team"),
+                                home_team=pred.get("home_team"),
+                                actual_away_score=int(away_score) if away_score is not None else None,
+                                actual_home_score=int(home_score) if home_score is not None else None,
+                                actual_winner=actual_winner,
+                                lead_after_p1=lead_after_p1,
+                            )
+                        except Exception as e:
+                            logger.warning(f"Could not append outcome event: {e}")
         
         except Exception as e:
             logger.error(f"Error checking game {game_id}: {e}")

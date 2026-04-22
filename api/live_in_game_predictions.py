@@ -1,24 +1,14 @@
-#!/usr/bin/env python3
 """
-True Live In-Game NHL Predictions
-Uses real-time game data, scores, and metrics to make predictions that change as the game progresses
+Deprecated shim.
+
+The canonical implementation is `live_in_game_predictions.py` at repo root.
+This file exists only to prevent import ambiguity and silent drift.
 """
 
-import json
-import requests
-import time
-import math
-from datetime import datetime, timedelta
-import pytz
-from pathlib import Path
-from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
-from nhl_api_client import NHLAPIClient
-from pdf_report_generator import PostGameReportGenerator
-from advanced_metrics_analyzer import AdvancedMetricsAnalyzer
-
-def sigmoid(x):
-    """Sigmoid function for probability conversion"""
-    return 1 / (1 + math.exp(-x))
+try:
+    from live_in_game_predictions import *  # type: ignore
+except Exception:
+    from ..live_in_game_predictions import *  # type: ignore
 
 def calculate_likelihood_of_winning(away_metrics, home_metrics):
     """

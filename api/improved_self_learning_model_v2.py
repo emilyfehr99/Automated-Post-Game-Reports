@@ -1,39 +1,14 @@
-#!/usr/bin/env python3
 """
-Improved Self-Learning Win Probability Model V2
-Implements comprehensive improvements for better prediction accuracy
+Deprecated shim.
+
+The canonical implementation is `models/improved_self_learning_model_v2.py`.
+This file exists only to prevent import ambiguity and silent drift.
 """
 
-import json
-import numpy as np
-from datetime import datetime, timedelta
-from pathlib import Path
-from typing import Dict, List, Tuple, Optional
-import logging
-from correlation_model import CorrelationModel
-
-# Set up logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-DEFAULT_WEIGHT_PRIORS = {
-    "xg_weight": 0.40,
-    "hdc_weight": 0.20,
-    "corsi_weight": 0.10,
-    "power_play_weight": 0.08,
-    "faceoff_weight": 0.06,
-    "shots_weight": 0.05,
-    "hits_weight": 0.03,
-    "blocked_shots_weight": 0.03,
-    "takeaways_weight": 0.02,
-    "penalty_minutes_weight": 0.01,
-    "recent_form_weight": 0.02,
-    "head_to_head_weight": 0.00,
-    "rest_days_weight": 0.00,
-    "goalie_performance_weight": 0.00,
-    "game_score_weight": 0.15,
-    "sos_weight": 0.00,
-}
+try:
+    from models.improved_self_learning_model_v2 import *  # type: ignore
+except Exception:
+    from improved_self_learning_model_v2 import *  # type: ignore
 
 DEFAULT_SCORE_WEIGHTS = {
     "goals_weight": 0.40,
