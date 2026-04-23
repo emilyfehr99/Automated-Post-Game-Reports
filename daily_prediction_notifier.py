@@ -391,19 +391,86 @@ class DailyPredictionNotifier:
             from utils.event_store import append_prediction_event
         except Exception:
             from event_store import append_prediction_event
+
+        def _clamp01(x: float) -> float:
+            return max(1e-6, min(1.0 - 1e-6, float(x)))
+
+        def _norm_pair(ph: float, pa: float) -> tuple[float, float]:
+            s = float(ph) + float(pa)
+            if not (s > 0):
+                return 0.5, 0.5
+            return float(ph) / s, float(pa) / s
+
+        # Sanity guard: ensure we aren't systematically flipping home/away.
+        # Keep a small rolling sample from the history view (best-effort).
+        def _sanity_check_home_share() -> None:
+            try:
+                p = Path("data/win_probability_predictions_v2.json")
+                if not p.exists():
+                    return
+                d = json.loads(p.read_text())
+                preds = d.get("predictions", [])
+                if not isinstance(preds, list) or len(preds) < 30:
+                    return
+                recent = preds[-50:]
+                cnt = 0
+                tot = 0
+                for r in recent:
+                    ph = r.get("predicted_home_win_prob")
+                    pa = r.get("predicted_away_win_prob")
+                    if ph is None and pa is None:
+                        continue
+                    try:
+                        ph = float(ph) if ph is not None else (100.0 - float(pa))
+                        # Normalize to 0..1
+                        ph = ph / 100.0 if ph > 1.0 else ph
+                    except Exception:
+                        continue
+                    tot += 1
+                    cnt += int(ph >= 0.5)
+                if tot >= 25:
+                    share = cnt / tot
+                    # If we *never* favor home (or always do), something is likely inverted.
+                    if share <= 0.02 or share >= 0.98:
+                        raise RuntimeError(
+                            f"Sanity check failed: home_favored_share={share:.3f} over last {tot} preds. "
+                            "This suggests a home/away probability mapping bug."
+                        )
+            except Exception as e:
+                # Fail fast: better to stop writing corrupted history.
+                raise
+
         new_count = 0
         for pred in predictions:
             if not pred.get("game_id"):
                 continue
+            # Prefer blended away prob when present (0..1).
+            if "blended_away_prob" in pred and pred["blended_away_prob"] is not None:
+                away_p = float(pred["blended_away_prob"])
+                home_p = 1.0 - away_p
+            else:
+                # Fallback to legacy % fields.
+                away_p = float(pred.get("away_prob", 50.0)) / 100.0
+                home_p = float(pred.get("home_prob", 50.0)) / 100.0
+
+            # Invariants
+            home_p, away_p = _norm_pair(home_p, away_p)
+            home_p = _clamp01(home_p)
+            away_p = _clamp01(away_p)
+
             record = {
                 'date': datetime.now(pytz.timezone('US/Central')).strftime('%Y-%m-%d'),
                 'game_id': pred['game_id'],
                 'home_team': pred['home_team'],
                 'away_team': pred['away_team'],
                 'predicted_winner': pred['predicted_winner'],
-                # Use BLENDED probabilities for history tracking to match the decision
-                'home_win_prob': (1.0 - pred['blended_away_prob']) if 'blended_away_prob' in pred else (pred['home_prob'] / 100.0),
-                'away_win_prob': pred['blended_away_prob'] if 'blended_away_prob' in pred else (pred['away_prob'] / 100.0),
+                # Store both schema variants:
+                # - *_win_prob: decimals in 0..1 (new pipeline)
+                # - predicted_*_win_prob: percents 0..100 (legacy readers / dashboards)
+                'home_win_prob': home_p,
+                'away_win_prob': away_p,
+                'predicted_home_win_prob': home_p * 100.0,
+                'predicted_away_win_prob': away_p * 100.0,
                 'model_confidence': pred['confidence'] / 100.0,
                 # Scoreline outputs (if present)
                 'predicted_home_goals': pred.get("predicted_home_goals"),
@@ -442,6 +509,9 @@ class DailyPredictionNotifier:
                 write_view()
             except Exception as e:
                 print(f"⚠️ Could not regenerate JSON history view: {e}")
+
+        # Sanity check after write.
+        _sanity_check_home_share()
 
         print(f"✅ Appended {new_count} predictions to events log.")
 

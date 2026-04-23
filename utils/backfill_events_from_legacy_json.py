@@ -13,7 +13,11 @@ from __future__ import annotations
 import json
 from pathlib import Path
 
-from utils.event_store import append_outcome_event, append_prediction_event
+try:
+    from utils.event_store import append_outcome_event, append_prediction_event
+except Exception:
+    # Allows running as `python3 utils/backfill_events_from_legacy_json.py`
+    from event_store import append_outcome_event, append_prediction_event
 
 
 def main() -> None:

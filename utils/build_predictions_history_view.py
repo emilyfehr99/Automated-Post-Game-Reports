@@ -6,11 +6,19 @@ import json
 from pathlib import Path
 from typing import Any, Dict, List
 
-from utils.event_store import (
-    OUTCOME_EVENTS_PATH,
-    PREDICTION_EVENTS_PATH,
-    load_latest_by_game_id,
-)
+try:
+    from utils.event_store import (
+        OUTCOME_EVENTS_PATH,
+        PREDICTION_EVENTS_PATH,
+        load_latest_by_game_id,
+    )
+except Exception:
+    # Allows running as `python3 utils/build_predictions_history_view.py`
+    from event_store import (
+        OUTCOME_EVENTS_PATH,
+        PREDICTION_EVENTS_PATH,
+        load_latest_by_game_id,
+    )
 
 
 def build_view() -> Dict[str, Any]:
@@ -20,6 +28,36 @@ def build_view() -> Dict[str, Any]:
     rows: List[Dict[str, Any]] = []
     for gid, p in preds.items():
         row = dict(p)
+        # Legacy compatibility: some producers write home_win_prob/away_win_prob (0..1),
+        # while legacy consumers expect predicted_*_win_prob.
+        try:
+            if row.get("predicted_home_win_prob") is None and row.get("home_win_prob") is not None:
+                row["predicted_home_win_prob"] = float(row["home_win_prob"]) * 100.0
+            if row.get("predicted_away_win_prob") is None and row.get("away_win_prob") is not None:
+                row["predicted_away_win_prob"] = float(row["away_win_prob"]) * 100.0
+        except Exception:
+            pass
+
+        # Ensure invariants when possible (best-effort; do not crash view build).
+        try:
+            ph = row.get("predicted_home_win_prob")
+            pa = row.get("predicted_away_win_prob")
+            if ph is not None and pa is not None:
+                ph = float(ph)
+                pa = float(pa)
+                # If these look like decimals, normalize to percents.
+                if 0.0 <= ph <= 1.0 and 0.0 <= pa <= 1.0:
+                    ph *= 100.0
+                    pa *= 100.0
+                    row["predicted_home_win_prob"] = ph
+                    row["predicted_away_win_prob"] = pa
+                s = ph + pa
+                if s > 0 and abs(s - 100.0) > 1e-3:
+                    # Renormalize (protect downstream analyses)
+                    row["predicted_home_win_prob"] = 100.0 * ph / s
+                    row["predicted_away_win_prob"] = 100.0 * pa / s
+        except Exception:
+            pass
         o = outs.get(gid) or {}
         for k in ["actual_winner", "actual_away_score", "actual_home_score"]:
             if o.get(k) is not None:
