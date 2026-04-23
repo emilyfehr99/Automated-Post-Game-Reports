@@ -120,8 +120,8 @@ jobs:
         git config --local user.email "github-actions[bot]@users.noreply.github.com"
         git config --local user.name "GitHub Actions Bot"
         
-        # Pull latest changes to avoid conflicts (in case another run committed)
-        git pull --rebase origin main || git pull origin main || true
+        # Pull latest changes to avoid conflicts (multiple runs overlap)
+        git pull --rebase --autostash origin main || true
         
         # Ensure processed_games.json exists (create empty if missing)
         if [ ! -f processed_games.json ]; then
@@ -154,8 +154,16 @@ jobs:
         if ! git diff --staged --quiet; then
           echo "📝 Committing updated tracking files..."
           git commit -m "Update processed games, team stats, and model learning data [skip ci]"
-          git push origin main
-          echo "✅ Successfully committed and pushed tracking files"
+          # Push with retry (handles concurrent pushes)
+          for i in 1 2 3; do
+            if git push origin HEAD:main; then
+              echo "✅ Successfully committed and pushed tracking files"
+              break
+            fi
+            echo "⚠️  Push failed (attempt $i). Rebasing and retrying..."
+            git pull --rebase --autostash origin main || true
+            sleep 2
+          done
         else
           echo "ℹ️  No changes to commit (files are up to date)"
         fi
