@@ -391,7 +391,7 @@ class GitHubActionsRunner:
             traceback.print_exc()
             return False
         
-        # Post to Twitter (non-fatal if it fails)
+        # Post to Twitter
         twitter_success = False
         print(f"\n🐦 Posting {away_team} @ {home_team} to Twitter...")
         try:
@@ -436,7 +436,14 @@ class GitHubActionsRunner:
                 self.save_tweet_id(game_id, tweet_id, f"{away_team} vs {home_team}")
             
         except Exception as e:
-            print(f"⚠️  Twitter posting failed (non-fatal): {e}")
+            # Common failure mode: X API returning 402 when the app/account has no credits.
+            msg = str(e)
+            if "402" in msg or "Payment Required" in msg:
+                print("❌ Twitter/X posting failed: API returned 402 Payment Required.")
+                print("   This usually means your X developer/app/project has no remaining API credits.")
+                print("   Fix: add credits/upgrade plan, or switch posting strategy.")
+            else:
+                print(f"⚠️  Twitter posting failed: {e}")
             import traceback
             traceback.print_exc()
             print(f"   Continuing with Discord and cleanup...")
@@ -454,10 +461,16 @@ class GitHubActionsRunner:
         except Exception as e:
             print(f"⚠️  Could not delete image: {e}")
         
-        # Return True even if Twitter failed - we generated the report successfully
+        # Default behavior: if Twitter post fails, do NOT mark as processed so the next run retries.
+        require_twitter = os.environ.get("REQUIRE_TWITTER_POST", "true").lower() == "true"
+        allow_twitter_failure = os.environ.get("ALLOW_TWITTER_FAILURE", "false").lower() == "true"
+
         if not twitter_success:
-            print(f"⚠️  Report generated but Twitter posting failed - marking as processed anyway")
-        
+            if require_twitter and not allow_twitter_failure:
+                print("❌ Twitter post did not succeed; game will NOT be marked processed so we can retry.")
+                return False
+            print("⚠️  Twitter post did not succeed; proceeding anyway (ALLOW_TWITTER_FAILURE=true).")
+
         return True
             
     def post_to_discord(self, away_team, home_team, image_path):
