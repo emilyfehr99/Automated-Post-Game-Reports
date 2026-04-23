@@ -17,6 +17,7 @@ ENV/
 nhl_postgame_reports/*.pdf
 *.csv
 *.zip
+*.jsonl
 
 # IDE files
 .idea/
