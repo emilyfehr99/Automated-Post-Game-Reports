@@ -14,7 +14,7 @@ for _d in _module_dirs:
 
 import os
 import sys
-from datetime import datetime
+from datetime import datetime, timedelta
 from pathlib import Path
 import pytz
 from nhl_api_client import NHLAPIClient
@@ -125,6 +125,46 @@ class GitHubActionsRunner:
             
         except Exception as e:
             print(f"⚠️  Could not save Tweet ID: {e}")
+
+    def _has_tweet_id_for_game(self, game_id: str) -> bool:
+        """Return True if we have a recorded tweet_id for this game."""
+        try:
+            if not self.posted_tweets_file.exists():
+                return False
+            with open(self.posted_tweets_file, "r") as f:
+                data = json.load(f) or {}
+            gid = str(game_id)
+            for _day, entries in (data.items() if isinstance(data, dict) else []):
+                if not isinstance(entries, list):
+                    continue
+                for entry in entries:
+                    if isinstance(entry, dict) and entry.get("game_id") == gid and entry.get("tweet_id"):
+                        return True
+            return False
+        except Exception:
+            return False
+
+    def _should_force_reprocess(self, game_date: str) -> bool:
+        """
+        Allow replaying recently completed games, even if processed_games.json says they were processed.
+        Set FORCE_REPROCESS_DAYS=N (e.g. 2) to replay last N days (Central time date strings).
+        """
+        try:
+            raw = os.environ.get("FORCE_REPROCESS_DAYS", "").strip()
+            if not raw:
+                return False
+            days = int(raw)
+            if days <= 0:
+                return False
+
+            central_tz = pytz.timezone("US/Central")
+            today = datetime.now(central_tz).date()
+            start = today - timedelta(days=days)
+            # game_date is YYYY-MM-DD
+            gd = datetime.strptime(game_date, "%Y-%m-%d").date()
+            return start <= gd <= today
+        except Exception:
+            return False
     
     def load_team_stats(self):
         """Load current team stats"""
@@ -791,9 +831,24 @@ class GitHubActionsRunner:
             # If game is already processed, skip it
             is_today = game_date == today
             is_already_processed = game_id in self.processed_games
+
+            # If Twitter posting is required, "processed" should mean "we have a tweet id".
+            # This avoids state drift where processed_games.json is ahead of actual posts.
+            require_twitter = os.environ.get("REQUIRE_TWITTER_POST", "true").lower() == "true"
+            allow_twitter_failure = os.environ.get("ALLOW_TWITTER_FAILURE", "false").lower() == "true"
+            has_tweet = self._has_tweet_id_for_game(game_id)
+            processed_but_missing_tweet = require_twitter and (not allow_twitter_failure) and is_already_processed and (not has_tweet)
+            force_reprocess = self._should_force_reprocess(game_date)
             
             if is_already_processed:
-                print(f"      ⏭️  Already processed, skipping")
+                if processed_but_missing_tweet:
+                    print("      🔁 Was processed but no tweet_id recorded; reprocessing.")
+                    newly_completed.append({'id': game_id, 'away': away_team, 'home': home_team})
+                elif force_reprocess:
+                    print(f"      🔁 FORCE_REPROCESS_DAYS active; reprocessing (date={game_date}).")
+                    newly_completed.append({'id': game_id, 'away': away_team, 'home': home_team})
+                else:
+                    print(f"      ⏭️  Already processed, skipping")
             elif game_state in ['FINAL', 'OFF']:
                 print(f"      ✅ NEW COMPLETED GAME!")
                 newly_completed.append({
