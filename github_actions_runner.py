@@ -715,29 +715,34 @@ class GitHubActionsRunner:
         current_hour = central_now.hour
         current_minute = central_now.minute
         
-        should_skip = False
-        skip_reason = ""
-        
-        if is_off_day:
-            # Weekends & Holidays: Active 11:30 AM - 2:00 AM (next day)
-            # Skip if: 02:00 <= Time < 11:30
-            if 2 <= current_hour < 11:
-                should_skip = True
-            elif current_hour == 11 and current_minute < 30:
-                should_skip = True
-            
+        # NOTE: Time-window skipping was originally intended to reduce unnecessary runs,
+        # but the workflow cron already controls cadence. Skipping here can prevent
+        # posting completed games (e.g. morning finals / late-night spillover).
+        # Keep it optional behind an env flag.
+        if os.environ.get("ENFORCE_TIME_WINDOW", "false").lower() == "true":
+            should_skip = False
+            skip_reason = ""
+
+            if is_off_day:
+                # Weekends & Holidays: Active 11:30 AM - 2:00 AM (next day)
+                # Skip if: 02:00 <= Time < 11:30
+                if 2 <= current_hour < 11:
+                    should_skip = True
+                elif current_hour == 11 and current_minute < 30:
+                    should_skip = True
+
+                if should_skip:
+                    skip_reason = f"Weekend/Holiday Off-Hours ({current_hour}:{current_minute:02d} CT). Active: 11:30 AM - 2:00 AM."
+            else:
+                # Weekdays: Active 8:00 PM - 2:00 AM (next day)
+                # Skip if: 02:00 <= Time < 20:00 (8 PM)
+                if 2 <= current_hour < 20:
+                    should_skip = True
+                    skip_reason = f"Weekday Off-Hours ({current_hour}:{current_minute:02d} CT). Active: 8:00 PM - 2:00 AM."
+
             if should_skip:
-                skip_reason = f"Weekend/Holiday Off-Hours ({current_hour}:{current_minute:02d} CT). Active: 11:30 AM - 2:00 AM."
-        else:
-            # Weekdays: Active 8:00 PM - 2:00 AM (next day)
-            # Skip if: 02:00 <= Time < 20:00 (8 PM)
-            if 2 <= current_hour < 20:
-                should_skip = True
-                skip_reason = f"Weekday Off-Hours ({current_hour}:{current_minute:02d} CT). Active: 8:00 PM - 2:00 AM."
-        
-        if should_skip:
-            print(f"\n⏸️  Skipping run: {skip_reason}")
-            return
+                print(f"\n⏸️  Skipping run: {skip_reason}")
+                return
         
         # Get games from today
         games = self.get_todays_games()
