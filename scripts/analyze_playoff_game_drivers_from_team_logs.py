@@ -169,6 +169,9 @@ def main() -> int:
 
     team_games = load_team_game_logs(args.team_logs)
     game_ids = sorted(set(team_games["game_id"].astype(str).tolist()))
+    # Fast prefilter: NHL gameId embeds gameType at positions 5-6 (1-indexed),
+    # e.g. 2025030113 -> "03" for playoffs.
+    game_ids = [gid for gid in game_ids if len(gid) >= 6 and gid[4:6] == "03"]
 
     # Pull outcomes for those games and filter to playoff games since cutoff
     outcomes: List[Dict[str, Any]] = []
