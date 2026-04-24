@@ -66,7 +66,7 @@ def _to_game_id(v: Any) -> Optional[str]:
 
 def extract_team_game_rows(team_stats_path: Path) -> pd.DataFrame:
     """
-    Converts season_2025_2026_team_stats.json into one row per team-game-side:
+    Converts a team-stats JSON (season or playoff build) into one row per team-game-side:
     columns include team, side(home/away), game_id, and metric values for that game.
     """
     d = json.loads(team_stats_path.read_text(encoding="utf-8"))

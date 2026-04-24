@@ -1,0 +1,80 @@
+name: Playoff Stats + Drivers (since start date)
+
+on:
+  workflow_dispatch:
+    inputs:
+      playoff_start_date:
+        description: "YYYY-MM-DD cutoff date (inclusive)"
+        required: false
+        default: "2026-04-18"
+      max_days:
+        description: "Max days of schedule to scan (guardrail)"
+        required: false
+        default: "90"
+      max_games:
+        description: "If >0, limit games processed (debug)"
+        required: false
+        default: "0"
+
+permissions:
+  contents: read
+
+jobs:
+  run:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-py310-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-py310-
+            ${{ runner.os }}-pip-
+
+      - name: Cache NHL API downloads
+        uses: actions/cache@v4
+        with:
+          path: .cache
+          key: ${{ runner.os }}-nhl-playoff-stats-drivers-v1
+          restore-keys: |
+            ${{ runner.os }}-nhl-playoff-stats-drivers-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Build playoff per-game team stats
+        run: |
+          ARGS="--playoff-start-date ${{ github.event.inputs.playoff_start_date }} --max-days ${{ github.event.inputs.max_days }}"
+          if [ "${{ github.event.inputs.max_games }}" != "0" ]; then
+            ARGS="$ARGS --max-games ${{ github.event.inputs.max_games }}"
+          fi
+          python3 scripts/build_playoff_team_stats_since_start.py $ARGS --out data/playoff_team_stats_since_start.json
+
+      - name: Rank playoff drivers from built stats
+        run: |
+          python3 scripts/analyze_playoff_drivers_from_team_stats_json.py --playoff-start-date ${{ github.event.inputs.playoff_start_date }} --team-stats data/playoff_team_stats_since_start.json --out data/playoff_drivers_from_built_playoff_stats.json
+
+      - name: Upload artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: playoff-stats-and-drivers
+          if-no-files-found: error
+          path: |
+            data/playoff_team_stats_since_start.json
+            data/playoff_drivers_from_built_playoff_stats.json
+
