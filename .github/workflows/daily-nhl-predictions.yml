@@ -368,7 +368,7 @@ jobs:
                       bad.append((r.get("game_id"), mode, w.get("xgb")))
               if bad:
                   raise SystemExit(f"Guardrail failed: xgb worse by {gap:.4f} but found non-elo-champion rows: {bad[:5]}")
-          print(f\"Guardrail OK (gap={gap:+.4f})\")
+          print(f"Guardrail OK (gap={gap:+.4f})")
           PY
 
       - name: Commit predictions and edge data changes
