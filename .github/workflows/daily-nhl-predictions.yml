@@ -367,7 +367,7 @@ jobs:
                   if mode != "elo_champion" or float(w.get("xgb", 1.0)) != 0.0:
                       bad.append((r.get("game_id"), mode, w.get("xgb")))
               if bad:
-                  raise SystemExit(f\"Guardrail failed: xgb worse by {gap:.4f} but found non-elo-champion rows: {bad[:5]}\")
+                  raise SystemExit(f"Guardrail failed: xgb worse by {gap:.4f} but found non-elo-champion rows: {bad[:5]}")
           print(f\"Guardrail OK (gap={gap:+.4f})\")
           PY
 
