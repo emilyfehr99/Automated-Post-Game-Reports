@@ -326,6 +326,27 @@ class GitHubActionsRunner:
             
             generator = PostGameReportGenerator()
             pdf_path = generator.generate_report(game_data, output_filename, game_id)
+
+            # Ingest ALL postgame report metrics (append-only JSONL) for analysis
+            try:
+                try:
+                    from utils.event_store import append_postgame_metrics_event
+                except Exception:
+                    from event_store import append_postgame_metrics_event
+
+                payload = generator.collect_postgame_metrics(game_data, game_id=game_id)
+                append_postgame_metrics_event(
+                    {
+                        "game_id": str(game_id),
+                        "date": game_data.get("game_center", {}).get("gameDate") or payload.get("date"),
+                        "away_team": payload.get("away_team") or away_team,
+                        "home_team": payload.get("home_team") or home_team,
+                        "postgame_metrics": payload.get("postgame", payload),
+                    }
+                )
+                print("✅ Appended postgame metrics event")
+            except Exception as e:
+                print(f"⚠️  Could not append postgame metrics event: {e}")
             
             if not generator.is_high_fidelity:
                 print(f"⚠️  Low-fidelity report detected for game {game_id} (Comparison failed).")

@@ -177,6 +177,91 @@ class PostGameReportGenerator:
                 
         except Exception as e:
             print(f"WARNING: Could not register font: {e}. Using Helvetica.")
+
+    def collect_postgame_metrics(self, game_data, game_id=None) -> dict:
+        """
+        Extract (as JSON-serializable as possible) *all* computed postgame metrics
+        used across the PDF report, for ingestion/analysis.
+
+        This is intentionally separate from training features to avoid leakage.
+        """
+        out = {
+            "game_id": str(game_id) if game_id is not None else None,
+            "away_team": None,
+            "home_team": None,
+            "away_team_id": None,
+            "home_team_id": None,
+            "postgame": {},
+        }
+        try:
+            box = (game_data or {}).get("boxscore") or {}
+            away = box.get("awayTeam") or {}
+            home = box.get("homeTeam") or {}
+            out["away_team"] = away.get("abbrev")
+            out["home_team"] = home.get("abbrev")
+            out["away_team_id"] = away.get("id")
+            out["home_team_id"] = home.get("id")
+        except Exception:
+            pass
+
+        # 1) Advanced metrics section (comprehensive report)
+        try:
+            from advanced_metrics_analyzer import AdvancedMetricsAnalyzer
+
+            pbp = (game_data or {}).get("play_by_play") or {}
+            analyzer = AdvancedMetricsAnalyzer(pbp)
+            if out.get("away_team_id") and out.get("home_team_id"):
+                adv = analyzer.generate_comprehensive_report(int(out["away_team_id"]), int(out["home_team_id"]))
+                out["postgame"]["advanced_metrics"] = adv
+        except Exception as e:
+            out["postgame"]["advanced_metrics_error"] = str(e)
+
+        # 2) Core xG + HDC (used in multiple sections)
+        try:
+            axg, hxg = self._calculate_xg_from_plays(game_data)
+            out["postgame"]["xg_total"] = {"away": float(axg), "home": float(hxg)}
+        except Exception:
+            pass
+        try:
+            ahdc, hhdc = self._calculate_hdc_from_plays(game_data)
+            out["postgame"]["hdc_total"] = {"away": float(ahdc), "home": float(hhdc)}
+        except Exception:
+            pass
+
+        # 3) Period table sources (period metrics + zone metrics)
+        try:
+            box = (game_data or {}).get("boxscore") or {}
+            away_id = (box.get("awayTeam") or {}).get("id")
+            home_id = (box.get("homeTeam") or {}).get("id")
+            if away_id and home_id:
+                out["postgame"]["period_metrics"] = {
+                    "away": self._calculate_period_metrics(game_data, int(away_id), "away"),
+                    "home": self._calculate_period_metrics(game_data, int(home_id), "home"),
+                }
+                out["postgame"]["zone_metrics"] = {
+                    "away": self._calculate_zone_metrics(game_data, int(away_id), "away"),
+                    "home": self._calculate_zone_metrics(game_data, int(home_id), "home"),
+                }
+        except Exception as e:
+            out["postgame"]["period_zone_error"] = str(e)
+
+        # 4) Derived/simple values (faceoffs, goals by period)
+        try:
+            out["postgame"]["faceoff_percentages"] = self._calculate_faceoff_percentages(game_data)
+        except Exception:
+            pass
+        try:
+            box = (game_data or {}).get("boxscore") or {}
+            away_id = (box.get("awayTeam") or {}).get("id")
+            home_id = (box.get("homeTeam") or {}).get("id")
+            if away_id:
+                out["postgame"]["goals_by_period_away"] = self._calculate_goals_by_period(game_data, int(away_id))
+            if home_id:
+                out["postgame"]["goals_by_period_home"] = self._calculate_goals_by_period(game_data, int(home_id))
+        except Exception:
+            pass
+
+        return out
     
     def create_header_image(self, game_data, game_id=None):
         """Create the modern header image for the report using the user's header with team names"""

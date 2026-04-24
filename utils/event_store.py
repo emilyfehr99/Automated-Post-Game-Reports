@@ -8,6 +8,7 @@ from typing import Any, Dict, Optional
 
 PREDICTION_EVENTS_PATH = Path("data/prediction_events.jsonl")
 OUTCOME_EVENTS_PATH = Path("data/outcome_events.jsonl")
+POSTGAME_METRICS_EVENTS_PATH = Path("data/postgame_metrics_events.jsonl")
 
 
 def _ensure_parent(p: Path) -> None:
@@ -54,6 +55,20 @@ def append_outcome_event(
     }
     if lead_after_p1 is not None:
         payload["lead_after_p1"] = int(lead_after_p1)
+    with open(path, "a") as f:
+        f.write(json.dumps(payload, ensure_ascii=False) + "\n")
+
+
+def append_postgame_metrics_event(event: Dict[str, Any], *, path: Path = POSTGAME_METRICS_EVENTS_PATH) -> None:
+    """
+    Append-only postgame metrics event. One JSON object per line.
+
+    Required fields (best-effort): game_id, date, away_team, home_team, postgame_metrics.
+    """
+    _ensure_parent(path)
+    payload = dict(event)
+    payload.setdefault("event_type", "postgame_metrics")
+    payload.setdefault("recorded_at_utc", datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"))
     with open(path, "a") as f:
         f.write(json.dumps(payload, ensure_ascii=False) + "\n")
 
