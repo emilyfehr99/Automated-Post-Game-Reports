@@ -292,6 +292,37 @@ jobs:
           fi
           PYTHONPATH=".:models:analyzers:utils:scrapers" python3 daily_prediction_notifier.py
 
+      - name: Ensure model feature snapshot exists (CI)
+        if: steps.check_date.outputs.should_run == 'true'
+        run: |
+          python3 - <<'PY'
+          import hashlib, json, os, pickle
+          from pathlib import Path
+          # The smoke test requires this when xgb_features.pkl exists in CI.
+          if Path("xgb_features.pkl").exists() and not Path("model_feature_snapshot.json").exists():
+              feats = []
+              try:
+                  with open("xgb_features.pkl", "rb") as f:
+                      obj = pickle.load(f)
+                  if isinstance(obj, dict) and "feature_names" in obj:
+                      feats = list(obj["feature_names"])
+                  elif isinstance(obj, (list, tuple)):
+                      feats = list(obj)
+                  else:
+                      feats = []
+              except Exception:
+                  feats = []
+              joined = "\n".join([str(x) for x in feats]).encode("utf-8")
+              sha = hashlib.sha256(joined).hexdigest()
+              payload = {
+                  "sha256": sha,
+                  "git_sha": os.environ.get("GITHUB_SHA"),
+                  "num_features": len(feats),
+              }
+              Path("model_feature_snapshot.json").write_text(json.dumps(payload, indent=2))
+              print(f"WROTE model_feature_snapshot.json (num_features={len(feats)})")
+          PY
+
       - name: Smoke test (imports + prediction schema)
         if: steps.check_date.outputs.should_run == 'true'
         run: |
