@@ -1,0 +1,87 @@
+name: Timeout + Goalie Pull Optimization
+
+on:
+  workflow_dispatch:
+    inputs:
+      max_games:
+        description: "If >0, limit games per season (debug)"
+        required: false
+        default: "0"
+      season_start_years:
+        description: "Space-separated season start years (e.g. '2023 2024 2025'). Blank = last 3."
+        required: false
+        default: ""
+      bucket_min:
+        description: "Bucket size in minutes of game time remaining (default 2)"
+        required: false
+        default: "2"
+      windows_sec:
+        description: "Space-separated windows in seconds (default '60 120')"
+        required: false
+        default: "60 120"
+
+permissions:
+  contents: read
+
+jobs:
+  run-study:
+    runs-on: ubuntu-latest
+    env:
+      FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      BUCKET_MIN: ${{ github.event.inputs.bucket_min }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Set up Python
+        uses: actions/setup-python@v6
+        with:
+          python-version: "3.10"
+
+      - name: Cache pip
+        uses: actions/cache@v4
+        with:
+          path: ~/.cache/pip
+          key: ${{ runner.os }}-pip-py310-${{ hashFiles('requirements.txt') }}
+          restore-keys: |
+            ${{ runner.os }}-pip-py310-
+            ${{ runner.os }}-pip-
+
+      - name: Cache NHL PBP downloads
+        uses: actions/cache@v4
+        with:
+          path: .cache/nhl_timeout_goalie_pull
+          key: ${{ runner.os }}-nhl-timeout-goalie-pull-study-v1
+          restore-keys: |
+            ${{ runner.os }}-nhl-timeout-goalie-pull-study-
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r requirements.txt
+
+      - name: Run study
+        run: |
+          set -e
+          ARGS=""
+          if [ "${{ github.event.inputs.max_games }}" != "0" ]; then
+            ARGS="$ARGS --max-games ${{ github.event.inputs.max_games }}"
+          fi
+          if [ -n "${{ github.event.inputs.season_start_years }}" ]; then
+            ARGS="$ARGS --season-start-years ${{ github.event.inputs.season_start_years }}"
+          fi
+          if [ -n "${{ github.event.inputs.windows_sec }}" ]; then
+            ARGS="$ARGS --windows-sec ${{ github.event.inputs.windows_sec }}"
+          fi
+          python3 scripts/run_timeout_goalie_pull_optimization.py $ARGS
+
+      - name: Upload artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: timeout-goalie-pull-optimization
+          if-no-files-found: error
+          path: |
+            data/timeout_goalie_pull_optimization.json
+
