@@ -142,7 +142,8 @@ jobs:
           # Update outcomes, emit OUTCOMES_UPDATED=N, and persist to step output.
           set -e
           PYTHONPATH=".:models:analyzers:utils:scrapers" python3 utils/update_game_outcomes.py | tee /tmp/outcomes.log
-          updated="$(python3 - <<'PY'\nimport re\nfrom pathlib import Path\nm = re.search(r'OUTCOMES_UPDATED=(\\d+)', Path('/tmp/outcomes.log').read_text())\nprint(int(m.group(1)) if m else 0)\nPY\n)\"\n          echo \"outcomes_updated=${updated}\" >> \"$GITHUB_OUTPUT\"
+          updated="$(python3 -c "import re; from pathlib import Path; m=re.search(r'OUTCOMES_UPDATED=(\\d+)', Path('/tmp/outcomes.log').read_text()); print(int(m.group(1)) if m else 0)")"
+          echo "outcomes_updated=${updated}" >> "$GITHUB_OUTPUT"
 
       - name: One-time backfill events logs (if missing)
         if: steps.check_date.outputs.should_run == 'true'
