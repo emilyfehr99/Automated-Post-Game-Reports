@@ -358,7 +358,7 @@ def analyze_goalie_pulls(
     for _, r in events.iterrows():
         away_goalie = r["awayGoalie"]
         home_goalie = r["homeGoalie"]
-        if away_goalie is None or home_goalie is None:
+        if pd.isna(away_goalie) or pd.isna(home_goalie):
             continue
 
         cur_away_empty = int(away_goalie) != 1
