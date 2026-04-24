@@ -6,7 +6,7 @@ import math
 import os
 import time
 from dataclasses import asdict, dataclass
-from datetime import UTC, date, datetime
+from datetime import date, datetime, timezone
 from pathlib import Path
 from typing import Any, Dict, Iterable, List, Optional, Tuple
 
@@ -553,7 +553,7 @@ def main() -> int:
 
     # storage for each diff and action type
     results: Dict[str, Any] = {
-        "generatedAtUtc": datetime.now(UTC).isoformat(),
+        "generatedAtUtc": datetime.now(timezone.utc).isoformat(),
         "seasonStartYears": list(args.season_start_years),
         "windowsSec": windows,
         "bucketMinutes": int(args.bucket_min),
