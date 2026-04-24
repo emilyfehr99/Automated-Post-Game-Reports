@@ -3,10 +3,6 @@ name: Playoff Stats + Drivers (since start date)
 on:
   workflow_dispatch:
     inputs:
-      playoff_start_date:
-        description: "YYYY-MM-DD cutoff date (inclusive)"
-        required: false
-        default: "2026-04-18"
       max_days:
         description: "Max days of schedule to scan (guardrail)"
         required: false
@@ -24,6 +20,7 @@ jobs:
     runs-on: ubuntu-latest
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      PLAYOFF_START_DATE: "2026-04-18"
     steps:
       - name: Checkout
         uses: actions/checkout@v6
@@ -59,7 +56,7 @@ jobs:
 
       - name: Build playoff per-game team stats
         run: |
-          ARGS="--playoff-start-date ${{ github.event.inputs.playoff_start_date }} --max-days ${{ github.event.inputs.max_days }}"
+          ARGS="--playoff-start-date ${PLAYOFF_START_DATE} --max-days ${{ github.event.inputs.max_days }}"
           if [ "${{ github.event.inputs.max_games }}" != "0" ]; then
             ARGS="$ARGS --max-games ${{ github.event.inputs.max_games }}"
           fi
@@ -67,7 +64,7 @@ jobs:
 
       - name: Rank playoff drivers from built stats
         run: |
-          python3 scripts/analyze_playoff_drivers_from_team_stats_json.py --playoff-start-date ${{ github.event.inputs.playoff_start_date }} --team-stats data/playoff_team_stats_since_start.json --out data/playoff_drivers_from_built_playoff_stats.json
+          python3 scripts/analyze_playoff_drivers_from_team_stats_json.py --playoff-start-date ${PLAYOFF_START_DATE} --team-stats data/playoff_team_stats_since_start.json --out data/playoff_drivers_from_built_playoff_stats.json
 
       - name: Upload artifacts
         uses: actions/upload-artifact@v4
