@@ -591,13 +591,16 @@ class PlayoffSeriesPredictor:
             'winner_projection': away if away_series_prob > 0.5 else home
         }
 
-    def predict_cup_winner(self):
-        """Analyze all current teams and rank them by 'Championship DNA' alignment."""
+    def predict_cup_winner(self, filter_teams: Optional[List[str]] = None):
+        """Analyze current teams and rank them by 'Championship DNA' alignment."""
         if not self.advanced_metrics:
             return None
             
         contender_scores = []
         for team_abbr in self.advanced_metrics:
+            if filter_teams and team_abbr not in filter_teams:
+                continue
+                
             dna_score = self.get_team_playoff_modifier(team_abbr)
             # Use points percentage from standings to identify 'Playoff-Bound' teams
             # Actually, just rank everyone for now.
