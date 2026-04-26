@@ -1532,6 +1532,11 @@ class ScorePredictionModel:
         away_expected = away_raw * calibration
         home_expected = home_raw * calibration
         
+        # Apply Playoff Scoring Environment Adjustment (~6% reduction in playoffs)
+        if is_playoff:
+            away_expected *= 0.94
+            home_expected *= 0.94
+        
         # Apply multiplicative modifiers
         away_expected *= away_def_factor
         home_expected *= home_def_factor

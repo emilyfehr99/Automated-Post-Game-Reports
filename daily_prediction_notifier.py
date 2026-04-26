@@ -583,7 +583,20 @@ class DailyPredictionNotifier:
                 key = f"{game['away_team']}@{game['home_team']}"
                 game_info = schedule_map.get(key, {})
                 is_playoff = (game_info.get('gameType') == 3)
-                series_status = game_info.get('series_status')
+                series_status_obj = game_info.get('series_status')
+                
+                # Parse series wins for simulation
+                away_wins = 0
+                home_wins = 0
+                if is_playoff and series_status_obj:
+                    if isinstance(series_status_obj, dict):
+                        t_wins = series_status_obj.get('topSeedWins', 0)
+                        b_wins = series_status_obj.get('bottomSeedWins', 0)
+                        t_abbr = series_status_obj.get('topSeedTeamAbbrev')
+                        if t_abbr == game['away_team']:
+                            away_wins, home_wins = t_wins, b_wins
+                        else:
+                            away_wins, home_wins = b_wins, t_wins
                 
                 pred = self.meta_ensemble.predict(
                     game['away_team'],
@@ -594,8 +607,19 @@ class DailyPredictionNotifier:
                     home_goalie=game.get('home_goalie'),
                     vegas_odds=vegas_odds,
                     is_playoff=is_playoff,
-                    series_status=series_status
+                    series_status=str(series_status_obj) if series_status_obj else None
                 )
+                
+                # Phase 3: Playoff Series Simulation
+                series_proj = None
+                if is_playoff:
+                    try:
+                        series_proj = self.playoff_predictor.simulate_series(
+                            game['away_team'], game['home_team'],
+                            away_wins=away_wins, home_wins=home_wins
+                        )
+                    except Exception as e:
+                        print(f"Error simulating series for {key}: {e}")
                 
                 # Attach odds taken for ROI tracking
                 if vegas_odds:
@@ -722,7 +746,7 @@ class DailyPredictionNotifier:
                         'odds_taken': pred.get('odds_taken', 0),
                         'p1_home_prob': pred.get('p1_home_prob', 50.0),
                         'is_playoff': is_playoff,
-                        'series_info': self.playoff_predictor.simulate_series(game['away_team'], game['home_team']) if is_playoff else None
+                        'series_info': series_proj
                     })
             except Exception as e:
                 print(f"Error predicting {game['away_team']} @ {game['home_team']}: {e}")
