@@ -746,7 +746,8 @@ class DailyPredictionNotifier:
                         'odds_taken': pred.get('odds_taken', 0),
                         'p1_home_prob': pred.get('p1_home_prob', 50.0),
                         'is_playoff': is_playoff,
-                        'series_info': series_proj
+                        'series_info': series_proj,
+                        'attribution': score_pred.get('attribution', [])
                     })
             except Exception as e:
                 print(f"Error predicting {game['away_team']} @ {game['home_team']}: {e}")
@@ -830,6 +831,12 @@ class DailyPredictionNotifier:
                 if factors.get('situation') != 'Neutral':
                     summary += f"  🔥 {factors['situation']}\n"
                     has_factors = True
+            
+            # Phase 25/26: Show Attribution Signals (Explainable AI)
+            attribution = pred.get('attribution', [])
+            if attribution:
+                summary += f"  🧠 Signals: {', '.join(attribution)}\n"
+                has_factors = True
                     
             if not has_factors:
                  summary += f"  🥅 Goalies: {pred['away_goalie']} vs {pred['home_goalie']}\n"

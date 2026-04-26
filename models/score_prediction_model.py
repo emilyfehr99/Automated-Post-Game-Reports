@@ -1399,7 +1399,9 @@ class ScorePredictionModel:
                      vegas_odds: Dict = None,
                      use_calibration: bool = True,
                      is_playoff: bool = False,
-                     series_status: str = None) -> Dict:
+                     series_status: str = None,
+                     away_missing_star: bool = False,
+                     home_missing_star: bool = False) -> Dict:
         """
         Predict realistic game score.
         
@@ -1409,10 +1411,18 @@ class ScorePredictionModel:
         away = away_team.upper()
         home = home_team.upper()
         
+        # --- Attribution Tracking ---
+        attribution = []
+        
         # ─── 1. Game Score baseline (r=0.642 with goals) ───
         # Recency-weighted GS average
         away_gs = self._get_team_metric(away, 'gs', 'away')
         home_gs = self._get_team_metric(home, 'gs', 'home')
+        
+        # Clutch Star Power Boost
+        gs_weight_adj = 1.10 if is_playoff else 1.0
+        if is_playoff: attribution.append("Star Power Boost (+10% GS)")
+        
         gs_to_goals = lambda gs: max(1.0, 0.5 * gs)
         away_gs_goals = gs_to_goals(away_gs)
         home_gs_goals = gs_to_goals(home_gs)
@@ -1437,14 +1447,28 @@ class ScorePredictionModel:
         # PP vs opponent PK matchup
         away_pp_effectiveness = (away_pp / 100.0) * (1.0 - home_pk / 100.0)
         home_pp_effectiveness = (home_pp / 100.0) * (1.0 - away_pk / 100.0)
-        away_pp_factor = 1.0 + (away_pp_effectiveness - 0.04) * 3.0  # 4% is ~league avg
+        # Power Play Tightening: refs call fewer penalties in playoffs (typically)
+        pp_weight = self.W_PP * (0.85 if is_playoff else 1.0)
+        if is_playoff: attribution.append("Playoff PP Tightening (-15% impact)")
+        
+        away_pp_factor = 1.0 + (away_pp_effectiveness - 0.04) * 3.0
         home_pp_factor = 1.0 + (home_pp_effectiveness - 0.04) * 3.0
         
-        # ─── 5. High Danger Chances ───
+        # ─── 5. High Danger Chances & Finishing Efficiency ───
         away_hdc = self._get_team_metric(away, 'hdc', 'away')
         home_hdc = self._get_team_metric(home, 'hdc', 'home')
-        away_hdc_factor = away_hdc / 7.0
-        home_hdc_factor = home_hdc / 7.0
+        
+        # HDC Conversion Efficiency (Goals / HDC)
+        # Teams that finish their best chances (like EDM/TBL) should get a boost
+        away_goals = self._get_team_metric(away, 'goals_flat', 'away')
+        home_goals = self._get_team_metric(home, 'goals_flat', 'home')
+        
+        away_hdc_eff = away_goals / max(1.0, away_hdc)
+        home_hdc_eff = home_goals / max(1.0, home_hdc)
+        
+        # Scale: avg eff is around 0.35-0.40
+        away_hdc_factor = (away_hdc / 7.0) * (away_hdc_eff / 0.38)
+        home_hdc_factor = (home_hdc / 7.0) * (home_hdc_eff / 0.38)
         
         # ─── 6. xG luck regression ───
         away_luck = self._get_team_metric(away, 'xg_luck', 'away')
@@ -1485,6 +1509,13 @@ class ScorePredictionModel:
         away_goalie_adj = self._get_goalie_adjustment(home_goalie, home, 'home')
         home_goalie_adj = self._get_goalie_adjustment(away_goalie, away, 'away')
         
+        # Overworked Goalie Penalty (60+ games in regular season)
+        # Playoff intensity is higher; overworked goalies fade faster.
+        away_goalie_load = self._get_goalie_games(away_goalie)
+        home_goalie_load = self._get_goalie_games(home_goalie)
+        if away_goalie_load > 60: away_goalie_adj -= 0.15
+        if home_goalie_load > 60: home_goalie_adj -= 0.15
+        
         # ─── 13. Short-Term Form (Momentum) ───
         # Compare last 5 and last 10 xG against season-long xG to detect "hot" or "cold" streaks.
         away_xg_l5 = self._get_team_metric(away, 'xg_l5', 'away')
@@ -1508,16 +1539,16 @@ class ScorePredictionModel:
         
         # ─── COMBINE: Weighted expected goals ───
         away_raw = (
-            self.W_GS * away_gs_goals +
+            (self.W_GS * gs_weight_adj) * away_gs_goals +
             self.W_XG * away_xg +
-            self.W_PP * (self.LEAGUE_AVG_GF * away_pp_factor) +
+            (pp_weight) * (self.LEAGUE_AVG_GF * away_pp_factor) +
             self.W_HDC * (self.LEAGUE_AVG_GF * away_hdc_factor) +
             self.W_CONTEXT * self.LEAGUE_AVG_GF
         )
         home_raw = (
-            self.W_GS * home_gs_goals +
+            (self.W_GS * gs_weight_adj) * home_gs_goals +
             self.W_XG * home_xg +
-            self.W_PP * (self.LEAGUE_AVG_GF * home_pp_factor) +
+            (pp_weight) * (self.LEAGUE_AVG_GF * home_pp_factor) +
             self.W_HDC * (self.LEAGUE_AVG_GF * home_hdc_factor) +
             self.W_CONTEXT * self.LEAGUE_AVG_GF
         )
@@ -1550,14 +1581,34 @@ class ScorePredictionModel:
         away_expected += away_goalie_adj
         away_expected += away_momentum_adj
         
-        home_expected += home_luck_adj
-        home_expected += home_div_adj
-        home_expected += home_venue_adj
-        home_expected += home_boost
-        home_expected += home_h2h_adj
-        home_expected += home_b2b_adj
-        home_expected += home_goalie_adj
-        home_expected += home_momentum_adj
+        # ─── 14. Jet Lag & Time Zone Penalty (NEW) ───
+        jet_lag_adj = self._calculate_jet_lag(away, home)
+        if abs(jet_lag_adj) > 0.05: attribution.append(f"Jet Lag Adjustment ({jet_lag_adj:+.2f})")
+        away_expected += jet_lag_adj
+        
+        # ─── 15. Missing Star Penalty ───
+        if away_missing_star:
+            attribution.append(f"{away} Missing Star (-0.25)")
+            away_expected -= 0.25
+        if home_missing_star:
+            attribution.append(f"{home} Missing Star (-0.25)")
+            home_expected -= 0.25
+            
+        # ─── 16. Playoff Environment Reductions ───
+        if is_playoff:
+            # Check for ST mismatches that might lead to blowouts
+            # If one team is >10% better on Net ST, reduce the reduction.
+            a_st = away_pp_effectiveness + self._get_team_metric(away, 'pk', 'away')
+            h_st = home_pp_effectiveness + self._get_team_metric(home, 'pk', 'home')
+            if abs(a_st - h_st) > 0.10:
+                reduction = 0.97 # Slight reduction (blowout possible)
+                attribution.append("Playoff Blowout Potential (ST Mismatch)")
+            else:
+                reduction = 0.94 # Tight checking
+                attribution.append("Playoff Tight Checking (-6% Scoring)")
+            
+            away_expected *= reduction
+            home_expected *= reduction
         
         # ─── 14. Phase 3: 3-in-4 Fatigue (Context Only) ───
         # Note: Triangulation Audit (N=923) showed that a hard goal penalty
@@ -1712,6 +1763,7 @@ class ScorePredictionModel:
             'total_goals': away_score + home_score,
             'confidence': confidence,
             'factors': factors,
+            'attribution': attribution
         }
     
     def _get_goalie_data(self, goalie_name: str) -> Optional[Dict]:
@@ -2020,61 +2072,105 @@ class ScorePredictionModel:
             'score_errors': [], 'goal_diff_errors': [],
         }
         
-        for pred in self.prediction_history:
-            if not pred.get('actual_winner'):
-                continue
-            
-            away = pred.get('away_team', '')
-            home = pred.get('home_team', '')
-            actual_away = pred.get('actual_away_score')
-            actual_home = pred.get('actual_home_score')
-            
-            if not all([away, home, actual_away is not None, actual_home is not None]):
-                continue
-            
-            away_b2b = pred.get('away_back_to_back', False)
-            home_b2b = pred.get('home_back_to_back', False)
-            
-            # Extract goalie names if available
-            metrics = pred.get('metrics_used', {})
-            away_goalie = metrics.get('away_goalie', 'TBD')
-            home_goalie = metrics.get('home_goalie', 'TBD')
-            
-            # Predict (using deterministic Poisson for reproducibility)
-            prediction = self.predict_score(
-                away, home,
-                away_goalie=away_goalie, home_goalie=home_goalie,
-                away_b2b=away_b2b, home_b2b=home_b2b
-            )
-            
-            pred_away = prediction['away_score']
-            pred_home = prediction['home_score']
-            
-            # Winner accuracy
-            actual_winner_is_away = actual_away > actual_home
-            pred_winner_is_away = pred_away > pred_home
-            
-            correct = actual_winner_is_away == pred_winner_is_away
-            results['correct_winner'] += int(correct)
-            results['total'] += 1
-            
-            # Score accuracy
-            score_error = abs(pred_away - actual_away) + abs(pred_home - actual_home)
-            results['score_errors'].append(score_error)
-            
-            goal_diff_error = abs((pred_away - pred_home) - (actual_away - actual_home))
-            results['goal_diff_errors'].append(goal_diff_error)
-            
-            if verbose and not correct:
-                print(f"  ❌ {away}@{home}: pred {pred_away}-{pred_home}, actual {actual_away}-{actual_home}")
+        # --- NEW: Granular Audit ---
+        audit_raw = {
+            'home_acc': [], 'away_acc': [], 'divisional_acc': [],
+            'confidence_buckets': {
+                '50-60': {'total': 0, 'correct': 0}, '60-70': {'total': 0, 'correct': 0},
+                '70-80': {'total': 0, 'correct': 0}, '80-90': {'total': 0, 'correct': 0},
+                '90-100': {'total': 0, 'correct': 0}
+            }
+        }
         
+        for pred_h in self.prediction_history:
+            if not pred_h.get('actual_winner'): continue
+            
+            away = pred_h.get('away_team', '')
+            home = pred_h.get('home_team', '')
+            actual_away = pred_h.get('actual_away_score')
+            actual_home = pred_h.get('actual_home_score')
+            
+            if not all([away, home, actual_away is not None, actual_home is not None]): continue
+            
+            # Predict
+            res = self.predict_score(away, home, 
+                                     away_goalie=pred_h.get('metrics_used', {}).get('away_goalie', 'TBD'),
+                                     home_goalie=pred_h.get('metrics_used', {}).get('home_goalie', 'TBD'))
+            
+            pred_winner = away if res['away_score'] > res['home_score'] else home
+            is_correct = (pred_winner == pred_h['actual_winner'])
+            
+            # Record Audit data
+            conf = res['confidence'] * 100
+            bucket = None
+            if 50 <= conf < 60: bucket = '50-60'
+            elif 60 <= conf < 70: bucket = '60-70'
+            elif 70 <= conf < 80: bucket = '70-80'
+            elif 80 <= conf < 90: bucket = '80-90'
+            elif conf >= 90: bucket = '90-100'
+            
+            if bucket:
+                audit_raw['confidence_buckets'][bucket]['total'] += 1
+                if is_correct: audit_raw['confidence_buckets'][bucket]['correct'] += 1
+            
+            if home == pred_winner: audit_raw['home_acc'].append(is_correct)
+            else: audit_raw['away_acc'].append(is_correct)
+            
+            if TEAM_TO_DIV.get(home) == TEAM_TO_DIV.get(away):
+                audit_raw['divisional_acc'].append(is_correct)
+
+            # Core metrics (already calculated in your previous loop, 
+            # but I'll assume I'm merging them into one clean loop now).
+            results['correct_winner'] += int(is_correct)
+            results['total'] += 1
+            score_error = abs(res['away_score'] - actual_away) + abs(res['home_score'] - actual_home)
+            results['score_errors'].append(score_error)
+            results['goal_diff_errors'].append(abs((res['away_score'] - res['home_score']) - (actual_away - actual_home)))
+
         if results['total'] > 0:
             results['winner_accuracy'] = results['correct_winner'] / results['total']
             results['avg_score_error'] = np.mean(results['score_errors'])
             results['median_score_error'] = np.median(results['score_errors'])
             results['avg_diff_error'] = np.mean(results['goal_diff_errors'])
+            
+            results['audit'] = {
+                'home_win_rate': np.mean(audit_raw['home_acc']) if audit_raw['home_acc'] else 0,
+                'away_win_rate': np.mean(audit_raw['away_acc']) if audit_raw['away_acc'] else 0,
+                'divisional_acc': np.mean(audit_raw['divisional_acc']) if audit_raw['divisional_acc'] else 0,
+                'calibration': {k: (v['correct']/v['total'] if v['total'] > 0 else 0) for k, v in audit_raw['confidence_buckets'].items()},
+                'bucket_totals': {k: v['total'] for k, v in audit_raw['confidence_buckets'].items()}
+            }
         
         return results
+
+
+    def _calculate_jet_lag(self, away_team: str, home_team: str) -> float:
+        """Calculate performance decrement based on time zones crossed."""
+        TZ = {
+            'ANA': -8, 'BOS': -5, 'BUF': -5, 'CGY': -7, 'CAR': -5, 'CHI': -6,
+            'COL': -7, 'CBJ': -5, 'DAL': -6, 'DET': -5, 'EDM': -7, 'FLA': -5,
+            'LAK': -8, 'MIN': -6, 'MTL': -5, 'NSH': -6, 'NJD': -5, 'NYI': -5,
+            'NYR': -5, 'OTT': -5, 'PHI': -5, 'PIT': -5, 'SJS': -8, 'SEA': -8,
+            'STL': -6, 'TBL': -5, 'TOR': -5, 'UTA': -7, 'VAN': -8, 'VGK': -8,
+            'WSH': -5, 'WPG': -6
+        }
+        if away_team not in TZ or home_team not in TZ: return 0.0
+        
+        diff = TZ[home_team] - TZ[away_team] # e.g. -5 - (-8) = +3 zones traveling East
+        # Traveling East is harder on the body than traveling West.
+        if diff > 1: return -0.1 * diff # Penalty for traveling East
+        if diff < -2: return 0.05 * abs(diff) # Slight 'extra sleep' boost traveling West
+        return 0.0
+
+    def _get_goalie_games(self, goalie_name: Optional[str]) -> int:
+        """Retrieve total games played for a goalie."""
+        if not goalie_name: return 0
+        
+        # Look up by name in the names mapping
+        gid = getattr(self, 'goalie_names', {}).get(goalie_name)
+        if not gid: return 0
+        
+        return int(self.goalie_stats.get(gid, {}).get('games', 0))
 
 
 if __name__ == "__main__":
@@ -2087,8 +2183,23 @@ if __name__ == "__main__":
     print(f"  Games tested:       {bt['total']}")
     print(f"  Winner accuracy:    {bt.get('winner_accuracy', 0):.1%}")
     print(f"  Avg score error:    {bt.get('avg_score_error', 0):.2f} goals")
+    # Audit Results
     print(f"  Median score error: {bt.get('median_score_error', 0):.2f} goals")
     print(f"  Avg diff error:     {bt.get('avg_diff_error', 0):.2f}")
+    
+    audit = bt.get('audit', {})
+    if audit:
+        print("\n🔍 ACCURACY AUDIT (GRANULAR)")
+        print("-" * 30)
+        print(f"  Home Pick Acc:      {audit['home_win_rate']:.1%}")
+        print(f"  Away Pick Acc:      {audit['away_win_rate']:.1%}")
+        print(f"  Divisional Acc:     {audit['divisional_acc']:.1%}")
+        
+        print("\n🎯 CALIBRATION CURVE")
+        print("-" * 30)
+        for bucket, rate in audit['calibration'].items():
+            total = audit['bucket_totals'].get(bucket, 0)
+            print(f"  {bucket}% Confidence: {rate:>5.1%} ({total:>3} games)")
     
     # Sample predictions
     print("\n🏒 TODAY'S PREDICTIONS")

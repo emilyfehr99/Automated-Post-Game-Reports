@@ -210,10 +210,18 @@ class PlayoffSeriesPredictor:
         print(f"🥅 Identified #1 starters for {len(self.starters)} teams for playoff simulation")
 
     def _load_edge_data(self):
-        if self.edge_path.exists():
-            with open(self.edge_path) as f:
-                self.edge_profiles = json.load(f)
-            print(f"⛸️  Loaded high-fidelity Edge tracking profiles for {len(self.edge_profiles)} teams")
+        """Unify Edge tracking data from team_advanced_metrics.json."""
+        for abbr, stats in self.advanced_metrics.items():
+            # Extract high-fidelity tracking data from advanced metrics pool
+            profile = {
+                'avg_max_speed': stats.get('max_skating_speed', 21.0),
+                'avg_burst_frequency': stats.get('skating_bursts_per_game', 0.5),
+                'avg_shot_speed': stats.get('avg_shot_speed', 75.0),
+                'puck_possession_dist': stats.get('puck_possession_dist', 1.0)
+            }
+            self.edge_profiles[abbr] = profile
+        
+        print(f"⛸️  Synchronized high-fidelity Edge tracking for {len(self.edge_profiles)} teams")
 
     def _load_cup_priors(self):
         """Load regular-season-derived Cup priors (optional)."""
@@ -400,7 +408,7 @@ class PlayoffSeriesPredictor:
 
         return modifier * 0.1
 
-    def calculate_game_win_prob(self, away_team, home_team, playoff_round: Optional[int] = None):
+    def calculate_game_win_prob(self, away_team, home_team, away_wins: int = 0, home_wins: int = 0, playoff_round: Optional[int] = None):
         """Calculate the single-game win probability with playoff tuning."""
         # Identify starters
         away_goalie = self.starters.get(away_team)
@@ -422,25 +430,156 @@ class PlayoffSeriesPredictor:
         away_hot_hand = self._calculate_goalie_hot_hand(away_team)
         home_hot_hand = self._calculate_goalie_hot_hand(home_team)
         
-        # 2. Series Fatigue (Travel) Modifier
-        games_played = away_wins + home_wins
-        away_fatigue = self._calculate_series_fatigue(away_team, home_team, games_played, is_away=True)
-        home_fatigue = self._calculate_series_fatigue(away_team, home_team, games_played, is_away=False)
+        # 2. Goalie Cumulative Load (Fatigue from playing deep into series)
+        games_in_series = away_wins + home_wins
+        away_g_fatigue = self._calculate_goalie_fatigue(away_team, games_in_series)
+        home_g_fatigue = self._calculate_goalie_fatigue(home_team, games_in_series)
         
-        # 3. Elimination Game Modifier
+        # 3. Series Fatigue (Travel) Modifier
+        away_fatigue = self._calculate_series_fatigue(away_team, home_team, games_in_series, is_away=True)
+        home_fatigue = self._calculate_series_fatigue(away_team, home_team, games_in_series, is_away=False)
+        
+        # 4. Elimination Game Modifier
         away_elim_mod, home_elim_mod = self._calculate_elimination_modifier(away_wins, home_wins)
         
-        # 4. Phase 18 Lateral movement advantage
+        # 5. Phase 18 Lateral movement advantage
         lateral_adv = self._calculate_lateral_advantage(away_team, home_team)
         
+        # 6. Home Ice Matchup Advantage (Last Change)
+        # Home coach can match shutdown lines vs star lines. 
+        # Only applies to home team, varies by defensive quality.
+        home_matchup_adv = self._calculate_matchup_advantage(home_team, away_team)
+        
+        # 7. Special Teams Net Edge (PP + PK)
+        st_edge = self._calculate_special_teams_edge(away_team, home_team)
+        
+        # 8. Shot Block Resilience
+        away_blocks = self._calculate_shot_block_resilience(away_team)
+        home_blocks = self._calculate_shot_block_resilience(home_team)
+        
+        # 9. Championship Pedigree
+        away_pedigree = self._calculate_pedigree_modifier(away_team)
+        home_pedigree = self._calculate_pedigree_modifier(home_team)
+        
+        # 10. Tactical Solving (Seriality)
+        # If a team has won consecutive games, they may have 'solved' the opponent
+        tactical_shift = self._calculate_tactical_solving(away_wins, home_wins)
+        
+        # 11. Playoff OT Conditioning
+        away_cond = self._calculate_conditioning_boost(away_team)
+        home_cond = self._calculate_conditioning_boost(home_team)
+        
+        # 12. NHL Edge: Transition & Skating Speed Edge (With Playoff Intensity)
+        # Apply Playoff Intensity Multiplier and Series Fatigue Decay
+        total_games_played = away_wins + home_wins
+        fatigue_decay = max(0.95, 1.0 - (total_games_played * 0.008)) # -0.8% speed per game in series
+        intensity_boost = 1.05 if is_playoff else 1.0 # +5% effort in playoffs
+        
+        away_speed = self._calculate_skating_edge(away_team, decay=fatigue_decay, intensity=intensity_boost)
+        home_speed = self._calculate_skating_edge(home_team, decay=fatigue_decay, intensity=intensity_boost)
+        
+        # 13. NHL Edge: Puck Control Dominance
+        away_puck = self._calculate_possession_edge(away_team, intensity=intensity_boost)
+        home_puck = self._calculate_possession_edge(home_team, intensity=intensity_boost)
+        
         # Combine all modifiers (net_shift)
-        # Tactical DNA + Hot Hand + Fatigue + Elimination + Lateral
+        # Tactical DNA + Hot Hand + Fatigue + Elimination + Goalie Fatigue + Lateral + Matchup + ST + Blocks + Pedigree + Solving + OT + Speed + Puck
         net_shift = (away_mod - home_mod) + (away_hot_hand - home_hot_hand) + \
                     (home_fatigue - away_fatigue) + (away_elim_mod - home_elim_mod) + \
-                    lateral_adv
+                    (home_g_fatigue - away_g_fatigue) + \
+                    lateral_adv + home_matchup_adv + st_edge + \
+                    (away_blocks - home_blocks) + (away_pedigree - home_pedigree) + \
+                    tactical_shift + (away_cond - home_cond) + \
+                    (away_speed - home_speed) + (away_puck - home_puck)
         
         final_away_prob = np.clip(away_prob + net_shift, 0.01, 0.99)
         return final_away_prob
+
+    def _calculate_tactical_solving(self, away_wins: int, home_wins: int) -> float:
+        """Slight boost for teams on a win streak in the series (System Solving)."""
+        # We don't have game-by-game order in this simple (wins, wins) state, 
+        # but we can assume a team with a 2-game lead (e.g. 2-0, 3-1) has tactical momentum.
+        diff = away_wins - home_wins
+        if diff >= 2: return 0.01 # Away solved home
+        if diff <= -2: return -0.01 # Home solved away
+        return 0.0
+
+    def _calculate_conditioning_boost(self, team_abbr: str) -> float:
+        """Aerobic conditioning boost (based on Edge Burst Frequency) for long Playoff OTs."""
+        edge = self.edge_profiles.get(team_abbr, {})
+        burst = edge.get('avg_burst_frequency', 0.5)
+        # Top-tier conditioning (burst > 0.6) grants a small edge in the 5v5 playoff OT meta.
+        if burst > 0.6: return 0.005
+        return 0.0
+
+    def _calculate_skating_edge(self, team_abbr: str, decay: float = 1.0, intensity: float = 1.0) -> float:
+        """NHL Edge: Skating speed and transition efficiency with Playoff scaling."""
+        edge = self.edge_profiles.get(team_abbr, {})
+        speed = edge.get('avg_max_speed', 21.0) * decay
+        bursts = edge.get('avg_burst_frequency', 0.5) * intensity
+        # Reward teams with both high peak speed and high frequency
+        if speed > 22.0 and bursts > 0.55: return 0.01
+        if speed > 21.5: return 0.005
+        return 0.0
+
+    def _calculate_possession_edge(self, team_abbr: str, intensity: float = 1.0) -> float:
+        """NHL Edge: Puck possession distance dominance with Playoff intensity."""
+        edge = self.edge_profiles.get(team_abbr, {})
+        dist = edge.get('puck_possession_dist', 1.0) * intensity
+        # Scale: average distance is around 1.0-1.2 miles per game for a team
+        if dist > 1.25: return 0.01 # Elite puck control
+        if dist > 1.15: return 0.005
+        return 0.0
+
+    def _calculate_matchup_advantage(self, home_team: str, away_team: str) -> float:
+        """Home team gets last change, allowing tactical line matching."""
+        h_stats = self.advanced_metrics.get(home_team, {})
+        # If home team has elite defensive suppressors (low shots against)
+        # and away team is top-heavy, the home edge increases.
+        h_suppression = h_stats.get('avg_ex_to_en', 0) # Entry suppression
+        if h_suppression < -0.05: # Elite entry defense
+            return 0.015 # Extra 1.5% for tactical matching
+        return 0.005 # Baseline last-change edge
+
+    def _calculate_special_teams_edge(self, away_team: str, home_team: str) -> float:
+        """Net Special Teams (PP% + PK%) advantage."""
+        # Pull from learned model averages
+        a_avgs = self.model.team_averages.get(away_team, {}).get('combined', {})
+        h_avgs = self.model.team_averages.get(home_team, {}).get('combined', {})
+        
+        a_net = a_avgs.get('power_play_pct', 20.0) + a_avgs.get('penalty_kill_pct', 80.0)
+        h_net = h_avgs.get('power_play_pct', 20.0) + h_avgs.get('penalty_kill_pct', 80.0)
+        
+        # Reward teams with 'Net ST' over 105 (Playoff benchmark)
+        shift = (a_net - h_net) * 0.001
+        return np.clip(shift, -0.02, 0.02)
+
+    def _calculate_shot_block_resilience(self, team_abbr: str) -> float:
+        """Playoff teams that sacrifice bodies get a defensive resilience boost."""
+        stats = self.advanced_metrics.get(team_abbr, {})
+        # Use total_blocks / games if available
+        blocks = stats.get('total_blocks', 0)
+        games = stats.get('games', 1)
+        bpg = blocks / games
+        if bpg > 18.0: return 0.015 # Elite shot blocking
+        if bpg > 15.0: return 0.005 # Above average
+        return 0.0
+
+    def _calculate_pedigree_modifier(self, team_abbr: str) -> float:
+        """Experience boost for teams with recent Cup success (Pedigree)."""
+        PEDIGREE = {
+            'TBL': 0.01, # Multi-cup core
+            'COL': 0.01, # 2022 Champ
+            'VGK': 0.01, # 2023 Champ
+            'FLA': 0.005, # Recent Finalist
+        }
+        return PEDIGREE.get(team_abbr, 0.0)
+
+    def _calculate_goalie_fatigue(self, team_abbr: str, games_in_series: int) -> float:
+        """Penalty for goalie playing heavy minutes deep in a series."""
+        if games_in_series < 4: return 0.0
+        # 1% penalty per game after Game 4
+        return (games_in_series - 3) * 0.01
 
     def _calculate_goalie_hot_hand(self, team_abbr: str) -> float:
         """Calculate if a goalie is on a 'Hot Hand' streak (> .915 SV% last 3 games)."""
@@ -482,14 +621,18 @@ class PlayoffSeriesPredictor:
         # Facing elimination (Down 3-x)
         if away_wins == 3 and home_wins < 3:
             # Home team is desperate
-            home_mod += 0.02
+            home_mod += 0.025 # Boosted for high-leverage
+            if home_wins == 0: # Down 3-0 is harder (psychological)
+                home_mod -= 0.01
             # Away team might be tight/pressured to close out
-            away_mod -= 0.01
+            away_mod -= 0.015
         elif home_wins == 3 and away_wins < 3:
             # Away team is desperate
-            away_mod += 0.02
+            away_mod += 0.025
+            if away_wins == 0:
+                away_mod -= 0.01
             # Home team might be tight
-            home_mod -= 0.01
+            home_mod -= 0.015
             
         return away_mod, home_mod
 
@@ -525,44 +668,61 @@ class PlayoffSeriesPredictor:
         home_wins: int,
         simulations: int,
         remaining_venues: list,
-        p_away_at_home: float,
-        p_away_at_away: float,
+        playoff_round: Optional[int] = None,
     ) -> tuple[int, float, float, float]:
         """
-        Same distribution as the scalar loop: Bernoulli game outcomes, 2-2-1-1-1 schedule.
-        All ``simulations`` series are advanced in parallel (one venue step at a time).
-        Returns also P(series length == 7) from the same draws.
+        Dynamic probability simulation.
+        Probabilities are recalculated in each step based on the current series score.
         """
         rng = np.random.default_rng()
         n = int(simulations)
         a_w = np.full(n, away_wins, dtype=np.int32)
         h_w = np.full(n, home_wins, dtype=np.int32)
         mu_combined = self._historical_poisson_mean_combined_goals()
-        lam_totals = np.full(len(remaining_venues), mu_combined, dtype=np.float64)
         total_games = np.zeros(n, dtype=np.float64)
         total_goals = np.zeros(n, dtype=np.float64)
 
-        for gi, venue in enumerate(remaining_venues):
+        # Map current game index to its place in full_venues (H-H-A-A-H-A-H)
+        full_venues = ['home', 'home', 'away', 'away', 'home', 'away', 'home']
+        
+        for g_idx in range(away_wins + home_wins, 7):
             mask = (a_w < 4) & (h_w < 4)
             if not np.any(mask):
                 break
-            p = float(p_away_at_home if venue == "home" else p_away_at_away)
+            
+            venue = full_venues[g_idx]
+            
+            # Recalculate probabilities for unique (a_w, h_w) states in the current batch
+            # For simplicity in batching, we group by unique scorelines
+            unique_scores = set(zip(a_w[mask], h_w[mask]))
+            p_map = {}
+            for aw, hw in unique_scores:
+                # Probability depends on who is home/away in THIS game
+                if venue == 'home':
+                    p_map[(aw, hw)] = self.calculate_game_win_prob(away, home, aw, hw, playoff_round)
+                else:
+                    # 'away' venue in the series schedule means home_team is visiting away_team's arena
+                    # So away_team is 'home' for this calculation
+                    p_map[(aw, hw)] = 1.0 - self.calculate_game_win_prob(home, away, hw, aw, playoff_round)
+            
+            # Apply probabilities to batch
+            p_vector = np.array([p_map[(aw, hw)] if (aw < 4 and hw < 4) else 0.5 for aw, hw in zip(a_w, h_w)])
+            
             u = rng.random(n)
-            away_win = u < p
+            away_win = u < p_vector
             inc_a = (mask & away_win).astype(np.int32)
             inc_h = (mask & ~away_win).astype(np.int32)
             a_w = a_w + inc_a
             h_w = h_w + inc_h
             total_games += mask.astype(np.float64)
-            # Poisson(mean); mean = 5yr NHL playoff per-game combined goals (historical JSON).
-            lt = max(lam_totals[gi], 1e-6)
-            sampled = rng.poisson(lt, size=n).astype(np.float64)
+            
+            sampled = rng.poisson(mu_combined, size=n).astype(np.float64)
             total_goals += np.where(mask, sampled, 0.0)
 
         away_series_wins = int(np.sum(a_w == 4))
         total_games_completed = float(np.sum(total_games))
         total_series_goals_sum = float(np.sum(total_goals))
-        prob_seven = float(np.mean(total_games == 7.0))
+        prob_seven = float(np.mean(total_games + (away_wins + home_wins) == 7.0))
         return away_series_wins, total_games_completed, total_series_goals_sum, prob_seven
 
     def simulate_series(self, away, home, away_wins=0, home_wins=0, simulations=10000, playoff_round: Optional[int] = None):
@@ -624,13 +784,11 @@ class PlayoffSeriesPredictor:
                     home_wins,
                     simulations,
                     remaining_venues,
-                    p_away_at_home,
-                    p_away_at_away,
+                    playoff_round=playoff_round
                 )
             )
         else:
             rng_small = np.random.default_rng()
-            games_per_sim: List[int] = []
             for _ in range(simulations):
                 a_w = away_wins
                 h_w = home_wins
@@ -641,7 +799,12 @@ class PlayoffSeriesPredictor:
                     sim_games += 1
                     lt = self._historical_poisson_mean_combined_goals()
                     goals_this_series += float(rng_small.poisson(max(lt, 1e-6)))
-                    prob = p_away_at_home if venue == 'home' else p_away_at_away
+                    
+                    # DYNAMIC recalculation
+                    if venue == 'home':
+                        prob = self.calculate_game_win_prob(away, home, a_w, h_w, playoff_round)
+                    else:
+                        prob = 1.0 - self.calculate_game_win_prob(home, away, h_w, a_w, playoff_round)
 
                     if random.random() < prob:
                         a_w += 1
