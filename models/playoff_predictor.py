@@ -35,6 +35,22 @@ class PlayoffSeriesPredictor:
         self.round_models: Dict[str, Dict[str, Any]] = {}
         self.round_team_features: Dict[str, Dict[str, float]] = {}
         self.metric_norms = {}
+        
+        # City Coordinates (Lat, Lon) for fatigue/travel calculation
+        self.TEAM_COORDS = {
+            'ANA': (33.8078, -117.8765), 'BOS': (42.3662, -71.0621), 'BUF': (42.8750, -78.8764),
+            'CGY': (51.0375, -114.0519), 'CAR': (35.8033, -78.7219), 'CHI': (41.8817, -87.6742),
+            'COL': (39.7486, -105.0075), 'CBJ': (39.9692, -83.0061), 'DAL': (32.7905, -96.8103),
+            'DET': (42.3411, -83.0553), 'EDM': (53.5469, -113.4901), 'FLA': (26.1583, -80.3256),
+            'LAK': (34.0430, -118.2673), 'MIN': (44.9447, -93.1011), 'MTL': (45.4961, -73.5694),
+            'NSH': (36.1592, -86.7785), 'NJD': (40.7335, -74.1711), 'NYI': (40.7135, -73.7158),
+            'NYR': (40.7505, -73.9934), 'OTT': (45.2969, -75.9268), 'PHI': (39.9012, -75.1720),
+            'PIT': (40.4395, -79.9893), 'SJS': (37.3329, -121.9017), 'SEA': (47.6221, -122.3540),
+            'STL': (38.6268, -90.2026), 'TBL': (27.9427, -82.4492), 'TOR': (43.6435, -79.3791),
+            'UTA': (40.7683, -111.9011), 'VAN': (49.2778, -123.1088), 'VGK': (36.1028, -115.1783),
+            'WSH': (38.8982, -77.0209), 'WPG': (49.8926, -97.1437)
+        }
+        
         self._load_metrics()
         self._load_starters()
         self._load_edge_data()
@@ -42,21 +58,22 @@ class PlayoffSeriesPredictor:
         self._load_round_models()
         self._load_round_team_features()
         
-        # FINAL 5-YEAR CHAMPIONSHIP WEIGHTS (Tactical Audit v2.1 2020-2025)
+        # FINAL 5-YEAR CHAMPIONSHIP WEIGHTS (Tactical Audit v2.2 2020-2026)
         # These weights prioritize offensive zone persistence and transition efficiency.
         self.PLAYOFF_WEIGHTS = {
-            'rebound_gen_rate': 0.33,       
-            'avg_en_to_s': 0.22,           
-            'quick_strike_rate': 0.21,      
-            'hd_pizzas_per_game': -0.14,    
-            'rapid_reb_rate': 0.08,         
-            'avg_ex_to_en': -0.07,          
-            'pizzas_per_game': -0.10,     
+            'rebound_gen_rate': 0.35,       # ↑ Increased for 2026 meta
+            'avg_en_to_s': 0.25,           # ↑ Increased: entry quality is king
+            'quick_strike_rate': 0.20,      
+            'hd_pizzas_per_game': -0.15,    
+            'rapid_reb_rate': 0.10,         
+            'avg_ex_to_en': -0.05,          
+            'pizzas_per_game': -0.12,     
             # Edge Tracking Weights (Phase 18 Integration)
             'edge_top_speed': 0.15,         
             'edge_burst_frequency': 0.12,   
             # Possession Starters (Phase 19 Integration)
-            'ozone_faceoff_pct': 0.05,      # Clean wins drive immediate persistence
+            'ozone_faceoff_pct': 0.08,      # Clean wins drive immediate persistence
+            'lateral_movement_forcing': 0.18, # NEW: High signal in 2026
         }
         self._load_historical_weights()
         self._compute_metric_norms()
@@ -401,11 +418,91 @@ class PlayoffSeriesPredictor:
         away_mod = self.get_team_playoff_modifier(away_team, playoff_round=playoff_round)
         home_mod = self.get_team_playoff_modifier(home_team, playoff_round=playoff_round)
         
-        # Balance out the shift (if Away has better DNA, they get a boost, and vice-versa)
-        net_shift = away_mod - home_mod
+        # 1. Goalie Hot Hand Modifier
+        away_hot_hand = self._calculate_goalie_hot_hand(away_team)
+        home_hot_hand = self._calculate_goalie_hot_hand(home_team)
+        
+        # 2. Series Fatigue (Travel) Modifier
+        games_played = away_wins + home_wins
+        away_fatigue = self._calculate_series_fatigue(away_team, home_team, games_played, is_away=True)
+        home_fatigue = self._calculate_series_fatigue(away_team, home_team, games_played, is_away=False)
+        
+        # 3. Elimination Game Modifier
+        away_elim_mod, home_elim_mod = self._calculate_elimination_modifier(away_wins, home_wins)
+        
+        # 4. Phase 18 Lateral movement advantage
+        lateral_adv = self._calculate_lateral_advantage(away_team, home_team)
+        
+        # Combine all modifiers (net_shift)
+        # Tactical DNA + Hot Hand + Fatigue + Elimination + Lateral
+        net_shift = (away_mod - home_mod) + (away_hot_hand - home_hot_hand) + \
+                    (home_fatigue - away_fatigue) + (away_elim_mod - home_elim_mod) + \
+                    lateral_adv
         
         final_away_prob = np.clip(away_prob + net_shift, 0.01, 0.99)
         return final_away_prob
+
+    def _calculate_goalie_hot_hand(self, team_abbr: str) -> float:
+        """Calculate if a goalie is on a 'Hot Hand' streak (> .915 SV% last 3 games)."""
+        # This would ideally pull from a per-game goalie SV% store
+        # For now, we'll use a signal from advanced_metrics if 'recent_gsax' is present
+        stats = self.advanced_metrics.get(team_abbr, {})
+        recent_gsax = stats.get('recent_gsax_per_game', 0) # GSAx over last 3 games
+        if recent_gsax > 1.5: return 0.04 # Major hot hand
+        if recent_gsax > 0.5: return 0.02 # Moderate hot hand
+        if recent_gsax < -1.0: return -0.03 # Cold hand
+        return 0.0
+
+    def _calculate_series_fatigue(self, away_team: str, home_team: str, games_played: int, is_away: bool) -> float:
+        """Calculate travel fatigue based on distance between cities."""
+        if away_team not in self.TEAM_COORDS or home_team not in self.TEAM_COORDS:
+            return 0.0
+            
+        c1 = self.TEAM_COORDS[away_team]
+        c2 = self.TEAM_COORDS[home_team]
+        
+        # Simple Euclidean distance as proxy for travel hours
+        dist = np.sqrt((c1[0]-c2[0])**2 + (c1[1]-c2[1])**2)
+        
+        # Cross-continent travel (dist > 25) incurs fatigue if many games played
+        # Penalty is higher for the away team in Game 5 and Game 7
+        fatigue = 0.0
+        if dist > 25:
+            if games_played >= 4: # Deep in series
+                fatigue = 0.02
+                if is_away: fatigue *= 1.5 # Extra penalty for visiting team
+        
+        return fatigue
+
+    def _calculate_elimination_modifier(self, away_wins: int, home_wins: int) -> tuple[float, float]:
+        """Apply 'Urgency' modifier for teams facing elimination."""
+        away_mod = 0.0
+        home_mod = 0.0
+        
+        # Facing elimination (Down 3-x)
+        if away_wins == 3 and home_wins < 3:
+            # Home team is desperate
+            home_mod += 0.02
+            # Away team might be tight/pressured to close out
+            away_mod -= 0.01
+        elif home_wins == 3 and away_wins < 3:
+            # Away team is desperate
+            away_mod += 0.02
+            # Home team might be tight
+            home_mod -= 0.01
+            
+        return away_mod, home_mod
+
+    def _calculate_lateral_advantage(self, away_team: str, home_team: str) -> float:
+        """Calculate advantage based on lateral movement forcing (Phase 18)."""
+        a_stats = self.advanced_metrics.get(away_team, {})
+        h_stats = self.advanced_metrics.get(home_team, {})
+        
+        a_lateral = a_stats.get('lateral_movement_forcing', 0)
+        h_lateral = h_stats.get('lateral_movement_forcing', 0)
+        
+        # High lateral movement forcing = moving the goalie, creating better chances
+        return (a_lateral - h_lateral) * 0.01
 
     @staticmethod
     def _projected_series_length_games_int(

@@ -1098,6 +1098,12 @@ class MetaEnsemblePredictor:
             xgb_weight = 0.40
             spec_weight = 0.35
             
+            # Phase 19: Elimination Game Boost
+            # If it's a potential close-out game, specialized series logic is even more critical
+            if series_status and self._is_elimination_game(series_status):
+                xgb_weight = 0.35
+                spec_weight = 0.45
+            
         xgb_pred = self._predict_xgboost(away_team, home_team, game_date, away_goalie, home_goalie)
         xgb_margin = 0.0
         if xgb_pred:
@@ -1319,6 +1325,17 @@ class MetaEnsemblePredictor:
                 winners.append(home_team or p.get('home_team', 'home'))
         most_common = max(set(winners), key=winners.count)
         return winners.count(most_common) / len(winners)
+
+    def _is_elimination_game(self, status: str) -> bool:
+        """Parse series status to see if any team has 3 wins (e.g. 'FLA leads 3-2')."""
+        if not status: return False
+        try:
+            import re
+            nums = re.findall(r'\d', status)
+            if any(n == '3' for n in nums):
+                return True
+        except: pass
+        return False
     
     def should_predict(self, prediction: Dict, confidence_threshold: float = 0.50) -> bool:
         return prediction['prediction_confidence'] >= confidence_threshold
