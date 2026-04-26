@@ -1397,7 +1397,9 @@ class ScorePredictionModel:
                      away_b2b: bool = False, home_b2b: bool = False,
                      away_3_in_4: bool = False, home_3_in_4: bool = False,
                      vegas_odds: Dict = None,
-                     use_calibration: bool = True) -> Dict:
+                     use_calibration: bool = True,
+                     is_playoff: bool = False,
+                     series_status: str = None) -> Dict:
         """
         Predict realistic game score.
         

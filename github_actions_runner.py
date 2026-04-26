@@ -144,6 +144,68 @@ class GitHubActionsRunner:
         except Exception:
             return False
 
+    def _has_discord_post_for_game(self, game_id: str) -> bool:
+        """Return True if we have already posted this game's report to Discord."""
+        try:
+            if not self.posted_tweets_file.exists():
+                return False
+            with open(self.posted_tweets_file, "r") as f:
+                data = json.load(f) or {}
+            gid = str(game_id)
+            for _day, entries in (data.items() if isinstance(data, dict) else []):
+                if not isinstance(entries, list):
+                    continue
+                for entry in entries:
+                    if not isinstance(entry, dict):
+                        continue
+                    if entry.get("game_id") == gid and entry.get("discord_posted_at"):
+                        return True
+            return False
+        except Exception:
+            return False
+
+    def save_discord_post(self, game_id: str, description: str) -> None:
+        """Record that we posted this game's report to Discord (for dedupe)."""
+        try:
+            data = {}
+            if self.posted_tweets_file.exists():
+                with open(self.posted_tweets_file, "r") as f:
+                    try:
+                        data = json.load(f)
+                    except json.JSONDecodeError:
+                        data = {}
+
+            central_tz = pytz.timezone("US/Central")
+            today = datetime.now(central_tz).strftime("%Y-%m-%d")
+            if today not in data:
+                data[today] = []
+
+            gid = str(game_id)
+            now_iso = datetime.now(central_tz).isoformat()
+            found = False
+            for entry in data[today]:
+                if isinstance(entry, dict) and entry.get("game_id") == gid:
+                    entry["discord_posted_at"] = now_iso
+                    # Keep description up to date if missing
+                    if description and not entry.get("description"):
+                        entry["description"] = description
+                    found = True
+                    break
+
+            if not found:
+                data[today].append(
+                    {
+                        "game_id": gid,
+                        "description": description,
+                        "discord_posted_at": now_iso,
+                    }
+                )
+
+            with open(self.posted_tweets_file, "w") as f:
+                json.dump(data, f, indent=2)
+        except Exception as e:
+            print(f"⚠️  Could not record Discord post: {e}")
+
     def _should_force_reprocess(self, game_date: str) -> bool:
         """
         Allow replaying recently completed games, even if processed_games.json says they were processed.
@@ -511,7 +573,13 @@ class GitHubActionsRunner:
         
         # Post to Discord (also non-fatal)
         try:
-            self.post_to_discord(away_team, home_team, image_path)
+            # If X is failing and we keep retrying the game, avoid spamming Discord
+            # with the same report image on every run.
+            if self._has_discord_post_for_game(str(game_id)):
+                print("ℹ️  Discord already posted for this game_id; skipping Discord to avoid duplicates.")
+            else:
+                if self.post_to_discord(away_team, home_team, image_path):
+                    self.save_discord_post(str(game_id), f"{away_team} vs {home_team}")
         except Exception as e:
             print(f"⚠️  Discord posting failed (non-fatal): {e}")
         

@@ -99,15 +99,74 @@ class StandingsTracker:
         
         return 90  # Default threshold
     
-    def calculate_desperation_index(self, team: str, date: str = None) -> float:
+    def calculate_playoff_desperation(self, series_status: str, team_abbr: str, away_team: str, home_team: str) -> float:
+        """Calculate desperation for playoff games based on series status.
+        series_status: e.g. "Series tied 2-2", "NYR leads 3-1", or "Game 1"
+        team_abbr: current team
+        """
+        try:
+            if not series_status or "Game 1" in series_status:
+                return 0.0
+            
+            # Parse wins from status
+            import re
+            match = re.search(r'(\d+)-(\d+)', series_status)
+            if not match:
+                return 0.0
+            
+            w1 = int(match.group(1))
+            w2 = int(match.group(2))
+            
+            # Determine who has which wins
+            # Status usually like "NYR leads 3-1" or "Series tied 2-2"
+            parts = series_status.split()
+            leader_abbr = parts[0] if len(parts) > 0 else None
+            
+            if "tied" in series_status.lower():
+                my_wins = w1
+                opp_wins = w2
+            elif leader_abbr == team_abbr:
+                my_wins = max(w1, w2)
+                opp_wins = min(w1, w2)
+            else:
+                my_wins = min(w1, w2)
+                opp_wins = max(w1, w2)
+            
+            # Desperation Logic
+            # Case 1: Elimination game (opponent has 3 wins)
+            if opp_wins == 3:
+                if my_wins == 0: return 0.12 # 0-3 down, extreme desperation
+                if my_wins == 1: return 0.10 # 1-3 down
+                if my_wins == 2: return 0.08 # 2-3 down
+            
+            # Case 2: Facing elimination (down in series)
+            if opp_wins > my_wins:
+                if opp_wins == 2 and my_wins == 0: return 0.07 # 0-2 down
+                if opp_wins == 2 and my_wins == 1: return 0.05 # 1-2 down
+                return 0.04 # General down-in-series boost
+            
+            # Case 3: Leading but series is close (momentum preservation)
+            if my_wins == opp_wins and my_wins > 0:
+                return 0.03 # 1-1 or 2-2 tied series
+            
+            # Case 4: Leading big (potential let-down / coasting)
+            if my_wins >= 2 and (my_wins - opp_wins) >= 2:
+                return -0.04 # Up 2-0 or 3-1, might lack same intensity
+                
+            return 0.0
+        except Exception as e:
+            print(f"Error calculating playoff desperation: {e}")
+            return 0.0
+
+    def calculate_desperation_index(self, team: str, date: str = None, is_playoff: bool = False, series_status: str = None, away_team: str = None, home_team: str = None) -> float:
         """Calculate team's playoff desperation index
         
         Returns:
-            float: -0.10 to +0.10 adjustment factor
-                   Positive = desperate (fighting for playoffs)
-                   Negative = eliminated/tanking
-                   Zero = locked in or mid-season
+            float: -0.10 to +0.12 adjustment factor
         """
+        if is_playoff and series_status:
+            return self.calculate_playoff_desperation(series_status, team, away_team, home_team)
+
         standings = self.get_current_standings(date)
         
         if team not in standings:

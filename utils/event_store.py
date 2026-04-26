@@ -14,6 +14,54 @@ POSTGAME_METRICS_EVENTS_PATH = Path("data/postgame_metrics_events.jsonl")
 def _ensure_parent(p: Path) -> None:
     p.parent.mkdir(parents=True, exist_ok=True)
 
+def _json_safe(obj: Any) -> Any:
+    """
+    Best-effort conversion to JSON-serializable types.
+    This keeps event ingestion resilient when upstream code returns sets,
+    numpy scalars, Paths, etc.
+    """
+    # Fast paths
+    if obj is None or isinstance(obj, (str, int, float, bool)):
+        return obj
+
+    # Common non-JSON containers
+    if isinstance(obj, dict):
+        return {str(k): _json_safe(v) for k, v in obj.items()}
+    if isinstance(obj, (list, tuple)):
+        return [_json_safe(v) for v in obj]
+    if isinstance(obj, set):
+        # Order doesn't matter for sets; stabilize for diffs/debugging.
+        try:
+            return sorted([_json_safe(v) for v in obj], key=lambda x: str(x))
+        except Exception:
+            return [_json_safe(v) for v in obj]
+
+    # Path-like
+    if isinstance(obj, Path):
+        return str(obj)
+
+    # datetime-like
+    if hasattr(obj, "isoformat") and callable(getattr(obj, "isoformat")):
+        try:
+            return obj.isoformat()
+        except Exception:
+            pass
+
+    # numpy scalars / arrays (avoid importing numpy)
+    if hasattr(obj, "item") and callable(getattr(obj, "item")):
+        try:
+            return _json_safe(obj.item())
+        except Exception:
+            pass
+    if hasattr(obj, "tolist") and callable(getattr(obj, "tolist")):
+        try:
+            return _json_safe(obj.tolist())
+        except Exception:
+            pass
+
+    # Fallback: string representation
+    return str(obj)
+
 
 def append_prediction_event(event: Dict[str, Any], *, path: Path = PREDICTION_EVENTS_PATH) -> None:
     """
@@ -22,7 +70,7 @@ def append_prediction_event(event: Dict[str, Any], *, path: Path = PREDICTION_EV
     Required fields (best-effort): game_id, date, away_team, home_team.
     """
     _ensure_parent(path)
-    payload = dict(event)
+    payload = _json_safe(dict(event))
     payload.setdefault("event_type", "prediction")
     payload.setdefault("recorded_at_utc", datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"))
     with open(path, "a") as f:
@@ -42,7 +90,7 @@ def append_outcome_event(
     path: Path = OUTCOME_EVENTS_PATH,
 ) -> None:
     _ensure_parent(path)
-    payload: Dict[str, Any] = {
+    payload: Dict[str, Any] = _json_safe({
         "event_type": "outcome",
         "recorded_at_utc": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
         "game_id": game_id,
@@ -52,7 +100,7 @@ def append_outcome_event(
         "actual_away_score": actual_away_score,
         "actual_home_score": actual_home_score,
         "actual_winner": actual_winner,
-    }
+    })
     if lead_after_p1 is not None:
         payload["lead_after_p1"] = int(lead_after_p1)
     with open(path, "a") as f:
@@ -66,7 +114,7 @@ def append_postgame_metrics_event(event: Dict[str, Any], *, path: Path = POSTGAM
     Required fields (best-effort): game_id, date, away_team, home_team, postgame_metrics.
     """
     _ensure_parent(path)
-    payload = dict(event)
+    payload = _json_safe(dict(event))
     payload.setdefault("event_type", "postgame_metrics")
     payload.setdefault("recorded_at_utc", datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"))
     with open(path, "a") as f:

@@ -578,6 +578,12 @@ class DailyPredictionNotifier:
                 # Map RotoWire game to Vegas odds key
                 odds_key = f"{game['away_team']}_vs_{game['home_team']}"
                 vegas_odds = market_odds.get(odds_key)
+
+                # Identify game type and series status
+                key = f"{game['away_team']}@{game['home_team']}"
+                game_info = schedule_map.get(key, {})
+                is_playoff = (game_info.get('gameType') == 3)
+                series_status = game_info.get('series_status')
                 
                 pred = self.meta_ensemble.predict(
                     game['away_team'],
@@ -586,7 +592,9 @@ class DailyPredictionNotifier:
                     home_lineup=game.get('home_lineup'),
                     away_goalie=game.get('away_goalie'),
                     home_goalie=game.get('home_goalie'),
-                    vegas_odds=vegas_odds
+                    vegas_odds=vegas_odds,
+                    is_playoff=is_playoff,
+                    series_status=series_status
                 )
                 
                 # Attach odds taken for ROI tracking
@@ -611,6 +619,8 @@ class DailyPredictionNotifier:
                         home_b2b=pred.get('home_back_to_back', False),
                         away_3_in_4=self.schedule.get_game_count_in_window(game['away_team'], datetime.now().strftime('%Y-%m-%d'), 4) >= 3,
                         home_3_in_4=self.schedule.get_game_count_in_window(game['home_team'], datetime.now().strftime('%Y-%m-%d'), 4) >= 3,
+                        is_playoff=is_playoff,
+                        series_status=series_status
                     )
                     away_score = score_pred['away_score']
                     home_score = score_pred['home_score']
@@ -648,8 +658,9 @@ class DailyPredictionNotifier:
                     v_odds = self._market_odds.get(f"{game['away_team']}@{game['home_team']}", {})
                     if v_odds and 'away_prob' in v_odds:
                         v_away_prob = v_odds['away_prob']
-                        # 70% Internal Model / 30% Market Wisdom
-                        blended_away_win_prob = (blended_away_win_prob * 0.70) + (v_away_prob * 0.30)
+                        # Blending: Market gets more weight in playoffs due to higher efficiency
+                        market_weight = 0.45 if is_playoff else 0.30
+                        blended_away_win_prob = (blended_away_win_prob * (1.0 - market_weight)) + (v_away_prob * market_weight)
                         
                     blended_winner = game['away_team'] if blended_away_win_prob >= 0.5 else game['home_team']
 

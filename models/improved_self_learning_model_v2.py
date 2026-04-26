@@ -1818,7 +1818,9 @@ class ImprovedSelfLearningModelV2:
         }
     
     def predict_game(self, away_team: str, home_team: str, current_away_score: int = None, 
-                    current_home_score: int = None, period: int = 1, game_id: str = None, game_date: Optional[str] = None, vegas_odds: Dict = None) -> Dict:
+                    current_home_score: int = None, period: int = 1, game_id: str = None, 
+                    game_date: Optional[str] = None, vegas_odds: Dict = None,
+                    is_playoff: bool = False, series_status: str = None) -> Dict:
         """Predict a game with improved features and confidence"""
         
         # Get team performance data
@@ -1831,6 +1833,20 @@ class ImprovedSelfLearningModelV2:
         
         # Get current model weights
         weights = self.get_current_weights()
+        
+        # Adjust weights for playoffs
+        if is_playoff:
+            weights = weights.copy()
+            # In playoffs, recent form is much more important (momentum)
+            weights['recent_form_weight'] = max(weights.get('recent_form_weight', 0.05), 0.15)
+            # Tactical DNA metrics are more important in playoff grinds
+            weights['rebounds_weight'] = max(weights.get('rebounds_weight', 0.05), 0.08)
+            weights['rush_shots_weight'] = max(weights.get('rush_shots_weight', 0.05), 0.08)
+            # Normalize weights
+            w_total = sum(weights.values())
+            if w_total > 0:
+                for k in weights:
+                    weights[k] /= w_total
         
         # Calculate weighted scores with comprehensive metrics and advanced features
         # Override goalie performance with predicted starter when available
@@ -1931,8 +1947,11 @@ class ImprovedSelfLearningModelV2:
         prediction_confidence = avg_confidence
         
         result = {
+            'away_team': away_team,
+            'home_team': home_team,
             'away_prob': away_prob,  # Keep as percentage
             'home_prob': home_prob,  # Keep as percentage
+            'predicted_winner': away_team if away_prob >= home_prob else home_team,
             'away_score': away_score,
             'home_score': home_score,
             'away_perf': away_perf,
@@ -1948,8 +1967,8 @@ class ImprovedSelfLearningModelV2:
             tracker = StandingsTracker()
             
             # Playoff desperation
-            away_desperation = tracker.calculate_desperation_index(away_team, game_date)
-            home_desperation = tracker.calculate_desperation_index(home_team, game_date)
+            away_desperation = tracker.calculate_desperation_index(away_team, game_date, is_playoff, series_status, away_team, home_team)
+            home_desperation = tracker.calculate_desperation_index(home_team, game_date, is_playoff, series_status, away_team, home_team)
             
             # Rivalry intensity
             rivalry_bonus = tracker.get_rivalry_intensity(away_team, home_team)
@@ -2375,7 +2394,7 @@ class ImprovedSelfLearningModelV2:
             "goal_diff": goal_diff,
             "prediction_accuracy": None,
             "timestamp": datetime.now().isoformat(),
-            "predicted_winner": predicted_side,
+            "predicted_winner": predicted_team,
             "predicted_winner_team": predicted_team,
             "prediction_confidence": prediction_confidence,
             "prediction_margin": prediction_margin,

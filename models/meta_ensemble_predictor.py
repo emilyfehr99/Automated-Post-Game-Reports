@@ -1082,7 +1082,8 @@ class MetaEnsemblePredictor:
                 away_lineup: Dict = None, home_lineup: Dict = None,
                 away_goalie: str = None, home_goalie: str = None,
                 away_injuries: list = None, home_injuries: list = None,
-                vegas_odds: Dict = None) -> Dict:
+                vegas_odds: Dict = None, is_playoff: bool = False,
+                series_status: str = None) -> Dict:
         """Meta-ensemble prediction combining all methods"""
         predictions = []
         weights = []
@@ -1133,7 +1134,7 @@ class MetaEnsemblePredictor:
         
         # 4. Base model (10% weight - reduced due to lower accuracy)
         try:
-            base_pred = self.base_model.predict_game(away_team, home_team, game_id=game_id, game_date=game_date)
+            base_pred = self.base_model.predict_game(away_team, home_team, game_id=game_id, game_date=game_date, is_playoff=is_playoff, series_status=series_status)
             predictions.append(base_pred)
             weights.append(float(self._component_weights.get("base", 0.10)))
         except Exception as e:

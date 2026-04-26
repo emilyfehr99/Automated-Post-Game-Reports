@@ -2,19 +2,24 @@ name: Auto Post NHL Reports
 
 on:
   schedule:
-    # Updated Schedule (UTC) to match Central Time requirements:
-    # Weekends/Holidays: 11:30 AM CT - 2 AM CT
-    #   - 16:30/17:30 UTC start
-    # Weekdays: 8 PM CT - 2 AM CT
-    #   - 01:00/02:00 UTC start
-    
-    # Daily Daytime check (Covering weekends/holidays 11:30am - 8pm period)
-    # 17:00 UTC is 11am/12pm CT. 
-    - cron: '*/10 17-23 * * *'
-    
-    # Late Night / Early Morning (Covering all days 8pm - 3am CT)
-    # 00:00 - 08:50 UTC covers 6pm CT - 3am CT approx
-    - cron: '*/10 0-9 * * *'
+    # GitHub Actions cron is UTC.
+    #
+    # Desired schedule (CT):
+    # - Weekends: 12:00 PM - 11:59 PM
+    # - Weekdays: keep existing night schedule (8:00 PM - 2:00 AM)
+    #
+    # NOTE: CT is either CST (UTC-6) or CDT (UTC-5). These crons are correct for CDT.
+    # If you want to pin to CST year-round, we can adjust to UTC-6 instead.
+    #
+    # Weekdays (Mon-Fri): 8:00 PM - 2:59 AM CT  ==> 01:00 - 07:59 UTC
+    - cron: '*/10 1-7 * * 1-5'
+    #
+    # Weekends (Sat/Sun): 12:00 PM - 11:59 PM CT ==> 17:00 - 04:59 UTC
+    # Because this window crosses midnight UTC, it requires two crons:
+    # - Sat/Sun 17:00-23:59 UTC covers Sat/Sun afternoon-evening CT
+    - cron: '*/10 17-23 * * 6,0'
+    # - Sun/Mon 00:00-04:59 UTC covers Sat/Sun late evening CT
+    - cron: '*/10 0-4 * * 0,1'
   repository_dispatch:  # Allow external triggers (instant when game finishes)
     types: [game-finished]  # Custom event type from game monitor
   workflow_dispatch:  # Allow manual triggering from Actions tab
