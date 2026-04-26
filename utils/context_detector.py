@@ -35,13 +35,23 @@ class ContextDetector:
         desperation = self.standings.calculate_desperation_index(team, game_date)
         return abs(desperation) > 0.05  # Significant desperation
     
-    def detect_game_context(self, away_team: str, home_team: str, game_date: str = None) -> List[Tuple[str, float]]:
+    def detect_game_context(self, away_team: str, home_team: str, game_date: str = None, is_playoff: bool = False) -> List[Tuple[str, float]]:
         """Determine which specialized model(s) to use
         
+        Args:
+            away_team: Away team abbreviation
+            home_team: Home team abbreviation
+            game_date: Date of the game
+            is_playoff: Whether this is a playoff game
+            
         Returns:
             List of (context_type, confidence) tuples
         """
         contexts = []
+        
+        # Priority 1: Playoff Series
+        if is_playoff:
+            contexts.append(('playoff_series', 0.9))
         
         # Calculate expected total
         expected_total = self.predict_total_goals(away_team, home_team)
@@ -52,16 +62,18 @@ class ContextDetector:
         elif expected_total < 5.5:
             contexts.append(('defensive', 0.7))
         else:
-            contexts.append(('standard', 0.5))
+            if not is_playoff: # If playoff, 'playoff_series' covers the baseline
+                contexts.append(('standard', 0.5))
         
-        # Check playoff race
-        away_in_race = self.is_playoff_race(away_team, game_date)
-        home_in_race = self.is_playoff_race(home_team, game_date)
-        
-        if away_in_race or home_in_race:
-            # Confidence higher if both teams in race
-            confidence = 0.8 if (away_in_race and home_in_race) else 0.6
-            contexts.append(('playoff_race', confidence))
+        # Check playoff race (if not already in playoffs)
+        if not is_playoff:
+            away_in_race = self.is_playoff_race(away_team, game_date)
+            home_in_race = self.is_playoff_race(home_team, game_date)
+            
+            if away_in_race or home_in_race:
+                # Confidence higher if both teams in race
+                confidence = 0.8 if (away_in_race and home_in_race) else 0.6
+                contexts.append(('playoff_race', confidence))
         
         # Check rivalry
         rivalry_intensity = self.standings.get_rivalry_intensity(away_team, home_team)

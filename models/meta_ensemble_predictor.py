@@ -1090,11 +1090,19 @@ class MetaEnsemblePredictor:
         xgb_p1_prob = 50.0
         
         # 1. XGBoost ML Model (50% Weight - Highest Accuracy Component)
+        xgb_weight = float(self._component_weights.get("xgb", 0.50))
+        spec_weight = float(self._component_weights.get("specialized", 0.25))
+        
+        # Phase 18: Playoff Boost
+        if is_playoff:
+            xgb_weight = 0.40
+            spec_weight = 0.35
+            
         xgb_pred = self._predict_xgboost(away_team, home_team, game_date, away_goalie, home_goalie)
         xgb_margin = 0.0
         if xgb_pred:
             predictions.append(xgb_pred)
-            weights.append(float(self._component_weights.get("xgb", 0.50)))
+            weights.append(xgb_weight)
             xgb_margin = xgb_pred.get('predicted_margin', 0.0)
             xgb_p1_prob = xgb_pred.get('p1_home_prob', 50.0)
 
@@ -1115,9 +1123,9 @@ class MetaEnsemblePredictor:
         
         # 2. Specialized ensemble (25% weight)
         try:
-            spec_pred = self.specialized_ensemble.predict(away_team, home_team, game_id, game_date)
+            spec_pred = self.specialized_ensemble.predict(away_team, home_team, game_id, game_date, is_playoff=is_playoff, series_status=series_status)
             predictions.append(spec_pred)
-            weights.append(float(self._component_weights.get("specialized", 0.25)))
+            weights.append(spec_weight)
         except Exception as e:
             print(f"Specialized ensemble failed: {e}")
         

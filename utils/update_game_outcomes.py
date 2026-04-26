@@ -137,6 +137,64 @@ def update_game_outcomes():
                         else:
                             actual_winner = 'TIE'  # Rare/Impossible in regular season usually
 
+                        # NEW: Fetch full metrics for training (Phase 21)
+                        full_metrics = {}
+                        try:
+                            home_team_box = boxscore.get('homeTeam', {})
+                            away_team_box = boxscore.get('awayTeam', {})
+                            
+                            # Basic stats
+                            full_metrics['home_goals'] = home_score
+                            full_metrics['away_goals'] = away_score
+                            full_metrics['home_shots'] = home_team_box.get('sog', 0)
+                            full_metrics['away_shots'] = away_team_box.get('sog', 0)
+                            
+                            # Use advanced analyzer if PBP available
+                            if 'play_by_play' in game_data:
+                                from analyzers.advanced_metrics_analyzer import AdvancedMetricsAnalyzer
+                                analyzer = AdvancedMetricsAnalyzer(game_data['play_by_play'])
+                                h_id = home_team_box.get('id')
+                                a_id = away_team_box.get('id')
+                                
+                                report = analyzer.generate_comprehensive_report(a_id, h_id)
+                                h_rep = report.get('home_team', {})
+                                a_rep = report.get('away_team', {})
+                                
+                                # Advanced Phase 18 signals
+                                full_metrics['home_xg'] = h_rep.get('expected_goals', home_score)
+                                full_metrics['away_xg'] = a_rep.get('expected_goals', away_score)
+                                full_metrics['home_corsi_pct'] = h_rep.get('possession', {}).get('corsi_pct', 50.0)
+                                full_metrics['away_corsi_pct'] = a_rep.get('possession', {}).get('corsi_pct', 50.0)
+                                full_metrics['home_hdsv_pct'] = h_rep.get('goaltending', {}).get('high_danger_save_pct', 0.8)
+                                full_metrics['away_hdsv_pct'] = a_rep.get('goaltending', {}).get('high_danger_save_pct', 0.8)
+                                full_metrics['home_pressure'] = h_rep.get('offensive_pressure', {}).get('pressure_score', 2.0)
+                                full_metrics['away_pressure'] = a_rep.get('offensive_pressure', {}).get('pressure_score', 2.0)
+                                
+                                # Phase 18: Tactical High-Signal Metrics
+                                full_metrics['home_royal_road'] = h_rep.get('pre_shot_movement', {}).get('royal_road_proxy', {}).get('attempts', 0)
+                                full_metrics['away_royal_road'] = a_rep.get('pre_shot_movement', {}).get('royal_road_proxy', {}).get('attempts', 0)
+                                full_metrics['home_lateral'] = h_rep.get('pre_shot_movement', {}).get('lateral_movement', {}).get('avg_delta_y', 0)
+                                full_metrics['away_lateral'] = a_rep.get('pre_shot_movement', {}).get('lateral_movement', {}).get('avg_delta_y', 0)
+                                full_metrics['home_nzt_possession'] = h_rep.get('nzt_stats', {}).get('nzt_possession_pct', 50.0)
+                                full_metrics['away_nzt_possession'] = a_rep.get('nzt_stats', {}).get('nzt_possession_pct', 50.0)
+                                full_metrics['home_rush_sv_pct'] = h_rep.get('rush_stats', {}).get('rush_save_pct', 90.0)
+                                full_metrics['away_rush_sv_pct'] = a_rep.get('rush_stats', {}).get('rush_save_pct', 90.0)
+                                full_metrics['home_ca_shots'] = h_rep.get('nzt_stats', {}).get('counter_attack_shots', 0)
+                                full_metrics['away_ca_shots'] = a_rep.get('nzt_stats', {}).get('counter_attack_shots', 0)
+                                
+                                # Phase 15/17: Momentum & Period Splits
+                                mom = analyzer.calculate_momentum_metrics(a_id, h_id)
+                                full_metrics['p1_xg_home'] = mom.get('p1_xg', {}).get('home', 0.8)
+                                full_metrics['p1_xg_away'] = mom.get('p1_xg', {}).get('away', 0.8)
+                                full_metrics['p2_xg_home'] = mom.get('p2_xg', {}).get('home', 0.8)
+                                full_metrics['p2_xg_away'] = mom.get('p2_xg', {}).get('away', 0.8)
+                                full_metrics['p3_xg_home'] = mom.get('p3_xg', {}).get('home', 0.8)
+                                full_metrics['p3_xg_away'] = mom.get('p3_xg', {}).get('away', 0.8)
+                                full_metrics['lead_after_p2'] = mom.get('lead_after_p2', 0)
+                                
+                        except Exception as e:
+                            logger.warning(f"   Could not calculate full metrics for {game_id}: {e}")
+
                         # NEW: Track Period 1 Leader (Phase 20)
                         lead_after_p1 = 0  # 0=Tie, 1=Home, -1=Away
                         try:
@@ -165,10 +223,14 @@ def update_game_outcomes():
                                 elif p1_away > p1_home:
                                     lead_after_p1 = -1
 
-                                # Store lead_after_p1 in metrics_used for training parity
+                                # Store metrics in pred for training parity
                                 if 'metrics_used' not in pred:
                                     pred['metrics_used'] = {}
+                                
+                                # Update with both P1 lead and full metrics
+                                pred['metrics_used'].update(full_metrics)
                                 pred['metrics_used']['lead_after_p1'] = lead_after_p1
+                                
                                 logger.info(
                                     f"   P1 Score: {away_abbr} {p1_away} - {p1_home} {home_abbr} (Lead: {lead_after_p1})"
                                 )
@@ -192,6 +254,7 @@ def update_game_outcomes():
                                     actual_home_score=int(home_score) if home_score is not None else None,
                                     actual_winner=actual_winner,
                                     lead_after_p1=lead_after_p1,
+                                    **full_metrics
                                 )
                             except Exception as e:
                                 logger.warning(f"Could not append outcome event: {e}")

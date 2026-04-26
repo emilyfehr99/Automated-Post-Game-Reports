@@ -88,6 +88,7 @@ def append_outcome_event(
     actual_winner: Optional[str],
     lead_after_p1: Optional[int] = None,
     path: Path = OUTCOME_EVENTS_PATH,
+    **kwargs,
 ) -> None:
     _ensure_parent(path)
     payload: Dict[str, Any] = _json_safe({
@@ -103,6 +104,12 @@ def append_outcome_event(
     })
     if lead_after_p1 is not None:
         payload["lead_after_p1"] = int(lead_after_p1)
+    
+    # Store any extra metrics (e.g. xG, shots) directly in the outcome event
+    for k, v in kwargs.items():
+        if v is not None:
+            payload[k] = _json_safe(v)
+            
     with open(path, "a") as f:
         f.write(json.dumps(payload, ensure_ascii=False) + "\n")
 

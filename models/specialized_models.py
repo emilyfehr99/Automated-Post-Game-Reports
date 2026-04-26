@@ -144,6 +144,42 @@ class RivalryGameModel(ImprovedSelfLearningModelV2):
         """Return specialized weights for rivalry games"""
         return self.specialized_weights
 
+class PlayoffSeriesModel(ImprovedSelfLearningModelV2):
+    """Optimized for Playoff Series games (high stakes, repeated matchups)"""
+    
+    def __init__(self):
+        super().__init__()
+        # Override weights for playoff series context
+        # In playoffs: Goaltending, HDCs, and Blocked Shots are paramount
+        self.specialized_weights = {
+            'goalie_performance_weight': 0.30,  # ↑ Goalie is everything
+            'blocked_shots_weight': 0.15,       # ↑ Defensive commitment
+            'hdc_weight': 0.12,                 # ↑ Quality chances over quantity
+            'xg_weight': 0.08,                  # ↓ Regular season metrics slightly less predictive
+            'recent_form_weight': 0.10,         # ↑ Series momentum
+            'head_to_head_weight': 0.08,         # ↑ Matchup familiarity
+            'power_play_weight': 0.07,          # Discipline matters
+            'corsi_weight': 0.04,               # Possession less important than results
+            'shots_weight': 0.02,
+            'faceoff_weight': 0.05,
+            'hits_weight': 0.06,                 # Physicality
+            'takeaways_weight': 0.04,
+            'penalty_minutes_weight': 0.02,
+            'rest_days_weight': 0.01,           # Teams play through anything
+            'sos_weight': 0.01,                 # Opponent quality is fixed in a series
+            'rebounds_weight': 0.03,
+            'rush_shots_weight': 0.01,
+            'traffic_weight': 0.02,
+            'zone_entry_weight': 0.01
+        }
+        
+        # Series momentum: team that won/lost last game behaves differently
+        self.series_momentum_multiplier = 1.4
+    
+    def get_current_weights(self) -> Dict:
+        """Return specialized weights for playoff series games"""
+        return self.specialized_weights
+
 if __name__ == "__main__":
     print("🎯 Specialized Models Test")
     print("=" * 60)

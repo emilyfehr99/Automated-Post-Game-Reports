@@ -694,12 +694,9 @@ def _build_matrices_and_sidecars(
             "home_venue_goal_diff",
             "away_venue_goal_diff",
             "l5_pizza_diff",
-            "l5_nzt_diff",
-            "l5_rush_diff",
             "l5_pk_diff",
             "l5_pp_diff",
             "l5_ozs_diff",
-            "l5_hdc_diff",
         ]
         for col in prune:
             if col in X.columns:
@@ -1060,10 +1057,10 @@ def train_optimized_model():
     
     # Final drop of low-impact or redundant columns (Phase 9 Elite Pruning)
     final_prune = [
-        'home_win_rate', 'home_b2b', 'rest_diff', 'gsax_diff', 'away_b2b',
+        'home_win_rate',
         'home_venue_goal_diff', 'away_venue_goal_diff', 'l5_pizza_diff',
-        'l5_nzt_diff', 'l5_rush_diff', 'l5_pk_diff', 'l5_pp_diff', 
-        'l5_ozs_diff', 'l5_hdc_diff'
+        'l5_pk_diff', 'l5_pp_diff', 
+        'l5_ozs_diff'
     ]
     for p in final_prune:
         if p in X_train.columns: X_train.drop(columns=[p], inplace=True)
@@ -2017,6 +2014,13 @@ def prune_unstable_features(
     recent = X_train.tail(int(recent_n)) if len(X_train) > recent_n else X_train
     dropped = []
 
+    whitelist = [
+        'home_b2b', 'away_b2b', 'rest_diff', 'gsax_diff', 
+        'l5_royal_road_diff', 'l5_lateral_diff', 'l5_pressure_diff',
+        'l5_rush_sv_pct_diff', 'l5_ca_shots_diff', 'l5_nzt_possession_diff',
+        'p1_xg_diff', 'p2_xg_diff', 'p3_xg_diff'
+    ]
+
     for col in list(X_train.columns):
         s = recent[col]
         # Missingness
@@ -2024,20 +2028,32 @@ def prune_unstable_features(
         if miss > float(max_missing):
             dropped.append(col)
             continue
+            
         # Zero fraction (for numeric)
         try:
             zero_frac = float((s.fillna(0) == 0).mean())
         except Exception:
             zero_frac = 0.0
-        if zero_frac > float(max_zero_frac):
+            
+        # Be less aggressive for high-signal binary indicators and whitelisted features
+        threshold = 0.999 if any(w in col for w in whitelist) else 0.98
+        if col in whitelist:
+            print(f"DEBUG: {col} zero_frac={zero_frac} threshold={threshold}")
+            
+        if zero_frac > threshold: 
             dropped.append(col)
             continue
+            
         # Near-constant
         try:
             sd = float(np.nanstd(s.astype(float).values))
         except Exception:
             sd = float("inf")
-        if sd < float(min_std):
+            
+        if col in whitelist:
+            print(f"DEBUG: {col} sd={sd} min_std={min_std}")
+            
+        if sd < float(min_std) and col not in whitelist:
             dropped.append(col)
 
     if dropped:

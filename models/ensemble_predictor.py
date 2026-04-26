@@ -14,6 +14,7 @@ try:
         DefensiveMatchupModel,
         PlayoffRaceModel,
         RivalryGameModel,
+        PlayoffSeriesModel,
     )
 except Exception:
     from models.specialized_models import (
@@ -21,6 +22,7 @@ except Exception:
         DefensiveMatchupModel,
         PlayoffRaceModel,
         RivalryGameModel,
+        PlayoffSeriesModel,
     )
 try:
     from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
@@ -37,17 +39,18 @@ class EnsemblePredictor:
             'high_scoring': HighScoringGameModel(),
             'defensive': DefensiveMatchupModel(),
             'playoff_race': PlayoffRaceModel(),
-            'rivalry': RivalryGameModel()
+            'rivalry': RivalryGameModel(),
+            'playoff_series': PlayoffSeriesModel()
         }
     
-    def predict(self, away_team: str, home_team: str, game_id: str = None, game_date: str = None) -> Dict:
+    def predict(self, away_team: str, home_team: str, game_id: str = None, game_date: str = None, is_playoff: bool = False, series_status: str = None) -> Dict:
         """Make ensemble prediction using specialized models
         
         Returns:
             Dict with prediction and component details
         """
         # Detect game contexts
-        contexts = self.detector.detect_game_context(away_team, home_team, game_date)
+        contexts = self.detector.detect_game_context(away_team, home_team, game_date, is_playoff=is_playoff)
         
         # Get predictions from each relevant model
         predictions = []
@@ -55,7 +58,12 @@ class EnsemblePredictor:
         
         for context_type, confidence in contexts:
             model = self.models.get(context_type, self.models['standard'])
-            pred = model.predict_game(away_team, home_team, game_id=game_id, game_date=game_date)
+            
+            # Pass playoff flags if the model supports them
+            try:
+                pred = model.predict_game(away_team, home_team, game_id=game_id, game_date=game_date, is_playoff=is_playoff, series_status=series_status)
+            except TypeError:
+                pred = model.predict_game(away_team, home_team, game_id=game_id, game_date=game_date)
             
             predictions.append({
                 'context': context_type,
