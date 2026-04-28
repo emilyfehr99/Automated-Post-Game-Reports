@@ -160,15 +160,17 @@ class EloTracker:
 
 class GoalieHistory:
     def __init__(self):
-        self.stats = {} # {goalie_name: {'gsax': [], 'hdsv': []}}
+        self.stats = {} # {goalie_name: {'gsax': [], 'hdsv': [], 'shots': []}}
         
-    def update(self, name, gsax, hdsv=None):
+    def update(self, name, gsax, hdsv=None, shots=None):
         if not name: return
         if name not in self.stats:
-            self.stats[name] = {'gsax': [], 'hdsv': []}
+            self.stats[name] = {'gsax': [], 'hdsv': [], 'shots': []}
         self.stats[name]['gsax'].append(gsax)
         if hdsv is not None:
             self.stats[name]['hdsv'].append(hdsv)
+        if shots is not None:
+            self.stats[name]['shots'].append(shots)
         
     def get_rolling_gsax(self, name, window=5):
         if not name or name not in self.stats or not self.stats[name]['gsax']:
@@ -178,9 +180,15 @@ class GoalieHistory:
         
     def get_rolling_hdsv(self, name, window=5):
         if not name or name not in self.stats or not self.stats[name]['hdsv']:
-            return 0.8 # Default NHL avg HDSv%
+            return 0.8
         vals = self.stats[name]['hdsv'][-window:]
         return np.mean(vals)
+
+    def get_rolling_shots_faced(self, name, window=10):
+        if not name or name not in self.stats or not self.stats[name]['shots']:
+            return 0.0
+        vals = self.stats[name]['shots'][-window:]
+        return np.sum(vals)
 
 class TeamHistory:
     def __init__(self):
@@ -211,8 +219,8 @@ class TeamHistory:
             return 0.0
         return calculate_distance(self.history[team]['last_city'], current_city)
             
-    def update_goalie(self, name, gsax):
-        self.goalies.update(name, gsax)
+    def update_goalie(self, name, gsax, hdsv=None, shots=None):
+        self.goalies.update(name, gsax, hdsv, shots)
         
     def get_goalie_gsax(self, name, window=5):
         return self.goalies.get_rolling_gsax(name, window)
@@ -531,11 +539,11 @@ def extract_features_chronologically(predictions):
         h_hdsv = float(metrics.get('home_hdsv_pct', 0.8) or 0.8)
         a_hdsv = float(metrics.get('away_hdsv_pct', 0.8) or 0.8)
         
-        tracker.goalies.update(h_goalie, h_gsax, h_hdsv)
-        tracker.goalies.update(a_goalie, a_gsax, a_hdsv)
-        
         h_shots = float(metrics.get('home_shots', 30) or 30)
         a_shots = float(metrics.get('away_shots', 30) or 30)
+        
+        tracker.goalies.update(h_goalie, h_gsax, h_hdsv, h_shots)
+        tracker.goalies.update(a_goalie, a_gsax, a_hdsv, a_shots)
         
         h_pdo = ((h_score / h_shots if h_shots > 0 else 0.1) + ((a_shots - a_score) / a_shots if a_shots > 0 else 0.9)) * 100
         a_pdo = ((a_score / a_shots if a_shots > 0 else 0.1) + ((h_shots - h_score) / h_shots if h_shots > 0 else 0.9)) * 100

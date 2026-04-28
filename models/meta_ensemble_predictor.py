@@ -105,15 +105,17 @@ class EloTracker:
 
 class GoalieHistory:
     def __init__(self):
-        self.stats = {} # {goalie_name: {'gsax': [], 'hdsv': []}}
+        self.stats = {} # {goalie_name: {'gsax': [], 'hdsv': [], 'shots': []}}
         
-    def update(self, name, gsax, hdsv=None):
+    def update(self, name, gsax, hdsv=None, shots=None):
         if not name: return
         if name not in self.stats:
-            self.stats[name] = {'gsax': [], 'hdsv': []}
+            self.stats[name] = {'gsax': [], 'hdsv': [], 'shots': []}
         self.stats[name]['gsax'].append(gsax)
         if hdsv is not None:
             self.stats[name]['hdsv'].append(hdsv)
+        if shots is not None:
+            self.stats[name]['shots'].append(shots)
         
     def get_rolling_gsax(self, name, window=5):
         if not name or name not in self.stats or not self.stats[name]['gsax']:
@@ -126,6 +128,12 @@ class GoalieHistory:
             return 0.8
         vals = self.stats[name]['hdsv'][-window:]
         return np.mean(vals)
+
+    def get_rolling_shots_faced(self, name, window=10):
+        if not name or name not in self.stats or not self.stats[name]['shots']:
+            return 0.0
+        vals = self.stats[name]['shots'][-window:]
+        return np.sum(vals)
 
 class TeamHistory:
     def __init__(self):
@@ -150,8 +158,8 @@ class TeamHistory:
         elif venue == 'away':
             self.history[team]['away_stats'].append(game_stats)
             
-    def update_goalie(self, name, gsax, hdsv=None):
-        self.goalies.update(name, gsax, hdsv)
+    def update_goalie(self, name, gsax, hdsv=None, shots=None):
+        self.goalies.update(name, gsax, hdsv, shots)
         
     def get_goalie_gsax(self, name, window=5):
         return self.goalies.get_rolling_gsax(name, window)
@@ -608,12 +616,11 @@ class MetaEnsemblePredictor:
                 a_goalie = metrics.get('away_goalie') or p.get('away_goalie')
                 h_hdsv = float(metrics.get('home_hdsv_pct', 0.8) or metrics.get('home_hd_sv_pct', 0.8) or 0.8)
                 a_hdsv = float(metrics.get('away_hdsv_pct', 0.8) or metrics.get('away_hd_sv_pct', 0.8) or 0.8)
-                
-                if h_goalie: self.history_tracker.update_goalie(h_goalie, h_xg - h_goals, h_hdsv)
-                if a_goalie: self.history_tracker.update_goalie(a_goalie, a_xg - a_goals, a_hdsv)
-                
                 h_shots = float(metrics.get('home_shots', 30) or 30)
                 a_shots = float(metrics.get('away_shots', 30) or 30)
+                
+                if h_goalie: self.history_tracker.update_goalie(h_goalie, h_xg - h_goals, h_hdsv, h_shots)
+                if a_goalie: self.history_tracker.update_goalie(a_goalie, a_xg - a_goals, a_hdsv, a_shots)
                 
                 # Real PDO
                 h_pdo = ((h_goals / h_shots if h_shots > 0 else 0.1) + ((a_shots - a_goals) / a_shots if a_shots > 0 else 0.9)) * 100
@@ -830,8 +837,11 @@ class MetaEnsemblePredictor:
             'a_desperation': self.standings.calculate_desperation_index(away_team),
             
             # Raw Components for Phase 11/12 Symbolic Features
-            'home_xg': h_l5.get('xg_avg', 2.5),
-            'away_xg': a_l5.get('xg_avg', 2.5),
+            # Phase 48: Apply momentum_scalar to reduce xG-heavy bias during playoffs
+            'l5_xg_diff': (h_l5.get('xg_diff', 0) - a_l5.get('xg_diff', 0)) * momentum_scalar,
+            'l10_xg_diff': (h_l10.get('xg_diff', 0) - a_l10.get('xg_diff', 0)) * momentum_scalar,
+            'home_xg': h_l5.get('xg_avg', 2.5) * momentum_scalar,
+            'away_xg': a_l5.get('xg_avg', 2.5) * momentum_scalar,
             'home_elo': home_elo + tracker.elo.ha,
             'away_elo': away_elo,
             'home_win_rate': self.team_encodings.get('home_map', {}).get(home_team, self.team_encodings.get('home_prior', 0.5)),
@@ -1043,11 +1053,24 @@ class MetaEnsemblePredictor:
                 except Exception as e:
                     print(f"P1 prediction error: {e}")
             
-            # Phase 47 Fatigue Metrics for Score Model
+            # Phase 47/48 Fatigue Metrics for Score Model
             away_games_7d = tracker.get_game_count_in_window(away_team, datetime.now(), 7)
             home_games_7d = tracker.get_game_count_in_window(home_team, datetime.now(), 7)
             away_travel = tracker.get_travel_distance(away_team, home_team)
             home_travel = tracker.get_travel_distance(home_team, home_team) # Home stays home
+
+            # Phase 48: Goalie Shot Pressure Factor (SPF)
+            # Incorporate physical exertion of goalie into team TWI
+            away_shots_30d = getattr(tracker.goalies, 'get_rolling_shots_faced', lambda x, y: 0)(away_goalie, 30)
+            home_shots_30d = getattr(tracker.goalies, 'get_rolling_shots_faced', lambda x, y: 0)(home_goalie, 30)
+            avg_league_shots = 30.0 * 10 # ~300 over 10 games played
+            
+            a_spf = max(1.0, (away_shots_30d / avg_league_shots)) if away_shots_30d > 0 else 1.0
+            h_spf = max(1.0, (home_shots_30d / avg_league_shots)) if home_shots_30d > 0 else 1.0
+
+            # Phase 48: Playoff Weight Decay
+            # Reduce momentum bias (xg_10d/20d) by 20% if in playoff mode
+            momentum_scalar = 0.8 if is_playoff else 1.0
 
             return {
                 'away_team': away_team,
