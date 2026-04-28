@@ -517,62 +517,67 @@ class DailyPredictionNotifier:
 
     def get_daily_predictions_summary(self):
         """Get formatted summary of today's predictions using meta-ensemble"""
-        # Get today's games from RotoWire
-        with timed("rotowire scrape"):
-            rotowire_data = self.rotowire.scrape_daily_data()
-        games = rotowire_data.get('games', [])
-
+        # Phase 33: Dynamic Date Detection (US/Central)
+        import pytz
+        today = datetime.now(pytz.timezone('US/Central')).strftime('%Y-%m-%d')
+        print(f"🏒 SIMULATION MODE: Analyzing games for {today}")
+        print(f"🏒 SIMULATION MODE: Prioritizing local schedule for {today}")
+        
+        # We use the local schedule analyzer directly, falling back to RotoWire
+        sched_games = self.schedule.games_by_date.get(today, [])
+        games = []
+        if sched_games:
+            for g in sched_games:
+                games.append({
+                    'away_team': g.get('awayTeam', {}).get('abbrev'),
+                    'home_team': g.get('homeTeam', {}).get('abbrev')
+                })
+            print(f"✅ Identified {len(games)} games from local schedule.")
+        else:
+            # Fallback: scrape today's games from RotoWire
+            print(f"⚠️  No games in local schedule for {today}. Falling back to RotoWire scraper...")
+            try:
+                roto_data = self.rotowire.scrape_daily_data()
+                roto_games = roto_data.get('games', []) if isinstance(roto_data, dict) else roto_data or []
+                if roto_games:
+                    for rg in roto_games:
+                        games.append({
+                            'away_team': rg.get('away_team'),
+                            'home_team': rg.get('home_team'),
+                            'away_goalie': rg.get('away_goalie'),
+                            'home_goalie': rg.get('home_goalie'),
+                        })
+                    print(f"✅ Identified {len(games)} games from RotoWire fallback.")
+                else:
+                    return f"No games scheduled for {today} (checked local + RotoWire)."
+            except Exception as e:
+                print(f"❌ RotoWire fallback failed: {e}")
+                return f"No games scheduled for {today} in the local system."
+        
         # Fetch Vegas odds
         from vegas_odds_scraper import scrape_vegas_odds
         with timed("vegas odds scrape"):
             market_odds = scrape_vegas_odds()
 
-        # Get NHL Schedule for Game IDs
-        from nhl_api_client import NHLAPIClient
-        nhl_client = NHLAPIClient()
-        with timed("nhl schedule fetch"):
-            schedule = nhl_client.get_game_schedule()  # Defaults to today
-        schedule_map = {} # 'AWAY@HOME' -> game_id
-        
-        if schedule:
-            # Handle new API structure: { "gameWeek": [ { "games": [...] } ] }
-            games_list = []
-            if 'gameWeek' in schedule:
-                for day in schedule['gameWeek']:
-                    games_list.extend(day.get('games', []))
-            elif 'games' in schedule:
-                # Legacy fallback
-                games_list = schedule['games']
-            
-            for g in games_list:
-                # API v1 uses 'awayTeam'/'homeTeam' objects
-                # Check different key possibilities just in case
-                away_abbr = g.get('awayTeam', {}).get('abbrev') or g.get('awayTeam', {}).get('triCode')
-                home_abbr = g.get('homeTeam', {}).get('abbrev') or g.get('homeTeam', {}).get('triCode')
-                
+        # Phase 36: Build schedule_map from Local Analyzer (Reliable for 2026 Simulation)
+        schedule_map = {}
+        for date_str, day_games in self.schedule.games_by_date.items():
+            for g in day_games:
+                away_abbr = g.get('awayTeam', {}).get('abbrev')
+                home_abbr = g.get('homeTeam', {}).get('abbrev')
                 if away_abbr and home_abbr:
-                    key = f"{away_abbr}@{home_abbr}"
+                    key = f'{away_abbr}@{home_abbr}'
                     schedule_map[key] = {
-                        'id': g['id'],
+                        'id': g.get('id'),
                         'gameType': g.get('gameType', 2),
-                        'series_status': g.get('seriesStatus') # Available in some API versions
+                        'series_status': g.get('seriesStatus')
                     }
-        
-        if not games:
-            # Fallback to prediction interface
-            predictions = self.predictor.get_daily_predictions()
-            if not predictions:
-                return "No games scheduled for today."
-            games = [{'away_team': p['away_team'], 'home_team': p['home_team']} 
-                    for p in predictions]
-        
-        # Make meta-ensemble predictions
-        # For best winner accuracy, derive winner from the (deterministic)
-        # score model rather than relying on the meta win-prob argmax.
-        from score_prediction_model import ScorePredictionModel
+        print(f'🗺️  Built local schedule map with {len(schedule_map)} entries.')
+        predictions = []
+        from models.score_prediction_model import ScorePredictionModel
         score_model = ScorePredictionModel()
 
-        predictions = []
+
         for game in games:
             try:
                 # Map RotoWire game to Vegas odds key
@@ -583,7 +588,7 @@ class DailyPredictionNotifier:
                 key = f"{game['away_team']}@{game['home_team']}"
                 game_info = schedule_map.get(key, {})
                 is_playoff = (game_info.get('gameType') == 3)
-                series_status_obj = game_info.get('series_status')
+                series_status_obj = game_info.get('series_status') or {}
                 
                 # Parse series wins for simulation
                 away_wins = 0
@@ -598,6 +603,24 @@ class DailyPredictionNotifier:
                         else:
                             away_wins, home_wins = b_wins, t_wins
                 
+                # Phase 32: Calculate Series Pace Offset
+                pace_offset = 0.0
+                if is_playoff:
+
+                    # Get all games for this matchup in the current season
+                    matchup_games = self.schedule.get_recent_games(game['away_team'], today, n=7)
+                    series_games = [g for g in matchup_games if (g.get("awayTeam", {}).get("abbrev") == game["home_team"] or g.get("homeTeam", {}).get("abbrev") == game["home_team"]) and g.get("gameType") == 3]
+                    print(f"🔍 DEBUG: Found {len(matchup_games)} recent games for {game['away_team']}. Checking for series vs {game['home_team']}...")
+                    if series_games:
+                        total_goals = sum([g.get('score', {}).get('awayScore', 0) + g.get('score', {}).get('homeScore', 0) for g in series_games])
+                        avg_goals = total_goals / len(series_games)
+                        # League avg is ~6.1; if series is 8.0, offset is +0.9
+                        pace_offset = (avg_goals - 6.1) / 2.0
+                        series_status_obj['pace_offset'] = pace_offset
+                        print(f"📈 Series Pace Detected for {key}: {len(series_games)} games, {avg_goals:.1f} G/gm (Offset: {pace_offset:+.2f})")
+                    else:
+                        print(f"ℹ️  No historical series games found for {key} in local schedule.")
+
                 pred = self.meta_ensemble.predict(
                     game['away_team'],
                     game['home_team'],
@@ -631,6 +654,13 @@ class DailyPredictionNotifier:
                     key = f"{game['away_team']}@{game['home_team']}"
                     game_info = schedule_map.get(key, {})
                     game_id = game_info.get('id')
+                    series_status_str = None
+                    if is_playoff and series_status_obj:
+                        leader = series_status_obj.get("topSeedTeamAbbrev")
+                        w1 = series_status_obj.get("topSeedWins", 0)
+                        w2 = series_status_obj.get("bottomSeedWins", 0)
+                        series_status_str = f"{leader} leads {w1}-{w2}"
+
                     is_playoff = (game_info.get('gameType') == 3)
                     
                     # Score model score + win prob
@@ -644,16 +674,27 @@ class DailyPredictionNotifier:
                         away_3_in_4=self.schedule.get_game_count_in_window(game['away_team'], datetime.now().strftime('%Y-%m-%d'), 4) >= 3,
                         home_3_in_4=self.schedule.get_game_count_in_window(game['home_team'], datetime.now().strftime('%Y-%m-%d'), 4) >= 3,
                         is_playoff=is_playoff,
-                        series_status=series_status
+                        series_status=series_status_str,
+                        game_id=game_info.get('id')
                     )
                     away_score = score_pred['away_score']
                     home_score = score_pred['home_score']
+                    score_away_win_prob = score_pred.get('away_prob', 0.5)
 
                     # Mixture-of-experts winner (small improvement over score-only).
                     # w near 1.0 keeps mostly score-model, but lets meta win-prob
                     # correct some edge cases.
-                    w_score = self._moe_default_w
-                    score_away_win_prob = float(score_pred.get('away_win_prob', 0.5))
+                    # Phase 44: Adaptive Confidence Blending
+                    # Dynamically adjust ensemble weight based on score-model confidence.
+                    score_confidence = float(score_pred.get('confidence', 0.5))
+                    if score_confidence > 0.60:
+                        # High confidence in tactical setup -> Trust the score model more
+                        w_score = 0.85
+                    elif score_confidence < 0.45:
+                        # Low confidence -> Trust the Meta-Ensemble (XGBoost/ELO) more
+                        w_score = 0.40
+                    else:
+                        w_score = self._moe_default_w
 
                     # If we have contextual tuning, choose w by abs(diff in xG).
                     if self._moe_absdiff_edges and self._moe_absdiff_w_map:
@@ -679,7 +720,15 @@ class DailyPredictionNotifier:
                     blended_away_win_prob = (w_score * score_away_win_prob) + ((1.0 - w_score) * meta_away_win_prob)
                     
                     # Phase 2: Incorporate Vegas as a standalone "Expert"
-                    v_odds = self._market_odds.get(f"{game['away_team']}@{game['home_team']}", {})
+                    # Abbreviation Normalization (LA -> LAK, TB -> TBL, etc.)
+                    def normalize_abbr(a):
+                        mapping = {'LA': 'LAK', 'TB': 'TBL', 'VEG': 'VGK', 'SJS': 'SJ', 'MON': 'MTL'}
+                        rev_mapping = {v: k for k, v in mapping.items()}
+                        return rev_mapping.get(a, a)
+                    
+                    v_key = f"{normalize_abbr(game['away_team'])}_vs_{normalize_abbr(game['home_team'])}"
+                    v_odds = market_odds.get(v_key, {})
+                    
                     if v_odds and 'away_prob' in v_odds:
                         v_away_prob = v_odds['away_prob']
                         # Blending: Market gets more weight in playoffs due to higher efficiency
@@ -744,6 +793,7 @@ class DailyPredictionNotifier:
                         'is_plus_ev_home': pred.get('is_plus_ev_home', False),
                         'suggested_units': pred.get('suggested_units', 0.0),
                         'odds_taken': pred.get('odds_taken', 0),
+                        "attribution": score_pred.get("attribution", []),
                         'p1_home_prob': pred.get('p1_home_prob', 50.0),
                         'is_playoff': is_playoff,
                         'series_info': series_proj,
@@ -759,11 +809,10 @@ class DailyPredictionNotifier:
         # SAVE PREDICTIONS TO IDB
         self.save_predictions_to_history(predictions)
         
-        total_games = len(games)
         
         # Format predictions
         summary = "🏒 **NHL GAME PREDICTIONS FOR TODAY** 🏒\n\n"
-        summary += f"Showing **{len(predictions)} high-confidence games** out of {total_games} on the schedule.\n"
+        summary += f"Showing **{len(predictions)} high-confidence games** out of {len(games)} on the schedule.\n"
         summary += f"(Meta-Ensemble Model: 55-60% accuracy)\n\n"
 
         for i, pred in enumerate(predictions, 1):
