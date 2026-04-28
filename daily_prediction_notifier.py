@@ -479,11 +479,18 @@ class DailyPredictionNotifier:
                 # Ensemble diagnostics (for guardrails / observability)
                 'ensemble_mode': pred.get("ensemble_mode"),
                 'ensemble_weights': pred.get("ensemble_weights"),
-                # Store fatigue signals when available
+                # Phase 47 Fatigue Signals
                 'away_back_to_back': pred.get('away_back_to_back', False),
                 'home_back_to_back': pred.get('home_back_to_back', False),
+                'away_3_in_4': pred.get('away_3_in_4', False),
+                'home_3_in_4': pred.get('home_3_in_4', False),
                 'away_rest_value': pred.get('away_rest_value', 0.0),
                 'home_rest_value': pred.get('home_rest_value', 0.0),
+                'away_games_7d': pred.get('away_games_7d', 1),
+                'home_games_7d': pred.get('home_games_7d', 1),
+                'away_travel_miles': pred.get('away_travel_miles', 0.0),
+                'home_travel_miles': pred.get('home_travel_miles', 0.0),
+                'attribution': pred.get('attribution', []),
                 # Store the metrics used for this prediction (crucial for training)
                 'metrics_used': {
                     'home_xg': pred.get('home_xg', 0),
