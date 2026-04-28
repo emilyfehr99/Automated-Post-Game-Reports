@@ -1955,7 +1955,8 @@ class ScorePredictionModel:
             away_mu=float(away_expected),
             home_mu=float(home_expected),
             winner_side=str(winner_side) if winner_side else None,
-            game_id=game_id
+            game_id=game_id,
+            attribution=attribution
         )
         
         # ─── Generate analysis factors ───
@@ -2224,6 +2225,7 @@ class ScorePredictionModel:
         winner_side: Optional[str],
         max_goals: int = 11,
         game_id: Optional[int] = None,
+        attribution: Optional[list] = None
     ) -> Tuple[int, int]:
         """Return the most-likely (MAP) scoreline under independent NB goals.
 
@@ -2239,6 +2241,9 @@ class ScorePredictionModel:
         desired = (winner_side or "").lower()
         if desired not in {"away", "home", ""}:
             desired = ""
+            
+        if attribution is None:
+            attribution = []
 
         k = float(self._get_dispersion_k(away_u, home_u, away_mu, home_mu))
         k = float(max(0.25, k))
