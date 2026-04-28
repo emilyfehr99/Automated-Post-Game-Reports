@@ -768,6 +768,7 @@ def _build_matrices_and_sidecars(
 def train_calibrate_evaluate_variant(
     *,
     name: str,
+    algo: str = "xgb",
     train_df: pd.DataFrame,
     cal_df: pd.DataFrame,
     test_df: pd.DataFrame,
@@ -784,25 +785,41 @@ def train_calibrate_evaluate_variant(
     y_test = mats["y_test"]
     w = mats["sample_weights"]
 
-    print(f"\n🧠 Training XGB variant={name} (grid_search={do_grid_search})")
+    print(f"\n🧠 Training {algo.upper()} variant={name} (grid_search={do_grid_search})")
     print(f"  train={len(X_train)} cal={len(X_cal)} test={len(X_test)} feats={X_train.shape[1]}")
 
     best_params = None
     if do_grid_search:
         tscv = TimeSeriesSplit(n_splits=5)
-        param_grid = {
-            "max_depth": [3, 4, 5],
-            "learning_rate": [0.01, 0.03, 0.05],
-            "n_estimators": [100, 150, 200],
-            "subsample": [0.8, 0.9],
-            "colsample_bytree": [0.8, 0.9],
-            "gamma": [0, 0.1, 0.2],
-        }
-        base = xgb.XGBClassifier(
-            objective="binary:logistic",
-            eval_metric="logloss",
-            random_state=42,
-        )
+        if algo == "xgb":
+            param_grid = {
+                "max_depth": [3, 4, 5],
+                "learning_rate": [0.01, 0.03, 0.05],
+                "n_estimators": [100, 150, 200],
+                "subsample": [0.8, 0.9],
+                "colsample_bytree": [0.8, 0.9],
+            }
+            base = xgb.XGBClassifier(objective="binary:logistic", eval_metric="logloss", random_state=42)
+        elif algo == "lgbm":
+            import lightgbm as lgb
+            param_grid = {
+                "max_depth": [3, 5, -1],
+                "learning_rate": [0.01, 0.03, 0.05],
+                "n_estimators": [100, 150, 200],
+                "subsample": [0.8, 0.9],
+                "num_leaves": [15, 31, 63],
+            }
+            base = lgb.LGBMClassifier(random_state=42, verbose=-1)
+        elif algo == "rf":
+            from sklearn.ensemble import RandomForestClassifier
+            param_grid = {
+                "max_depth": [5, 10, None],
+                "n_estimators": [100, 200, 300],
+                "min_samples_split": [2, 5],
+                "max_features": ["sqrt", "log2"],
+            }
+            base = RandomForestClassifier(random_state=42)
+        
         grid = GridSearchCV(
             estimator=base,
             param_grid=param_grid,
@@ -813,29 +830,30 @@ def train_calibrate_evaluate_variant(
         grid.fit(X_train, y_train, sample_weight=w)
         best_model = grid.best_estimator_
         best_params = dict(grid.best_params_ or {})
-        print(f"✅ {name} best params: {best_params}")
+        print(f"✅ {name} ({algo}) best params: {best_params}")
     else:
         params = fixed_params or {}
         if not params:
-            params = {
-                "max_depth": 4,
-                "learning_rate": 0.03,
-                "n_estimators": 150,
-                "subsample": 0.85,
-                "colsample_bytree": 0.85,
-                "gamma": 0.0,
-            }
+            if algo == "xgb":
+                params = {"max_depth": 4, "learning_rate": 0.03, "n_estimators": 150}
+            elif algo == "lgbm":
+                params = {"max_depth": 4, "learning_rate": 0.03, "n_estimators": 150, "num_leaves": 15}
+            elif algo == "rf":
+                params = {"max_depth": 10, "n_estimators": 200}
+        
         best_params = dict(params)
-        best_model = xgb.XGBClassifier(
-            objective="binary:logistic",
-            eval_metric="logloss",
-            random_state=42,
-            **best_params,
-        )
+        if algo == "xgb":
+            best_model = xgb.XGBClassifier(objective="binary:logistic", eval_metric="logloss", random_state=42, **best_params)
+        elif algo == "lgbm":
+            import lightgbm as lgb
+            best_model = lgb.LGBMClassifier(random_state=42, verbose=-1, **best_params)
+        elif algo == "rf":
+            from sklearn.ensemble import RandomForestClassifier
+            best_model = RandomForestClassifier(random_state=42, **best_params)
+            
         best_model.fit(X_train, y_train, sample_weight=w)
 
     # Calibrate on true future fold
-    best_model.fit(X_train, y_train, sample_weight=w)
     cal = CalibratedClassifierCV(estimator=best_model, method="isotonic", cv="prefit")
     cal.fit(X_cal, y_cal)
 
@@ -910,39 +928,46 @@ def train_optimized_model():
     train_df_recent = train_df_full.tail(recent_n).copy() if len(train_df_full) > recent_n else train_df_full.copy()
     print(f"🏷️ Variants: full_train={len(train_df_full)} recent_train={len(train_df_recent)} cal={len(cal_df)} test={len(test_df)}")
 
-    # Train FULL variant (includes hyperparam search)
-    full_res = train_calibrate_evaluate_variant(
-        name="full",
-        train_df=train_df_full,
-        cal_df=cal_df,
-        test_df=test_df,
-        do_grid_search=True,
-    )
+    # Evaluate multiple algorithms
+    results = []
+    algos = ["xgb", "lgbm", "rf"]
+    
+    for algo in algos:
+        # Full variant
+        res_full = train_calibrate_evaluate_variant(
+            name=f"{algo}_full",
+            algo=algo,
+            train_df=train_df_full,
+            cal_df=cal_df,
+            test_df=test_df,
+            do_grid_search=True,
+        )
+        results.append(res_full)
+        
+        # Recent variant
+        res_recent = train_calibrate_evaluate_variant(
+            name=f"{algo}_recent",
+            algo=algo,
+            train_df=train_df_recent,
+            cal_df=cal_df,
+            test_df=test_df,
+            do_grid_search=False,
+            fixed_params=res_full.get("best_params"),
+        )
+        results.append(res_recent)
 
-    # Train RECENT variant (reuse full params for speed/stability)
-    recent_res = train_calibrate_evaluate_variant(
-        name="recent",
-        train_df=train_df_recent,
-        cal_df=cal_df,
-        test_df=test_df,
-        do_grid_search=False,
-        fixed_params=full_res.get("best_params"),
-    )
-
-    # Pick champion by forward test log loss (lower is better)
-    champ = "full"
-    try:
-        if float(recent_res["test_logloss"]) < float(full_res["test_logloss"]) - 1e-6:
-            champ = "recent"
-    except Exception:
-        champ = "full"
-
-    print(f"🏆 XGB champion={champ} (full_ll={full_res.get('test_logloss'):.4f}, recent_ll={recent_res.get('test_logloss'):.4f})")
+    # Pick overall champion by test log loss
+    results.sort(key=lambda x: x["test_logloss"])
+    best_res = results[0]
+    champ = best_res["name"]
+    algo_champ = champ.split("_")[0]
+    
+    print(f"🏆 Overall Champion={champ} (algo={algo_champ}, ll={best_res['test_logloss']:.4f})")
 
     # Write legacy artifact filenames to keep the rest of the pipeline stable.
     try:
-        chosen = full_res if champ == "full" else recent_res
-        art = chosen.get("artifacts", {}) if isinstance(chosen, dict) else {}
+        chosen = best_res
+        art = chosen.get("artifacts", {})
         # Calibrated model + features are pickles; booster + encodings are JSON.
         if art.get("calibrated_model") and Path(str(art["calibrated_model"])).exists():
             shutil.copyfile(str(art["calibrated_model"]), "xgb_calibrated_model.pkl")
@@ -952,35 +977,24 @@ def train_optimized_model():
             shutil.copyfile(str(art["encodings"]), "team_encodings.json")
         if art.get("booster_json") and Path(str(art["booster_json"])).exists():
             shutil.copyfile(str(art["booster_json"]), "xgb_nhl_model.json")
-        print("✅ Wrote legacy champion artifacts (xgb_* + team_encodings.json)")
+        print(f"✅ Wrote legacy artifacts for champion: {champ}")
     except Exception as e:
         print(f"⚠️ Could not write legacy champion artifacts: {e}")
 
-    # Persist performance snapshot (including champion)
+    # Persist performance snapshot
     perf_out = {
         "updated_at_utc": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
-        "xgb_champion": champ,
-        "variants": {
-            "full": {
-                "train_n": int(len(train_df_full)),
-                "test_acc": float(full_res.get("test_acc")),
-                "test_logloss": float(full_res.get("test_logloss")),
-                "recent_eval": full_res.get("recent_eval"),
-            },
-            "recent": {
-                "train_n": int(len(train_df_recent)),
-                "test_acc": float(recent_res.get("test_acc")),
-                "test_logloss": float(recent_res.get("test_logloss")),
-                "recent_eval": recent_res.get("recent_eval"),
-            },
-        },
-        # Keep top-level fields for backward compatibility with guardrails
-        "xgb_recent_logloss": float((recent_res.get("recent_eval") or {}).get("xgb_recent_logloss") or (full_res.get("recent_eval") or {}).get("xgb_recent_logloss") or float("nan")),
-        "elo_recent_logloss": float((recent_res.get("recent_eval") or {}).get("elo_recent_logloss") or (full_res.get("recent_eval") or {}).get("elo_recent_logloss") or float("nan")),
+        "champion": champ,
+        "algo_champion": algo_champ,
+        "variants": {r["name"]: {
+            "test_acc": r["test_acc"],
+            "test_logloss": r["test_logloss"],
+            "best_params": r["best_params"]
+        } for r in results}
     }
     with open("model_performance.json", "w") as f:
         json.dump(perf_out, f, indent=2)
-    print("✅ Saved model_performance.json (with xgb_champion)")
+    print("✅ Saved model_performance.json")
 
     # NOTE: The rest of the previous monolithic training flow remains below for now,
     # but is bypassed because we return early after producing artifacts.

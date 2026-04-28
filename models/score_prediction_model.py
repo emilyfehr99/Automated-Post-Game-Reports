@@ -1228,6 +1228,53 @@ class ScorePredictionModel:
         if total_w == 0:
             return np.mean(values)
         return sum(v * w for v, w in zip(values, weights)) / total_w
+
+    def _calculate_team_workload_fatigue(self, team: str, games_7d: int, travel_miles: float, rest_days: int) -> float:
+        """
+        Phase 47: Team Workload Index (TWI)
+        Models fatigue as a function of volume, travel, and rest.
+        Returns a multiplicative multiplier (e.g., 0.95 for 5% reduction).
+        """
+        # 1. Base Fatigue from Volume (Games in 7 days)
+        # 3-in-4 or 4-in-7 are typical heavy workloads
+        vol_factor = (games_7d * 0.35)
+        
+        # 2. Travel Impact (Normalized per 1000 miles)
+        travel_factor = (travel_miles / 1000.0) * 0.20
+        
+        # 3. Rest Mitigation
+        # 1 day rest is standard; 2+ days is recovery; 0 days (B2B) is penalty.
+        rest_factor = -0.35 if rest_days == 0 else (0.15 if rest_days >= 3 else 0.0)
+        
+        twi = vol_factor + travel_factor - rest_factor
+        
+        # TWI Threshold: 1.5 is standard heavy workload.
+        # Above 1.5, start applying a progressive penalty.
+        if twi > 1.5:
+            # Multiplicative penalty: 2% reduction per 0.5 TWI above 1.5
+            penalty = (twi - 1.5) * 0.04
+            
+            # Fatigue Resistance: Elite teams handle workload better
+            team_elo = self._get_team_elo(team)
+            if team_elo > 1550:
+                penalty *= 0.5 # 50% reduction in fatigue impact for elite teams
+            
+            # Cap at 10% reduction
+            multiplier = max(0.90, 1.0 - penalty)
+            return multiplier
+            
+        return 1.0
+
+    def _get_team_elo(self, team: str) -> float:
+        """Helper to get team Elo for fatigue resistance check."""
+        try:
+            # We assume meta_ensemble_predictor or similar passed Elo ratings to us
+            # but if not, we fallback to a safe neutral.
+            if hasattr(self, 'current_elo_ratings'):
+                return self.current_elo_ratings.get(team, 1500)
+        except Exception:
+            pass
+        return 1500
     
     def _sanitize_pp_pk(self, values: list) -> list:
         """Fix corrupt PP%/PK% values.
@@ -1420,6 +1467,9 @@ class ScorePredictionModel:
                      game_date: str = None,
                      away_b2b: bool = False, home_b2b: bool = False,
                      away_3_in_4: bool = False, home_3_in_4: bool = False,
+                     away_games_7d: int = 1, home_games_7d: int = 1,
+                     away_travel_miles: float = 0.0, home_travel_miles: float = 0.0,
+                     away_rest_days: int = 2, home_rest_days: int = 2,
                      vegas_odds: Dict = None,
                      use_calibration: bool = True,
                      is_playoff: bool = False,
@@ -1523,9 +1573,25 @@ class ScorePredictionModel:
         away_h2h_adj = self._get_h2h_adjustment(away, home)
         home_h2h_adj = self._get_h2h_adjustment(home, away)
         
-        # ─── 11. Back-to-back penalty (NEW) ───
-        away_b2b_adj = -self.B2B_PENALTY if away_b2b else 0.0
-        home_b2b_adj = -self.B2B_PENALTY if home_b2b else 0.0
+        # ─── 11. Phase 47: Team Workload Index (TWI) ───
+        # Replaces simple B2B penalty with a full workload model.
+        # Fallback to provided B2B flag if more granular rest_days is missing.
+        a_rest = away_rest_days if away_rest_days != 2 else (0 if away_b2b else 2)
+        h_rest = home_rest_days if home_rest_days != 2 else (0 if home_b2b else 2)
+        
+        # Ensure away_games_7d is at least away_3_in_4 + 1
+        a_g7 = max(away_games_7d, (3 if away_3_in_4 else 1))
+        h_g7 = max(home_games_7d, (3 if home_3_in_4 else 1))
+        
+        away_twi_mult = self._calculate_team_workload_fatigue(away, a_g7, away_travel_miles, a_rest)
+        home_twi_mult = self._calculate_team_workload_fatigue(home, h_g7, home_travel_miles, h_rest)
+        
+        if away_twi_mult < 1.0:
+            attribution.append(f"{away} Workload Fatigue (TWI={1.0 - away_twi_mult:+.2f})")
+        if home_twi_mult < 1.0:
+            attribution.append(f"{home} Workload Fatigue (TWI={1.0 - home_twi_mult:+.2f})")
+        
+        # Combine into multiplicative modifiers (applied below)
         
         # ─── 12. Goalie adjustment (NEW) ───
         # An opposing goalie's quality affects the shooting team's score.
@@ -1601,9 +1667,12 @@ class ScorePredictionModel:
         away_expected += away_div_adj
         away_expected += away_venue_adj
         away_expected += away_h2h_adj
-        away_expected += away_b2b_adj
         away_expected += away_goalie_adj
         away_expected += away_momentum_adj
+        
+        # Apply Phase 47 TWI Fatigue (Multiplicative)
+        away_expected *= away_twi_mult
+        home_expected *= home_twi_mult
         
         # ─── 14. Jet Lag & Time Zone Penalty (NEW) ───
         jet_lag_adj = self._calculate_jet_lag(away, home)
@@ -2243,25 +2312,52 @@ class ScorePredictionModel:
         final_a = int(best_a)
         final_h = int(best_h)
 
-        # --- Phase 31 & 37: Playoff Margin Expansion & Seed-Driven EN ---
+        # --- Phase 47: Probabilistic Empty Net (EN) Simulation ---
+        # Instead of a hard threshold, we use a stochastic 6v5 phase.
+        # EN goals typically happen in the final 2 minutes when a team pulls the goalie.
         current_margin = abs(final_a - final_h)
         expected_diff = abs(away_mu - home_mu)
         
-        # Case 1: Empty Net Simulation (Significant Spread > 1.8)
-        if expected_diff > 1.8 and current_margin < 3:
-            if away_mu > home_mu: final_a = max(final_a, final_h + 3)
-            else: final_h = max(final_h, final_a + 3)
+        # Determine dominant team (who is likely to score into the EN)
+        dominant_side = "away" if away_mu > home_mu else "home"
+        leader_side = "away" if final_a > final_h else "home"
+        
+        # Probabilistic 6v5 / EN Logic
+        en_roll = random.random()
+        
+        if current_margin == 1:
+            # Leading by 1: High EN pull rate
+            # Dominant team up by 1 has ~28% chance of EN goal
+            # Non-dominant team up by 1 has ~18% chance of EN goal
+            en_chance = 0.28 if dominant_side == leader_side else 0.18
+            # Trailing team has ~4% chance of 6v5 equalizer
+            equalizer_chance = 0.04
             
-        # Case 2: Seed-Driven Variance for 1-goal games (20% chance)
-        # If it's a tight game (margin 1) and spread is >0.3, occasionally flip to 2-goal margin
-        elif current_margin == 1 and expected_diff > 0.3 and (random.random() < 0.2):
-            if away_mu > home_mu: final_a += 1
-            else: final_h += 1
+            if en_roll < en_chance:
+                if leader_side == "away": final_a += 1
+                else: final_h += 1
+                attribution.append("Probabilistic Empty Net Goal (+1)")
+            elif en_roll < en_chance + equalizer_chance:
+                if leader_side == "away": final_h += 1
+                else: final_a += 1
+                attribution.append("Probabilistic 6v5 Equalizer (+1)")
+                
+        elif current_margin == 2:
+            # Leading by 2: Lower EN pull rate, but often pulled late
+            # Chance of EN goal to make it a 3-goal margin
+            en_chance = 0.15 if dominant_side == leader_side else 0.10
+            if en_roll < en_chance:
+                if leader_side == "away": final_a += 1
+                else: final_h += 1
+                attribution.append("Late Empty Net Insurance (+1)")
 
-        # Case 3: Multi-Goal Separation (Moderate Spread > 1.0)
-        elif expected_diff > 1.0 and current_margin < 2:
+        # --- Phase 31 & 37: Seed-Driven Variance for high-dominance spreads ---
+        # If the expected spread is huge (>1.8), we still ensure at least a 2-goal margin
+        # if the probabilistic EN didn't already create one.
+        if expected_diff > 1.8 and abs(final_a - final_h) < 2:
             if away_mu > home_mu: final_a = max(final_a, final_h + 2)
             else: final_h = max(final_h, final_a + 2)
+            
 
         # Tie-breaker for close games
         if final_a == final_h:

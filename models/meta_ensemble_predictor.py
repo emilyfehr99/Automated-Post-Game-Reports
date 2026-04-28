@@ -345,49 +345,55 @@ class MetaEnsemblePredictor:
     def _load_xgboost_components(self):
         """Load model, features list, and build history state"""
         # Prefer the current champion (full vs recent) when available.
-        champ = None
         try:
             p = Path("model_performance.json")
             if p.exists():
                 with open(p, "r") as f:
                     perf = json.load(f)
-                champ = perf.get("xgb_champion")
-                if champ not in ("full", "recent"):
-                    champ = None
+                champ = perf.get("champion")
         except Exception:
             champ = None
 
         suffix = f"_{champ}" if champ else ""
 
         # 1. Load Calibrated Model (Preferred)
+        # This is algo-agnostic because it's a pickled CalibratedClassifierCV
         cal_model_path = Path(f"xgb_calibrated_model{suffix}.pkl")
         legacy_cal_model_path = Path("xgb_calibrated_model.pkl")
+        
+        loaded_cal = False
         if cal_model_path.exists():
             try:
                 with open(cal_model_path, "rb") as f:
                     self.calibrated_model = pickle.load(f)
-                print(f"✅ Loaded Calibrated XGBoost model from {cal_model_path}")
+                print(f"✅ Loaded Calibrated champion model from {cal_model_path}")
+                loaded_cal = True
             except Exception as e:
                 print(f"⚠️ Failed to load calibrated model: {e}")
-        elif legacy_cal_model_path.exists():
+        
+        if not loaded_cal and legacy_cal_model_path.exists():
             try:
                 with open(legacy_cal_model_path, "rb") as f:
                     self.calibrated_model = pickle.load(f)
-                print(f"✅ Loaded Calibrated XGBoost model from {legacy_cal_model_path}")
+                print(f"✅ Loaded Calibrated model from {legacy_cal_model_path}")
+                loaded_cal = True
             except Exception as e:
                 print(f"⚠️ Failed to load calibrated model: {e}")
 
         # 1b. Load Standard Model (Fallback/Legacy)
+        # Note: Legacy fallback is still hardcoded for XGB for now, 
+        # but production mostly relies on calibrated_model above.
         model_path = Path(f"xgb_nhl_model{suffix}.json")
         legacy_model_path = Path("xgb_nhl_model.json")
-        if model_path.exists():
-            self.xgb_model = xgb.XGBClassifier()
-            self.xgb_model.load_model(str(model_path))
-            print(f"✅ Loaded XGBoost model from {model_path} (Fallback)")
-        elif legacy_model_path.exists():
-            self.xgb_model = xgb.XGBClassifier()
-            self.xgb_model.load_model(str(legacy_model_path))
-            print(f"✅ Loaded XGBoost model from {legacy_model_path} (Fallback)")
+        if not loaded_cal:
+            if model_path.exists():
+                self.xgb_model = xgb.XGBClassifier()
+                self.xgb_model.load_model(str(model_path))
+                print(f"✅ Loaded XGBoost fallback from {model_path}")
+            elif legacy_model_path.exists():
+                self.xgb_model = xgb.XGBClassifier()
+                self.xgb_model.load_model(str(legacy_model_path))
+                print(f"✅ Loaded XGBoost fallback from {legacy_model_path}")
             
         # 2. Load Feature Names
         feat_path = Path(f"xgb_features{suffix}.pkl")
@@ -1037,6 +1043,12 @@ class MetaEnsemblePredictor:
                 except Exception as e:
                     print(f"P1 prediction error: {e}")
             
+            # Phase 47 Fatigue Metrics for Score Model
+            away_games_7d = tracker.get_game_count_in_window(away_team, datetime.now(), 7)
+            home_games_7d = tracker.get_game_count_in_window(home_team, datetime.now(), 7)
+            away_travel = tracker.get_travel_distance(away_team, home_team)
+            home_travel = tracker.get_travel_distance(home_team, home_team) # Home stays home
+
             return {
                 'away_team': away_team,
                 'home_team': home_team,
@@ -1058,6 +1070,12 @@ class MetaEnsemblePredictor:
                 'home_back_to_back': 1 if home_rest == 1 else 0,
                 'away_rest_value': float(away_rest),
                 'home_rest_value': float(home_rest),
+                'away_3_in_4': bool(feature_data.get('a_3_in_4')),
+                'home_3_in_4': bool(feature_data.get('h_3_in_4')),
+                'away_games_7d': away_games_7d,
+                'home_games_7d': home_games_7d,
+                'away_travel_miles': away_travel,
+                'home_travel_miles': home_travel,
                 'prediction_type': 'xgboost_ml'
             }
         except Exception as e:
