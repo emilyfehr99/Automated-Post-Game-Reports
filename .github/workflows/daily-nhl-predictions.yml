@@ -159,8 +159,8 @@ jobs:
         run: |
           PYTHONPATH=".:models:analyzers:utils:scrapers" python3 utils/compact_event_logs.py
 
-      - name: Retrain Model (FORCED - Phase 47 Tournament)
-        if: steps.check_date.outputs.should_run == 'true'
+      - name: Retrain XGBoost Model
+        if: steps.check_date.outputs.should_run == 'true' && steps.outcomes.outputs.outcomes_updated != '0'
         run: |
           echo "🧠 RETRAINING MODEL WITH LATEST RESULTS"
           # Capture baseline metrics (from repo checkout) for regression guardrails.
