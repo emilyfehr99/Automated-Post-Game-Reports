@@ -86,16 +86,17 @@ class ScorePredictionModel:
                 self.prediction_history = pred_data.get('predictions', [])
                 break
         
-        # Load comprehensive goalie stats from high-fidelity metrics source
-        # This now contains xG-based GSAX from the ImprovedXGModel
+        # Load comprehensive advanced metrics (NHL Edge)
+        self.advanced_team_metrics = {}
         for p in [Path('data/team_advanced_metrics.json'), Path('team_advanced_metrics.json')]:
             if p.exists():
                 with open(p) as f:
                     metrics_data = json.load(f)
                 self.goalie_stats = metrics_data.get('goalies', {})
+                self.advanced_team_metrics = metrics_data.get('teams', {})
                 # Create a name -> ID layout for easy lookup
                 self.goalie_names = {v['name']: k for k, v in self.goalie_stats.items()}
-                print(f"🧤 Loaded {len(self.goalie_stats)} high-fidelity goalies (xG-based GSAX)")
+                print(f"🧤 Loaded {len(self.goalie_stats)} high-fidelity goalies and Edge metrics for {len(self.advanced_team_metrics)} teams")
                 break
         
         # Fallback to legacy goalie_stats if above failed
@@ -1384,11 +1385,34 @@ class ScorePredictionModel:
             'power_play_pct': 20.0, 'penalty_kill_pct': 80.0,
             'faceoff_pct': 50.0, 'corsi_pct': 50.0,
             'xg_luck': 0.0, 'rush_shots': 4.0, 'rebounds': 3.0,
+            'pp_pass_efficiency': 75.0, 'max_skating_speed': 21.0,
+            'avg_star_power_gs': 0.5,
         }
         team_data = self.team_averages.get(team.upper(), {}).get(venue, {})
         val = team_data.get(metric)
         if val is not None and not np.isnan(val):
             return val
+            
+        # Phase 46 Fallback: Check advanced Edge metrics (flat per team)
+        adv_data = self.advanced_team_metrics.get(team.upper(), {})
+        
+        # Check aliases for advanced metrics
+        metric_aliases = {
+            'faceoff_pct': ['ozone_faceoff_pct', 'fo_pct'],
+            'power_play_pct': ['pp_pct', 'pp_efficiency'],
+            'penalty_kill_pct': ['pk_pct', 'pk_efficiency']
+        }
+        
+        search_keys = [metric] + metric_aliases.get(metric, [])
+        for k in search_keys:
+            if k in adv_data:
+                val = adv_data[k]
+                if val is not None and not np.isnan(val):
+                    # Handle decimal to percentage conversion if needed
+                    if 'pct' in k and 0 < val < 1.0:
+                        return val * 100.0
+                    return val
+        
         return defaults.get(metric, 0.0)
     
     def predict_score(self, away_team: str, home_team: str,
@@ -1401,7 +1425,8 @@ class ScorePredictionModel:
                      is_playoff: bool = False,
                      series_status: str = None,
                      away_missing_star: bool = False,
-                     home_missing_star: bool = False) -> Dict:
+                     home_missing_star: bool = False,
+                     game_id: Optional[int] = None) -> Dict:
         """
         Predict realistic game score.
         
@@ -1419,9 +1444,8 @@ class ScorePredictionModel:
         away_gs = self._get_team_metric(away, 'gs', 'away')
         home_gs = self._get_team_metric(home, 'gs', 'home')
         
-        # Clutch Star Power Boost
-        gs_weight_adj = 1.10 if is_playoff else 1.0
-        if is_playoff: attribution.append("Star Power Boost (+10% GS)")
+        # Clutch Star Power Boost is handled specifically in Section 16 based on avg_star_power_gs
+        gs_weight_adj = 1.05 if is_playoff else 1.0
         
         gs_to_goals = lambda gs: max(1.0, 0.5 * gs)
         away_gs_goals = gs_to_goals(away_gs)
@@ -1597,7 +1621,6 @@ class ScorePredictionModel:
         # ─── 16. Playoff Environment Reductions ───
         if is_playoff:
             # Check for ST mismatches that might lead to blowouts
-            # If one team is >10% better on Net ST, reduce the reduction.
             a_st = away_pp_effectiveness + self._get_team_metric(away, 'pk', 'away')
             h_st = home_pp_effectiveness + self._get_team_metric(home, 'pk', 'home')
             if abs(a_st - h_st) > 0.10:
@@ -1609,8 +1632,109 @@ class ScorePredictionModel:
             
             away_expected *= reduction
             home_expected *= reduction
+
+            # Star Power Boost (GS > 1.0)
+            away_star = self._get_team_metric(away, 'avg_star_power_gs', 'away')
+            home_star = self._get_team_metric(home, 'avg_star_power_gs', 'home')
+            
+            if away_star > 1.0:
+                attribution.append(f"{away} Star Power Boost (+10% GS)")
+                away_expected *= 1.10
+            if home_star > 1.0:
+                attribution.append(f"{home} Star Power Boost (+10% GS)")
+                home_expected *= 1.10
+
+            # NHL Edge Speed/Burst Scaling with Phase 46 Series Fatigue Decay
+            # Series Fatigue: Speed/Burst signals decay slightly as the series goes on (Games 4-7)
+            import re
+            decay_factor = 1.0
+            if series_status:
+                m_game = re.search(r'(\d)-(\d)', str(series_status))
+                if m_game:
+                    total_g = int(m_game.group(1)) + int(m_game.group(2))
+                    if total_g >= 3: # After 3 games (starting Game 4)
+                        decay_factor = max(0.85, 1.0 - (total_g - 2) * 0.03)
+
+            away_speed = self._get_team_metric(away, 'max_skating_speed', 'away')
+            home_speed = self._get_team_metric(home, 'max_skating_speed', 'home')
+            if away_speed > 23.0:
+                s_boost = 0.05 * decay_factor
+                attribution.append(f"{away} Speed Dominance (+{s_boost*100:.1f}% xG)")
+                away_expected *= (1.0 + s_boost)
+            if home_speed > 23.0:
+                s_boost = 0.05 * decay_factor
+                attribution.append(f"{home} Speed Dominance (+{s_boost*100:.1f}% xG)")
+                home_expected *= (1.0 + s_boost)
+
+        # ─── 18. Phase 40: Faceoff Geographic Advantage ───
+        if is_playoff:
+            # OZ Faceoff Advantage (based on deep dive data)
+            # Crosby/PIT OZ FO% is typically >55%
+            away_fo = self._get_team_metric(away, 'faceoff_pct', 'away')
+            home_fo = self._get_team_metric(home, 'faceoff_pct', 'home')
+            
+            if away_fo > 53.0:
+                attribution.append(f"{away} Possession Advantage (FO%) (+0.10)")
+                away_expected += 0.10
+            if home_fo > 53.0:
+                attribution.append(f"{home} Possession Advantage (FO%) (+0.10)")
+                home_expected += 0.10
+
+        # ─── 19. Phase 41: Series Elimination Desperation ───
+        if is_playoff and series_status:
+            # status format: "Series tied 2-2" or "PIT leads 3-1"
+            import re
+            m = re.search(r'leads (\d)-(\d)', str(series_status))
+            if m:
+                w1, w2 = int(m.group(1)), int(m.group(2))
+                leader = str(series_status).split(' ')[0]
+                
+                # Identify if one team is facing elimination (Down 3-x)
+                if w1 == 3 or w2 == 3:
+                    # Identify if one team is facing elimination (Down 3-x)
+                    # If w1 == 3, the leader has won 3 games.
+                    # If w2 == 3, the trailer has won 3 games (meaning they are the leader).
+                    leader_wins = max(w1, w2)
+                    if leader_wins == 3:
+                        # Find the team that is NOT the leader
+                        leader_is_away = (leader == away)
+                        if w1 == 3:
+                            leader_in_this_string = leader
+                        else:
+                            # If w2 == 3, the string formatting might be "Leader leads 1-3" (rare)
+                            # but we'll assume the first team is the leader if it says "leads".
+                            leader_in_this_string = leader
+                        
+                        trailer = home if leader == away else away
+                        if trailer == away:
+                            attribution.append(f"{away} Elimination Desperation (+12%)")
+                            away_expected *= 1.12
+                        else:
+                            attribution.append(f"{home} Elimination Desperation (+12%)")
+                            home_expected *= 1.12
         
-        # ─── 14. Phase 3: 3-in-4 Fatigue (Context Only) ───
+        # ─── 20. Phase 43: Spatial Special Teams (Pass Efficiency) ───
+        if is_playoff:
+            # Elite PP passing (>80%) creates higher-quality looks
+            # PIT (Penguins) typically have elite PP movement
+            away_pp_eff = self._get_team_metric(away, 'pp_pass_efficiency', 'away')
+            home_pp_eff = self._get_team_metric(home, 'pp_pass_efficiency', 'home')
+            
+            # Use 80% threshold from process_special_teams.py
+            if away_pp_eff > 80.0:
+                attribution.append(f"{away} PP Passing Efficiency (+0.15)")
+                away_expected += 0.15
+            if home_pp_eff > 80.0:
+                attribution.append(f"{home} PP Passing Efficiency (+0.15)")
+                home_expected += 0.15
+        
+        # ─── 21. Phase 46: Tactical Convergence & Clipping ───
+        # Ensure that multiple tactical bonuses don't create unrealistic xG inflation
+        # We clip the total tactical impact to a realistic "Playoff Intensity Ceiling"
+        if is_playoff:
+            # Clip expected goals to a reasonable per-game ceiling for the model
+            away_expected = min(5.5, max(0.5, away_expected))
+            home_expected = min(5.5, max(0.5, home_expected))
         # Note: Triangulation Audit (N=923) showed that a hard goal penalty
         # for 3-in-4 reduces winner accuracy by ~5%. We now handle this
         # via the High-Risk alerting in DailyPredictionNotifier rather than
@@ -1640,12 +1764,38 @@ class ScorePredictionModel:
         away_expected += away_env
         home_expected += home_env
         
+        # ─── 18. Phase 32: Common Score Nudging ───
+        # In hockey, certain scores are much more common than others.
+        # We define a 'Commonality Weight' to nudge the MAP toward these.
+        common_scores = {
+            (3, 2): 1.15, (2, 3): 1.15,
+            (4, 2): 1.12, (2, 4): 1.12,
+            (2, 1): 1.10, (1, 2): 1.10,
+            (4, 3): 1.08, (3, 4): 1.08,
+            (3, 1): 1.07, (1, 3): 1.07,
+            (5, 2): 1.05, (2, 5): 1.05
+        }
+        
+        # ─── 19. Phase 32: Series Trend Adjustment ───
+        # If the series has been a track-meet, keep it high. 
+        # If it's been a grind, keep it low.
+        series_pace_adj = 0.0
+        if series_status and isinstance(series_status, (dict, str)):
+            # If dict, read pace_offset. If str, pace adjustment is currently 0.0 
+            # until we implement pace detection from series history.
+            series_pace_adj = series_status.get('pace_offset', 0.0) if isinstance(series_status, dict) else 0.0
+            # We assume series_status might contain 'avg_goals_per_game' 
+            # or we calculate it from recent games elsewhere.
+            # For now, we apply a 'Series Intensity' boost if provided.
+            series_pace_adj = series_status.get('pace_offset', 0.0)
+            if series_pace_adj != 0:
+                attribution.append(f"Series Trend Adj ({series_pace_adj:+.2f})")
+                away_expected += series_pace_adj
+                home_expected += series_pace_adj
+
         # ─── Clamp to realistic range ───
-        # NHL teams very rarely exceed 4.5 xG in a game. Keeping the cap
-        # tight prevents the deterministic rounding from producing
-        # unrealistic 5-4, 6-5 scorelines.
-        away_expected = max(1.5, min(4.5, away_expected))
-        home_expected = max(1.5, min(4.5, home_expected))
+        away_expected = max(1.5, min(4.8, away_expected))
+        home_expected = max(1.5, min(4.8, home_expected))
         
         # ─── Winner selection ───
         # If calibration is available, use it to learn the empirical win
@@ -1736,6 +1886,7 @@ class ScorePredictionModel:
             away_mu=float(away_expected),
             home_mu=float(home_expected),
             winner_side=str(winner_side) if winner_side else None,
+            game_id=game_id
         )
         
         # ─── Generate analysis factors ───
@@ -1802,10 +1953,22 @@ class ScorePredictionModel:
                 if gs.get('games', 0) < 5:
                     backup_penalty = 0.50 # AHL call-up or extreme backup
             
-            # 2. Base GSAX Adjustment
-            if gs.get('games', 0) >= 5:
-                # Positive GSAX means goalie is saving more than expected -> reduces opponent goals
-                gsax_pg = gs.get('gsax_per_game', 0.0)
+                # 2. Base GSAX Adjustment
+                if gs.get('games', 0) >= 5:
+                    # Positive GSAX means goalie is saving more than expected -> reduces opponent goals
+                    gsax_pg = gs.get('gsax_per_game', 0.0)
+                    
+                    # Phase 45: Goaltender Playoff Wall
+                    # Elite goalies "level up" in playoffs. Multiplier for high-GSAx goalies.
+                    if gsax_pg > 0.5:
+                        # Only apply the level-up in playoffs or high-stakes games
+                        # We use a localized check for is_playoff (passed down or inferred)
+                        # For simplicity, we'll assume higher stakes if it's April/May
+                        import datetime
+                        current_month = datetime.datetime.now().month
+                        if current_month in [4, 5, 6]:
+                            gsax_pg *= 1.5
+                            # attribution.append(f"{goalie_name} Playoff Wall (+50% GSAx)") # Traceable
                 
                 # Venue Adjustment (Home/Away Splits)
                 venue_adj = 0.0
@@ -1991,6 +2154,7 @@ class ScorePredictionModel:
         home_mu: float,
         winner_side: Optional[str],
         max_goals: int = 11,
+        game_id: Optional[int] = None,
     ) -> Tuple[int, int]:
         """Return the most-likely (MAP) scoreline under independent NB goals.
 
@@ -2014,9 +2178,29 @@ class ScorePredictionModel:
         pmf_a = [self._neg_bin_pmf(g, away_mu, k) for g in range(int(max_goals) + 1)]
         pmf_h = [self._neg_bin_pmf(g, home_mu, k) for g in range(int(max_goals) + 1)]
 
-        best_a = 0
-        best_h = 0
+        best_a = int(away_mu)
+        best_h = int(home_mu)
         best_p = -1.0
+        
+        # Define common score weights - Toned down in Phase 46 to improve variety
+        common_weights = {
+            (3, 2): 1.08, (2, 3): 1.08, (4, 2): 1.06, (2, 4): 1.06,
+            (2, 1): 1.05, (1, 2): 1.05, (4, 3): 1.04, (3, 4): 1.04,
+            (3, 1): 1.03, (1, 3): 1.03, (5, 2): 1.02, (2, 5): 1.02
+        }
+
+        # Phase 39: Stochastic Series Projection (Stochastic Sampling)
+        # We collect all candidate scores and their probabilities, then sample
+        candidates = []
+        probs = []
+        
+        import hashlib
+        import random
+        # Seed the random number generator with the unique game_id
+        seed_source = f"{away_u}{home_u}{game_id or 'none'}{away_mu:.2f}{home_mu:.2f}"
+        rng_seed = int(hashlib.md5(seed_source.encode()).hexdigest(), 16) % (2**32)
+        random.seed(rng_seed)
+        
         for a in range(int(max_goals) + 1):
             pa = pmf_a[a]
             if pa <= 0.0:
@@ -2024,25 +2208,69 @@ class ScorePredictionModel:
             for h in range(int(max_goals) + 1):
                 ph = pmf_h[h]
                 p = pa * ph
-                if p > best_p:
-                    best_p = p
-                    best_a = a
-                    best_h = h
+                
+                # Apply Common Score Nudge
+                nudge = common_weights.get((a, h), 1.0)
+                p *= nudge
+                
+                # Winner Nudge (to align with Meta-Ensemble)
+                if desired == "away" and a > h:
+                    p *= 1.2 # Stronger nudge for sampling
+                elif desired == "home" and h > a:
+                    p *= 1.2
+                
+                candidates.append((a, h))
+                probs.append(p)
+        
+        # Normalize probabilities
+        total_p = sum(probs)
+        if total_p > 0:
+            probs = [p / total_p for p in probs]
+            
+            # Phase 39: Sample from the distribution
+            # We use a simple cumulative distribution function for sampling
+            r = random.random()
+            cum_p = 0
+            best_a, best_h = int(away_mu), int(home_mu)
+            for i, p in enumerate(probs):
+                cum_p += p
+                if r <= cum_p:
+                    best_a, best_h = candidates[i]
+                    break
+        else:
+            best_a, best_h = int(away_mu), int(home_mu)
 
-        a = int(best_a)
-        h = int(best_h)
+        final_a = int(best_a)
+        final_h = int(best_h)
 
-        # Convert regulation tie to OT/SO result (winner gets +1).
-        if a == h:
-            if desired == "away":
-                a = min(int(max_goals), a + 1)
-            elif desired == "home":
-                h = min(int(max_goals), h + 1)
+        # --- Phase 31 & 37: Playoff Margin Expansion & Seed-Driven EN ---
+        current_margin = abs(final_a - final_h)
+        expected_diff = abs(away_mu - home_mu)
+        
+        # Case 1: Empty Net Simulation (Significant Spread > 1.8)
+        if expected_diff > 1.8 and current_margin < 3:
+            if away_mu > home_mu: final_a = max(final_a, final_h + 3)
+            else: final_h = max(final_h, final_a + 3)
+            
+        # Case 2: Seed-Driven Variance for 1-goal games (20% chance)
+        # If it's a tight game (margin 1) and spread is >0.3, occasionally flip to 2-goal margin
+        elif current_margin == 1 and expected_diff > 0.3 and (random.random() < 0.2):
+            if away_mu > home_mu: final_a += 1
+            else: final_h += 1
+
+        # Case 3: Multi-Goal Separation (Moderate Spread > 1.0)
+        elif expected_diff > 1.0 and current_margin < 2:
+            if away_mu > home_mu: final_a = max(final_a, final_h + 2)
+            else: final_h = max(final_h, final_a + 2)
+
+        # Tie-breaker for close games
+        if final_a == final_h:
+            if desired == "away" or away_mu > home_mu:
+                final_a = min(int(max_goals), final_a + 1)
             else:
-                if away_mu >= home_mu:
-                    a = min(int(max_goals), a + 1)
-                else:
-                    h = min(int(max_goals), h + 1)
+                final_h = min(int(max_goals), final_h + 1)
+                
+        return int(final_a), int(final_h)
 
         # If a specific winner is requested but MAP disagrees, nudge minimally.
         if desired == "away" and a < h:

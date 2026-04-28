@@ -661,7 +661,7 @@ class DailyPredictionNotifier:
                         w2 = series_status_obj.get("bottomSeedWins", 0)
                         series_status_str = f"{leader} leads {w1}-{w2}"
 
-                    is_playoff = (game_info.get('gameType') == 3)
+                    is_playoff = game_info.get('gameType') == 3
                     
                     # Score model score + win prob
                     score_pred = score_model.predict_score(
@@ -679,7 +679,7 @@ class DailyPredictionNotifier:
                     )
                     away_score = score_pred['away_score']
                     home_score = score_pred['home_score']
-                    score_away_win_prob = score_pred.get('away_prob', 0.5)
+                    score_away_win_prob = score_pred.get('away_win_prob', 0.5)
 
                     # Mixture-of-experts winner (small improvement over score-only).
                     # w near 1.0 keeps mostly score-model, but lets meta win-prob

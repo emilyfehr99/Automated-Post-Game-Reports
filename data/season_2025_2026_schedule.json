@@ -56450,5 +56450,251 @@
     "condensedGame": "/video/pit-at-tbl-condensed-game-6386005775112",
     "condensedGameFr": "/fr/video/match-condense-penguins-lightning-04-12-2025-6386003989112",
     "gameCenterLink": "/gamecenter/pit-vs-tbl/2025/12/04/2025020428"
+  },
+  {
+    "id": 2025030124,
+    "gameDate": "2026-04-26",
+    "startTimeUTC": "2026-04-26T23:00:00Z",
+    "gameType": 3,
+    "awayTeam": {
+      "abbrev": "BUF"
+    },
+    "homeTeam": {
+      "abbrev": "BOS"
+    },
+    "gameState": "FUT",
+    "seriesStatus": {
+      "topSeedWins": 3,
+      "bottomSeedWins": 0,
+      "topSeedTeamAbbrev": "BOS"
+    }
+  },
+  {
+    "id": 2025030144,
+    "gameDate": "2026-04-26",
+    "startTimeUTC": "2026-04-26T23:30:00Z",
+    "gameType": 3,
+    "awayTeam": {
+      "abbrev": "TBL"
+    },
+    "homeTeam": {
+      "abbrev": "MTL"
+    },
+    "gameState": "FUT",
+    "seriesStatus": {
+      "topSeedWins": 2,
+      "bottomSeedWins": 1,
+      "topSeedTeamAbbrev": "TBL"
+    }
+  },
+  {
+    "id": 2025030164,
+    "gameDate": "2026-04-26",
+    "gameDate_actual": "2026-04-26",
+    "startTimeUTC": "2026-04-27T02:00:00Z",
+    "gameType": 3,
+    "awayTeam": {
+      "abbrev": "COL"
+    },
+    "homeTeam": {
+      "abbrev": "LAK"
+    },
+    "gameState": "FUT",
+    "seriesStatus": {
+      "topSeedWins": 3,
+      "bottomSeedWins": 0,
+      "topSeedTeamAbbrev": "COL"
+    }
+  },
+  {
+    "id": 2025030184,
+    "gameDate": "2026-04-26",
+    "gameDate_actual": "2026-04-26",
+    "startTimeUTC": "2026-04-27T02:30:00Z",
+    "gameType": 3,
+    "awayTeam": {
+      "abbrev": "EDM"
+    },
+    "homeTeam": {
+      "abbrev": "ANA"
+    },
+    "gameState": "FUT",
+    "seriesStatus": {
+      "topSeedWins": 2,
+      "bottomSeedWins": 1,
+      "topSeedTeamAbbrev": "EDM"
+    }
+  },
+  {
+    "id": 2025030115,
+    "gameDate": "2026-04-27",
+    "startTimeUTC": "2026-04-27T23:00:00Z",
+    "gameType": 3,
+    "awayTeam": {
+      "abbrev": "PHI"
+    },
+    "homeTeam": {
+      "abbrev": "PIT"
+    },
+    "gameState": "FUT",
+    "seriesStatus": {
+      "topSeedWins": 2,
+      "bottomSeedWins": 2,
+      "topSeedTeamAbbrev": "PIT"
+    }
+  },
+  {
+    "id": 2025030155,
+    "gameDate": "2026-04-27",
+    "startTimeUTC": "2026-04-28T02:00:00Z",
+    "gameType": 3,
+    "awayTeam": {
+      "abbrev": "VGK"
+    },
+    "homeTeam": {
+      "abbrev": "UTA"
+    },
+    "gameState": "FUT",
+    "seriesStatus": {
+      "topSeedWins": 3,
+      "bottomSeedWins": 1,
+      "topSeedTeamAbbrev": "VGK"
+    }
+  },
+  {
+    "id": 2025030111,
+    "gameDate": "2026-04-18",
+    "startTimeUTC": "2026-04-18T23:00:00Z",
+    "gameType": 3,
+    "awayTeam": {
+      "abbrev": "PHI"
+    },
+    "homeTeam": {
+      "abbrev": "PIT"
+    },
+    "gameState": "FINAL",
+    "score": {
+      "awayScore": 4,
+      "homeScore": 3
+    }
+  },
+  {
+    "id": 2025030112,
+    "gameDate": "2026-04-20",
+    "startTimeUTC": "2026-04-20T23:00:00Z",
+    "gameType": 3,
+    "awayTeam": {
+      "abbrev": "PHI"
+    },
+    "homeTeam": {
+      "abbrev": "PIT"
+    },
+    "gameState": "FINAL",
+    "score": {
+      "awayScore": 2,
+      "homeScore": 5
+    }
+  },
+  {
+    "id": 2025030113,
+    "gameDate": "2026-04-22",
+    "startTimeUTC": "2026-04-22T23:00:00Z",
+    "gameType": 3,
+    "awayTeam": {
+      "abbrev": "PIT"
+    },
+    "homeTeam": {
+      "abbrev": "PHI"
+    },
+    "gameState": "FINAL",
+    "score": {
+      "awayScore": 5,
+      "homeScore": 4
+    }
+  },
+  {
+    "id": 2025030114,
+    "gameDate": "2026-04-24",
+    "startTimeUTC": "2026-04-24T23:00:00Z",
+    "gameType": 3,
+    "awayTeam": {
+      "abbrev": "PIT"
+    },
+    "homeTeam": {
+      "abbrev": "PHI"
+    },
+    "gameState": "FINAL",
+    "score": {
+      "awayScore": 2,
+      "homeScore": 3
+    }
+  },
+  {
+    "id": 2025030151,
+    "gameDate": "2026-04-18",
+    "startTimeUTC": "2026-04-18T23:00:00Z",
+    "gameType": 3,
+    "awayTeam": {
+      "abbrev": "VGK"
+    },
+    "homeTeam": {
+      "abbrev": "UTA"
+    },
+    "gameState": "FINAL",
+    "score": {
+      "awayScore": 1,
+      "homeScore": 2
+    }
+  },
+  {
+    "id": 2025030152,
+    "gameDate": "2026-04-20",
+    "startTimeUTC": "2026-04-20T23:00:00Z",
+    "gameType": 3,
+    "awayTeam": {
+      "abbrev": "VGK"
+    },
+    "homeTeam": {
+      "abbrev": "UTA"
+    },
+    "gameState": "FINAL",
+    "score": {
+      "awayScore": 2,
+      "homeScore": 0
+    }
+  },
+  {
+    "id": 2025030153,
+    "gameDate": "2026-04-22",
+    "startTimeUTC": "2026-04-22T23:00:00Z",
+    "gameType": 3,
+    "awayTeam": {
+      "abbrev": "UTA"
+    },
+    "homeTeam": {
+      "abbrev": "VGK"
+    },
+    "gameState": "FINAL",
+    "score": {
+      "awayScore": 3,
+      "homeScore": 1
+    }
+  },
+  {
+    "id": 2025030154,
+    "gameDate": "2026-04-24",
+    "startTimeUTC": "2026-04-24T23:00:00Z",
+    "gameType": 3,
+    "awayTeam": {
+      "abbrev": "UTA"
+    },
+    "homeTeam": {
+      "abbrev": "VGK"
+    },
+    "gameState": "FINAL",
+    "score": {
+      "awayScore": 2,
+      "homeScore": 0
+    }
   }
 ]

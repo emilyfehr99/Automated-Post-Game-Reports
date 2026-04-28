@@ -823,7 +823,11 @@ class MetaEnsemblePredictor:
             'h_desperation': self.standings.calculate_desperation_index(home_team),
             'a_desperation': self.standings.calculate_desperation_index(away_team),
             
-            # Team Win Rates (Target Encoding Phase 8.1)
+            # Raw Components for Phase 11/12 Symbolic Features
+            'home_xg': h_l5.get('xg_avg', 2.5),
+            'away_xg': a_l5.get('xg_avg', 2.5),
+            'home_elo': home_elo + tracker.elo.ha,
+            'away_elo': away_elo,
             'home_win_rate': self.team_encodings.get('home_map', {}).get(home_team, self.team_encodings.get('home_prior', 0.5)),
             'away_win_rate': self.team_encodings.get('away_map', {}).get(away_team, self.team_encodings.get('away_prior', 0.5)),
 
@@ -838,24 +842,26 @@ class MetaEnsemblePredictor:
             'power_momentum': ((home_elo + self.history_tracker.elo.ha) - away_elo) * (h_l10.get('xg_diff', 0) - a_l10.get('xg_diff', 0))
         }
         
-        # Prune noisy features (Phase 9 Elite Pruning)
-        # RESTORED: 'home_win_rate', 'home_b2b', 'rest_diff', 'gsax_diff', 'away_b2b'
-        # These are high-signal in late season/playoff push.
-        prune_features = [
-            'home_venue_goal_diff', 'away_venue_goal_diff', 'l5_pizza_diff',
-            'l5_nzt_diff', 'l5_rush_diff', 'l5_pk_diff', 'l5_pp_diff', 
-            'l5_ozs_diff', 'l5_hdc_diff'
-        ]
-        for f in prune_features:
-            if f in feature_data:
-                del feature_data[f]
-        
-        # Ensure ordered columns match training
-        try:
-            vector = []
-            for name in self.feature_names:
-                vector.append(feature_data.get(name, 0.0))
+        # --- Helper for dynamic feature alignment ---
+        def _get_aligned_df(model):
+            if model is None: return None
+            
+            # Get feature names from model if possible
+            feats_to_use = self.feature_names
+            if hasattr(model, 'get_booster'):
+                feats_to_use = model.get_booster().feature_names
+            elif hasattr(model, 'feature_names_in_'):
+                feats_to_use = list(model.feature_names_in_)
+            elif hasattr(model, 'feature_names'):
+                feats_to_use = model.feature_names
+                
+            vec = []
+            for name in feats_to_use:
+                vec.append(feature_data.get(name, 0.0))
+            return pd.DataFrame([vec], columns=feats_to_use)
 
+        # Ensure ordered columns match training for MAIN model
+        try:
             # Strict anti-leakage / drift guard: feature list must match training snapshot exactly.
             if isinstance(self._feature_snapshot, dict) and self._feature_snapshot.get("sha256"):
                 joined = "\n".join([str(x) for x in self.feature_names]).encode("utf-8")
@@ -868,13 +874,13 @@ class MetaEnsemblePredictor:
                     )
                 
             # 4. Make Prediction
-            df = pd.DataFrame([vector], columns=self.feature_names)
+            df_main = _get_aligned_df(self.calibrated_model or self.xgb_model)
             
             # Prefer calibrated model for better probability accuracy
             if self.calibrated_model is not None:
-                prob = self.calibrated_model.predict_proba(df)[0][1] # Probability of home win
+                prob = self.calibrated_model.predict_proba(df_main)[0][1] # Probability of home win
             elif self.xgb_model is not None:
-                prob = self.xgb_model.predict_proba(df)[0][1] # Probability of home win
+                prob = self.xgb_model.predict_proba(df_main)[0][1] # Probability of home win
             else:
                 return None
 
@@ -906,10 +912,12 @@ class MetaEnsemblePredictor:
             home_prob = prob * 100
             
             # 5. Goal Margin Prediction (Phase 12)
+            # Use dynamic alignment to handle potentially different features in margin model
             predicted_margin = 0.0
             if self.margin_model is not None:
                 try:
-                    predicted_margin = float(self.margin_model.predict(df)[0])
+                    df_margin = _get_aligned_df(self.margin_model)
+                    predicted_margin = float(self.margin_model.predict(df_margin)[0])
                 except Exception as e:
                     print(f"Margin prediction error: {e}")
 
@@ -919,8 +927,11 @@ class MetaEnsemblePredictor:
             predicted_away_goals = None
             try:
                 if self.home_goals_model is not None and self.away_goals_model is not None:
-                    h = float(self.home_goals_model.predict(df)[0])
-                    a = float(self.away_goals_model.predict(df)[0])
+                    df_h = _get_aligned_df(self.home_goals_model)
+                    df_a = _get_aligned_df(self.away_goals_model)
+                    
+                    h = float(self.home_goals_model.predict(df_h)[0])
+                    a = float(self.away_goals_model.predict(df_a)[0])
                     # Clamp predicted means
                     h = float(max(0.05, min(12.0, h)))
                     a = float(max(0.05, min(12.0, a)))
@@ -956,7 +967,8 @@ class MetaEnsemblePredictor:
             if predicted_total is None:
                 try:
                     if self.total_goals_model is not None:
-                        predicted_total = float(self.total_goals_model.predict(df)[0])
+                        df_tg = _get_aligned_df(self.total_goals_model)
+                        predicted_total = float(self.total_goals_model.predict(df_tg)[0])
                 except Exception as e:
                     print(f"Total goals prediction error: {e}")
                     predicted_total = None
@@ -994,29 +1006,34 @@ class MetaEnsemblePredictor:
                 if predicted_total is not None and nb_size is not None:
                     mu_total = float(max(0.1, min(20.0, float(predicted_total))))
                     sz = float(nb_size)
-                    total_over_5_5 = float(prob_total_over(mu_total, sz, 5.5, max_k=15))
-                    total_over_6_5 = float(prob_total_over(mu_total, sz, 6.5, max_k=15))
+                    from scipy.stats import nbinom
+                    # P(X > k) = 1 - P(X <= k)
+                    # p = r / (r + mu)
+                    p_nb = sz / (sz + mu_total)
+                    total_over_5_5 = float(1.0 - nbinom.cdf(5, sz, p_nb))
+                    total_over_6_5 = float(1.0 - nbinom.cdf(6, sz, p_nb))
             except Exception:
-                total_over_5_5 = None
-                total_over_6_5 = None
+                pass
             
-            # 6. Meta-Confidence Tiers (Phase 10)
+            # 6. Meta-Confidence Estimation
             confidence_tier = "Standard"
             if self.confidence_model is not None:
                 try:
-                    is_correct = self.confidence_model.predict(df)[0]
+                    df_conf = _get_aligned_df(self.confidence_model)
+                    is_correct = self.confidence_model.predict(df_conf)[0]
                     if is_correct == 1 and max(away_prob, home_prob) > 55:
                         confidence_tier = "🔥 High Confidence"
                     elif is_correct == 0 or max(away_prob, home_prob) < 52:
                         confidence_tier = "⚠️ High Risk"
-                except:
-                    pass
+                except Exception as e:
+                    print(f"Confidence model error: {e}")
             
             # 7. Period 1 Outcome Model (Phase 17)
             p1_win_prob = 0.5
             if self.p1_model is not None:
                 try:
-                    p1_win_prob = self.p1_model.predict_proba(df)[0][1]
+                    df_p1 = _get_aligned_df(self.p1_model)
+                    p1_win_prob = self.p1_model.predict_proba(df_p1)[0][1]
                 except Exception as e:
                     print(f"P1 prediction error: {e}")
             
