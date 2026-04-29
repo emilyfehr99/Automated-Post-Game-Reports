@@ -274,6 +274,10 @@ class MetaEnsemblePredictor:
         self._feature_snapshot = None
         self._scoreline_calibration = None
         self._prob_calibration = None
+        self.margin_model = None
+        self.p1_model = None
+        self.confidence_model = None
+        self.total_goals_model = None
         self.team_profiles = {}
         self.travel_archetypes = {}
         self.edge_profiles = {}
@@ -368,60 +372,12 @@ class MetaEnsemblePredictor:
         self.calibrated_model = self.calibrated_model_reg or self.calibrated_model_ply
         self.feature_names = self.feature_names_reg or self.feature_names_ply
         self.xgb_model = getattr(self.calibrated_model, 'estimator', None) if self.calibrated_model else None
+        
+        # 3. Load Common Components (Shared across regimes)
+        self._load_common_calibrations()
 
-    def _load_regime_files(self, is_playoff=False):
-        """Helper to load model and features for a specific regime"""
-        try:
-            p = Path("model_performance.json")
-            champ = None
-            if p.exists():
-                with open(p, "r") as f:
-                    perf = json.load(f)
-                if is_playoff:
-                    champ = perf.get("playoff_champion") or "playoff"
-                else:
-                    champ = perf.get("champion")
-        except Exception:
-            champ = "playoff" if is_playoff else None
-
-        suffix = f"_{champ}" if champ else ""
-        
-        # 1. Calibrated Model
-        paths_to_try = [
-            Path(f"xgb_calibrated_model{suffix}.pkl"),
-            Path("xgb_calibrated_model_playoff.pkl") if is_playoff else Path("xgb_calibrated_model_recent.pkl"),
-            Path("xgb_calibrated_model.pkl")
-        ]
-        
-        model = None
-        for p in paths_to_try:
-            if p.exists():
-                try:
-                    with open(p, "rb") as f:
-                        model = pickle.load(f)
-                    print(f"✅ Loaded {'Playoff' if is_playoff else 'Regular'} model from {p}")
-                    break
-                except: continue
-        
-        # 2. Feature Names
-        feat_paths = [
-            Path(f"xgb_features{suffix}.pkl"),
-            Path("xgb_features_playoff.pkl") if is_playoff else Path("xgb_features_recent.pkl"),
-            Path("xgb_features.pkl")
-        ]
-        
-        features = []
-        for p in feat_paths:
-            if p.exists():
-                try:
-                    with open(p, "rb") as f:
-                        features = pickle.load(f)
-                    break
-                except: continue
-                
-        return model, features
-
-        # Feature snapshot (strict anti-leakage / drift validation)
+    def _load_common_calibrations(self):
+        """Load feature snapshots and calibration mappings that apply to both regimes"""
         try:
             snap_path = Path("model_feature_snapshot.json")
             if snap_path.exists():
@@ -438,15 +394,6 @@ class MetaEnsemblePredictor:
             if p.exists():
                 with open(p, "r") as f:
                     self._scoreline_calibration = json.load(f)
-        except Exception:
-            self._scoreline_calibration = None
-
-        # Probability calibration (post-hoc isotonic points)
-        try:
-            p = Path("xgb_prob_calibration.json")
-            if p.exists():
-                with open(p, "r") as f:
-                    self._prob_calibration = json.load(f)
         except Exception:
             self._prob_calibration = None
 
@@ -558,137 +505,71 @@ class MetaEnsemblePredictor:
                     top_bursts = sorted(metrics['bursts'], reverse=True)[:3]
                     self.edge_profiles[team] = {
                         'edge_top_speed': np.mean(top_speeds) if top_speeds else 21.0,
-                        'edge_burst_avg': np.mean(top_bursts) if top_bursts else 0.5
+                        'edge_bursts_per_mile': np.mean(top_bursts) if top_bursts else 1.5
                     }
-                print(f"✅ Loaded {len(self.edge_profiles)} team Edge profiles")
+                print(f"✅ Loaded Edge profiles for {len(self.edge_profiles)} teams")
+            else:
+                print("⚠️ data/nhl_edge_data.json not found for Edge features")
         except Exception as e:
-            print(f"⚠️ Could not load NHL Edge profiles: {e}")
+            print(f"⚠️ Error loading Edge data: {e}")
 
-        # 6. Load Team win rate encodings (Phase 8.1)
+        # 6. Load Team Encodings (Symbolic)
         try:
-            enc_path = Path(f"team_encodings{suffix}.json")
-            legacy_enc_path = Path("team_encodings.json")
-            if enc_path.exists():
-                with open(enc_path, "r") as f:
-                    self.team_encodings = json.load(f)
-                print(f"✅ Loaded Phase 8.1 Team Encodings")
-            elif legacy_enc_path.exists():
-                with open(legacy_enc_path, "r") as f:
-                    self.team_encodings = json.load(f)
-                print(f"✅ Loaded Phase 8.1 Team Encodings")
-        except Exception as e:
-            print(f"⚠️ Could not load team encodings: {e}")
+            with open('team_encodings.json', 'r') as f:
+                self.team_encodings = json.load(f)
+        except:
+            pass
 
-        # 4. Build Team History State
-        data_path = Path('data/win_probability_predictions_v2.json')
-        if not data_path.exists():
-            data_path = Path('win_probability_predictions_v2.json')
-            
-        if data_path.exists():
-            print("⏳ Rebuilding team history state...")
-            with open(data_path, 'r') as f:
-                data = json.load(f)
-            
-            raw_preds = data.get('predictions', [])
-            # Sort chronologically to replay history correctly
-            sorted_preds = sorted(raw_preds, key=lambda x: x.get('date', '1900-01-01'))
-            
-            count = 0
-            for p in sorted_preds:
-                date_str = p.get('date')
-                if not date_str:
-                    continue
+    def _load_regime_files(self, is_playoff=False):
+        """Helper to load model and features for a specific regime"""
+        try:
+            p = Path("model_performance.json")
+            champ = None
+            if p.exists():
+                with open(p, "r") as f:
+                    perf = json.load(f)
+                if is_playoff:
+                    champ = perf.get("playoff_champion") or "playoff"
+                else:
+                    champ = perf.get("champion")
+        except Exception:
+            champ = "playoff" if is_playoff else None
+
+        suffix = f"_{champ}" if champ else ""
+        
+        # 1. Calibrated Model
+        paths_to_try = [
+            Path(f"xgb_calibrated_model{suffix}.pkl"),
+            Path("xgb_calibrated_model_playoff.pkl") if is_playoff else Path("xgb_calibrated_model_recent.pkl"),
+            Path("xgb_calibrated_model.pkl")
+        ]
+        
+        model = None
+        for p in paths_to_try:
+            if p.exists():
                 try:
-                    game_date = datetime.strptime(date_str, "%Y-%m-%d")
-                except:
-                    continue
-                    
-                metrics = p.get('metrics_used', {})
-                home = p.get('home_team')
-                away = p.get('away_team')
-                
-                # Extract stats (logic matches train_xgboost_model.py)
-                h_goals = float(metrics.get('home_goals', 0) or p.get('actual_home_score', 0) or 0)
-                a_goals = float(metrics.get('away_goals', 0) or p.get('actual_away_score', 0) or 0)
-                h_xg = float(metrics.get('home_xg', h_goals) or h_goals)
-                a_xg = float(metrics.get('away_xg', a_goals) or a_goals)
-                
-                # Goalie Update
-                h_goalie = metrics.get('home_goalie') or p.get('home_goalie')
-                a_goalie = metrics.get('away_goalie') or p.get('away_goalie')
-                h_hdsv = float(metrics.get('home_hdsv_pct', 0.8) or metrics.get('home_hd_sv_pct', 0.8) or 0.8)
-                a_hdsv = float(metrics.get('away_hdsv_pct', 0.8) or metrics.get('away_hd_sv_pct', 0.8) or 0.8)
-                h_shots = float(metrics.get('home_shots', 30) or 30)
-                a_shots = float(metrics.get('away_shots', 30) or 30)
-                
-                if h_goalie: self.history_tracker.update_goalie(h_goalie, h_xg - h_goals, h_hdsv, h_shots)
-                if a_goalie: self.history_tracker.update_goalie(a_goalie, a_xg - a_goals, a_hdsv, a_shots)
-                
-                # Real PDO
-                h_pdo = ((h_goals / h_shots if h_shots > 0 else 0.1) + ((a_shots - a_goals) / a_shots if a_shots > 0 else 0.9)) * 100
-                a_pdo = ((a_goals / a_shots if a_shots > 0 else 0.1) + ((h_shots - h_goals) / h_shots if h_shots > 0 else 0.9)) * 100
-
-                h_corsi = float(metrics.get('home_corsi_pct', 50) or 50)
-                a_corsi = float(metrics.get('away_corsi_pct', 50) or 50)
-                h_pp = float(metrics.get('home_power_play_pct', 0) or 0)
-                a_pp = float(metrics.get('away_power_play_pct', 0) or 0)
-                
-                # PK Symmetery
-                h_pk = 100 - a_pp
-                a_pk = 100 - h_pp
-                
-                h_stats = {
-                    'goal_diff': h_goals - a_goals, 
-                    'xg_diff': h_xg - a_xg, 
-                    'corsi_pct': h_corsi, 
-                    'pdo': h_pdo, 
-                    'pp_pct': h_pp,
-                    'pk_pct': h_pk,
-                    'lateral': float(metrics.get('home_lateral', 5.0) or 5.0),
-                    # Phase 15
-                    'p1_xg': float(metrics.get('p1_xg_home', 0.8) or 0.8),
-                    'p2_xg': float(metrics.get('p2_xg_home', 0.8) or 0.8),
-                    'p3_xg': float(metrics.get('p3_xg_home', 0.8) or 0.8),
-                    'led_after_p1': 1 if metrics.get('lead_after_p1') == 1 else 0,
-                    'led_after_p2': 1 if metrics.get('lead_after_p2') == 1 else 0,
-                    'trailed_after_p2': 1 if metrics.get('lead_after_p2') == -1 else 0,
-                    'won_game': 1 if h_goals > a_goals else 0
-                }
-                a_stats = {
-                    'goal_diff': a_goals - h_goals, 
-                    'xg_diff': a_xg - h_xg, 
-                    'corsi_pct': a_corsi, 
-                    'pdo': a_pdo, 
-                    'pp_pct': a_pp,
-                    'pk_pct': a_pk,
-                    'rush': float(metrics.get('away_rush', 2) or 2),
-                    'nzt': float(metrics.get('away_nzt', 5) or 5),
-                    'ozs': float(metrics.get('away_ozs', 10) or 10),
-                    'hdc': float(metrics.get('away_hdc', 5) or 5),
-                    'pizzas': float(metrics.get('away_hd_giveaways', 2) or 2),
-                    # Phase 13
-                    'royal_road': float(metrics.get('away_royal_road', 1) or 1),
-                    'pressure': float(metrics.get('away_pressure', 2) or 2),
-                    'rebounds': float(metrics.get('away_rebounds', 1) or 1),
-                    'lateral': float(metrics.get('away_lateral', 5.0) or 5.0),
-                    # Phase 15
-                    'p1_xg': float(metrics.get('p1_xg_away', 0.8) or 0.8),
-                    'p2_xg': float(metrics.get('p2_xg_away', 0.8) or 0.8),
-                    'p3_xg': float(metrics.get('p3_xg_away', 0.8) or 0.8),
-                    'led_after_p1': 1 if metrics.get('lead_after_p1') == -1 else 0,
-                    'led_after_p2': 1 if metrics.get('lead_after_p2') == -1 else 0,
-                    'trailed_after_p2': 1 if metrics.get('lead_after_p1') == 1 else 0,
-                    'won_game': 1 if a_goals > h_goals else 0
-                }
-                
-                curr_h_elo = self.history_tracker.get_elo(home)
-                curr_a_elo = self.history_tracker.get_elo(away)
-                
-                self.history_tracker.elo.update(home, away, h_goals, a_goals)
-                self.history_tracker.update(home, game_date, h_stats, venue='home', opponent_elo=curr_a_elo, city=home)
-                self.history_tracker.update(away, game_date, a_stats, venue='away', opponent_elo=curr_h_elo, city=home)
-                count += 1
-            print(f"✅ Replayed {count} games to build current state")
+                    with open(p, "rb") as f:
+                        model = pickle.load(f)
+                    print(f"✅ Loaded {'Playoff' if is_playoff else 'Regular'} model from {p}")
+                    break
+                except: continue
+        
+        # 2. Feature Names
+        feat_paths = [
+            Path(f"xgb_features{suffix}.pkl"),
+            Path("xgb_features_playoff.pkl") if is_playoff else Path("xgb_features_recent.pkl"),
+            Path("xgb_features.pkl")
+        ]
+        
+        features = []
+        for p in feat_paths:
+            if p.exists():
+                try:
+                    with open(p, "rb") as f:
+                        features = pickle.load(f)
+                    break
+                except: continue
+        return model, features
 
     def _predict_xgboost(self, away_team, home_team, game_date_str=None, away_goalie=None, home_goalie=None, is_playoff=False, series_status=None) -> Optional[Dict]:
         """Make prediction using XGBoost model with dynamic features"""

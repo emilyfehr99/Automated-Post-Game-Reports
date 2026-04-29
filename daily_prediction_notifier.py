@@ -507,16 +507,16 @@ class DailyPredictionNotifier:
                 'odds_taken': pred.get('odds_taken', 0)
             }
             try:
-                append_prediction_event(
-                    date=pred.get("date", datetime.now().strftime("%Y-%m-%d")),
-                    game_id=g_id,
-                    home_team=pred["home_team"],
-                    away_team=pred["away_team"],
-                    predicted_home_win_prob=home_p * 100.0,
-                    predicted_away_win_prob=away_p * 100.0,
-                    model_confidence=pred.get("confidence", 0.0) / 100.0,
-                    metrics_used={"home_xg": 0, "away_xg": 0},
-                    extra_metadata={
+                event_data = {
+                    "date": pred.get("date", datetime.now().strftime("%Y-%m-%d")),
+                    "game_id": g_id,
+                    "home_team": pred["home_team"],
+                    "away_team": pred["away_team"],
+                    "predicted_home_win_prob": home_p * 100.0,
+                    "predicted_away_win_prob": away_p * 100.0,
+                    "model_confidence": pred.get("confidence", 0.0) / 100.0,
+                    "metrics_used": {"home_xg": 0, "away_xg": 0},
+                    "extra_metadata": {
                         "predicted_home_goals": pred.get("home_score"),
                         "predicted_away_goals": pred.get("away_score"),
                         "ensemble_mode": pred.get("ensemble_mode"),
@@ -524,7 +524,8 @@ class DailyPredictionNotifier:
                         "attribution": pred.get("attribution", []),
                         "is_playoff": pred.get("is_playoff", False)
                     }
-                )
+                }
+                append_prediction_event(event_data)
                 new_count += 1
             except Exception as e:
                 print(f"⚠️  Failed to log prediction event for {pred['away_team']}@{pred['home_team']}: {e}")
