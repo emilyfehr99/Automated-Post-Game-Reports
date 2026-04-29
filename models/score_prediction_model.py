@@ -1813,6 +1813,62 @@ class ScorePredictionModel:
                 attribution.append(f"{home} PP Passing Efficiency (+0.15)")
                 home_expected += 0.15
         
+        # ─── 22. Phase 48: Tactical Synergy (Mismatches) ───
+        # Identify specific tactical matchups that the base xG might miss.
+        
+        # A. D-Zone Giveaways vs Forecheck Pressure
+        # Teams with high turnovers (ANA, CHI) struggle against heavy forecheck (CAR, FLA, TOR, VGK)
+        away_giveaways = self._get_team_metric(away, 'dzone_giveaways', 'away')
+        home_giveaways = self._get_team_metric(home, 'dzone_giveaways', 'home')
+        
+        # Heuristic list of elite forecheck teams for 2026
+        high_pressure_teams = ['CAR', 'FLA', 'TOR', 'VGK', 'COL', 'TBL']
+        
+        if away in high_pressure_teams and home_giveaways > 450: # Threshold based on ANA head data
+             attribution.append(f"{away} Forecheck Advantage vs {home} Turnovers (+0.12)")
+             away_expected += 0.12
+        if home in high_pressure_teams and away_giveaways > 450:
+             attribution.append(f"{home} Forecheck Advantage vs {away} Turnovers (+0.12)")
+             home_expected += 0.12
+             
+        # B. Extended Buildup vs Low Blocks
+        # Cycling teams thrive when they aren't getting shots blocked.
+        away_buildup = self._get_team_metric(away, 'extended_buildup_shots', 'away')
+        home_buildup = self._get_team_metric(home, 'extended_buildup_shots', 'home')
+        away_blocks = self._get_team_metric(away, 'total_blocks', 'away')
+        home_blocks = self._get_team_metric(home, 'total_blocks', 'home')
+        
+        if away_buildup > 1500 and home_blocks < 1000:
+            attribution.append(f"{away} Cycle Dominance vs Low Block Volume (+0.08)")
+            away_expected += 0.08
+        if home_buildup > 1500 and away_blocks < 1000:
+            attribution.append(f"{home} Cycle Dominance vs Low Block Volume (+0.08)")
+            home_expected += 0.08
+
+        # ─── 23. Phase 48: Series Friction (Scoring Decay) ───
+        # As teams get familiar in a series, scoring tends to tighten.
+        if is_playoff and series_status:
+            try:
+                import re
+                m = re.search(r'leads (\d)-(\d)', str(series_status))
+                if m:
+                    total_games = int(m.group(1)) + int(m.group(2))
+                    # Game 1-2: 1.0 (no change)
+                    # Game 3-4: 0.98
+                    # Game 5-6: 0.96
+                    # Game 7: 0.92
+                    friction = 1.0
+                    if total_games >= 6: friction = 0.92
+                    elif total_games >= 4: friction = 0.96
+                    elif total_games >= 2: friction = 0.98
+                    
+                    if friction < 1.0:
+                        attribution.append(f"Series Friction (Game {total_games+1}) ({friction:.2f}x goals)")
+                        away_expected *= friction
+                        home_expected *= friction
+            except Exception:
+                pass
+
         # ─── 21. Phase 46: Tactical Convergence & Clipping ───
         # Ensure that multiple tactical bonuses don't create unrealistic xG inflation
         # We clip the total tactical impact to a realistic "Playoff Intensity Ceiling"

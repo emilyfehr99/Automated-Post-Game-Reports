@@ -318,7 +318,7 @@ class MetaEnsemblePredictor:
         self._shrink_alpha = 1.0
         
         # Stacking Parameters
-        self._stacking_temp = 0.12 # Sensitivity for softmax
+        self._stacking_temp = 0.12 # Sensitivity for softmax (Adaptive default)
         self._core_budget = 0.60 # Combined weight for primary predictors
         
         try:
@@ -336,6 +336,12 @@ class MetaEnsemblePredictor:
             e_ll = perf.get("elo_recent_logloss") or perf.get("elo_mean_logloss")
             
             if x_ll is not None and e_ll is not None:
+                # Adaptive Temperature: Trust the winner more if the gap is clear.
+                # If gap is small (e.g. 0.01), T increases to 0.18 (more blending).
+                # If gap is large (e.g. 0.10), T decreases to 0.08 (trust the leader).
+                gap = abs(float(x_ll) - float(e_ll))
+                self._stacking_temp = float(max(0.08, min(0.25, 0.20 - (gap * 1.2))))
+                
                 # Weighted blending based on negative logloss
                 w_xgb_raw = math.exp(-float(x_ll) / self._stacking_temp)
                 w_elo_raw = math.exp(-float(e_ll) / self._stacking_temp)
