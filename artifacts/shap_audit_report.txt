@@ -1,0 +1,62 @@
+SHAP AUDIT REPORT
+=================
+               Feature  Mean |SHAP|
+home_win_rate_away_sos     0.683041
+         away_win_rate     0.421114
+       edge_burst_diff     0.105247
+           l5_pdo_diff     0.083939
+         xg_efficiency     0.051360
+           l5_std_diff     0.047614
+              home_elo     0.045051
+        elo_rest_inter     0.040725
+          season_month     0.040705
+              home_sos     0.036326
+              away_sos     0.035611
+              away_elo     0.030451
+             p1_target     0.029705
+       h_comeback_rate     0.026973
+           l10_xg_diff     0.025292
+         l5_corsi_diff     0.024103
+away_b2b_home_strength     0.015368
+           finish_diff     0.012973
+        is_late_season     0.012648
+          l5_goal_diff     0.011177
+    speed_finish_inter     0.010281
+       l5_lateral_diff     0.008166
+       edge_speed_diff     0.007951
+         a_desperation     0.006479
+        power_momentum     0.003778
+         l10_goal_diff     0.003278
+             l5_st_net     0.002866
+              elo_diff     0.002775
+            l5_xg_diff     0.002223
+   l5_rush_sv_pct_diff     0.000000
+               away_xg     0.000000
+        pressure_index     0.000000
+    l5_royal_road_diff     0.000000
+      l5_pressure_diff     0.000000
+       l5_rebound_diff     0.000000
+            p1_xg_diff     0.000000
+            p2_xg_diff     0.000000
+               home_xg     0.000000
+         h_desperation     0.000000
+            p3_xg_diff     0.000000
+       p1_p2_dominance     0.000000
+   h_preservation_rate     0.000000
+   a_preservation_rate     0.000000
+       a_comeback_rate     0.000000
+l5_nzt_possession_diff     0.000000
+      l5_ca_shots_diff     0.000000
+
+CALIBRATION:
+        decile  mean_pred  observed_win_rate  count
+(0.141, 0.175]   0.164046           0.545455     22
+(0.175, 0.184]   0.180030           0.571429     21
+(0.184, 0.201]   0.193306           0.409091     22
+(0.201, 0.213]   0.207992           0.476190     21
+(0.213, 0.227]   0.219161           0.545455     22
+(0.227, 0.247]   0.235731           0.523810     21
+(0.247, 0.263]   0.255871           0.428571     21
+(0.263, 0.287]   0.275160           0.454545     22
+(0.287, 0.335]   0.306875           0.523810     21
+(0.335, 0.455]   0.402354           0.681818     22

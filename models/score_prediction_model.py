@@ -1229,7 +1229,7 @@ class ScorePredictionModel:
             return np.mean(values)
         return sum(v * w for v, w in zip(values, weights)) / total_w
 
-    def _calculate_team_workload_fatigue(self, team: str, games_7d: int, travel_miles: float, rest_days: int) -> float:
+    def _calculate_team_workload_fatigue(self, team: str, games_7d: int, travel_miles: float, rest_days: int, goalie_shots_30d: float = 0, opponent_team: str = None) -> float:
         """
         Phase 47: Team Workload Index (TWI)
         Models fatigue as a function of volume, travel, and rest.
@@ -1246,23 +1246,39 @@ class ScorePredictionModel:
         # 1 day rest is standard; 2+ days is recovery; 0 days (B2B) is penalty.
         rest_factor = -0.35 if rest_days == 0 else (0.15 if rest_days >= 3 else 0.0)
         
-        twi = vol_factor + travel_factor - rest_factor
+        # 4. Goalie Shot Pressure (Phase 48)
+        # Prioritize goalie-specific physical exertion.
+        # SPF threshold: ~350 shots in 30 days indicates a heavily used starter.
+        spf = max(0.0, (goalie_shots_30d - 350.0) / 100.0) * 0.12
+        
+        twi = vol_factor + travel_factor - rest_factor + spf
         
         # TWI Threshold: 1.5 is standard heavy workload.
         # Above 1.5, start applying a progressive penalty.
         if twi > 1.5:
-            # Multiplicative penalty: 2% reduction per 0.5 TWI above 1.5
+            # Multiplicative penalty: ~4% reduction per 1.0 TWI above 1.5
             penalty = (twi - 1.5) * 0.04
             
-            # Fatigue Resistance: Elite teams handle workload better
+            # Phase 47b: Elite Resistance Discount
+            # 1. Depth Discount: Elite teams handle workload better (Self ELO)
             team_elo = self._get_team_elo(team)
-            if team_elo > 1550:
-                penalty *= 0.5 # 50% reduction in fatigue impact for elite teams
+            depth_discount = min(0.40, max(0.0, (team_elo - 1500.0) / 250.0))
             
-            # Cap at 10% reduction
+            # 2. Matchup Intensity: Reduce penalty when playing top teams (Opponent ELO)
+            intensity_discount = 0.0
+            if opponent_team:
+                opp_elo = self._get_team_elo(opponent_team)
+                if opp_elo > 1550:
+                    intensity_discount = min(0.50, (opp_elo - 1550.0) / 100.0)
+            
+            # Combine discounts (multiplicative)
+            penalty *= (1.0 - depth_discount)
+            penalty *= (1.0 - intensity_discount)
+            
+            # Cap at 10% reduction (extreme exhaustion)
             multiplier = max(0.90, 1.0 - penalty)
             return multiplier
-            
+        
         return 1.0
 
     def _get_team_elo(self, team: str) -> float:
@@ -1475,7 +1491,7 @@ class ScorePredictionModel:
                      is_playoff: bool = False,
                      series_status: str = None,
                      away_missing_star: bool = False,
-                     home_missing_star: bool = False,
+                     home_missing_star: bool = False, away_goalie_shots_30d: float = 0, home_goalie_shots_30d: float = 0,
                      game_id: Optional[int] = None) -> Dict:
         """
         Predict realistic game score.
@@ -1583,8 +1599,8 @@ class ScorePredictionModel:
         a_g7 = max(away_games_7d, (3 if away_3_in_4 else 1))
         h_g7 = max(home_games_7d, (3 if home_3_in_4 else 1))
         
-        away_twi_mult = self._calculate_team_workload_fatigue(away, a_g7, away_travel_miles, a_rest)
-        home_twi_mult = self._calculate_team_workload_fatigue(home, h_g7, home_travel_miles, h_rest)
+        away_twi_mult = self._calculate_team_workload_fatigue(away, a_g7, away_travel_miles, a_rest, away_goalie_shots_30d, opponent_team=home)
+        home_twi_mult = self._calculate_team_workload_fatigue(home, h_g7, home_travel_miles, h_rest, home_goalie_shots_30d, opponent_team=away)
         
         if away_twi_mult < 1.0:
             attribution.append(f"{away} Workload Fatigue (TWI={1.0 - away_twi_mult:+.2f})")

@@ -734,6 +734,8 @@ class DailyPredictionNotifier:
                         home_rest_days=int(pred.get('home_rest_value', 2)),
                         is_playoff=is_playoff,
                         series_status=series_status_str,
+                        away_goalie_shots_30d=pred.get('away_goalie_shots_30d', 0),
+                        home_goalie_shots_30d=pred.get('home_goalie_shots_30d', 0),
                         game_id=game_info.get('id')
                     )
                     away_score = score_pred['away_score']

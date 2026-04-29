@@ -1002,6 +1002,8 @@ class MetaEnsemblePredictor:
                 'home_games_7d': home_games_7d,
                 'away_travel_miles': away_travel,
                 'home_travel_miles': home_travel,
+                'away_goalie_shots_30d': float(away_shots_30d),
+                'home_goalie_shots_30d': float(home_shots_30d),
                 'prediction_type': 'xgboost_ml'
             }
         except Exception as e:
@@ -1255,7 +1257,23 @@ class MetaEnsemblePredictor:
             'is_plus_ev_home': edge_home > 5.0,
             'suggested_units': suggested_units,
             'p1_home_prob': xgb_p1_prob,
-            'contexts_used': xgb_pred.get('contexts_used', []) if xgb_pred else []
+            'contexts_used': xgb_pred.get('contexts_used', []) if xgb_pred else [],
+            # Fatigue and Goalie metrics for downstream consumers
+            'away_back_to_back': xgb_pred.get('away_back_to_back', 0) if xgb_pred else 0,
+            'home_back_to_back': xgb_pred.get('home_back_to_back', 0) if xgb_pred else 0,
+            'away_rest_value': xgb_pred.get('away_rest_value', 2.0) if xgb_pred else 2.0,
+            'home_rest_value': xgb_pred.get('home_rest_value', 2.0) if xgb_pred else 2.0,
+            'away_3_in_4': xgb_pred.get('away_3_in_4', False) if xgb_pred else False,
+            'home_3_in_4': xgb_pred.get('home_3_in_4', False) if xgb_pred else False,
+            'away_games_7d': xgb_pred.get('away_games_7d', 1) if xgb_pred else 1,
+            'home_games_7d': xgb_pred.get('home_games_7d', 1) if xgb_pred else 1,
+            'away_travel_miles': xgb_pred.get('away_travel_miles', 0.0) if xgb_pred else 0.0,
+            'home_travel_miles': xgb_pred.get('home_travel_miles', 0.0) if xgb_pred else 0.0,
+            'away_goalie_shots_30d': xgb_pred.get('away_goalie_shots_30d', 0.0) if xgb_pred else 0.0,
+            'home_goalie_shots_30d': xgb_pred.get('home_goalie_shots_30d', 0.0) if xgb_pred else 0.0,
+            'predicted_home_goals': xgb_pred.get('predicted_home_goals') if xgb_pred else None,
+            'predicted_away_goals': xgb_pred.get('predicted_away_goals') if xgb_pred else None,
+            'predicted_total_goals': xgb_pred.get('predicted_total_goals') if xgb_pred else None,
         }
     
     def _calculate_legacy_injury_impact(self, away_injuries: list, home_injuries: list) -> float:
