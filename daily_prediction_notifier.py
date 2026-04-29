@@ -805,8 +805,11 @@ class DailyPredictionNotifier:
                     except Exception:
                         pass
 
-                    # Force displayed scoreline to match blended winner.
-                    max_goals = 10
+                    # Force displayed scoreline to match blended winner, but clamp to realistic hockey scores.
+                    max_goals = 6
+                    away_score = int(max(0, min(max_goals, away_score)))
+                    home_score = int(max(0, min(max_goals, home_score)))
+                    
                     if blended_winner == game['away_team']:
                         if away_score <= home_score:
                             away_score = min(max_goals, home_score + 1)

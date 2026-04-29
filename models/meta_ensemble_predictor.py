@@ -739,8 +739,14 @@ class MetaEnsemblePredictor:
         h_finish = self.team_profiles.get(home_team, 1.0)
         a_finish = self.team_profiles.get(away_team, 1.0)
         
+        # Phase 48: Playoff Weight Decay
+        # Reduce momentum bias (xg_10d/20d) by 20% if in playoff mode
+        momentum_scalar = 0.8 if is_playoff else 1.0
+        regime_flag = 1.0 if is_playoff else 0.0
+        
         # Build Feature Vector (Optimized for 59.0% Accuracy Set)
         feature_data = {
+            'regime_intensity': regime_flag,
             'elo_diff': (home_elo + tracker.elo.ha) - away_elo,
             
             # Contextual Features
@@ -758,7 +764,6 @@ class MetaEnsemblePredictor:
             
             # Rolling General (EWMA)
             'l5_goal_diff': h_l5.get('goal_diff', 0) - a_l5.get('goal_diff', 0),
-            'l5_xg_diff': h_l5.get('xg_diff', 0) - a_l5.get('xg_diff', 0),
             'l5_corsi_diff': h_l5.get('corsi_pct', 50) - a_l5.get('corsi_pct', 50),
             'l5_pdo_diff': h_l5.get('pdo', 100) - a_l5.get('pdo', 100),
             
@@ -824,7 +829,6 @@ class MetaEnsemblePredictor:
             'l5_std_diff': tracker.get_rolling_std(home_team, 5) - tracker.get_rolling_std(away_team, 5),
             
             'l10_goal_diff': h_l10.get('goal_diff', 0) - a_l10.get('goal_diff', 0),
-            'l10_xg_diff': h_l10.get('xg_diff', 0) - a_l10.get('xg_diff', 0),
             
             # Interaction Features (Phase 8 Advanced DS)
             'elo_rest_inter': ((home_elo + self.history_tracker.elo.ha) - away_elo) * (home_rest - away_rest),
@@ -921,6 +925,17 @@ class MetaEnsemblePredictor:
                                 prob = float(y0 + t * (y1 - y0))
                                 break
                     prob = float(max(1e-6, min(1.0 - 1e-6, prob)))
+                    
+                    # Platt scaling post-isotonic for 0.7-0.8 decile
+                    if 0.7 <= prob <= 0.8:
+                        import numpy as np
+                        # Logistic calibration: f(x) = 1 / (1 + exp(-A*(x - B) + C))
+                        prob = 1.0 / (1.0 + np.exp(-1.5 * (prob - 0.75) + 0.5)) 
+                        
+                    # Monitor via events
+                    with open("events.jsonl", "a") as f:
+                        f.write(json.dumps({"event": "calibrated_prob", "prob": prob, "is_playoff": is_playoff, "date": date_str}) + "\n")
+
             except Exception:
                 pass
             
@@ -995,8 +1010,8 @@ class MetaEnsemblePredictor:
                     a = (predicted_total - float(predicted_margin)) / 2.0
                     h = float(max(0.0, h))
                     a = float(max(0.0, a))
-                    predicted_home_goals = int(round(h))
-                    predicted_away_goals = int(round(a))
+                    predicted_home_goals = int(max(0, min(6, round(h))))
+                    predicted_away_goals = int(max(0, min(6, round(a))))
 
             # Ensure no ties in displayed final: break ties toward predicted winner.
             if predicted_home_goals is not None and predicted_away_goals is not None:
@@ -1067,10 +1082,6 @@ class MetaEnsemblePredictor:
             
             a_spf = max(1.0, (away_shots_30d / avg_league_shots)) if away_shots_30d > 0 else 1.0
             h_spf = max(1.0, (home_shots_30d / avg_league_shots)) if home_shots_30d > 0 else 1.0
-
-            # Phase 48: Playoff Weight Decay
-            # Reduce momentum bias (xg_10d/20d) by 20% if in playoff mode
-            momentum_scalar = 0.8 if is_playoff else 1.0
 
             return {
                 'away_team': away_team,
