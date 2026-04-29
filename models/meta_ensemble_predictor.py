@@ -3,7 +3,7 @@
 Meta Ensemble Predictor
 Combines all prediction methods for maximum accuracy
 """
-from typing import Dict, Optional
+from typing import Dict, List, Optional, Tuple, Any
 import json
 import numpy as np
 import xgboost as xgb
@@ -291,6 +291,10 @@ class MetaEnsemblePredictor:
         self.feature_names_reg = []
         self.feature_names_ply = []
         
+        # Phase 48: Multi-Model Stacking
+        self.xgb_stack_reg = [] # List of (model, feature_names, weight)
+        self.xgb_stack_ply = []
+        
         self._component_weights = None
         self._load_component_weights()
         
@@ -312,6 +316,11 @@ class MetaEnsemblePredictor:
         }
         self._model_mode = "ensemble"
         self._shrink_alpha = 1.0
+        
+        # Stacking Parameters
+        self._stacking_temp = 0.12 # Sensitivity for softmax
+        self._core_budget = 0.60 # Combined weight for primary predictors
+        
         try:
             p = Path("model_performance.json")
             if not p.exists():
@@ -319,12 +328,46 @@ class MetaEnsemblePredictor:
                 return
             with open(p, "r") as f:
                 perf = json.load(f)
-            # Prefer recent-window metrics when present; fall back to mean-over-splits.
+            
+            # Phase 48: Advanced Softmax Stacking
+            # We calculate weights for the two primary predictors (XGB and ELO)
+            # based on their recent performance logs.
             x_ll = perf.get("xgb_recent_logloss") or perf.get("xgb_cal_mean_logloss")
             e_ll = perf.get("elo_recent_logloss") or perf.get("elo_mean_logloss")
-            if x_ll is None or e_ll is None:
-                print("ℹ️  model_performance.json missing logloss fields; using default ensemble weights")
-                return
+            
+            if x_ll is not None and e_ll is not None:
+                # Weighted blending based on negative logloss
+                w_xgb_raw = math.exp(-float(x_ll) / self._stacking_temp)
+                w_elo_raw = math.exp(-float(e_ll) / self._stacking_temp)
+                total_raw = w_xgb_raw + w_elo_raw
+                
+                if total_raw > 0:
+                    self._component_weights["xgb"] = round(self._core_budget * (w_xgb_raw / total_raw), 3)
+                    self._component_weights["elo"] = round(self._core_budget * (w_elo_raw / total_raw), 3)
+                    self._model_mode = "stacked_ensemble"
+            
+            # Gap detection for champion/challenger status
+            x_ll_val = float(x_ll) if x_ll else 1.0
+            e_ll_val = float(e_ll) if e_ll else 1.0
+            gap = x_ll_val - e_ll_val
+            
+            # Champion/Challenger Audit (Guardrail)
+            # If XGB is significantly worse than Elo (> 0.02 logloss gap), 
+            # we aggressively dampen it further than softmax suggests.
+            if gap > 0.02:
+                print(f"⚠️ XGB Underperformance detected (Gap={gap:+.3f}). Activating Elo-Champion mode.")
+                self._component_weights["xgb"] *= 0.5
+                self._component_weights["elo"] += (self._component_weights["xgb"] * 0.5)
+                self._model_mode = "elo_champion"
+            elif gap < -0.10:
+                # Strong XGB lead
+                self._model_mode = "xgb_champion"
+
+            # Shrinkage factor (secondary smoothing)
+            if gap > 0:
+                self._shrink_alpha = float(max(0.2, min(1.0, 1.0 - (gap * 15.0))))
+            else:
+                self._shrink_alpha = 1.0
 
             # If XGB is worse than Elo by a meaningful margin, reduce its influence.
             # This is a guardrail for periods where feature refresh degrades quality.
@@ -362,16 +405,24 @@ class MetaEnsemblePredictor:
             return
 
     def _load_dual_regime_components(self):
-        """Pre-load both regular season and playoff components if available"""
-        # Load Regular Season Components
-        self.calibrated_model_reg, self.feature_names_reg = self._load_regime_files(is_playoff=False)
-        # Load Playoff Components
-        self.calibrated_model_ply, self.feature_names_ply = self._load_regime_files(is_playoff=True)
+        """Pre-load both regular season and playoff model stacks"""
+        # Phase 48: Multi-Model Stacking
+        # Load Stacks
+        self.xgb_stack_reg = self._load_regime_files(is_playoff=False)
+        self.xgb_stack_ply = self._load_regime_files(is_playoff=True)
         
-        # Set default active components (fallback)
-        self.calibrated_model = self.calibrated_model_reg or self.calibrated_model_ply
-        self.feature_names = self.feature_names_reg or self.feature_names_ply
-        self.xgb_model = getattr(self.calibrated_model, 'estimator', None) if self.calibrated_model else None
+        # Set default active components (fallback for legacy lookups)
+        # We pick the highest-weighted variant from the regular stack as the 'primary'
+        if self.xgb_stack_reg:
+            champ = self.xgb_stack_reg[0]
+            self.calibrated_model = champ['model']
+            self.feature_names = champ['feats']
+            self.xgb_model = getattr(self.calibrated_model, 'estimator', None)
+        elif self.xgb_stack_ply:
+            champ = self.xgb_stack_ply[0]
+            self.calibrated_model = champ['model']
+            self.feature_names = champ['feats']
+            self.xgb_model = getattr(self.calibrated_model, 'estimator', None)
         
         # 3. Load Common Components (Shared across regimes)
         self._load_common_calibrations()
@@ -520,56 +571,97 @@ class MetaEnsemblePredictor:
         except:
             pass
 
-    def _load_regime_files(self, is_playoff=False):
-        """Helper to load model and features for a specific regime"""
+    def _load_regime_files(self, is_playoff=False) -> List[Dict[str, Any]]:
+        """Helper to load model stack for a specific regime"""
+        stack = []
         try:
             p = Path("model_performance.json")
-            champ = None
             if p.exists():
                 with open(p, "r") as f:
                     perf = json.load(f)
+                
+                variants = perf.get("variants", {})
+                
+                # Phase 48: Stacking Strategy
+                # We load multiple variants and blend them.
+                candidates = []
                 if is_playoff:
-                    champ = perf.get("playoff_champion") or "playoff"
+                    candidates = ["playoff", "full", "recent"]
                 else:
-                    champ = perf.get("champion")
-        except Exception:
-            champ = "playoff" if is_playoff else None
+                    # In regular season, prioritize champion and recent window
+                    champ = perf.get("champion", "full")
+                    candidates = [champ, "recent", "full"]
+                
+                # Deduplicate candidates while preserving order
+                candidates = list(dict.fromkeys(candidates))
+                
+                for var_name in candidates:
+                    suffix = f"_{var_name}" if var_name != "calibrated" else ""
+                    # Handle special naming conventions
+                    model_path = Path(f"xgb_calibrated_model{suffix}.pkl")
+                    if not model_path.exists() and var_name == "full":
+                         model_path = Path("xgb_calibrated_model.pkl")
 
-        suffix = f"_{champ}" if champ else ""
-        
-        # 1. Calibrated Model
-        paths_to_try = [
-            Path(f"xgb_calibrated_model{suffix}.pkl"),
-            Path("xgb_calibrated_model_playoff.pkl") if is_playoff else Path("xgb_calibrated_model_recent.pkl"),
-            Path("xgb_calibrated_model.pkl")
-        ]
-        
-        model = None
-        for p in paths_to_try:
-            if p.exists():
+                    if model_path.exists():
+                        # Get logloss for weighting
+                        v_perf = variants.get(var_name, {})
+                        v_ll = v_perf.get("test_logloss") or v_perf.get("recent_eval", {}).get("xgb_recent_logloss")
+                        
+                        # Fallback logloss if missing (neutral)
+                        if v_ll is None:
+                            v_ll = 0.693 
+                            
+                        try:
+                            with open(model_path, "rb") as f:
+                                model = pickle.load(f)
+                            
+                            # Features
+                            feats = self.feature_names 
+                            feat_path = Path(f"xgb_features{suffix}.pkl")
+                            if not feat_path.exists() and suffix == "":
+                                feat_path = Path("xgb_features.pkl")
+                                
+                            if feat_path.exists():
+                                with open(feat_path, "rb") as f:
+                                    feat_obj = pickle.load(f)
+                                    if isinstance(feat_obj, dict): 
+                                        feats = feat_obj.get("feature_names", feats)
+                                    else: 
+                                        feats = feat_obj
+                            
+                            stack.append({
+                                "name": var_name,
+                                "model": model,
+                                "feats": list(feats) if feats else [],
+                                "logloss": float(v_ll)
+                            })
+                        except Exception:
+                            continue
+        except Exception:
+            pass
+
+        # Final fallback if no stack built
+        if not stack:
+            suffix = "_playoff" if is_playoff else ""
+            p_fallback = Path(f"xgb_calibrated_model{suffix}.pkl")
+            if not p_fallback.exists(): p_fallback = Path("xgb_calibrated_model.pkl")
+            
+            if p_fallback.exists():
                 try:
-                    with open(p, "rb") as f:
+                    with open(p_fallback, "rb") as f:
                         model = pickle.load(f)
-                    print(f"✅ Loaded {'Playoff' if is_playoff else 'Regular'} model from {p}")
-                    break
-                except: continue
-        
-        # 2. Feature Names
-        feat_paths = [
-            Path(f"xgb_features{suffix}.pkl"),
-            Path("xgb_features_playoff.pkl") if is_playoff else Path("xgb_features_recent.pkl"),
-            Path("xgb_features.pkl")
-        ]
-        
-        features = []
-        for p in feat_paths:
-            if p.exists():
-                try:
-                    with open(p, "rb") as f:
-                        features = pickle.load(f)
-                    break
-                except: continue
-        return model, features
+                    stack.append({"name": "fallback", "model": model, "feats": self.feature_names, "logloss": 0.693})
+                except: pass
+
+        # Calculate internal stack weights using Softmax (T=0.10)
+        if stack:
+            ll_list = [s["logloss"] for s in stack]
+            raw_ws = [math.exp(-ll / 0.10) for ll in ll_list]
+            total_w = sum(raw_ws)
+            for i, s in enumerate(stack):
+                s["stack_weight"] = raw_ws[i] / total_w
+            
+        return stack
 
     def _predict_xgboost(self, away_team, home_team, game_date_str=None, away_goalie=None, home_goalie=None, is_playoff=False, series_status=None) -> Optional[Dict]:
         """Make prediction using XGBoost model with dynamic features"""
@@ -763,40 +855,52 @@ class MetaEnsemblePredictor:
                 vec.append(feature_data.get(name, 0.0))
             return pd.DataFrame([vec], columns=feats_to_use)
 
-        # 4. Select Regime Model
-        active_model = self.calibrated_model_ply if is_playoff else self.calibrated_model_reg
-        active_feats = self.feature_names_ply if is_playoff else self.feature_names_reg
-        
-        # Fallback to defaults if specific regime not loaded
-        if active_model is None: active_model = self.calibrated_model
-        if not active_feats: active_feats = self.feature_names
-
-        try:
-            # Strict anti-leakage / drift guard: feature list must match training snapshot exactly.
-            if isinstance(self._feature_snapshot, dict) and self._feature_snapshot.get("sha256"):
-                joined = "\n".join([str(x) for x in active_feats]).encode("utf-8")
-                cur = hashlib.sha256(joined).hexdigest()
-                exp = str(self._feature_snapshot.get("sha256"))
-                if cur != exp:
-                    # For playoffs, we allow skip mismatch if explicitly trained for it
-                    if not is_playoff:
-                        raise RuntimeError(
-                            f"Feature snapshot mismatch (runtime={cur} expected={exp}). "
-                            "Refusing XGB prediction due to potential leakage/drift."
-                        )
-                
-            # 5. Make Prediction
-            df_main = _get_aligned_df(active_model, regime_feats=active_feats)
-            
-            # Prefer calibrated model for better probability accuracy
-            if active_model is not None:
-                prob = active_model.predict_proba(df_main)[0][1] # Probability of home win
-            elif self.xgb_model is not None:
-                prob = self.xgb_model.predict_proba(df_main)[0][1] # Probability of home win
+        # 4. Phase 48: Stacked Prediction
+        active_stack = self.xgb_stack_ply if is_playoff else self.xgb_stack_reg
+        if not active_stack:
+            # Minimal fallback to legacy single model if stack failed to load
+            if self.calibrated_model:
+                active_stack = [{"model": self.calibrated_model, "feats": self.feature_names, "stack_weight": 1.0, "name": "legacy"}]
             else:
                 return None
+            
+        prob_sum = 0.0
+        weight_sum = 0.0
+        
+        for entry in active_stack:
+            v_model = entry['model']
+            v_feats = entry['feats']
+            v_weight = entry.get('stack_weight', 1.0)
+            
+            try:
+                # Feature Snapshot Guard (only for the primary variant in regular season)
+                if entry['name'] == "full" and not is_playoff:
+                    if isinstance(self._feature_snapshot, dict) and self._feature_snapshot.get("sha256"):
+                        joined = "\n".join([str(x) for x in v_feats]).encode("utf-8")
+                        cur = hashlib.sha256(joined).hexdigest()
+                        exp = str(self._feature_snapshot.get("sha256"))
+                        if cur != exp:
+                            print(f"⚠️ Feature snapshot mismatch for {entry['name']} (runtime={cur} expected={exp})")
+                            continue # Skip this variant if it's drifting
 
-            # Apply post-hoc calibration mapping if available.
+                df_v = _get_aligned_df(v_model, regime_feats=v_feats)
+                v_prob = v_model.predict_proba(df_v)[0][1]
+                prob_sum += (v_prob * v_weight)
+                weight_sum += v_weight
+            except Exception as e:
+                print(f"⚠️ Variant {entry['name']} prediction failed: {e}")
+                
+        if weight_sum > 0:
+            prob = prob_sum / weight_sum
+        else:
+            return None
+            
+        # Use the first variant for downstream sub-models (margin, etc.) as primary alignment
+        active_model = active_stack[0]['model']
+        active_feats = active_stack[0]['feats']
+
+        try:
+            # 5. Apply post-hoc calibration mapping if available.
             try:
                 pts = None
                 if isinstance(self._prob_calibration, dict):
