@@ -1853,10 +1853,7 @@ class ScorePredictionModel:
             # If dict, read pace_offset. If str, pace adjustment is currently 0.0 
             # until we implement pace detection from series history.
             series_pace_adj = series_status.get('pace_offset', 0.0) if isinstance(series_status, dict) else 0.0
-            # We assume series_status might contain 'avg_goals_per_game' 
-            # or we calculate it from recent games elsewhere.
             # For now, we apply a 'Series Intensity' boost if provided.
-            series_pace_adj = series_status.get('pace_offset', 0.0)
             if series_pace_adj != 0:
                 attribution.append(f"Series Trend Adj ({series_pace_adj:+.2f})")
                 away_expected += series_pace_adj

@@ -1,0 +1,1420 @@
+run	Set up job	﻿2026-04-29T12:43:43.8874379Z Current runner version: '2.334.0'
+run	Set up job	2026-04-29T12:43:43.8906856Z ##[group]Runner Image Provisioner
+run	Set up job	2026-04-29T12:43:43.8908177Z Hosted Compute Agent
+run	Set up job	2026-04-29T12:43:43.8909163Z Version: 20260213.493
+run	Set up job	2026-04-29T12:43:43.8910122Z Commit: 5c115507f6dd24b8de37d8bbe0bb4509d0cc0fa3
+run	Set up job	2026-04-29T12:43:43.8911135Z Build Date: 2026-02-13T00:28:41Z
+run	Set up job	2026-04-29T12:43:43.8912194Z Worker ID: {86211ee1-f4c8-4925-8c67-5f603eaf3afe}
+run	Set up job	2026-04-29T12:43:43.8913201Z Azure Region: eastus
+run	Set up job	2026-04-29T12:43:43.8914037Z ##[endgroup]
+run	Set up job	2026-04-29T12:43:43.8916188Z ##[group]Operating System
+run	Set up job	2026-04-29T12:43:43.8917021Z Ubuntu
+run	Set up job	2026-04-29T12:43:43.8917743Z 24.04.4
+run	Set up job	2026-04-29T12:43:43.8918743Z LTS
+run	Set up job	2026-04-29T12:43:43.8919410Z ##[endgroup]
+run	Set up job	2026-04-29T12:43:43.8920234Z ##[group]Runner Image
+run	Set up job	2026-04-29T12:43:43.8921159Z Image: ubuntu-24.04
+run	Set up job	2026-04-29T12:43:43.8921941Z Version: 20260413.86.1
+run	Set up job	2026-04-29T12:43:43.8923491Z Included Software: https://github.com/actions/runner-images/blob/ubuntu24/20260413.86/images/ubuntu/Ubuntu2404-Readme.md
+run	Set up job	2026-04-29T12:43:43.8926694Z Image Release: https://github.com/actions/runner-images/releases/tag/ubuntu24%2F20260413.86
+run	Set up job	2026-04-29T12:43:43.8928505Z ##[endgroup]
+run	Set up job	2026-04-29T12:43:43.8930108Z ##[group]GITHUB_TOKEN Permissions
+run	Set up job	2026-04-29T12:43:43.8932886Z Contents: write
+run	Set up job	2026-04-29T12:43:43.8933686Z Metadata: read
+run	Set up job	2026-04-29T12:43:43.8934465Z ##[endgroup]
+run	Set up job	2026-04-29T12:43:43.8937413Z Secret source: Actions
+run	Set up job	2026-04-29T12:43:43.8938848Z Prepare workflow directory
+run	Set up job	2026-04-29T12:43:43.9464901Z Prepare all required actions
+run	Set up job	2026-04-29T12:43:43.9517480Z Getting action download info
+run	Set up job	2026-04-29T12:43:44.3939114Z Download action repository 'actions/checkout@v6' (SHA:de0fac2e4500dabe0009e67214ff5f5447ce83dd)
+run	Set up job	2026-04-29T12:43:44.5070115Z Download action repository 'actions/setup-python@v6' (SHA:a309ff8b426b58ec0e2a45f0f869d46889d02405)
+run	Set up job	2026-04-29T12:43:44.5820183Z Download action repository 'actions/cache@v4' (SHA:0057852bfaa89a56745cba8c7296529d2fc39830)
+run	Set up job	2026-04-29T12:43:44.7616495Z Download action repository 'actions/upload-artifact@v4' (SHA:ea165f8d65b6e75b540449e92b4886f43607fa02)
+run	Set up job	2026-04-29T12:43:45.0086142Z Complete job name: run
+run	Check Season Resume Date	﻿2026-04-29T12:43:45.0869838Z ##[group]Run current_date=$(date +%Y-%m-%d)
+run	Check Season Resume Date	2026-04-29T12:43:45.0871151Z [36;1mcurrent_date=$(date +%Y-%m-%d)[0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0872234Z [36;1mtarget_date="2026-02-25"[0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0873349Z [36;1mif [[ "$current_date" < "$target_date" ]]; then[0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0875099Z [36;1m  echo "⏸️  Olympic Break: Current date $current_date is before resume date $target_date."[0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0876752Z [36;1m  echo "Skipping workflow."[0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0878368Z [36;1m  # Exit with success to avoid failure notification, or error to cancel. [0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0880356Z [36;1m  # Using exit 0 (success) effectively skips subsequent steps if we put this first,[0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0882063Z [36;1m  # BUT we need to conditionally run the rest. [0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0883719Z [36;1m  # Easier way: Set an output and use `if` on subsequent steps, OR just exit 0 and stop.[0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0885939Z [36;1m  # However, steps run sequentially. To stop the workflow successfully we can't just exit 0.[0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0888330Z [36;1m  # We will use gh run cancel to stop it "neutral" or just exit 78 (neutral in some contexts) [0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0890536Z [36;1m  # or simply fail (exit 1) if we want to be sure nothing else runs, but that sends failure email.[0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0892772Z [36;1m  # Best approach: set an env var and use it in `if` condition for all other steps? Too verbose.[0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0894445Z [36;1m  # Alternative: Exit 1 to fail? No.[0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0895570Z [36;1m  # Let's just exit 0 and use a hack? No.[0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0896794Z [36;1m  # Actually, `gh run cancel` requires a token.[0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0898504Z [36;1m  # Let's use the `if` condition on the job level? No, `on` doesn't support date logic.[0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0900146Z [36;1m  # Let's just let it run but do nothing? [0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0901611Z [36;1m  # We can use circleci-style "halt"? No.[0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0902881Z [36;1m  # Let's just exit 1 (failure) but that's annoying.[0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0904192Z [36;1m  # How about we just dont run anything else?[0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0905697Z [36;1m  # We can set a step output `should_run` and check it in every other step.[0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0907229Z [36;1m  echo "should_run=false" >> $GITHUB_OUTPUT[0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0908413Z [36;1melse[0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0909218Z [36;1m  echo "✅ Season Resumed!"[0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0910271Z [36;1m  echo "should_run=true" >> $GITHUB_OUTPUT[0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0911342Z [36;1mfi[0m
+run	Check Season Resume Date	2026-04-29T12:43:45.0938622Z shell: /usr/bin/bash -e {0}
+run	Check Season Resume Date	2026-04-29T12:43:45.0939784Z env:
+run	Check Season Resume Date	2026-04-29T12:43:45.0940565Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+run	Check Season Resume Date	2026-04-29T12:43:45.0941644Z   PUSH_MODEL_ARTIFACTS: false
+run	Check Season Resume Date	2026-04-29T12:43:45.0942651Z ##[endgroup]
+run	Check Season Resume Date	2026-04-29T12:43:45.1081856Z ✅ Season Resumed!
+run	Checkout	﻿2026-04-29T12:43:45.1378807Z ##[group]Run actions/checkout@v6
+run	Checkout	2026-04-29T12:43:45.1379785Z with:
+run	Checkout	2026-04-29T12:43:45.1380872Z   token: ***
+run	Checkout	2026-04-29T12:43:45.1381632Z   persist-credentials: true
+run	Checkout	2026-04-29T12:43:45.1382479Z   fetch-depth: 0
+run	Checkout	2026-04-29T12:43:45.1383378Z   repository: emilyfehr99/Automated-Post-Game-Reports
+run	Checkout	2026-04-29T12:43:45.1384492Z   ssh-strict: true
+run	Checkout	2026-04-29T12:43:45.1385228Z   ssh-user: git
+run	Checkout	2026-04-29T12:43:45.1385929Z   clean: true
+run	Checkout	2026-04-29T12:43:45.1386684Z   sparse-checkout-cone-mode: true
+run	Checkout	2026-04-29T12:43:45.1387587Z   fetch-tags: false
+run	Checkout	2026-04-29T12:43:45.1388480Z   show-progress: true
+run	Checkout	2026-04-29T12:43:45.1389240Z   lfs: false
+run	Checkout	2026-04-29T12:43:45.1389932Z   submodules: false
+run	Checkout	2026-04-29T12:43:45.1390693Z   set-safe-directory: true
+run	Checkout	2026-04-29T12:43:45.1391491Z env:
+run	Checkout	2026-04-29T12:43:45.1392221Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+run	Checkout	2026-04-29T12:43:45.1393229Z   PUSH_MODEL_ARTIFACTS: false
+run	Checkout	2026-04-29T12:43:45.1394076Z ##[endgroup]
+run	Checkout	2026-04-29T12:43:45.2394554Z Syncing repository: emilyfehr99/Automated-Post-Game-Reports
+run	Checkout	2026-04-29T12:43:45.2399038Z ##[group]Getting Git version info
+run	Checkout	2026-04-29T12:43:45.2401715Z Working directory is '/home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports'
+run	Checkout	2026-04-29T12:43:45.2404383Z [command]/usr/bin/git version
+run	Checkout	2026-04-29T12:43:45.2423743Z git version 2.53.0
+run	Checkout	2026-04-29T12:43:45.2445466Z ##[endgroup]
+run	Checkout	2026-04-29T12:43:45.2459898Z Temporarily overriding HOME='/home/runner/work/_temp/26730a54-d64a-458f-853d-d73e222f69ee' before making global git config changes
+run	Checkout	2026-04-29T12:43:45.2462595Z Adding repository directory to the temporary git global config as a safe directory
+run	Checkout	2026-04-29T12:43:45.2465606Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports
+run	Checkout	2026-04-29T12:43:45.2498868Z Deleting the contents of '/home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports'
+run	Checkout	2026-04-29T12:43:45.2503015Z ##[group]Initializing the repository
+run	Checkout	2026-04-29T12:43:45.2508307Z [command]/usr/bin/git init /home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports
+run	Checkout	2026-04-29T12:43:45.2565235Z hint: Using 'master' as the name for the initial branch. This default branch name
+run	Checkout	2026-04-29T12:43:45.2567566Z hint: will change to "main" in Git 3.0. To configure the initial branch name
+run	Checkout	2026-04-29T12:43:45.2569542Z hint: to use in all of your new repositories, which will suppress this warning,
+run	Checkout	2026-04-29T12:43:45.2570949Z hint: call:
+run	Checkout	2026-04-29T12:43:45.2571642Z hint:
+run	Checkout	2026-04-29T12:43:45.2572522Z hint: 	git config --global init.defaultBranch <name>
+run	Checkout	2026-04-29T12:43:45.2573638Z hint:
+run	Checkout	2026-04-29T12:43:45.2574833Z hint: Names commonly chosen instead of 'master' are 'main', 'trunk' and
+run	Checkout	2026-04-29T12:43:45.2576545Z hint: 'development'. The just-created branch can be renamed via this command:
+run	Checkout	2026-04-29T12:43:45.2578104Z hint:
+run	Checkout	2026-04-29T12:43:45.2578819Z hint: 	git branch -m <name>
+run	Checkout	2026-04-29T12:43:45.2579659Z hint:
+run	Checkout	2026-04-29T12:43:45.2580791Z hint: Disable this message with "git config set advice.defaultBranchName false"
+run	Checkout	2026-04-29T12:43:45.2583622Z Initialized empty Git repository in /home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports/.git/
+run	Checkout	2026-04-29T12:43:45.2587277Z [command]/usr/bin/git remote add origin https://github.com/emilyfehr99/Automated-Post-Game-Reports
+run	Checkout	2026-04-29T12:43:45.2680530Z ##[endgroup]
+run	Checkout	2026-04-29T12:43:45.2682744Z ##[group]Disabling automatic garbage collection
+run	Checkout	2026-04-29T12:43:45.2684589Z [command]/usr/bin/git config --local gc.auto 0
+run	Checkout	2026-04-29T12:43:45.2687458Z ##[endgroup]
+run	Checkout	2026-04-29T12:43:45.2688973Z ##[group]Setting up auth
+run	Checkout	2026-04-29T12:43:45.2689891Z Removing SSH command configuration
+run	Checkout	2026-04-29T12:43:45.2691253Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+run	Checkout	2026-04-29T12:43:45.2695652Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+run	Checkout	2026-04-29T12:43:45.2963877Z Removing HTTP extra header
+run	Checkout	2026-04-29T12:43:45.2969590Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+run	Checkout	2026-04-29T12:43:45.3001935Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+run	Checkout	2026-04-29T12:43:45.3223649Z Removing includeIf entries pointing to credentials config files
+run	Checkout	2026-04-29T12:43:45.3229908Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+run	Checkout	2026-04-29T12:43:45.3263614Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+run	Checkout	2026-04-29T12:43:45.3497724Z [command]/usr/bin/git config --file /home/runner/work/_temp/git-credentials-1d00d0c6-c0f1-488a-b1a3-61694fcf3e43.config http.https://github.com/.extraheader AUTHORIZATION: basic ***
+run	Checkout	2026-04-29T12:43:45.3536470Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports/.git.path /home/runner/work/_temp/git-credentials-1d00d0c6-c0f1-488a-b1a3-61694fcf3e43.config
+run	Checkout	2026-04-29T12:43:45.3567196Z [command]/usr/bin/git config --local includeIf.gitdir:/home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-1d00d0c6-c0f1-488a-b1a3-61694fcf3e43.config
+run	Checkout	2026-04-29T12:43:45.3599267Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-1d00d0c6-c0f1-488a-b1a3-61694fcf3e43.config
+run	Checkout	2026-04-29T12:43:45.3630573Z [command]/usr/bin/git config --local includeIf.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-1d00d0c6-c0f1-488a-b1a3-61694fcf3e43.config
+run	Checkout	2026-04-29T12:43:45.3657390Z ##[endgroup]
+run	Checkout	2026-04-29T12:43:45.3658998Z ##[group]Fetching the repository
+run	Checkout	2026-04-29T12:43:45.3666005Z [command]/usr/bin/git -c protocol.version=2 fetch --no-tags --prune --no-recurse-submodules origin +refs/heads/*:refs/remotes/origin/* +refs/tags/*:refs/tags/*
+run	Checkout	2026-04-29T12:43:58.8068479Z From https://github.com/emilyfehr99/Automated-Post-Game-Reports
+run	Checkout	2026-04-29T12:43:58.8069491Z  * [new branch]        chore/scrape-edge-data-fix -> origin/chore/scrape-edge-data-fix
+run	Checkout	2026-04-29T12:43:58.8070235Z  * [new branch]        chore/update-edge-data -> origin/chore/update-edge-data
+run	Checkout	2026-04-29T12:43:58.8070906Z  * [new branch]        clean-main             -> origin/clean-main
+run	Checkout	2026-04-29T12:43:58.8071466Z  * [new branch]        main                   -> origin/main
+run	Checkout	2026-04-29T12:43:58.8072302Z  * [new branch]        revert-13-chore/update-edge-data -> origin/revert-13-chore/update-edge-data
+run	Checkout	2026-04-29T12:43:58.8124060Z [command]/usr/bin/git branch --list --remote origin/main
+run	Checkout	2026-04-29T12:43:58.8150712Z   origin/main
+run	Checkout	2026-04-29T12:43:58.8160134Z [command]/usr/bin/git rev-parse refs/remotes/origin/main
+run	Checkout	2026-04-29T12:43:58.8183617Z 3dc9297ee5562d80f77c2d924d7086272359a764
+run	Checkout	2026-04-29T12:43:58.8187731Z ##[endgroup]
+run	Checkout	2026-04-29T12:43:58.8188681Z ##[group]Determining the checkout info
+run	Checkout	2026-04-29T12:43:58.8189469Z ##[endgroup]
+run	Checkout	2026-04-29T12:43:58.8193669Z [command]/usr/bin/git sparse-checkout disable
+run	Checkout	2026-04-29T12:43:58.8233496Z [command]/usr/bin/git config --local --unset-all extensions.worktreeConfig
+run	Checkout	2026-04-29T12:43:58.8268639Z ##[group]Checking out the ref
+run	Checkout	2026-04-29T12:43:58.8270731Z [command]/usr/bin/git checkout --progress --force -B main refs/remotes/origin/main
+run	Checkout	2026-04-29T12:43:59.0149923Z Switched to a new branch 'main'
+run	Checkout	2026-04-29T12:43:59.0150824Z branch 'main' set up to track 'origin/main'.
+run	Checkout	2026-04-29T12:43:59.0195403Z ##[endgroup]
+run	Checkout	2026-04-29T12:43:59.0237756Z [command]/usr/bin/git log -1 --format=%H
+run	Checkout	2026-04-29T12:43:59.0262288Z 3dc9297ee5562d80f77c2d924d7086272359a764
+run	Set up Python	﻿2026-04-29T12:43:59.0448041Z ##[group]Run actions/setup-python@v6
+run	Set up Python	2026-04-29T12:43:59.0448341Z with:
+run	Set up Python	2026-04-29T12:43:59.0448533Z   python-version: 3.10
+run	Set up Python	2026-04-29T12:43:59.0448793Z   check-latest: false
+run	Set up Python	2026-04-29T12:43:59.0449142Z   token: ***
+run	Set up Python	2026-04-29T12:43:59.0449351Z   update-environment: true
+run	Set up Python	2026-04-29T12:43:59.0449596Z   allow-prereleases: false
+run	Set up Python	2026-04-29T12:43:59.0449859Z   freethreaded: false
+run	Set up Python	2026-04-29T12:43:59.0450109Z env:
+run	Set up Python	2026-04-29T12:43:59.0450320Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+run	Set up Python	2026-04-29T12:43:59.0450598Z   PUSH_MODEL_ARTIFACTS: false
+run	Set up Python	2026-04-29T12:43:59.0450838Z ##[endgroup]
+run	Set up Python	2026-04-29T12:43:59.1686812Z ##[group]Installed versions
+run	Set up Python	2026-04-29T12:43:59.1772945Z Successfully set up CPython (3.10.20)
+run	Set up Python	2026-04-29T12:43:59.1773727Z ##[endgroup]
+run	Cache pip	﻿2026-04-29T12:43:59.2477748Z ##[group]Run actions/cache@v4
+run	Cache pip	2026-04-29T12:43:59.2478467Z with:
+run	Cache pip	2026-04-29T12:43:59.2478680Z   path: ~/.cache/pip
+run	Cache pip	2026-04-29T12:43:59.2479108Z   key: Linux-pip-py310-3fa965faba2b9addf8df8309c1e2c41c7b5b05626c7609c75fb789414a0daac8
+run	Cache pip	2026-04-29T12:43:59.2479612Z   restore-keys: Linux-pip-py310-
+run	Cache pip	Linux-pip-
+run	Cache pip	
+run	Cache pip	2026-04-29T12:43:59.2479909Z   enableCrossOsArchive: false
+run	Cache pip	2026-04-29T12:43:59.2480190Z   fail-on-cache-miss: false
+run	Cache pip	2026-04-29T12:43:59.2480429Z   lookup-only: false
+run	Cache pip	2026-04-29T12:43:59.2480628Z   save-always: false
+run	Cache pip	2026-04-29T12:43:59.2480828Z env:
+run	Cache pip	2026-04-29T12:43:59.2481036Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+run	Cache pip	2026-04-29T12:43:59.2481341Z   PUSH_MODEL_ARTIFACTS: false
+run	Cache pip	2026-04-29T12:43:59.2481641Z   pythonLocation: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Cache pip	2026-04-29T12:43:59.2482080Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib/pkgconfig
+run	Cache pip	2026-04-29T12:43:59.2482499Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Cache pip	2026-04-29T12:43:59.2482856Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Cache pip	2026-04-29T12:43:59.2483270Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Cache pip	2026-04-29T12:43:59.2483635Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib
+run	Cache pip	2026-04-29T12:43:59.2483948Z ##[endgroup]
+run	Cache pip	2026-04-29T12:43:59.3529748Z (node:2458) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+run	Cache pip	2026-04-29T12:43:59.3530664Z (Use `node --trace-deprecation ...` to show where the warning was created)
+run	Cache pip	2026-04-29T12:43:59.4154522Z Cache hit for: Linux-pip-py310-3fa965faba2b9addf8df8309c1e2c41c7b5b05626c7609c75fb789414a0daac8
+run	Cache pip	2026-04-29T12:43:59.4264068Z (node:2458) [DEP0169] DeprecationWarning: `url.parse()` behavior is not standardized and prone to errors that have security implications. Use the WHATWG URL API instead. CVEs are not issued for `url.parse()` vulnerabilities.
+run	Cache pip	2026-04-29T12:44:00.4580739Z Received 213909504 of 550344768 (38.9%), 204.0 MBs/sec
+run	Cache pip	2026-04-29T12:44:01.4593237Z Received 461373440 of 550344768 (83.8%), 219.8 MBs/sec
+run	Cache pip	2026-04-29T12:44:01.8109219Z Received 550344768 of 550344768 (100.0%), 223.3 MBs/sec
+run	Cache pip	2026-04-29T12:44:01.8122701Z Cache Size: ~525 MB (550344768 B)
+run	Cache pip	2026-04-29T12:44:01.8185631Z [command]/usr/bin/tar -xf /home/runner/work/_temp/a95438e3-e808-4b40-b8b5-650b25929042/cache.tzst -P -C /home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports --use-compress-program unzstd
+run	Cache pip	2026-04-29T12:44:02.4999544Z Cache restored successfully
+run	Cache pip	2026-04-29T12:44:02.5340353Z Cache restored from key: Linux-pip-py310-3fa965faba2b9addf8df8309c1e2c41c7b5b05626c7609c75fb789414a0daac8
+run	Install dependencies	﻿2026-04-29T12:44:02.5512298Z ##[group]Run python -m pip install --upgrade pip
+run	Install dependencies	2026-04-29T12:44:02.5512705Z [36;1mpython -m pip install --upgrade pip[0m
+run	Install dependencies	2026-04-29T12:44:02.5513365Z [36;1mpip install pytz requests pandas numpy beautifulsoup4 python-dateutil reportlab pillow matplotlib scikit-learn seaborn xgboost lightgbm pytest[0m
+run	Install dependencies	2026-04-29T12:44:02.5541721Z shell: /usr/bin/bash -e {0}
+run	Install dependencies	2026-04-29T12:44:02.5541977Z env:
+run	Install dependencies	2026-04-29T12:44:02.5542198Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+run	Install dependencies	2026-04-29T12:44:02.5542487Z   PUSH_MODEL_ARTIFACTS: false
+run	Install dependencies	2026-04-29T12:44:02.5542794Z   pythonLocation: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Install dependencies	2026-04-29T12:44:02.5543211Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib/pkgconfig
+run	Install dependencies	2026-04-29T12:44:02.5543620Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Install dependencies	2026-04-29T12:44:02.5544003Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Install dependencies	2026-04-29T12:44:02.5544363Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Install dependencies	2026-04-29T12:44:02.5544738Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib
+run	Install dependencies	2026-04-29T12:44:02.5545079Z ##[endgroup]
+run	Install dependencies	2026-04-29T12:44:03.1298733Z Requirement already satisfied: pip in /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages (26.0.1)
+run	Install dependencies	2026-04-29T12:44:03.2293332Z Collecting pip
+run	Install dependencies	2026-04-29T12:44:03.2831701Z   Downloading pip-26.1-py3-none-any.whl.metadata (4.6 kB)
+run	Install dependencies	2026-04-29T12:44:03.2904667Z Downloading pip-26.1-py3-none-any.whl (1.8 MB)
+run	Install dependencies	2026-04-29T12:44:03.3635425Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 1.8/1.8 MB 45.5 MB/s  0:00:00
+run	Install dependencies	2026-04-29T12:44:03.3884678Z Installing collected packages: pip
+run	Install dependencies	2026-04-29T12:44:03.3886168Z   Attempting uninstall: pip
+run	Install dependencies	2026-04-29T12:44:03.3893138Z     Found existing installation: pip 26.0.1
+run	Install dependencies	2026-04-29T12:44:03.4352256Z     Uninstalling pip-26.0.1:
+run	Install dependencies	2026-04-29T12:44:03.4419981Z       Successfully uninstalled pip-26.0.1
+run	Install dependencies	2026-04-29T12:44:04.2809485Z Successfully installed pip-26.1
+run	Install dependencies	2026-04-29T12:44:04.7223662Z Collecting pytz
+run	Install dependencies	2026-04-29T12:44:04.7734335Z   Downloading pytz-2026.1.post1-py2.py3-none-any.whl.metadata (22 kB)
+run	Install dependencies	2026-04-29T12:44:04.8133742Z Collecting requests
+run	Install dependencies	2026-04-29T12:44:04.8169105Z   Downloading requests-2.33.1-py3-none-any.whl.metadata (4.8 kB)
+run	Install dependencies	2026-04-29T12:44:04.9321355Z Collecting pandas
+run	Install dependencies	2026-04-29T12:44:04.9338132Z   Using cached pandas-2.3.3-cp310-cp310-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl.metadata (91 kB)
+run	Install dependencies	2026-04-29T12:44:05.1378247Z Collecting numpy
+run	Install dependencies	2026-04-29T12:44:05.1395202Z   Using cached numpy-2.2.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (62 kB)
+run	Install dependencies	2026-04-29T12:44:05.1546034Z Collecting beautifulsoup4
+run	Install dependencies	2026-04-29T12:44:05.1583133Z   Downloading beautifulsoup4-4.14.3-py3-none-any.whl.metadata (3.8 kB)
+run	Install dependencies	2026-04-29T12:44:05.1707363Z Collecting python-dateutil
+run	Install dependencies	2026-04-29T12:44:05.1743316Z   Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl.metadata (8.4 kB)
+run	Install dependencies	2026-04-29T12:44:05.3090699Z Collecting reportlab
+run	Install dependencies	2026-04-29T12:44:05.3130928Z   Downloading reportlab-4.5.0-py3-none-any.whl.metadata (1.7 kB)
+run	Install dependencies	2026-04-29T12:44:05.4803652Z Collecting pillow
+run	Install dependencies	2026-04-29T12:44:05.4819984Z   Using cached pillow-12.2.0-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl.metadata (8.8 kB)
+run	Install dependencies	2026-04-29T12:44:05.6120528Z Collecting matplotlib
+run	Install dependencies	2026-04-29T12:44:05.6136726Z   Using cached matplotlib-3.10.9-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (52 kB)
+run	Install dependencies	2026-04-29T12:44:05.6907610Z Collecting scikit-learn
+run	Install dependencies	2026-04-29T12:44:05.6923351Z   Using cached scikit_learn-1.7.2-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (11 kB)
+run	Install dependencies	2026-04-29T12:44:05.7233516Z Collecting seaborn
+run	Install dependencies	2026-04-29T12:44:05.7247537Z   Using cached seaborn-0.13.2-py3-none-any.whl.metadata (5.4 kB)
+run	Install dependencies	2026-04-29T12:44:05.7523321Z Collecting xgboost
+run	Install dependencies	2026-04-29T12:44:05.7537523Z   Using cached xgboost-3.2.0-py3-none-manylinux_2_28_x86_64.whl.metadata (2.1 kB)
+run	Install dependencies	2026-04-29T12:44:05.7706630Z Collecting lightgbm
+run	Install dependencies	2026-04-29T12:44:05.7720552Z   Using cached lightgbm-4.6.0-py3-none-manylinux_2_28_x86_64.whl.metadata (17 kB)
+run	Install dependencies	2026-04-29T12:44:05.8023159Z Collecting pytest
+run	Install dependencies	2026-04-29T12:44:05.8037597Z   Using cached pytest-9.0.3-py3-none-any.whl.metadata (7.6 kB)
+run	Install dependencies	2026-04-29T12:44:05.8976910Z Collecting charset_normalizer<4,>=2 (from requests)
+run	Install dependencies	2026-04-29T12:44:05.8994052Z   Using cached charset_normalizer-3.4.7-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl.metadata (40 kB)
+run	Install dependencies	2026-04-29T12:44:05.9112822Z Collecting idna<4,>=2.5 (from requests)
+run	Install dependencies	2026-04-29T12:44:05.9126443Z   Using cached idna-3.13-py3-none-any.whl.metadata (8.0 kB)
+run	Install dependencies	2026-04-29T12:44:05.9312680Z Collecting urllib3<3,>=1.26 (from requests)
+run	Install dependencies	2026-04-29T12:44:05.9326760Z   Using cached urllib3-2.6.3-py3-none-any.whl.metadata (6.9 kB)
+run	Install dependencies	2026-04-29T12:44:05.9478416Z Collecting certifi>=2023.5.7 (from requests)
+run	Install dependencies	2026-04-29T12:44:05.9492265Z   Using cached certifi-2026.4.22-py3-none-any.whl.metadata (2.5 kB)
+run	Install dependencies	2026-04-29T12:44:05.9688811Z Collecting tzdata>=2022.7 (from pandas)
+run	Install dependencies	2026-04-29T12:44:05.9724613Z   Downloading tzdata-2026.2-py2.py3-none-any.whl.metadata (1.4 kB)
+run	Install dependencies	2026-04-29T12:44:05.9873046Z Collecting soupsieve>=1.6.1 (from beautifulsoup4)
+run	Install dependencies	2026-04-29T12:44:05.9886488Z   Using cached soupsieve-2.8.3-py3-none-any.whl.metadata (4.6 kB)
+run	Install dependencies	2026-04-29T12:44:06.0025204Z Collecting typing-extensions>=4.0.0 (from beautifulsoup4)
+run	Install dependencies	2026-04-29T12:44:06.0038704Z   Using cached typing_extensions-4.15.0-py3-none-any.whl.metadata (3.3 kB)
+run	Install dependencies	2026-04-29T12:44:06.0137136Z Collecting six>=1.5 (from python-dateutil)
+run	Install dependencies	2026-04-29T12:44:06.0151146Z   Using cached six-1.17.0-py2.py3-none-any.whl.metadata (1.7 kB)
+run	Install dependencies	2026-04-29T12:44:06.0781602Z Collecting contourpy>=1.0.1 (from matplotlib)
+run	Install dependencies	2026-04-29T12:44:06.0796797Z   Using cached contourpy-1.3.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (5.5 kB)
+run	Install dependencies	2026-04-29T12:44:06.0887575Z Collecting cycler>=0.10 (from matplotlib)
+run	Install dependencies	2026-04-29T12:44:06.0901106Z   Using cached cycler-0.12.1-py3-none-any.whl.metadata (3.8 kB)
+run	Install dependencies	2026-04-29T12:44:06.2309892Z Collecting fonttools>=4.22.0 (from matplotlib)
+run	Install dependencies	2026-04-29T12:44:06.2325913Z   Using cached fonttools-4.62.1-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl.metadata (117 kB)
+run	Install dependencies	2026-04-29T12:44:06.3195162Z Collecting kiwisolver>=1.3.1 (from matplotlib)
+run	Install dependencies	2026-04-29T12:44:06.3211214Z   Using cached kiwisolver-1.5.0-cp310-cp310-manylinux_2_12_x86_64.manylinux2010_x86_64.whl.metadata (5.1 kB)
+run	Install dependencies	2026-04-29T12:44:06.3380318Z Collecting packaging>=20.0 (from matplotlib)
+run	Install dependencies	2026-04-29T12:44:06.3415648Z   Downloading packaging-26.2-py3-none-any.whl.metadata (3.5 kB)
+run	Install dependencies	2026-04-29T12:44:06.3673384Z Collecting pyparsing>=3 (from matplotlib)
+run	Install dependencies	2026-04-29T12:44:06.3687158Z   Using cached pyparsing-3.3.2-py3-none-any.whl.metadata (5.8 kB)
+run	Install dependencies	2026-04-29T12:44:06.4913741Z Collecting scipy>=1.8.0 (from scikit-learn)
+run	Install dependencies	2026-04-29T12:44:06.4929668Z   Using cached scipy-1.15.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl.metadata (61 kB)
+run	Install dependencies	2026-04-29T12:44:06.5144565Z Collecting joblib>=1.2.0 (from scikit-learn)
+run	Install dependencies	2026-04-29T12:44:06.5159596Z   Using cached joblib-1.5.3-py3-none-any.whl.metadata (5.5 kB)
+run	Install dependencies	2026-04-29T12:44:06.5241980Z Collecting threadpoolctl>=3.1.0 (from scikit-learn)
+run	Install dependencies	2026-04-29T12:44:06.5255349Z   Using cached threadpoolctl-3.6.0-py3-none-any.whl.metadata (13 kB)
+run	Install dependencies	2026-04-29T12:44:06.5475700Z Collecting nvidia-nccl-cu12 (from xgboost)
+run	Install dependencies	2026-04-29T12:44:06.5489467Z   Using cached nvidia_nccl_cu12-2.30.4-py3-none-manylinux_2_18_x86_64.whl.metadata (2.1 kB)
+run	Install dependencies	2026-04-29T12:44:06.5632223Z Collecting exceptiongroup>=1 (from pytest)
+run	Install dependencies	2026-04-29T12:44:06.5645705Z   Using cached exceptiongroup-1.3.1-py3-none-any.whl.metadata (6.7 kB)
+run	Install dependencies	2026-04-29T12:44:06.5724935Z Collecting iniconfig>=1.0.1 (from pytest)
+run	Install dependencies	2026-04-29T12:44:06.5738366Z   Using cached iniconfig-2.3.0-py3-none-any.whl.metadata (2.5 kB)
+run	Install dependencies	2026-04-29T12:44:06.5840478Z Collecting pluggy<2,>=1.5 (from pytest)
+run	Install dependencies	2026-04-29T12:44:06.5854379Z   Using cached pluggy-1.6.0-py3-none-any.whl.metadata (4.8 kB)
+run	Install dependencies	2026-04-29T12:44:06.6006501Z Collecting pygments>=2.7.2 (from pytest)
+run	Install dependencies	2026-04-29T12:44:06.6020236Z   Using cached pygments-2.20.0-py3-none-any.whl.metadata (2.5 kB)
+run	Install dependencies	2026-04-29T12:44:06.6219806Z Collecting tomli>=1 (from pytest)
+run	Install dependencies	2026-04-29T12:44:06.6233848Z   Using cached tomli-2.4.1-py3-none-any.whl.metadata (10 kB)
+run	Install dependencies	2026-04-29T12:44:06.6440433Z Downloading pytz-2026.1.post1-py2.py3-none-any.whl (510 kB)
+run	Install dependencies	2026-04-29T12:44:06.6606172Z Downloading requests-2.33.1-py3-none-any.whl (64 kB)
+run	Install dependencies	2026-04-29T12:44:06.6638478Z Using cached charset_normalizer-3.4.7-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.manylinux_2_28_x86_64.whl (216 kB)
+run	Install dependencies	2026-04-29T12:44:06.6651516Z Using cached idna-3.13-py3-none-any.whl (68 kB)
+run	Install dependencies	2026-04-29T12:44:06.6664325Z Using cached urllib3-2.6.3-py3-none-any.whl (131 kB)
+run	Install dependencies	2026-04-29T12:44:06.6677333Z Using cached pandas-2.3.3-cp310-cp310-manylinux_2_24_x86_64.manylinux_2_28_x86_64.whl (12.8 MB)
+run	Install dependencies	2026-04-29T12:44:06.6731855Z Using cached numpy-2.2.6-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (16.8 MB)
+run	Install dependencies	2026-04-29T12:44:06.6823520Z Downloading beautifulsoup4-4.14.3-py3-none-any.whl (107 kB)
+run	Install dependencies	2026-04-29T12:44:06.6892484Z Downloading python_dateutil-2.9.0.post0-py2.py3-none-any.whl (229 kB)
+run	Install dependencies	2026-04-29T12:44:06.6964701Z Downloading reportlab-4.5.0-py3-none-any.whl (2.0 MB)
+run	Install dependencies	2026-04-29T12:44:06.7148161Z    ━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━ 2.0/2.0 MB 119.4 MB/s  0:00:00
+run	Install dependencies	2026-04-29T12:44:06.7161773Z Using cached pillow-12.2.0-cp310-cp310-manylinux_2_27_x86_64.manylinux_2_28_x86_64.whl (7.1 MB)
+run	Install dependencies	2026-04-29T12:44:06.7200776Z Using cached matplotlib-3.10.9-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (8.8 MB)
+run	Install dependencies	2026-04-29T12:44:06.7242267Z Using cached scikit_learn-1.7.2-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (9.7 MB)
+run	Install dependencies	2026-04-29T12:44:06.7286170Z Using cached seaborn-0.13.2-py3-none-any.whl (294 kB)
+run	Install dependencies	2026-04-29T12:44:06.7299670Z Using cached xgboost-3.2.0-py3-none-manylinux_2_28_x86_64.whl (131.7 MB)
+run	Install dependencies	2026-04-29T12:44:06.7752069Z Using cached lightgbm-4.6.0-py3-none-manylinux_2_28_x86_64.whl (3.6 MB)
+run	Install dependencies	2026-04-29T12:44:06.7776802Z Using cached pytest-9.0.3-py3-none-any.whl (375 kB)
+run	Install dependencies	2026-04-29T12:44:06.7790308Z Using cached pluggy-1.6.0-py3-none-any.whl (20 kB)
+run	Install dependencies	2026-04-29T12:44:06.7802477Z Using cached certifi-2026.4.22-py3-none-any.whl (135 kB)
+run	Install dependencies	2026-04-29T12:44:06.7815299Z Using cached contourpy-1.3.2-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (325 kB)
+run	Install dependencies	2026-04-29T12:44:06.7828168Z Using cached cycler-0.12.1-py3-none-any.whl (8.3 kB)
+run	Install dependencies	2026-04-29T12:44:06.7840481Z Using cached exceptiongroup-1.3.1-py3-none-any.whl (16 kB)
+run	Install dependencies	2026-04-29T12:44:06.7852798Z Using cached fonttools-4.62.1-cp310-cp310-manylinux2014_x86_64.manylinux_2_17_x86_64.whl (4.9 MB)
+run	Install dependencies	2026-04-29T12:44:06.7883038Z Using cached iniconfig-2.3.0-py3-none-any.whl (7.5 kB)
+run	Install dependencies	2026-04-29T12:44:06.7894626Z Using cached joblib-1.5.3-py3-none-any.whl (309 kB)
+run	Install dependencies	2026-04-29T12:44:06.7908028Z Using cached kiwisolver-1.5.0-cp310-cp310-manylinux_2_12_x86_64.manylinux2010_x86_64.whl (1.6 MB)
+run	Install dependencies	2026-04-29T12:44:06.7953843Z Downloading packaging-26.2-py3-none-any.whl (100 kB)
+run	Install dependencies	2026-04-29T12:44:06.7991231Z Using cached pygments-2.20.0-py3-none-any.whl (1.2 MB)
+run	Install dependencies	2026-04-29T12:44:06.8008478Z Using cached pyparsing-3.3.2-py3-none-any.whl (122 kB)
+run	Install dependencies	2026-04-29T12:44:06.8021542Z Using cached scipy-1.15.3-cp310-cp310-manylinux_2_17_x86_64.manylinux2014_x86_64.whl (37.7 MB)
+run	Install dependencies	2026-04-29T12:44:06.8159142Z Using cached six-1.17.0-py2.py3-none-any.whl (11 kB)
+run	Install dependencies	2026-04-29T12:44:06.8171863Z Using cached soupsieve-2.8.3-py3-none-any.whl (37 kB)
+run	Install dependencies	2026-04-29T12:44:06.8184203Z Using cached threadpoolctl-3.6.0-py3-none-any.whl (18 kB)
+run	Install dependencies	2026-04-29T12:44:06.8196214Z Using cached tomli-2.4.1-py3-none-any.whl (14 kB)
+run	Install dependencies	2026-04-29T12:44:06.8208676Z Using cached typing_extensions-4.15.0-py3-none-any.whl (44 kB)
+run	Install dependencies	2026-04-29T12:44:06.8248936Z Downloading tzdata-2026.2-py2.py3-none-any.whl (349 kB)
+run	Install dependencies	2026-04-29T12:44:06.8301994Z Using cached nvidia_nccl_cu12-2.30.4-py3-none-manylinux_2_18_x86_64.whl (300.2 MB)
+run	Install dependencies	2026-04-29T12:44:07.5678136Z Installing collected packages: pytz, urllib3, tzdata, typing-extensions, tomli, threadpoolctl, soupsieve, six, pyparsing, pygments, pluggy, pillow, packaging, nvidia-nccl-cu12, numpy, kiwisolver, joblib, iniconfig, idna, fonttools, cycler, charset_normalizer, certifi, scipy, requests, reportlab, python-dateutil, exceptiongroup, contourpy, beautifulsoup4, xgboost, scikit-learn, pytest, pandas, matplotlib, lightgbm, seaborn
+run	Install dependencies	2026-04-29T12:44:27.9995301Z 
+run	Install dependencies	2026-04-29T12:44:28.0044269Z Successfully installed beautifulsoup4-4.14.3 certifi-2026.4.22 charset_normalizer-3.4.7 contourpy-1.3.2 cycler-0.12.1 exceptiongroup-1.3.1 fonttools-4.62.1 idna-3.13 iniconfig-2.3.0 joblib-1.5.3 kiwisolver-1.5.0 lightgbm-4.6.0 matplotlib-3.10.9 numpy-2.2.6 nvidia-nccl-cu12-2.30.4 packaging-26.2 pandas-2.3.3 pillow-12.2.0 pluggy-1.6.0 pygments-2.20.0 pyparsing-3.3.2 pytest-9.0.3 python-dateutil-2.9.0.post0 pytz-2026.1.post1 reportlab-4.5.0 requests-2.33.1 scikit-learn-1.7.2 scipy-1.15.3 seaborn-0.13.2 six-1.17.0 soupsieve-2.8.3 threadpoolctl-3.6.0 tomli-2.4.1 typing-extensions-4.15.0 tzdata-2026.2 urllib3-2.6.3 xgboost-3.2.0
+run	Check time window	﻿2026-04-29T12:44:28.1341174Z ##[group]Run python3 -c "
+run	Check time window	2026-04-29T12:44:28.1341509Z [36;1mpython3 -c "[0m
+run	Check time window	2026-04-29T12:44:28.1341746Z [36;1mimport pytz[0m
+run	Check time window	2026-04-29T12:44:28.1341979Z [36;1mfrom datetime import datetime[0m
+run	Check time window	2026-04-29T12:44:28.1342271Z [36;1mct = pytz.timezone('US/Central')[0m
+run	Check time window	2026-04-29T12:44:28.1342545Z [36;1mnow_ct = datetime.now(ct)[0m
+run	Check time window	2026-04-29T12:44:28.1342868Z [36;1mprint('Now (CT):', now_ct.strftime('%Y-%m-%d %H:%M:%S %Z'))[0m
+run	Check time window	2026-04-29T12:44:28.1343253Z [36;1mprint('Running daily predictions workflow...')[0m
+run	Check time window	2026-04-29T12:44:28.1343546Z [36;1m"[0m
+run	Check time window	2026-04-29T12:44:28.1367160Z shell: /usr/bin/bash -e {0}
+run	Check time window	2026-04-29T12:44:28.1367406Z env:
+run	Check time window	2026-04-29T12:44:28.1367625Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+run	Check time window	2026-04-29T12:44:28.1368181Z   PUSH_MODEL_ARTIFACTS: false
+run	Check time window	2026-04-29T12:44:28.1368502Z   pythonLocation: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Check time window	2026-04-29T12:44:28.1368915Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib/pkgconfig
+run	Check time window	2026-04-29T12:44:28.1369365Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Check time window	2026-04-29T12:44:28.1369763Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Check time window	2026-04-29T12:44:28.1370111Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Check time window	2026-04-29T12:44:28.1370463Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib
+run	Check time window	2026-04-29T12:44:28.1370770Z ##[endgroup]
+run	Check time window	2026-04-29T12:44:28.1725205Z Now (CT): 2026-04-29 07:44:28 CDT
+run	Check time window	2026-04-29T12:44:28.1725682Z Running daily predictions workflow...
+run	Scrape Edge data	﻿2026-04-29T12:44:28.1786067Z ##[group]Run echo "🏒 SCRAPING NHL EDGE DATA"
+run	Scrape Edge data	2026-04-29T12:44:28.1786450Z [36;1mecho "🏒 SCRAPING NHL EDGE DATA"[0m
+run	Scrape Edge data	2026-04-29T12:44:28.1786746Z [36;1mecho "Current directory: $(pwd)"[0m
+run	Scrape Edge data	2026-04-29T12:44:28.1787009Z [36;1mecho "Contents:"[0m
+run	Scrape Edge data	2026-04-29T12:44:28.1787235Z [36;1mls -la[0m
+run	Scrape Edge data	2026-04-29T12:44:28.1787466Z [36;1mecho "Looking for scraper:"[0m
+run	Scrape Edge data	2026-04-29T12:44:28.1787789Z [36;1mfind . -name "daily_edge_data_scraper.py" -type f[0m
+run	Scrape Edge data	2026-04-29T12:44:28.1788360Z [36;1mecho "Running scraper:"[0m
+run	Scrape Edge data	2026-04-29T12:44:28.1788828Z [36;1mPYTHONPATH=".:models:analyzers:utils:scrapers" python3 scrapers/daily_edge_data_scraper.py[0m
+run	Scrape Edge data	2026-04-29T12:44:28.1810778Z shell: /usr/bin/bash -e {0}
+run	Scrape Edge data	2026-04-29T12:44:28.1811021Z env:
+run	Scrape Edge data	2026-04-29T12:44:28.1811238Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+run	Scrape Edge data	2026-04-29T12:44:28.1811521Z   PUSH_MODEL_ARTIFACTS: false
+run	Scrape Edge data	2026-04-29T12:44:28.1811834Z   pythonLocation: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Scrape Edge data	2026-04-29T12:44:28.1812253Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib/pkgconfig
+run	Scrape Edge data	2026-04-29T12:44:28.1812693Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Scrape Edge data	2026-04-29T12:44:28.1813048Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Scrape Edge data	2026-04-29T12:44:28.1813401Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Scrape Edge data	2026-04-29T12:44:28.1813931Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib
+run	Scrape Edge data	2026-04-29T12:44:28.1814237Z ##[endgroup]
+run	Scrape Edge data	2026-04-29T12:44:28.1857533Z 🏒 SCRAPING NHL EDGE DATA
+run	Scrape Edge data	2026-04-29T12:44:28.1862472Z Current directory: /home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports
+run	Scrape Edge data	2026-04-29T12:44:28.1862963Z Contents:
+run	Scrape Edge data	2026-04-29T12:44:28.1880920Z total 2976
+run	Scrape Edge data	2026-04-29T12:44:28.1881353Z drwxr-xr-x 23 runner runner   4096 Apr 29 12:43 .
+run	Scrape Edge data	2026-04-29T12:44:28.1881884Z drwxr-xr-x  3 runner runner   4096 Apr 29 12:43 ..
+run	Scrape Edge data	2026-04-29T12:44:28.1882380Z -rw-r--r--  1 runner runner   6148 Apr 29 12:43 .DS_Store
+run	Scrape Edge data	2026-04-29T12:44:28.1882857Z drwxr-xr-x  7 runner runner   4096 Apr 29 12:43 .git
+run	Scrape Edge data	2026-04-29T12:44:28.1883362Z drwxr-xr-x  3 runner runner   4096 Apr 29 12:43 .github
+run	Scrape Edge data	2026-04-29T12:44:28.1883705Z -rw-r--r--  1 runner runner   1735 Apr 29 12:43 .gitignore
+run	Scrape Edge data	2026-04-29T12:44:28.1884082Z -rw-r--r--  1 runner runner     50 Apr 29 12:43 .vercel-deploy
+run	Scrape Edge data	2026-04-29T12:44:28.1884510Z -rw-r--r--  1 runner runner    365 Apr 29 12:43 .vercelignore
+run	Scrape Edge data	2026-04-29T12:44:28.1885170Z -rw-r--r--  1 runner runner 169177 Apr 29 12:43 F300E016-E2BD-450A-B624-5BADF3853AC0.jpeg
+run	Scrape Edge data	2026-04-29T12:44:28.1885885Z -rw-r--r--  1 runner runner   7901 Apr 29 12:43 FEATURE_ROADMAP.md
+run	Scrape Edge data	2026-04-29T12:44:28.1886379Z -rw-r--r--  1 runner runner   2537 Apr 29 12:43 README.md
+run	Scrape Edge data	2026-04-29T12:44:28.1886724Z -rw-r--r--  1 runner runner     54 Apr 29 12:43 README_MONITOR.txt
+run	Scrape Edge data	2026-04-29T12:44:28.1887111Z -rw-r--r--  1 runner runner   5424 Apr 29 12:43 SPRITE_DATA_GUIDE.md
+run	Scrape Edge data	2026-04-29T12:44:28.1887481Z drwxr-xr-x  4 runner runner   4096 Apr 29 12:43 _legacy
+run	Scrape Edge data	2026-04-29T12:44:28.1888002Z drwxr-xr-x  2 runner runner   4096 Apr 29 12:43 analyzers
+run	Scrape Edge data	2026-04-29T12:44:28.1888361Z drwxr-xr-x  4 runner runner   4096 Apr 29 12:43 api
+run	Scrape Edge data	2026-04-29T12:44:28.1888696Z -rw-r--r--  1 runner runner 190024 Apr 29 12:43 api_server.py
+run	Scrape Edge data	2026-04-29T12:44:28.1889037Z drwxr-xr-x  2 runner runner   4096 Apr 29 12:43 assets
+run	Scrape Edge data	2026-04-29T12:44:28.1889404Z -rwxr-xr-x  1 runner runner   1751 Apr 29 12:43 automated_workflow.sh
+run	Scrape Edge data	2026-04-29T12:44:28.1889850Z -rw-r--r--  1 runner runner  49935 Apr 29 12:43 daily_prediction_notifier.py
+run	Scrape Edge data	2026-04-29T12:44:28.1890326Z -rw-r--r--  1 runner runner   1194 Apr 29 12:43 daily_predictions_20260426.txt
+run	Scrape Edge data	2026-04-29T12:44:28.1890755Z -rw-r--r--  1 runner runner    850 Apr 29 12:43 daily_predictions_20260427.txt
+run	Scrape Edge data	2026-04-29T12:44:28.1891163Z -rw-r--r--  1 runner runner    996 Apr 29 12:43 daily_predictions_20260428.txt
+run	Scrape Edge data	2026-04-29T12:44:28.1891534Z drwxr-xr-x  3 runner runner   4096 Apr 29 12:43 data
+run	Scrape Edge data	2026-04-29T12:44:28.1891887Z -rw-r--r--  1 runner runner   3669 Apr 29 12:43 discord_poster.py
+run	Scrape Edge data	2026-04-29T12:44:28.1892227Z drwxr-xr-x  2 runner runner   4096 Apr 29 12:43 docs
+run	Scrape Edge data	2026-04-29T12:44:28.1892827Z drwxr-xr-x  2 runner runner   4096 Apr 29 12:43 examples
+run	Scrape Edge data	2026-04-29T12:44:28.1893186Z -rw-r--r--  1 runner runner  10399 Apr 29 12:43 game_monitor.py
+run	Scrape Edge data	2026-04-29T12:44:28.1893593Z -rw-r--r--  1 runner runner  48010 Apr 29 12:43 github_actions_runner.py
+run	Scrape Edge data	2026-04-29T12:44:28.1893975Z drwxr-xr-x  2 runner runner   4096 Apr 29 12:43 legacy
+run	Scrape Edge data	2026-04-29T12:44:28.1894353Z -rw-r--r--  1 runner runner 152484 Apr 29 12:43 live_in_game_predictions.py
+run	Scrape Edge data	2026-04-29T12:44:28.1894727Z drwxr-xr-x  2 runner runner   4096 Apr 29 12:43 logs
+run	Scrape Edge data	2026-04-29T12:44:28.1895088Z -rw-r--r--  1 runner runner 120451 Apr 29 12:43 margin_regression_model.pkl
+run	Scrape Edge data	2026-04-29T12:44:28.1895507Z -rw-r--r--  1 runner runner 357673 Apr 29 12:43 meta_confidence_model.pkl
+run	Scrape Edge data	2026-04-29T12:44:28.1895911Z -rw-r--r--  1 runner runner     91 Apr 29 12:43 model_metrics.json
+run	Scrape Edge data	2026-04-29T12:44:28.1896306Z -rw-r--r--  1 runner runner  14839 Apr 29 12:43 model_performance.json
+run	Scrape Edge data	2026-04-29T12:44:28.1896670Z drwxr-xr-x  2 runner runner   4096 Apr 29 12:43 models
+run	Scrape Edge data	2026-04-29T12:44:28.1897026Z drwxr-xr-x  5 runner runner   4096 Apr 29 12:43 nhl-analytics
+run	Scrape Edge data	2026-04-29T12:44:28.1897405Z -rw-r--r--  1 runner runner 115500 Apr 29 12:43 p1_outcome_model.pkl
+run	Scrape Edge data	2026-04-29T12:44:28.1898100Z -rw-r--r--  1 runner runner 240402 Apr 29 12:43 pdf_report_generator.py
+run	Scrape Edge data	2026-04-29T12:44:28.1898669Z -rw-r--r--  1 runner runner  82382 Apr 29 12:43 posted_tweets.json
+run	Scrape Edge data	2026-04-29T12:44:28.1899053Z -rw-r--r--  1 runner runner  16291 Apr 29 12:43 processed_games.json
+run	Scrape Edge data	2026-04-29T12:44:28.1899415Z -rw-r--r--  1 runner runner    308 Apr 29 12:43 render.yaml
+run	Scrape Edge data	2026-04-29T12:44:28.1899779Z -rw-r--r--  1 runner runner    341 Apr 29 12:43 requirements.txt
+run	Scrape Edge data	2026-04-29T12:44:28.1900131Z -rw-r--r--  1 runner runner 157045 Apr 29 12:43 run_log.txt
+run	Scrape Edge data	2026-04-29T12:44:28.1900452Z -rw-r--r--  1 runner runner     13 Apr 29 12:43 runtime.txt
+run	Scrape Edge data	2026-04-29T12:44:28.1900776Z drwxr-xr-x  2 runner runner   4096 Apr 29 12:43 scrapers
+run	Scrape Edge data	2026-04-29T12:44:28.1901108Z drwxr-xr-x  2 runner runner   4096 Apr 29 12:43 scratch
+run	Scrape Edge data	2026-04-29T12:44:28.1901430Z drwxr-xr-x  2 runner runner   4096 Apr 29 12:43 scripts
+run	Scrape Edge data	2026-04-29T12:44:28.1901808Z -rw-r--r--  1 runner runner   7724 Apr 29 12:43 season_2025_2026_team_stats.json
+run	Scrape Edge data	2026-04-29T12:44:28.1902242Z -rwxr-xr-x  1 runner runner   1990 Apr 29 12:43 setup_oracle_cloud.sh
+run	Scrape Edge data	2026-04-29T12:44:28.1902609Z drwxr-xr-x  2 runner runner   4096 Apr 29 12:43 static
+run	Scrape Edge data	2026-04-29T12:44:28.1902964Z -rw-r--r--  1 runner runner   1820 Apr 29 12:43 team_encodings.json
+run	Scrape Edge data	2026-04-29T12:44:28.1903358Z -rw-r--r--  1 runner runner 175989 Apr 29 12:43 team_report_generator.py
+run	Scrape Edge data	2026-04-29T12:44:28.1903799Z -rw-r--r--  1 runner runner    924 Apr 29 12:43 team_scoring_profiles.json
+run	Scrape Edge data	2026-04-29T12:44:28.1904235Z -rw-r--r--  1 runner runner   5122 Apr 29 12:43 team_travel_archetypes.json
+run	Scrape Edge data	2026-04-29T12:44:28.1904621Z drwxr-xr-x  2 runner runner   4096 Apr 29 12:43 templates
+run	Scrape Edge data	2026-04-29T12:44:28.1904955Z drwxr-xr-x  2 runner runner   4096 Apr 29 12:43 tests
+run	Scrape Edge data	2026-04-29T12:44:28.1905268Z drwxr-xr-x  2 runner runner   4096 Apr 29 12:43 tmp
+run	Scrape Edge data	2026-04-29T12:44:28.1905626Z -rw-r--r--  1 runner runner   3798 Apr 29 12:43 twitter_api_client.py
+run	Scrape Edge data	2026-04-29T12:44:28.1906008Z -rw-r--r--  1 runner runner   1796 Apr 29 12:43 twitter_config.py
+run	Scrape Edge data	2026-04-29T12:44:28.1906367Z -rw-r--r--  1 runner runner   7776 Apr 29 12:43 twitter_poster.py
+run	Scrape Edge data	2026-04-29T12:44:28.1906705Z drwxr-xr-x  2 runner runner   4096 Apr 29 12:43 utils
+run	Scrape Edge data	2026-04-29T12:44:28.1907063Z -rwxr-xr-x  1 runner runner   1079 Apr 29 12:43 verify_deployment.sh
+run	Scrape Edge data	2026-04-29T12:44:28.1907464Z -rw-r--r--  1 runner runner 218971 Apr 29 12:43 xgb_calibrated_model.pkl
+run	Scrape Edge data	2026-04-29T12:44:28.1908158Z -rw-r--r--  1 runner runner 218971 Apr 29 12:43 xgb_calibrated_model_full.pkl
+run	Scrape Edge data	2026-04-29T12:44:28.1908624Z -rw-r--r--  1 runner runner 217929 Apr 29 12:43 xgb_calibrated_model_recent.pkl
+run	Scrape Edge data	2026-04-29T12:44:28.1909035Z -rw-r--r--  1 runner runner    678 Apr 29 12:43 xgb_features.pkl
+run	Scrape Edge data	2026-04-29T12:44:28.1909410Z -rw-r--r--  1 runner runner    678 Apr 29 12:43 xgb_features_full.pkl
+run	Scrape Edge data	2026-04-29T12:44:28.1909973Z -rw-r--r--  1 runner runner    678 Apr 29 12:43 xgb_features_recent.pkl
+run	Scrape Edge data	2026-04-29T12:44:28.1910361Z -rw-r--r--  1 runner runner 209036 Apr 29 12:43 xgb_nhl_model.json
+run	Scrape Edge data	2026-04-29T12:44:28.1910677Z Looking for scraper:
+run	Scrape Edge data	2026-04-29T12:44:28.1912798Z ./scrapers/daily_edge_data_scraper.py
+run	Scrape Edge data	2026-04-29T12:44:28.1915391Z Running scraper:
+run	Scrape Edge data	2026-04-29T12:44:29.6940803Z 🏒 DAILY NHL EDGE DATA SCRAPING
+run	Scrape Edge data	2026-04-29T12:44:29.6941356Z 📅 Date: 2026-04-29 12:44:28 UTC
+run	Scrape Edge data	2026-04-29T12:44:29.6941737Z ==================================================
+run	Scrape Edge data	2026-04-29T12:44:29.6942195Z 📊 Found 831 players with Edge data
+run	Scrape Edge data	2026-04-29T12:44:29.6942682Z 💾 Saved Edge data to data/nhl_edge_data.json
+run	Scrape Edge data	2026-04-29T12:44:29.6943183Z ✅ Successfully scraped 831 players
+run	Scrape Edge data	2026-04-29T12:44:29.6943595Z ✅ Calculated stats for 32 teams
+run	Scrape Edge data	2026-04-29T12:44:29.6943829Z 
+run	Scrape Edge data	2026-04-29T12:44:29.6944016Z 🎉 DAILY EDGE DATA SCRAPING COMPLETE!
+run	Scrape Edge data	2026-04-29T12:44:29.6944399Z ==================================================
+run	Scrape Edge data	2026-04-29T12:44:29.6944876Z ✅ Fresh NHL Edge data scraped
+run	Scrape Edge data	2026-04-29T12:44:29.6945255Z ✅ Team statistics calculated
+run	Scrape Edge data	2026-04-29T12:44:29.6945657Z ✅ Ready for daily predictions
+run	Scrape Edge data	2026-04-29T12:44:29.6946099Z ✅ Edge advantages will be factored into predictions
+run	Scrape Edge data	2026-04-29T12:44:29.6946401Z 
+run	Scrape Edge data	2026-04-29T12:44:29.6946894Z 🧪 TESTING TEAM ADVANTAGE CALCULATION:
+run	Scrape Edge data	2026-04-29T12:44:29.6947407Z Colorado vs San Jose Edge advantage: 0.000 (+0.0% win probability impact)
+run	Validate edge data exists	﻿2026-04-29T12:44:29.7719569Z ##[group]Run if [ -f "data/nhl_edge_data.json" ]; then
+run	Validate edge data exists	2026-04-29T12:44:29.7720009Z [36;1mif [ -f "data/nhl_edge_data.json" ]; then[0m
+run	Validate edge data exists	2026-04-29T12:44:29.7720382Z [36;1m  echo "✅ Edge data file created successfully in data/"[0m
+run	Validate edge data exists	2026-04-29T12:44:29.7720740Z [36;1m  ls -l data/nhl_edge_data.json[0m
+run	Validate edge data exists	2026-04-29T12:44:29.7720997Z [36;1melse[0m
+run	Validate edge data exists	2026-04-29T12:44:29.7721254Z [36;1m  echo "❌ Edge data file not found in data/" && exit 1[0m
+run	Validate edge data exists	2026-04-29T12:44:29.7721554Z [36;1mfi[0m
+run	Validate edge data exists	2026-04-29T12:44:29.7744321Z shell: /usr/bin/bash -e {0}
+run	Validate edge data exists	2026-04-29T12:44:29.7744566Z env:
+run	Validate edge data exists	2026-04-29T12:44:29.7744785Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+run	Validate edge data exists	2026-04-29T12:44:29.7745080Z   PUSH_MODEL_ARTIFACTS: false
+run	Validate edge data exists	2026-04-29T12:44:29.7745386Z   pythonLocation: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Validate edge data exists	2026-04-29T12:44:29.7745799Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib/pkgconfig
+run	Validate edge data exists	2026-04-29T12:44:29.7746222Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Validate edge data exists	2026-04-29T12:44:29.7746581Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Validate edge data exists	2026-04-29T12:44:29.7746972Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Validate edge data exists	2026-04-29T12:44:29.7747323Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib
+run	Validate edge data exists	2026-04-29T12:44:29.7747628Z ##[endgroup]
+run	Validate edge data exists	2026-04-29T12:44:29.7793099Z ✅ Edge data file created successfully in data/
+run	Validate edge data exists	2026-04-29T12:44:29.7806710Z -rw-r--r-- 1 runner runner 547897 Apr 29 12:44 data/nhl_edge_data.json
+run	Generate real team stats	﻿2026-04-29T12:44:29.7834523Z ##[group]Run echo "📊 GENERATING REAL TEAM STATS"
+run	Generate real team stats	2026-04-29T12:44:29.7834898Z [36;1mecho "📊 GENERATING REAL TEAM STATS"[0m
+run	Generate real team stats	2026-04-29T12:44:29.7835198Z [36;1mecho "Current directory: $(pwd)"[0m
+run	Generate real team stats	2026-04-29T12:44:29.7835496Z [36;1mecho "Running team stats generator..."[0m
+run	Generate real team stats	2026-04-29T12:44:29.7835959Z [36;1mPYTHONPATH=".:models:analyzers:utils:scrapers" python3 utils/generate_real_team_stats.py[0m
+run	Generate real team stats	2026-04-29T12:44:29.7836448Z [36;1mecho "✅ Team stats generation complete"[0m
+run	Generate real team stats	2026-04-29T12:44:29.7836730Z [36;1m[0m
+run	Generate real team stats	2026-04-29T12:44:29.7836978Z [36;1m# Check if file was created (normalized location)[0m
+run	Generate real team stats	2026-04-29T12:44:29.7837353Z [36;1mif [ -f "data/season_2025_2026_team_stats.json" ]; then[0m
+run	Generate real team stats	2026-04-29T12:44:29.7837699Z [36;1m  echo "✅ Team stats file created in data/"[0m
+run	Generate real team stats	2026-04-29T12:44:29.7838285Z [36;1m  ls -lh data/season_2025_2026_team_stats.json[0m
+run	Generate real team stats	2026-04-29T12:44:29.7838566Z [36;1melse[0m
+run	Generate real team stats	2026-04-29T12:44:29.7838827Z [36;1m  echo "❌ Team stats file not found in data/" && exit 1[0m
+run	Generate real team stats	2026-04-29T12:44:29.7839196Z [36;1mfi[0m
+run	Generate real team stats	2026-04-29T12:44:29.7859727Z shell: /usr/bin/bash -e {0}
+run	Generate real team stats	2026-04-29T12:44:29.7859967Z env:
+run	Generate real team stats	2026-04-29T12:44:29.7860180Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+run	Generate real team stats	2026-04-29T12:44:29.7860464Z   PUSH_MODEL_ARTIFACTS: false
+run	Generate real team stats	2026-04-29T12:44:29.7860772Z   pythonLocation: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Generate real team stats	2026-04-29T12:44:29.7861197Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib/pkgconfig
+run	Generate real team stats	2026-04-29T12:44:29.7861611Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Generate real team stats	2026-04-29T12:44:29.7861974Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Generate real team stats	2026-04-29T12:44:29.7862325Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Generate real team stats	2026-04-29T12:44:29.7862680Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib
+run	Generate real team stats	2026-04-29T12:44:29.7862980Z ##[endgroup]
+run	Generate real team stats	2026-04-29T12:44:29.7905091Z 📊 GENERATING REAL TEAM STATS
+run	Generate real team stats	2026-04-29T12:44:29.7909906Z Current directory: /home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports
+run	Generate real team stats	2026-04-29T12:44:29.7910701Z Running team stats generator...
+run	Generate real team stats	2026-04-29T12:44:32.8325563Z DEBUG: Found font at /home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports/assets/RussoOne-Regular.ttf
+run	Generate real team stats	2026-04-29T12:44:32.8326528Z DEBUG: Successfully registered RussoOne font
+run	Generate real team stats	2026-04-29T12:44:32.8326835Z Fetching standings to get all teams...
+run	Generate real team stats	2026-04-29T12:44:32.8328275Z ✅ Loaded existing stats for 32 teams
+run	Generate real team stats	2026-04-29T12:44:32.8328555Z 
+run	Generate real team stats	2026-04-29T12:44:32.8328701Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:32.8329130Z Processing Colorado Avalanche (COL)...
+run	Generate real team stats	2026-04-29T12:44:32.8329493Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:32.8329872Z Found 68 total games in history
+run	Generate real team stats	2026-04-29T12:44:32.8330222Z   Home games: 32 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:32.8330571Z   Away games: 38 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:32.8330785Z 
+run	Generate real team stats	2026-04-29T12:44:32.8330930Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:32.8331339Z Processing Carolina Hurricanes (CAR)...
+run	Generate real team stats	2026-04-29T12:44:32.8331718Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:32.8332076Z Found 67 total games in history
+run	Generate real team stats	2026-04-29T12:44:32.8332416Z   Home games: 34 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:32.8332793Z   Away games: 35 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:32.8333061Z 
+run	Generate real team stats	2026-04-29T12:44:32.8333218Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:32.8333659Z Processing Dallas Stars (DAL)...
+run	Generate real team stats	2026-04-29T12:44:32.8334052Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:32.8334473Z Found 67 total games in history
+run	Generate real team stats	2026-04-29T12:44:32.8334834Z   Home games: 37 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:32.8335205Z   Away games: 32 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:32.8335445Z 
+run	Generate real team stats	2026-04-29T12:44:32.8335587Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:32.8336009Z Processing Buffalo Sabres (BUF)...
+run	Generate real team stats	2026-04-29T12:44:32.8336336Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:32.8336907Z Found 67 total games in history
+run	Generate real team stats	2026-04-29T12:44:32.8337134Z   Home games: 34 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:32.8337389Z   Away games: 35 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:32.8337543Z 
+run	Generate real team stats	2026-04-29T12:44:32.8337654Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:32.8338174Z Processing Tampa Bay Lightning (TBL)...
+run	Generate real team stats	2026-04-29T12:44:32.8338464Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:32.8338741Z Found 69 total games in history
+run	Generate real team stats	2026-04-29T12:44:32.8338985Z   Home games: 35 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:32.8339227Z   Away games: 35 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:32.8339371Z 
+run	Generate real team stats	2026-04-29T12:44:32.8339467Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:32.8339872Z Processing Montréal Canadiens (MTL)...
+run	Generate real team stats	2026-04-29T12:44:32.8340147Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:32.8340407Z Found 67 total games in history
+run	Generate real team stats	2026-04-29T12:44:32.8340652Z   Home games: 36 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:32.8340891Z   Away games: 32 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:32.8341050Z 
+run	Generate real team stats	2026-04-29T12:44:32.8341151Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:32.8341452Z Processing Minnesota Wild (MIN)...
+run	Generate real team stats	2026-04-29T12:44:32.8341708Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:32.8341978Z Found 67 total games in history
+run	Generate real team stats	2026-04-29T12:44:32.8342215Z   Home games: 36 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:32.8342444Z   Away games: 32 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:32.8342597Z 
+run	Generate real team stats	2026-04-29T12:44:32.8342694Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:32.8342956Z Processing Boston Bruins (BOS)...
+run	Generate real team stats	2026-04-29T12:44:32.8343200Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:32.8343456Z Found 68 total games in history
+run	Generate real team stats	2026-04-29T12:44:32.8343681Z   Home games: 32 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:32.8343922Z   Away games: 38 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:32.8344075Z 
+run	Generate real team stats	2026-04-29T12:44:32.8344167Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:32.8344433Z Processing Ottawa Senators (OTT)...
+run	Generate real team stats	2026-04-29T12:44:32.8344683Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:32.8344938Z Found 67 total games in history
+run	Generate real team stats	2026-04-29T12:44:32.8345585Z   Home games: 33 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:32.8345939Z   Away games: 36 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:32.8346169Z 
+run	Generate real team stats	2026-04-29T12:44:32.8346318Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:32.8346744Z Processing Pittsburgh Penguins (PIT)...
+run	Generate real team stats	2026-04-29T12:44:32.8347168Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:32.8347440Z Found 69 total games in history
+run	Generate real team stats	2026-04-29T12:44:32.8347676Z   Home games: 34 processed, 1 new
+run	Generate real team stats	2026-04-29T12:44:32.8348225Z   Away games: 34 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:34.9416959Z   Processing NEW home game 1/1: None (ID: 2025030115)... Debug - Game Center data: True
+run	Generate real team stats	2026-04-29T12:44:34.9417726Z Debug - Boxscore data: True
+run	Generate real team stats	2026-04-29T12:44:34.9421060Z Debug - Play-by-play data: True
+run	Generate real team stats	2026-04-29T12:44:34.9421761Z DEBUG: Fetching sprite from https://wsr.nhle.com/sprites/20252026/2025030115/ev712.json
+run	Generate real team stats	2026-04-29T12:44:34.9422653Z DEBUG: Fetching sprite from https://wsr.nhle.com/sprites/20252026/2025030115/ev1293.json
+run	Generate real team stats	2026-04-29T12:44:34.9423469Z DEBUG: Fetching sprite from https://wsr.nhle.com/sprites/20252026/2025030115/ev110.json
+run	Generate real team stats	2026-04-29T12:44:34.9424334Z ✓ GS=3.6, xG=2.91
+run	Generate real team stats	2026-04-29T12:44:34.9425111Z   (Saved updates to /home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports/data/season_2025_2026_team_stats.json)
+run	Generate real team stats	2026-04-29T12:44:34.9425839Z 
+run	Generate real team stats	2026-04-29T12:44:34.9426007Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:34.9426459Z Processing Philadelphia Flyers (PHI)...
+run	Generate real team stats	2026-04-29T12:44:34.9426848Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:34.9428402Z Found 68 total games in history
+run	Generate real team stats	2026-04-29T12:44:34.9428669Z   Home games: 38 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:34.9428930Z   Away games: 31 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:34.9429093Z 
+run	Generate real team stats	2026-04-29T12:44:34.9429204Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:34.9429509Z Processing Washington Capitals (WSH)...
+run	Generate real team stats	2026-04-29T12:44:34.9429805Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:34.9430083Z Found 64 total games in history
+run	Generate real team stats	2026-04-29T12:44:34.9430327Z   Home games: 33 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:34.9430579Z   Away games: 32 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:34.9430739Z 
+run	Generate real team stats	2026-04-29T12:44:34.9430852Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:34.9431150Z Processing Vegas Golden Knights (VGK)...
+run	Generate real team stats	2026-04-29T12:44:34.9431430Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:34.9431708Z Found 69 total games in history
+run	Generate real team stats	2026-04-29T12:44:34.9431952Z   Home games: 35 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:34.9432199Z   Away games: 35 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:34.9432347Z 
+run	Generate real team stats	2026-04-29T12:44:34.9432447Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:34.9432717Z Processing Edmonton Oilers (EDM)...
+run	Generate real team stats	2026-04-29T12:44:34.9432974Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:34.9433238Z Found 67 total games in history
+run	Generate real team stats	2026-04-29T12:44:34.9433469Z   Home games: 33 processed, 1 new
+run	Generate real team stats	2026-04-29T12:44:34.9433711Z   Away games: 35 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:38.0788250Z   Processing NEW home game 1/1: None (ID: 2025030185)... Debug - Game Center data: True
+run	Generate real team stats	2026-04-29T12:44:38.0788993Z Debug - Boxscore data: True
+run	Generate real team stats	2026-04-29T12:44:38.0789368Z Debug - Play-by-play data: True
+run	Generate real team stats	2026-04-29T12:44:38.0789983Z DEBUG: Fetching sprite from https://wsr.nhle.com/sprites/20252026/2025030185/ev670.json
+run	Generate real team stats	2026-04-29T12:44:38.0790798Z DEBUG: Fetching sprite from https://wsr.nhle.com/sprites/20252026/2025030185/ev92.json
+run	Generate real team stats	2026-04-29T12:44:38.0791653Z DEBUG: Fetching sprite from https://wsr.nhle.com/sprites/20252026/2025030185/ev252.json
+run	Generate real team stats	2026-04-29T12:44:38.0792519Z DEBUG: Fetching sprite from https://wsr.nhle.com/sprites/20252026/2025030185/ev282.json
+run	Generate real team stats	2026-04-29T12:44:38.0793346Z DEBUG: Fetching sprite from https://wsr.nhle.com/sprites/20252026/2025030185/ev697.json
+run	Generate real team stats	2026-04-29T12:44:38.0794694Z ✓ GS=8.7, xG=2.31
+run	Generate real team stats	2026-04-29T12:44:38.0795493Z   (Saved updates to /home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports/data/season_2025_2026_team_stats.json)
+run	Generate real team stats	2026-04-29T12:44:38.0796234Z 
+run	Generate real team stats	2026-04-29T12:44:38.0796398Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:38.0796853Z Processing Utah Mammoth (UTA)...
+run	Generate real team stats	2026-04-29T12:44:38.0797199Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:38.0797574Z Found 70 total games in history
+run	Generate real team stats	2026-04-29T12:44:38.0798148Z   Home games: 34 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:38.0798513Z   Away games: 37 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:38.0798750Z 
+run	Generate real team stats	2026-04-29T12:44:38.0798899Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:38.0799237Z Processing Detroit Red Wings (DET)...
+run	Generate real team stats	2026-04-29T12:44:38.0799525Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:38.0799810Z Found 67 total games in history
+run	Generate real team stats	2026-04-29T12:44:38.0800071Z   Home games: 34 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:38.0800332Z   Away games: 35 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:38.0800489Z 
+run	Generate real team stats	2026-04-29T12:44:38.0800599Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:38.0800901Z Processing Columbus Blue Jackets (CBJ)...
+run	Generate real team stats	2026-04-29T12:44:38.0801187Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:38.0801468Z Found 66 total games in history
+run	Generate real team stats	2026-04-29T12:44:38.0801712Z   Home games: 32 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:38.0801959Z   Away games: 36 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:38.0802107Z 
+run	Generate real team stats	2026-04-29T12:44:38.0802217Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:38.0802715Z Processing Anaheim Ducks (ANA)...
+run	Generate real team stats	2026-04-29T12:44:38.0802961Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:38.0803228Z Found 67 total games in history
+run	Generate real team stats	2026-04-29T12:44:38.0803462Z   Home games: 33 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:38.0803701Z   Away games: 35 processed, 1 new
+run	Generate real team stats	2026-04-29T12:44:43.8693027Z   Processing NEW away game 1/1: None (ID: 2025030185)... Debug - Game Center data: True
+run	Generate real team stats	2026-04-29T12:44:43.8693713Z Debug - Boxscore data: True
+run	Generate real team stats	2026-04-29T12:44:43.8694071Z Debug - Play-by-play data: True
+run	Generate real team stats	2026-04-29T12:44:43.8694648Z DEBUG: Fetching sprite from https://wsr.nhle.com/sprites/20252026/2025030185/ev670.json
+run	Generate real team stats	2026-04-29T12:44:43.8695422Z DEBUG: Fetching sprite from https://wsr.nhle.com/sprites/20252026/2025030185/ev92.json
+run	Generate real team stats	2026-04-29T12:44:43.8696179Z DEBUG: Fetching sprite from https://wsr.nhle.com/sprites/20252026/2025030185/ev252.json
+run	Generate real team stats	2026-04-29T12:44:43.8696962Z DEBUG: Fetching sprite from https://wsr.nhle.com/sprites/20252026/2025030185/ev282.json
+run	Generate real team stats	2026-04-29T12:44:43.8697986Z DEBUG: Fetching sprite from https://wsr.nhle.com/sprites/20252026/2025030185/ev697.json
+run	Generate real team stats	2026-04-29T12:44:43.8698824Z ✓ GS=7.0, xG=2.66
+run	Generate real team stats	2026-04-29T12:44:43.8699605Z   (Saved updates to /home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports/data/season_2025_2026_team_stats.json)
+run	Generate real team stats	2026-04-29T12:44:43.8700374Z 
+run	Generate real team stats	2026-04-29T12:44:43.8700530Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8700969Z Processing New York Islanders (NYI)...
+run	Generate real team stats	2026-04-29T12:44:43.8701373Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8701782Z Found 66 total games in history
+run	Generate real team stats	2026-04-29T12:44:43.8702148Z   Home games: 35 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8702593Z   Away games: 32 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8702814Z 
+run	Generate real team stats	2026-04-29T12:44:43.8702965Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8703384Z Processing Los Angeles Kings (LAK)...
+run	Generate real team stats	2026-04-29T12:44:43.8703800Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8704193Z Found 67 total games in history
+run	Generate real team stats	2026-04-29T12:44:43.8704529Z   Home games: 30 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8704869Z   Away games: 37 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8705092Z 
+run	Generate real team stats	2026-04-29T12:44:43.8705237Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8706131Z Processing New Jersey Devils (NJD)...
+run	Generate real team stats	2026-04-29T12:44:43.8706527Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8706925Z Found 67 total games in history
+run	Generate real team stats	2026-04-29T12:44:43.8707264Z   Home games: 36 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8707613Z   Away games: 33 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8708075Z 
+run	Generate real team stats	2026-04-29T12:44:43.8708213Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8708606Z Processing St. Louis Blues (STL)...
+run	Generate real team stats	2026-04-29T12:44:43.8708977Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8709370Z Found 68 total games in history
+run	Generate real team stats	2026-04-29T12:44:43.8709690Z   Home games: 36 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8710026Z   Away games: 34 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8710253Z 
+run	Generate real team stats	2026-04-29T12:44:43.8710387Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8710787Z Processing Nashville Predators (NSH)...
+run	Generate real team stats	2026-04-29T12:44:43.8711177Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8711545Z Found 66 total games in history
+run	Generate real team stats	2026-04-29T12:44:43.8711876Z   Home games: 35 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8712220Z   Away games: 33 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8712437Z 
+run	Generate real team stats	2026-04-29T12:44:43.8712576Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8712975Z Processing San Jose Sharks (SJS)...
+run	Generate real team stats	2026-04-29T12:44:43.8713341Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8713730Z Found 69 total games in history
+run	Generate real team stats	2026-04-29T12:44:43.8714065Z   Home games: 34 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8714615Z   Away games: 35 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8714829Z 
+run	Generate real team stats	2026-04-29T12:44:43.8714957Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8715349Z Processing Florida Panthers (FLA)...
+run	Generate real team stats	2026-04-29T12:44:43.8715719Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8716114Z Found 68 total games in history
+run	Generate real team stats	2026-04-29T12:44:43.8716437Z   Home games: 34 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8716776Z   Away games: 36 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8717000Z 
+run	Generate real team stats	2026-04-29T12:44:43.8717131Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8717529Z Processing Winnipeg Jets (WPG)...
+run	Generate real team stats	2026-04-29T12:44:43.8718061Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8718430Z Found 65 total games in history
+run	Generate real team stats	2026-04-29T12:44:43.8718768Z   Home games: 31 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8719113Z   Away games: 34 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8719343Z 
+run	Generate real team stats	2026-04-29T12:44:43.8719482Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8719875Z Processing Seattle Kraken (SEA)...
+run	Generate real team stats	2026-04-29T12:44:43.8720231Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8720609Z Found 63 total games in history
+run	Generate real team stats	2026-04-29T12:44:43.8720941Z   Home games: 34 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8721303Z   Away games: 31 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8721534Z 
+run	Generate real team stats	2026-04-29T12:44:43.8721689Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8722113Z Processing Toronto Maple Leafs (TOR)...
+run	Generate real team stats	2026-04-29T12:44:43.8722518Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8722913Z Found 64 total games in history
+run	Generate real team stats	2026-04-29T12:44:43.8723262Z   Home games: 33 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8723604Z   Away games: 31 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8723837Z 
+run	Generate real team stats	2026-04-29T12:44:43.8723968Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8724392Z Processing Calgary Flames (CGY)...
+run	Generate real team stats	2026-04-29T12:44:43.8724761Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8725148Z Found 67 total games in history
+run	Generate real team stats	2026-04-29T12:44:43.8725486Z   Home games: 33 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8725827Z   Away games: 36 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8726236Z 
+run	Generate real team stats	2026-04-29T12:44:43.8726373Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8726761Z Processing New York Rangers (NYR)...
+run	Generate real team stats	2026-04-29T12:44:43.8727140Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8727511Z Found 66 total games in history
+run	Generate real team stats	2026-04-29T12:44:43.8727998Z   Home games: 38 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8728344Z   Away games: 31 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8728561Z 
+run	Generate real team stats	2026-04-29T12:44:43.8728698Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8729099Z Processing Chicago Blackhawks (CHI)...
+run	Generate real team stats	2026-04-29T12:44:43.8729612Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8730145Z Found 67 total games in history
+run	Generate real team stats	2026-04-29T12:44:43.8730572Z   Home games: 32 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8731236Z   Away games: 37 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8731508Z 
+run	Generate real team stats	2026-04-29T12:44:43.8731788Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8732283Z Processing Vancouver Canucks (VAN)...
+run	Generate real team stats	2026-04-29T12:44:43.8732887Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8733407Z Found 65 total games in history
+run	Generate real team stats	2026-04-29T12:44:43.8733864Z   Home games: 36 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8734440Z   Away games: 31 processed, 0 new
+run	Generate real team stats	2026-04-29T12:44:43.8734749Z 
+run	Generate real team stats	2026-04-29T12:44:43.8734928Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8736188Z ✓ Stats generation complete. /home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports/data/season_2025_2026_team_stats.json
+run	Generate real team stats	2026-04-29T12:44:43.8737384Z 
+run	Generate real team stats	2026-04-29T12:44:43.8737583Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:43.8738424Z 🔄 Refreshing advanced goalie and team metrics...
+run	Generate real team stats	2026-04-29T12:44:43.8752395Z 📂 Loaded existing stats: 96 goalies, 1069 games processed
+run	Generate real team stats	2026-04-29T12:44:43.8752962Z 📋 Found 1071 completed games to process
+run	Generate real team stats	2026-04-29T12:44:43.8753261Z 
+run	Generate real team stats	2026-04-29T12:44:43.8753657Z 🏒 Backfilling goalie stats: 2 new games (of 1071 total, 1069 already done)
+run	Generate real team stats	2026-04-29T12:44:43.8754279Z 💾 Saved 96 goalies to data/goalie_stats.json
+run	Generate real team stats	2026-04-29T12:44:43.8754553Z 
+run	Generate real team stats	2026-04-29T12:44:43.8754730Z 📊 TOP GOALIES (min 10 GP)
+run	Generate real team stats	2026-04-29T12:44:43.8755098Z ================================================================================
+run	Generate real team stats	2026-04-29T12:44:43.8755634Z Goalie                  GP    SV%   GAA   GSAX  HDSV%  GlvSV%  BlkSV%  REB%
+run	Generate real team stats	2026-04-29T12:44:43.8756212Z --------------------------------------------------------------------------------
+run	Generate real team stats	2026-04-29T12:44:43.8756811Z Dennis Hildeby          13  0.915  2.31   -9.9  0.849   0.915   0.915 0.076
+run	Generate real team stats	2026-04-29T12:44:43.8757405Z Thatcher Demko          13  0.905  2.46  -11.6  0.882   0.914   0.894 0.089
+run	Generate real team stats	2026-04-29T12:44:43.8758151Z Jonathan Quick          17  0.915  2.41  -15.8  0.824   0.886   0.939 0.065
+run	Generate real team stats	2026-04-29T12:44:43.8758729Z Anton Forsberg          28  0.909  2.50  -26.7  0.838   0.895   0.921 0.055
+run	Generate real team stats	2026-04-29T12:44:43.8759298Z Logan Thompson          30  0.913  3.57  -34.0  0.853   0.910   0.917 0.060
+run	Generate real team stats	2026-04-29T12:44:43.8759849Z Devin Cooley            28  0.895  2.79  -33.3  0.841   0.878   0.910 0.077
+run	Generate real team stats	2026-04-29T12:44:43.8760407Z Jake Allen              30  0.899  2.90  -38.0  0.812   0.898   0.899 0.077
+run	Generate real team stats	2026-04-29T12:44:43.8760977Z Alex Nedeljkovic        30  0.900  3.03  -38.7  0.850   0.905   0.895 0.056
+run	Generate real team stats	2026-04-29T12:44:43.8761565Z Philipp Grubauer        22  0.890  2.77  -30.0  0.774   0.896   0.884 0.054
+run	Generate real team stats	2026-04-29T12:44:43.8762151Z James Reimer            13  0.877  2.46  -17.7  0.781   0.862   0.891 0.057
+run	Generate real team stats	2026-04-29T12:44:43.8762696Z Joel Hofer              30  0.905  3.20  -41.6  0.807   0.909   0.901 0.059
+run	Generate real team stats	2026-04-29T12:44:43.8763243Z Anthony Stolarz         26  0.891  3.00  -36.4  0.829   0.885   0.898 0.078
+run	Generate real team stats	2026-04-29T12:44:43.8763793Z Dan Vladar              30  0.906  3.60  -45.2  0.841   0.901   0.910 0.055
+run	Generate real team stats	2026-04-29T12:44:43.8764337Z Eric Comrie             21  0.887  3.00  -31.7  0.782   0.919   0.857 0.084
+run	Generate real team stats	2026-04-29T12:44:43.8765107Z Nikita Tolopilo         18  0.884  3.11  -27.4  0.831   0.881   0.886 0.064
+run	Generate real team stats	2026-04-29T12:44:43.8765866Z 📂 Loaded existing advanced stats: 32 teams, 98 goalies, 1027 games processed
+run	Generate real team stats	2026-04-29T12:44:43.8766523Z 🏒 Backfilling Team & Goalie ADV Stats: 2 games
+run	Generate real team stats	2026-04-29T12:44:43.8767039Z 💾 Saved advanced stats for 32 teams and 98 goalies
+run	Generate real team stats	2026-04-29T12:44:43.8767488Z   ✅ 2/2 processed
+run	Generate real team stats	2026-04-29T12:44:43.8768062Z ✅ Advanced metrics summaries refreshed successfully
+run	Generate real team stats	2026-04-29T12:44:43.8768513Z ============================================================
+run	Generate real team stats	2026-04-29T12:44:44.0238579Z ✅ Team stats generation complete
+run	Generate real team stats	2026-04-29T12:44:44.0239041Z ✅ Team stats file created in data/
+run	Generate real team stats	2026-04-29T12:44:44.0254472Z -rw-r--r-- 1 runner runner 1.9M Apr 29 12:44 data/season_2025_2026_team_stats.json
+run	Update game outcomes	﻿2026-04-29T12:44:44.0288366Z ##[group]Run echo "📝 UPDATING PAST GAME OUTCOMES"
+run	Update game outcomes	2026-04-29T12:44:44.0288829Z [36;1mecho "📝 UPDATING PAST GAME OUTCOMES"[0m
+run	Update game outcomes	2026-04-29T12:44:44.0289300Z [36;1m# Update outcomes, emit OUTCOMES_UPDATED=N, and persist to step output.[0m
+run	Update game outcomes	2026-04-29T12:44:44.0289759Z [36;1mset -e[0m
+run	Update game outcomes	2026-04-29T12:44:44.0290273Z [36;1mPYTHONPATH=".:models:analyzers:utils:scrapers" python3 utils/update_game_outcomes.py | tee /tmp/outcomes.log[0m
+run	Update game outcomes	2026-04-29T12:44:44.0291309Z [36;1mupdated="$(python3 -c "import re; from pathlib import Path; m=re.search(r'OUTCOMES_UPDATED=(\\d+)', Path('/tmp/outcomes.log').read_text()); print(int(m.group(1)) if m else 0)")"[0m
+run	Update game outcomes	2026-04-29T12:44:44.0292153Z [36;1mecho "outcomes_updated=${updated}" >> "$GITHUB_OUTPUT"[0m
+run	Update game outcomes	2026-04-29T12:44:44.0315178Z shell: /usr/bin/bash -e {0}
+run	Update game outcomes	2026-04-29T12:44:44.0315457Z env:
+run	Update game outcomes	2026-04-29T12:44:44.0315701Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+run	Update game outcomes	2026-04-29T12:44:44.0316036Z   PUSH_MODEL_ARTIFACTS: false
+run	Update game outcomes	2026-04-29T12:44:44.0316389Z   pythonLocation: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Update game outcomes	2026-04-29T12:44:44.0316900Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib/pkgconfig
+run	Update game outcomes	2026-04-29T12:44:44.0317376Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Update game outcomes	2026-04-29T12:44:44.0317795Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Update game outcomes	2026-04-29T12:44:44.0318385Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Update game outcomes	2026-04-29T12:44:44.0318802Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib
+run	Update game outcomes	2026-04-29T12:44:44.0319155Z ##[endgroup]
+run	Update game outcomes	2026-04-29T12:44:44.0362205Z 📝 UPDATING PAST GAME OUTCOMES
+run	Update game outcomes	2026-04-29T12:44:44.4436251Z 2026-04-29 12:44:44,443 - INFO - Checking for game updates via events log (1073 pending games)...
+run	Update game outcomes	2026-04-29T12:44:44.4439167Z 2026-04-29 12:44:44,443 - INFO - Checking status for game 2025030136 (CAR @ OTT) on 2026-04-25...
+run	Update game outcomes	2026-04-29T12:44:44.8079111Z 2026-04-29 12:44:44,807 - WARNING - Could not fetch data for game 2025030136
+run	Update game outcomes	2026-04-29T12:44:44.8080012Z 2026-04-29 12:44:44,807 - INFO - Checking status for game 2025030146 (PIT @ PHI) on 2026-04-25...
+run	Update game outcomes	2026-04-29T12:44:44.8873808Z 2026-04-29 12:44:44,887 - INFO - Checking status for game 2025030166 (DAL @ MIN) on 2026-04-25...
+run	Update game outcomes	2026-04-29T12:44:45.1626265Z 2026-04-29 12:44:45,162 - INFO - Checking status for game 2025030116 (BUF @ BOS) on 2026-04-26...
+run	Update game outcomes	2026-04-29T12:44:45.4697012Z 2026-04-29 12:44:45,469 - INFO - Checking status for game 2025030126 (TBL @ MTL) on 2026-04-26...
+run	Update game outcomes	2026-04-29T12:44:45.7478919Z 2026-04-29 12:44:45,747 - INFO - Checking status for game 2025030156 (COL @ LAK) on 2026-04-26...
+run	Update game outcomes	2026-04-29T12:44:46.0640126Z 2026-04-29 12:44:46,063 - WARNING - Could not fetch data for game 2025030156
+run	Update game outcomes	2026-04-29T12:44:46.0640730Z 2026-04-29 12:44:46,063 - INFO - Checking status for game 2025030186 (EDM @ ANA) on 2026-04-26...
+run	Update game outcomes	2026-04-29T12:44:46.3272455Z 2026-04-29 12:44:46,326 - INFO - Checking status for game 2025030135 (FLA @ TOR) on 2026-04-27...
+run	Update game outcomes	2026-04-29T12:44:46.6116343Z 2026-04-29 12:44:46,611 - WARNING - Could not fetch data for game 2025030135
+run	Update game outcomes	2026-04-29T12:44:46.6116965Z 2026-04-29 12:44:46,611 - INFO - Checking status for game 2025030155 (VGK @ UTA) on 2026-04-27...
+run	Update game outcomes	2026-04-29T12:44:46.8357117Z 2026-04-29 12:44:46,835 - WARNING - Could not fetch data for game 2025030155
+run	Update game outcomes	2026-04-29T12:44:46.8358238Z 2026-04-29 12:44:46,835 - INFO - Checking status for game 2025030175 (WPG @ VAN) on 2026-04-27...
+run	Update game outcomes	2026-04-29T12:44:46.9287565Z 2026-04-29 12:44:46,928 - INFO - No completed games found needing updates.
+run	Update game outcomes	2026-04-29T12:44:46.9330872Z Debug - Game Center data: False
+run	Update game outcomes	2026-04-29T12:44:46.9331346Z Debug - Boxscore data: False
+run	Update game outcomes	2026-04-29T12:44:46.9331741Z Debug - Play-by-play data: False
+run	Update game outcomes	2026-04-29T12:44:46.9332152Z Warning: Missing game data, returning None
+run	Update game outcomes	2026-04-29T12:44:46.9332585Z Debug - Game Center data: True
+run	Update game outcomes	2026-04-29T12:44:46.9332951Z Debug - Boxscore data: True
+run	Update game outcomes	2026-04-29T12:44:46.9333313Z Debug - Play-by-play data: True
+run	Update game outcomes	2026-04-29T12:44:46.9333674Z Debug - Game Center data: True
+run	Update game outcomes	2026-04-29T12:44:46.9334021Z Debug - Boxscore data: True
+run	Update game outcomes	2026-04-29T12:44:46.9334715Z Debug - Play-by-play data: True
+run	Update game outcomes	2026-04-29T12:44:46.9335002Z Debug - Game Center data: True
+run	Update game outcomes	2026-04-29T12:44:46.9335233Z Debug - Boxscore data: True
+run	Update game outcomes	2026-04-29T12:44:46.9335494Z Debug - Play-by-play data: True
+run	Update game outcomes	2026-04-29T12:44:46.9335744Z Debug - Game Center data: True
+run	Update game outcomes	2026-04-29T12:44:46.9335982Z Debug - Boxscore data: True
+run	Update game outcomes	2026-04-29T12:44:46.9336216Z Debug - Play-by-play data: True
+run	Update game outcomes	2026-04-29T12:44:46.9336453Z Debug - Game Center data: False
+run	Update game outcomes	2026-04-29T12:44:46.9336683Z Debug - Boxscore data: False
+run	Update game outcomes	2026-04-29T12:44:46.9336921Z Debug - Play-by-play data: False
+run	Update game outcomes	2026-04-29T12:44:46.9337182Z Warning: Missing game data, returning None
+run	Update game outcomes	2026-04-29T12:44:46.9337448Z Debug - Game Center data: True
+run	Update game outcomes	2026-04-29T12:44:46.9337678Z Debug - Boxscore data: True
+run	Update game outcomes	2026-04-29T12:44:46.9338081Z Debug - Play-by-play data: True
+run	Update game outcomes	2026-04-29T12:44:46.9338335Z Debug - Game Center data: False
+run	Update game outcomes	2026-04-29T12:44:46.9338559Z Debug - Boxscore data: False
+run	Update game outcomes	2026-04-29T12:44:46.9338792Z Debug - Play-by-play data: False
+run	Update game outcomes	2026-04-29T12:44:46.9339058Z Warning: Missing game data, returning None
+run	Update game outcomes	2026-04-29T12:44:46.9339325Z Debug - Game Center data: False
+run	Update game outcomes	2026-04-29T12:44:46.9339569Z Debug - Boxscore data: False
+run	Update game outcomes	2026-04-29T12:44:46.9339798Z Debug - Play-by-play data: False
+run	Update game outcomes	2026-04-29T12:44:46.9340087Z Warning: Missing game data, returning None
+run	Update game outcomes	2026-04-29T12:44:46.9340352Z Debug - Game Center data: True
+run	Update game outcomes	2026-04-29T12:44:46.9340581Z Debug - Boxscore data: True
+run	Update game outcomes	2026-04-29T12:44:46.9340797Z Debug - Play-by-play data: True
+run	Update game outcomes	2026-04-29T12:44:46.9341027Z OUTCOMES_UPDATED=0
+run	Update game outcomes	2026-04-29T12:44:46.9341507Z ⏱️ update_game_outcomes total: 2.52s
+run	One-time backfill events logs (if missing)	﻿2026-04-29T12:44:47.0086850Z ##[group]Run if [ ! -f "data/prediction_events.jsonl" ] && [ -f "data/win_probability_predictions_v2.json" ]; then
+run	One-time backfill events logs (if missing)	2026-04-29T12:44:47.0087579Z [36;1mif [ ! -f "data/prediction_events.jsonl" ] && [ -f "data/win_probability_predictions_v2.json" ]; then[0m
+run	One-time backfill events logs (if missing)	2026-04-29T12:44:47.0088532Z [36;1m  PYTHONPATH=".:models:analyzers:utils:scrapers" python3 utils/backfill_events_from_legacy_json.py[0m
+run	One-time backfill events logs (if missing)	2026-04-29T12:44:47.0089170Z [36;1m  PYTHONPATH=".:models:analyzers:utils:scrapers" python3 utils/compact_event_logs.py[0m
+run	One-time backfill events logs (if missing)	2026-04-29T12:44:47.0089782Z [36;1m  PYTHONPATH=".:models:analyzers:utils:scrapers" python3 utils/build_predictions_history_view.py[0m
+run	One-time backfill events logs (if missing)	2026-04-29T12:44:47.0090215Z [36;1mfi[0m
+run	One-time backfill events logs (if missing)	2026-04-29T12:44:47.0112831Z shell: /usr/bin/bash -e {0}
+run	One-time backfill events logs (if missing)	2026-04-29T12:44:47.0113071Z env:
+run	One-time backfill events logs (if missing)	2026-04-29T12:44:47.0113285Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+run	One-time backfill events logs (if missing)	2026-04-29T12:44:47.0113567Z   PUSH_MODEL_ARTIFACTS: false
+run	One-time backfill events logs (if missing)	2026-04-29T12:44:47.0113863Z   pythonLocation: /opt/hostedtoolcache/Python/3.10.20/x64
+run	One-time backfill events logs (if missing)	2026-04-29T12:44:47.0114316Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib/pkgconfig
+run	One-time backfill events logs (if missing)	2026-04-29T12:44:47.0114719Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	One-time backfill events logs (if missing)	2026-04-29T12:44:47.0115080Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	One-time backfill events logs (if missing)	2026-04-29T12:44:47.0115434Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	One-time backfill events logs (if missing)	2026-04-29T12:44:47.0115790Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib
+run	One-time backfill events logs (if missing)	2026-04-29T12:44:47.0116096Z ##[endgroup]
+run	Compact events logs	﻿2026-04-29T12:44:47.0186146Z ##[group]Run PYTHONPATH=".:models:analyzers:utils:scrapers" python3 utils/compact_event_logs.py
+run	Compact events logs	2026-04-29T12:44:47.0186952Z [36;1mPYTHONPATH=".:models:analyzers:utils:scrapers" python3 utils/compact_event_logs.py[0m
+run	Compact events logs	2026-04-29T12:44:47.0207696Z shell: /usr/bin/bash -e {0}
+run	Compact events logs	2026-04-29T12:44:47.0208104Z env:
+run	Compact events logs	2026-04-29T12:44:47.0208313Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+run	Compact events logs	2026-04-29T12:44:47.0208604Z   PUSH_MODEL_ARTIFACTS: false
+run	Compact events logs	2026-04-29T12:44:47.0208909Z   pythonLocation: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Compact events logs	2026-04-29T12:44:47.0209326Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib/pkgconfig
+run	Compact events logs	2026-04-29T12:44:47.0209725Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Compact events logs	2026-04-29T12:44:47.0210106Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Compact events logs	2026-04-29T12:44:47.0210457Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Compact events logs	2026-04-29T12:44:47.0210806Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib
+run	Compact events logs	2026-04-29T12:44:47.0211105Z ##[endgroup]
+run	Compact events logs	2026-04-29T12:44:47.1450138Z COMPACTED_PREDICTIONS=1081
+run	Compact events logs	2026-04-29T12:44:47.1450481Z COMPACTED_OUTCOMES=8
+run	Run daily predictions	﻿2026-04-29T12:44:47.1568557Z ##[group]Run echo "🎯 RUNNING DAILY PREDICTIONS WITH META-ENSEMBLE"
+run	Run daily predictions	2026-04-29T12:44:47.1569077Z [36;1mecho "🎯 RUNNING DAILY PREDICTIONS WITH META-ENSEMBLE"[0m
+run	Run daily predictions	2026-04-29T12:44:47.1569476Z [36;1mecho "All data collected, now making predictions..."[0m
+run	Run daily predictions	2026-04-29T12:44:47.1569880Z [36;1m# Ensure model artifacts exist even on non-retrain days.[0m
+run	Run daily predictions	2026-04-29T12:44:47.1570323Z [36;1mif [ ! -f "xgb_calibrated_model.pkl" ] && [ -n "${GITHUB_TOKEN}" ]; then[0m
+run	Run daily predictions	2026-04-29T12:44:47.1570777Z [36;1m  python3 scripts/download_latest_model_artifact.py || true[0m
+run	Run daily predictions	2026-04-29T12:44:47.1571105Z [36;1mfi[0m
+run	Run daily predictions	2026-04-29T12:44:47.1571459Z [36;1mPYTHONPATH=".:models:analyzers:utils:scrapers" python3 daily_prediction_notifier.py[0m
+run	Run daily predictions	2026-04-29T12:44:47.1593955Z shell: /usr/bin/bash -e {0}
+run	Run daily predictions	2026-04-29T12:44:47.1594195Z env:
+run	Run daily predictions	2026-04-29T12:44:47.1594416Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+run	Run daily predictions	2026-04-29T12:44:47.1594732Z   PUSH_MODEL_ARTIFACTS: false
+run	Run daily predictions	2026-04-29T12:44:47.1595042Z   pythonLocation: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Run daily predictions	2026-04-29T12:44:47.1595484Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib/pkgconfig
+run	Run daily predictions	2026-04-29T12:44:47.1595888Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Run daily predictions	2026-04-29T12:44:47.1596255Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Run daily predictions	2026-04-29T12:44:47.1596620Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Run daily predictions	2026-04-29T12:44:47.1596978Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib
+run	Run daily predictions	2026-04-29T12:44:47.1598195Z   DISCORD_WEBHOOK_URL: ***
+run	Run daily predictions	2026-04-29T12:44:47.1598440Z ##[endgroup]
+run	Run daily predictions	2026-04-29T12:44:47.1642292Z 🎯 RUNNING DAILY PREDICTIONS WITH META-ENSEMBLE
+run	Run daily predictions	2026-04-29T12:44:47.1642736Z All data collected, now making predictions...
+run	Run daily predictions	2026-04-29T12:44:48.8990849Z INFO:improved_self_learning_model_v2:Loaded team stats for 32 teams with data
+run	Run daily predictions	2026-04-29T12:44:48.9126795Z INFO:schedule_analyzer:ScheduleAnalyzer loaded 553 games.
+run	Run daily predictions	2026-04-29T12:44:48.9561884Z INFO:improved_self_learning_model_v2:Loaded team stats for 32 teams with data
+run	Run daily predictions	2026-04-29T12:44:48.9993166Z INFO:improved_self_learning_model_v2:Loaded team stats for 32 teams with data
+run	Run daily predictions	2026-04-29T12:44:49.1188557Z INFO:improved_self_learning_model_v2:Loaded team stats for 32 teams with data
+run	Run daily predictions	2026-04-29T12:44:49.1621113Z INFO:improved_self_learning_model_v2:Loaded team stats for 32 teams with data
+run	Run daily predictions	2026-04-29T12:44:49.2062104Z INFO:improved_self_learning_model_v2:Loaded team stats for 32 teams with data
+run	Run daily predictions	2026-04-29T12:44:49.2485328Z INFO:improved_self_learning_model_v2:Loaded team stats for 32 teams with data
+run	Run daily predictions	2026-04-29T12:44:49.3915026Z INFO:improved_self_learning_model_v2:Loaded team stats for 32 teams with data
+run	Run daily predictions	2026-04-29T12:44:49.4341692Z INFO:improved_self_learning_model_v2:Loaded team stats for 32 teams with data
+run	Run daily predictions	2026-04-29T12:44:49.4640079Z /home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports/models/meta_ensemble_predictor.py:376: UserWarning: [12:44:49] WARNING: /__w/xgboost/xgboost/src/collective/../data/../common/error_msg.h:83: If you are loading a serialized model (like pickle in Python, RDS in R) or
+run	Run daily predictions	2026-04-29T12:44:49.4668585Z configuration generated by an older version of XGBoost, please export the model by calling
+run	Run daily predictions	2026-04-29T12:44:49.4669528Z `Booster.save_model` from that version first, then load it back in current version. See:
+run	Run daily predictions	2026-04-29T12:44:49.4670042Z 
+run	Run daily predictions	2026-04-29T12:44:49.4670434Z     https://xgboost.readthedocs.io/en/stable/tutorials/saving_model.html
+run	Run daily predictions	2026-04-29T12:44:49.4698149Z 
+run	Run daily predictions	2026-04-29T12:44:49.4715491Z for more details about differences between saving model and serializing.
+run	Run daily predictions	2026-04-29T12:44:49.4715948Z 
+run	Run daily predictions	2026-04-29T12:44:49.4716113Z   self.calibrated_model = pickle.load(f)
+run	Run daily predictions	2026-04-29T12:44:49.4717701Z /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages/sklearn/base.py:442: InconsistentVersionWarning: Trying to unpickle estimator IsotonicRegression from version 1.7.1 when using version 1.7.2. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+run	Run daily predictions	2026-04-29T12:44:49.4719678Z https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+run	Run daily predictions	2026-04-29T12:44:49.4720138Z   warnings.warn(
+run	Run daily predictions	2026-04-29T12:44:49.4721259Z /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages/sklearn/base.py:442: InconsistentVersionWarning: Trying to unpickle estimator CalibratedClassifierCV from version 1.7.1 when using version 1.7.2. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+run	Run daily predictions	2026-04-29T12:44:49.4722582Z https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+run	Run daily predictions	2026-04-29T12:44:49.4723023Z   warnings.warn(
+run	Run daily predictions	2026-04-29T12:44:49.5632530Z /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages/sklearn/base.py:442: InconsistentVersionWarning: Trying to unpickle estimator DecisionTreeClassifier from version 1.7.1 when using version 1.7.2. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+run	Run daily predictions	2026-04-29T12:44:49.5634034Z https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+run	Run daily predictions	2026-04-29T12:44:49.5634502Z   warnings.warn(
+run	Run daily predictions	2026-04-29T12:44:49.5653637Z /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages/sklearn/base.py:442: InconsistentVersionWarning: Trying to unpickle estimator RandomForestClassifier from version 1.7.1 when using version 1.7.2. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+run	Run daily predictions	2026-04-29T12:44:49.5655033Z https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+run	Run daily predictions	2026-04-29T12:44:49.5655495Z   warnings.warn(
+run	Run daily predictions	2026-04-29T12:44:49.6356235Z INFO:schedule_analyzer:ScheduleAnalyzer loaded 553 games.
+run	Run daily predictions	2026-04-29T12:44:57.4230778Z INFO:improved_self_learning_model_v2:Reloaded 1081 predictions from /home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports/data/win_probability_predictions_v2.json for performance recalculation
+run	Run daily predictions	2026-04-29T12:44:57.4236491Z INFO:improved_self_learning_model_v2:Recalculating performance from 1071 completed games (out of 1081 total predictions)
+run	Run daily predictions	2026-04-29T12:44:57.4313234Z INFO:improved_self_learning_model_v2:Updated calibration model with 1071 samples
+run	Run daily predictions	2026-04-29T12:44:58.6154951Z INFO:improved_self_learning_model_v2:Model data saved successfully
+run	Run daily predictions	2026-04-29T12:45:03.3604374Z INFO:improved_self_learning_model_v2:Reloaded 1081 predictions from /home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports/data/win_probability_predictions_v2.json for performance recalculation
+run	Run daily predictions	2026-04-29T12:45:03.3607796Z INFO:improved_self_learning_model_v2:Performance recalculation skipped (predictions unchanged)
+run	Run daily predictions	2026-04-29T12:45:08.0359638Z INFO:improved_self_learning_model_v2:Reloaded 1081 predictions from /home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports/data/win_probability_predictions_v2.json for performance recalculation
+run	Run daily predictions	2026-04-29T12:45:08.0362740Z INFO:improved_self_learning_model_v2:Performance recalculation skipped (predictions unchanged)
+run	Run daily predictions	2026-04-29T12:45:08.2063366Z DEBUG: Found font at /home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports/assets/RussoOne-Regular.ttf
+run	Run daily predictions	2026-04-29T12:45:08.2064403Z DEBUG: Successfully registered RussoOne font
+run	Run daily predictions	2026-04-29T12:45:08.2066152Z 📌 Loaded model_performance.json (xgb_ll=0.2795, elo_ll=0.6946, gap=-0.4151, mode=ensemble, shrink_alpha=1.00, adjusted=False) weights={'xgb': 0.5, 'elo': 0.1, 'specialized': 0.25, 'player': 0.15, 'base': 0.1, 'vegas': 0.15}
+run	Run daily predictions	2026-04-29T12:45:08.2067528Z ✅ Loaded Calibrated champion model from xgb_calibrated_model.pkl
+run	Run daily predictions	2026-04-29T12:45:08.2068351Z ✅ Loaded 42 feature definitions
+run	Run daily predictions	2026-04-29T12:45:08.2068778Z ✅ Loaded Phase 10 Meta-Confidence Model
+run	Run daily predictions	2026-04-29T12:45:08.2069429Z ✅ Loaded Phase 12 Goal Margin Regression model from margin_regression_model.pkl
+run	Run daily predictions	2026-04-29T12:45:08.2070179Z ✅ Loaded Phase 17 Period 1 Meta-Model from p1_outcome_model.pkl
+run	Run daily predictions	2026-04-29T12:45:08.2070752Z ✅ Loaded 32 team finishing profiles
+run	Run daily predictions	2026-04-29T12:45:08.2073917Z ✅ Loaded 32 team travel archetypes
+run	Run daily predictions	2026-04-29T12:45:08.2074338Z ✅ Loaded 32 team Edge profiles
+run	Run daily predictions	2026-04-29T12:45:08.2074731Z ✅ Loaded Phase 8.1 Team Encodings
+run	Run daily predictions	2026-04-29T12:45:08.2075146Z ⏳ Rebuilding team history state...
+run	Run daily predictions	2026-04-29T12:45:08.2075593Z ✅ Replayed 1081 games to build current state
+run	Run daily predictions	2026-04-29T12:45:08.2076173Z 🧤 Loaded 98 high-fidelity goalies and Edge metrics for 32 teams
+run	Run daily predictions	2026-04-29T12:45:08.2076838Z ✅ Score model v3: 32 teams, 1081 predictions, 2142 H2H records
+run	Run daily predictions	2026-04-29T12:45:08.2077527Z    📊 Dynamic league avg: 3.07 GF/game, scoring bias correction: -0.223
+run	Run daily predictions	2026-04-29T12:45:08.2078838Z ✅ Tuned OT/Blend (multi-split): OT_SCALE=0.5 OT_BLEND=0.6 OT_TIE_GAMMA=1.0 (mean acc=0.618, median acc=0.618, mean brier=0.2297, mean logloss=0.6503)
+run	Run daily predictions	2026-04-29T12:45:08.2079761Z ✅ Tuned max_goals: max_goals=9 (mean acc=0.578)
+run	Run daily predictions	2026-04-29T12:45:08.2080344Z 🥅 Identified #1 starters for 32 teams for playoff simulation
+run	Run daily predictions	2026-04-29T12:45:08.2080989Z ⛸️  Synchronized high-fidelity Edge tracking for 32 teams
+run	Run daily predictions	2026-04-29T12:45:08.2081601Z 📌 Loaded Cup priors for 32 teams (regular-season model)
+run	Run daily predictions	2026-04-29T12:45:08.2082138Z 📊 Loaded 4 regular-season → playoff round models
+run	Run daily predictions	2026-04-29T12:45:08.2082761Z 📐 Loaded current-season feature rows for 32 teams (round priors)
+run	Run daily predictions	2026-04-29T12:45:08.2083331Z ✅ Loaded 3 games from Vegas market
+run	Run daily predictions	2026-04-29T12:45:08.2083872Z 🧤 Loaded 98 high-fidelity goalies and Edge metrics for 32 teams
+run	Run daily predictions	2026-04-29T12:45:08.2084526Z ✅ Score model v3: 32 teams, 1081 predictions, 2142 H2H records
+run	Run daily predictions	2026-04-29T12:45:08.2085208Z    📊 Dynamic league avg: 3.07 GF/game, scoring bias correction: -0.223
+run	Run daily predictions	2026-04-29T12:45:08.2086327Z ✅ Tuned OT/Blend (multi-split): OT_SCALE=0.5 OT_BLEND=0.6 OT_TIE_GAMMA=1.0 (mean acc=0.618, median acc=0.618, mean brier=0.2297, mean logloss=0.6503)
+run	Run daily predictions	2026-04-29T12:45:08.2087280Z ✅ Tuned max_goals: max_goals=9 (mean acc=0.578)
+run	Run daily predictions	2026-04-29T12:45:08.2088014Z ✅ Tuned global MOE w_score: 0.600 (rolling mean winner acc=0.644)
+run	Run daily predictions	2026-04-29T12:45:08.2088568Z 🔔 DAILY NHL PREDICTIONS NOTIFIER
+run	Run daily predictions	2026-04-29T12:45:08.2088950Z ==================================================
+run	Run daily predictions	2026-04-29T12:45:08.2089462Z 🏒 SIMULATION MODE: Analyzing games for 2026-04-29
+run	Run daily predictions	2026-04-29T12:45:08.2090058Z 🏒 SIMULATION MODE: Prioritizing local schedule for 2026-04-29
+run	Run daily predictions	2026-04-29T12:45:08.2090809Z ⚠️  No games in local schedule for 2026-04-29. Falling back to RotoWire scraper...
+run	Run daily predictions	2026-04-29T12:45:08.2091465Z ✅ Identified 3 games from RotoWire fallback.
+run	Run daily predictions	2026-04-29T12:45:08.2091899Z ⏱️ vegas odds scrape: 0.05s
+run	Run daily predictions	2026-04-29T12:45:08.2092331Z 🗺️  Built local schedule map with 458 entries.
+run	Run daily predictions	2026-04-29T12:45:08.2092950Z 🧤 Loaded 98 high-fidelity goalies and Edge metrics for 32 teams
+run	Run daily predictions	2026-04-29T12:45:08.2093589Z ✅ Score model v3: 32 teams, 1081 predictions, 2142 H2H records
+run	Run daily predictions	2026-04-29T12:45:08.2094312Z    📊 Dynamic league avg: 3.07 GF/game, scoring bias correction: -0.223
+run	Run daily predictions	2026-04-29T12:45:08.2095422Z ✅ Tuned OT/Blend (multi-split): OT_SCALE=0.5 OT_BLEND=0.6 OT_TIE_GAMMA=1.0 (mean acc=0.618, median acc=0.618, mean brier=0.2297, mean logloss=0.6503)
+run	Run daily predictions	2026-04-29T12:45:08.2096590Z ✅ Tuned max_goals: max_goals=9 (mean acc=0.578)
+run	Run daily predictions	2026-04-29T12:45:08.2097222Z 🔍 DEBUG: Found 7 recent games for PIT. Checking for series vs PHI...
+run	Run daily predictions	2026-04-29T12:45:08.2098081Z 📈 Series Pace Detected for PIT@PHI: 4 games, 7.0 G/gm (Offset: +0.45)
+run	Run daily predictions	2026-04-29T12:45:08.2098772Z Error simulating series for PIT@PHI: 'str' object has no attribute 'get'
+run	Run daily predictions	2026-04-29T12:45:08.2099425Z Error predicting PIT @ PHI: 'str' object has no attribute 'get'
+run	Run daily predictions	2026-04-29T12:45:08.2100122Z 🔍 DEBUG: Found 7 recent games for UTA. Checking for series vs VGK...
+run	Run daily predictions	2026-04-29T12:45:08.2100827Z 📈 Series Pace Detected for UTA@VGK: 4 games, 2.8 G/gm (Offset: -1.67)
+run	Run daily predictions	2026-04-29T12:45:08.2101484Z Error simulating series for UTA@VGK: 'str' object has no attribute 'get'
+run	Run daily predictions	2026-04-29T12:45:08.2102104Z Error predicting UTA @ VGK: 'str' object has no attribute 'get'
+run	Run daily predictions	2026-04-29T12:45:08.2102681Z ✅ Appended 0 predictions to events log.
+run	Run daily predictions	2026-04-29T12:45:08.2103249Z 🏒 **NHL GAME PREDICTIONS FOR TODAY** 🏒
+run	Run daily predictions	2026-04-29T12:45:08.2103981Z 
+run	Run daily predictions	2026-04-29T12:45:08.2104265Z Showing **1 high-confidence games** out of 3 on the schedule.
+run	Run daily predictions	2026-04-29T12:45:08.2104903Z (Meta-Ensemble Model: 55-60% accuracy)
+run	Run daily predictions	2026-04-29T12:45:08.2105226Z 
+run	Run daily predictions	2026-04-29T12:45:08.2105481Z **Game 1**: MTL @ TBL
+run	Run daily predictions	2026-04-29T12:45:08.2106067Z   🏆 Prediction: **TBL wins** (2-3)
+run	Run daily predictions	2026-04-29T12:45:08.2106580Z   ⭐ Confidence: 62.6% (Standard)
+run	Run daily predictions	2026-04-29T12:45:08.2107190Z   🥅 Goalies: Jakub Dobes vs A. Vasilevskiy
+run	Run daily predictions	2026-04-29T12:45:08.2121745Z 
+run	Run daily predictions	2026-04-29T12:45:08.2122008Z 📊 **Model Performance:**
+run	Run daily predictions	2026-04-29T12:45:08.2122354Z    Accuracy: 55.6%
+run	Run daily predictions	2026-04-29T12:45:08.2122661Z    Recent Accuracy: 53.3%
+run	Run daily predictions	2026-04-29T12:45:08.2122979Z    Total Games: 1071
+run	Run daily predictions	2026-04-29T12:45:08.2123169Z 
+run	Run daily predictions	2026-04-29T12:45:08.2123450Z 🤖 Generated by NHL Meta-Ensemble Model (55-60% accuracy)
+run	Run daily predictions	2026-04-29T12:45:08.2123964Z 📅 2026-04-29 07:44 AM CT
+run	Run daily predictions	2026-04-29T12:45:08.2124179Z 
+run	Run daily predictions	2026-04-29T12:45:08.2124312Z ==================================================
+run	Run daily predictions	2026-04-29T12:45:08.2124582Z 
+run	Run daily predictions	2026-04-29T12:45:08.2124767Z 📤 SENDING NOTIFICATIONS:
+run	Run daily predictions	2026-04-29T12:45:08.2125213Z 🏒 SIMULATION MODE: Analyzing games for 2026-04-29
+run	Run daily predictions	2026-04-29T12:45:08.2125826Z 🏒 SIMULATION MODE: Prioritizing local schedule for 2026-04-29
+run	Run daily predictions	2026-04-29T12:45:08.2126590Z ⚠️  No games in local schedule for 2026-04-29. Falling back to RotoWire scraper...
+run	Run daily predictions	2026-04-29T12:45:08.2127260Z ✅ Identified 3 games from RotoWire fallback.
+run	Run daily predictions	2026-04-29T12:45:08.2127704Z ⏱️ vegas odds scrape: 0.07s
+run	Run daily predictions	2026-04-29T12:45:08.2128285Z 🗺️  Built local schedule map with 458 entries.
+run	Run daily predictions	2026-04-29T12:45:08.2128881Z 🧤 Loaded 98 high-fidelity goalies and Edge metrics for 32 teams
+run	Run daily predictions	2026-04-29T12:45:08.2129538Z ✅ Score model v3: 32 teams, 1081 predictions, 2142 H2H records
+run	Run daily predictions	2026-04-29T12:45:08.2130259Z    📊 Dynamic league avg: 3.07 GF/game, scoring bias correction: -0.223
+run	Run daily predictions	2026-04-29T12:45:08.2131384Z ✅ Tuned OT/Blend (multi-split): OT_SCALE=0.5 OT_BLEND=0.6 OT_TIE_GAMMA=1.0 (mean acc=0.618, median acc=0.618, mean brier=0.2297, mean logloss=0.6503)
+run	Run daily predictions	2026-04-29T12:45:08.2132355Z ✅ Tuned max_goals: max_goals=9 (mean acc=0.578)
+run	Run daily predictions	2026-04-29T12:45:08.2132996Z 🔍 DEBUG: Found 7 recent games for PIT. Checking for series vs PHI...
+run	Run daily predictions	2026-04-29T12:45:08.2133750Z 📈 Series Pace Detected for PIT@PHI: 4 games, 7.0 G/gm (Offset: +0.45)
+run	Run daily predictions	2026-04-29T12:45:08.2134423Z Error simulating series for PIT@PHI: 'str' object has no attribute 'get'
+run	Run daily predictions	2026-04-29T12:45:08.2135056Z Error predicting PIT @ PHI: 'str' object has no attribute 'get'
+run	Run daily predictions	2026-04-29T12:45:08.2135738Z 🔍 DEBUG: Found 7 recent games for UTA. Checking for series vs VGK...
+run	Run daily predictions	2026-04-29T12:45:08.2136416Z 📈 Series Pace Detected for UTA@VGK: 4 games, 2.8 G/gm (Offset: -1.67)
+run	Run daily predictions	2026-04-29T12:45:08.2137072Z Error simulating series for UTA@VGK: 'str' object has no attribute 'get'
+run	Run daily predictions	2026-04-29T12:45:08.2137700Z Error predicting UTA @ VGK: 'str' object has no attribute 'get'
+run	Run daily predictions	2026-04-29T12:45:08.2138427Z ✅ Appended 0 predictions to events log.
+run	Run daily predictions	2026-04-29T12:45:08.2139229Z ✅ Predictions saved to daily_predictions_20260429.txt
+run	Run daily predictions	2026-04-29T12:45:08.2139955Z ℹ️  Set NOTIFICATION_EMAIL environment variable to enable email notifications
+run	Run daily predictions	2026-04-29T12:45:08.2140636Z 🏒 SIMULATION MODE: Analyzing games for 2026-04-29
+run	Run daily predictions	2026-04-29T12:45:08.2141240Z 🏒 SIMULATION MODE: Prioritizing local schedule for 2026-04-29
+run	Run daily predictions	2026-04-29T12:45:08.2141980Z ⚠️  No games in local schedule for 2026-04-29. Falling back to RotoWire scraper...
+run	Run daily predictions	2026-04-29T12:45:08.2142630Z ✅ Identified 3 games from RotoWire fallback.
+run	Run daily predictions	2026-04-29T12:45:08.2143072Z ⏱️ vegas odds scrape: 0.18s
+run	Run daily predictions	2026-04-29T12:45:08.2143506Z 🗺️  Built local schedule map with 458 entries.
+run	Run daily predictions	2026-04-29T12:45:08.2144095Z 🧤 Loaded 98 high-fidelity goalies and Edge metrics for 32 teams
+run	Run daily predictions	2026-04-29T12:45:08.2144729Z ✅ Score model v3: 32 teams, 1081 predictions, 2142 H2H records
+run	Run daily predictions	2026-04-29T12:45:08.2145401Z    📊 Dynamic league avg: 3.07 GF/game, scoring bias correction: -0.223
+run	Run daily predictions	2026-04-29T12:45:08.2146508Z ✅ Tuned OT/Blend (multi-split): OT_SCALE=0.5 OT_BLEND=0.6 OT_TIE_GAMMA=1.0 (mean acc=0.618, median acc=0.618, mean brier=0.2297, mean logloss=0.6503)
+run	Run daily predictions	2026-04-29T12:45:08.2147648Z ✅ Tuned max_goals: max_goals=9 (mean acc=0.578)
+run	Run daily predictions	2026-04-29T12:45:08.2148404Z 🔍 DEBUG: Found 7 recent games for PIT. Checking for series vs PHI...
+run	Run daily predictions	2026-04-29T12:45:08.2149122Z 📈 Series Pace Detected for PIT@PHI: 4 games, 7.0 G/gm (Offset: +0.45)
+run	Run daily predictions	2026-04-29T12:45:08.2149816Z Error simulating series for PIT@PHI: 'str' object has no attribute 'get'
+run	Run daily predictions	2026-04-29T12:45:08.2150486Z Error predicting PIT @ PHI: 'str' object has no attribute 'get'
+run	Run daily predictions	2026-04-29T12:45:08.2151179Z 🔍 DEBUG: Found 7 recent games for UTA. Checking for series vs VGK...
+run	Run daily predictions	2026-04-29T12:45:08.2151860Z 📈 Series Pace Detected for UTA@VGK: 4 games, 2.8 G/gm (Offset: -1.67)
+run	Run daily predictions	2026-04-29T12:45:08.2152488Z Error simulating series for UTA@VGK: 'str' object has no attribute 'get'
+run	Run daily predictions	2026-04-29T12:45:08.2153102Z Error predicting UTA @ VGK: 'str' object has no attribute 'get'
+run	Run daily predictions	2026-04-29T12:45:08.2153688Z ✅ Appended 0 predictions to events log.
+run	Run daily predictions	2026-04-29T12:45:08.2154185Z ✅ Discord notification sent successfully (1 parts)
+run	Ensure model feature snapshot exists (CI)	﻿2026-04-29T12:45:08.4293959Z ##[group]Run python3 - <<'PY'
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4294300Z [36;1mpython3 - <<'PY'[0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4294559Z [36;1mimport hashlib, json, os, pickle[0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4294839Z [36;1mfrom pathlib import Path[0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4295187Z [36;1m# The smoke test requires this when xgb_features.pkl exists in CI.[0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4295713Z [36;1mif Path("xgb_features.pkl").exists() and not Path("model_feature_snapshot.json").exists():[0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4296157Z [36;1m    feats = [][0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4296375Z [36;1m    try:[0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4296628Z [36;1m        with open("xgb_features.pkl", "rb") as f:[0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4296941Z [36;1m            obj = pickle.load(f)[0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4297264Z [36;1m        if isinstance(obj, dict) and "feature_names" in obj:[0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4297612Z [36;1m            feats = list(obj["feature_names"])[0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4298296Z [36;1m        elif isinstance(obj, (list, tuple)):[0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4298617Z [36;1m            feats = list(obj)[0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4298869Z [36;1m        else:[0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4299094Z [36;1m            feats = [][0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4299333Z [36;1m    except Exception:[0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4299572Z [36;1m        feats = [][0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4299882Z [36;1m    joined = "\n".join([str(x) for x in feats]).encode("utf-8")[0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4300252Z [36;1m    sha = hashlib.sha256(joined).hexdigest()[0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4300539Z [36;1m    payload = {[0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4300760Z [36;1m        "sha256": sha,[0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4301033Z [36;1m        "git_sha": os.environ.get("GITHUB_SHA"),[0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4301342Z [36;1m        "num_features": len(feats),[0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4301601Z [36;1m    }[0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4301943Z [36;1m    Path("model_feature_snapshot.json").write_text(json.dumps(payload, indent=2))[0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4302690Z [36;1m    print(f"WROTE model_feature_snapshot.json (num_features={len(feats)})")[0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4303068Z [36;1mPY[0m
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4326535Z shell: /usr/bin/bash -e {0}
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4326769Z env:
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4326982Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4327261Z   PUSH_MODEL_ARTIFACTS: false
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4327565Z   pythonLocation: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4328244Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib/pkgconfig
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4328658Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4329020Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4329371Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4329731Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4330034Z ##[endgroup]
+run	Ensure model feature snapshot exists (CI)	2026-04-29T12:45:08.4641883Z WROTE model_feature_snapshot.json (num_features=42)
+run	Smoke test (imports + prediction schema)	﻿2026-04-29T12:45:08.4708747Z ##[group]Run PYTHONPATH=".:models:analyzers:utils:scrapers" python3 -m pytest -q tests/test_smoke_daily_predictions.py
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:08.4709551Z [36;1mPYTHONPATH=".:models:analyzers:utils:scrapers" python3 -m pytest -q tests/test_smoke_daily_predictions.py[0m
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:08.4731301Z shell: /usr/bin/bash -e {0}
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:08.4731541Z env:
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:08.4731753Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:08.4732044Z   PUSH_MODEL_ARTIFACTS: false
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:08.4732350Z   pythonLocation: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:08.4732757Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib/pkgconfig
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:08.4733156Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:08.4733517Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:08.4733877Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:08.4734252Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:08.4734584Z ##[endgroup]
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3789776Z ..                                                                       [100%]
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3790256Z =============================== warnings summary ===============================
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3790889Z tests/test_smoke_daily_predictions.py::test_smoke_meta_predictor_builds_prediction_dict
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3792137Z   /home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports/models/meta_ensemble_predictor.py:376: UserWarning: [12:45:10] WARNING: /__w/xgboost/xgboost/src/collective/../data/../common/error_msg.h:83: If you are loading a serialized model (like pickle in Python, RDS in R) or
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3793400Z   configuration generated by an older version of XGBoost, please export the model by calling
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3793980Z   `Booster.save_model` from that version first, then load it back in current version. See:
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3794401Z   
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3794720Z       https://xgboost.readthedocs.io/en/stable/tutorials/saving_model.html
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3795092Z   
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3795369Z   for more details about differences between saving model and serializing.
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3795704Z   
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3795893Z     self.calibrated_model = pickle.load(f)
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3796075Z 
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3796318Z tests/test_smoke_daily_predictions.py::test_smoke_meta_predictor_builds_prediction_dict
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3797608Z   /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages/sklearn/base.py:442: InconsistentVersionWarning: Trying to unpickle estimator IsotonicRegression from version 1.7.1 when using version 1.7.2. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3799163Z   https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3799984Z     warnings.warn(
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3800162Z 
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3800422Z tests/test_smoke_daily_predictions.py::test_smoke_meta_predictor_builds_prediction_dict
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3801692Z   /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages/sklearn/base.py:442: InconsistentVersionWarning: Trying to unpickle estimator CalibratedClassifierCV from version 1.7.1 when using version 1.7.2. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3802990Z   https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3803432Z     warnings.warn(
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3803560Z 
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3803795Z tests/test_smoke_daily_predictions.py::test_smoke_meta_predictor_builds_prediction_dict
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3805103Z   /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages/sklearn/base.py:442: InconsistentVersionWarning: Trying to unpickle estimator DecisionTreeClassifier from version 1.7.1 when using version 1.7.2. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3806643Z   https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3807079Z     warnings.warn(
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3807199Z 
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3807441Z tests/test_smoke_daily_predictions.py::test_smoke_meta_predictor_builds_prediction_dict
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3808827Z   /opt/hostedtoolcache/Python/3.10.20/x64/lib/python3.10/site-packages/sklearn/base.py:442: InconsistentVersionWarning: Trying to unpickle estimator RandomForestClassifier from version 1.7.1 when using version 1.7.2. This might lead to breaking code or invalid results. Use at your own risk. For more info please refer to:
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3810192Z   https://scikit-learn.org/stable/model_persistence.html#security-maintainability-limitations
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3810641Z     warnings.warn(
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3810762Z 
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3810967Z -- Docs: https://docs.pytest.org/en/stable/how-to/capture-warnings.html
+run	Smoke test (imports + prediction schema)	2026-04-29T12:45:11.3811340Z 2 passed, 5 warnings in 2.56s
+run	Guardrail: ensure we don't use XGB when worse than Elo	﻿2026-04-29T12:45:11.5236003Z ##[group]Run python3 - <<'PY'
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5236385Z [36;1mpython3 - <<'PY'[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5236637Z [36;1mimport json[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5236869Z [36;1mfrom pathlib import Path[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5237176Z [36;1mp = Path("model_performance.json")[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5237468Z [36;1mif not p.exists():[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5238073Z [36;1m    raise SystemExit("model_performance.json missing (guardrail)")[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5238483Z [36;1mperf = json.loads(p.read_text())[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5238883Z [36;1mx_ll = perf.get("xgb_recent_logloss") or perf.get("xgb_cal_mean_logloss")[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5239366Z [36;1me_ll = perf.get("elo_recent_logloss") or perf.get("elo_mean_logloss")[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5239774Z [36;1mif x_ll is None or e_ll is None:[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5240127Z [36;1m    print("Guardrail skipped: missing logloss fields")[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5240469Z [36;1m    raise SystemExit(0)[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5240744Z [36;1mgap = float(x_ll) - float(e_ll)[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5241033Z [36;1mmargin = 0.01[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5241261Z [36;1mif gap > margin:[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5241668Z [36;1m    # When XGB is worse, require that today's saved predictions indicate Elo-champion mode.[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5242184Z [36;1m    hist = Path("data/win_probability_predictions_v2.json")[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5242522Z [36;1m    if not hist.exists():[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5242835Z [36;1m        hist = Path("win_probability_predictions_v2.json")[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5243154Z [36;1m    if not hist.exists():[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5243520Z [36;1m        raise SystemExit("Guardrail failed: predictions history missing")[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5243928Z [36;1m    d = json.loads(hist.read_text())[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5244405Z [36;1m    preds = d.get("predictions", [])[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5244674Z [36;1m    if not preds:[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5245014Z [36;1m        raise SystemExit("Guardrail failed: no predictions in history")[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5245407Z [36;1m    today = preds[-1].get("date")[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5245737Z [36;1m    todays = [r for r in preds if r.get("date") == today][0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5246048Z [36;1m    if not todays:[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5246441Z [36;1m        raise SystemExit("Guardrail failed: could not find today's predictions in history")[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5246864Z [36;1m    bad = [][0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5247085Z [36;1m    for r in todays:[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5247342Z [36;1m        mode = r.get("ensemble_mode")[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5247648Z [36;1m        w = (r.get("ensemble_weights") or {})[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5248204Z [36;1m        if mode != "elo_champion" or float(w.get("xgb", 1.0)) != 0.0:[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5248622Z [36;1m            bad.append((r.get("game_id"), mode, w.get("xgb")))[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5248942Z [36;1m    if bad:[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5249385Z [36;1m        raise SystemExit(f"Guardrail failed: xgb worse by {gap:.4f} but found non-elo-champion rows: {bad[:5]}")[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5249900Z [36;1mprint(f"Guardrail OK (gap={gap:+.4f})")[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5250179Z [36;1mPY[0m
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5272461Z shell: /usr/bin/bash -e {0}
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5272707Z env:
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5272930Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5273229Z   PUSH_MODEL_ARTIFACTS: false
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5273544Z   pythonLocation: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5273969Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib/pkgconfig
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5274380Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5274753Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5275144Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5275529Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5275845Z ##[endgroup]
+run	Guardrail: ensure we don't use XGB when worse than Elo	2026-04-29T12:45:11.5550961Z Guardrail OK (gap=-0.4151)
+run	Commit predictions and edge data changes	﻿2026-04-29T12:45:11.5612860Z ##[group]Run git config user.email "action@github.com"
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5613319Z [36;1mgit config user.email "action@github.com"[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5613662Z [36;1mgit config user.name "github-actions[bot]"[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5613945Z [36;1m[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5614147Z [36;1m# Track files to commit[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5614404Z [36;1mFILES_TO_COMMIT=""[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5614638Z [36;1m[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5614889Z [36;1m# Add nhl_edge_data.json if it exists (in data dir)[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5615246Z [36;1mif [ -f "data/nhl_edge_data.json" ]; then[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5615605Z [36;1m  echo "📦 Force adding nhl_edge_data.json..."[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5615952Z [36;1m  git add --force data/nhl_edge_data.json[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5616338Z [36;1m  FILES_TO_COMMIT="$FILES_TO_COMMIT data/nhl_edge_data.json"[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5616704Z [36;1m  echo "✅ nhl_edge_data.json added"[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5616969Z [36;1melse[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5617221Z [36;1m  echo "⚠️  nhl_edge_data.json not found in data/"[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5617570Z [36;1mfi[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5617749Z [36;1m[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5618348Z [36;1m# Add win_probability_predictions_v2.json if it exists (in data dir)[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5618814Z [36;1mif [ -f "data/win_probability_predictions_v2.json" ]; then[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5619226Z [36;1m  echo "📦 Adding win_probability_predictions_v2.json..."[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5619627Z [36;1m  git add --force data/win_probability_predictions_v2.json[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5620080Z [36;1m  FILES_TO_COMMIT="$FILES_TO_COMMIT data/win_probability_predictions_v2.json"[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5620536Z [36;1m  echo "✅ win_probability_predictions_v2.json added"[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5621045Z [36;1melse[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5621338Z [36;1m  echo "⚠️  win_probability_predictions_v2.json not found in data/"[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5621684Z [36;1mfi[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5621859Z [36;1m[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5622159Z [36;1m# Commit minimal tracked metrics on retrain days (used by guardrails).[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5622598Z [36;1mif [ "0" != "0" ] && [ -f "model_metrics.json" ]; then[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5622959Z [36;1m  echo "📦 Adding model_metrics.json (retrain day)..."[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5623288Z [36;1m  git add --force model_metrics.json[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5623626Z [36;1m  FILES_TO_COMMIT="$FILES_TO_COMMIT model_metrics.json"[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5623948Z [36;1mfi[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5624139Z [36;1m[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5624375Z [36;1m# Add season_2025_2026_team_stats.json if it exists[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5624735Z [36;1mif [ -f "data/season_2025_2026_team_stats.json" ]; then[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5625104Z [36;1m  echo "📦 Adding season_2025_2026_team_stats.json..."[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5625460Z [36;1m  git add --force data/season_2025_2026_team_stats.json[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5625880Z [36;1m  FILES_TO_COMMIT="$FILES_TO_COMMIT data/season_2025_2026_team_stats.json"[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5626309Z [36;1m  echo "✅ season_2025_2026_team_stats.json added"[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5626596Z [36;1melse[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5626868Z [36;1m  echo "⚠️  season_2025_2026_team_stats.json not found in data/"[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5627190Z [36;1mfi[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5627363Z [36;1m[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5627573Z [36;1m# Add advanced goalie and team metrics[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5628103Z [36;1mif [ -f "data/goalie_stats.json" ]; then[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5628422Z [36;1m  echo "📦 Adding goalie_stats.json..."[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5628731Z [36;1m  git add --force data/goalie_stats.json[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5629084Z [36;1m  FILES_TO_COMMIT="$FILES_TO_COMMIT data/goalie_stats.json"[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5629418Z [36;1mfi[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5629653Z [36;1mif [ -f "data/team_advanced_metrics.json" ]; then[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5630002Z [36;1m  echo "📦 Adding team_advanced_metrics.json..."[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5630347Z [36;1m  git add --force data/team_advanced_metrics.json[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5630933Z [36;1m  FILES_TO_COMMIT="$FILES_TO_COMMIT data/team_advanced_metrics.json"[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5631284Z [36;1mfi[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5631459Z [36;1m[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5631780Z [36;1m# Model artifacts are uploaded as Actions artifacts by default (not committed).[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5632182Z [36;1m[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5632433Z [36;1m# Append-only events (schema-stable training store)[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5632800Z [36;1mif [ -f "data/prediction_events.jsonl" ]; then[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5633142Z [36;1m  git add --force data/prediction_events.jsonl[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5633523Z [36;1m  FILES_TO_COMMIT="$FILES_TO_COMMIT data/prediction_events.jsonl"[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5633873Z [36;1mfi[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5634096Z [36;1mif [ -f "data/outcome_events.jsonl" ]; then[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5634416Z [36;1m  git add --force data/outcome_events.jsonl[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5634792Z [36;1m  FILES_TO_COMMIT="$FILES_TO_COMMIT data/outcome_events.jsonl"[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5635127Z [36;1mfi[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5635305Z [36;1m[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5635537Z [36;1mif [ -f "team_travel_archetypes.json" ]; then[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5635895Z [36;1m   echo "📦 Adding travel archetypes..."[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5636234Z [36;1m   git add --force team_travel_archetypes.json[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5636630Z [36;1m   FILES_TO_COMMIT="$FILES_TO_COMMIT team_travel_archetypes.json"[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5636972Z [36;1mfi[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5637152Z [36;1m[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5637348Z [36;1m# Commit if there are changes[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5637636Z [36;1mif ! git diff --staged --quiet; then[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5638404Z [36;1m  echo "📝 Committing updated predictions, edge data, and team stats..."[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5639012Z [36;1m  git commit -m "Update daily NHL predictions, edge data, and team stats - $(date -u +'%Y-%m-%d')"[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5639498Z [36;1m  echo "✅ Committed:$FILES_TO_COMMIT"[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5639779Z [36;1melse[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5640046Z [36;1m  echo "ℹ️  No changes to commit (files are up to date)"[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5640354Z [36;1mfi[0m
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5661311Z shell: /usr/bin/bash -e {0}
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5661559Z env:
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5661779Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5662066Z   PUSH_MODEL_ARTIFACTS: false
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5662389Z   pythonLocation: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5662817Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib/pkgconfig
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5663233Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5663622Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5663986Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5664352Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5664664Z ##[endgroup]
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5742676Z 📦 Force adding nhl_edge_data.json...
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5922739Z ✅ nhl_edge_data.json added
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.5923154Z 📦 Adding win_probability_predictions_v2.json...
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.6057986Z ✅ win_probability_predictions_v2.json added
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.6058439Z 📦 Adding season_2025_2026_team_stats.json...
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.6271581Z ✅ season_2025_2026_team_stats.json added
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.6272168Z 📦 Adding goalie_stats.json...
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.6375550Z 📦 Adding team_advanced_metrics.json...
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.6563094Z 📦 Adding travel archetypes...
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.6706782Z 📝 Committing updated predictions, edge data, and team stats...
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.7198104Z [main ee93e5ba] Update daily NHL predictions, edge data, and team stats - 2026-04-29
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.7199036Z  4 files changed, 2668 insertions(+), 2435 deletions(-)
+run	Commit predictions and edge data changes	2026-04-29T12:45:11.7208307Z ✅ Committed: data/nhl_edge_data.json data/win_probability_predictions_v2.json data/season_2025_2026_team_stats.json data/goalie_stats.json data/team_advanced_metrics.json data/prediction_events.jsonl data/outcome_events.jsonl team_travel_archetypes.json
+run	Push edge data changes	﻿2026-04-29T12:45:11.7238833Z ##[group]Run # Only push if there are local commits ahead of origin
+run	Push edge data changes	2026-04-29T12:45:11.7239322Z [36;1m# Only push if there are local commits ahead of origin[0m
+run	Push edge data changes	2026-04-29T12:45:11.7239668Z [36;1mgit fetch origin main[0m
+run	Push edge data changes	2026-04-29T12:45:11.7240005Z [36;1mAHEAD=$(git rev-list --count origin/main..HEAD || echo 0)[0m
+run	Push edge data changes	2026-04-29T12:45:11.7240364Z [36;1mif [ "$AHEAD" -gt 0 ]; then[0m
+run	Push edge data changes	2026-04-29T12:45:11.7240672Z [36;1m  git pull --rebase --autostash origin main[0m
+run	Push edge data changes	2026-04-29T12:45:11.7240981Z [36;1m  git push origin HEAD:main[0m
+run	Push edge data changes	2026-04-29T12:45:11.7241250Z [36;1melse[0m
+run	Push edge data changes	2026-04-29T12:45:11.7241488Z [36;1m  echo "No edge data changes to push"[0m
+run	Push edge data changes	2026-04-29T12:45:11.7241764Z [36;1mfi[0m
+run	Push edge data changes	2026-04-29T12:45:11.7264354Z shell: /usr/bin/bash -e {0}
+run	Push edge data changes	2026-04-29T12:45:11.7264624Z env:
+run	Push edge data changes	2026-04-29T12:45:11.7264853Z   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+run	Push edge data changes	2026-04-29T12:45:11.7265155Z   PUSH_MODEL_ARTIFACTS: false
+run	Push edge data changes	2026-04-29T12:45:11.7265474Z   pythonLocation: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Push edge data changes	2026-04-29T12:45:11.7265941Z   PKG_CONFIG_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib/pkgconfig
+run	Push edge data changes	2026-04-29T12:45:11.7266361Z   Python_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Push edge data changes	2026-04-29T12:45:11.7266750Z   Python2_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Push edge data changes	2026-04-29T12:45:11.7267126Z   Python3_ROOT_DIR: /opt/hostedtoolcache/Python/3.10.20/x64
+run	Push edge data changes	2026-04-29T12:45:11.7267508Z   LD_LIBRARY_PATH: /opt/hostedtoolcache/Python/3.10.20/x64/lib
+run	Push edge data changes	2026-04-29T12:45:11.7268008Z ##[endgroup]
+run	Push edge data changes	2026-04-29T12:45:11.9033119Z From https://github.com/emilyfehr99/Automated-Post-Game-Reports
+run	Push edge data changes	2026-04-29T12:45:11.9033874Z  * branch              main       -> FETCH_HEAD
+run	Push edge data changes	2026-04-29T12:45:12.0718988Z From https://github.com/emilyfehr99/Automated-Post-Game-Reports
+run	Push edge data changes	2026-04-29T12:45:12.0719482Z  * branch              main       -> FETCH_HEAD
+run	Push edge data changes	2026-04-29T12:45:12.0808234Z Current branch main is up to date.
+run	Push edge data changes	2026-04-29T12:45:13.2089115Z To https://github.com/emilyfehr99/Automated-Post-Game-Reports
+run	Push edge data changes	2026-04-29T12:45:13.2089721Z    3dc9297e..ee93e5ba  HEAD -> main
+run	Post Cache pip	﻿2026-04-29T12:45:13.2737077Z Post job cleanup.
+run	Post Cache pip	2026-04-29T12:45:13.3811145Z Cache hit occurred on the primary key Linux-pip-py310-3fa965faba2b9addf8df8309c1e2c41c7b5b05626c7609c75fb789414a0daac8, not saving cache.
+run	Post Cache pip	2026-04-29T12:45:13.3812695Z (node:2664) [DEP0040] DeprecationWarning: The `punycode` module is deprecated. Please use a userland alternative instead.
+run	Post Cache pip	2026-04-29T12:45:13.3813718Z (Use `node --trace-deprecation ...` to show where the warning was created)
+run	Post Set up Python	﻿2026-04-29T12:45:13.3919798Z Post job cleanup.
+run	Post Checkout	﻿2026-04-29T12:45:13.5294389Z Post job cleanup.
+run	Post Checkout	2026-04-29T12:45:13.6102425Z [command]/usr/bin/git version
+run	Post Checkout	2026-04-29T12:45:13.6170310Z git version 2.53.0
+run	Post Checkout	2026-04-29T12:45:13.6209269Z Temporarily overriding HOME='/home/runner/work/_temp/7137ae58-5316-4643-a709-ade79f10c4aa' before making global git config changes
+run	Post Checkout	2026-04-29T12:45:13.6210518Z Adding repository directory to the temporary git global config as a safe directory
+run	Post Checkout	2026-04-29T12:45:13.6215331Z [command]/usr/bin/git config --global --add safe.directory /home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports
+run	Post Checkout	2026-04-29T12:45:13.6247095Z Removing SSH command configuration
+run	Post Checkout	2026-04-29T12:45:13.6254198Z [command]/usr/bin/git config --local --name-only --get-regexp core\.sshCommand
+run	Post Checkout	2026-04-29T12:45:13.6289088Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'core\.sshCommand' && git config --local --unset-all 'core.sshCommand' || :"
+run	Post Checkout	2026-04-29T12:45:13.6526569Z Removing HTTP extra header
+run	Post Checkout	2026-04-29T12:45:13.6531479Z [command]/usr/bin/git config --local --name-only --get-regexp http\.https\:\/\/github\.com\/\.extraheader
+run	Post Checkout	2026-04-29T12:45:13.6565236Z [command]/usr/bin/git submodule foreach --recursive sh -c "git config --local --name-only --get-regexp 'http\.https\:\/\/github\.com\/\.extraheader' && git config --local --unset-all 'http.https://github.com/.extraheader' || :"
+run	Post Checkout	2026-04-29T12:45:13.6795899Z Removing includeIf entries pointing to credentials config files
+run	Post Checkout	2026-04-29T12:45:13.6802832Z [command]/usr/bin/git config --local --name-only --get-regexp ^includeIf\.gitdir:
+run	Post Checkout	2026-04-29T12:45:13.6827619Z includeif.gitdir:/home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports/.git.path
+run	Post Checkout	2026-04-29T12:45:13.6829093Z includeif.gitdir:/home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports/.git/worktrees/*.path
+run	Post Checkout	2026-04-29T12:45:13.6830001Z includeif.gitdir:/github/workspace/.git.path
+run	Post Checkout	2026-04-29T12:45:13.6830548Z includeif.gitdir:/github/workspace/.git/worktrees/*.path
+run	Post Checkout	2026-04-29T12:45:13.6838405Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports/.git.path
+run	Post Checkout	2026-04-29T12:45:13.6862001Z /home/runner/work/_temp/git-credentials-1d00d0c6-c0f1-488a-b1a3-61694fcf3e43.config
+run	Post Checkout	2026-04-29T12:45:13.6872047Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports/.git.path /home/runner/work/_temp/git-credentials-1d00d0c6-c0f1-488a-b1a3-61694fcf3e43.config
+run	Post Checkout	2026-04-29T12:45:13.6909325Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports/.git/worktrees/*.path
+run	Post Checkout	2026-04-29T12:45:13.6932490Z /home/runner/work/_temp/git-credentials-1d00d0c6-c0f1-488a-b1a3-61694fcf3e43.config
+run	Post Checkout	2026-04-29T12:45:13.6943997Z [command]/usr/bin/git config --local --unset includeif.gitdir:/home/runner/work/Automated-Post-Game-Reports/Automated-Post-Game-Reports/.git/worktrees/*.path /home/runner/work/_temp/git-credentials-1d00d0c6-c0f1-488a-b1a3-61694fcf3e43.config
+run	Post Checkout	2026-04-29T12:45:13.6978524Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git.path
+run	Post Checkout	2026-04-29T12:45:13.7000313Z /github/runner_temp/git-credentials-1d00d0c6-c0f1-488a-b1a3-61694fcf3e43.config
+run	Post Checkout	2026-04-29T12:45:13.7008336Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git.path /github/runner_temp/git-credentials-1d00d0c6-c0f1-488a-b1a3-61694fcf3e43.config
+run	Post Checkout	2026-04-29T12:45:13.7040450Z [command]/usr/bin/git config --local --get-all includeif.gitdir:/github/workspace/.git/worktrees/*.path
+run	Post Checkout	2026-04-29T12:45:13.7062436Z /github/runner_temp/git-credentials-1d00d0c6-c0f1-488a-b1a3-61694fcf3e43.config
+run	Post Checkout	2026-04-29T12:45:13.7071337Z [command]/usr/bin/git config --local --unset includeif.gitdir:/github/workspace/.git/worktrees/*.path /github/runner_temp/git-credentials-1d00d0c6-c0f1-488a-b1a3-61694fcf3e43.config
+run	Post Checkout	2026-04-29T12:45:13.7103502Z [command]/usr/bin/git submodule foreach --recursive git config --local --show-origin --name-only --get-regexp remote.origin.url
+run	Post Checkout	2026-04-29T12:45:13.7330729Z Removing credentials config '/home/runner/work/_temp/git-credentials-1d00d0c6-c0f1-488a-b1a3-61694fcf3e43.config'
+run	Complete job	﻿2026-04-29T12:45:13.7469476Z Cleaning up orphan processes
+run	Complete job	2026-04-29T12:45:13.7738999Z ##[warning]Node.js 20 is deprecated. The following actions target Node.js 20 but are being forced to run on Node.js 24: actions/cache@v4. For more information see: https://github.blog/changelog/2025-09-19-deprecation-of-node-20-on-github-actions-runners/
