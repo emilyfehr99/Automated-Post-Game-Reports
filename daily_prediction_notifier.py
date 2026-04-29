@@ -500,6 +500,12 @@ class DailyPredictionNotifier:
                 # Store the metrics used for this prediction (crucial for training)
                 'metrics_used': {
                     'home_xg': pred.get('home_xg', 0),
+                    'away_xg': pred.get('away_xg', 0),
+                },
+                'prediction_reason': "Meta-Ensemble Daily Run",
+                'suggested_units': pred.get('suggested_units', 0.0),
+                'odds_taken': pred.get('odds_taken', 0)
+            }
             try:
                 append_prediction_event(
                     date=pred.get("date", datetime.now().strftime("%Y-%m-%d")),
