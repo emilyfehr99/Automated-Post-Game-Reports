@@ -492,6 +492,7 @@ class PlayoffSeriesPredictor:
         # Apply Playoff Intensity Multiplier and Series Fatigue Decay
         total_games_played = away_wins + home_wins
         fatigue_decay = max(0.95, 1.0 - (total_games_played * 0.008)) # -0.8% speed per game in series
+        is_playoff = True # In this context, it's always a playoff game
         intensity_boost = 1.05 if is_playoff else 1.0 # +5% effort in playoffs
         
         away_speed = self._calculate_skating_edge(away_team, decay=fatigue_decay, intensity=intensity_boost)

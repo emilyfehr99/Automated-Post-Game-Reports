@@ -688,7 +688,7 @@ class MetaEnsemblePredictor:
                 count += 1
             print(f"✅ Replayed {count} games to build current state")
 
-    def _predict_xgboost(self, away_team, home_team, game_date_str=None, away_goalie=None, home_goalie=None) -> Optional[Dict]:
+    def _predict_xgboost(self, away_team, home_team, game_date_str=None, away_goalie=None, home_goalie=None, is_playoff=False, series_status=None) -> Optional[Dict]:
         """Make prediction using XGBoost model with dynamic features"""
         if not self.xgb_model or not self.feature_names:
             return None
@@ -1162,7 +1162,7 @@ class MetaEnsemblePredictor:
                 xgb_weight = 0.35
                 spec_weight = 0.45
             
-        xgb_pred = self._predict_xgboost(away_team, home_team, game_date, away_goalie, home_goalie)
+        xgb_pred = self._predict_xgboost(away_team, home_team, game_date, away_goalie, home_goalie, is_playoff=is_playoff, series_status=series_status)
         xgb_margin = 0.0
         if xgb_pred:
             predictions.append(xgb_pred)
