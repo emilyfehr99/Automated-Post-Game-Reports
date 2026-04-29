@@ -466,7 +466,7 @@ class DailyPredictionNotifier:
 
             record = {
                 'date': datetime.now(pytz.timezone('US/Central')).strftime('%Y-%m-%d'),
-                'game_id': pred['game_id'],
+                'game_id': g_id,
                 'home_team': pred['home_team'],
                 'away_team': pred['away_team'],
                 'predicted_winner': pred['predicted_winner'],
