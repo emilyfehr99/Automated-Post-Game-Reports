@@ -280,13 +280,20 @@ class MetaEnsemblePredictor:
         self.team_encodings = {}
         self.rotowire = RotoWireScraper()
         self.standings = StandingsTracker()
+        
+        # Dual-Model State
+        self.calibrated_model_reg = None
+        self.calibrated_model_ply = None
+        self.feature_names_reg = []
+        self.feature_names_ply = []
+        
         self._component_weights = None
         self._load_component_weights()
         
         try:
-            self._load_xgboost_components()
+            self._load_dual_regime_components()
         except Exception as e:
-            print(f"⚠️ Failed to load XGBoost components: {e}")
+            print(f"⚠️ Failed to load dual regime components: {e}")
 
     def _load_component_weights(self) -> None:
         """Load dynamic component weights from recent backtests if available."""
@@ -350,74 +357,69 @@ class MetaEnsemblePredictor:
         except Exception:
             return
 
-    def _load_xgboost_components(self):
-        """Load model, features list, and build history state"""
-        # Prefer the current champion (full vs recent) when available.
+    def _load_dual_regime_components(self):
+        """Pre-load both regular season and playoff components if available"""
+        # Load Regular Season Components
+        self.calibrated_model_reg, self.feature_names_reg = self._load_regime_files(is_playoff=False)
+        # Load Playoff Components
+        self.calibrated_model_ply, self.feature_names_ply = self._load_regime_files(is_playoff=True)
+        
+        # Set default active components (fallback)
+        self.calibrated_model = self.calibrated_model_reg or self.calibrated_model_ply
+        self.feature_names = self.feature_names_reg or self.feature_names_ply
+        self.xgb_model = getattr(self.calibrated_model, 'estimator', None) if self.calibrated_model else None
+
+    def _load_regime_files(self, is_playoff=False):
+        """Helper to load model and features for a specific regime"""
         try:
             p = Path("model_performance.json")
+            champ = None
             if p.exists():
                 with open(p, "r") as f:
                     perf = json.load(f)
-                champ = perf.get("champion")
+                if is_playoff:
+                    champ = perf.get("playoff_champion") or "playoff"
+                else:
+                    champ = perf.get("champion")
         except Exception:
-            champ = None
+            champ = "playoff" if is_playoff else None
 
         suffix = f"_{champ}" if champ else ""
-
-        # 1. Load Calibrated Model (Preferred)
-        # This is algo-agnostic because it's a pickled CalibratedClassifierCV
-        cal_model_path = Path(f"xgb_calibrated_model{suffix}.pkl")
-        legacy_cal_model_path = Path("xgb_calibrated_model.pkl")
         
-        loaded_cal = False
-        if cal_model_path.exists():
-            try:
-                with open(cal_model_path, "rb") as f:
-                    self.calibrated_model = pickle.load(f)
-                print(f"✅ Loaded Calibrated champion model from {cal_model_path}")
-                loaded_cal = True
-            except Exception as e:
-                print(f"⚠️ Failed to load calibrated model: {e}")
+        # 1. Calibrated Model
+        paths_to_try = [
+            Path(f"xgb_calibrated_model{suffix}.pkl"),
+            Path("xgb_calibrated_model_playoff.pkl") if is_playoff else Path("xgb_calibrated_model_recent.pkl"),
+            Path("xgb_calibrated_model.pkl")
+        ]
         
-        if not loaded_cal and legacy_cal_model_path.exists():
-            try:
-                with open(legacy_cal_model_path, "rb") as f:
-                    self.calibrated_model = pickle.load(f)
-                print(f"✅ Loaded Calibrated model from {legacy_cal_model_path}")
-                loaded_cal = True
-            except Exception as e:
-                print(f"⚠️ Failed to load calibrated model: {e}")
-
-        # 1b. Load Standard Model (Fallback/Legacy)
-        # Note: Legacy fallback is still hardcoded for XGB for now, 
-        # but production mostly relies on calibrated_model above.
-        model_path = Path(f"xgb_nhl_model{suffix}.json")
-        legacy_model_path = Path("xgb_nhl_model.json")
-        if not loaded_cal:
-            if model_path.exists():
-                self.xgb_model = xgb.XGBClassifier()
-                self.xgb_model.load_model(str(model_path))
-                print(f"✅ Loaded XGBoost fallback from {model_path}")
-            elif legacy_model_path.exists():
-                self.xgb_model = xgb.XGBClassifier()
-                self.xgb_model.load_model(str(legacy_model_path))
-                print(f"✅ Loaded XGBoost fallback from {legacy_model_path}")
-            
-        # 2. Load Feature Names
-        feat_path = Path(f"xgb_features{suffix}.pkl")
-        legacy_feat_path = Path("xgb_features.pkl")
-        if feat_path.exists():
-            with open(feat_path, "rb") as f:
-                self.feature_names = pickle.load(f)
-            print(f"✅ Loaded {len(self.feature_names)} feature definitions")
-        elif legacy_feat_path.exists():
-            with open(legacy_feat_path, "rb") as f:
-                self.feature_names = pickle.load(f)
-            print(f"✅ Loaded {len(self.feature_names)} feature definitions")
-        else:
-            print("⚠️ feature definitions not found, XGBoost disabled")
-            self.xgb_model = None
-            return
+        model = None
+        for p in paths_to_try:
+            if p.exists():
+                try:
+                    with open(p, "rb") as f:
+                        model = pickle.load(f)
+                    print(f"✅ Loaded {'Playoff' if is_playoff else 'Regular'} model from {p}")
+                    break
+                except: continue
+        
+        # 2. Feature Names
+        feat_paths = [
+            Path(f"xgb_features{suffix}.pkl"),
+            Path("xgb_features_playoff.pkl") if is_playoff else Path("xgb_features_recent.pkl"),
+            Path("xgb_features.pkl")
+        ]
+        
+        features = []
+        for p in feat_paths:
+            if p.exists():
+                try:
+                    with open(p, "rb") as f:
+                        features = pickle.load(f)
+                    break
+                except: continue
+                
+        return model, features
 
         # Feature snapshot (strict anti-leakage / drift validation)
         try:
@@ -863,11 +865,11 @@ class MetaEnsemblePredictor:
         }
         
         # --- Helper for dynamic feature alignment ---
-        def _get_aligned_df(model):
+        def _get_aligned_df(model, regime_feats=None):
             if model is None: return None
             
-            # Get feature names from model if possible
-            feats_to_use = self.feature_names
+            # Get feature names from model if possible, fallback to regime feats
+            feats_to_use = regime_feats or self.feature_names
             if hasattr(model, 'get_booster'):
                 feats_to_use = model.get_booster().feature_names
             elif hasattr(model, 'feature_names_in_'):
@@ -880,25 +882,34 @@ class MetaEnsemblePredictor:
                 vec.append(feature_data.get(name, 0.0))
             return pd.DataFrame([vec], columns=feats_to_use)
 
-        # Ensure ordered columns match training for MAIN model
+        # 4. Select Regime Model
+        active_model = self.calibrated_model_ply if is_playoff else self.calibrated_model_reg
+        active_feats = self.feature_names_ply if is_playoff else self.feature_names_reg
+        
+        # Fallback to defaults if specific regime not loaded
+        if active_model is None: active_model = self.calibrated_model
+        if not active_feats: active_feats = self.feature_names
+
         try:
             # Strict anti-leakage / drift guard: feature list must match training snapshot exactly.
             if isinstance(self._feature_snapshot, dict) and self._feature_snapshot.get("sha256"):
-                joined = "\n".join([str(x) for x in self.feature_names]).encode("utf-8")
+                joined = "\n".join([str(x) for x in active_feats]).encode("utf-8")
                 cur = hashlib.sha256(joined).hexdigest()
                 exp = str(self._feature_snapshot.get("sha256"))
                 if cur != exp:
-                    raise RuntimeError(
-                        f"Feature snapshot mismatch (runtime={cur} expected={exp}). "
-                        "Refusing XGB prediction due to potential leakage/drift."
-                    )
+                    # For playoffs, we allow skip mismatch if explicitly trained for it
+                    if not is_playoff:
+                        raise RuntimeError(
+                            f"Feature snapshot mismatch (runtime={cur} expected={exp}). "
+                            "Refusing XGB prediction due to potential leakage/drift."
+                        )
                 
-            # 4. Make Prediction
-            df_main = _get_aligned_df(self.calibrated_model or self.xgb_model)
+            # 5. Make Prediction
+            df_main = _get_aligned_df(active_model, regime_feats=active_feats)
             
             # Prefer calibrated model for better probability accuracy
-            if self.calibrated_model is not None:
-                prob = self.calibrated_model.predict_proba(df_main)[0][1] # Probability of home win
+            if active_model is not None:
+                prob = active_model.predict_proba(df_main)[0][1] # Probability of home win
             elif self.xgb_model is not None:
                 prob = self.xgb_model.predict_proba(df_main)[0][1] # Probability of home win
             else:
@@ -947,7 +958,7 @@ class MetaEnsemblePredictor:
             predicted_margin = 0.0
             if self.margin_model is not None:
                 try:
-                    df_margin = _get_aligned_df(self.margin_model)
+                    df_margin = _get_aligned_df(self.margin_model, regime_feats=active_feats)
                     predicted_margin = float(self.margin_model.predict(df_margin)[0])
                 except Exception as e:
                     print(f"Margin prediction error: {e}")
@@ -958,8 +969,8 @@ class MetaEnsemblePredictor:
             predicted_away_goals = None
             try:
                 if self.home_goals_model is not None and self.away_goals_model is not None:
-                    df_h = _get_aligned_df(self.home_goals_model)
-                    df_a = _get_aligned_df(self.away_goals_model)
+                    df_h = _get_aligned_df(self.home_goals_model, regime_feats=active_feats)
+                    df_a = _get_aligned_df(self.away_goals_model, regime_feats=active_feats)
                     
                     h = float(self.home_goals_model.predict(df_h)[0])
                     a = float(self.away_goals_model.predict(df_a)[0])
@@ -998,7 +1009,7 @@ class MetaEnsemblePredictor:
             if predicted_total is None:
                 try:
                     if self.total_goals_model is not None:
-                        df_tg = _get_aligned_df(self.total_goals_model)
+                        df_tg = _get_aligned_df(self.total_goals_model, regime_feats=active_feats)
                         predicted_total = float(self.total_goals_model.predict(df_tg)[0])
                 except Exception as e:
                     print(f"Total goals prediction error: {e}")
@@ -1050,7 +1061,7 @@ class MetaEnsemblePredictor:
             confidence_tier = "Standard"
             if self.confidence_model is not None:
                 try:
-                    df_conf = _get_aligned_df(self.confidence_model)
+                    df_conf = _get_aligned_df(self.confidence_model, regime_feats=active_feats)
                     is_correct = self.confidence_model.predict(df_conf)[0]
                     if is_correct == 1 and max(away_prob, home_prob) > 55:
                         confidence_tier = "🔥 High Confidence"
@@ -1063,7 +1074,7 @@ class MetaEnsemblePredictor:
             p1_win_prob = 0.5
             if self.p1_model is not None:
                 try:
-                    df_p1 = _get_aligned_df(self.p1_model)
+                    df_p1 = _get_aligned_df(self.p1_model, regime_feats=active_feats)
                     p1_win_prob = self.p1_model.predict_proba(df_p1)[0][1]
                 except Exception as e:
                     print(f"P1 prediction error: {e}")
