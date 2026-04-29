@@ -39,6 +39,8 @@ class DailyPredictionNotifier:
         from schedule_analyzer import ScheduleAnalyzer
         self.schedule = ScheduleAnalyzer()
         self.playoff_predictor = PlayoffSeriesPredictor()
+        self._cached_summary = None
+        self._cached_predictions = None
 
         # Phase 2: Centralize Vegas odds for 3-way blending
         from vegas_odds_scraper import scrape_vegas_odds
@@ -442,8 +444,12 @@ class DailyPredictionNotifier:
 
         new_count = 0
         for pred in predictions:
-            if not pred.get("game_id"):
-                continue
+            # We want to track all games, even if we don't have a numeric ID (fallback games)
+            g_id = pred.get("game_id")
+            if not g_id:
+                # Generate a deterministic string ID for tracking
+                g_id = f"{pred['away_team']}@{pred['home_team']}_{pred.get('date', datetime.now().strftime('%Y-%m-%d'))}"
+            
             # Prefer blended away prob when present (0..1).
             if "blended_away_prob" in pred and pred["blended_away_prob"] is not None:
                 away_p = float(pred["blended_away_prob"])
@@ -494,17 +500,28 @@ class DailyPredictionNotifier:
                 # Store the metrics used for this prediction (crucial for training)
                 'metrics_used': {
                     'home_xg': pred.get('home_xg', 0),
-                    'away_xg': pred.get('away_xg', 0),
-                },
-                'prediction_reason': "Meta-Ensemble Daily Run",
-                'suggested_units': pred.get('suggested_units', 0.0),
-                'odds_taken': pred.get('odds_taken', 0)
-            }
             try:
-                append_prediction_event(record)
+                append_prediction_event(
+                    date=pred.get("date", datetime.now().strftime("%Y-%m-%d")),
+                    game_id=g_id,
+                    home_team=pred["home_team"],
+                    away_team=pred["away_team"],
+                    predicted_home_win_prob=home_p * 100.0,
+                    predicted_away_win_prob=away_p * 100.0,
+                    model_confidence=pred.get("confidence", 0.0) / 100.0,
+                    metrics_used={"home_xg": 0, "away_xg": 0},
+                    extra_metadata={
+                        "predicted_home_goals": pred.get("home_score"),
+                        "predicted_away_goals": pred.get("away_score"),
+                        "ensemble_mode": pred.get("ensemble_mode"),
+                        "ensemble_weights": pred.get("ensemble_weights"),
+                        "attribution": pred.get("attribution", []),
+                        "is_playoff": pred.get("is_playoff", False)
+                    }
+                )
                 new_count += 1
             except Exception as e:
-                print(f"❌ Error appending prediction event: {e}")
+                print(f"⚠️  Failed to log prediction event for {pred['away_team']}@{pred['home_team']}: {e}")
 
         # Regenerate derived JSON view for dashboard/legacy readers
         try:
@@ -522,8 +539,11 @@ class DailyPredictionNotifier:
 
         print(f"✅ Appended {new_count} predictions to events log.")
 
-    def get_daily_predictions_summary(self):
+    def get_daily_predictions_summary(self, force_refresh=False):
         """Get formatted summary of today's predictions using meta-ensemble"""
+        if self._cached_summary and not force_refresh:
+            return self._cached_summary
+
         # Phase 33: Dynamic Date Detection (US/Central)
         import pytz
         today = datetime.now(pytz.timezone('US/Central')).strftime('%Y-%m-%d')
@@ -609,6 +629,19 @@ class DailyPredictionNotifier:
                             away_wins, home_wins = t_wins, b_wins
                         else:
                             away_wins, home_wins = b_wins, t_wins
+                    elif isinstance(series_status_obj, str):
+                        # Attempt to parse wins from string: "Team leads 3-2"
+                        import re
+                        m = re.search(r'leads (\d)-(\d)', series_status_obj)
+                        if m:
+                            w1, w2 = int(m.group(1)), int(m.group(2))
+                            # For simplicity in string parsing, we just assign w1 to the leader
+                            # In most cases this is enough for the simulation prior
+                            if series_status_obj.startswith(game['away_team']):
+                                away_wins, home_wins = w1, w2
+                            else:
+                                home_wins, away_wins = w1, w2
+                        series_status_obj = {'status_text': series_status_obj} # Convert to dict for safety downstream
                 
                 # Phase 32: Calculate Series Pace Offset
                 pace_offset = 0.0
@@ -663,10 +696,16 @@ class DailyPredictionNotifier:
                     game_id = game_info.get('id')
                     series_status_str = None
                     if is_playoff and series_status_obj:
-                        leader = series_status_obj.get("topSeedTeamAbbrev")
-                        w1 = series_status_obj.get("topSeedWins", 0)
-                        w2 = series_status_obj.get("bottomSeedWins", 0)
-                        series_status_str = f"{leader} leads {w1}-{w2}"
+                        if isinstance(series_status_obj, dict):
+                            leader = series_status_obj.get("topSeedTeamAbbrev")
+                            w1 = series_status_obj.get("topSeedWins", 0)
+                            w2 = series_status_obj.get("bottomSeedWins", 0)
+                            if leader and w1 is not None:
+                                series_status_str = f"{leader} leads {w1}-{w2}"
+                            else:
+                                series_status_str = series_status_obj.get("status_text", "Playoffs")
+                        else:
+                            series_status_str = str(series_status_obj)
 
                     is_playoff = game_info.get('gameType') == 3
                     
@@ -816,8 +855,13 @@ class DailyPredictionNotifier:
                 print(f"Error predicting {game['away_team']} @ {game['home_team']}: {e}")
                 continue
         
+        # Cache the results
+        self._cached_predictions = predictions
+        
         if not predictions:
-            return "No high-confidence predictions for today."
+            self._cached_summary = "No high-confidence predictions for today."
+            return self._cached_summary
+            
             
         # SAVE PREDICTIONS TO IDB
         self.save_predictions_to_history(predictions)
@@ -926,6 +970,7 @@ class DailyPredictionNotifier:
         summary += f"🤖 Generated by NHL Meta-Ensemble Model (55-60% accuracy)\n"
         summary += f"📅 {datetime.now(pytz.timezone('US/Central')).strftime('%Y-%m-%d %I:%M %p CT')}"
         
+        self._cached_summary = summary
         return summary
 
     def send_email_notification(self, to_email, subject="Daily NHL Predictions"):
