@@ -1,5 +1,5 @@
 {
-  "scraped_at": "2026-05-04T12:11:09.800627",
+  "scraped_at": "2026-05-05T11:49:30.189662",
   "total_players": 831,
   "player_data": [
     {
@@ -566,13 +566,13 @@
       "Player": "Matt Duchene",
       "Team": "DAL",
       "Pos": "C",
-      "GP": 19,
-      "Top Speed": 21.21,
-      "Distance Skated": 44.38,
-      "Average Speed": 9.65,
-      "Bursts>20 per mile": 0.41,
-      "ES Dist. Skated": 40.62,
-      "ES Avg. Speed": 9.67
+      "GP": 57,
+      "Top Speed": 21.56,
+      "Distance Skated": 148.98,
+      "Average Speed": 9.5,
+      "Bursts>20 per mile": 0.45,
+      "ES Dist. Skated": 129.63,
+      "ES Avg. Speed": 9.63
     },
     {
       "": "",
@@ -14554,13 +14554,13 @@
           "Player": "Matt Duchene",
           "Team": "DAL",
           "Pos": "C",
-          "GP": 19,
-          "Top Speed": 21.21,
-          "Distance Skated": 44.38,
-          "Average Speed": 9.65,
-          "Bursts>20 per mile": 0.41,
-          "ES Dist. Skated": 40.62,
-          "ES Avg. Speed": 9.67
+          "GP": 57,
+          "Top Speed": 21.56,
+          "Distance Skated": 148.98,
+          "Average Speed": 9.5,
+          "Bursts>20 per mile": 0.45,
+          "ES Dist. Skated": 129.63,
+          "ES Avg. Speed": 9.63
         },
         {
           "": "",
@@ -14836,17 +14836,17 @@
           "ES Avg. Speed": 9.64
         }
       ],
-      "total_distance": 1734.02,
-      "avg_speed": 8.423043478260867,
+      "total_distance": 1838.62,
+      "avg_speed": 8.416521739130435,
       "max_speed": 23.61,
-      "total_bursts": 7.769999999999999,
+      "total_bursts": 7.809999999999999,
       "player_count": 23,
-      "avg_distance": 75.39217391304348,
-      "avg_bursts": 0.33782608695652167,
-      "speed_score": 0.8423043478260868,
+      "avg_distance": 79.94,
+      "avg_bursts": 0.3395652173913043,
+      "speed_score": 0.8416521739130435,
       "distance_score": 1.0,
-      "burst_score": 0.16891304347826083,
-      "edge_advantage": 0.7549347826086955
+      "burst_score": 0.16978260869565215,
+      "edge_advantage": 0.7547826086956522
     },
     "UTA": {
       "players": [
