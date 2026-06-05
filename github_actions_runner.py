@@ -528,9 +528,11 @@ class GitHubActionsRunner:
         
         # Post to Discord (also non-fatal)
         try:
+            if os.environ.get("SKIP_DISCORD_POST", "false").lower() == "true":
+                print("ℹ️  SKIP_DISCORD_POST=true; not posting to Discord.")
             # If X is failing and we keep retrying the game, avoid spamming Discord
             # with the same report image on every run.
-            if self._has_discord_post_for_game(str(game_id)):
+            elif self._has_discord_post_for_game(str(game_id)):
                 print("ℹ️  Discord already posted for this game_id; skipping Discord to avoid duplicates.")
             else:
                 if self.post_to_discord(away_team, home_team, image_path):
@@ -1041,8 +1043,91 @@ class GitHubActionsRunner:
         print(f"📊 Total processed games: {len(self.processed_games)}")
         print("="*60)
 
+    def get_playoff_games_missing_x_post(self, start_date: str, end_date: str | None = None):
+        """Return chronological playoff games without a recorded tweet_id."""
+        if end_date is None:
+            central_tz = pytz.timezone("US/Central")
+            end_date = datetime.now(central_tz).strftime("%Y-%m-%d")
+
+        start = datetime.strptime(start_date, "%Y-%m-%d").date()
+        end = datetime.strptime(end_date, "%Y-%m-%d").date()
+        missing = []
+
+        current = start
+        while current <= end:
+            check_date = current.strftime("%Y-%m-%d")
+            try:
+                schedule = self.client.get_game_schedule(check_date)
+                for day in schedule.get("gameWeek", []):
+                    if day.get("date") != check_date:
+                        continue
+                    for game in day.get("games", []):
+                        game_id = str(game.get("id", ""))
+                        if not game_id.startswith("202503"):
+                            continue
+                        if game.get("gameState") not in ["FINAL", "OFF"]:
+                            continue
+                        if self._has_tweet_id_for_game(game_id):
+                            continue
+                        away = game.get("awayTeam", {}).get("abbrev", "UNK")
+                        home = game.get("homeTeam", {}).get("abbrev", "UNK")
+                        missing.append(
+                            {
+                                "id": game_id,
+                                "date": check_date,
+                                "away": away,
+                                "home": home,
+                            }
+                        )
+            except Exception as e:
+                print(f"⚠️  Could not load schedule for {check_date}: {e}")
+            current += timedelta(days=1)
+
+        missing.sort(key=lambda g: (g["date"], g["id"]))
+        return missing
+
+    def run_x_backfill(self):
+        """Post all playoff reports that never made it to X."""
+        start_date = os.environ.get("BACKFILL_START_DATE", "2026-04-23").strip()
+        delay_seconds = int(os.environ.get("X_POST_DELAY_SECONDS", "45"))
+
+        games = self.get_playoff_games_missing_x_post(start_date)
+        print(f"\n📋 X backfill: {len(games)} playoff game(s) missing tweets since {start_date}")
+
+        if not games:
+            print("✅ Nothing to backfill.")
+            return
+
+        success_count = 0
+        for idx, game in enumerate(games, 1):
+            print(f"\n{'='*60}")
+            print(f"BACKFILL {idx}/{len(games)}: {game['away']} @ {game['home']} ({game['date']})")
+            print(f"{'='*60}")
+            try:
+                if self.generate_and_post_game(game["id"], game["away"], game["home"]):
+                    self.processed_games.add(game["id"])
+                    self.save_processed_games()
+                    success_count += 1
+                    print(f"✅ Backfilled: {game['away']} @ {game['home']}")
+                else:
+                    print(f"⚠️  Backfill failed for {game['away']} @ {game['home']}")
+            except Exception as e:
+                print(f"❌ Backfill error for {game['id']}: {e}")
+                import traceback
+                traceback.print_exc()
+
+            if idx < len(games) and delay_seconds > 0:
+                print(f"⏳ Waiting {delay_seconds}s before next X post...")
+                import time
+                time.sleep(delay_seconds)
+
+        print(f"\n🎉 X backfill complete: {success_count}/{len(games)} posted")
+
 
 if __name__ == '__main__':
     runner = GitHubActionsRunner()
-    runner.run()
+    if os.environ.get("BACKFILL_X_PLAYOFFS", "false").lower() == "true":
+        runner.run_x_backfill()
+    else:
+        runner.run()
 
