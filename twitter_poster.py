@@ -53,7 +53,7 @@ class TwitterPoster:
             
         except Exception as e:
             print(f"❌ Authentication failed: {e}")
-            sys.exit(1)
+            raise
     
     def calculate_week_and_day(self, date_str):
         """

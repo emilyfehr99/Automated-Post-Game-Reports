@@ -1,0 +1,41 @@
+"""
+Post to X using browser session cookies (auth_token + ct0).
+
+No official X API credits required — uses the same internal endpoints as x.com.
+"""
+
+import asyncio
+import os
+from pathlib import Path
+
+from twikit import Client
+
+
+class XCookiePoster:
+    """Post tweets with media via X session cookies."""
+
+    def __init__(self):
+        self.auth_token = os.getenv("X_AUTH_TOKEN", "").strip()
+        self.ct0 = os.getenv("X_CT0", "").strip()
+        if not self.auth_token or not self.ct0:
+            raise ValueError(
+                "X_AUTH_TOKEN and X_CT0 are required for free cookie-based posting. "
+                "Extract both from x.com → DevTools → Application → Cookies."
+            )
+
+        self.client = Client("en-US")
+        self.client.set_cookies(
+            {
+                "auth_token": self.auth_token,
+                "ct0": self.ct0,
+            }
+        )
+
+    async def _post_async(self, text: str, image_path: Path) -> str:
+        media_id = await self.client.upload_media(str(image_path))
+        tweet = await self.client.create_tweet(text, media_ids=[media_id])
+        return str(tweet.id)
+
+    def post_with_media(self, text: str, image_path: Path) -> str:
+        """Upload image and post tweet. Returns tweet ID."""
+        return asyncio.run(self._post_async(text, image_path))

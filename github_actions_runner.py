@@ -19,6 +19,7 @@ from pathlib import Path
 import pytz
 from nhl_api_client import NHLAPIClient
 from twitter_poster import TwitterPoster
+from x_cookie_poster import XCookiePoster
 from discord_poster import DiscordPoster
 from twitter_config import TEAM_HASHTAGS, TWITTER_API_KEY
 from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
@@ -514,62 +515,16 @@ class GitHubActionsRunner:
             traceback.print_exc()
             return False
         
-        # Post to Twitter
-        twitter_success = False
-        print(f"\n🐦 Posting {away_team} @ {home_team} to Twitter...")
-        try:
-            # Debug: Check if environment variables are set
-            import os
-            api_key = os.getenv('TWITTER_API_KEY', '')
-            api_secret = os.getenv('TWITTER_API_SECRET', '')
-            access_token = os.getenv('TWITTER_ACCESS_TOKEN', '')
-            access_secret = os.getenv('TWITTER_ACCESS_TOKEN_SECRET', '')
-            
-            print(f"Debug - Credential lengths:")
-            print(f"  API Key: {len(api_key)} chars (expected 25)")
-            print(f"  API Secret: {len(api_secret)} chars (expected 50)")
-            print(f"  Access Token: {len(access_token)} chars (expected 50)")
-            print(f"  Access Secret: {len(access_secret)} chars (expected 45)")
-            
-            poster = TwitterPoster()
-            
-            # Get team hashtags
-            away_hashtag = TEAM_HASHTAGS.get(away_team, f'#{away_team}')
-            home_hashtag = TEAM_HASHTAGS.get(home_team, f'#{home_team}')
-            tweet_text = f"{away_hashtag} vs {home_hashtag}"
-            
-            # Upload image
-            media_id = poster.upload_media(image_path)
-            
-            if not media_id:
-                print(f"⚠️  Failed to upload image to Twitter - continuing anyway")
-            else:
-                # Post tweet
-                tweet = poster.client.create_tweet(
-                    text=tweet_text,
-                    media_ids=[media_id]
-                )
-                
-                tweet_id = tweet.data['id']
-                print(f"✅ Posted to Twitter: {tweet_text}")
-                print(f"   🔗 https://twitter.com/user/status/{tweet_id}")
-                twitter_success = True
-                
-                # Save Tweet ID for tomorrow's repost
-                self.save_tweet_id(game_id, tweet_id, f"{away_team} vs {home_team}")
-            
-        except Exception as e:
-            # Common failure mode: X API returning 402 when the app/account has no credits.
-            msg = str(e)
-            if "402" in msg or "Payment Required" in msg:
-                print("❌ Twitter/X posting failed: API returned 402 Payment Required.")
-                print("   This usually means your X developer/app/project has no remaining API credits.")
-                print("   Fix: add credits/upgrade plan, or switch posting strategy.")
-            else:
-                print(f"⚠️  Twitter posting failed: {e}")
-            import traceback
-            traceback.print_exc()
-            print(f"   Continuing with Discord and cleanup...")
+        # Post to X
+        away_hashtag = TEAM_HASHTAGS.get(away_team, f'#{away_team}')
+        home_hashtag = TEAM_HASHTAGS.get(home_team, f'#{home_team}')
+        tweet_text = f"{away_hashtag} vs {home_hashtag}"
+        twitter_success, tweet_id = self.post_to_x(
+            tweet_text=tweet_text,
+            image_path=image_path,
+            game_id=game_id,
+            description=f"{away_team} vs {home_team}",
+        )
         
         # Post to Discord (also non-fatal)
         try:
@@ -602,6 +557,81 @@ class GitHubActionsRunner:
 
         return True
             
+    def _x_cookie_credentials_configured(self) -> bool:
+        return bool(os.getenv("X_AUTH_TOKEN", "").strip() and os.getenv("X_CT0", "").strip())
+
+    def _prefer_x_cookie_posting(self) -> bool:
+        mode = os.getenv("X_POST_MODE", "cookie").strip().lower()
+        if mode == "api":
+            return False
+        if mode == "cookie":
+            return True
+        # auto: cookies when present, otherwise official API
+        return self._x_cookie_credentials_configured()
+
+    def post_to_x(self, tweet_text: str, image_path, game_id: str, description: str):
+        """
+        Post report image to X. Uses free cookie auth by default; falls back to official API.
+        Returns (success: bool, tweet_id: str|None).
+        """
+        print(f"\n🐦 Posting to X: {description}")
+        use_cookies = self._prefer_x_cookie_posting()
+
+        if use_cookies:
+            if not self._x_cookie_credentials_configured():
+                print("❌ X cookie posting enabled but X_AUTH_TOKEN / X_CT0 are not set.")
+                print("   Add both as GitHub secrets (from x.com DevTools → Cookies).")
+                return False, None
+            try:
+                print("   Mode: cookie session (no API credits)")
+                poster = XCookiePoster()
+                tweet_id = poster.post_with_media(tweet_text, Path(image_path))
+                print(f"✅ Posted to X: {tweet_text}")
+                print(f"   🔗 https://x.com/i/web/status/{tweet_id}")
+                self.save_tweet_id(game_id, tweet_id, description)
+                return True, tweet_id
+            except Exception as e:
+                msg = str(e)
+                if "401" in msg or "403" in msg or "Authentication" in msg:
+                    print("❌ X cookie auth failed — cookies may be expired.")
+                    print("   Re-copy auth_token + ct0 from a logged-in x.com browser session.")
+                else:
+                    print(f"❌ X cookie posting failed: {e}")
+                import traceback
+                traceback.print_exc()
+
+                if os.getenv("X_POST_MODE", "cookie").strip().lower() == "cookie":
+                    print("   Continuing with Discord and cleanup...")
+                    return False, None
+                print("   Falling back to official X API...")
+
+        # Official API fallback (requires paid credits)
+        try:
+            print("   Mode: official X API")
+            poster = TwitterPoster()
+            media_id = poster.upload_media(image_path)
+            if not media_id:
+                print("⚠️  Failed to upload image to X API")
+                return False, None
+
+            tweet = poster.client.create_tweet(text=tweet_text, media_ids=[media_id])
+            tweet_id = tweet.data["id"]
+            print(f"✅ Posted to X: {tweet_text}")
+            print(f"   🔗 https://x.com/i/web/status/{tweet_id}")
+            self.save_tweet_id(game_id, tweet_id, description)
+            return True, tweet_id
+        except Exception as e:
+            msg = str(e)
+            if "402" in msg or "Payment Required" in msg:
+                print("❌ Official X API returned 402 Payment Required (no credits).")
+                print("   Use cookie mode instead: set X_AUTH_TOKEN + X_CT0 secrets.")
+            else:
+                print(f"⚠️  Official X API posting failed: {e}")
+            import traceback
+            traceback.print_exc()
+            print("   Continuing with Discord and cleanup...")
+            return False, None
+
     def post_to_discord(self, away_team, home_team, image_path):
         """Post report to Discord"""
         try:
