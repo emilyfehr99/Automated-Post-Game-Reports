@@ -37,8 +37,33 @@ class XCookiePoster:
 
     async def _post_async(self, text: str, image_path: Path) -> str:
         media_id = await self.client.upload_media(str(image_path))
-        tweet = await self.client.create_tweet(text, media_ids=[media_id])
-        return str(tweet.id)
+        media_entities = [{"media_id": media_id, "tagged_users": []}]
+        response, _ = await self.client.gql.create_tweet(
+            False,
+            text,
+            media_entities,
+            None,
+            None,
+            None,
+            None,
+            False,
+            None,
+            None,
+            None,
+        )
+        if "errors" in response:
+            errors = response.get("errors") or []
+            raise RuntimeError(
+                errors[0].get("message", "Failed to post tweet")
+                if errors
+                else "Failed to post tweet"
+            )
+
+        result = response["data"]["create_tweet"]["tweet_results"]["result"]
+        tweet_id = result.get("rest_id") or (result.get("legacy") or {}).get("id_str")
+        if not tweet_id:
+            raise RuntimeError(f"Could not parse tweet id from X response: {result}")
+        return str(tweet_id)
 
     def post_with_media(self, text: str, image_path: Path) -> str:
         """Upload image and post tweet. Returns tweet ID."""
