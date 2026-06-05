@@ -597,6 +597,8 @@ class GitHubActionsRunner:
                 if "401" in msg or "403" in msg or "Authentication" in msg:
                     print("❌ X cookie auth failed — cookies may be expired.")
                     print("   Re-copy auth_token + ct0 from a logged-in x.com browser session.")
+                elif "daily limit" in msg.lower() or "(344)" in msg or "(501)" in msg:
+                    print("❌ X daily post limit reached — try again tomorrow.")
                 else:
                     print(f"❌ X cookie posting failed: {e}")
                 import traceback
@@ -604,6 +606,8 @@ class GitHubActionsRunner:
 
                 if os.getenv("X_POST_MODE", "cookie").strip().lower() == "cookie":
                     print("   Continuing with Discord and cleanup...")
+                    if any(t in msg for t in ("daily limit", "(344)", "(501)")):
+                        raise
                     return False, None
                 print("   Falling back to official X API...")
 
@@ -1086,6 +1090,18 @@ class GitHubActionsRunner:
         missing.sort(key=lambda g: (g["date"], g["id"]))
         return missing
 
+    def _is_x_daily_limit_error(self, exc: Exception) -> bool:
+        msg = str(exc)
+        return any(
+            token in msg
+            for token in (
+                "daily limit",
+                "(344)",
+                "(501)",
+                "reached your daily limit",
+            )
+        )
+
     def run_x_backfill(self):
         """Post all playoff reports that never made it to X."""
         start_date = os.environ.get("BACKFILL_START_DATE", "2026-04-23").strip()
@@ -1099,6 +1115,7 @@ class GitHubActionsRunner:
             return
 
         success_count = 0
+        hit_daily_limit = False
         for idx, game in enumerate(games, 1):
             print(f"\n{'='*60}")
             print(f"BACKFILL {idx}/{len(games)}: {game['away']} @ {game['home']} ({game['date']})")
@@ -1115,13 +1132,20 @@ class GitHubActionsRunner:
                 print(f"❌ Backfill error for {game['id']}: {e}")
                 import traceback
                 traceback.print_exc()
+                if self._is_x_daily_limit_error(e):
+                    hit_daily_limit = True
+                    print("🛑 X daily post limit reached — stopping backfill for today.")
+                    break
 
-            if idx < len(games) and delay_seconds > 0:
+            if idx < len(games) and delay_seconds > 0 and not hit_daily_limit:
                 print(f"⏳ Waiting {delay_seconds}s before next X post...")
                 import time
                 time.sleep(delay_seconds)
 
+        remaining = len(games) - success_count
         print(f"\n🎉 X backfill complete: {success_count}/{len(games)} posted")
+        if hit_daily_limit or remaining > 0:
+            print(f"⏸️  {remaining} game(s) still need posting — re-run tomorrow when X resets daily limits.")
 
 
 if __name__ == '__main__':

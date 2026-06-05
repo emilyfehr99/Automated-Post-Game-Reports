@@ -11,6 +11,9 @@ on:
         description: "Seconds between X posts (rate limit safety)"
         required: false
         default: "45"
+  schedule:
+    # Resume any missed posts daily at 9:00 AM CT (14:00 UTC, CDT)
+    - cron: "0 14 * * *"
 
 jobs:
   backfill-x:
