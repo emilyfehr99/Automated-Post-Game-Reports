@@ -8,6 +8,10 @@ import asyncio
 import os
 from pathlib import Path
 
+import twikit_x_patch
+
+twikit_x_patch.apply()
+
 from twikit import Client
 
 
