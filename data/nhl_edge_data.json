@@ -1,5 +1,5 @@
 {
-  "scraped_at": "2026-06-06T11:56:23.280828",
+  "scraped_at": "2026-06-07T12:08:40.029406",
   "total_players": 938,
   "player_data": [
     {
@@ -2167,11 +2167,11 @@
       "Pos": "D",
       "GP": 55,
       "Top Speed": 21.73,
-      "Distance Skated": 151.62,
-      "Average Speed": 8.6,
-      "Bursts>20 per mile": 0.08,
-      "ES Dist. Skated": 126.03,
-      "ES Avg. Speed": 8.59
+      "Distance Skated": "",
+      "Average Speed": "",
+      "Bursts>20 per mile": "",
+      "ES Dist. Skated": "",
+      "ES Avg. Speed": ""
     },
     {
       "": "",
@@ -15969,11 +15969,11 @@
           "Pos": "D",
           "GP": 55,
           "Top Speed": 21.73,
-          "Distance Skated": 151.62,
-          "Average Speed": 8.6,
-          "Bursts>20 per mile": 0.08,
-          "ES Dist. Skated": 126.03,
-          "ES Avg. Speed": 8.59
+          "Distance Skated": "",
+          "Average Speed": "",
+          "Bursts>20 per mile": "",
+          "ES Dist. Skated": "",
+          "ES Avg. Speed": ""
         },
         {
           "": "",
@@ -16301,17 +16301,17 @@
           "ES Avg. Speed": 9.36
         }
       ],
-      "total_distance": 3822.3600000000006,
-      "avg_speed": 9.371612903225808,
+      "total_distance": 3670.7400000000007,
+      "avg_speed": 9.094193548387098,
       "max_speed": 23.6,
-      "total_bursts": 13.800000000000002,
+      "total_bursts": 13.72,
       "player_count": 31,
-      "avg_distance": 123.30193548387099,
-      "avg_bursts": 0.4451612903225807,
-      "speed_score": 0.9371612903225808,
+      "avg_distance": 118.41096774193551,
+      "avg_bursts": 0.44258064516129036,
+      "speed_score": 0.9094193548387098,
       "distance_score": 1.0,
-      "burst_score": 0.22258064516129036,
-      "edge_advantage": 0.8130967741935485
+      "burst_score": 0.22129032258064518,
+      "edge_advantage": 0.7989677419354839
     },
     "WPG": {
       "players": [
