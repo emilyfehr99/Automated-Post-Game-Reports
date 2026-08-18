@@ -263,6 +263,27 @@ class PostGameReportGenerator:
 
         return out
     
+    def _fetch_cached_logo_bytes(self, url: str) -> bytes | None:
+        """Cache remote logo image bytes to data/logo_cache/ for instant reuse."""
+        try:
+            import re
+            from pathlib import Path
+            cache_dir = Path("data/logo_cache")
+            cache_dir.mkdir(parents=True, exist_ok=True)
+            safe_name = re.sub(r'[^a-zA-Z0-9._-]', '_', url.split('/')[-1])
+            cache_path = cache_dir / safe_name
+            if cache_path.exists() and cache_path.stat().st_size > 0:
+                with open(cache_path, "rb") as f:
+                    return f.read()
+            resp = requests.get(url, timeout=5)
+            if resp.status_code == 200 and resp.content:
+                with open(cache_path, "wb") as f:
+                    f.write(resp.content)
+                return resp.content
+        except Exception as e:
+            print(f"Failed to fetch or cache logo from {url}: {e}")
+        return None
+
     def create_header_image(self, game_data, game_id=None):
         """Create the modern header image for the report using the user's header with team names"""
         try:
@@ -435,24 +456,24 @@ class PostGameReportGenerator:
                     home_logo_url = f"https://a.espncdn.com/i/teamlogos/nhl/500/{home_logo_abbrev}.png"
                     nhl_logo_url = "https://a.espncdn.com/i/teamlogos/leagues/500/nhl.png"
                     
-                    # Download NHL logo
-                    nhl_response = requests.get(nhl_logo_url, timeout=5)
-                    if nhl_response.status_code == 200:
-                        nhl_logo = PILImage.open(BytesIO(nhl_response.content))
+                    # Download/load cached NHL logo
+                    nhl_bytes = self._fetch_cached_logo_bytes(nhl_logo_url)
+                    if nhl_bytes:
+                        nhl_logo = PILImage.open(BytesIO(nhl_bytes))
                         nhl_logo = nhl_logo.resize((212, 184), PILImage.Resampling.LANCZOS)
                         print(f"Loaded NHL logo")
                     
-                    # Download away team logo
-                    away_response = requests.get(away_logo_url, timeout=5)
-                    if away_response.status_code == 200:
-                        away_logo = PILImage.open(BytesIO(away_response.content))
+                    # Download/load cached away team logo
+                    away_bytes = self._fetch_cached_logo_bytes(away_logo_url)
+                    if away_bytes:
+                        away_logo = PILImage.open(BytesIO(away_bytes))
                         away_logo = away_logo.resize((240, 212), PILImage.Resampling.LANCZOS)
                         print(f"Loaded away team logo: {away_team}")
                     
-                    # Download home team logo
-                    home_response = requests.get(home_logo_url, timeout=5)
-                    if home_response.status_code == 200:
-                        home_logo = PILImage.open(BytesIO(home_response.content))
+                    # Download/load cached home team logo
+                    home_bytes = self._fetch_cached_logo_bytes(home_logo_url)
+                    if home_bytes:
+                        home_logo = PILImage.open(BytesIO(home_bytes))
                         home_logo = home_logo.resize((240, 212), PILImage.Resampling.LANCZOS)
                         print(f"Loaded home team logo: {home_team}")
                         
