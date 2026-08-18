@@ -1706,7 +1706,14 @@ class PostGameReportGenerator:
     
     def create_goalie_analytics_section(self, game_id, game_data):
         """Create enhanced goalie analytics section with GSAx and Entry stats"""
-        from goalie_analytics_analyzer import GoalieAnalyticsAnalyzer
+        elements = []
+        try:
+            from goalie_analytics_analyzer import GoalieAnalyticsAnalyzer
+        except ImportError:
+            try:
+                from analyzers.goalie_analytics_analyzer import GoalieAnalyticsAnalyzer
+            except ImportError:
+                return elements
         from reportlab.platypus import Table, TableStyle
         from reportlab.lib import colors
         
@@ -4020,6 +4027,7 @@ class PostGameReportGenerator:
             home_team_abbrev = boxscore['homeTeam']['abbrev']
             away_team_id = boxscore['awayTeam']['id']
             home_team_id = boxscore['homeTeam']['id']
+            game_id = game_data.get('game_id') or boxscore.get('id')
             
             # Define team primary colors for advanced metrics table
             team_colors = {

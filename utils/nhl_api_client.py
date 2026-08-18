@@ -64,6 +64,14 @@ class NHLAPIClient:
             return combined_data
         return None
     
+    def get_game_landing(self, game_id):
+        """Get game landing summary"""
+        url = f"{self.base_url}/gamecenter/{game_id}/landing"
+        response = self.session.get(url)
+        if response.status_code == 200:
+            return response.json()
+        return None
+
     def get_game_boxscore(self, game_id):
         """Get game boxscore"""
         url = f"{self.base_url}/gamecenter/{game_id}/boxscore"
