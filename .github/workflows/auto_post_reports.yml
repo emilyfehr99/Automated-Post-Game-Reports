@@ -46,27 +46,18 @@ jobs:
       contents: write  # Allow workflow to commit and push
     
     steps:
-    - name: Check Season Resume Date
+    - name: Check Season Active
       run: |
-        current_date=$(date +%Y-%m-%d)
-        target_date="2026-02-25"
-        if [[ "$current_date" < "$target_date" ]]; then
-          echo "⏸️  Olympic Break: Current date $current_date is before resume date $target_date."
-          echo "Skipping workflow."
-          echo "should_run=false" >> $GITHUB_OUTPUT
-        else
-          echo "✅ Season Resumed!"
-          echo "should_run=true" >> $GITHUB_OUTPUT
-        fi
+        echo "✅ Season Active!"
+        echo "should_run=true" >> $GITHUB_OUTPUT
       id: check_date
-      
+
     - name: Checkout repository
       if: steps.check_date.outputs.should_run == 'true'
       uses: actions/checkout@v6
       with:
         fetch-depth: 0  # Fetch all history to ensure we have the latest commits
     
-
     
     - name: Set up Python
       if: steps.check_date.outputs.should_run == 'true'
@@ -139,9 +130,12 @@ jobs:
         
         # Force add files that are in .gitignore but need to be tracked
         # Team stats is updated by daily predictions workflow at 6am CT, so we just commit it if it exists
-        if [ -f "season_2025_2026_team_stats.json" ]; then
-          git add -f season_2025_2026_team_stats.json
-        fi
+        shopt -s nullglob
+        for stats_file in season_*_team_stats.json data/season_*_team_stats.json; do
+          if [ -f "$stats_file" ]; then
+            git add -f "$stats_file"
+          fi
+        done
         # Add other files
         if [ -f "processed_games.json" ]; then
           git add -f processed_games.json

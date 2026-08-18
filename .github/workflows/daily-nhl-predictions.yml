@@ -407,15 +407,16 @@ jobs:
             FILES_TO_COMMIT="$FILES_TO_COMMIT model_metrics.json"
           fi
           
-          # Add season_2025_2026_team_stats.json if it exists
-          if [ -f "data/season_2025_2026_team_stats.json" ]; then
-            echo "📦 Adding season_2025_2026_team_stats.json..."
-            git add --force data/season_2025_2026_team_stats.json
-            FILES_TO_COMMIT="$FILES_TO_COMMIT data/season_2025_2026_team_stats.json"
-            echo "✅ season_2025_2026_team_stats.json added"
-          else
-            echo "⚠️  season_2025_2026_team_stats.json not found in data/"
-          fi
+          # Add season_*_team_stats.json if it exists
+          shopt -s nullglob
+          for sf in data/season_*_team_stats.json season_*_team_stats.json; do
+            if [ -f "$sf" ]; then
+              echo "📦 Adding $sf..."
+              git add --force "$sf"
+              FILES_TO_COMMIT="$FILES_TO_COMMIT $sf"
+              echo "✅ $sf added"
+            fi
+          done
 
           # Add advanced goalie and team metrics
           if [ -f "data/goalie_stats.json" ]; then

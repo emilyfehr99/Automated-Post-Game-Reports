@@ -8,21 +8,21 @@ logger = logging.getLogger(__name__)
 class ScheduleAnalyzer:
     def __init__(self, schedule_file=None):
         if schedule_file is None:
-            # Determine path relative to script location
-            script_dir = os.path.dirname(os.path.abspath(__file__))
-            
-            # Potential locations
-            paths = [
-                os.path.join(os.path.dirname(script_dir), "data", "season_2025_2026_schedule.json"), # Root/data/
-                os.path.join(script_dir, "data", "season_2025_2026_schedule.json"),                  # analyzers/data/
-                os.path.join(os.getcwd(), "data", "season_2025_2026_schedule.json")                # current_dir/data/
-            ]
-            
-            self.schedule_file = paths[0] # Default
-            for p in paths:
-                if os.path.exists(p):
-                    self.schedule_file = p
-                    break
+            try:
+                from utils.season_utils import get_schedule_path
+                self.schedule_file = str(get_schedule_path())
+            except Exception:
+                script_dir = os.path.dirname(os.path.abspath(__file__))
+                paths = [
+                    os.path.join(os.path.dirname(script_dir), "data", "season_2025_2026_schedule.json"),
+                    os.path.join(script_dir, "data", "season_2025_2026_schedule.json"),
+                    os.path.join(os.getcwd(), "data", "season_2025_2026_schedule.json")
+                ]
+                self.schedule_file = paths[0]
+                for p in paths:
+                    if os.path.exists(p):
+                        self.schedule_file = p
+                        break
         else:
             self.schedule_file = schedule_file
             

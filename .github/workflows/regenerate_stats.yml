@@ -61,12 +61,13 @@ jobs:
           git config --global user.name "GitHub Actions Bot"
           git config --global user.email "actions@github.com"
           
-          # Check for changes
-          if [[ -n $(git status -s data/season_2025_2026_team_stats.json data/goalie_stats.json data/team_advanced_metrics.json) ]]; then
+          shopt -s nullglob
+          stats_files=(data/season_*_team_stats.json)
+          if [[ -n $(git status -s "${stats_files[@]}" data/goalie_stats.json data/team_advanced_metrics.json) ]]; then
             echo "Changes detected in data files"
-            git add data/season_2025_2026_team_stats.json
-            git add data/goalie_stats.json
-            git add data/team_advanced_metrics.json
+            git add data/season_*_team_stats.json 2>/dev/null || true
+            git add data/goalie_stats.json 2>/dev/null || true
+            git add data/team_advanced_metrics.json 2>/dev/null || true
             git commit -m "data: automated stats regeneration [skip ci]"
             git push
             echo "✅ Successfully updated stats"

@@ -70,12 +70,11 @@ class ScorePredictionModel:
         self.h2h_cache = {}
         
         # Load team stats
-        for p in [Path('data/season_2025_2026_team_stats.json'),
-                  Path('season_2025_2026_team_stats.json')]:
-            if p.exists():
-                with open(p) as f:
-                    self.team_stats = json.load(f)
-                break
+        from season_utils import get_team_stats_path
+        p = get_team_stats_path()
+        if p.exists():
+            with open(p) as f:
+                self.team_stats = json.load(f)
         
         # Load prediction history (has actual scores, B2B, opponents)
         for p in [Path('data/win_probability_predictions_v2.json'),

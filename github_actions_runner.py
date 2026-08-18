@@ -44,7 +44,8 @@ class GitHubActionsRunner:
         self.discord_poster = DiscordPoster() # Initialize Discord poster
         self.goalie_builder = GoalieStatsBuilder()
         self.team_metrics_builder = TeamAdvancedMetricsBuilder()
-        self.team_stats_file = Path('season_2025_2026_team_stats.json')
+        from season_utils import get_team_stats_path
+        self.team_stats_file = get_team_stats_path()
         self.posted_tweets_file = Path('posted_tweets.json')
         
     def load_processed_games(self):

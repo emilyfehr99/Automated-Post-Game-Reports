@@ -90,8 +90,8 @@ class ImprovedSelfLearningModelV2:
         # Load persisted goalie history if present, else build from predictions
         self.goalie_history = self.model_data.get('goalie_history') or self._build_goalie_history()
         
-        # Team performance tracking - use new season stats format
-        self.team_stats_file = Path("data/season_2025_2026_team_stats.json")
+        from season_utils import get_team_stats_path
+        self.team_stats_file = get_team_stats_path()
         self.historical_stats_file = Path("historical_seasons_team_stats.json")
         
         # Load current season stats
