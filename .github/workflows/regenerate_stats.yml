@@ -14,16 +14,15 @@ jobs:
       contents: write  # Allow pushing changes back to repo
       
     steps:
-      - name: Check Season Resume Date
+      - name: Check Season Active
         run: |
           current_date=$(date +%Y-%m-%d)
-          target_date="2026-02-25"
-          if [[ "$current_date" < "$target_date" ]]; then
-            echo "⏸️  Olympic Break: Current date $current_date is before resume date $target_date."
-            echo "Skipping workflow."
+          if [[ "$current_date" > "2026-06-25" && "$current_date" < "2026-09-28" && "${{ github.event_name }}" != "workflow_dispatch" ]]; then
+            echo "⏸️ Off-Season: No games scheduled until Opening Day (Sept 29, 2026)."
+            echo "Skipping off-season run."
             echo "should_run=false" >> $GITHUB_OUTPUT
           else
-            echo "✅ Season Resumed!"
+            echo "✅ Season / Manual Dispatch Active!"
             echo "should_run=true" >> $GITHUB_OUTPUT
           fi
         id: check_date

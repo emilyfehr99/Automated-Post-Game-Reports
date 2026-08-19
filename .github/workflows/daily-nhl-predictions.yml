@@ -21,33 +21,15 @@ jobs:
       # Set true if you explicitly want model binaries committed (avoids frequent conflicts)
       PUSH_MODEL_ARTIFACTS: "false"
     steps:
-      - name: Check Season Resume Date
+      - name: Check Season Active
         run: |
           current_date=$(date +%Y-%m-%d)
-          target_date="2026-02-25"
-          if [[ "$current_date" < "$target_date" ]]; then
-            echo "⏸️  Olympic Break: Current date $current_date is before resume date $target_date."
-            echo "Skipping workflow."
-            # Exit with success to avoid failure notification, or error to cancel. 
-            # Using exit 0 (success) effectively skips subsequent steps if we put this first,
-            # BUT we need to conditionally run the rest. 
-            # Easier way: Set an output and use `if` on subsequent steps, OR just exit 0 and stop.
-            # However, steps run sequentially. To stop the workflow successfully we can't just exit 0.
-            # We will use gh run cancel to stop it "neutral" or just exit 78 (neutral in some contexts) 
-            # or simply fail (exit 1) if we want to be sure nothing else runs, but that sends failure email.
-            # Best approach: set an env var and use it in `if` condition for all other steps? Too verbose.
-            # Alternative: Exit 1 to fail? No.
-            # Let's just exit 0 and use a hack? No.
-            # Actually, `gh run cancel` requires a token.
-            # Let's use the `if` condition on the job level? No, `on` doesn't support date logic.
-            # Let's just let it run but do nothing? 
-            # We can use circleci-style "halt"? No.
-            # Let's just exit 1 (failure) but that's annoying.
-            # How about we just dont run anything else?
-            # We can set a step output `should_run` and check it in every other step.
+          if [[ "$current_date" > "2026-06-25" && "$current_date" < "2026-09-28" && "${{ github.event_name }}" != "workflow_dispatch" ]]; then
+            echo "⏸️ Off-Season: No games scheduled until Opening Day (Sept 29, 2026)."
+            echo "Skipping off-season run."
             echo "should_run=false" >> $GITHUB_OUTPUT
           else
-            echo "✅ Season Resumed!"
+            echo "✅ Season / Manual Dispatch Active!"
             echo "should_run=true" >> $GITHUB_OUTPUT
           fi
         id: check_date

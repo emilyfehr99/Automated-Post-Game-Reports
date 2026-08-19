@@ -48,8 +48,15 @@ jobs:
     steps:
     - name: Check Season Active
       run: |
-        echo "✅ Season Active!"
-        echo "should_run=true" >> $GITHUB_OUTPUT
+        current_date=$(date +%Y-%m-%d)
+        if [[ "$current_date" > "2026-06-25" && "$current_date" < "2026-09-28" && "${{ github.event_name }}" != "workflow_dispatch" ]]; then
+          echo "⏸️ Off-Season: No games scheduled until Opening Day (Sept 29, 2026)."
+          echo "Skipping off-season run."
+          echo "should_run=false" >> $GITHUB_OUTPUT
+        else
+          echo "✅ Season / Manual Dispatch Active!"
+          echo "should_run=true" >> $GITHUB_OUTPUT
+        fi
       id: check_date
 
     - name: Checkout repository

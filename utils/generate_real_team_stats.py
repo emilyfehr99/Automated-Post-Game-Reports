@@ -4,6 +4,17 @@ Generate real team stats JSON from actual NHL game data
 Uses the same calculation logic as team_report_generator.py
 """
 
+import os
+import sys
+
+_base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _base_dir not in sys.path:
+    sys.path.insert(0, _base_dir)
+for _d in ['models', 'analyzers', 'scrapers', 'utils']:
+    _p = os.path.join(_base_dir, _d)
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
 import json
 import requests
 from pathlib import Path
@@ -16,12 +27,6 @@ from team_advanced_metrics_builder import TeamAdvancedMetricsBuilder
 from collections import defaultdict
 from datetime import datetime
 import numpy as np
-import sys
-import os
-
-# Add the current directory to path for imports
-sys.path.insert(0, os.path.dirname(os.path.abspath(__file__)))
-
 from team_report_generator import TeamReportGenerator
 
 class RealTeamStatsGenerator(TeamReportGenerator):
@@ -33,7 +38,10 @@ class RealTeamStatsGenerator(TeamReportGenerator):
         # Use absolute path for robustness
         script_dir = Path(__file__).parent.absolute()
         project_root = script_dir.parent.absolute()
-        from .season_utils import current_season_file_tag
+        try:
+            from season_utils import current_season_file_tag
+        except ImportError:
+            from .season_utils import current_season_file_tag
         tag = current_season_file_tag()
         self.output_file = project_root / "data" / f"season_{tag}_team_stats.json"
 

@@ -32,7 +32,10 @@ def require_file_fresh(path: Path, *, max_age_seconds: float, label: str) -> Fre
     return FreshnessResult(True, f"{label} fresh (age={age/3600.0:.1f}h): {path}", age)
 
 
-from .season_utils import get_schedule_path, get_team_stats_path
+try:
+    from season_utils import get_schedule_path, get_team_stats_path
+except ImportError:
+    from .season_utils import get_schedule_path, get_team_stats_path
 
 
 def require_team_stats_fresh(*, max_age_hours: float = 36.0) -> FreshnessResult:
