@@ -46,16 +46,27 @@ jobs:
       contents: write  # Allow workflow to commit and push
     
     steps:
-    - name: Check Season Active
+    - name: Check Active Schedule
       run: |
-        current_date=$(date +%Y-%m-%d)
-        if [[ "$current_date" > "2026-06-25" && "$current_date" < "2026-09-28" && "${{ github.event_name }}" != "workflow_dispatch" ]]; then
-          echo "⏸️ Off-Season: No games scheduled until Opening Day (Sept 29, 2026)."
-          echo "Skipping off-season run."
-          echo "should_run=false" >> $GITHUB_OUTPUT
-        else
-          echo "✅ Season / Manual Dispatch Active!"
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
+          echo "✅ Manual Dispatch Triggered!"
           echo "should_run=true" >> $GITHUB_OUTPUT
+        else
+          has_games=$(python3 -c "
+import sys
+sys.path.insert(0, 'utils')
+from nhl_api_client import NHLAPIClient
+client = NHLAPIClient()
+sched = client.get_game_schedule()
+print('true' if (sched and any(day.get('games') for day in (sched.get('gameWeek') or []))) else 'false')
+" 2>/dev/null || echo "false")
+          if [[ "$has_games" == "true" ]]; then
+            echo "✅ Active games scheduled in current gameWeek!"
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          else
+            echo "⏸️ No games scheduled for active week. Skipping run."
+            echo "should_run=false" >> $GITHUB_OUTPUT
+          fi
         fi
       id: check_date
 

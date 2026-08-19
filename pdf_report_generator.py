@@ -896,19 +896,55 @@ class PostGameReportGenerator:
             
         return goals
 
-    def _create_player_roster_map(self, play_by_play):
-        """Create a mapping of player IDs to player info"""
+    def _create_player_roster_map(self, play_by_play, game_data=None):
+        """Create a complete mapping of player IDs to player info dynamically from PBP, Boxscore, and Landing data."""
         roster_map = {}
-        if 'rosterSpots' in play_by_play:
-            for player in play_by_play['rosterSpots']:
-                player_id = player['playerId']
-                roster_map[player_id] = {
-                    'firstName': player['firstName']['default'],
-                    'lastName': player['lastName']['default'],
-                    'sweaterNumber': player['sweaterNumber'],
-                    'positionCode': player['positionCode'],
-                    'teamId': player['teamId']
-                }
+        # 1. From play_by_play.rosterSpots
+        pbp_dict = play_by_play if isinstance(play_by_play, dict) else {}
+        if 'rosterSpots' in pbp_dict:
+            for player in pbp_dict['rosterSpots']:
+                player_id = player.get('playerId')
+                if player_id:
+                    fn = (player.get('firstName') or {}).get('default', '') if isinstance(player.get('firstName'), dict) else str(player.get('firstName', ''))
+                    ln = (player.get('lastName') or {}).get('default', '') if isinstance(player.get('lastName'), dict) else str(player.get('lastName', ''))
+                    name = f"{fn} {ln}".strip() or (player.get('name') or {}).get('default', f"Player #{player_id}")
+                    roster_map[player_id] = {
+                        'name': name,
+                        'firstName': fn,
+                        'lastName': ln,
+                        'sweaterNumber': player.get('sweaterNumber', ''),
+                        'positionCode': player.get('positionCode', ''),
+                        'teamId': player.get('teamId')
+                    }
+
+        # 2. From boxscore.playerByGameStats
+        boxscore = None
+        if isinstance(game_data, dict):
+            boxscore = game_data.get('boxscore')
+        elif isinstance(play_by_play, dict) and 'playerByGameStats' in play_by_play:
+            boxscore = play_by_play
+
+        if isinstance(boxscore, dict) and 'playerByGameStats' in boxscore:
+            pbg = boxscore['playerByGameStats']
+            for side in ('awayTeam', 'homeTeam'):
+                side_data = pbg.get(side) or {}
+                t_id = (boxscore.get(side) or {}).get('id')
+                for cat in ('forwards', 'defense', 'goalies'):
+                    for player in side_data.get(cat, []):
+                        pid = player.get('playerId')
+                        if pid and pid not in roster_map:
+                            raw_name = player.get('name') or {}
+                            p_name = raw_name.get('default') if isinstance(raw_name, dict) else str(raw_name)
+                            fn = p_name.split()[0] if p_name else ''
+                            ln = p_name.split()[-1] if p_name else ''
+                            roster_map[pid] = {
+                                'name': p_name or f"Player #{pid}",
+                                'firstName': fn,
+                                'lastName': ln,
+                                'sweaterNumber': player.get('sweaterNumber', ''),
+                                'positionCode': player.get('position', cat[0].upper()),
+                                'teamId': t_id
+                            }
         return roster_map
 
     def _calculate_team_stats_from_play_by_play(self, game_data, team_side):
