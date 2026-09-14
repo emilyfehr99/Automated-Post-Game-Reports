@@ -53,17 +53,16 @@ jobs:
           echo "should_run=true" >> $GITHUB_OUTPUT
         else
           has_games=$(python3 -c "
-import urllib.request, json
-try:
-    req = urllib.request.Request('https://api-web.nhle.com/v1/schedule/now', headers={'User-Agent': 'Mozilla/5.0'})
-    with urllib.request.urlopen(req, timeout=10) as r:
-        data = json.loads(r.read().decode('utf-8'))
-    has_games = any(bool(day.get('games')) for day in (data.get('gameWeek') or []))
-    print('true' if has_games else 'false')
-except Exception as e:
-    # If API error/timeout, default to true so scheduled runs are not dropped
-    print('true')
-" 2>/dev/null || echo "true")
+          import urllib.request, json
+          try:
+              req = urllib.request.Request('https://api-web.nhle.com/v1/schedule/now', headers={'User-Agent': 'Mozilla/5.0'})
+              with urllib.request.urlopen(req, timeout=10) as r:
+                  data = json.loads(r.read().decode('utf-8'))
+              has_games = any(bool(day.get('games')) for day in (data.get('gameWeek') or []))
+              print('true' if has_games else 'false')
+          except Exception as e:
+              print('true')
+          " 2>/dev/null || echo "true")
           if [[ "$has_games" == "true" ]]; then
             echo "✅ Active games scheduled in current gameWeek!"
             echo "should_run=true" >> $GITHUB_OUTPUT
