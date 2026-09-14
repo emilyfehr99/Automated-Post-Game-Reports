@@ -628,7 +628,7 @@ class LiveInGamePredictor:
                     print(f"📋 Fetching rosters from NHL API for {away_abbrev} and {home_abbrev}...", flush=True)
                     for team_abbrev in [away_abbrev, home_abbrev]:
                         try:
-                            roster_data = self.api.get_team_roster_by_abbrev(team_abbrev, season='20252026')
+                            roster_data = self.api.get_team_roster(team_abbrev)
                             if roster_data:
                                 # Roster API returns: {'forwards': [...], 'defensemen': [...], 'goalies': [...]}
                                 for position_group in ['forwards', 'defensemen', 'goalies']:

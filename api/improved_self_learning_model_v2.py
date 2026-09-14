@@ -53,7 +53,11 @@ class ImprovedSelfLearningModelV2:
         self.goalie_history = self.model_data.get('goalie_history') or self._build_goalie_history()
         
         # Team performance tracking - use new season stats format
-        self.team_stats_file = Path("data/season_2025_2026_team_stats.json")
+        try:
+            from season_utils import get_team_stats_path
+            self.team_stats_file = get_team_stats_path()
+        except Exception:
+            self.team_stats_file = Path("data/season_2025_2026_team_stats.json")
         self.historical_stats_file = Path("historical_seasons_team_stats.json")
         
         # Load current season stats

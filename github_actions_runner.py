@@ -240,8 +240,15 @@ class GitHubActionsRunner:
                 print(f"⚠️  Could not load team stats: {e}")
         
         # Initialize empty structure
+        try:
+            from season_utils import current_season_string
+            s_tag = current_season_string()
+            s_display = f"{s_tag[:4]}-{s_tag[4:]}"
+        except Exception:
+            s_display = "current"
+
         return {
-            'season': '2025-2026',
+            'season': s_display,
             'generated_at': datetime.utcnow().isoformat(),
             'total_games': 0,
             'teams': {}
@@ -858,13 +865,6 @@ class GitHubActionsRunner:
         print(f"📋 Previously processed: {len(self.processed_games)} games")
         print("="*60)
         
-        # Check for Olympic Break (Resume on Feb 25, 2026)
-        today_date_str = datetime.now().strftime('%Y-%m-%d')
-        if today_date_str < '2026-02-25':
-            print(f"\n⏸️  Olympic Break: NHL season paused until Feb 25, 2026.")
-            print(f"   Today is {today_date_str}. Skipping execution.")
-            return
-
         # Get today's date context
         central_tz = pytz.timezone('US/Central')
         central_now = datetime.now(central_tz)

@@ -31,6 +31,15 @@ class NHLAPIClient:
             return response.json()
         return None
     
+    def get_team_roster_by_abbrev(self, team_abbr, season=None):
+        """Get team roster by team abbreviation (optional season)"""
+        if season:
+            url = f"{self.base_url}/roster/{team_abbr}/{season}"
+            response = self.session.get(url)
+            if response.status_code == 200:
+                return response.json()
+        return self.get_team_roster(team_abbr)
+    
     def get_game_schedule(self, date=None):
         """Get game schedule for a specific date"""
         if date is None:

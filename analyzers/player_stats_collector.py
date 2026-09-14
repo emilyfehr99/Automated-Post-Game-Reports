@@ -17,9 +17,16 @@ class PlayerStatsCollector:
         })
         self.player_cache = {}
     
-    def get_player_stats(self, player_id: int, season: str = "20252026") -> Optional[Dict]:
+    def get_player_stats(self, player_id: int, season: Optional[str] = None) -> Optional[Dict]:
         """Get comprehensive player statistics"""
         try:
+            if not season:
+                try:
+                    from season_utils import current_season_string
+                    season = current_season_string()
+                except Exception:
+                    season = "20262027"
+
             # Check cache first
             cache_key = f"{player_id}_{season}"
             if cache_key in self.player_cache:

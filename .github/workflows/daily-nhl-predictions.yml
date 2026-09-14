@@ -28,13 +28,17 @@ jobs:
             echo "should_run=true" >> $GITHUB_OUTPUT
           else
             has_games=$(python3 -c "
-import sys
-sys.path.insert(0, 'utils')
-from nhl_api_client import NHLAPIClient
-client = NHLAPIClient()
-sched = client.get_game_schedule()
-print('true' if (sched and any(day.get('games') for day in (sched.get('gameWeek') or []))) else 'false')
-" 2>/dev/null || echo "false")
+import urllib.request, json
+try:
+    req = urllib.request.Request('https://api-web.nhle.com/v1/schedule/now', headers={'User-Agent': 'Mozilla/5.0'})
+    with urllib.request.urlopen(req, timeout=10) as r:
+        data = json.loads(r.read().decode('utf-8'))
+    has_games = any(bool(day.get('games')) for day in (data.get('gameWeek') or []))
+    print('true' if has_games else 'false')
+except Exception as e:
+    # If API error/timeout, default to true so scheduled runs are not dropped
+    print('true')
+" 2>/dev/null || echo "true")
             if [[ "$has_games" == "true" ]]; then
               echo "✅ Active games scheduled in current gameWeek!"
               echo "should_run=true" >> $GITHUB_OUTPUT
@@ -120,11 +124,12 @@ print('true' if (sched and any(day.get('games') for day in (sched.get('gameWeek'
           echo "✅ Team stats generation complete"
           
           # Check if file was created (normalized location)
-          if [ -f "data/season_2025_2026_team_stats.json" ]; then
-            echo "✅ Team stats file created in data/"
-            ls -lh data/season_2025_2026_team_stats.json
+          STATS_FILE=$(python3 -c "from season_utils import get_team_stats_path; print(get_team_stats_path())" 2>/dev/null || echo "")
+          if [ -n "$STATS_FILE" ] && [ -f "$STATS_FILE" ]; then
+            echo "✅ Team stats file created: $STATS_FILE"
+            ls -lh "$STATS_FILE"
           else
-            echo "❌ Team stats file not found in data/" && exit 1
+            echo "❌ Team stats file not found!" && exit 1
           fi
 
       - name: Update game outcomes
