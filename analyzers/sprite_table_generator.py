@@ -239,14 +239,40 @@ def create_sprite_analysis_tables(sprite_data, compact: bool = False):
     red_color = colors.HexColor('#FF0000')    # Bright Red
     black_color = colors.black
     
-    def get_metric_color(val1, val2, lower_is_better=False):
-        """Return (color1, color2) tuple based on comparison"""
-        if val1 == val2: return black_color, black_color
+    g_away = away_stats.get('total_goals', len(away_stats.get('shot_dist', [])) if away_stats.get('shot_dist') else 0)
+    g_home = home_stats.get('total_goals', len(home_stats.get('shot_dist', [])) if home_stats.get('shot_dist') else 0)
+    
+    def get_metric_color(val1, val2, lower_is_better=False, is_traffic=False):
+        """Return (color1, color2) tuple based on comparison, properly handling 0 goals and ties"""
+        # If neither team scored, both are neutral
+        if g_away == 0 and g_home == 0:
+            return black_color, black_color
+            
+        # Parse floats safely
         try:
             v1_float = float(val1)
             v2_float = float(val2)
-        except: return black_color, black_color
-        
+        except (ValueError, TypeError):
+            v1_float = 0.0
+            v2_float = 0.0
+
+        # If both values are equal (e.g. both 0.0% traffic): neutral for both
+        if v1_float == v2_float:
+            return black_color, black_color
+
+        # If only away scored: away is positive (green), home had 0 goals (red)
+        if g_away > 0 and g_home == 0:
+            if is_traffic and v1_float == 0.0:
+                return black_color, red_color
+            return green_color, red_color
+            
+        # If only home scored: home is positive (green), away had 0 goals (red)
+        if g_home > 0 and g_away == 0:
+            if is_traffic and v2_float == 0.0:
+                return red_color, black_color
+            return red_color, green_color
+            
+        # If both scored, compare values
         if lower_is_better:
             return (green_color, red_color) if v1_float < v2_float else (red_color, green_color)
         else:
@@ -255,7 +281,7 @@ def create_sprite_analysis_tables(sprite_data, compact: bool = False):
     # Calculate colors
     nf_away = away_stats.get('net_front_traffic_pct', 0)
     nf_home = home_stats.get('net_front_traffic_pct', 0)
-    c_nf_away, c_nf_home = get_metric_color(nf_away, nf_home, lower_is_better=False)
+    c_nf_away, c_nf_home = get_metric_color(nf_away, nf_home, lower_is_better=False, is_traffic=True)
     
     sd_away = away_stats.get('avg_shot_dist', 0)
     sd_home = home_stats.get('avg_shot_dist', 0)
@@ -273,17 +299,14 @@ def create_sprite_analysis_tables(sprite_data, compact: bool = False):
     away_total_entries = ze_away_counts.get('carry', 0) + ze_away_counts.get('pass', 0)
     home_total_entries = ze_home_counts.get('carry', 0) + ze_home_counts.get('pass', 0)
     
-    # Calculate Shares as percentage of each team's entries
-    # Away Team: What % of their entries were carries vs passes
-    away_carry_share = (ze_away_counts.get('carry', 0) / away_total_entries * 100) if away_total_entries > 0 else 50
-    away_pass_share = (ze_away_counts.get('pass', 0) / away_total_entries * 100) if away_total_entries > 0 else 50
+    # Calculate Shares as percentage of each team's entries (0% when 0 goals)
+    away_carry_share = (ze_away_counts.get('carry', 0) / away_total_entries * 100) if away_total_entries > 0 else 0
+    away_pass_share = (ze_away_counts.get('pass', 0) / away_total_entries * 100) if away_total_entries > 0 else 0
     
-    # Home Team: What % of their entries were carries vs passes  
-    home_carry_share = (ze_home_counts.get('carry', 0) / home_total_entries * 100) if home_total_entries > 0 else 50
-    home_pass_share = (ze_home_counts.get('pass', 0) / home_total_entries * 100) if home_total_entries > 0 else 50
+    home_carry_share = (ze_home_counts.get('carry', 0) / home_total_entries * 100) if home_total_entries > 0 else 0
+    home_pass_share = (ze_home_counts.get('pass', 0) / home_total_entries * 100) if home_total_entries > 0 else 0
     
     col_width = 0.40*inch  # Reduced to fit within page margins
-    
     
     def create_split_bar(carry_pct, pass_pct, fill_color_obj, width=400, height=160):
         """
@@ -303,10 +326,6 @@ def create_sprite_analysis_tables(sprite_data, compact: bool = False):
         img = PILImage.new('RGB', (width, height), color='#FFFFFF')  # White background
         draw = ImageDraw.Draw(img)
         
-        # Load the same font used elsewhere in the report.
-        # The final report is rasterized for X; these sprite tables are physically small,
-        # so we intentionally oversize the text in the source image to keep it legible
-        # after PDF->PNG conversion and mobile downscaling.
         font = _load_pil_font(40)
         label_font = _load_pil_font(26)
         
@@ -314,17 +333,58 @@ def create_sprite_analysis_tables(sprite_data, compact: bool = False):
         label_height = 35  # Reserve space at bottom for labels
         bar_height = height - label_height
         
+        # Labels
+        carry_label = "Carry"
+        pass_label = "Pass"
+        try:
+            bbox = draw.textbbox((0, 0), carry_label, font=label_font)
+            c_label_w = bbox[2] - bbox[0]
+            c_label_h = bbox[3] - bbox[1]
+        except:
+            c_label_w, c_label_h = draw.textsize(carry_label, font=label_font)
+        carry_label_x = (half_width - 2 - c_label_w) // 2
+        carry_label_y = bar_height + (label_height - c_label_h) // 2
+
+        try:
+            bbox = draw.textbbox((0, 0), pass_label, font=label_font)
+            p_label_w = bbox[2] - bbox[0]
+            p_label_h = bbox[3] - bbox[1]
+        except:
+            p_label_w, p_label_h = draw.textsize(pass_label, font=label_font)
+        pass_label_x = half_width + 2 + (half_width - 2 - p_label_w) // 2
+        pass_label_y = bar_height + (label_height - p_label_h) // 2
+
+        # Handle 0% / 0% case (0 goals)
+        if carry_pct == 0 and pass_pct == 0:
+            draw.rectangle([(0, 0), (half_width - 2, bar_height)], fill='#F0F0F0')
+            draw.rectangle([(half_width + 2, 0), (width, bar_height)], fill='#F0F0F0')
+            c_text = "0%"
+            p_text = "0%"
+            try:
+                cb = draw.textbbox((0, 0), c_text, font=font)
+                cw, ch = cb[2] - cb[0], cb[3] - cb[1]
+                pb = draw.textbbox((0, 0), p_text, font=font)
+                pw, ph = pb[2] - pb[0], pb[3] - pb[1]
+            except:
+                cw, ch = draw.textsize(c_text, font=font)
+                pw, ph = draw.textsize(p_text, font=font)
+            draw.text(((half_width - 2 - cw) // 2, (bar_height - ch) // 2), c_text, font=font, fill='#888888')
+            draw.text((half_width + 2 + (half_width - 2 - pw) // 2, (bar_height - ph) // 2), p_text, font=font, fill='#888888')
+            draw.text((carry_label_x, carry_label_y), carry_label, font=label_font, fill='#888888')
+            draw.text((pass_label_x, pass_label_y), pass_label, font=label_font, fill='#888888')
+            
+            temp_path = f"/tmp/split_bar_{fill_color_hex}_0_0.png"
+            img.save(temp_path)
+            bar_h = 0.35 * inch if not compact else 0.30 * inch
+            return RLImage(temp_path, width=0.75*inch, height=bar_h)
+
         # LEFT SIDE: Carry
-        # Background: Light grey
         draw.rectangle([(0, 0), (half_width - 2, bar_height)], fill='#F0F0F0')
-        
-        # Fill from bottom up based on percentage
         carry_fill_height = int((carry_pct / 100.0) * bar_height)
         if carry_fill_height > 0:
             fill_y_start = bar_height - carry_fill_height
             draw.rectangle([(0, fill_y_start), (half_width - 2, bar_height)], fill=fill_color_hex)
         
-        # Percentage text in center of bar
         carry_text = f"{int(carry_pct)}%"
         try:
             bbox = draw.textbbox((0, 0), carry_text, font=font)
@@ -332,34 +392,22 @@ def create_sprite_analysis_tables(sprite_data, compact: bool = False):
             text_h = bbox[3] - bbox[1]
         except:
             text_w, text_h = draw.textsize(carry_text, font=font)
-        
         text_x = (half_width - 2 - text_w) // 2
         text_y = (bar_height - text_h) // 2
         
-        # Draw with thicker outline for readability after downscaling
         for offset_x in range(-2, 3):
             for offset_y in range(-2, 3):
-                if offset_x == 0 and offset_y == 0:
-                    continue
-                draw.text(
-                    (text_x + offset_x, text_y + offset_y),
-                    carry_text,
-                    font=font,
-                    fill="#000000",
-                )
+                if offset_x == 0 and offset_y == 0: continue
+                draw.text((text_x + offset_x, text_y + offset_y), carry_text, font=font, fill="#000000")
         draw.text((text_x, text_y), carry_text, font=font, fill='#FFFFFF')
         
         # RIGHT SIDE: Pass
-        # Background: Light grey
         draw.rectangle([(half_width + 2, 0), (width, bar_height)], fill='#F0F0F0')
-        
-        # Fill from bottom up based on percentage
         pass_fill_height = int((pass_pct / 100.0) * bar_height)
         if pass_fill_height > 0:
             fill_y_start = bar_height - pass_fill_height
             draw.rectangle([(half_width + 2, fill_y_start), (width, bar_height)], fill=fill_color_hex)
         
-        # Percentage text in center of bar
         pass_text = f"{int(pass_pct)}%"
         try:
             bbox = draw.textbbox((0, 0), pass_text, font=font)
@@ -367,50 +415,17 @@ def create_sprite_analysis_tables(sprite_data, compact: bool = False):
             text_h = bbox[3] - bbox[1]
         except:
             text_w, text_h = draw.textsize(pass_text, font=font)
-        
         text_x = half_width + 2 + (half_width - 2 - text_w) // 2
         text_y = (bar_height - text_h) // 2
         
-        # Draw with thicker outline for readability after downscaling
         for offset_x in range(-2, 3):
             for offset_y in range(-2, 3):
-                if offset_x == 0 and offset_y == 0:
-                    continue
-                draw.text(
-                    (text_x + offset_x, text_y + offset_y),
-                    pass_text,
-                    font=font,
-                    fill="#000000",
-                )
+                if offset_x == 0 and offset_y == 0: continue
+                draw.text((text_x + offset_x, text_y + offset_y), pass_text, font=font, fill="#000000")
         draw.text((text_x, text_y), pass_text, font=font, fill='#FFFFFF')
         
-        # LABELS AT BOTTOM
-        # "Carry" label on left
-        carry_label = "Carry"
-        try:
-            bbox = draw.textbbox((0, 0), carry_label, font=label_font)
-            label_w = bbox[2] - bbox[0]
-            label_h = bbox[3] - bbox[1]
-        except:
-            label_w, label_h = draw.textsize(carry_label, font=label_font)
-        
-        label_x = (half_width - 2 - label_w) // 2
-        label_y = bar_height + (label_height - label_h) // 2
-        draw.text((label_x, label_y), carry_label, font=label_font, fill='#000000')
-        
-        # "Pass" label on right
-        pass_label = "Pass"
-        try:
-            bbox = draw.textbbox((0, 0), pass_label, font=label_font)
-            label_w = bbox[2] - bbox[0]
-            label_h = bbox[3] - bbox[1]
-        except:
-            label_w, label_h = draw.textsize(pass_label, font=label_font)
-        
-        label_x = half_width + 2 + (half_width - 2 - label_w) // 2
-        label_y = bar_height + (label_height - label_h) // 2
-        draw.text((label_x, label_y), pass_label, font=label_font, fill='#000000')
-
+        draw.text((carry_label_x, carry_label_y), carry_label, font=label_font, fill='#000000')
+        draw.text((pass_label_x, pass_label_y), pass_label, font=label_font, fill='#000000')
         
         # Save to temp file and return as ReportLab Image
         temp_path = f"/tmp/split_bar_{fill_color_hex}_{int(carry_pct)}_{int(pass_pct)}.png"

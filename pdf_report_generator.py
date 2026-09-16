@@ -4263,6 +4263,45 @@ class PostGameReportGenerator:
                  self._classify_longitudinal_movement(home_pre_shot['longitudinal_movement']['avg_delta_x'])]
             ]
             
+            def _get_comp_color(val_a, val_h, lower_is_better=False):
+                """Compare two metric values and return (color_away, color_home), handling ties neutrally"""
+                try:
+                    va = float(val_a)
+                    vh = float(val_h)
+                except (ValueError, TypeError):
+                    return colors.black, colors.black
+                
+                if va == vh:
+                    return colors.black, colors.black
+                    
+                c_green = colors.HexColor('#008000')
+                c_red = colors.HexColor('#DC143C')
+                
+                if lower_is_better:
+                    return (c_green, c_red) if va < vh else (c_red, c_green)
+                else:
+                    return (c_green, c_red) if va > vh else (c_red, c_green)
+
+            # Calculate row comparison colors
+            c_xg_a, c_xg_h = _get_comp_color(away_xg_total, home_xg_total, lower_is_better=False)
+            c_hd_a, c_hd_h = _get_comp_color(away_shot_quality['high_danger_shots'], home_shot_quality['high_danger_shots'], lower_is_better=False)
+            c_ts_a, c_ts_h = _get_comp_color(away_shot_quality['total_shots'], home_shot_quality['total_shots'], lower_is_better=False)
+            c_sog_a, c_sog_h = _get_comp_color(away_shot_quality['shots_on_goal'], home_shot_quality['shots_on_goal'], lower_is_better=False)
+            c_shp_a, c_shp_h = _get_comp_color(away_shot_quality['shooting_percentage'], home_shot_quality['shooting_percentage'], lower_is_better=False)
+            
+            c_sp_a, c_sp_h = _get_comp_color(away_pressure['sustained_pressure_sequences'], home_pressure['sustained_pressure_sequences'], lower_is_better=False)
+            c_qs_a, c_qs_h = _get_comp_color(away_pressure['quick_strike_opportunities'], home_pressure['quick_strike_opportunities'], lower_is_better=False)
+            
+            away_avg_shots = (sum(away_pressure['shot_attempts_per_sequence'])/len(away_pressure['shot_attempts_per_sequence'])) if away_pressure['shot_attempts_per_sequence'] else 0.0
+            home_avg_shots = (sum(home_pressure['shot_attempts_per_sequence'])/len(home_pressure['shot_attempts_per_sequence'])) if home_pressure['shot_attempts_per_sequence'] else 0.0
+            c_as_a, c_as_h = _get_comp_color(away_avg_shots, home_avg_shots, lower_is_better=False)
+            
+            c_blk_a, c_blk_h = _get_comp_color(away_defense['blocked_shots'], home_defense['blocked_shots'], lower_is_better=False)
+            c_tk_a, c_tk_h = _get_comp_color(away_defense['takeaways'], home_defense['takeaways'], lower_is_better=False)
+            c_hit_a, c_hit_h = _get_comp_color(away_defense['hits'], home_defense['hits'], lower_is_better=False)
+            c_saa_a, c_saa_h = _get_comp_color(away_defense['shot_attempts_against'], home_defense['shot_attempts_against'], lower_is_better=True)
+            c_hdca_a, c_hdca_h = _get_comp_color(away_defense['high_danger_chances_against'], home_defense['high_danger_chances_against'], lower_is_better=True)
+
             combined_table = Table(combined_data, colWidths=[1.0*inch, 1.4*inch, 0.9*inch, 0.9*inch])
             combined_table.setStyle(TableStyle([
                 # Header row with home team primary color background
@@ -4313,45 +4352,32 @@ class PostGameReportGenerator:
                 ('BOTTOMPADDING', (0, 1), (-1, -1), 1), # Reduced from 2
                 
                 # Green/Red comparison colors for selected metrics
-                # Row 1: Expected Goals (xG) - higher is better
-                ('TEXTCOLOR', (2, 1), (2, 1), colors.HexColor('#008000') if away_xg_total > home_xg_total else colors.HexColor('#DC143C')),
-                ('TEXTCOLOR', (3, 1), (3, 1), colors.HexColor('#008000') if home_xg_total > away_xg_total else colors.HexColor('#DC143C')),
-                # Row 2: High Danger Shots - higher is better
-                ('TEXTCOLOR', (2, 2), (2, 2), colors.HexColor('#008000') if away_shot_quality['high_danger_shots'] > home_shot_quality['high_danger_shots'] else colors.HexColor('#DC143C')),
-                ('TEXTCOLOR', (3, 2), (3, 2), colors.HexColor('#008000') if home_shot_quality['high_danger_shots'] > away_shot_quality['high_danger_shots'] else colors.HexColor('#DC143C')),
-                # Row 3: Total Shots - higher is better
-                ('TEXTCOLOR', (2, 3), (2, 3), colors.HexColor('#008000') if away_shot_quality['total_shots'] > home_shot_quality['total_shots'] else colors.HexColor('#DC143C')),
-                ('TEXTCOLOR', (3, 3), (3, 3), colors.HexColor('#008000') if home_shot_quality['total_shots'] > away_shot_quality['total_shots'] else colors.HexColor('#DC143C')),
-                # Row 4: Shots on Goal - higher is better
-                ('TEXTCOLOR', (2, 4), (2, 4), colors.HexColor('#008000') if away_shot_quality['shots_on_goal'] > home_shot_quality['shots_on_goal'] else colors.HexColor('#DC143C')),
-                ('TEXTCOLOR', (3, 4), (3, 4), colors.HexColor('#008000') if home_shot_quality['shots_on_goal'] > away_shot_quality['shots_on_goal'] else colors.HexColor('#DC143C')),
-                # Row 5: Shooting % - higher is better
-                ('TEXTCOLOR', (2, 5), (2, 5), colors.HexColor('#008000') if away_shot_quality['shooting_percentage'] > home_shot_quality['shooting_percentage'] else colors.HexColor('#DC143C')),
-                ('TEXTCOLOR', (3, 5), (3, 5), colors.HexColor('#008000') if home_shot_quality['shooting_percentage'] > away_shot_quality['shooting_percentage'] else colors.HexColor('#DC143C')),
-                # Row 6: Sustained Pressure Sequences - higher is better
-                ('TEXTCOLOR', (2, 6), (2, 6), colors.HexColor('#008000') if away_pressure['sustained_pressure_sequences'] > home_pressure['sustained_pressure_sequences'] else colors.HexColor('#DC143C')),
-                ('TEXTCOLOR', (3, 6), (3, 6), colors.HexColor('#008000') if home_pressure['sustained_pressure_sequences'] > away_pressure['sustained_pressure_sequences'] else colors.HexColor('#DC143C')),
-                # Row 7: Quick Strike Opportunities - higher is better
-                ('TEXTCOLOR', (2, 7), (2, 7), colors.HexColor('#008000') if away_pressure['quick_strike_opportunities'] > home_pressure['quick_strike_opportunities'] else colors.HexColor('#DC143C')),
-                ('TEXTCOLOR', (3, 7), (3, 7), colors.HexColor('#008000') if home_pressure['quick_strike_opportunities'] > away_pressure['quick_strike_opportunities'] else colors.HexColor('#DC143C')),
-                # Row 8: Avg Shots per Sequence - higher is better
-                ('TEXTCOLOR', (2, 8), (2, 8), colors.HexColor('#008000') if (sum(away_pressure['shot_attempts_per_sequence'])/len(away_pressure['shot_attempts_per_sequence']) if away_pressure['shot_attempts_per_sequence'] else 0) > (sum(home_pressure['shot_attempts_per_sequence'])/len(home_pressure['shot_attempts_per_sequence']) if home_pressure['shot_attempts_per_sequence'] else 0) else colors.HexColor('#DC143C')),
-                ('TEXTCOLOR', (3, 8), (3, 8), colors.HexColor('#008000') if (sum(home_pressure['shot_attempts_per_sequence'])/len(home_pressure['shot_attempts_per_sequence']) if home_pressure['shot_attempts_per_sequence'] else 0) > (sum(away_pressure['shot_attempts_per_sequence'])/len(away_pressure['shot_attempts_per_sequence']) if away_pressure['shot_attempts_per_sequence'] else 0) else colors.HexColor('#DC143C')),
-                # Row 9: Blocked Shots - LOWER is better
-                ('TEXTCOLOR', (2, 9), (2, 9), colors.HexColor('#008000') if away_defense['blocked_shots'] < home_defense['blocked_shots'] else colors.HexColor('#DC143C')),
-                ('TEXTCOLOR', (3, 9), (3, 9), colors.HexColor('#008000') if home_defense['blocked_shots'] < away_defense['blocked_shots'] else colors.HexColor('#DC143C')),
-                # Row 10: Takeaways - higher is better
-                ('TEXTCOLOR', (2, 10), (2, 10), colors.HexColor('#008000') if away_defense['takeaways'] > home_defense['takeaways'] else colors.HexColor('#DC143C')),
-                ('TEXTCOLOR', (3, 10), (3, 10), colors.HexColor('#008000') if home_defense['takeaways'] > away_defense['takeaways'] else colors.HexColor('#DC143C')),
-                # Row 11: Hits - higher is better
-                ('TEXTCOLOR', (2, 11), (2, 11), colors.HexColor('#008000') if away_defense['hits'] > home_defense['hits'] else colors.HexColor('#DC143C')),
-                ('TEXTCOLOR', (3, 11), (3, 11), colors.HexColor('#008000') if home_defense['hits'] > away_defense['hits'] else colors.HexColor('#DC143C')),
-                # Row 12: Shot Attempts Against - LOWER is better
-                ('TEXTCOLOR', (2, 12), (2, 12), colors.HexColor('#008000') if away_defense['shot_attempts_against'] < home_defense['shot_attempts_against'] else colors.HexColor('#DC143C')),
-                ('TEXTCOLOR', (3, 12), (3, 12), colors.HexColor('#008000') if home_defense['shot_attempts_against'] < away_defense['shot_attempts_against'] else colors.HexColor('#DC143C')),
-                # Row 13: High Danger Chances Against - LOWER is better
-                ('TEXTCOLOR', (2, 13), (2, 13), colors.HexColor('#008000') if away_defense['high_danger_chances_against'] < home_defense['high_danger_chances_against'] else colors.HexColor('#DC143C')),
-                ('TEXTCOLOR', (3, 13), (3, 13), colors.HexColor('#008000') if home_defense['high_danger_chances_against'] < away_defense['high_danger_chances_against'] else colors.HexColor('#DC143C')),
+                ('TEXTCOLOR', (2, 1), (2, 1), c_xg_a),
+                ('TEXTCOLOR', (3, 1), (3, 1), c_xg_h),
+                ('TEXTCOLOR', (2, 2), (2, 2), c_hd_a),
+                ('TEXTCOLOR', (3, 2), (3, 2), c_hd_h),
+                ('TEXTCOLOR', (2, 3), (2, 3), c_ts_a),
+                ('TEXTCOLOR', (3, 3), (3, 3), c_ts_h),
+                ('TEXTCOLOR', (2, 4), (2, 4), c_sog_a),
+                ('TEXTCOLOR', (3, 4), (3, 4), c_sog_h),
+                ('TEXTCOLOR', (2, 5), (2, 5), c_shp_a),
+                ('TEXTCOLOR', (3, 5), (3, 5), c_shp_h),
+                ('TEXTCOLOR', (2, 6), (2, 6), c_sp_a),
+                ('TEXTCOLOR', (3, 6), (3, 6), c_sp_h),
+                ('TEXTCOLOR', (2, 7), (2, 7), c_qs_a),
+                ('TEXTCOLOR', (3, 7), (3, 7), c_qs_h),
+                ('TEXTCOLOR', (2, 8), (2, 8), c_as_a),
+                ('TEXTCOLOR', (3, 8), (3, 8), c_as_h),
+                ('TEXTCOLOR', (2, 9), (2, 9), c_blk_a),
+                ('TEXTCOLOR', (3, 9), (3, 9), c_blk_h),
+                ('TEXTCOLOR', (2, 10), (2, 10), c_tk_a),
+                ('TEXTCOLOR', (3, 10), (3, 10), c_tk_h),
+                ('TEXTCOLOR', (2, 11), (2, 11), c_hit_a),
+                ('TEXTCOLOR', (3, 11), (3, 11), c_hit_h),
+                ('TEXTCOLOR', (2, 12), (2, 12), c_saa_a),
+                ('TEXTCOLOR', (3, 12), (3, 12), c_saa_h),
+                ('TEXTCOLOR', (2, 13), (2, 13), c_hdca_a),
+                ('TEXTCOLOR', (3, 13), (3, 13), c_hdca_h),
                 
                 # Grid borders
                 ('GRID', (0, 0), (-1, -1), 1, colors.black),
