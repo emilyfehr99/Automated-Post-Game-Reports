@@ -16,8 +16,10 @@ on:
 jobs:
   repost-reports:
     runs-on: ubuntu-latest
+    timeout-minutes: 15
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      PYTHONPATH: ".:models:analyzers:utils:scrapers:api"
     
     steps:
     - name: Check Active Schedule

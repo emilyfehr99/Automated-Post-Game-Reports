@@ -40,8 +40,10 @@ on:
 jobs:
   check-and-post:
     runs-on: ubuntu-latest
+    timeout-minutes: 20
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      PYTHONPATH: ".:models:analyzers:utils:scrapers:api"
     permissions:
       contents: write  # Allow workflow to commit and push
     
