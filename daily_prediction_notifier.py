@@ -5,6 +5,11 @@ Uses Meta-Ensemble Predictor for 55-60% accuracy
 """
 
 import sys, os
+os.environ.setdefault('MPLCONFIGDIR', '/tmp/matplotlib')
+import logging
+logging.getLogger('matplotlib').setLevel(logging.WARNING)
+logging.getLogger('matplotlib.font_manager').setLevel(logging.ERROR)
+
 _module_dirs = ['models', 'analyzers', 'scrapers', 'utils']
 _base_dir = os.path.dirname(os.path.abspath(__file__))
 for _d in _module_dirs:
@@ -22,7 +27,6 @@ import pytz
 from prediction_interface import PredictionInterface
 from meta_ensemble_predictor import MetaEnsemblePredictor
 from rotowire_scraper import RotoWireScraper
-import os
 from pathlib import Path
 from playoff_predictor import PlayoffSeriesPredictor
 try:
@@ -35,10 +39,12 @@ class DailyPredictionNotifier:
         """Initialize the notifier with meta-ensemble predictor"""
         self.predictor = PredictionInterface()  # Keep for compatibility
         self.meta_ensemble = MetaEnsemblePredictor()
+        from score_prediction_model import ScorePredictionModel
+        self.score_model = ScorePredictionModel()
         self.rotowire = RotoWireScraper()
         from schedule_analyzer import ScheduleAnalyzer
         self.schedule = ScheduleAnalyzer()
-        self.playoff_predictor = PlayoffSeriesPredictor()
+        self.playoff_predictor = PlayoffSeriesPredictor(model=self.score_model)
         self._cached_summary = None
         self._cached_predictions = None
 
@@ -79,7 +85,7 @@ class DailyPredictionNotifier:
         if not preds:
             return
 
-        score_model = ScorePredictionModel()
+        score_model = getattr(self, 'score_model', None) or ScorePredictionModel()
 
         # Collect completed games with both meta and score probabilities.
         rows = []
@@ -257,7 +263,7 @@ class DailyPredictionNotifier:
         if not preds:
             return
 
-        score_model = ScorePredictionModel()
+        score_model = getattr(self, 'score_model', None) or ScorePredictionModel()
         cache_sp = {}
 
         def _get_meta_away_prob(p: dict):
@@ -608,8 +614,7 @@ class DailyPredictionNotifier:
                     }
         print(f'🗺️  Built local schedule map with {len(schedule_map)} entries.')
         predictions = []
-        from models.score_prediction_model import ScorePredictionModel
-        score_model = ScorePredictionModel()
+        score_model = getattr(self, 'score_model', None) or ScorePredictionModel()
 
 
         for game in games:

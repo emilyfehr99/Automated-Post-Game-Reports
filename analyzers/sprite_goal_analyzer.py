@@ -391,10 +391,21 @@ class SpriteGoalAnalyzer:
         else:
             return "Set"
     
-    def analyze_game_goals_by_team(self, game_id) -> Optional[Dict]:
+    def analyze_game_goals_by_team(self, game_id, game_data=None, landing_data=None) -> Optional[Dict]:
         """Analyze all goals by team and return team comparison data"""
-        game_data = self.get_game_data(game_id)
-        landing_data = self.get_game_landing(game_id)
+        if game_data is None:
+            if self.game_data and isinstance(self.game_data, dict):
+                game_data = self.game_data.get('play_by_play') or self.game_data
+            else:
+                game_data = self.get_game_data(game_id)
+        elif isinstance(game_data, dict) and 'play_by_play' in game_data:
+            game_data = game_data['play_by_play']
+            
+        if landing_data is None:
+            if self.game_data and isinstance(self.game_data, dict) and 'landing' in self.game_data:
+                landing_data = self.game_data['landing']
+            else:
+                landing_data = self.get_game_landing(game_id)
         
         if not game_data:
             return None
@@ -490,41 +501,54 @@ class SpriteGoalAnalyzer:
             
             sprite_data = self.get_sprite_data(game_id, event_id)
             if not sprite_data:
+                # Accurate fallback using official high-fidelity NHL PBP tracking coordinates
+                details = goal.get('details', {})
+                x = details.get('xCoord')
+                y = details.get('yCoord')
+                if x is not None and y is not None:
+                    # In official NHL coordinates (-100 to 100), goal line is at +/-89 ft
+                    dist_ft = math.sqrt((89 - abs(x))**2 + y**2)
+                    team_stats[scoring_team_id]['shot_dist'].append(round(dist_ft, 1))
+                    
+                    # Net-front presence proxy: within 15ft of crease
+                    team_stats[scoring_team_id]['net_front'].append(2.0 if dist_ft < 15.0 else 1.0)
+                    
+                # Assists / Passes on goal
+                a1 = details.get('assist1PlayerId')
+                a2 = details.get('assist2PlayerId')
+                passes = (1 if a1 else 0) + (1 if a2 else 0)
+                team_stats[scoring_team_id]['passes'].append(passes)
+                
+                # Zone entry classification from goal build-up
+                if a2 or passes >= 2:
+                    team_stats[scoring_team_id]['entry_types']['pass'] += 1
+                else:
+                    team_stats[scoring_team_id]['entry_types']['carry'] += 1
                 continue
             
-            # Net-front presence
+            # Net-front presence from raw sprite
             net_front = self.analyze_net_front_presence(sprite_data)
             team_stats[scoring_team_id]['net_front'].append(net_front)
             
-            # Shot distance
+            # Shot distance in feet from raw sprite
             shot_dist = self.analyze_shot_distance(sprite_data)
             team_stats[scoring_team_id]['shot_dist'].append(shot_dist)
             
             # Zone entry
-            # Get side for this period
             side = period_sides.get(period_num)
-            # If side is missing, we could try to infer it here or handle in func
-            # For robustness: if side is None, func will fail? 
-            # Let's ensure logic works or defaults.
-            # But the user specifically asked for API info. I implemented finding it.
-            # If side is None, we default to the heuristic I removed?
-            # I should keep the heuristic as fallback inside analyze_zone_entry_count?
-            # No, I removed it. I will restore heuristic if side is None.
-            
             if side:
                 entry_type = self.analyze_zone_entry_count(sprite_data, scoring_team_id, side, home_team_id)
             else:
-                # Fallback: Infer from goal location (pass fake side based on inference)
-                # Infer side from goal
                 goal_x_avg = 0
                 c = 0
                 for f in sprite_data[-10:]:
                     for p in f['onIce'].values():
-                        if p.get('id')==1: goal_x_avg+=p['x']; c+=1; break
-                if c>0:
-                    goal_x_avg/=c
-                    # If goal > 1200, Defending Side = Right
-                    # If goal < 1200, Defending Side = Left
+                        if p.get('id') == 1:
+                            goal_x_avg += p['x']
+                            c += 1
+                            break
+                if c > 0:
+                    goal_x_avg /= c
                     inferred_side = 'right' if goal_x_avg > 1200 else 'left'
                     entry_type = self.analyze_zone_entry_count(sprite_data, scoring_team_id, inferred_side, home_team_id)
                 else:
@@ -540,19 +564,17 @@ class SpriteGoalAnalyzer:
         # Calculate averages
         result = {}
         for team_id, stats in team_stats.items():
-            # Calculate Net-Front Traffic %
-            traffic_pct = 0
+            traffic_pct = 0.0
             if stats['total_goals'] > 0:
                 traffic_pct = round((stats['traffic_goals'] / stats['total_goals']) * 100, 1)
             
             result[team_id] = {
                 'abbrev': stats['abbrev'],
-                'avg_net_front': round(sum(stats['net_front']) / len(stats['net_front']), 1) if stats['net_front'] else 0,
-                'net_front_traffic_pct': traffic_pct,  # New screening efficiency metric
-                # Convert units to feet (approx 12 units = 1 foot)
-                'avg_shot_dist': round((sum(stats['shot_dist']) / len(stats['shot_dist'])) / 12, 0) if stats['shot_dist'] else 0,
-                'entry_counts': stats['entry_types'], # Return raw counts for visualization
-                'avg_passes': round(sum(stats['passes']) / len(stats['passes']), 1) if stats['passes'] else 0
+                'avg_net_front': round(sum(stats['net_front']) / len(stats['net_front']), 1) if stats['net_front'] else 0.0,
+                'net_front_traffic_pct': traffic_pct,
+                'avg_shot_dist': round(sum(stats['shot_dist']) / len(stats['shot_dist']), 1) if stats['shot_dist'] else 0.0,
+                'entry_counts': stats['entry_types'],
+                'avg_passes': round(sum(stats['passes']) / len(stats['passes']), 1) if stats['passes'] else 0.0
             }
         
         return {

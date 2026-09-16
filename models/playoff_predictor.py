@@ -21,10 +21,10 @@ _ROUND_MODEL_TARGET = {
 class PlayoffSeriesPredictor:
     """Best-of-7 series simulation based on 'DNA of Playoff Success' Audit weights."""
     
-    def __init__(self):
+    def __init__(self, model: Optional[ScorePredictionModel] = None):
         base_dir = Path(__file__).resolve().parent.parent  # automated-post-game-reports/
         self._playoff_series_historical_5yr = self._load_playoff_series_historical_5yr(base_dir)
-        self.model = ScorePredictionModel()
+        self.model = model if model is not None else ScorePredictionModel()
         self.metrics_path = base_dir / 'data' / 'team_advanced_metrics.json'
         self.edge_path = base_dir / 'data' / 'team_edge_profiles.json'
         self.historical_weights_path = base_dir / 'data' / 'ultimate_tactical_weights.json'

@@ -4512,8 +4512,9 @@ class PostGameReportGenerator:
             from sprite_goal_analyzer import SpriteGoalAnalyzer
             from sprite_table_generator import create_sprite_analysis_tables
             
-            analyzer = SpriteGoalAnalyzer()
-            sprite_data = analyzer.analyze_game_goals_by_team(game_id)
+            analyzer = SpriteGoalAnalyzer(game_data=game_data)
+            sprite_data = analyzer.analyze_game_goals_by_team(game_id, game_data=game_data)
+            print(f"Goal analysis data for PDF: {sprite_data}")
             
             if sprite_data:
                 # Add sprite tables at bottom with spacing.

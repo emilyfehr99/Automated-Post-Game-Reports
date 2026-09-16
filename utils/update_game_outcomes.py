@@ -11,6 +11,7 @@ This ensures the model performance metrics (accuracy, etc.) remain up-to-date.
 
 import json
 import logging
+from datetime import datetime
 from pathlib import Path
 try:
     from utils.nhl_api_client import NHLAPIClient
