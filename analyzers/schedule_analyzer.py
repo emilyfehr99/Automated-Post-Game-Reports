@@ -12,17 +12,16 @@ class ScheduleAnalyzer:
                 from utils.season_utils import get_schedule_path
                 self.schedule_file = str(get_schedule_path())
             except Exception:
-                script_dir = os.path.dirname(os.path.abspath(__file__))
-                paths = [
-                    os.path.join(os.path.dirname(script_dir), "data", "season_2025_2026_schedule.json"),
-                    os.path.join(script_dir, "data", "season_2025_2026_schedule.json"),
-                    os.path.join(os.getcwd(), "data", "season_2025_2026_schedule.json")
-                ]
-                self.schedule_file = paths[0]
-                for p in paths:
-                    if os.path.exists(p):
-                        self.schedule_file = p
-                        break
+                try:
+                    from season_utils import get_schedule_path
+                    self.schedule_file = str(get_schedule_path())
+                except Exception:
+                    import glob
+                    script_dir = os.path.dirname(os.path.abspath(__file__))
+                    matches = sorted(glob.glob(os.path.join(os.path.dirname(script_dir), "data", "season_*_schedule.json")) +
+                                     glob.glob(os.path.join(script_dir, "data", "season_*_schedule.json")) +
+                                     glob.glob("data/season_*_schedule.json"), reverse=True)
+                    self.schedule_file = matches[0] if matches else "data/season_2026_2027_schedule.json"
         else:
             self.schedule_file = schedule_file
             

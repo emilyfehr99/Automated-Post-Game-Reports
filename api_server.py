@@ -106,6 +106,19 @@ def get_file_mtime(filename):
     except:
         return None
 
+def _load_current_team_stats():
+    """Load active season team stats dynamically"""
+    try:
+        from season_utils import get_team_stats_path
+        p = get_team_stats_path()
+        return load_json(str(p))
+    except Exception:
+        import glob
+        matches = sorted(glob.glob("data/season_*_team_stats.json") + glob.glob("season_*_team_stats.json"), reverse=True)
+        if matches:
+            return load_json(matches[0])
+    return load_json('season_2026_2027_team_stats.json') or load_json('season_2025_2026_team_stats.json')
+
 @app.route('/api/health', methods=['GET'])
 def health():
     """Health check endpoint"""
@@ -117,7 +130,7 @@ def health():
 @app.route('/api/team-stats', methods=['GET'])
 def get_team_stats():
     """Get current season team stats with advanced metrics"""
-    data = load_json('season_2025_2026_team_stats.json')
+    data = _load_current_team_stats()
     
     # Handle both structures: direct team dict or wrapped in 'teams' key
     if 'teams' in data:
@@ -127,7 +140,7 @@ def get_team_stats():
 @app.route('/api/team-stats/<team_abbrev>', methods=['GET'])
 def get_team_stats_by_abbrev(team_abbrev):
     """Get stats for specific team"""
-    data = load_json('season_2025_2026_team_stats.json')
+    data = _load_current_team_stats()
     
     # Handle both structures
     teams = data.get('teams', data)
@@ -137,7 +150,7 @@ def get_team_stats_by_abbrev(team_abbrev):
 @app.route('/api/team-metrics', methods=['GET'])
 def get_team_metrics():
     """Get aggregated team metrics for all teams (for pre-game comparisons)
-    Primary source: season_2025_2026_team_stats.json (created daily with calculated metrics)
+    Primary source: current season team stats JSON (created daily with calculated metrics)
     Supplemented with: MoneyPuck data for additional fields
     Uses caching to avoid recalculating on every request.
     Cache is invalidated after 1 hour.
@@ -162,7 +175,7 @@ def get_team_metrics():
         print(f"Returning cached team metrics (age: {(current_time - _team_metrics_cache_time).seconds}s)")
         return jsonify(_team_metrics_cache)
     
-    print("Loading team metrics from season_2025_2026_team_stats.json (primary source)...")
+    print("Loading team metrics from current season stats (primary source)...")
     
     # Helper function to calculate average from list
     def avg_from_list(lst):
@@ -171,10 +184,10 @@ def get_team_metrics():
             return None
         return sum(lst) / len(lst)
     
-    # PRIMARY SOURCE: Load from season_2025_2026_team_stats.json (created daily)
+    # PRIMARY SOURCE: Load from current season stats (created daily)
     metrics = {}
     try:
-        season_stats = load_json('season_2025_2026_team_stats.json')
+        season_stats = _load_current_team_stats()
         teams_stats = season_stats.get('teams', season_stats) if isinstance(season_stats, dict) else {}
         print(f"Loaded {len(teams_stats)} teams from season stats")
         

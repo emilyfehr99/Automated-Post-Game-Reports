@@ -692,7 +692,8 @@ class ImprovedSelfLearningModelV2:
             if not stats[t].get('home', {}).get('games') or not stats[t].get('away', {}).get('games')
         ]
         if teams_needing_backfill:
-            prior_paths = [Path("data/season_2025_2026_team_stats.json"), Path("season_2025_2026_team_stats.json")]
+            import glob
+            prior_paths = [Path(p) for p in sorted(glob.glob("data/season_*_team_stats.json") + glob.glob("season_*_team_stats.json"), reverse=True)]
             for pp in prior_paths:
                 if pp.exists() and pp != self.team_stats_file:
                     try:
