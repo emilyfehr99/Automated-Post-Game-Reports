@@ -513,6 +513,12 @@ class SpriteGoalAnalyzer:
                     # Net-front presence proxy: within 15ft of crease
                     team_stats[scoring_team_id]['net_front'].append(2.0 if dist_ft < 15.0 else 1.0)
                     
+                # Check for net-front traffic / screen / deflection
+                shot_type = str(details.get('shotType', '')).lower()
+                is_traffic = (shot_type in ['tip-in', 'deflected', 'tip', 'deflection'] or (dist_ft is not None and dist_ft <= 10.0))
+                if is_traffic:
+                    team_stats[scoring_team_id]['traffic_goals'] += 1
+                    
                 # Assists / Passes on goal
                 a1 = details.get('assist1PlayerId')
                 a2 = details.get('assist2PlayerId')
@@ -520,8 +526,10 @@ class SpriteGoalAnalyzer:
                 team_stats[scoring_team_id]['passes'].append(passes)
                 
                 # Zone entry classification from goal build-up
-                if a2 or passes >= 2:
+                if passes >= 2:
                     team_stats[scoring_team_id]['entry_types']['pass'] += 1
+                elif passes == 1:
+                    team_stats[scoring_team_id]['entry_types']['carry'] += 1
                 else:
                     team_stats[scoring_team_id]['entry_types']['carry'] += 1
                 continue

@@ -38,6 +38,17 @@ except ImportError as e:
         def predict_live_game(self, metrics): return {}
     live_predictor = MockPredictor()
 
+try:
+    from models.improved_xg_model import ImprovedXGModel
+    xg_model = ImprovedXGModel()
+except ImportError:
+    try:
+        from improved_xg_model import ImprovedXGModel
+        xg_model = ImprovedXGModel()
+    except Exception as e:
+        print(f"Warning: ImprovedXGModel not loaded in api/app.py: {e}")
+        xg_model = None
+
 # Cache for team metrics to avoid recalculating on every request
 _team_metrics_cache = None
 _team_metrics_cache_time = None
@@ -353,64 +364,34 @@ def get_team_heatmap(team_abbr):
                 for player in roster.get(position, []):
                     player_names[player['id']] = f"{player['firstName']['default']} {player['lastName']['default']}"
 
-        def calculate_xg(x, y, shot_type):
-            """
-            Estimate xG based on location and shot type.
-            Coordinates are from center ice (0,0) to (100, 42.5).
-            Net is approx at x=89.
-            """
-            import math
+        def calculate_shot_xg(play_obj, prev_plays=None):
+            """Calculate shot xG using ImprovedXGModel with fallback"""
+            details = play_obj.get('details', {})
+            x = details.get('xCoord', 0)
+            y = details.get('yCoord', 0)
+            shot_type = details.get('shotType', 'wrist')
+            event_type = play_obj.get('typeDescKey', 'shot-on-goal')
             
-            # Normalize to offensive zone coordinates (0-100)
-            # Abs(x) because we don't know which side they are shooting at, but shots are usually recorded relative to net
-            # Standardize: Net is at 89, 0
-            
-            # Distance to net
-            # If x is negative, it might be the other side, but usually API returns coordinates relative to rink center
-            # We'll assume offensive zone logic: closer to 89 is closer to net
-            
-            # Simple distance calculation from (89, 0)
-            # x is usually -100 to 100. 
-            
-            # Use absolute x to treat both sides symmetrically if needed, 
-            # but usually we care about distance to NEAREST net.
-            # Net locations are -89 and 89.
-            
-            dist_to_right_net = math.sqrt((89 - x)**2 + y**2)
-            dist_to_left_net = math.sqrt((-89 - x)**2 + y**2)
-            
-            distance = min(dist_to_right_net, dist_to_left_net)
-            
-            # Base probability based on distance
-            # Exponential decay: P = 0.4 * e^(-0.05 * distance)
-            # At 0ft: 0.4
-            # At 10ft: 0.24
-            # At 20ft: 0.14
-            # At 40ft: 0.05
-            prob = 0.4 * math.exp(-0.05 * distance)
-            
-            # Adjust for shot type
-            multipliers = {
-                'tip-in': 1.5,
-                'deflected': 1.3,
-                'slap': 0.8,  # Often further away
-                'snap': 1.0,
-                'wrist': 1.0,
-                'backhand': 0.9,
-                'wrap-around': 1.2
-            }
-            
-            shot_type_key = str(shot_type).lower() if shot_type else 'wrist'
-            mult = multipliers.get(shot_type_key, 1.0)
-            
-            # Bonus for central angle (closer to y=0)
-            angle_mult = 1.0
-            if abs(y) < 10:
-                angle_mult = 1.2
-            elif abs(y) > 20:
-                angle_mult = 0.8
+            if xg_model:
+                sit_code = str(play_obj.get('situationCode', '1551'))
+                strength_state = '5v5'
+                if len(sit_code) >= 4:
+                    strength_state = f"{sit_code[1]}v{sit_code[2]}"
                 
-            return min(0.99, prob * mult * angle_mult)
+                shot_data = {
+                    'x_coord': x,
+                    'y_coord': y,
+                    'shot_type': str(shot_type).lower(),
+                    'event_type': event_type,
+                    'strength_state': strength_state,
+                    'score_differential': 0
+                }
+                return xg_model.calculate_xg(shot_data, prev_plays or [])
+            
+            # Simple fallback if model not loaded
+            import math
+            dist = math.sqrt((89 - abs(x))**2 + y**2)
+            return min(0.95, 0.35 * math.exp(-0.04 * dist))
 
         shots_for = []
         goals_for = []
@@ -424,7 +405,8 @@ def get_team_heatmap(team_abbr):
             if not pbp:
                 continue
                 
-            for play in pbp.get('plays', []):
+            all_plays = pbp.get('plays', [])
+            for play_idx, play in enumerate(all_plays):
                 details = play.get('details', {})
                 if not details:
                     continue
@@ -445,8 +427,9 @@ def get_team_heatmap(team_abbr):
                 if not shooter_name and shooter_id:
                     shooter_name = player_names.get(shooter_id)
                 
-                # Calculate xG
-                xg = calculate_xg(x, y, details.get('shotType'))
+                # Calculate xG with context
+                prev_plays = all_plays[max(0, play_idx-10):play_idx]
+                xg = calculate_shot_xg(play, prev_plays)
                     
                 if play.get('typeDescKey') == 'shot-on-goal':
                     point = {

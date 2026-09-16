@@ -511,8 +511,8 @@ class PostGameReportGenerator:
                     header_img.paste(away_logo, (away_logo_x, away_logo_y), away_logo)
                 
                 if home_logo:
-                    # Position home logo to the right of away logo
-                    home_logo_x = header_img.width - 519  # Further right (moved 9.5cm/269px total inward)
+                    # Position home logo to the right of away logo (moved 0.2cm / 22px further right)
+                    home_logo_x = header_img.width - 497
                     home_logo_y = team_y - 81  # Moved down 0.8cm total (25px) from -106 to -81
                     header_img.paste(home_logo, (home_logo_x, home_logo_y), home_logo)
                 
@@ -2652,10 +2652,10 @@ class PostGameReportGenerator:
     def _parse_strength_state(self, situation_code):
         """Parse situation code to get strength state (e.g., '5v5', '5v4')"""
         try:
-            # Situation code format: XXYY where XX = away skaters, YY = home skaters
-            if len(situation_code) >= 4:
-                away_skaters = int(situation_code[0:2]) % 10  # Get last digit
-                home_skaters = int(situation_code[2:4]) % 10  # Get last digit
+            # Situation code format: ABCD where B = away skaters, C = home skaters
+            if situation_code and len(situation_code) >= 4:
+                away_skaters = int(situation_code[1])
+                home_skaters = int(situation_code[2])
                 return f"{away_skaters}v{home_skaters}"
             return '5v5'
         except:
@@ -4583,7 +4583,37 @@ class PostGameReportGenerator:
                         print(f"Cleaned up temporary plot file: {plot_file}")
                 except Exception as e:
                     print(f"Warning: Could not clean up plot file {plot_file}: {e}")
-            self.temp_plot_files = []
-        
         print(f"Post-game report generated successfully: {output_filename}")
         return output_filename
+
+    def export_as_image(self, pdf_path: str, output_png_path: str = None, scale: float = 5.0) -> str:
+        """
+        Convert generated PDF report into ultra-high-definition (4K) PNG image.
+        Uses pypdfium2 (scale=5.0 -> 3060x3960 px) with fallback to macOS sips.
+        """
+        if not output_png_path:
+            output_png_path = str(Path(pdf_path).with_suffix('.png'))
+            
+        try:
+            import pypdfium2 as pdfium
+            pdf = pdfium.PdfDocument(pdf_path)
+            page = pdf[0]
+            # scale=5.0 renders a standard 612x792 pt page at 3060x3960 px (crisp 4K UHD)
+            image = page.render(scale=scale).to_pil()
+            image.save(output_png_path, format='PNG', optimize=True)
+            print(f"✅ Rendered 4K image with pypdfium2: {output_png_path} ({image.size[0]}x{image.size[1]} px)")
+            return output_png_path
+        except Exception as e:
+            print(f"pypdfium2 render failed ({e}), falling back to sips...")
+            try:
+                import subprocess
+                subprocess.run(
+                    ["sips", "-s", "format", "png", str(pdf_path), "--out", str(output_png_path)],
+                    capture_output=True,
+                    check=True
+                )
+                print(f"✅ Rendered image with sips fallback: {output_png_path}")
+                return output_png_path
+            except Exception as sips_err:
+                print(f"❌ Failed to export PDF to image: {sips_err}")
+                raise
