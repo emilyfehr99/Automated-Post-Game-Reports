@@ -43,15 +43,23 @@ class StandingsTracker:
         if hasattr(date, 'strftime'):
             date = date.strftime('%Y-%m-%d')
             
-        # Check cache
+        # Check cache exact match
         cache_key = date or datetime.now().strftime('%Y-%m-%d')
         if cache_key in self.standings_cache:
             return self.standings_cache[cache_key]
         
+        # Check closest prior cached date for instant local inference
+        if self.standings_cache:
+            valid_keys = [k for k in self.standings_cache.keys() if k <= cache_key]
+            if valid_keys:
+                return self.standings_cache[max(valid_keys)]
+            # If date is before first cached date, return earliest cached date
+            return self.standings_cache[min(self.standings_cache.keys())]
+        
         try:
-            # NHL API standings endpoint
+            # NHL API standings endpoint (only if cache completely empty)
             url = f"https://api-web.nhle.com/v1/standings/{date or 'now'}"
-            response = self.api.session.get(url, timeout=10)
+            response = self.api.session.get(url, timeout=2)
             response.raise_for_status()
             
             data = response.json()

@@ -8,13 +8,40 @@ import json
 import requests
 import os
 import numpy as np
-from nhl_api_client import NHLAPIClient
-from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
-from correlation_model import CorrelationModel
-from lineup_service import LineupService
-from pdf_report_generator import PostGameReportGenerator
-from advanced_metrics_analyzer import AdvancedMetricsAnalyzer
-from schedule_analyzer import ScheduleAnalyzer
+try:
+    from utils.nhl_api_client import NHLAPIClient
+except ImportError:
+    from nhl_api_client import NHLAPIClient
+
+try:
+    from models.improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
+except ImportError:
+    from improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
+
+try:
+    from models.correlation_model import CorrelationModel
+except ImportError:
+    from correlation_model import CorrelationModel
+
+try:
+    from utils.lineup_service import LineupService
+except ImportError:
+    from lineup_service import LineupService
+
+try:
+    from pdf_report_generator import PostGameReportGenerator
+except ImportError:
+    PostGameReportGenerator = None
+
+try:
+    from analyzers.advanced_metrics_analyzer import AdvancedMetricsAnalyzer
+except ImportError:
+    from advanced_metrics_analyzer import AdvancedMetricsAnalyzer
+
+try:
+    from analyzers.schedule_analyzer import ScheduleAnalyzer
+except ImportError:
+    from schedule_analyzer import ScheduleAnalyzer
 from datetime import datetime, timedelta
 from typing import Optional
 import pytz

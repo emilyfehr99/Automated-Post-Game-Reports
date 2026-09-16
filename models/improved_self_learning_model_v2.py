@@ -90,7 +90,10 @@ class ImprovedSelfLearningModelV2:
         # Load persisted goalie history if present, else build from predictions
         self.goalie_history = self.model_data.get('goalie_history') or self._build_goalie_history()
         
-        from season_utils import get_team_stats_path
+        try:
+            from season_utils import get_team_stats_path
+        except ImportError:
+            from utils.season_utils import get_team_stats_path
         self.team_stats_file = get_team_stats_path()
         self.historical_stats_file = Path("historical_seasons_team_stats.json")
         
@@ -683,6 +686,32 @@ class ImprovedSelfLearningModelV2:
         else:
             logger.warning(f"Team stats file not found: {self.team_stats_file}, initialized all 32 teams")
         
+        # Ensure all 32 teams and both venues have baseline data by checking prior season for any unpopulated venues
+        teams_needing_backfill = [
+            t for t in stats 
+            if not stats[t].get('home', {}).get('games') or not stats[t].get('away', {}).get('games')
+        ]
+        if teams_needing_backfill:
+            prior_paths = [Path("data/season_2025_2026_team_stats.json"), Path("season_2025_2026_team_stats.json")]
+            for pp in prior_paths:
+                if pp.exists() and pp != self.team_stats_file:
+                    try:
+                        with open(pp, "r") as f:
+                            p_data = json.load(f)
+                        p_teams = p_data.get("teams", p_data)
+                        if isinstance(p_teams, dict):
+                            for mt in list(teams_needing_backfill):
+                                if mt in p_teams and isinstance(p_teams[mt], dict):
+                                    for v in ['home', 'away']:
+                                        if not stats[mt].get(v, {}).get('games') and p_teams[mt].get(v, {}).get('games'):
+                                            stats[mt][v] = p_teams[mt][v]
+                                    if stats[mt].get('home', {}).get('games') and stats[mt].get('away', {}).get('games'):
+                                        teams_needing_backfill.remove(mt)
+                        if not teams_needing_backfill:
+                            break
+                    except Exception as exc:
+                        logger.warning(f"Failed to backfill missing teams/venues from {pp}: {exc}")
+        
         return stats
     
     def load_historical_stats(self) -> Dict:
@@ -914,75 +943,39 @@ class ImprovedSelfLearningModelV2:
         team_key = team.upper()
         
         # Prefer current season stats if available
+        venue_data = {}
         if team_key in self.team_stats:
             venue_data = self.team_stats[team_key].get(venue, {})
             
-            # Check if venue_data has actual game data
-            has_venue_data = venue_data and len(venue_data.get('games', [])) > 0
+        # Check if venue_data has actual game data
+        has_venue_data = bool(venue_data and len(venue_data.get('games', [])) > 0)
+        
+        if not has_venue_data:
+            # 1. Try opposite venue for the same team in current season
+            if team_key in self.team_stats:
+                opp_venue = 'away' if venue == 'home' else 'home'
+                opp_vdata = self.team_stats[team_key].get(opp_venue, {})
+                if opp_vdata and len(opp_vdata.get('games', [])) > 0:
+                    venue_data = opp_vdata
+                    has_venue_data = True
             
-            if not has_venue_data:
-                logger.warning(f"   ⚠️  No venue-specific data for {team_key} @ {venue}, using aggregate team stats as fallback")
-                # Try to use aggregate stats from standings/API
-                try:
-                    import requests
-                    url = 'https://api-web.nhle.com/v1/standings/now'
-                    response = requests.get(url, headers={'User-Agent': 'Mozilla/5.0'}, timeout=5)
-                    if response.status_code == 200:
-                        standings = response.json()
-                        for team_entry in standings.get('standings', []):
-                            team_abbrev_obj = team_entry.get('teamAbbrev', {})
-                            abbrev = team_abbrev_obj.get('default', '') if isinstance(team_abbrev_obj, dict) else str(team_abbrev_obj)
+            # 2. Try historical stats if available
+            if not has_venue_data and getattr(self, 'historical_stats', None):
+                for season_key in sorted(self.historical_stats.keys(), reverse=True):
+                    s_teams = self.historical_stats[season_key]
+                    if team_key in s_teams:
+                        h_vdata = s_teams[team_key].get(venue, {})
+                        if h_vdata and len(h_vdata.get('games', [])) > 0:
+                            venue_data = h_vdata
+                            has_venue_data = True
+                            break
+                        h_opp = s_teams[team_key].get('away' if venue == 'home' else 'home', {})
+                        if h_opp and len(h_opp.get('games', [])) > 0:
+                            venue_data = h_opp
+                            has_venue_data = True
+                            break
                             
-                            if abbrev == team_key:
-                                # Use aggregate team stats from standings
-                                gp = team_entry.get('gamesPlayed', 1)
-                                goals_for = team_entry.get('goalFor', 0)
-                                goals_against = team_entry.get('goalAgainst', 0)
-                                
-                                # Rough estimates based on league averages
-                                goals_avg = (goals_for / gp) if gp > 0 else 2.5
-                                goals_against_avg = (goals_against / gp) if gp > 0 else 2.5
-                                
-                                # Estimate xG as goals * 0.9-1.1 (teams usually score ~90-110% of xG)
-                                xg_avg = goals_avg * 1.0
-                                xg_against_avg = goals_against_avg * 1.0
-                                
-                                logger.info(f"   📊 Using aggregate fallback: xg={xg_avg:.2f}, goals={goals_avg:.2f}, GA={goals_against_avg:.2f}")
-                                
-                                return {
-                                    'xg_avg': xg_avg,
-                                    'goals_avg': goals_avg,
-                                    'goals_against_avg': goals_against_avg,
-                                    'xg_against_avg': xg_against_avg,
-                                    'hdc_avg': xg_avg * 0.3,  # HDC is roughly 30% of xG
-                                    'shots_avg': 30.0,
-                                    'gs_avg': xg_avg * 1.5,  # Rough Game Score estimate
-                                    'corsi_avg': 50.0,
-                                    'power_play_avg': 20.0,
-                                    'penalty_kill_avg': 80.0,
-                                    'faceoff_avg': 50.0,
-                                    'hits_avg': 20.0,
-                                    'blocked_shots_avg': 15.0,
-                                    'takeaways_avg': 7.0,
-                                    'giveaways_avg': 7.0,
-                                    'penalty_minutes_avg': 8.0,
-                                    'pdo_avg': 100.0,
-                                    'ozs_avg': 15.0,
-                                    'recent_form': 0.5,
-                                    'head_to_head': 0.5,
-                                    'rest_days_advantage': 0.0,
-                                    'goalie_performance': 0.0,
-                                    'games_played': gp,
-                                    'confidence': 0.5
-                                }
-                except Exception as e:
-                    logger.error(f"   ❌ Fallback API call failed: {e}")
-                
-            # Continue with venue-specific data if available
-            # Compute situational factors
-            rest_adv = self._calculate_rest_days_advantage(team_key, venue)
-            goalie_perf = self._calculate_goalie_performance(team_key, venue)
- 
+        if has_venue_data:
             # Calculate averages from arrays if they exist
             def safe_mean(arr, default=0.0):
                 if arr and len(arr) > 0:
@@ -991,52 +984,40 @@ class ImprovedSelfLearningModelV2:
             
             goals_against_avg = safe_mean(venue_data.get('opp_goals', []), default=2.5)
             xg_avg = safe_mean(venue_data.get('xg', []), default=2.0)
-            
-            # Opponent xG is stored in 'xg_against' in our file, or 'opp_xg' sometimes.
-            # Based on inspection, keys are 'xG_for' and 'xG_against' in the aggregated arrays at the bottom,
-            # but inside 'home' block it's 'xg' and 'opp_xg' usually? 
-            # File snippet showed 'xg' and 'opp_goals'. It didn't explicitly show 'opp_xg' in the lines 1-100 block 
-            # but usually it's symmetric. However, at line 289 we saw 'xG_against'.
-            # Let's try to grab 'xG_against' from the venue data if it exists, otherwise fallback to index matching?
-            # Actually, let's just use 'xg' from the Perspective of 'opp_goals' or look for 'opp_xg'.
-            # If not found, use 2.0.
-            # NOTE: Now using real opponent stats from regenerated data file
-            
             hdc_avg = safe_mean(venue_data.get('hdc', []), default=0.0)
             shots_avg = safe_mean(venue_data.get('shots', []), default=30.0)
-            goals_avg = safe_mean(venue_data.get('goals', []), 2.0)
+            goals_avg = safe_mean(venue_data.get('goals', []), default=2.0)
         
             # Opponent stats (goals allowed, xG against)
-            goals_against_avg = safe_mean(venue_data.get('opp_goals', []), 3.0)
-            xg_against_avg = safe_mean(venue_data.get('opp_xg', []), 3.0)
+            goals_against_avg = safe_mean(venue_data.get('opp_goals', []), default=3.0)
+            xg_against_avg = safe_mean(venue_data.get('opp_xg', []), default=3.0)
             
-            # DEBUG: Log calculated averages
-            logger.debug(f"   📊 Calculated averages: xg_avg={xg_avg:.2f}, xg_against_avg={xg_against_avg:.2f}, goals_avg={goals_avg:.2f}")
-            
-            gs_avg = safe_mean(venue_data.get('gs', []), 0.0)
+            gs_avg = safe_mean(venue_data.get('gs', []), default=0.0)
             
             # Advanced Metrics
-            corsi_avg = safe_mean(venue_data.get('corsi_pct', []), 50.0)
-            fenwick_avg = safe_mean(venue_data.get('fenwick_pct', []), 50.0)
-            power_play_avg = safe_mean(venue_data.get('power_play_pct', []), 20.0)
-            penalty_kill_avg = safe_mean(venue_data.get('penalty_kill_pct', []), 80.0)
-            faceoff_avg = safe_mean(venue_data.get('faceoff_pct', []), 50.0)
-            hits_avg = safe_mean(venue_data.get('hits', []), 20.0)
-            takeaways_avg = safe_mean(venue_data.get('takeaways', []), 5.0)
-            blocked_shots_avg = safe_mean(venue_data.get('blocked_shots', []), 15.0)
-            pdo_avg = safe_mean(venue_data.get('pdo', []), 100.0)
-            ozs_avg = safe_mean(venue_data.get('ozs', []), 15.0) # Offensive Zone Starts
+            corsi_avg = safe_mean(venue_data.get('corsi_pct', []), default=50.0)
+            fenwick_avg = safe_mean(venue_data.get('fenwick_pct', []), default=50.0)
+            power_play_avg = safe_mean(venue_data.get('power_play_pct', []), default=20.0)
+            penalty_kill_avg = safe_mean(venue_data.get('penalty_kill_pct', []), default=80.0)
+            faceoff_avg = safe_mean(venue_data.get('faceoff_pct', []), default=50.0)
+            hits_avg = safe_mean(venue_data.get('hits', []), default=20.0)
+            takeaways_avg = safe_mean(venue_data.get('takeaways', []), default=5.0)
+            blocked_shots_avg = safe_mean(venue_data.get('blocked_shots', []), default=15.0)
+            pdo_avg = safe_mean(venue_data.get('pdo', []), default=100.0)
+            ozs_avg = safe_mean(venue_data.get('ozs', []), default=15.0) # Offensive Zone Starts
             
-            giveaways_avg = safe_mean(venue_data.get('giveaways', []), 0.0)
-            penalty_minutes_avg = safe_mean(venue_data.get('penalty_minutes', []), 0.0)
+            giveaways_avg = safe_mean(venue_data.get('giveaways', []), default=0.0)
+            penalty_minutes_avg = safe_mean(venue_data.get('penalty_minutes', []), default=0.0)
             
             # New Advanced Metrics
-            rebounds_avg = safe_mean(venue_data.get('rebounds', []), 0.0)
-            rush_shots_avg = safe_mean(venue_data.get('rush_shots', []), 0.0)
-            traffic_avg = safe_mean(venue_data.get('net_front_traffic_pct', []), 0.0)
-            zone_entry_carry_avg = safe_mean(venue_data.get('zone_entry_carry_pct', []), 50.0)
+            rebounds_avg = safe_mean(venue_data.get('rebounds', []), default=0.0)
+            rush_shots_avg = safe_mean(venue_data.get('rush_shots', []), default=0.0)
+            traffic_avg = safe_mean(venue_data.get('net_front_traffic_pct', []), default=0.0)
+            zone_entry_carry_avg = safe_mean(venue_data.get('zone_entry_carry_pct', []), default=50.0)
             
             games_played = len(venue_data.get('games', []))
+            rest_adv = self._calculate_rest_days_advantage(team_key, venue)
+            goalie_perf = self._calculate_goalie_performance(team_key, venue)
 
             if games_played:
                 return {
@@ -1050,7 +1031,6 @@ class ImprovedSelfLearningModelV2:
                     'shots_avg': shots_avg,
                     'goals_avg': goals_avg,
                     'goals_against_avg': goals_against_avg,
-                    'xg_avg': xg_avg,
                     'xg_against_avg': xg_against_avg,
                     'gs_avg': gs_avg,
                     'corsi_avg': corsi_avg,
@@ -1064,13 +1044,12 @@ class ImprovedSelfLearningModelV2:
                     'penalty_minutes_avg': penalty_minutes_avg,
                     'pdo_avg': pdo_avg,
                     'ozs_avg': ozs_avg,
-                    'recent_form': self._calculate_recent_form(team_key, venue, window=10),  # Venue-aware, last 10 games
-                    'head_to_head': 0.5,  # Default
+                    'recent_form': self._calculate_recent_form(team_key, venue, window=10),
+                    'head_to_head': 0.5,
                     'rest_days_advantage': rest_adv,
                     'goalie_performance': goalie_perf,
                     'games_played': games_played,
                     'confidence': self._calculate_confidence(games_played),
-                    # Advanced metrics for prediction
                     'rebounds_avg': rebounds_avg,
                     'rush_shots_avg': rush_shots_avg,
                     'traffic_avg': traffic_avg,
@@ -2007,8 +1986,8 @@ class ImprovedSelfLearningModelV2:
             logger.debug(f"Situational context failed: {e}, using base prediction")
             pass
         
-        # BETTING ODDS ENSEMBLE: Blend with market consensus if available
-        if game_id:
+        # BETTING ODDS ENSEMBLE: Blend with market consensus if available for live games
+        if game_id and not game_date and not vegas_odds:
             try:
                 try:
                     from nhl_api_client import NHLAPIClient

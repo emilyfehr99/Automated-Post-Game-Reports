@@ -77,6 +77,9 @@ src/
 !data/official_2026_bracket_current.json
 !nhl-analytics/public/data/*.json
 
+# Keep logo cache for offline report generation
+!data/logo_cache/*.png
+
 # Keep model performance snapshot (guardrails)
 !model_performance.json
 !model_metrics.json
@@ -84,3 +87,8 @@ src/
 # Keep vercel.json for deployment configuration
 !nhl-analytics/vercel.json
 .vercel
+
+# Ignore scratch and generated outputs
+scratch/
+outputs/
+*.txt

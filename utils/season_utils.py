@@ -39,11 +39,35 @@ def current_season_file_tag(now: datetime | None = None) -> str:
     return f"{start_year}_{end_year}"
 
 
-def get_team_stats_path() -> Path:
+def _is_valid_team_stats_file(path: Path, min_teams: int = 30) -> bool:
+    """Validate that team stats file contains comprehensive venue data for at least min_teams."""
+    if not path.exists():
+        return False
+    try:
+        import json
+        with open(path, "r") as f:
+            d = json.load(f)
+        teams = d.get("teams", d)
+        if not isinstance(teams, dict) or len(teams) < min_teams:
+            return False
+        # Verify structure contains home/away venue breakdowns with games
+        venue_teams = 0
+        for team_data in teams.values():
+            if isinstance(team_data, dict):
+                home_games = len(team_data.get("home", {}).get("games", []))
+                away_games = len(team_data.get("away", {}).get("games", []))
+                if home_games > 0 or away_games > 0:
+                    venue_teams += 1
+        return venue_teams >= min_teams
+    except Exception:
+        return False
+
+
+def get_team_stats_path(min_teams: int = 30) -> Path:
     """
     Locate active team_stats file.
-    Prefers current season (e.g. data/season_2026_2027_team_stats.json),
-    then any matching pattern, falling back to data/season_2025_2026_team_stats.json.
+    Prefers current season if populated with at least `min_teams` teams,
+    otherwise falls back to the most recent complete season (e.g. 2025_2026).
     """
     tag = current_season_file_tag()
     candidates = [
@@ -51,15 +75,20 @@ def get_team_stats_path() -> Path:
         Path(f"season_{tag}_team_stats.json"),
     ]
     for c in candidates:
-        if c.exists():
+        if _is_valid_team_stats_file(c, min_teams=min_teams):
             return c
 
-    # Search for any existing season team stats file
-    matches = sorted(glob.glob("data/season_*_team_stats.json") + glob.glob("season_*_team_stats.json"), reverse=True)
-    if matches:
-        return Path(matches[0])
+    # Search for any existing season team stats file with at least min_teams
+    matches = sorted(glob.glob("data/season_*_team_stats.json"), reverse=True)
+    for m in matches:
+        p = Path(m)
+        if _is_valid_team_stats_file(p, min_teams=min_teams):
+            return p
 
-    # Default fallback
+    # Default fallback to complete 2025_2026 season stats
+    for fb in [Path("data/season_2025_2026_team_stats.json"), Path("season_2025_2026_team_stats.json")]:
+        if _is_valid_team_stats_file(fb, min_teams=1):
+            return fb
     return Path("data/season_2025_2026_team_stats.json")
 
 

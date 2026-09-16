@@ -4,8 +4,9 @@ from datetime import datetime, timedelta
 import pandas as pd
 
 class NHLAPIClient:
-    def __init__(self):
+    def __init__(self, timeout: int = 10):
         self.base_url = "https://api-web.nhle.com/v1"
+        self.timeout = timeout
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
@@ -15,29 +16,34 @@ class NHLAPIClient:
             'Connection': 'keep-alive'
         })
     
+    def _safe_get(self, url: str, timeout: int = None):
+        """Helper to perform session.get with timeout and error handling"""
+        t = timeout or self.timeout
+        try:
+            resp = self.session.get(url, timeout=t)
+            if resp.status_code == 200:
+                return resp.json()
+        except Exception as e:
+            pass
+        return None
+
     def get_team_info(self, team_id):
         """Get team information by team ID"""
         url = f"{self.base_url}/teams/{team_id}"
-        response = self.session.get(url)
-        if response.status_code == 200:
-            return response.json()
-        return None
+        return self._safe_get(url)
     
     def get_team_roster(self, team_abbr):
         """Get team roster by team abbreviation"""
         url = f"{self.base_url}/roster/{team_abbr}/current"
-        response = self.session.get(url)
-        if response.status_code == 200:
-            return response.json()
-        return None
+        return self._safe_get(url)
     
     def get_team_roster_by_abbrev(self, team_abbr, season=None):
         """Get team roster by team abbreviation (optional season)"""
         if season:
             url = f"{self.base_url}/roster/{team_abbr}/{season}"
-            response = self.session.get(url)
-            if response.status_code == 200:
-                return response.json()
+            res = self._safe_get(url)
+            if res is not None:
+                return res
         return self.get_team_roster(team_abbr)
     
     def get_game_schedule(self, date=None):
@@ -46,25 +52,19 @@ class NHLAPIClient:
             date = datetime.now().strftime("%Y-%m-%d")
         
         url = f"{self.base_url}/schedule/{date}"
-        response = self.session.get(url)
-        if response.status_code == 200:
-            return response.json()
-        return None
+        return self._safe_get(url)
     
     def get_game_center(self, game_id):
         """Get detailed game information by combining boxscore and play-by-play"""
         # Get boxscore data
         boxscore_url = f"{self.base_url}/gamecenter/{game_id}/boxscore"
-        boxscore_response = self.session.get(boxscore_url)
+        boxscore_data = self._safe_get(boxscore_url)
         
         # Get play-by-play data
         pbp_url = f"{self.base_url}/gamecenter/{game_id}/play-by-play"
-        pbp_response = self.session.get(pbp_url)
+        pbp_data = self._safe_get(pbp_url)
         
-        if boxscore_response.status_code == 200 and pbp_response.status_code == 200:
-            boxscore_data = boxscore_response.json()
-            pbp_data = pbp_response.json()
-            
+        if boxscore_data is not None and pbp_data is not None:
             # Combine the data
             combined_data = {
                 'boxscore': boxscore_data,
@@ -76,26 +76,17 @@ class NHLAPIClient:
     def get_game_landing(self, game_id):
         """Get game landing summary"""
         url = f"{self.base_url}/gamecenter/{game_id}/landing"
-        response = self.session.get(url)
-        if response.status_code == 200:
-            return response.json()
-        return None
+        return self._safe_get(url)
 
     def get_game_boxscore(self, game_id):
         """Get game boxscore"""
         url = f"{self.base_url}/gamecenter/{game_id}/boxscore"
-        response = self.session.get(url)
-        if response.status_code == 200:
-            return response.json()
-        return None
+        return self._safe_get(url)
     
     def get_player_stats(self, player_id):
         """Get player statistics"""
         url = f"{self.base_url}/players/{player_id}/stats"
-        response = self.session.get(url)
-        if response.status_code == 200:
-            return response.json()
-        return None
+        return self._safe_get(url)
     
     def find_recent_game(self, team1_abbrev, team2_abbrev, days_back=30):
         """Find the most recent game between two teams"""
@@ -104,7 +95,7 @@ class NHLAPIClient:
             'FLA': 13, 'EDM': 22, 'BOS': 6, 'TOR': 10, 'MTL': 8, 'OTT': 9,
             'BUF': 7, 'DET': 17, 'TBL': 14, 'CAR': 12, 'WSH': 15, 'PIT': 5,
             'NYR': 3, 'NYI': 2, 'NJD': 1, 'PHI': 4, 'CBJ': 29, 'NSH': 18,
-            'STL': 19, 'MIN': 30, 'WPG': 52, 'COL': 21, 'ARI': 53, 'UTA': 59, 'VGK': 54,
+            'STL': 19, 'MIN': 30, 'WPG': 52, 'COL': 21, 'UTA': 59, 'VGK': 54,
             'SJS': 28, 'LAK': 26, 'ANA': 24, 'CGY': 20, 'VAN': 23, 'SEA': 55,
             'CHI': 16, 'DAL': 25
         }
@@ -198,7 +189,7 @@ class NHLAPIClient:
             'FLA': 13, 'EDM': 22, 'BOS': 6, 'TOR': 10, 'MTL': 8, 'OTT': 9,
             'BUF': 7, 'DET': 17, 'TBL': 14, 'CAR': 12, 'WSH': 15, 'PIT': 5,
             'NYR': 3, 'NYI': 2, 'NJD': 1, 'PHI': 4, 'CBJ': 29, 'NSH': 18,
-            'STL': 19, 'MIN': 30, 'WPG': 52, 'COL': 21, 'ARI': 53, 'UTA': 59, 'VGK': 54,
+            'STL': 19, 'MIN': 30, 'WPG': 52, 'COL': 21, 'VGK': 54,
             'SJS': 28, 'LAK': 26, 'ANA': 24, 'CGY': 20, 'VAN': 23, 'SEA': 55,
             'CHI': 16, 'DAL': 25, 'UTA': 59
         }
@@ -316,7 +307,4 @@ class NHLAPIClient:
     def get_standings(self):
         """Get current league standings"""
         url = f"{self.base_url}/standings/now"
-        response = self.session.get(url)
-        if response.status_code == 200:
-            return response.json()
-        return None
+        return self._safe_get(url)

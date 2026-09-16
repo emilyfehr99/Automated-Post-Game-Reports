@@ -10,7 +10,10 @@ from typing import Dict, Optional, List, Tuple
 from pathlib import Path
 import json
 
-from nhl_api_client import NHLAPIClient
+try:
+    from utils.nhl_api_client import NHLAPIClient
+except ImportError:
+    from nhl_api_client import NHLAPIClient
 
 
 class LineupService:

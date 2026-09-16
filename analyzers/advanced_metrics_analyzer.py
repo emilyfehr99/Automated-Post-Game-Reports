@@ -9,7 +9,10 @@ import os
 from datetime import datetime
 from collections import defaultdict
 from typing import Dict, List, Tuple, Optional
-from improved_xg_model import ImprovedXGModel
+try:
+    from models.improved_xg_model import ImprovedXGModel
+except ImportError:
+    from improved_xg_model import ImprovedXGModel
 
 class AdvancedMetricsAnalyzer:
     def __init__(self, play_by_play_data: dict):
@@ -280,13 +283,17 @@ class AdvancedMetricsAnalyzer:
     def _parse_strength_state(self, situation_code: str) -> str:
         """
         Parse NHL situation code to strength state
-        Format: XXYY where XX = away skaters, YY = home skaters
-        Examples: 1551 = 5v5, 1541 = 5v4 (PP), 1451 = 4v5 (PK)
+        Format: ABCD where:
+          A (idx 0) = Away Goalie (1=in net, 0=pulled)
+          B (idx 1) = Away Skaters (5, 4, 3, 6)
+          C (idx 2) = Home Skaters (5, 4, 3, 6)
+          D (idx 3) = Home Goalie (1=in net, 0=pulled)
+        Examples: 1551 = 5v5, 1541 = 5v4 (Away PP), 1451 = 4v5 (Home PP)
         """
         try:
-            if len(situation_code) >= 4:
-                away_skaters = int(situation_code[2])
-                home_skaters = int(situation_code[3])
+            if situation_code and len(situation_code) == 4:
+                away_skaters = int(situation_code[1])
+                home_skaters = int(situation_code[2])
                 return f"{away_skaters}v{home_skaters}"
         except (ValueError, IndexError):
             pass

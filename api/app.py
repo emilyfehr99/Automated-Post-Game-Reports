@@ -305,7 +305,7 @@ def get_team_metrics():
         # Add team color
         # Standard NHL team colors
         team_colors = {
-            'ANA': '#F47A38', 'ARI': '#8C2633', 'BOS': '#FFB81C', 'BUF': '#002654',
+            'ANA': '#F47A38', 'BOS': '#FFB81C', 'BUF': '#002654',
             'CGY': '#C8102E', 'CAR': '#CC0000', 'CHI': '#CF0A2C', 'COL': '#6F263D',
             'CBJ': '#002654', 'DAL': '#006847', 'DET': '#CE1126', 'EDM': '#FF4C00',
             'FLA': '#B9975B', 'LAK': '#111111', 'MIN': '#154734', 'MTL': '#AF1E2D',
@@ -336,7 +336,7 @@ def get_team_heatmap(team_abbr):
             'FLA': 13, 'EDM': 22, 'BOS': 6, 'TOR': 10, 'MTL': 8, 'OTT': 9,
             'BUF': 7, 'DET': 17, 'TBL': 14, 'CAR': 12, 'WSH': 15, 'PIT': 5,
             'NYR': 3, 'NYI': 2, 'NJD': 1, 'PHI': 4, 'CBJ': 29, 'NSH': 18,
-            'STL': 19, 'MIN': 30, 'WPG': 52, 'COL': 21, 'ARI': 53, 'VGK': 54,
+            'STL': 19, 'MIN': 30, 'WPG': 52, 'COL': 21, 'VGK': 54,
             'SJS': 28, 'LAK': 26, 'ANA': 24, 'CGY': 20, 'VAN': 23, 'SEA': 55,
             'CHI': 16, 'DAL': 25, 'UTA': 59
         }
@@ -819,7 +819,7 @@ def get_team_roster(team_abbrev):
     try:
         import requests
         # Use the NHL API to get the roster
-        url = f"https://api-web.nhle.com/v1/roster/{team_abbrev}/20252026"
+        url = f"https://api-web.nhle.com/v1/roster/{team_abbrev}/current"
         response = requests.get(url, timeout=10)
         
         if response.status_code == 200:

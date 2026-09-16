@@ -70,7 +70,10 @@ class ScorePredictionModel:
         self.h2h_cache = {}
         
         # Load team stats
-        from season_utils import get_team_stats_path
+        try:
+            from season_utils import get_team_stats_path
+        except ImportError:
+            from utils.season_utils import get_team_stats_path
         p = get_team_stats_path()
         if p.exists():
             with open(p) as f:

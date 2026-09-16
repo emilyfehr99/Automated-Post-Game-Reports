@@ -22,7 +22,10 @@ import numpy as np
 from pathlib import Path
 from typing import Dict, List, Optional, Tuple
 from collections import defaultdict
-from nhl_api_client import NHLAPIClient
+try:
+    from utils.nhl_api_client import NHLAPIClient
+except ImportError:
+    from nhl_api_client import NHLAPIClient
 
 
 # ─── Ice Geometry Constants ───
@@ -236,16 +239,20 @@ class GoalieStatsBuilder:
     def _parse_situation(self, sit_code: str, goalie_team_is_home: bool) -> str:
         """Parse situation code to determine EV/PP/PK.
         
-        Code format: away_skaters / away_goalies / home_skaters / home_goalies
-        e.g. '1551' = away 5 skaters + 1 goalie, home 5 skaters + 1 goalie
+        Code format: ABCD
+          A (idx 0) = Away Goalie (1/0)
+          B (idx 1) = Away Skaters (5,4,3,6)
+          C (idx 2) = Home Skaters (5,4,3,6)
+          D (idx 3) = Home Goalie (1/0)
+        e.g. '1551' = away 5 skaters + goalie, home 5 skaters + goalie
         """
         if not sit_code or len(sit_code) != 4:
             return 'ev'
         
         try:
-            away_sk = int(sit_code[0])
+            away_sk = int(sit_code[1])
             home_sk = int(sit_code[2])
-        except:
+        except (ValueError, IndexError):
             return 'ev'
         
         if goalie_team_is_home:

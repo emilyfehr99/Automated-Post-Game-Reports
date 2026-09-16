@@ -25,7 +25,7 @@ TEAM_HASHTAGS = {
     'BOS': '#NHLBruins',
     'BUF': '#SabreHood',
     'CGY': '#Flames',
-    'CAR': '#CarolinaCultre',
+    'CAR': '#CauseChaos',
     'CHI': '#Blackhawks',
     'COL': '#GoAvsGo',
     'CBJ': '#CBJ',
@@ -48,7 +48,7 @@ TEAM_HASHTAGS = {
     'STL': '#STLBlues',
     'TBL': '#GoBolts',
     'TOR': '#LeafsForever',
-    'UTA': '#TusksUp',
+    'UTA': '#UtahHC',
     'VAN': '#Canucks',
     'VGK': '#VegasBorn',
     'WSH': '#ALLCAPS',
@@ -56,5 +56,5 @@ TEAM_HASHTAGS = {
 }
 
 # NHL Season Start Date (for calculating week/day)
-NHL_SEASON_START = '2025-10-08'  # Adjust this to the actual season start date
+NHL_SEASON_START = os.getenv('NHL_SEASON_START', '2026-09-29')
 

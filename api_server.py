@@ -492,7 +492,7 @@ def get_team_heatmap(team_abbr):
             'FLA': 13, 'EDM': 22, 'BOS': 6, 'TOR': 10, 'MTL': 8, 'OTT': 9,
             'BUF': 7, 'DET': 17, 'TBL': 14, 'CAR': 12, 'WSH': 15, 'PIT': 5,
             'NYR': 3, 'NYI': 2, 'NJD': 1, 'PHI': 4, 'CBJ': 29, 'NSH': 18,
-            'STL': 19, 'MIN': 30, 'WPG': 52, 'COL': 21, 'ARI': 53, 'VGK': 54,
+            'STL': 19, 'MIN': 30, 'WPG': 52, 'COL': 21, 'VGK': 54,
             'SJS': 28, 'LAK': 26, 'ANA': 24, 'CGY': 20, 'VAN': 23, 'SEA': 55,
             'CHI': 16, 'DAL': 25, 'UTA': 59
         }
@@ -802,7 +802,7 @@ def get_team_roster(team_abbrev):
     try:
         import requests
         # Use the NHL API to get the roster
-        url = f"https://api-web.nhle.com/v1/roster/{team_abbrev}/20252026"
+        url = f"https://api-web.nhle.com/v1/roster/{team_abbrev}/current"
         response = requests.get(url, timeout=10)
         
         if response.status_code == 200:
@@ -1169,8 +1169,8 @@ def get_team_top_performers(team_abbr):
                         )
                         
                         if player_id not in player_stats:
-                            # Generate headshot URL from player ID
-                            headshot_url = f"https://assets.nhle.com/mugs/nhl/20242025/{player_id}.jpg"
+                            # Use headshot from player data or dynamic fallback
+                            headshot_url = player.get('headshot') or f"https://assets.nhle.com/mugs/nhl/latest/{player_id}.png"
                             
                             player_stats[player_id] = {
                                 'name': name,
@@ -1207,7 +1207,7 @@ def get_team_top_performers(team_abbr):
                     'position': stats['position'],
                     'sweaterNumber': stats['sweaterNumber'],
                     'playerId': stats.get('playerId', player_id),
-                    'headshot': stats.get('headshot', f"https://assets.nhle.com/mugs/nhl/20242025/{player_id}.jpg"),
+                    'headshot': stats.get('headshot') or f"https://assets.nhle.com/mugs/nhl/latest/{player_id}.png",
                     'gsPerGame': stats['total_gs'] / stats['games'],
                     'goals': stats['goals'],
                     'assists': stats['assists'],

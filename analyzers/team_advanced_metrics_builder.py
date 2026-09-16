@@ -19,8 +19,15 @@ import os
 from pathlib import Path
 from typing import Dict, List, Optional
 from collections import defaultdict
-from nhl_api_client import NHLAPIClient
-from improved_xg_model import ImprovedXGModel
+try:
+    from utils.nhl_api_client import NHLAPIClient
+except ImportError:
+    from nhl_api_client import NHLAPIClient
+
+try:
+    from models.improved_xg_model import ImprovedXGModel
+except ImportError:
+    from improved_xg_model import ImprovedXGModel
 
 # ─── Ice Geometry Constants ───
 SLOT_X_THRESHOLD = 69     # Inside ~20ft of goal line

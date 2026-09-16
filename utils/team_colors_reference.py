@@ -67,7 +67,6 @@ def create_team_colors_reference():
         'STL': ('St. Louis Blues', (0, 47, 108), (252, 181, 20), 'Blue', 'Yellow'),
         'MIN': ('Minnesota Wild', (0, 99, 65), (200, 16, 46), 'Green', 'Red'),
         'WPG': ('Winnipeg Jets', (4, 30, 66), (215, 33, 41), 'Navy Blue', 'Red'),
-        'ARI': ('Arizona Coyotes', (140, 38, 51), (226, 214, 181), 'Red', 'Sand'),
         'VGK': ('Vegas Golden Knights', (185, 151, 91), (185, 151, 91), 'Gold', 'Gold'),
         'SJS': ('San Jose Sharks', (0, 109, 117), (234, 114, 0), 'Teal', 'Orange'),
         'LAK': ('Los Angeles Kings', (162, 170, 173), (162, 170, 173), 'Silver', 'Silver'),

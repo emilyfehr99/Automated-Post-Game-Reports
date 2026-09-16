@@ -12,8 +12,10 @@ This ensures the model performance metrics (accuracy, etc.) remain up-to-date.
 import json
 import logging
 from pathlib import Path
-from datetime import datetime
-from nhl_api_client import NHLAPIClient
+try:
+    from utils.nhl_api_client import NHLAPIClient
+except ImportError:
+    from nhl_api_client import NHLAPIClient
 try:
     from utils.timing import timed
 except Exception:

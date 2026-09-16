@@ -6,7 +6,10 @@ Focuses on two key metrics:
 2. Exits Leading to Entries - Breakout success rate
 """
 
-from nhl_api_client import NHLAPIClient
+try:
+    from utils.nhl_api_client import NHLAPIClient
+except ImportError:
+    from nhl_api_client import NHLAPIClient
 from typing import Dict, List
 from datetime import datetime
 import json

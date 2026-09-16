@@ -38,6 +38,17 @@ TEAM_TIMEZONES = {
     'DET': -5, 'CBJ': -5
 }
 
+# Environmental Altitude / Elevation Mapping (feet above sea level)
+TEAM_ELEVATIONS = {
+    'COL': 5280, 'UTA': 4265, 'CGY': 3440, 'EDM': 2200, 'WPG': 784,
+    'MIN': 840, 'CHI': 596, 'STL': 466, 'DAL': 430, 'NSH': 597,
+    'DET': 600, 'CBJ': 780, 'PIT': 740, 'BUF': 600, 'TOR': 249,
+    'OTT': 230, 'MTL': 118, 'BOS': 20, 'NYR': 33, 'NYI': 50,
+    'NJD': 20, 'PHI': 39, 'WSH': 25, 'CAR': 315, 'FLA': 10,
+    'TBL': 15, 'ANA': 157, 'LAK': 285, 'SJS': 82, 'VGK': 2001,
+    'SEA': 175, 'VAN': 0
+}
+
 def calculate_distance(city1, city2):
     """Haversine distance between two teams in miles"""
     if city1 == city2 or city1 not in TEAM_COORDINATES or city2 not in TEAM_COORDINATES:
@@ -123,6 +134,17 @@ class GoalieHistory:
         vals = self.stats[name]['gsax'][-window:]
         return np.mean(vals)
         
+    def get_shrunk_gsax(self, name, window=5, prior_weight=8):
+        """Bayesian shrinkage toward 0.0 baseline to neutralize extreme single-game goalie volatility"""
+        if not name or name not in self.stats or not self.stats[name]['gsax']:
+            return 0.0
+        vals = self.stats[name]['gsax']
+        n = len(vals)
+        rolling_val = float(np.mean(vals[-window:]))
+        season_val = float(np.mean(vals))
+        shrunk_prior = (n * season_val + prior_weight * 0.0) / (n + prior_weight)
+        return 0.7 * rolling_val + 0.3 * shrunk_prior
+
     def get_rolling_hdsv(self, name, window=5):
         if not name or name not in self.stats or not self.stats[name]['hdsv']:
             return 0.8
@@ -140,6 +162,29 @@ class TeamHistory:
         self.history = {}  # {team_abbr: {'dates': [], 'stats': [], 'home_stats': [], 'away_stats': [], 'opponents_elo': [], 'last_city': None}}
         self.elo = EloTracker()
         self.goalies = GoalieHistory()
+        self.h2h_history = {}  # {(team_a, team_b): [{'date': d, 'total_goals': tot, 'home_goals': h, 'away_goals': a}]}
+        
+    def update_h2h(self, team_a, team_b, date, goals_a, goals_b):
+        """Record head-to-head game outcome chronologically"""
+        pair = tuple(sorted([team_a, team_b]))
+        if pair not in self.h2h_history:
+            self.h2h_history[pair] = []
+        self.h2h_history[pair].append({
+            'date': date,
+            'total_goals': float(goals_a + goals_b),
+            'goals_a': float(goals_a),
+            'goals_b': float(goals_b)
+        })
+
+    def get_h2h_pace(self, team_a, team_b, prior_weight=4.0, league_mean=6.10):
+        """Calculate Empirical Bayes shrunk pace for matchup"""
+        pair = tuple(sorted([team_a, team_b]))
+        history = self.h2h_history.get(pair, [])
+        if not history:
+            return league_mean
+        n = len(history)
+        obs_mean = sum(g['total_goals'] for g in history) / float(n)
+        return float((n / (n + prior_weight)) * obs_mean + (prior_weight / (n + prior_weight)) * league_mean)
         
     def update(self, team, date, game_stats, venue=None, opponent_elo=None, city=None):
         """Update team history with a new game"""
@@ -258,6 +303,71 @@ class TeamHistory:
 class MetaEnsemblePredictor:
     """Combines multiple ensemble strategies for maximum accuracy"""
     
+    @staticmethod
+    def compute_bivariate_score_distribution(lam_h: float, lam_a: float, home_favored: bool = True, win_prob: float = 0.55):
+        """
+        Bivariate Poisson joint score matrix generator for hockey with dynamic empty net & multi-goal dispersion.
+        Produces MAP optimal score, top 3 exact scores, and exact market totals.
+        """
+        max_goals = 9
+        P = np.zeros((max_goals, max_goals))
+        
+        # Base Poisson marginals
+        p_h = [ (float(lam_h)**i * math.exp(-float(lam_h))) / math.factorial(i) for i in range(max_goals) ]
+        p_a = [ (float(lam_a)**j * math.exp(-float(lam_a))) / math.factorial(j) for j in range(max_goals) ]
+        
+        for i in range(max_goals):
+            for j in range(max_goals):
+                base_p = p_h[i] * p_a[j]
+                adj = 1.0
+                
+                # 1. Empirically calibrated empty net pull probability (converts 1-goal margin to 2-goal margin)
+                if abs(i - j) == 2 and max(i, j) >= 3:
+                    adj = 1.35 if win_prob >= 0.56 else 1.10
+                # 2. Regulation ties resolved via OT/SO
+                elif abs(i - j) == 0:
+                    adj = 0.70
+                # 3. High-certainty blowout dispersion
+                elif abs(i - j) >= 3 and win_prob >= 0.62:
+                    adj = 1.30
+                elif abs(i - j) == 1 and win_prob < 0.55:
+                    adj = 1.15
+                    
+                P[i, j] = base_p * adj
+                
+        P /= max(1e-9, P.sum())
+        
+        # Identify top coherent outcomes
+        coherent_outcomes = []
+        for i in range(max_goals):
+            for j in range(max_goals):
+                if home_favored and i > j:
+                    coherent_outcomes.append((i, j, float(P[i, j])))
+                elif (not home_favored) and j > i:
+                    coherent_outcomes.append((i, j, float(P[i, j])))
+                    
+        coherent_outcomes.sort(key=lambda x: x[2], reverse=True)
+        
+        best = coherent_outcomes[0] if coherent_outcomes else (3, 2 if home_favored else (2, 3))
+        top_3 = coherent_outcomes[:3] if len(coherent_outcomes) >= 3 else coherent_outcomes
+        
+        # Market probabilities
+        p_over_5_5 = float(np.sum([P[i, j] for i in range(max_goals) for j in range(max_goals) if i + j > 5.5]))
+        p_over_6_5 = float(np.sum([P[i, j] for i in range(max_goals) for j in range(max_goals) if i + j > 6.5]))
+        p_home_cover_minus_1_5 = float(np.sum([P[i, j] for i in range(max_goals) for j in range(max_goals) if i - j >= 2]))
+        p_away_cover_minus_1_5 = float(np.sum([P[i, j] for i in range(max_goals) for j in range(max_goals) if j - i >= 2]))
+        
+        return {
+            "best_home_goals": int(best[0]),
+            "best_away_goals": int(best[1]),
+            "score_prob": float(best[2]),
+            "top_3_scores": [(int(o[0]), int(o[1]), float(o[2])) for o in top_3],
+            "total_over_5_5": p_over_5_5,
+            "total_over_6_5": p_over_6_5,
+            "puckline_home_minus_1_5": p_home_cover_minus_1_5,
+            "puckline_away_minus_1_5": p_away_cover_minus_1_5,
+        }
+
     def __init__(self):
         self.specialized_ensemble = EnsemblePredictor()
         self.base_model = ImprovedSelfLearningModelV2()
@@ -277,6 +387,7 @@ class MetaEnsemblePredictor:
         self.margin_model = None
         self.p1_model = None
         self.confidence_model = None
+        self.toss_up_model = None
         self.total_goals_model = None
         self.team_profiles = {}
         self.travel_archetypes = {}
@@ -308,10 +419,10 @@ class MetaEnsemblePredictor:
         # Defaults (roughly match existing behavior)
         self._component_weights = {
             "xgb": 0.50,
-            "elo": 0.10,
-            "specialized": 0.25,
-            "player": 0.15,
-            "base": 0.10,
+            "elo": 0.05,
+            "specialized": 0.20,
+            "player": 0.10,
+            "base": 0.15,
             "vegas": 0.15,
         }
         self._model_mode = "ensemble"
@@ -519,6 +630,19 @@ class MetaEnsemblePredictor:
         except Exception as e:
             print(f"⚠️ Error loading P1 model: {e}")
             self.p1_model = None
+
+        # Dedicated Toss-Up Specialist Model
+        try:
+            toss_path = Path("toss_up_model.pkl")
+            if toss_path.exists():
+                with open(toss_path, "rb") as f:
+                    self.toss_up_model = pickle.load(f)
+                print(f"✅ Loaded Toss-Up Specialist Model from {toss_path}")
+            else:
+                self.toss_up_model = None
+        except Exception as e:
+            print(f"⚠️ Error loading toss_up_model: {e}")
+            self.toss_up_model = None
 
         # 3. Load Finishing Profiles
         try:
@@ -734,26 +858,41 @@ class MetaEnsemblePredictor:
             'rest_diff': home_rest - away_rest,
             'home_b2b': 1 if home_rest == 1 else 0,
             'away_b2b': 1 if away_rest == 1 else 0,
+            'rest_adv_b2b': (1.0 if (home_rest > 1 and away_rest == 1) else (-1.0 if (home_rest == 1 and away_rest > 1) else 0.0)),
             
             # Goalie Difference
             'gsax_diff': h_gsax_roll - a_gsax_roll,
+            'shrunk_gsax_diff': tracker.goalies.get_shrunk_gsax(home_goalie) - tracker.goalies.get_shrunk_gsax(away_goalie),
             'finish_diff': h_finish - a_finish,
+            'finish_adj_xg_diff': (h_l5.get('xg_for', 2.5) * (0.8 + 0.2 * h_finish)) - (a_l5.get('xg_for', 2.5) * (0.8 + 0.2 * a_finish)),
             
             # NHL Edge Micro-Movement (Phase 6)
             'edge_speed_diff': self.edge_profiles.get(home_team, {}).get('edge_top_speed', 21.0) - self.edge_profiles.get(away_team, {}).get('edge_top_speed', 21.0),
             'edge_burst_diff': self.edge_profiles.get(home_team, {}).get('edge_burst_avg', 0.5) - self.edge_profiles.get(away_team, {}).get('edge_burst_avg', 0.5),
             
             # Rolling General (EWMA)
-            'l5_goal_diff': h_l5.get('goal_diff', 0) - a_l5.get('goal_diff', 0),
-            'l5_corsi_diff': h_l5.get('corsi_pct', 50) - a_l5.get('corsi_pct', 50),
-            'l5_pdo_diff': h_l5.get('pdo', 100) - a_l5.get('pdo', 100),
+            'l5_goal_diff': h_l5.get('goal_diff', 0.0) - a_l5.get('goal_diff', 0.0),
+            'l5_xg_diff': (h_l5.get('xg_diff', 0.0) - a_l5.get('xg_diff', 0.0)) * momentum_scalar,
+            'l5_goals_for_diff': h_l5.get('goals_for', 3.0) - a_l5.get('goals_for', 3.0),
+            'l5_goals_against_diff': a_l5.get('goals_against', 3.0) - h_l5.get('goals_against', 3.0),
+            'l5_xg_for_diff': (h_l5.get('xg_for', 2.5) - a_l5.get('xg_for', 2.5)) * momentum_scalar,
+            'l5_xg_against_diff': (a_l5.get('xg_against', 2.5) - h_l5.get('xg_against', 2.5)) * momentum_scalar,
+            'l5_shots_diff': h_l5.get('shots', 30.0) - a_l5.get('shots', 30.0),
+            'l5_corsi_diff': h_l5.get('corsi_pct', 50.0) - a_l5.get('corsi_pct', 50.0),
+            'l5_pdo_diff': h_l5.get('pdo', 100.0) - a_l5.get('pdo', 100.0),
+            'h_pdo_regress': 100.0 - (h_l5.get('pdo', 100.0) - a_l5.get('pdo', 100.0)),
+            'l5_l10_xg_blend': (0.6 * (h_l5.get('xg_diff', 0.0) - a_l5.get('xg_diff', 0.0)) + 0.4 * (h_l10.get('xg_diff', 0.0) - a_l10.get('xg_diff', 0.0))) * momentum_scalar,
+            'l5_l10_goal_blend': 0.6 * (h_l5.get('goal_diff', 0.0) - a_l5.get('goal_diff', 0.0)) + 0.4 * (h_l10.get('goal_diff', 0.0) - a_l10.get('goal_diff', 0.0)),
+            'venue_momentum_diff': h_home_l5.get('goal_diff', 0.0) - a_away_l5.get('goal_diff', 0.0),
             
             # Special Teams (Matchup-Adjusted Phase 3)
-            'l5_pp_diff': h_l5.get('pp_pct', 20) - a_l5.get('pp_pct', 20),
-            'l5_pk_diff': h_l5.get('pk_pct', 80) - a_l5.get('pk_pct', 80),
-            'l5_st_net': (h_l5.get('pp_pct', 20) + h_l5.get('pk_pct', 80)) - (a_l5.get('pp_pct', 20) + a_l5.get('pk_pct', 80)),
-            'h_pp_edge': h_l5.get('pp_pct', 20) - a_l5.get('pk_pct', 80), # Home PP vs Away PK
-            'a_pp_edge': a_l5.get('pp_pct', 20) - h_l5.get('pk_pct', 80), # Away PP vs Home PK
+            'l5_pp_diff': h_l5.get('pp_pct', 20.0) - a_l5.get('pp_pct', 20.0),
+            'l5_pk_diff': h_l5.get('pk_pct', 80.0) - a_l5.get('pk_pct', 80.0),
+            'l5_st_net': (h_l5.get('pp_pct', 20.0) - (100.0 - a_l5.get('pk_pct', 80.0))) - (a_l5.get('pp_pct', 20.0) - (100.0 - h_l5.get('pk_pct', 80.0))),
+            'st_leverage_diff': ((h_l5.get('pp_pct', 20.0) * (100.0 - a_l5.get('pk_pct', 80.0))) - (a_l5.get('pp_pct', 20.0) * (100.0 - h_l5.get('pk_pct', 80.0)))) / 1000.0,
+            'tight_game_leverage': (((home_elo + tracker.elo.ha) - away_elo) / 100.0) * 0.4 + (home_rest - away_rest) * 0.3 + (h_finish - a_finish) * 0.3,
+            'h_pp_edge': h_l5.get('pp_pct', 20.0) - a_l5.get('pk_pct', 80.0), # Home PP vs Away PK
+            'a_pp_edge': a_l5.get('pp_pct', 20.0) - h_l5.get('pk_pct', 80.0), # Away PP vs Home PK
             'h_discipline_target': a_l5.get('pim', 8.0), # How many PIMs does opponent take?
             'a_discipline_target': h_l5.get('pim', 8.0),
             
@@ -761,17 +900,18 @@ class MetaEnsemblePredictor:
             'h_3_in_4': 1 if tracker.get_game_count_in_window(home_team, datetime.now(), 4) >= 3 else 0,
             'a_3_in_4': 1 if tracker.get_game_count_in_window(away_team, datetime.now(), 4) >= 3 else 0,
             
-            # Technical Metrics
-            'l5_rush_diff': h_l5.get('rush', 2) - a_l5.get('rush', 2),
-            'l5_nzt_diff': h_l5.get('nzt', 5) - a_l5.get('nzt', 5),
-            'l5_ozs_diff': h_l5.get('ozs', 10) - a_l5.get('ozs', 10),
-            'l5_hdc_diff': h_l5.get('hdc', 5) - a_l5.get('hdc', 5),
-            'l5_pizza_diff': h_l5.get('pizzas', 2) - a_l5.get('pizzas', 2),
+            # Technical Metrics (Symmetric)
+            'l5_rush_diff': h_l5.get('rush', 2.0) - a_l5.get('rush', 2.0),
+            'l5_nzt_diff': h_l5.get('nzt', 5.0) - a_l5.get('nzt', 5.0),
+            'l5_ozs_diff': h_l5.get('ozs', 10.0) - a_l5.get('ozs', 10.0),
+            'l5_dzs_diff': a_l5.get('dzs', 10.0) - h_l5.get('dzs', 10.0),
+            'l5_hdc_diff': h_l5.get('hdc', 5.0) - a_l5.get('hdc', 5.0),
+            'l5_pizza_diff': a_l5.get('pizzas', 2.0) - h_l5.get('pizzas', 2.0),
             
             # Phase 13: Tactical Signals
-            'l5_royal_road_diff': h_l5.get('royal_road', 1) - a_l5.get('royal_road', 1),
-            'l5_pressure_diff': h_l5.get('pressure', 2) - a_l5.get('pressure', 2),
-            'l5_rebound_diff': h_l5.get('rebounds', 1) - a_l5.get('rebounds', 1),
+            'l5_royal_road_diff': h_l5.get('royal_road', 1.0) - a_l5.get('royal_road', 1.0),
+            'l5_pressure_diff': h_l5.get('pressure', 2.0) - a_l5.get('pressure', 2.0),
+            'l5_rebound_diff': h_l5.get('rebounds', 1.0) - a_l5.get('rebounds', 1.0),
             'l5_lateral_diff': h_l5.get('lateral', 5.0) - a_l5.get('lateral', 5.0),
             
             # Phase 15: Momentum Features
@@ -785,12 +925,13 @@ class MetaEnsemblePredictor:
             'a_comeback_rate': tracker.get_rolling_rate(away_team, 'trailed_after_p2', 'won_game', window=20),
 
             # Phase 18 Features
-            'l5_nzt_possession_diff': h_l5.get('nzt_possession', 50) - a_l5.get('nzt_possession', 50),
-            'l5_ca_shots_diff': h_l5.get('ca_shots', 0) - a_l5.get('ca_shots', 0),
-            'l5_rush_sv_pct_diff': h_l5.get('rush_sv_pct', 90) - a_l5.get('rush_sv_pct', 90),
+            'l5_nzt_possession_diff': h_l5.get('nzt_possession', 50.0) - a_l5.get('nzt_possession', 50.0),
+            'l5_ca_shots_diff': a_l5.get('ca_shots', 0.0) - h_l5.get('ca_shots', 0.0),
+            'l5_rush_sv_pct_diff': h_l5.get('rush_sv_pct', 90.0) - a_l5.get('rush_sv_pct', 90.0),
             
             # Venue Indicators
-            'home_venue_goal_diff': h_home_l5.get('goal_diff', 0),
+            'home_venue_goal_diff': h_home_l5.get('goal_diff', 0.0),
+            'away_venue_goal_diff': a_away_l5.get('goal_diff', 0.0),
             # Phase 14: Season-Phase Context
             'season_month': datetime.now().month,
             'is_late_season': 1 if datetime.now().month in [3, 4] else 0,
@@ -800,8 +941,6 @@ class MetaEnsemblePredictor:
             # Phase 4: Travel Jet Lag (TZ Delta)
             'tz_delta': TEAM_TIMEZONES.get(away_team, -5) - TEAM_TIMEZONES.get(home_team, -5),
             
-            # Venue Specific
-            
             # Strength of Schedule (SoS)
             'home_sos': tracker.get_sos(home_team, 5),
             'away_sos': tracker.get_sos(away_team, 5),
@@ -809,24 +948,16 @@ class MetaEnsemblePredictor:
             # Stability
             'l5_std_diff': tracker.get_rolling_std(home_team, 5) - tracker.get_rolling_std(away_team, 5),
             
-            'l10_goal_diff': h_l10.get('goal_diff', 0) - a_l10.get('goal_diff', 0),
+            'l10_goal_diff': h_l10.get('goal_diff', 0.0) - a_l10.get('goal_diff', 0.0),
+            'l10_xg_diff': (h_l10.get('xg_diff', 0.0) - a_l10.get('xg_diff', 0.0)) * momentum_scalar,
             
             # Interaction Features (Phase 8 Advanced DS)
             'elo_rest_inter': ((home_elo + self.history_tracker.elo.ha) - away_elo) * (home_rest - away_rest),
             'speed_finish_inter': (self.edge_profiles.get(home_team, {}).get('edge_top_speed', 21.0) - self.edge_profiles.get(away_team, {}).get('edge_top_speed', 21.0)) * (h_finish - a_finish),
             
-            # Phase 14: Season-Phase Context
-            'season_month': datetime.now().month,
-            'is_late_season': 1 if datetime.now().month in [3, 4] else 0,
-            'h_desperation': self.standings.calculate_desperation_index(home_team),
-            'a_desperation': self.standings.calculate_desperation_index(away_team),
-            
             # Raw Components for Phase 11/12 Symbolic Features
-            # Phase 48: Apply momentum_scalar to reduce xG-heavy bias during playoffs
-            'l5_xg_diff': (h_l5.get('xg_diff', 0) - a_l5.get('xg_diff', 0)) * momentum_scalar,
-            'l10_xg_diff': (h_l10.get('xg_diff', 0) - a_l10.get('xg_diff', 0)) * momentum_scalar,
-            'home_xg': h_l5.get('xg_avg', 2.5) * momentum_scalar,
-            'away_xg': a_l5.get('xg_avg', 2.5) * momentum_scalar,
+            'home_xg': h_l5.get('xg_for', 2.5) * momentum_scalar,
+            'away_xg': a_l5.get('xg_for', 2.5) * momentum_scalar,
             'home_elo': home_elo + tracker.elo.ha,
             'away_elo': away_elo,
             'home_win_rate': self.team_encodings.get('home_map', {}).get(home_team, self.team_encodings.get('home_prior', 0.5)),
@@ -835,12 +966,19 @@ class MetaEnsemblePredictor:
             # Phase 9: Automated Interaction Discovery
             'home_win_rate_away_sos': self.team_encodings.get('home_map', {}).get(home_team, 0.5) * self.history_tracker.get_sos(away_team, 5),
             'away_b2b_home_strength': (1 if away_rest == 1 else 0) * h_finish,
-            'l10_xg_st_inter': (h_l10.get('xg_diff', 0) - a_l10.get('xg_diff', 0)) * ((h_l5.get('pp_pct', 20) + h_l5.get('pk_pct', 80)) - (a_l5.get('pp_pct', 20) + a_l5.get('pk_pct', 80))),
+            'l10_xg_st_inter': (h_l10.get('xg_diff', 0.0) - a_l10.get('xg_diff', 0.0)) * ((h_l5.get('pp_pct', 20.0) + h_l5.get('pk_pct', 80.0)) - (a_l5.get('pp_pct', 20.0) + a_l5.get('pk_pct', 80.0))),
             
             # Phase 11: Symbolic Feature Discovery
-            'pressure_index': (h_l5.get('xg_avg', 2.5) / (a_l5.get('xg_avg', 2.5) + 0.1)) * ((home_elo + self.history_tracker.elo.ha) / (away_elo + 0.1)),
-            'xg_efficiency': (h_l5.get('xg_avg', 2.5) * (self.history_tracker.get_sos(home_team, 5) / 1500)) - (a_l5.get('xg_avg', 2.5) * (self.history_tracker.get_sos(away_team, 5) / 1500)),
-            'power_momentum': ((home_elo + self.history_tracker.elo.ha) - away_elo) * (h_l10.get('xg_diff', 0) - a_l10.get('xg_diff', 0))
+            'pressure_index': (h_l5.get('xg_for', 2.5) / (a_l5.get('xg_for', 2.5) + 0.1)) * ((home_elo + self.history_tracker.elo.ha) / (away_elo + 0.1)),
+            'xg_efficiency': (h_l5.get('xg_for', 2.5) * (self.history_tracker.get_sos(home_team, 5) / 1500)) - (a_l5.get('xg_for', 2.5) * (self.history_tracker.get_sos(away_team, 5) / 1500)),
+            'power_momentum': ((home_elo + self.history_tracker.elo.ha) - away_elo) * (h_l10.get('xg_diff', 0.0) - a_l10.get('xg_diff', 0.0)),
+
+            # Phase 20: Environmental & Physical Hypoxia / Circadian / OT Features
+            'hypoxia_fatigue': (max(0, TEAM_ELEVATIONS.get(home_team, 500) - TEAM_ELEVATIONS.get(away_team, 500)) / 1000.0) * (1.5 if away_rest <= 1 else 1.0),
+            'eastbound_lag': max(0, TEAM_TIMEZONES.get(home_team, -5) - TEAM_TIMEZONES.get(away_team, -5)) * (1.5 if away_rest <= 1 else 1.0),
+            'westbound_lag': max(0, TEAM_TIMEZONES.get(away_team, -5) - TEAM_TIMEZONES.get(home_team, -5)) * 0.5,
+            'ot_3v3_diff': (self.edge_profiles.get(home_team, {}).get('edge_top_speed', 21.0) * self.edge_profiles.get(home_team, {}).get('edge_burst_avg', 0.5) * h_finish) - (self.edge_profiles.get(away_team, {}).get('edge_top_speed', 21.0) * self.edge_profiles.get(away_team, {}).get('edge_burst_avg', 0.5) * a_finish),
+            'penalty_draw_arb': (h_l5.get('rush', 2.0) * (a_l5.get('pim', 8.0) / 8.0)) - (a_l5.get('rush', 2.0) * (h_l5.get('pim', 8.0) / 8.0))
         }
         
         # --- Helper for dynamic feature alignment ---
@@ -927,20 +1065,21 @@ class MetaEnsemblePredictor:
                                 prob = float(y0 + t * (y1 - y0))
                                 break
                     prob = float(max(1e-6, min(1.0 - 1e-6, prob)))
-                    
-                    # Platt scaling post-isotonic for 0.7-0.8 decile
-                    if 0.7 <= prob <= 0.8:
-                        import numpy as np
-                        # Logistic calibration: f(x) = 1 / (1 + exp(-A*(x - B) + C))
-                        prob = 1.0 / (1.0 + np.exp(-1.5 * (prob - 0.75) + 0.5)) 
-                        
-                    # Monitor via events
-                    with open("events.jsonl", "a") as f:
-                        f.write(json.dumps({"event": "calibrated_prob", "prob": prob, "is_playoff": is_playoff, "date": date_str}) + "\n")
 
             except Exception:
                 pass
             
+            # 4b. Toss-Up Specialist Model Blend (breaks 50/50 deadlocks using depth-1 additive micro signals)
+            if self.toss_up_model is not None and abs(prob - 0.50) <= 0.055:
+                try:
+                    df_toss = _get_aligned_df(self.toss_up_model, regime_feats=active_feats)
+                    toss_prob = float(self.toss_up_model.predict_proba(df_toss)[0][1])
+                    # Decisively resolve coin-flip matchups with the specialist
+                    prob = float(0.40 * prob + 0.60 * toss_prob)
+                    prob = float(max(1e-6, min(1.0 - 1e-6, prob)))
+                except Exception as e:
+                    print(f"⚠️ Toss-up model inference warning: {e}")
+
             away_prob = (1 - prob) * 100
             home_prob = prob * 100
             
@@ -954,99 +1093,49 @@ class MetaEnsemblePredictor:
                 except Exception as e:
                     print(f"Margin prediction error: {e}")
 
-            # 5b. Scoreline: prefer direct home/away goals models when available.
+            # 5b. Scoreline: Bivariate Poisson Joint Score Engine
             predicted_total = None
             predicted_home_goals = None
             predicted_away_goals = None
+            top_3_scores = []
+            total_over_5_5 = None
+            total_over_6_5 = None
+            pl_h_minus_1_5 = None
+            pl_a_minus_1_5 = None
+            
             try:
+                h = 3.1
+                a = 2.9
                 if self.home_goals_model is not None and self.away_goals_model is not None:
                     df_h = _get_aligned_df(self.home_goals_model, regime_feats=active_feats)
                     df_a = _get_aligned_df(self.away_goals_model, regime_feats=active_feats)
-                    
                     h = float(self.home_goals_model.predict(df_h)[0])
                     a = float(self.away_goals_model.predict(df_a)[0])
-                    # Clamp predicted means
-                    h = float(max(0.05, min(12.0, h)))
-                    a = float(max(0.05, min(12.0, a)))
-
-                    # If we have NB dispersion calibration, use NB mode (more realistic variance than rounding means).
-                    nb_size = None
-                    try:
-                        if isinstance(self._scoreline_calibration, dict):
-                            nb_size = self._scoreline_calibration.get("total_goals_nb_size")
-                        nb_size = float(nb_size) if nb_size is not None else None
-                    except Exception:
-                        nb_size = None
-
-                    def _nb_mode(mu: float, size: Optional[float]) -> int:
-                        if size is None or size <= 1.0:
-                            return int(round(mu))
-                        r = float(size)
-                        p = r / (r + float(mu))
-                        # mode = floor((r-1)*(1-p)/p) for r>1
-                        m = int(math.floor(((r - 1.0) * (1.0 - p)) / max(1e-9, p)))
-                        return int(m)
-
-                    predicted_home_goals = int(max(0, min(12, _nb_mode(h, nb_size))))
-                    predicted_away_goals = int(max(0, min(12, _nb_mode(a, nb_size))))
-                    predicted_total = float(predicted_home_goals + predicted_away_goals)
-            except Exception as e:
-                print(f"Home/away goals prediction error: {e}")
-                predicted_home_goals = None
-                predicted_away_goals = None
-                predicted_total = None
-
-            # Fallback: total-goals model + margin split
-            if predicted_total is None:
-                try:
-                    if self.total_goals_model is not None:
-                        df_tg = _get_aligned_df(self.total_goals_model, regime_feats=active_feats)
-                        predicted_total = float(self.total_goals_model.predict(df_tg)[0])
-                except Exception as e:
-                    print(f"Total goals prediction error: {e}")
-                    predicted_total = None
-
-                if predicted_total is not None:
-                    predicted_total = float(max(2.0, min(12.0, predicted_total)))
-                    h = (predicted_total + float(predicted_margin)) / 2.0
-                    a = (predicted_total - float(predicted_margin)) / 2.0
-                    h = float(max(0.0, h))
-                    a = float(max(0.0, a))
-                    predicted_home_goals = int(max(0, min(6, round(h))))
-                    predicted_away_goals = int(max(0, min(6, round(a))))
-
-            # Ensure no ties in displayed final: break ties toward predicted winner.
-            if predicted_home_goals is not None and predicted_away_goals is not None:
-                if predicted_home_goals == predicted_away_goals:
-                    if home_prob >= away_prob:
-                        predicted_home_goals += 1
-                    else:
-                        predicted_away_goals += 1
+                elif self.total_goals_model is not None:
+                    df_tg = _get_aligned_df(self.total_goals_model, regime_feats=active_feats)
+                    tot = float(self.total_goals_model.predict(df_tg)[0])
+                    h = (tot + float(predicted_margin)) / 2.0
+                    a = (tot - float(predicted_margin)) / 2.0
+                
+                # Clamp predicted goal intensities
+                h = float(max(0.5, min(7.5, h)))
+                a = float(max(0.5, min(7.5, a)))
+                
+                # Generate optimal scoreline and market probabilities
+                biv = self.compute_bivariate_score_distribution(h, a, home_favored=(home_prob >= away_prob))
+                predicted_home_goals = biv["best_home_goals"]
+                predicted_away_goals = biv["best_away_goals"]
                 predicted_total = float(predicted_home_goals + predicted_away_goals)
-
-            # Attach dispersion hint for downstream consumers (optional).
-            nb_size = None
-            try:
-                if isinstance(self._scoreline_calibration, dict):
-                    nb_size = self._scoreline_calibration.get("total_goals_nb_size")
-            except Exception:
-                nb_size = None
-
-            # Totals distribution (NB) -> implied O/U probabilities for decision support
-            total_over_5_5 = None
-            total_over_6_5 = None
-            try:
-                if predicted_total is not None and nb_size is not None:
-                    mu_total = float(max(0.1, min(20.0, float(predicted_total))))
-                    sz = float(nb_size)
-                    from scipy.stats import nbinom
-                    # P(X > k) = 1 - P(X <= k)
-                    # p = r / (r + mu)
-                    p_nb = sz / (sz + mu_total)
-                    total_over_5_5 = float(1.0 - nbinom.cdf(5, sz, p_nb))
-                    total_over_6_5 = float(1.0 - nbinom.cdf(6, sz, p_nb))
-            except Exception:
-                pass
+                top_3_scores = biv["top_3_scores"]
+                total_over_5_5 = biv["total_over_5_5"]
+                total_over_6_5 = biv["total_over_6_5"]
+                pl_h_minus_1_5 = biv["puckline_home_minus_1_5"]
+                pl_a_minus_1_5 = biv["puckline_away_minus_1_5"]
+            except Exception as e:
+                print(f"Bivariate score prediction error: {e}")
+                predicted_home_goals = 3 if home_prob >= away_prob else 2
+                predicted_away_goals = 2 if home_prob >= away_prob else 3
+                predicted_total = 5.0
             
             # 6. Meta-Confidence Estimation
             confidence_tier = "Standard"
@@ -1094,11 +1183,14 @@ class MetaEnsemblePredictor:
                 'predicted_total_goals': predicted_total,
                 'predicted_home_goals': predicted_home_goals,
                 'predicted_away_goals': predicted_away_goals,
-                'scoreline_nb_size': nb_size,
+                'top_3_scores': top_3_scores,
+                'scoreline_nb_size': self._scoreline_calibration.get("total_goals_nb_size") if isinstance(self._scoreline_calibration, dict) else None,
                 'total_over_5_5': total_over_5_5,
                 'total_under_5_5': (None if total_over_5_5 is None else float(1.0 - total_over_5_5)),
                 'total_over_6_5': total_over_6_5,
                 'total_under_6_5': (None if total_over_6_5 is None else float(1.0 - total_over_6_5)),
+                'puckline_home_minus_1_5': pl_h_minus_1_5,
+                'puckline_away_minus_1_5': pl_a_minus_1_5,
                 'confidence_tier': confidence_tier,
                 'p1_home_prob': p1_win_prob * 100,
                 # Fatigue signals for downstream score model calibration/OT modeling
@@ -1111,9 +1203,9 @@ class MetaEnsemblePredictor:
                 'away_games_7d': away_games_7d,
                 'home_games_7d': home_games_7d,
                 'away_travel_miles': away_travel,
-                'home_travel_miles': home_travel,
                 'away_goalie_shots_30d': float(away_shots_30d),
                 'home_goalie_shots_30d': float(home_shots_30d),
+                'feature_data': feature_data,
                 'prediction_type': 'xgboost_ml'
             }
         except Exception as e:
@@ -1121,10 +1213,15 @@ class MetaEnsemblePredictor:
             return None
     
     def get_injury_impact(self, team: str) -> float:
-        """Calculate injury impact multiplier (0.90 - 1.0) using RotoWire data"""
+        """Calculate injury impact multiplier (0.90 - 1.0) using cached RotoWire data"""
         try:
-            # Scrape latest data
-            data = self.rotowire.scrape_daily_data()
+            now = datetime.now()
+            # Cache rotowire scrape for 15 minutes to avoid redundant network requests
+            if not hasattr(self, '_rotowire_cache') or self._rotowire_cache is None or (now - getattr(self, '_rotowire_cache_time', datetime.min)).total_seconds() > 900:
+                self._rotowire_cache = self.rotowire.scrape_daily_data()
+                self._rotowire_cache_time = now
+            
+            data = self._rotowire_cache or {}
             impact = 1.0
             
             # Find the team's injuries in the scraped data
@@ -1146,8 +1243,8 @@ class MetaEnsemblePredictor:
                             impact -= 0.005
             
             return max(0.88, impact) # Cap impact at 12% reduction
-        except Exception as e:
-            print(f"Error calculating injury impact for {team}: {e}")
+        except Exception:
+            return 1.0
             return 1.0
     
     def predict(self, away_team: str, home_team: str, 
@@ -1247,58 +1344,129 @@ class MetaEnsemblePredictor:
         if not predictions:
             raise Exception("All prediction methods failed")
         
-        # Weighted ensemble calculation
-        total_weight = sum(weights)
-        ensemble_away = sum(p['away_prob'] * w for p, w in zip(predictions, weights)) / total_weight
-        ensemble_home = sum(p['home_prob'] * w for p, w in zip(predictions, weights)) / total_weight
+        # Weighted ensemble calculation in Logit Space
+        logits = []
+        eff_weights = []
+        for p, w in zip(predictions, weights):
+            ph = p.get('home_prob', 50.0)
+            pa = p.get('away_prob', 50.0)
+            s = float(ph) + float(pa)
+            p_norm = (float(ph) / s) if s > 0 else 0.5
+            p_norm = max(0.01, min(0.99, p_norm))
+            z = math.log(p_norm / (1.0 - p_norm))
+            logits.append(z)
+            eff_weights.append(max(0.01, float(w)))
 
-        # --- Final shrink toward Elo champion (stability + accuracy) ---
-        # If recent evaluation shows Elo outperforming XGB, we shrink the final
-        # probabilities toward Elo to reduce overconfident misses.
-        try:
-            alpha = float(getattr(self, "_shrink_alpha", 1.0))
-            if alpha < 0.999:
-                elo_home = float(self.history_tracker.elo.get_win_prob(home_team, away_team)) * 100.0
-                elo_away = 100.0 - elo_home
-                ensemble_home = alpha * ensemble_home + (1.0 - alpha) * elo_home
-                ensemble_away = alpha * ensemble_away + (1.0 - alpha) * elo_away
-        except Exception:
-            pass
-        
-        # Apply Contextual Factors (Phase 4 Blending)
-        # 1. Injury Impact
+        total_weight = sum(eff_weights) if eff_weights else 1.0
+        base_logit = sum(z * w for z, w in zip(logits, eff_weights)) / total_weight
+
+        # Apply Contextual Factors in Logit Space
+        # 1. Injury Impact (log odds ratio)
         h_health = self.get_injury_impact(home_team) if not home_injuries else (1.0 - self._team_injury_impact(home_injuries))
         a_health = self.get_injury_impact(away_team) if not away_injuries else (1.0 - self._team_injury_impact(away_injuries))
-        
-        # 2. Travel Impact
+        h_health = max(0.5, float(h_health))
+        a_health = max(0.5, float(a_health))
+        delta_inj = math.log(h_health / a_health)
+
+        # 2. Travel & Fatigue Impact
         h_travel = self.history_tracker.get_travel_distance(home_team, home_team)
         a_travel = self.history_tracker.get_travel_distance(away_team, home_team)
-        
-        # Phase 5: Road Warrior Mitigation
         h_is_rw = self.travel_archetypes.get(home_team, {}).get('is_road_warrior', False)
         a_is_rw = self.travel_archetypes.get(away_team, {}).get('is_road_warrior', False)
         
-        # Every 1000 miles reduction takes ~0.5% (was 1%) from prob
         h_fatigue = max(0.95, 1.0 - (h_travel / 20000.0))
         a_fatigue = max(0.95, 1.0 - (a_travel / 20000.0))
-        
-        # If a team is a Road Warrior, they suffer 50% less fatigue penalty
         if h_is_rw and h_fatigue < 1.0:
             h_fatigue = 1.0 - ((1.0 - h_fatigue) * 0.5)
         if a_is_rw and a_fatigue < 1.0:
             a_fatigue = 1.0 - ((1.0 - a_fatigue) * 0.5)
-        
-        # Combined Impact Ratio
-        impact_ratio = (h_health * h_fatigue) / (a_health * a_fatigue)
-        ensemble_home *= impact_ratio
-        
-        # 3. HDSv% Signal (Phase 4)
+        delta_fatigue = math.log(max(0.5, h_fatigue) / max(0.5, a_fatigue))
+
+        # 3. Goalie HDSv% Signal
         h_hdsv = self.history_tracker.goalies.get_rolling_hdsv(home_goalie)
         a_hdsv = self.history_tracker.goalies.get_rolling_hdsv(away_goalie)
-        hdsv_bonus = (h_hdsv - a_hdsv) * 10.0 # 1 point diff = 1% prob shift
-        ensemble_home += hdsv_bonus
-        ensemble_away -= hdsv_bonus
-        
+        delta_hdsv = float(np.clip((h_hdsv - a_hdsv) * 0.5, -0.3, 0.3))
+
+        # Total combined logit
+        total_logit = base_logit + delta_inj + delta_fatigue + delta_hdsv
+
+        # Invert logit to get calibrated probability
+        calibrated_home_p = 1.0 / (1.0 + math.exp(-total_logit))
+
+        # Shrinkage toward Elo / baseline for stability
+        try:
+            alpha = float(getattr(self, "_shrink_alpha", 1.0))
+            if alpha < 0.999:
+                elo_home_p = float(self.history_tracker.elo.get_win_prob(home_team, away_team))
+                calibrated_home_p = alpha * calibrated_home_p + (1.0 - alpha) * elo_home_p
+        except Exception:
+            pass
+
+        calibrated_home_p = float(max(0.05, min(0.95, calibrated_home_p)))
+        calibrated_away_p = 1.0 - calibrated_home_p
+
+        ensemble_home = calibrated_home_p * 100.0
+        ensemble_away = calibrated_away_p * 100.0
+
+        # 3b. Toss-Up Micro-Leverage Index (TMLI: Calibrated with Physical & Tactical Signals)
+        if abs(ensemble_home - 50.0) <= 5.5:
+            fd = xgb_pred.get('feature_data', {}) if xgb_pred else {}
+            pp_diff = float(fd.get('l5_pp_diff', 0.0))
+            st_lev = float(fd.get('st_leverage_diff', 0.0))
+            st_net = float(fd.get('l5_st_net', 0.0))
+            h_b2b = (xgb_pred.get('home_back_to_back', 0) == 1) if xgb_pred else False
+            a_b2b = (xgb_pred.get('away_back_to_back', 0) == 1) if xgb_pred else False
+            b2b_val = 1.0 if (a_b2b and not h_b2b) else (-1.0 if (h_b2b and not a_b2b) else 0.0)
+            h_rest = float(xgb_pred.get('home_rest_value', 2.0)) if xgb_pred else 2.0
+            a_rest = float(xgb_pred.get('away_rest_value', 2.0)) if xgb_pred else 2.0
+            rest_diff = h_rest - a_rest
+            gsax_diff = float(fd.get('shrunk_gsax_diff', fd.get('gsax_diff', 0.0)))
+            pizza_diff = float(fd.get('l5_pizza_diff', 0.0))
+            goals_for_diff = float(fd.get('l5_goals_for_diff', 0.0))
+            nzt_diff = float(fd.get('l5_nzt_diff', 0.0))
+            finish_xg = float(fd.get('finish_adj_xg_diff', 0.0))
+            speed_finish = float(fd.get('speed_finish_inter', 0.0))
+            corsi_diff = float(fd.get('l5_corsi_diff', 0.0))
+            pdo_diff = float(fd.get('l5_pdo_diff', 0.0))
+            
+            # Physical & environmental features
+            hypoxia_fatigue = float(fd.get('hypoxia_fatigue', 0.0))
+            eastbound_lag = float(fd.get('eastbound_lag', 0.0))
+            westbound_lag = float(fd.get('westbound_lag', 0.0))
+            ot_3v3_diff = float(fd.get('ot_3v3_diff', 0.0))
+            penalty_draw_arb = float(fd.get('penalty_draw_arb', 0.0))
+
+            # Multi-dimensional logit micro-leverage tie-breaker (TMLI v2)
+            tmli_logit = (
+                pp_diff * 0.02498 +
+                st_lev * 0.05443 +
+                st_net * 0.14842 +
+                b2b_val * 0.05965 +
+                rest_diff * (-0.08504) +
+                gsax_diff * 0.01665 +
+                pizza_diff * (-0.00611) +
+                goals_for_diff * (-0.02317) +
+                nzt_diff * (-0.09034) +
+                finish_xg * 0.12120 +
+                speed_finish * 0.19680 +
+                corsi_diff * 0.01163 +
+                (-pdo_diff) * 0.03851 +
+                hypoxia_fatigue * (-0.04083) +
+                eastbound_lag * 0.07980 +
+                (-westbound_lag) * 0.06691 +
+                ot_3v3_diff * 0.04013 +
+                penalty_draw_arb * 0.02284 +
+                0.11682 # Calibrated baseline home bias
+            )
+
+            # Apply micro-leverage adjustment directly to logit space
+            total_logit += tmli_logit
+            calibrated_home_p = 1.0 / (1.0 + math.exp(-total_logit))
+            calibrated_home_p = float(max(0.05, min(0.95, calibrated_home_p)))
+            calibrated_away_p = 1.0 - calibrated_home_p
+            ensemble_home = calibrated_home_p * 100.0
+            ensemble_away = calibrated_away_p * 100.0
+
         # 4. Market Edge Calculation (+EV Tracking - Phase 16)
         edge_away = 0.0
         edge_home = 0.0
@@ -1307,27 +1475,27 @@ class MetaEnsemblePredictor:
                 v_away = vegas_odds.get('away_ml')
                 v_home = vegas_odds.get('home_ml')
                 if v_away and v_home:
-                    # Convert to implied probability
                     implied_away = 100 / (v_away + 100) if v_away > 0 else abs(v_away) / (abs(v_away) + 100)
                     implied_home = 100 / (v_home + 100) if v_home > 0 else abs(v_home) / (abs(v_home) + 100)
-                    
-                    # Calculate Edge: (Model Prob - Implied Prob) / Implied Prob * 100
                     edge_away = (ensemble_away / 100.0 - implied_away) / implied_away * 100 if implied_away > 0 else 0
                     edge_home = (ensemble_home / 100.0 - implied_home) / implied_home * 100 if implied_home > 0 else 0
-            except: pass
+            except Exception:
+                pass
 
         # 5. Final Aggregation
         confidence = max(ensemble_away, ensemble_home) / 100
         agreement_score = self._calculate_agreement(predictions, away_team, home_team)
         
-        # Phase 10/12: Signal Alignment
-        confidence_tier = xgb_pred.get('confidence_tier', 'Standard') if xgb_pred else "Standard"
-        
-        # If margin and win prob both agree on a blowout, bump confidence
-        if xgb_margin > 1.5 and ensemble_home > 55:
+        # Quant 4-Tier Confidence Classification
+        fav_prob = max(ensemble_home, ensemble_away)
+        if fav_prob >= 64.0 or (fav_prob >= 60.0 and abs(xgb_margin) >= 1.2):
+            confidence_tier = "💎 Elite Lock"
+        elif fav_prob >= 56.5 or (fav_prob >= 54.0 and abs(xgb_margin) >= 0.8):
             confidence_tier = "🔥 High Confidence"
-        elif xgb_margin < -1.5 and ensemble_away > 55:
-            confidence_tier = "🔥 High Confidence"
+        elif fav_prob >= 52.5:
+            confidence_tier = "⚖️ Moderate Value"
+        else:
+            confidence_tier = "🎲 Toss-Up"
         
         # Phase 17: Bankroll Management & Kelly Criterion
         suggested_units = 0.0
@@ -1352,6 +1520,97 @@ class MetaEnsemblePredictor:
                     suggested_units = round(suggested_units, 1)
             except: pass
 
+        # 5. Systematic Upset & Trap Game Detection
+        is_upset_alert = False
+        trap_reasons = []
+        upset_prob = 0.0
+        
+        # Check if Favorite is falling into a known statistical trap
+        fav_side = "home" if ensemble_home >= ensemble_away else "away"
+        fav_prob = max(ensemble_home, ensemble_away)
+        
+        if fav_prob >= 53.0:
+            h_b2b = (xgb_pred.get('home_back_to_back', 0) == 1) if xgb_pred else False
+            a_b2b = (xgb_pred.get('away_back_to_back', 0) == 1) if xgb_pred else False
+            h_rest = float(xgb_pred.get('home_rest_value', 2.0)) if xgb_pred else 2.0
+            a_rest = float(xgb_pred.get('away_rest_value', 2.0)) if xgb_pred else 2.0
+            a_travel = float(xgb_pred.get('away_travel_miles', 0.0)) if xgb_pred else 0.0
+            
+            if fav_side == "home":
+                if h_b2b:
+                    upset_prob += 0.22
+                    trap_reasons.append(f"{home_team} playing on 0 days rest (Back-to-Back)")
+                if a_rest >= 3 and h_rest <= 1:
+                    upset_prob += 0.16
+                    trap_reasons.append(f"{away_team} rest advantage (+{int(a_rest - h_rest)} days)")
+            else: # Away favorite
+                if a_b2b:
+                    upset_prob += 0.25
+                    trap_reasons.append(f"Road favorite {away_team} playing on 0 days rest (Back-to-Back)")
+                if a_travel >= 1200:
+                    upset_prob += 0.12
+                    trap_reasons.append(f"Road fatigue ({int(a_travel)} travel miles)")
+                if h_rest >= 3 and a_rest <= 1:
+                    upset_prob += 0.16
+                    trap_reasons.append(f"Home underdog {home_team} rest advantage (+{int(h_rest - a_rest)} days)")
+            
+            # If high trap probability, trigger Upset Alert
+            if upset_prob >= 0.35:
+                is_upset_alert = True
+                confidence_tier = "🚨 High Risk Upset Alert"
+                # If extreme trap spot, adjust probabilities toward underdog
+                if upset_prob >= 0.45:
+                    if fav_side == "home":
+                        calibrated_home_p = float(max(0.40, calibrated_home_p - 0.06))
+                        calibrated_away_p = 1.0 - calibrated_home_p
+                    else:
+                        calibrated_away_p = float(max(0.40, calibrated_away_p - 0.06))
+                        calibrated_home_p = 1.0 - calibrated_away_p
+                    ensemble_home = calibrated_home_p * 100.0
+                    ensemble_away = calibrated_away_p * 100.0
+
+        # 6. Strict Winner-Scoreline Coherence & Dynamic Bivariate Scoreline
+        home_fav = (ensemble_home >= ensemble_away)
+        win_p = max(ensemble_home, ensemble_away) / 100.0
+        
+        # Expected pace conditioning via Continuous Tactical Telemetry & Empirical Bayes H2H Shrinkage
+        h_speed = self.edge_profiles.get(home_team, {}).get('edge_top_speed', 21.0) if hasattr(self, 'edge_profiles') and self.edge_profiles else 21.0
+        a_speed = self.edge_profiles.get(away_team, {}).get('edge_top_speed', 21.0) if hasattr(self, 'edge_profiles') and self.edge_profiles else 21.0
+        h_burst = self.edge_profiles.get(home_team, {}).get('edge_burst_avg', 0.5) if hasattr(self, 'edge_profiles') and self.edge_profiles else 0.5
+        a_burst = self.edge_profiles.get(away_team, {}).get('edge_burst_avg', 0.5) if hasattr(self, 'edge_profiles') and self.edge_profiles else 0.5
+        speed_burst_norm = ((h_speed * h_burst + a_speed * a_burst) / 2.0 - 10.5) / 1.5
+
+        h_finish = self.team_profiles.get(home_team, 1.0) if hasattr(self, 'team_profiles') and self.team_profiles else 1.0
+        a_finish = self.team_profiles.get(away_team, 1.0) if hasattr(self, 'team_profiles') and self.team_profiles else 1.0
+        finish_norm = (h_finish * a_finish - 1.0) / 0.15
+
+        base_clash_pace = 6.10 + 0.15 * speed_burst_norm + 0.10 * finish_norm
+        
+        # Empirical Bayes H2H Shrinkage (k=4.0 prior weight against base tactical clash)
+        shrunk_pace = self.history_tracker.get_h2h_pace(home_team, away_team, prior_weight=4.0, league_mean=base_clash_pace)
+        tot_pred = max(4.5, min(7.8, shrunk_pace))
+        
+        margin_pred = abs(xgb_margin) if xgb_margin else 2.6 * (win_p - 0.50)
+        
+        if home_fav:
+            lam_h = (tot_pred + margin_pred) / 2.0
+            lam_a = (tot_pred - margin_pred) / 2.0
+        else:
+            lam_a = (tot_pred + margin_pred) / 2.0
+            lam_h = (tot_pred - margin_pred) / 2.0
+            
+        biv = self.compute_bivariate_score_distribution(lam_h, lam_a, home_favored=home_fav, win_prob=win_p)
+        pred_h_goals = int(biv["best_home_goals"])
+        pred_a_goals = int(biv["best_away_goals"])
+        
+        # Enforce strict alignment between ensemble winner probability and predicted score
+        if home_fav and pred_h_goals <= pred_a_goals:
+            pred_h_goals = pred_a_goals + 1
+        elif (not home_fav) and pred_a_goals <= pred_h_goals:
+            pred_a_goals = pred_h_goals + 1
+                
+        pred_total_goals = pred_h_goals + pred_a_goals
+
         return {
             'away_team': away_team,
             'home_team': home_team,
@@ -1359,7 +1618,10 @@ class MetaEnsemblePredictor:
             'home_prob': ensemble_home,
             'predicted_winner': away_team if ensemble_away > ensemble_home else home_team,
             'prediction_confidence': max(ensemble_away, ensemble_home) / 100.0,
-            'confidence_tier': xgb_pred.get('confidence_tier', 'Standard') if xgb_pred else 'Standard',
+            'confidence_tier': confidence_tier,
+            'is_upset_alert': is_upset_alert,
+            'upset_probability': float(upset_prob),
+            'trap_reasons': trap_reasons,
             'predicted_margin': xgb_margin,
             'edge_away': edge_away,
             'edge_home': edge_home,
@@ -1381,9 +1643,16 @@ class MetaEnsemblePredictor:
             'home_travel_miles': xgb_pred.get('home_travel_miles', 0.0) if xgb_pred else 0.0,
             'away_goalie_shots_30d': xgb_pred.get('away_goalie_shots_30d', 0.0) if xgb_pred else 0.0,
             'home_goalie_shots_30d': xgb_pred.get('home_goalie_shots_30d', 0.0) if xgb_pred else 0.0,
-            'predicted_home_goals': xgb_pred.get('predicted_home_goals') if xgb_pred else None,
-            'predicted_away_goals': xgb_pred.get('predicted_away_goals') if xgb_pred else None,
-            'predicted_total_goals': xgb_pred.get('predicted_total_goals') if xgb_pred else None,
+            'predicted_home_goals': pred_h_goals,
+            'predicted_away_goals': pred_a_goals,
+            'predicted_total_goals': pred_total_goals,
+            'top_3_scorelines': biv.get('top_3_scores', []),
+            'total_over_5_5': biv.get('total_over_5_5'),
+            'total_under_5_5': (None if biv.get('total_over_5_5') is None else float(1.0 - biv.get('total_over_5_5'))),
+            'total_over_6_5': biv.get('total_over_6_5'),
+            'total_under_6_5': (None if biv.get('total_over_6_5') is None else float(1.0 - biv.get('total_over_6_5'))),
+            'puckline_home_minus_1_5': biv.get('puckline_home_minus_1_5'),
+            'puckline_away_minus_1_5': biv.get('puckline_away_minus_1_5'),
         }
     
     def _calculate_legacy_injury_impact(self, away_injuries: list, home_injuries: list) -> float:

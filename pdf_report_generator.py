@@ -263,25 +263,40 @@ class PostGameReportGenerator:
 
         return out
     
-    def _fetch_cached_logo_bytes(self, url: str) -> bytes | None:
-        """Cache remote logo image bytes to data/logo_cache/ for instant reuse."""
+    def _fetch_cached_logo_path(self, url: str) -> str | None:
+        """Cache remote logo image to data/logo_cache/ and return local file path."""
         try:
             import re
             from pathlib import Path
-            cache_dir = Path("data/logo_cache")
+            script_dir = Path(__file__).parent.absolute()
+            cache_dir = script_dir / "data" / "logo_cache"
             cache_dir.mkdir(parents=True, exist_ok=True)
             safe_name = re.sub(r'[^a-zA-Z0-9._-]', '_', url.split('/')[-1])
             cache_path = cache_dir / safe_name
             if cache_path.exists() and cache_path.stat().st_size > 0:
-                with open(cache_path, "rb") as f:
-                    return f.read()
-            resp = requests.get(url, timeout=5)
+                return str(cache_path)
+            headers = {
+                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                'Referer': 'https://www.nhl.com/'
+            }
+            resp = requests.get(url, headers=headers, timeout=5)
             if resp.status_code == 200 and resp.content:
                 with open(cache_path, "wb") as f:
                     f.write(resp.content)
-                return resp.content
+                return str(cache_path)
         except Exception as e:
             print(f"Failed to fetch or cache logo from {url}: {e}")
+        return None
+
+    def _fetch_cached_logo_bytes(self, url: str) -> bytes | None:
+        """Cache remote logo image bytes to data/logo_cache/ for instant reuse."""
+        path = self._fetch_cached_logo_path(url)
+        if path and os.path.exists(path):
+            try:
+                with open(path, "rb") as f:
+                    return f.read()
+            except Exception:
+                pass
         return None
 
     def create_header_image(self, game_data, game_id=None):
@@ -303,18 +318,25 @@ class PostGameReportGenerator:
                 
                 # Get team names with error handling
                 try:
-                    # Try new structure first (game_center.boxscore.awayTeam)
-                    if 'boxscore' in game_data['game_center']:
-                        away_team = game_data['game_center']['boxscore']['awayTeam']['abbrev']
-                        home_team = game_data['game_center']['boxscore']['homeTeam']['abbrev']
+                    if 'boxscore' in game_data and 'awayTeam' in game_data['boxscore']:
+                        away_team = game_data['boxscore']['awayTeam']['abbrev']
+                        home_team = game_data['boxscore']['homeTeam']['abbrev']
+                    elif 'game_center' in game_data:
+                        if 'boxscore' in game_data['game_center']:
+                            away_team = game_data['game_center']['boxscore']['awayTeam']['abbrev']
+                            home_team = game_data['game_center']['boxscore']['homeTeam']['abbrev']
+                        else:
+                            away_team = game_data['game_center']['awayTeam']['abbrev']
+                            home_team = game_data['game_center']['homeTeam']['abbrev']
+                    elif 'landing' in game_data and 'awayTeam' in game_data['landing']:
+                        away_team = game_data['landing']['awayTeam']['abbrev']
+                        home_team = game_data['landing']['homeTeam']['abbrev']
                     else:
-                        # Fallback to old structure
-                        away_team = game_data['game_center']['awayTeam']['abbrev']
-                        home_team = game_data['game_center']['homeTeam']['abbrev']
+                        away_team = "AWAY"
+                        home_team = "HOME"
                 except (KeyError, TypeError):
-                    # Fallback to default team names if data is missing
-                    away_team = "FLA"
-                    home_team = "EDM"
+                    away_team = "AWAY"
+                    home_team = "HOME"
                 
                 # Try to load Russo One font first (better text rendering), fallback to others (reduced by 1cm = 28pt from 140pt)
                 try:
@@ -444,9 +466,10 @@ class PostGameReportGenerator:
                         'MTL': 'mtl', 'OTT': 'ott', 'BUF': 'buf', 'DET': 'det',
                         'CAR': 'car', 'WSH': 'wsh', 'PIT': 'pit', 'NYR': 'nyr',
                         'NYI': 'nyi', 'NJD': 'nj', 'PHI': 'phi', 'CBJ': 'cbj',
-                        'STL': 'stl', 'MIN': 'min', 'WPG': 'wpg', 'ARI': 'ari',
+                        'STL': 'stl', 'MIN': 'min', 'WPG': 'wpg',
                         'VGK': 'vgk', 'SJS': 'sj', 'LAK': 'la', 'ANA': 'ana',
-                        'CGY': 'cgy', 'VAN': 'van', 'SEA': 'sea', 'CHI': 'chi'
+                        'CGY': 'cgy', 'VAN': 'van', 'SEA': 'sea', 'CHI': 'chi',
+                        'UTA': 'uta'
                     }
                     
                     away_logo_abbrev = logo_abbrev_map.get(away_team_abbrev, away_team_abbrev.lower())
@@ -546,9 +569,14 @@ class PostGameReportGenerator:
                     play_by_play = game_data.get('play_by_play', {})
                     if play_by_play and 'gameDate' in play_by_play:
                         game_date = play_by_play['gameDate']
+                    elif 'landing' in game_data and 'gameDate' in game_data['landing']:
+                        game_date = game_data['landing']['gameDate']
+                    elif 'boxscore' in game_data and 'gameDate' in game_data['boxscore']:
+                        game_date = game_data['boxscore']['gameDate']
+                    elif 'game_center' in game_data and 'game' in game_data['game_center']:
+                        game_date = game_data['game_center']['game'].get('gameDate', '')
                     else:
-                        # Fallback to game_center data
-                        game_date = game_data['game_center']['game']['gameDate']
+                        game_date = game_data.get('gameDate', '')
 
                     # Format date like "May 1st, 2026"
                     try:
@@ -732,12 +760,14 @@ class PostGameReportGenerator:
         story = []
         
         # Get team info - handle both old and new data structures
-        if 'boxscore' in game_data['game_center']:
-            # New structure: game_center contains boxscore
-            boxscore = game_data['game_center']['boxscore']
-        else:
-            # Old structure: separate boxscore
+        if 'boxscore' in game_data:
             boxscore = game_data['boxscore']
+        elif 'game_center' in game_data and 'boxscore' in game_data['game_center']:
+            boxscore = game_data['game_center']['boxscore']
+        elif 'landing' in game_data:
+            boxscore = game_data['landing']
+        else:
+            boxscore = game_data.get('game_center', {})
         
         away_team = boxscore['awayTeam']
         home_team = boxscore['homeTeam']
@@ -1314,7 +1344,6 @@ class PostGameReportGenerator:
             'STL': colors.Color(0/255, 47/255, 108/255),  # St. Louis Blues Blue
             'MIN': colors.Color(0/255, 99/255, 65/255),  # Minnesota Wild Green
             'WPG': colors.Color(4/255, 30/255, 66/255),  # Winnipeg Jets Blue
-            'ARI': colors.Color(140/255, 38/255, 51/255),  # Arizona Coyotes Red
             'VGK': colors.Color(185/255, 151/255, 91/255),  # Vegas Golden Knights Gold
             'SJS': colors.Color(0/255, 109/255, 117/255),  # San Jose Sharks Teal
             'LAK': colors.Color(162/255, 170/255, 173/255),  # Los Angeles Kings Silver
@@ -1379,7 +1408,7 @@ class PostGameReportGenerator:
             zone_eff_analyzer = ZoneTransitionEfficiencyAnalyzer()
             # Correctly get game_id if not provided
             if game_id is None:
-                game_id = game_data.get('game_center', {}).get('game', {}).get('id')
+                game_id = game_data.get('id') or game_data.get('game_center', {}).get('game', {}).get('id') or game_data.get('landing', {}).get('id') or game_data.get('boxscore', {}).get('id')
             
             # Extract period stats and game-level totals for both teams
             zone_eff_result = zone_eff_analyzer.analyze_by_period(game_id)
@@ -1447,29 +1476,26 @@ class PostGameReportGenerator:
                     'MTL': 'mtl', 'OTT': 'ott', 'BUF': 'buf', 'DET': 'det',
                     'CAR': 'car', 'WSH': 'wsh', 'PIT': 'pit', 'NYR': 'nyr',
                     'NYI': 'nyi', 'NJD': 'nj', 'PHI': 'phi', 'CBJ': 'cbj',
-                    'STL': 'stl', 'MIN': 'min', 'WPG': 'wpg', 'ARI': 'ari',
+                    'STL': 'stl', 'MIN': 'min', 'WPG': 'wpg',
                     'VGK': 'vgk', 'SJS': 'sj', 'LAK': 'la', 'ANA': 'ana',
-                    'CGY': 'cgy', 'VAN': 'van', 'SEA': 'sea', 'CHI': 'chi'
+                    'CGY': 'cgy', 'VAN': 'van', 'SEA': 'sea', 'CHI': 'chi',
+                    'UTA': 'uta'
                 }
                 
                 away_logo_abbrev = logo_abbrev_map.get(away_team['abbrev'], away_team['abbrev'].lower())
                 home_logo_abbrev = logo_abbrev_map.get(home_team['abbrev'], home_team['abbrev'].lower())
                 
-                # Download and resize logos for table use (mini size)
+                # Download and cache logos for table use (mini size)
                 away_logo_url = f"https://a.espncdn.com/i/teamlogos/nhl/500/{away_logo_abbrev}.png"
                 home_logo_url = f"https://a.espncdn.com/i/teamlogos/nhl/500/{home_logo_abbrev}.png"
                 
-                away_response = requests.get(away_logo_url, timeout=5)
-                if away_response.status_code == 200:
-                    away_logo = PILImage.open(BytesIO(away_response.content))
-                    away_logo = away_logo.resize((15, 15), PILImage.Resampling.LANCZOS)  # Much smaller size
-                    away_logo_img = Image(away_logo_url, width=15, height=15)
+                away_logo_path = self._fetch_cached_logo_path(away_logo_url)
+                if away_logo_path and os.path.exists(away_logo_path):
+                    away_logo_img = Image(away_logo_path, width=15, height=15)
                 
-                home_response = requests.get(home_logo_url, timeout=5)
-                if home_response.status_code == 200:
-                    home_logo = PILImage.open(BytesIO(home_response.content))
-                    home_logo = home_logo.resize((15, 15), PILImage.Resampling.LANCZOS)  # Much smaller size
-                    home_logo_img = Image(home_logo_url, width=15, height=15)
+                home_logo_path = self._fetch_cached_logo_path(home_logo_url)
+                if home_logo_path and os.path.exists(home_logo_path):
+                    home_logo_img = Image(home_logo_path, width=15, height=15)
                     
             except Exception as e:
                 print(f"Could not load mini logos: {e}")
@@ -2327,7 +2353,7 @@ class PostGameReportGenerator:
                     # Note: Full logic requires tracking entries, but we'll use a simplified check
                     # identifying Rush shots as those from NZ or with high velocity (not easy here)
                     # For consistency with main metrics, we'll mark as FC if in zone
-                    if zone == 'offensive':
+                    if origin_zone == 'offensive':
                         stats['fc_cycle_sog'] += 1
                     else:
                         stats['rush_sog'] += 1
@@ -2795,7 +2821,7 @@ class PostGameReportGenerator:
             'WSH': '#C8102E',  # Washington Capitals - Red
             
             # Central Division
-            'ARI': '#8C2633',  # Arizona Coyotes - Red
+            'UTA': '#6CACE4',  # Utah Hockey Club - Mountain Blue
             'CHI': '#CF0A2C',  # Chicago Blackhawks - Red
             'COL': '#6F263D',  # Colorado Avalanche - Burgundy
             'DAL': '#006847',  # Dallas Stars - Green
@@ -3481,7 +3507,6 @@ class PostGameReportGenerator:
                 'STL': colors.Color(0/255, 47/255, 108/255),  # St. Louis Blues Blue
                 'MIN': colors.Color(0/255, 99/255, 65/255),  # Minnesota Wild Green
                 'WPG': colors.Color(4/255, 30/255, 66/255),  # Winnipeg Jets Blue
-                'ARI': colors.Color(140/255, 38/255, 51/255),  # Arizona Coyotes Red
                 'VGK': colors.Color(185/255, 151/255, 91/255),  # Vegas Golden Knights Gold
                 'SJS': colors.Color(0/255, 109/255, 117/255),  # San Jose Sharks Teal
                 'LAK': colors.Color(162/255, 170/255, 173/255),  # Los Angeles Kings Silver
@@ -3551,7 +3576,7 @@ class PostGameReportGenerator:
             'SJS': colors.Color(0/255, 109/255, 117/255),  # San Jose Sharks Teal
             'VGK': colors.Color(185/255, 151/255, 91/255),  # Vegas Golden Knights Gold
             'COL': colors.Color(111/255, 38/255, 61/255),  # Colorado Avalanche Burgundy
-            'ARI': colors.Color(140/255, 38/255, 51/255),  # Arizona Coyotes Red
+            'UTA': colors.Color(105/255, 179/255, 231/255),  # Utah Hockey Club Mountain Blue
             'DAL': colors.Color(0/255, 99/255, 65/255),  # Dallas Stars Green
             'MIN': colors.Color(0/255, 99/255, 65/255),  # Minnesota Wild Green
             'WPG': colors.Color(4/255, 30/255, 66/255),  # Winnipeg Jets Navy Blue
@@ -3716,27 +3741,28 @@ class PostGameReportGenerator:
         story.append(Paragraph("GAME ANALYSIS & KEY MOMENTS", self.subtitle_style))
         story.append(Spacer(1, 15))
         
-        # Analyze the game flow
-        game_info = game_data['game_center']['game']
         # Handle both old and new data structures
-        if 'boxscore' in game_data['game_center']:
-            away_team = game_data['game_center']['boxscore']['awayTeam']
-            home_team = game_data['game_center']['boxscore']['homeTeam']
+        if 'boxscore' in game_data:
+            boxscore = game_data['boxscore']
+        elif 'game_center' in game_data and 'boxscore' in game_data['game_center']:
+            boxscore = game_data['game_center']['boxscore']
         else:
-            away_team = game_data['game_center']['awayTeam']
-            home_team = game_data['game_center']['homeTeam']
+            boxscore = game_data.get('landing', {})
+            
+        away_team = boxscore.get('awayTeam', {})
+        home_team = boxscore.get('homeTeam', {})
         
         # Determine winner and margin
-        away_score = game_info['awayTeamScore']
-        home_score = game_info['homeTeamScore']
+        away_score = away_team.get('score', 0)
+        home_score = home_team.get('score', 0)
         
         if away_score > home_score:
-            winner = away_team['abbrev']
-            loser = home_team['abbrev']
+            winner = away_team.get('abbrev', 'AWAY')
+            loser = home_team.get('abbrev', 'HOME')
             margin = away_score - home_score
         else:
-            winner = home_team['abbrev']
-            loser = away_team['abbrev']
+            winner = home_team.get('abbrev', 'HOME')
+            loser = away_team.get('abbrev', 'AWAY')
             margin = home_score - away_score
         
         
@@ -3939,17 +3965,18 @@ class PostGameReportGenerator:
                     'MTL': 'mtl', 'OTT': 'ott', 'BUF': 'buf', 'DET': 'det',
                     'CAR': 'car', 'WSH': 'wsh', 'PIT': 'pit', 'NYR': 'nyr',
                     'NYI': 'nyi', 'NJD': 'nj', 'PHI': 'phi', 'CBJ': 'cbj',
-                    'STL': 'stl', 'MIN': 'min', 'WPG': 'wpg', 'ARI': 'ari',
+                    'STL': 'stl', 'MIN': 'min', 'WPG': 'wpg',
                     'VGK': 'vgk', 'SJS': 'sj', 'LAK': 'la', 'ANA': 'ana',
-                    'CGY': 'cgy', 'VAN': 'van', 'SEA': 'sea', 'CHI': 'chi'
+                    'CGY': 'cgy', 'VAN': 'van', 'SEA': 'sea', 'CHI': 'chi',
+                    'UTA': 'uta'
                 }
                 home_team_abbrev = logo_abbrev_map.get(home_team['abbrev'], home_team['abbrev'].lower())
                 home_logo_url = f"https://a.espncdn.com/i/teamlogos/nhl/500/{home_team_abbrev}.png"
                 
-                # Download home team logo
-                home_response = requests.get(home_logo_url, timeout=5)
-                if home_response.status_code == 200:
-                    home_logo = PILImage.open(BytesIO(home_response.content))
+                # Download/load cached home team logo
+                home_bytes = self._fetch_cached_logo_bytes(home_logo_url)
+                if home_bytes:
+                    home_logo = PILImage.open(BytesIO(home_bytes))
                     # Resize logo to fit center ice circle
                     logo_size = 12  # 12 feet diameter in coordinate units
                     home_logo = home_logo.resize((logo_size, logo_size), PILImage.Resampling.LANCZOS)
@@ -3964,7 +3991,7 @@ class PostGameReportGenerator:
                              alpha=0.8, zorder=10)
                     print(f"Added {home_team['abbrev']} logo at center ice")
                 else:
-                    print(f"Failed to load home team logo: HTTP {home_response.status_code}")
+                    print(f"Failed to load home team logo from cache/URL")
             except Exception as e:
                 print(f"Error adding home team logo: {e}")
                 # Fallback: add text at center ice
@@ -4111,7 +4138,6 @@ class PostGameReportGenerator:
                 'STL': colors.Color(0/255, 47/255, 108/255),  # St. Louis Blues Blue
                 'MIN': colors.Color(0/255, 99/255, 65/255),  # Minnesota Wild Green
                 'WPG': colors.Color(4/255, 30/255, 66/255),  # Winnipeg Jets Blue
-                'ARI': colors.Color(140/255, 38/255, 51/255),  # Arizona Coyotes Red
                 'VGK': colors.Color(185/255, 151/255, 91/255),  # Vegas Golden Knights Gold
                 'SJS': colors.Color(0/255, 109/255, 117/255),  # San Jose Sharks Teal
                 'LAK': colors.Color(162/255, 170/255, 173/255),  # Los Angeles Kings Silver
@@ -4165,10 +4191,10 @@ class PostGameReportGenerator:
                     'MTL': 'mtl', 'OTT': 'ott', 'BUF': 'buf', 'DET': 'det',
                     'CAR': 'car', 'WSH': 'wsh', 'PIT': 'pit', 'NYR': 'nyr',
                     'NYI': 'nyi', 'NJD': 'nj', 'PHI': 'phi', 'CBJ': 'cbj',
-                    'STL': 'stl', 'MIN': 'min', 'WPG': 'wpg', 'ARI': 'ari',
+                    'STL': 'stl', 'MIN': 'min', 'WPG': 'wpg',
                     'VGK': 'vgk', 'SJS': 'sj', 'LAK': 'la', 'ANA': 'ana',
                     'CGY': 'cgy', 'VAN': 'van', 'SEA': 'sea', 'CHI': 'chi',
-                    'UTA': 'utah'
+                    'UTA': 'uta'
                 }
                 
                 import requests
@@ -4182,23 +4208,14 @@ class PostGameReportGenerator:
                 away_logo_url = f"https://a.espncdn.com/i/teamlogos/nhl/500/{away_logo_abbrev}.png"
                 home_logo_url = f"https://a.espncdn.com/i/teamlogos/nhl/500/{home_logo_abbrev}.png"
                 
-                # Download and save away logo
-                away_response = requests.get(away_logo_url, timeout=5)
-                if away_response.status_code == 200:
-                    away_png_path = tempfile.mktemp(suffix='.png')
-                    with open(away_png_path, 'wb') as f:
-                        f.write(away_response.content)
-                    away_logo_img = Image(away_png_path, width=20, height=20)
-                    # Keep file for now, will be cleaned up by OS
+                # Load cached logos for table header
+                away_logo_path = self._fetch_cached_logo_path(away_logo_url)
+                if away_logo_path and os.path.exists(away_logo_path):
+                    away_logo_img = Image(away_logo_path, width=20, height=20)
                 
-                # Download and save home logo
-                home_response = requests.get(home_logo_url, timeout=5)
-                if home_response.status_code == 200:
-                    home_png_path = tempfile.mktemp(suffix='.png')
-                    with open(home_png_path, 'wb') as f:
-                        f.write(home_response.content)
-                    home_logo_img = Image(home_png_path, width=20, height=20)
-                    # Keep file for now, will be cleaned up by OS
+                home_logo_path = self._fetch_cached_logo_path(home_logo_url)
+                if home_logo_path and os.path.exists(home_logo_path):
+                    home_logo_img = Image(home_logo_path, width=20, height=20)
                 
                 print(f"Logos loaded: Away={away_logo_img is not None}, Home={home_logo_img is not None}")
             except Exception as e:

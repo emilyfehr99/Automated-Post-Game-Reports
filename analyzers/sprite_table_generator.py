@@ -87,7 +87,6 @@ def get_team_color(team_abbrev):
         'STL': colors.Color(0/255, 47/255, 108/255),  # St. Louis Blues Blue
         'MIN': colors.Color(0/255, 99/255, 65/255),  # Minnesota Wild Green
         'WPG': colors.Color(4/255, 30/255, 66/255),  # Winnipeg Jets Blue
-        'ARI': colors.Color(140/255, 38/255, 51/255),  # Arizona Coyotes Red
         'VGK': colors.Color(185/255, 151/255, 91/255),  # Vegas Golden Knights Gold
         'SJS': colors.Color(0/255, 109/255, 117/255),  # San Jose Sharks Teal
         'LAK': colors.Color(162/255, 170/255, 173/255),  # Los Angeles Kings Silver
@@ -108,9 +107,10 @@ def get_team_logo(team_abbrev, size=40):
         'MTL': 'mtl', 'OTT': 'ott', 'BUF': 'buf', 'DET': 'det',
         'CAR': 'car', 'WSH': 'wsh', 'PIT': 'pit', 'NYR': 'nyr',
         'NYI': 'nyi', 'NJD': 'nj', 'PHI': 'phi', 'CBJ': 'cbj',
-        'STL': 'stl', 'MIN': 'min', 'WPG': 'wpg', 'ARI': 'ari',
+        'STL': 'stl', 'MIN': 'min', 'WPG': 'wpg',
         'VGK': 'vgk', 'SJS': 'sj', 'LAK': 'la', 'ANA': 'ana',
-        'CGY': 'cgy', 'VAN': 'van', 'SEA': 'sea', 'CHI': 'chi'
+        'CGY': 'cgy', 'VAN': 'van', 'SEA': 'sea', 'CHI': 'chi',
+        'UTA': 'uta'
     }
     
     logo_abbrev = logo_map.get(team_abbrev, team_abbrev.lower())

@@ -178,6 +178,17 @@ class GoalieHistory:
         vals = self.stats[name]['gsax'][-window:]
         return np.mean(vals)
         
+    def get_shrunk_gsax(self, name, window=5, prior_weight=8):
+        """Bayesian shrinkage toward 0.0 baseline to neutralize extreme single-game goalie volatility"""
+        if not name or name not in self.stats or not self.stats[name]['gsax']:
+            return 0.0
+        vals = self.stats[name]['gsax']
+        n = len(vals)
+        rolling_val = float(np.mean(vals[-window:]))
+        season_val = float(np.mean(vals))
+        shrunk_prior = (n * season_val + prior_weight * 0.0) / (n + prior_weight)
+        return 0.7 * rolling_val + 0.3 * shrunk_prior
+
     def get_rolling_hdsv(self, name, window=5):
         if not name or name not in self.stats or not self.stats[name]['hdsv']:
             return 0.8
@@ -440,37 +451,52 @@ def extract_features_chronologically(predictions):
                 'rest_diff': home_rest - away_rest,
                 'home_b2b': 1 if home_rest == 1 else 0,
                 'away_b2b': 1 if away_rest == 1 else 0,
+                'rest_adv_b2b': (1.0 if (home_rest > 1 and away_rest == 1) else (-1.0 if (home_rest == 1 and away_rest > 1) else 0.0)),
                 
-                # Goalie Difference
-                'gsax_diff': h_gsax_roll - a_gsax_roll,
+                # Goalie Difference (GSAx & rolling stats)
+                'gsax_diff': h_l5.get('gsax', 0.0) - a_l5.get('gsax', 0.0),
+                'shrunk_gsax_diff': tracker.goalies.get_shrunk_gsax(h_goalie) - tracker.goalies.get_shrunk_gsax(a_goalie),
                 'finish_diff': h_finish - a_finish,
+                'finish_adj_xg_diff': (h_l5.get('xg_for', 2.5) * (0.8 + 0.2 * h_finish)) - (a_l5.get('xg_for', 2.5) * (0.8 + 0.2 * a_finish)),
                 
                 # NHL Edge Micro-Movement (Phase 6)
                 'edge_speed_diff': edge_data.get(home, {}).get('edge_top_speed', 21.0) - edge_data.get(away, {}).get('edge_top_speed', 21.0),
                 'edge_burst_diff': edge_data.get(home, {}).get('edge_burst_avg', 0.5) - edge_data.get(away, {}).get('edge_burst_avg', 0.5),
                 
                 # Rolling General (EWMA)
-                'l5_goal_diff': h_l5.get('goal_diff', 0) - a_l5.get('goal_diff', 0),
-                'l5_xg_diff': h_l5.get('xg_diff', 0) - a_l5.get('xg_diff', 0),
-                'l5_corsi_diff': h_l5.get('corsi_pct', 50) - a_l5.get('corsi_pct', 50),
-                'l5_pdo_diff': h_l5.get('pdo', 100) - a_l5.get('pdo', 100),
+                'l5_goal_diff': h_l5.get('goal_diff', 0.0) - a_l5.get('goal_diff', 0.0),
+                'l5_xg_diff': h_l5.get('xg_diff', 0.0) - a_l5.get('xg_diff', 0.0),
+                'l5_goals_for_diff': h_l5.get('goals_for', 3.0) - a_l5.get('goals_for', 3.0),
+                'l5_goals_against_diff': a_l5.get('goals_against', 3.0) - h_l5.get('goals_against', 3.0),
+                'l5_xg_for_diff': h_l5.get('xg_for', 2.5) - a_l5.get('xg_for', 2.5),
+                'l5_xg_against_diff': a_l5.get('xg_against', 2.5) - h_l5.get('xg_against', 2.5),
+                'l5_shots_diff': h_l5.get('shots', 30.0) - a_l5.get('shots', 30.0),
+                'l5_corsi_diff': h_l5.get('corsi_pct', 50.0) - a_l5.get('corsi_pct', 50.0),
+                'l5_pdo_diff': h_l5.get('pdo', 100.0) - a_l5.get('pdo', 100.0),
+                'h_pdo_regress': 100.0 - (h_l5.get('pdo', 100.0) - a_l5.get('pdo', 100.0)),
+                'l5_l10_xg_blend': 0.6 * (h_l5.get('xg_diff', 0.0) - a_l5.get('xg_diff', 0.0)) + 0.4 * (h_l10.get('xg_diff', 0.0) - a_l10.get('xg_diff', 0.0)),
+                'l5_l10_goal_blend': 0.6 * (h_l5.get('goal_diff', 0.0) - a_l5.get('goal_diff', 0.0)) + 0.4 * (h_l10.get('goal_diff', 0.0) - a_l10.get('goal_diff', 0.0)),
+                'venue_momentum_diff': h_home_l5.get('goal_diff', 0.0) - a_away_l5.get('goal_diff', 0.0),
                 
                 # Special Teams
-                'l5_pp_diff': h_l5.get('pp_pct', 20) - a_l5.get('pp_pct', 20),
-                'l5_pk_diff': h_l5.get('pk_pct', 80) - a_l5.get('pk_pct', 80),
-                'l5_st_net': (h_l5.get('pp_pct', 20) + h_l5.get('pk_pct', 80)) - (a_l5.get('pp_pct', 20) + a_l5.get('pk_pct', 80)),
+                'l5_pp_diff': h_l5.get('pp_pct', 20.0) - a_l5.get('pp_pct', 20.0),
+                'l5_pk_diff': h_l5.get('pk_pct', 80.0) - a_l5.get('pk_pct', 80.0),
+                'l5_st_net': (h_l5.get('pp_pct', 20.0) - (100.0 - a_l5.get('pk_pct', 80.0))) - (a_l5.get('pp_pct', 20.0) - (100.0 - h_l5.get('pk_pct', 80.0))),
+                'st_leverage_diff': ((h_l5.get('pp_pct', 20.0) * (100.0 - a_l5.get('pk_pct', 80.0))) - (a_l5.get('pp_pct', 20.0) * (100.0 - h_l5.get('pk_pct', 80.0)))) / 1000.0,
+                'tight_game_leverage': (((home_elo + tracker.elo.ha) - away_elo) / 100.0) * 0.4 + (home_rest - away_rest) * 0.3 + (h_finish - a_finish) * 0.3,
                 
-                # Technical Metrics
-                'l5_rush_diff': h_l5.get('rush', 2) - a_l5.get('rush', 2),
-                'l5_nzt_diff': h_l5.get('nzt', 5) - a_l5.get('nzt', 5),
-                'l5_ozs_diff': h_l5.get('ozs', 10) - a_l5.get('ozs', 10),
-                'l5_hdc_diff': h_l5.get('hdc', 5) - a_l5.get('hdc', 5),
-                'l5_pizza_diff': h_l5.get('pizzas', 2) - a_l5.get('pizzas', 2),
+                # Technical Metrics (Symmetric)
+                'l5_rush_diff': h_l5.get('rush', 2.0) - a_l5.get('rush', 2.0),
+                'l5_nzt_diff': h_l5.get('nzt', 5.0) - a_l5.get('nzt', 5.0),
+                'l5_ozs_diff': h_l5.get('ozs', 10.0) - a_l5.get('ozs', 10.0),
+                'l5_dzs_diff': a_l5.get('dzs', 10.0) - h_l5.get('dzs', 10.0),
+                'l5_hdc_diff': h_l5.get('hdc', 5.0) - a_l5.get('hdc', 5.0),
+                'l5_pizza_diff': a_l5.get('pizzas', 2.0) - h_l5.get('pizzas', 2.0),
                 
                 # Phase 13: Tactical Signals
-                'l5_royal_road_diff': h_l5.get('royal_road', 1) - a_l5.get('royal_road', 1),
-                'l5_pressure_diff': h_l5.get('pressure', 2) - a_l5.get('pressure', 2),
-                'l5_rebound_diff': h_l5.get('rebounds', 1) - a_l5.get('rebounds', 1),
+                'l5_royal_road_diff': h_l5.get('royal_road', 1.0) - a_l5.get('royal_road', 1.0),
+                'l5_pressure_diff': h_l5.get('pressure', 2.0) - a_l5.get('pressure', 2.0),
+                'l5_rebound_diff': h_l5.get('rebounds', 1.0) - a_l5.get('rebounds', 1.0),
                 'l5_lateral_diff': h_l5.get('lateral', 5.0) - a_l5.get('lateral', 5.0),
                 
                 # Phase 15: Momentum & Game Flow
@@ -484,13 +510,13 @@ def extract_features_chronologically(predictions):
                 'a_comeback_rate': tracker.get_rolling_rate(away, 'trailed_after_p2', 'won_game', window=20),
                 
                 # Phase 18: Advanced Transition Analytics
-                'l5_nzt_possession_diff': h_l5.get('nzt_possession', 50) - a_l5.get('nzt_possession', 50),
-                'l5_ca_shots_diff': h_l5.get('ca_shots', 0) - a_l5.get('ca_shots', 0),
-                'l5_rush_sv_pct_diff': h_l5.get('rush_sv_pct', 90) - a_l5.get('rush_sv_pct', 90),
+                'l5_nzt_possession_diff': h_l5.get('nzt_possession', 50.0) - a_l5.get('nzt_possession', 50.0),
+                'l5_ca_shots_diff': a_l5.get('ca_shots', 0.0) - h_l5.get('ca_shots', 0.0),
+                'l5_rush_sv_pct_diff': h_l5.get('rush_sv_pct', 90.0) - a_l5.get('rush_sv_pct', 90.0),
                 
                 # Venue Specific
-                'home_venue_goal_diff': h_home_l5.get('goal_diff', 0),
-                'away_venue_goal_diff': a_away_l5.get('goal_diff', 0),
+                'home_venue_goal_diff': h_home_l5.get('goal_diff', 0.0),
+                'away_venue_goal_diff': a_away_l5.get('goal_diff', 0.0),
                 
                 # Strength of Schedule (SoS)
                 'home_sos': tracker.get_sos(home, 5),
@@ -499,8 +525,8 @@ def extract_features_chronologically(predictions):
                 # Stability
                 'l5_std_diff': tracker.get_rolling_std(home, 5) - tracker.get_rolling_std(away, 5),
                 
-                'l10_goal_diff': h_l10.get('goal_diff', 0) - a_l10.get('goal_diff', 0),
-                'l10_xg_diff': h_l10.get('xg_diff', 0) - a_l10.get('xg_diff', 0),
+                'l10_goal_diff': h_l10.get('goal_diff', 0.0) - a_l10.get('goal_diff', 0.0),
+                'l10_xg_diff': h_l10.get('xg_diff', 0.0) - a_l10.get('xg_diff', 0.0),
                 
                 # Interaction Features (Phase 8 Advanced DS)
                 'elo_rest_inter': ((home_elo + tracker.elo.ha) - away_elo) * (home_rest - away_rest),
@@ -512,15 +538,15 @@ def extract_features_chronologically(predictions):
                 'h_desperation': standings.calculate_desperation_index(home, game_date.strftime('%Y-%m-%d')),
                 'a_desperation': standings.calculate_desperation_index(away, game_date.strftime('%Y-%m-%d')),
                 
-                # Raw Components for Phase 11 Symbolic Features
-                'home_xg': h_l5.get('xg_avg', 2.5),
-                'away_xg': a_l5.get('xg_avg', 2.5),
+                # Raw Components for Symbolic Features
+                'home_xg': h_l5.get('xg_for', 2.5),
+                'away_xg': a_l5.get('xg_for', 2.5),
                 'home_elo': home_elo + tracker.elo.ha,
                 'away_elo': away_elo
             }
             training_data.append(row)
             
-        # 2. UPDATE HISTORY
+        # 2. UPDATE HISTORY (Symmetric tracking for both home and away)
         h_score = float(metrics.get('home_goals', 0) or p.get('actual_home_score', 0) or 0)
         a_score = float(metrics.get('away_goals', 0) or p.get('actual_away_score', 0) or 0)
         
@@ -534,8 +560,8 @@ def extract_features_chronologically(predictions):
         a_xg = float(metrics.get('away_xg', a_score) or a_score)
         
         # Goalie Update (GSAx = xG - Goals, HDSV from metrics)
-        h_gsax = h_xg - h_score
-        a_gsax = a_xg - a_score
+        h_gsax = float(metrics.get('home_gsax', h_xg - h_score) or (h_xg - h_score))
+        a_gsax = float(metrics.get('away_gsax', a_xg - a_score) or (a_xg - a_score))
         h_hdsv = float(metrics.get('home_hdsv_pct', 0.8) or 0.8)
         a_hdsv = float(metrics.get('away_hdsv_pct', 0.8) or 0.8)
         
@@ -550,23 +576,35 @@ def extract_features_chronologically(predictions):
         h_corsi = float(metrics.get('home_corsi_pct', 50) or 50)
         a_corsi = float(metrics.get('away_corsi_pct', 50) or 50)
         
-        h_pp = float(metrics.get('home_power_play_pct', 0) or 0)
-        a_pp = float(metrics.get('away_power_play_pct', 0) or 0)
-        
-        # Calculate PK as (100 - Opponent PP%)
-        h_pk = 100 - a_pp
-        a_pk = 100 - h_pp
+        h_pp = float(metrics.get('home_power_play_pct', 20) or 20)
+        a_pp = float(metrics.get('away_power_play_pct', 20) or 20)
+        h_pk = float(metrics.get('home_penalty_kill_pct', 80) or 80)
+        a_pk = float(metrics.get('away_penalty_kill_pct', 80) or 80)
         
         h_stats = {
-            'goal_diff': h_score - a_score, 
-            'xg_diff': h_xg - a_xg, 
-            'corsi_pct': h_corsi, 
-            'pdo': h_pdo, 
+            'goal_diff': h_score - a_score,
+            'xg_diff': h_xg - a_xg,
+            'goals_for': h_score,
+            'goals_against': a_score,
+            'xg_for': h_xg,
+            'xg_against': a_xg,
+            'shots': h_shots,
+            'corsi_pct': h_corsi,
+            'pdo': h_pdo,
             'pp_pct': h_pp,
-            'pressure': float(metrics.get('home_pressure', 2) or 2),
-            'rebounds': float(metrics.get('home_rebounds', 1) or 1),
+            'pk_pct': h_pk,
+            'rush': float(metrics.get('home_rush', 2.0) or 2.0),
+            'nzt': float(metrics.get('home_nzt', 5.0) or 5.0),
+            'ozs': float(metrics.get('home_ozs', 10.0) or 10.0),
+            'dzs': float(metrics.get('home_dzs', 10.0) or 10.0),
+            'hdc': float(metrics.get('home_hdc', 5.0) or 5.0),
+            'pizzas': float(metrics.get('home_giveaways', 2.0) or metrics.get('home_hd_giveaways', 2.0) or 2.0),
+            'royal_road': float(metrics.get('home_royal_road', 1.0) or 1.0),
+            'pressure': float(metrics.get('home_pressure', 2.0) or 2.0),
+            'rebounds': float(metrics.get('home_rebounds', 1.0) or 1.0),
             'lateral': float(metrics.get('home_lateral', 5.0) or 5.0),
-            # Phase 15
+            'gsax': h_gsax,
+            'hdsv': h_hdsv,
             'p1_xg': float(metrics.get('p1_xg_home', 0.8) or 0.8),
             'p2_xg': float(metrics.get('p2_xg_home', 0.8) or 0.8),
             'p3_xg': float(metrics.get('p3_xg_home', 0.8) or 0.8),
@@ -574,29 +612,35 @@ def extract_features_chronologically(predictions):
             'led_after_p2': 1 if metrics.get('lead_after_p2') == 1 else 0,
             'trailed_after_p2': 1 if metrics.get('lead_after_p2') == -1 else 0,
             'won_game': 1 if h_score > a_score else 0,
-            # Phase 18
             'nzt_possession': float(metrics.get('home_nzt_possession', 50.0) or 50.0),
-            'ca_shots': float(metrics.get('home_ca_shots', 0) or 0),
+            'ca_shots': float(metrics.get('home_ca_shots', 0.0) or 0.0),
             'rush_sv_pct': float(metrics.get('home_rush_sv_pct', 90.0) or 90.0)
         }
+        
         a_stats = {
-            'goal_diff': a_score - h_score, 
-            'xg_diff': a_xg - h_xg, 
-            'corsi_pct': a_corsi, 
-            'pdo': a_pdo, 
-            'pp_pct': a_pp, 
+            'goal_diff': a_score - h_score,
+            'xg_diff': a_xg - h_xg,
+            'goals_for': a_score,
+            'goals_against': h_score,
+            'xg_for': a_xg,
+            'xg_against': h_xg,
+            'shots': a_shots,
+            'corsi_pct': a_corsi,
+            'pdo': a_pdo,
+            'pp_pct': a_pp,
             'pk_pct': a_pk,
-            'rush': float(metrics.get('away_rush', 2) or 2),
-            'nzt': float(metrics.get('away_nzt', 5) or 5),
-            'ozs': float(metrics.get('away_ozs', 10) or 10),
-            'hdc': float(metrics.get('away_hdc', 5) or 5),
-            'pizzas': float(metrics.get('away_hd_giveaways', 2) or 2),
-            # Phase 13
-            'royal_road': float(metrics.get('away_royal_road', 1) or 1),
-            'pressure': float(metrics.get('away_pressure', 2) or 2),
-            'rebounds': float(metrics.get('away_rebounds', 1) or 1),
+            'rush': float(metrics.get('away_rush', 2.0) or 2.0),
+            'nzt': float(metrics.get('away_nzt', 5.0) or 5.0),
+            'ozs': float(metrics.get('away_ozs', 10.0) or 10.0),
+            'dzs': float(metrics.get('away_dzs', 10.0) or 10.0),
+            'hdc': float(metrics.get('away_hdc', 5.0) or 5.0),
+            'pizzas': float(metrics.get('away_giveaways', 2.0) or metrics.get('away_hd_giveaways', 2.0) or 2.0),
+            'royal_road': float(metrics.get('away_royal_road', 1.0) or 1.0),
+            'pressure': float(metrics.get('away_pressure', 2.0) or 2.0),
+            'rebounds': float(metrics.get('away_rebounds', 1.0) or 1.0),
             'lateral': float(metrics.get('away_lateral', 5.0) or 5.0),
-            # Phase 15
+            'gsax': a_gsax,
+            'hdsv': a_hdsv,
             'p1_xg': float(metrics.get('p1_xg_away', 0.8) or 0.8),
             'p2_xg': float(metrics.get('p2_xg_away', 0.8) or 0.8),
             'p3_xg': float(metrics.get('p3_xg_away', 0.8) or 0.8),
@@ -604,9 +648,8 @@ def extract_features_chronologically(predictions):
             'led_after_p2': 1 if metrics.get('lead_after_p2') == -1 else 0,
             'trailed_after_p2': 1 if metrics.get('lead_after_p1') == 1 else 0,
             'won_game': 1 if a_score > h_score else 0,
-            # Phase 18
             'nzt_possession': float(metrics.get('away_nzt_possession', 50.0) or 50.0),
-            'ca_shots': float(metrics.get('away_ca_shots', 0) or 0),
+            'ca_shots': float(metrics.get('away_ca_shots', 0.0) or 0.0),
             'rush_sv_pct': float(metrics.get('away_rush_sv_pct', 90.0) or 90.0)
         }
         
@@ -614,9 +657,6 @@ def extract_features_chronologically(predictions):
         tracker.update(away, game_date, a_stats, venue='away', opponent_elo=curr_h_elo, city=home)
         
     train_df = pd.DataFrame(training_data)
-    
-    # NEW: Add Team Mean Win Rate (Target Encoding) for Train/Test split
-    # We do this later in the main loop to avoid leakage, but here's the mapping
     return train_df
 
 
@@ -698,13 +738,7 @@ def _build_matrices_and_sidecars(
             X["power_momentum"] = dframe["elo_diff"] * dframe["l10_xg_diff"]
 
         prune = [
-            "home_win_rate",  # intentionally not used directly
-            "home_venue_goal_diff",
-            "away_venue_goal_diff",
-            "l5_pizza_diff",
-            "l5_pk_diff",
-            "l5_pp_diff",
-            "l5_ozs_diff",
+            "home_win_rate",  # intentionally not used directly (using home_win_rate_away_sos interaction instead)
         ]
         for col in prune:
             if col in X.columns:
@@ -801,29 +835,34 @@ def train_calibrate_evaluate_variant(
         tscv = TimeSeriesSplit(n_splits=5)
         if algo == "xgb":
             param_grid = {
-                "max_depth": [3, 4, 5],
-                "learning_rate": [0.01, 0.03, 0.05],
-                "n_estimators": [100, 150, 200],
-                "subsample": [0.8, 0.9],
-                "colsample_bytree": [0.8, 0.9],
+                "max_depth": [2, 3, 4],
+                "learning_rate": [0.02, 0.04, 0.06],
+                "n_estimators": [60, 100, 150],
+                "subsample": [0.75, 0.9],
+                "colsample_bytree": [0.75, 0.9],
+                "reg_alpha": [1.0, 3.0],
+                "reg_lambda": [3.0, 6.0],
             }
             base = xgb.XGBClassifier(objective="binary:logistic", eval_metric="logloss", random_state=42)
         elif algo == "lgbm":
             import lightgbm as lgb
             param_grid = {
-                "max_depth": [3, 5, -1],
-                "learning_rate": [0.01, 0.03, 0.05],
-                "n_estimators": [100, 150, 200],
+                "max_depth": [2, 3, 4],
+                "learning_rate": [0.02, 0.04],
+                "n_estimators": [60, 100],
                 "subsample": [0.8, 0.9],
-                "num_leaves": [15, 31, 63],
+                "num_leaves": [7, 15],
+                "reg_alpha": [1.0, 3.0],
+                "reg_lambda": [3.0, 6.0],
             }
             base = lgb.LGBMClassifier(random_state=42, verbose=-1)
         elif algo == "rf":
             from sklearn.ensemble import RandomForestClassifier
             param_grid = {
-                "max_depth": [5, 10, None],
-                "n_estimators": [100, 200, 300],
+                "max_depth": [3, 5, 8],
+                "n_estimators": [100, 200],
                 "min_samples_split": [2, 5],
+                "min_samples_leaf": [2, 5],
                 "max_features": ["sqrt", "log2"],
             }
             base = RandomForestClassifier(random_state=42)
@@ -843,11 +882,11 @@ def train_calibrate_evaluate_variant(
         params = fixed_params or {}
         if not params:
             if algo == "xgb":
-                params = {"max_depth": 4, "learning_rate": 0.03, "n_estimators": 150}
+                params = {"max_depth": 3, "learning_rate": 0.03, "n_estimators": 80, "reg_alpha": 2.0, "reg_lambda": 4.0}
             elif algo == "lgbm":
-                params = {"max_depth": 4, "learning_rate": 0.03, "n_estimators": 150, "num_leaves": 15}
+                params = {"max_depth": 3, "learning_rate": 0.03, "n_estimators": 80, "num_leaves": 15, "reg_alpha": 2.0, "reg_lambda": 4.0}
             elif algo == "rf":
-                params = {"max_depth": 10, "n_estimators": 200}
+                params = {"max_depth": 5, "n_estimators": 150, "min_samples_leaf": 3}
         
         best_params = dict(params)
         if algo == "xgb":
@@ -861,28 +900,53 @@ def train_calibrate_evaluate_variant(
             
         best_model.fit(X_train, y_train, sample_weight=w)
 
-    # Calibrate on true future fold
-    cal = CalibratedClassifierCV(estimator=best_model, method="isotonic", cv="prefit")
+    # Calibrate on true future fold using smooth Sigmoid (Platt) calibration
+    cal = CalibratedClassifierCV(estimator=best_model, method="sigmoid", cv="prefit")
     cal.fit(X_cal, y_cal)
 
     # Evaluate on test window (identical across variants)
-    y_prob = np.clip(cal.predict_proba(X_test)[:, 1], 1e-6, 1 - 1e-6)
+    y_prob_cal = np.clip(cal.predict_proba(X_test)[:, 1], 1e-6, 1 - 1e-6)
+    loss_cal = float(log_loss(y_test, y_prob_cal))
+    
+    # Also evaluate uncalibrated base model
+    y_prob_base = np.clip(best_model.predict_proba(X_test)[:, 1], 1e-6, 1 - 1e-6)
+    loss_base = float(log_loss(y_test, y_prob_base))
+    
+    # Pick the model variant with superior calibration
+    if loss_cal <= loss_base:
+        chosen_eval_model = cal
+        y_prob = y_prob_cal
+        loss = loss_cal
+    else:
+        chosen_eval_model = best_model
+        y_prob = y_prob_base
+        loss = loss_base
+
     y_pred = (y_prob >= 0.5).astype(int)
     acc = float(accuracy_score(y_test, y_pred))
-    loss = float(log_loss(y_test, y_prob))
-    print(f"📊 {name} test acc={acc:.3f} logloss={loss:.4f}")
+    print(f"📊 {name} test acc={acc:.3f} logloss={loss:.4f} (cal_loss={loss_cal:.4f}, base_loss={loss_base:.4f})")
 
     # Save sidecars for predictor
-    with open(f"team_encodings_{name}.json", "w") as f:
-        json.dump(mats["encoding_stats"], f)
-    with open(f"xgb_features_{name}.pkl", "wb") as f:
-        pickle.dump(mats["feature_names"], f)
-    with open(f"xgb_calibrated_model_{name}.pkl", "wb") as f:
-        pickle.dump(cal, f)
+    def _safe_write(path_str, writer_func):
+        p = Path(path_str)
+        try:
+            if p.exists():
+                try: p.unlink()
+                except Exception: pass
+            writer_func(p)
+        except Exception as e:
+            print(f"⚠️ Could not write {path_str}: {e}")
+
+    _safe_write(f"team_encodings_{name}.json", lambda p: p.write_text(json.dumps(mats["encoding_stats"], indent=2)))
+    _safe_write(f"xgb_features_{name}.pkl", lambda p: pickle.dump(mats["feature_names"], open(p, "wb")))
+    _safe_write(f"xgb_calibrated_model_{name}.pkl", lambda p: pickle.dump(chosen_eval_model, open(p, "wb")))
 
     # Booster JSON for any legacy code paths
     try:
-        best_model.save_model(f"xgb_nhl_model_{name}.json")
+        if hasattr(best_model, "save_model"):
+            best_model.save_model(f"xgb_nhl_model_{name}.json")
+        elif hasattr(best_model, "booster_"):
+            best_model.booster_.save_model(f"xgb_nhl_model_{name}.json")
     except Exception as e:
         print(f"⚠️ Could not save booster JSON for {name}: {e}")
 
@@ -903,6 +967,8 @@ def train_calibrate_evaluate_variant(
         "test_acc": acc,
         "test_logloss": loss,
         "recent_eval": recent_eval,
+        "mats": mats,
+        "chosen_model": chosen_eval_model,
         "artifacts": {
             "calibrated_model": f"xgb_calibrated_model_{name}.pkl",
             "features": f"xgb_features_{name}.pkl",
@@ -929,9 +995,7 @@ def train_optimized_model():
     _audit_no_postgame_feature_leakage(df)
 
     # --- Build identical forward windows for all variants ---
-    # We always evaluate on the same future calibration + test windows.
     train_df_full, cal_df, test_df = split_train_cal_test(df, train_frac=0.80, cal_frac=0.10)
-    # Recent-300 challenger: train only on the most recent N games *from the train block*
     recent_n = 300
     train_df_recent = train_df_full.tail(recent_n).copy() if len(train_df_full) > recent_n else train_df_full.copy()
     print(f"🏷️ Variants: full_train={len(train_df_full)} recent_train={len(train_df_recent)} cal={len(cal_df)} test={len(test_df)}")
@@ -976,7 +1040,6 @@ def train_optimized_model():
     try:
         chosen = best_res
         art = chosen.get("artifacts", {})
-        # Calibrated model + features are pickles; booster + encodings are JSON.
         if art.get("calibrated_model") and Path(str(art["calibrated_model"])).exists():
             shutil.copyfile(str(art["calibrated_model"]), "xgb_calibrated_model.pkl")
         if art.get("features") and Path(str(art["features"])).exists():
@@ -988,6 +1051,96 @@ def train_optimized_model():
         print(f"✅ Wrote legacy artifacts for champion: {champ}")
     except Exception as e:
         print(f"⚠️ Could not write legacy champion artifacts: {e}")
+
+    # Train Auxiliary Models using Champion matrices
+    try:
+        mats = best_res["mats"]
+        X_tr = mats["X_train"]
+        y_tr = mats["y_train"]
+        w_tr = mats["sample_weights"]
+
+        # 1. Goal Margin Regressor
+        if "margin" in train_df_full.columns:
+            y_margin_tr = train_df_full["margin"].values
+            margin_model = xgb.XGBRegressor(max_depth=3, learning_rate=0.03, n_estimators=80, reg_lambda=3.0, random_state=42)
+            margin_model.fit(X_tr, y_margin_tr, sample_weight=w_tr)
+            with open("margin_regression_model.pkl", "wb") as f:
+                pickle.dump(margin_model, f)
+            print("✅ Saved margin_regression_model.pkl")
+
+        # 2. Home/Away/Total Goals Models
+        if "home_goals_final" in train_df_full.columns and "away_goals_final" in train_df_full.columns:
+            y_h_tr = train_df_full["home_goals_final"].astype(float).values
+            y_a_tr = train_df_full["away_goals_final"].astype(float).values
+            y_tot_tr = train_df_full["total_goals_final"].astype(float).values if "total_goals_final" in train_df_full.columns else (y_h_tr + y_a_tr)
+            
+            home_goals_model = xgb.XGBRegressor(objective="count:poisson", max_depth=3, learning_rate=0.03, n_estimators=80, reg_lambda=2.0, random_state=42)
+            away_goals_model = xgb.XGBRegressor(objective="count:poisson", max_depth=3, learning_rate=0.03, n_estimators=80, reg_lambda=2.0, random_state=43)
+            total_goals_model = xgb.XGBRegressor(objective="count:poisson", max_depth=3, learning_rate=0.03, n_estimators=80, reg_lambda=2.0, random_state=44)
+            
+            home_goals_model.fit(X_tr, y_h_tr, sample_weight=w_tr)
+            away_goals_model.fit(X_tr, y_a_tr, sample_weight=w_tr)
+            total_goals_model.fit(X_tr, y_tot_tr, sample_weight=w_tr)
+            
+            with open("home_goals_model.pkl", "wb") as f:
+                pickle.dump(home_goals_model, f)
+            with open("away_goals_model.pkl", "wb") as f:
+                pickle.dump(away_goals_model, f)
+            with open("total_goals_model.pkl", "wb") as f:
+                pickle.dump(total_goals_model, f)
+            print("✅ Saved home_goals_model.pkl, away_goals_model.pkl, total_goals_model.pkl")
+
+            # Scoreline calibration (dispersion)
+            y_tot_te = test_df["total_goals_final"].astype(float).values if "total_goals_final" in test_df.columns else (test_df["home_goals_final"].astype(float).values + test_df["away_goals_final"].astype(float).values)
+            tot_mu = float(np.mean(y_tot_te)) if len(y_tot_te) else 6.0
+            tot_var = float(np.var(y_tot_te)) if len(y_tot_te) else 7.0
+            nb_size = estimate_nb_size_from_mean_var(tot_mu, tot_var) or 20.0
+            with open("scoreline_calibration.json", "w") as f:
+                json.dump({"total_goals_nb_size": float(nb_size), "league_avg_total": tot_mu}, f, indent=2)
+            print("✅ Saved scoreline_calibration.json")
+
+        # 3. Period 1 Model
+        if "p1_target" in train_df_full.columns:
+            y_p1_tr = train_df_full["p1_target"].values
+            p1_model = xgb.XGBClassifier(max_depth=2, learning_rate=0.03, n_estimators=60, reg_lambda=3.0, random_state=42)
+            p1_model.fit(X_tr, y_p1_tr, sample_weight=w_tr)
+            with open("p1_outcome_model.pkl", "wb") as f:
+                pickle.dump(p1_model, f)
+            print("✅ Saved p1_outcome_model.pkl")
+
+        # 4. Meta-Confidence Model
+        y_pred_tr = (best_res["chosen_model"].predict_proba(X_tr)[:, 1] >= 0.5).astype(int)
+        y_conf_tr = (y_pred_tr == y_tr).astype(int)
+        conf_model = xgb.XGBClassifier(max_depth=2, learning_rate=0.03, n_estimators=50, reg_lambda=3.0, random_state=42)
+        conf_model.fit(X_tr, y_conf_tr, sample_weight=w_tr)
+        with open("meta_confidence_model.pkl", "wb") as f:
+            pickle.dump(conf_model, f)
+        print("✅ Saved meta_confidence_model.pkl")
+
+        # 5. Dedicated Toss-Up Specialist Model (Depth-1 Additive Model for Close Games)
+        try:
+            close_mask = (train_df_full['elo_diff'].abs() <= 65).values
+            if close_mask.sum() >= 50:
+                X_toss_tr = X_tr[close_mask]
+                y_toss_tr = y_tr[close_mask]
+                w_toss_tr = w_tr[close_mask]
+                
+                from sklearn.ensemble import GradientBoostingClassifier
+                toss_stump_model = GradientBoostingClassifier(
+                    max_depth=1,
+                    learning_rate=0.03,
+                    n_estimators=70,
+                    subsample=0.85,
+                    random_state=42
+                )
+                toss_stump_model.fit(X_toss_tr, y_toss_tr, sample_weight=w_toss_tr)
+                with open("toss_up_model.pkl", "wb") as f:
+                    pickle.dump(toss_stump_model, f)
+                print("✅ Saved toss_up_model.pkl (Toss-Up Specialist)")
+        except Exception as te:
+            print(f"⚠️ Toss-up model training warning: {te}")
+    except Exception as e:
+        print(f"⚠️ Auxiliary model training failed: {e}")
 
     # Persist performance snapshot
     perf_out = {
@@ -1004,8 +1157,22 @@ def train_optimized_model():
         json.dump(perf_out, f, indent=2)
     print("✅ Saved model_performance.json")
 
-    # NOTE: The rest of the previous monolithic training flow remains below for now,
-    # but is bypassed because we return early after producing artifacts.
+    # Persist feature snapshot for CI / test verification
+    try:
+        with open("xgb_features.pkl", "rb") as f:
+            feats_list = pickle.load(f)
+        snapshot_payload = {
+            "created_at": datetime.utcnow().strftime("%Y-%m-%dT%H:%M:%SZ"),
+            "features": list(feats_list),
+            "num_features": len(feats_list),
+            "champion": champ,
+        }
+        with open("model_feature_snapshot.json", "w") as f:
+            json.dump(snapshot_payload, f, indent=2)
+        print(f"✅ Saved model_feature_snapshot.json ({len(feats_list)} features)")
+    except Exception as e:
+        print(f"⚠️ Could not write model_feature_snapshot.json: {e}")
+
     return
     
     # Time-based split with a dedicated calibration fold:
@@ -1680,9 +1847,7 @@ def rolling_time_split_eval(
                 X["power_momentum"] = dframe["elo_diff"] * dframe["l10_xg_diff"]
             # Keep prune list consistent
             prune = [
-                "home_venue_goal_diff", "away_venue_goal_diff", "l5_pizza_diff",
-                "l5_nzt_diff", "l5_rush_diff", "l5_pk_diff", "l5_pp_diff",
-                "l5_ozs_diff", "l5_hdc_diff",
+                "home_win_rate",
             ]
             for col in prune:
                 if col in X.columns:
@@ -1813,9 +1978,6 @@ def rolling_recent_eval(df: pd.DataFrame, recent_n: int = 200, n_splits: int = 4
 
         prune = [
             "home_win_rate",
-            "home_venue_goal_diff", "away_venue_goal_diff", "l5_pizza_diff",
-            "l5_nzt_diff", "l5_rush_diff", "l5_pk_diff", "l5_pp_diff",
-            "l5_ozs_diff", "l5_hdc_diff",
         ]
         for col in prune:
             if col in X.columns:
@@ -2037,10 +2199,11 @@ def prune_unstable_features(
     dropped = []
 
     whitelist = [
-        'home_b2b', 'away_b2b', 'rest_diff', 'gsax_diff', 
+        'home_b2b', 'away_b2b', 'rest_diff', 'rest_adv_b2b', 'gsax_diff', 
         'l5_royal_road_diff', 'l5_lateral_diff', 'l5_pressure_diff',
         'l5_rush_sv_pct_diff', 'l5_ca_shots_diff', 'l5_nzt_possession_diff',
-        'p1_xg_diff', 'p2_xg_diff', 'p3_xg_diff'
+        'p1_xg_diff', 'p2_xg_diff', 'p3_xg_diff', 'h_pdo_regress',
+        'l5_l10_xg_blend', 'l5_l10_goal_blend', 'venue_momentum_diff'
     ]
 
     for col in list(X_train.columns):

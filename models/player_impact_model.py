@@ -4,7 +4,10 @@ Player Impact Model
 Calculates individual player xG contributions and lineup strength
 """
 from typing import Dict, List, Optional
-from player_stats_collector import PlayerStatsCollector
+try:
+    from analyzers.player_stats_collector import PlayerStatsCollector
+except ImportError:
+    from player_stats_collector import PlayerStatsCollector
 import json
 
 class PlayerImpactModel:

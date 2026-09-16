@@ -5,7 +5,10 @@ from typing import Any, Dict, List, Optional
 
 import numpy as np
 from pathlib import Path
-from score_prediction_model import ScorePredictionModel
+try:
+    from models.score_prediction_model import ScorePredictionModel
+except ImportError:
+    from score_prediction_model import ScorePredictionModel
 
 # NHL playoff round index (simulate_2026_playoffs_master) -> round-depth model target
 _ROUND_MODEL_TARGET = {

@@ -522,13 +522,16 @@ class LiveInGamePredictor:
                     elif event_type == 'goal':
                         # Check if it's a power play goal from situation code
                         situation_code = str(play.get('situationCode', ''))
-                        if event_team_id == away_team_id:
-                            # Check if away team scored on power play (5v4 or 5v3 situation)
-                            if '5' in situation_code and ('4' in situation_code or '3' in situation_code):
-                                away_pp_goals_pbp += 1
-                        elif event_team_id == home_team_id:
-                            if '5' in situation_code and ('4' in situation_code or '3' in situation_code):
-                                home_pp_goals_pbp += 1
+                        if len(situation_code) == 4:
+                            try:
+                                away_sk = int(situation_code[1])
+                                home_sk = int(situation_code[2])
+                                if event_team_id == away_team_id and away_sk > home_sk:
+                                    away_pp_goals_pbp += 1
+                                elif event_team_id == home_team_id and home_sk > away_sk:
+                                    home_pp_goals_pbp += 1
+                            except (ValueError, IndexError):
+                                pass
                     elif event_type == 'faceoff':
                         # CORRECTED: Each faceoff has ONE winner and ONE loser
                         # Count total faceoffs once, then determine winner from roster
@@ -1326,12 +1329,17 @@ class LiveInGamePredictor:
                                 home_gs_cumulative += 0.75
                             
                             # Check if it's a power play goal
-                            situation = details.get('situationCode', '')
-                            if 'PP' in situation or 'powerPlay' in situation.lower():
-                                if is_away:
-                                    away_pp_goals_cumulative += 1
-                                elif is_home:
-                                    home_pp_goals_cumulative += 1
+                            sit_code = str(play.get('situationCode', ''))
+                            if len(sit_code) == 4:
+                                try:
+                                    away_sk = int(sit_code[1])
+                                    home_sk = int(sit_code[2])
+                                    if is_away and away_sk > home_sk:
+                                        away_pp_goals_cumulative += 1
+                                    elif is_home and home_sk > away_sk:
+                                        home_pp_goals_cumulative += 1
+                                except (ValueError, IndexError):
+                                    pass
                         
                         elif event_type == 'shot-on-goal':
                             if is_away:
