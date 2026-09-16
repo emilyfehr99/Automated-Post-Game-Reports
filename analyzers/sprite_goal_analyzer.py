@@ -55,14 +55,35 @@ class SpriteGoalAnalyzer:
             return None
     
     def analyze_net_front_presence(self, sprite_data):
-        """Count average players in net-front area"""
+        """
+        Count average players screening or battling in the net-front area
+        inside the goalie's sightline corridor during shot release.
+        """
         if not sprite_data or len(sprite_data) < 10:
             return 0
         
-        GOAL_X_MIN = 2000
-        GOAL_X_MAX = 2300
+        # Determine goal X position from puck trajectory in final frames
+        goal_x = 2200
+        puck_xs = []
+        for frame in sprite_data[-10:]:
+            for p in frame['onIce'].values():
+                if p.get('id') == 1 and 'x' in p:
+                    puck_xs.append(p['x'])
+                    break
+        if puck_xs:
+            avg_x = sum(puck_xs) / len(puck_xs)
+            goal_x = 2200 if avg_x > 1200 else 200
+            
+        # Define net-front screening bounding box (crease + inner slot: ~18ft depth, centered in Y)
+        # Rink Y is approx 0 to 1000 with center at 500
         GOAL_Y_MIN = 350
         GOAL_Y_MAX = 650
+        if goal_x > 1200:
+            GOAL_X_MIN = goal_x - 220  # ~18 feet out from right net
+            GOAL_X_MAX = goal_x + 50
+        else:
+            GOAL_X_MIN = goal_x - 50
+            GOAL_X_MAX = goal_x + 220  # ~18 feet out from left net
         
         mid_point = len(sprite_data) // 2
         sample_frames = sprite_data[max(0, mid_point-10):min(len(sprite_data), mid_point+10)]
@@ -71,10 +92,11 @@ class SpriteGoalAnalyzer:
         for frame in sample_frames:
             count = 0
             for p in frame['onIce'].values():
-                if p.get('sweaterNumber') == '':
+                if p.get('sweaterNumber') == '' or p.get('id') == 1:
                     continue
                 if 'x' not in p or 'y' not in p:
                     continue
+                # Exclude defending goalie (usually stationed directly on the goal line)
                 if (GOAL_X_MIN <= p['x'] <= GOAL_X_MAX and 
                     GOAL_Y_MIN <= p['y'] <= GOAL_Y_MAX):
                     count += 1
@@ -537,6 +559,8 @@ class SpriteGoalAnalyzer:
             # Net-front presence from raw sprite
             net_front = self.analyze_net_front_presence(sprite_data)
             team_stats[scoring_team_id]['net_front'].append(net_front)
+            if net_front >= 1.0:
+                team_stats[scoring_team_id]['traffic_goals'] += 1
             
             # Shot distance in feet from raw sprite
             shot_dist = self.analyze_shot_distance(sprite_data)
