@@ -44,6 +44,42 @@ class RealTeamStatsGenerator(TeamReportGenerator):
             from .season_utils import current_season_file_tag
         tag = current_season_file_tag()
         self.output_file = project_root / "data" / f"season_{tag}_team_stats.json"
+        self._game_cache = {}
+        try:
+            from season_utils import get_team_stats_path
+            self.fallback_file = project_root / get_team_stats_path(min_teams=1)
+        except Exception:
+            self.fallback_file = project_root / "data" / "season_2025_2026_team_stats.json"
+
+    def _fetch_and_calculate_single_game(self, game_info, is_home):
+        """Fetch game data and calculate metrics for one game item (thread-safe)"""
+        game_id = game_info.get('game_id')
+        if not game_id:
+            return None
+        try:
+            # Check in-memory cache to prevent duplicate network calls across home/away team processing
+            str_id = str(game_id)
+            if str_id in self._game_cache:
+                game_data = self._game_cache[str_id]
+            else:
+                game_data = self.api.get_comprehensive_game_data(str_id)
+                if game_data:
+                    self._game_cache[str_id] = game_data
+            
+            if not game_data:
+                return None
+            
+            boxscore = game_data.get('boxscore', {})
+            team_data = boxscore.get('homeTeam' if is_home else 'awayTeam', {})
+            team_id = team_data.get('id')
+            
+            metrics = self.calculate_game_metrics(game_data, team_id, is_home=is_home)
+            if metrics:
+                opp_team = boxscore.get('awayTeam' if is_home else 'homeTeam', {}).get('abbrev', 'UNK')
+                return (game_id, metrics, opp_team)
+        except Exception as e:
+            print(f"Error processing game {game_id}: {e}")
+        return None
 
     
     def calculate_game_metrics(self, game_data, team_id, is_home):
@@ -291,12 +327,22 @@ class RealTeamStatsGenerator(TeamReportGenerator):
                 with open(self.output_file, 'r') as f:
                     file_content = json.load(f)
                     existing_data = file_content.get('teams', {})
-                print(f"✅ Loaded existing stats for {len(existing_data)} teams")
+                print(f"✅ Loaded existing stats for {len(existing_data)} teams from {self.output_file}")
             except Exception as e:
                 print(f"⚠️ Could not load existing stats: {e}. Starting fresh.")
+        elif hasattr(self, 'fallback_file') and os.path.exists(self.fallback_file):
+            try:
+                with open(self.fallback_file, 'r') as f:
+                    file_content = json.load(f)
+                    existing_data = file_content.get('teams', {})
+                print(f"✅ Seeded baseline stats for {len(existing_data)} teams from fallback {self.fallback_file}")
+            except Exception as e:
+                print(f"⚠️ Could not seed fallback stats: {e}. Starting fresh.")
                 
         teams_data = existing_data
         
+        from concurrent.futures import ThreadPoolExecutor
+
         for team in standings:
             abbrev = team['teamAbbrev']['default']
             name = team['teamName']['default']
@@ -354,122 +400,47 @@ class RealTeamStatsGenerator(TeamReportGenerator):
             processed_away = len(teams_data[abbrev]['away'].get('gs', []))
             
             # Identify new games (by skipping the first N games)
-            # Assumption: team_games is sorted by date (guaranteed by get_team_games)
             new_home_games = home_games[processed_home:]
             new_away_games = away_games[processed_away:]
             
             print(f"  Home games: {processed_home} processed, {len(new_home_games)} new")
             print(f"  Away games: {processed_away} processed, {len(new_away_games)} new")
             
-            # Process new home games
+            # Process new home games in parallel
             home_stats = teams_data[abbrev]['home']
-            for i, game_info in enumerate(new_home_games):
-                # Calculate true index (for logging)
-                idx = processed_home + i
-                game_id = game_info.get('game_id')
-                if not game_id:
-                    continue
+            if new_home_games:
+                with ThreadPoolExecutor(max_workers=8) as executor:
+                    home_results = list(executor.map(lambda g: self._fetch_and_calculate_single_game(g, is_home=True), new_home_games))
                 
-                print(f"  Processing NEW home game {i+1}/{len(new_home_games)}: {game_info.get('date')} (ID: {game_id})...", end=' ', flush=True)
-                
-                try:
-                    import signal
-                    
-                    # Set 30-second timeout for API call
-                    def timeout_handler(signum, frame):
-                        raise TimeoutError("API call timed out")
-                    
-                    signal.signal(signal.SIGALRM, timeout_handler)
-                    signal.alarm(30)  # 30 second timeout
-                    
-                    try:
-                        game_data = self.api.get_comprehensive_game_data(str(game_id))
-                    finally:
-                        signal.alarm(0)  # Cancel alarm
-                    
-                    if not game_data:
-                        print("No data - skipping")
-                        continue
-                    
-                    boxscore = game_data.get('boxscore', {})
-                    home_team_data = boxscore.get('homeTeam', {})
-                    team_id = home_team_data.get('id')
-                    
-                    metrics = self.calculate_game_metrics(game_data, team_id, is_home=True)
-                    if metrics:
-                        # Append metrics to existing lists
+                for res in home_results:
+                    if res:
+                        game_id, metrics, opp_team = res
                         for key in home_stats.keys():
-                            if key != 'games' and key in metrics:
+                            if key not in ('games', 'opponents') and key in metrics:
                                 home_stats[key].append(metrics.get(key, 0))
-                        
-                        # Use game_id instead of index for robustness
                         home_stats['games'].append(game_id)
-                        
-                        # Extract opponent
-                        boxscore = game_data.get('boxscore', {})
-                        away_team = boxscore.get('awayTeam', {}).get('abbrev', 'UNK')
-                        home_stats['opponents'].append(away_team)
-                        print(f"✓ GS={metrics['gs']:.1f}, xG={metrics['xg']:.2f}")
+                        home_stats['opponents'].append(opp_team)
+                        print(f"  ✓ Home game {game_id}: GS={metrics.get('gs', 0):.1f}, xG={metrics.get('xg', 0):.2f}")
                     else:
-                        print("Failed to calculate metrics - skipping")
-                except TimeoutError as e:
-                    print(f"Timeout - skipping: {e}")
-                except KeyboardInterrupt:
-                    raise  # Allow user to stop
-                except Exception as e:
-                    print(f"Error (skipping): {e}")
-            
-            # Process new away games
+                        print(f"  ✗ Failed metrics calculation for home game")
+
+            # Process new away games in parallel
             away_stats = teams_data[abbrev]['away']
-            for i, game_info in enumerate(new_away_games):
-                idx = processed_away + i
-                game_id = game_info.get('game_id')
+            if new_away_games:
+                with ThreadPoolExecutor(max_workers=8) as executor:
+                    away_results = list(executor.map(lambda g: self._fetch_and_calculate_single_game(g, is_home=False), new_away_games))
                 
-                print(f"  Processing NEW away game {i+1}/{len(new_away_games)}: {game_info.get('date')} (ID: {game_id})...", end=' ', flush=True)
-                
-                try:
-                    import signal
-                    
-                    def timeout_handler(signum, frame):
-                        raise TimeoutError("API call timed out")
-                    
-                    signal.signal(signal.SIGALRM, timeout_handler)
-                    signal.alarm(30)
-                    
-                    try:
-                        game_data = self.api.get_comprehensive_game_data(str(game_id))
-                    finally:
-                        signal.alarm(0)
-                    
-                    if not game_data:
-                        print("No data - skipping")
-                        continue
-                    
-                    boxscore = game_data.get('boxscore', {})
-                    away_team_data = boxscore.get('awayTeam', {})
-                    team_id = away_team_data.get('id')
-                    
-                    metrics = self.calculate_game_metrics(game_data, team_id, is_home=False)
-                    if metrics:
+                for res in away_results:
+                    if res:
+                        game_id, metrics, opp_team = res
                         for key in away_stats.keys():
-                            if key != 'games' and key in metrics:
+                            if key not in ('games', 'opponents') and key in metrics:
                                 away_stats[key].append(metrics.get(key, 0))
-                        
                         away_stats['games'].append(game_id)
-                        
-                        # Extract opponent
-                        boxscore = game_data.get('boxscore', {})
-                        home_team = boxscore.get('homeTeam', {}).get('abbrev', 'UNK')
-                        away_stats['opponents'].append(home_team)
-                        print(f"✓ GS={metrics['gs']:.1f}, xG={metrics['xg']:.2f}")
+                        away_stats['opponents'].append(opp_team)
+                        print(f"  ✓ Away game {game_id}: GS={metrics.get('gs', 0):.1f}, xG={metrics.get('xg', 0):.2f}")
                     else:
-                        print("Failed to calculate metrics - skipping")
-                except TimeoutError as e:
-                    print(f"Timeout - skipping: {e}")
-                except KeyboardInterrupt:
-                    raise
-                except Exception as e:
-                    print(f"Error (skipping): {e}")
+                        print(f"  ✗ Failed metrics calculation for away game")
             
             # Incremental Save
             try:

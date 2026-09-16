@@ -60,8 +60,8 @@ src/
 # Keep win_probability_predictions_v2.json for dashboard predictions
 !win_probability_predictions_v2.json
 !data/win_probability_predictions_v2.json
-!data/season_2025_2026_schedule.json
-!data/season_2025_2026_team_stats.json
+!data/season_*_schedule.json
+!data/season_*_team_stats.json
 !data/nhl_edge_data.json
 # Playoff / regular-season training + predictions (repo default ignores *.json)
 !data/reg_season_cup_5yr.json
