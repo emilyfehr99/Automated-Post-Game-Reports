@@ -11,6 +11,7 @@ jobs:
     timeout-minutes: 25
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      PYTHONPATH: ".:models:analyzers:utils:scrapers"
     permissions:
       contents: write  # Allow pushing changes back to repo
       

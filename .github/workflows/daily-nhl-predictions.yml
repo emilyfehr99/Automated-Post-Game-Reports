@@ -19,6 +19,7 @@ jobs:
     timeout-minutes: 25
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
+      PYTHONPATH: ".:models:analyzers:utils:scrapers"
       # Set true if you explicitly want model binaries committed (avoids frequent conflicts)
       PUSH_MODEL_ARTIFACTS: "false"
     steps:
@@ -124,7 +125,7 @@ jobs:
           echo "✅ Team stats generation complete"
           
           # Check if file was created (normalized location)
-          STATS_FILE=$(python3 -c "from season_utils import get_team_stats_path; print(get_team_stats_path())" 2>/dev/null || echo "")
+          STATS_FILE=$(python3 -c "from utils.season_utils import get_team_stats_path; print(get_team_stats_path())" 2>/dev/null || python3 -c "from season_utils import get_team_stats_path; print(get_team_stats_path())" 2>/dev/null || echo "data/season_2026_2027_team_stats.json")
           if [ -n "$STATS_FILE" ] && [ -f "$STATS_FILE" ]; then
             echo "✅ Team stats file created: $STATS_FILE"
             ls -lh "$STATS_FILE"
