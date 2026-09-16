@@ -132,10 +132,7 @@ class NHLAPIClient:
     def get_play_by_play(self, game_id):
         """Get play-by-play data for a game"""
         url = f"{self.base_url}/gamecenter/{game_id}/play-by-play"
-        response = self.session.get(url)
-        if response.status_code == 200:
-            return response.json()
-        return None
+        return self._safe_get(url)
 
     def get_comprehensive_game_data(self, game_id):
         """Get comprehensive game data including boxscore and play-by-play"""

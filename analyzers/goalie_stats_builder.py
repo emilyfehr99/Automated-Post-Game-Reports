@@ -162,11 +162,8 @@ class GoalieStatsBuilder:
             return self.goalie_cache[goalie_id]
         
         try:
-            r = self.api.session.get(
-                f'https://api-web.nhle.com/v1/player/{goalie_id}/landing'
-            )
-            if r.status_code == 200:
-                data = r.json()
+            data = self.api._safe_get(f'https://api-web.nhle.com/v1/player/{goalie_id}/landing')
+            if data:
                 catches = data.get('shootsCatches', 'L')
                 name = f"{data.get('firstName', {}).get('default', '')} {data.get('lastName', {}).get('default', '')}".strip()
                 self.goalie_cache[goalie_id] = catches

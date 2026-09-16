@@ -32,7 +32,7 @@ from team_report_generator import TeamReportGenerator
 class RealTeamStatsGenerator(TeamReportGenerator):
     """Generate real team stats using TeamReportGenerator's calculation methods"""
     
-    def __init__(self, enable_sprites: bool = True):
+    def __init__(self, enable_sprites: bool = False):
         super().__init__()
         self.enable_sprites = enable_sprites
         # Use absolute path for robustness
@@ -275,12 +275,10 @@ class RealTeamStatsGenerator(TeamReportGenerator):
         """Generate stats for all teams incrementally"""
         print("Fetching standings to get all teams...")
         try:
-            # Use the API client's session to ensure proper headers (User-Agent) are sent
-            response = self.api.session.get("https://api-web.nhle.com/v1/standings/now")
-            if response.status_code != 200:
-                print(f"Error fetching standings: Status {response.status_code}")
+            data = self.api._safe_get("https://api-web.nhle.com/v1/standings/now")
+            if not data:
+                print("Error fetching standings: No data returned")
                 return
-            data = response.json()
             standings = data.get('standings', [])
         except Exception as e:
             print(f"Error fetching standings: {e}")
