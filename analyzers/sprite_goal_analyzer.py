@@ -602,6 +602,7 @@ class SpriteGoalAnalyzer:
             
             result[team_id] = {
                 'abbrev': stats['abbrev'],
+                'total_goals': stats['total_goals'],
                 'avg_net_front': round(sum(stats['net_front']) / len(stats['net_front']), 1) if stats['net_front'] else 0.0,
                 'net_front_traffic_pct': traffic_pct,
                 'avg_shot_dist': round(sum(stats['shot_dist']) / len(stats['shot_dist']), 1) if stats['shot_dist'] else 0.0,
