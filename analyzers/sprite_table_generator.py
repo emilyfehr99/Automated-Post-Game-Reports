@@ -99,8 +99,8 @@ def get_team_color(team_abbrev):
     }
     return team_colors.get(team_abbrev, colors.Color(26/255, 77/255, 107/255))  # Default dark blue
 
-def get_team_logo(team_abbrev, size=40):
-    """Download and resize team logo"""
+def get_team_logo(team_abbrev, size=13):
+    """Load cached team logo from disk, download if missing, and return ReportLab Image"""
     logo_map = {
         'TBL': 'tb', 'NSH': 'nsh', 'EDM': 'edm', 'FLA': 'fla',
         'COL': 'col', 'DAL': 'dal', 'BOS': 'bos', 'TOR': 'tor',
@@ -113,22 +113,41 @@ def get_team_logo(team_abbrev, size=40):
         'UTA': 'uta'
     }
     
-    logo_abbrev = logo_map.get(team_abbrev, team_abbrev.lower())
-    logo_url = f"https://a.espncdn.com/i/teamlogos/nhl/500/{logo_abbrev}.png"
+    logo_abbrev = logo_map.get(str(team_abbrev).upper(), str(team_abbrev).lower())
+    analyzers_dir = os.path.dirname(os.path.abspath(__file__))
+    repo_root = os.path.abspath(os.path.join(analyzers_dir, os.pardir))
+    cache_path = os.path.join(repo_root, "data", "logo_cache", f"{logo_abbrev}.png")
     
-    try:
-        response = requests.get(logo_url, timeout=5)
-        if response.status_code == 200:
-            img = PILImage.open(BytesIO(response.content))
-            img = img.resize((100, 100), PILImage.Resampling.LANCZOS)
+    img = None
+    if os.path.exists(cache_path):
+        try:
+            img = PILImage.open(cache_path)
+        except Exception:
+            img = None
             
-            # Save to temp file
-            temp_path = f"/tmp/team_logo_{team_abbrev}.png"
-            img.save(temp_path)
+    if img is None:
+        logo_url = f"https://a.espncdn.com/i/teamlogos/nhl/500/{logo_abbrev}.png"
+        try:
+            response = requests.get(logo_url, timeout=5)
+            if response.status_code == 200:
+                img = PILImage.open(BytesIO(response.content))
+                os.makedirs(os.path.dirname(cache_path), exist_ok=True)
+                img.save(cache_path)
+        except Exception:
+            pass
+            
+    if img is not None:
+        try:
+            # Ensure RGBA mode for transparency
+            if img.mode != 'RGBA':
+                img = img.convert('RGBA')
+            img_resized = img.resize((size * 4, size * 4), PILImage.Resampling.LANCZOS)
+            temp_path = f"/tmp/team_logo_{team_abbrev}_{size}.png"
+            img_resized.save(temp_path, format='PNG')
             return RLImage(temp_path, width=size, height=size)
-    except:
-        pass
-    
+        except Exception as e:
+            print(f"Error processing logo for {team_abbrev}: {e}")
+            
     return None
 
 def create_sprite_analysis_tables(sprite_data, compact: bool = False):
@@ -157,10 +176,15 @@ def create_sprite_analysis_tables(sprite_data, compact: bool = False):
     home_color = get_team_color(home_abbrev)
     away_color = get_team_color(away_abbrev)
     
-    # Get team logos
-    away_logo = get_team_logo(away_abbrev, size=12)
-    home_logo = get_team_logo(home_abbrev, size=12)
-    
+    # Factory helpers to return fresh RLImage instances for each table cell (avoiding ReportLab flowable reuse)
+    def get_away_logo(size=12):
+        img = get_team_logo(away_abbrev, size=size)
+        return img if img else away_abbrev
+
+    def get_home_logo(size=12):
+        img = get_team_logo(home_abbrev, size=size)
+        return img if img else home_abbrev
+
     flowables = []
     
     # Compact sizing defaults (tuned to fit on page 1)
@@ -404,11 +428,11 @@ def create_sprite_analysis_tables(sprite_data, compact: bool = False):
     
     # Table 1: Net-Front Traffic %
     net_front_table = Table([
-        ['NET-FRONT TRAFFIC % ON GF'],  # Updated label
-        [away_logo if away_logo else away_abbrev, 
-         f"{nf_away}%",  # Display as percentage
-         home_logo if home_logo else home_abbrev,
-         f"{nf_home}%"]  # Display as percentage
+        ['NET-FRONT TRAFFIC % ON GF'],
+        [get_away_logo(13), 
+         f"{nf_away}%",
+         get_home_logo(13),
+         f"{nf_home}%"]
     ], colWidths=[col_width]*4, rowHeights=[header_row_h, data_row_h])
     net_front_table.setStyle(table_style)
     net_front_table.setStyle(TableStyle([
@@ -419,9 +443,9 @@ def create_sprite_analysis_tables(sprite_data, compact: bool = False):
     # Table 2: Shot Distance  
     shot_dist_table = Table([
         ['AVG GOAL DISTANCE'],
-        [away_logo if away_logo else away_abbrev,
+        [get_away_logo(13),
          f"{int(sd_away)} ft",
-         home_logo if home_logo else home_abbrev,
+         get_home_logo(13),
          f"{int(sd_home)} ft"]
     ], colWidths=[col_width]*4, rowHeights=[header_row_h, data_row_h])
     shot_dist_table.setStyle(table_style)
@@ -431,12 +455,12 @@ def create_sprite_analysis_tables(sprite_data, compact: bool = False):
     ]))
     
     # Table 3: Zone Entry (Split Visual)
-    # Using specific column widths for the bars (0.75" bar vs 0.4" logo/text)
+    # Using specific column widths for the bars (0.75" bar vs 0.3" logo/text)
     entry_table = Table([
         ['ENTRY TYPE SHARE ON GF'],
-        [away_logo if away_logo else away_abbrev,
+        [get_away_logo(13),
          ze_away_bar,
-         home_logo if home_logo else home_abbrev,
+         get_home_logo(13),
          ze_home_bar]
     ], colWidths=[0.3*inch, 0.75*inch, 0.3*inch, 0.75*inch], rowHeights=[header_row_h, entry_data_row_h])
     entry_table.setStyle(table_style)
@@ -444,9 +468,9 @@ def create_sprite_analysis_tables(sprite_data, compact: bool = False):
     # Table 4: Passes
     pass_table = Table([
         ['PASSES PER GOAL'],
-        [away_logo if away_logo else away_abbrev,
+        [get_away_logo(13),
          f"{pass_away}",
-         home_logo if home_logo else home_abbrev,
+         get_home_logo(13),
          f"{pass_home}"]
     ], colWidths=[col_width]*4, rowHeights=[header_row_h, data_row_h])
     pass_table.setStyle(table_style)
