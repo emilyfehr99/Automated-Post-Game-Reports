@@ -15,18 +15,37 @@ class SpriteGoalAnalyzer:
         self.GOAL_X = 2250
         self.GOAL_Y = 500
         self.BLUE_LINE_X = 700
+        self.session = requests.Session()
+        self.session.headers.update({
+            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
+            'Referer': 'https://www.nhl.com/',
+        })
+        self._sprite_cache = {}
     
     def distance(self, x1, y1, x2, y2):
         """Calculate Euclidean distance"""
         return math.sqrt((x2-x1)**2 + (y2-y1)**2)
     
+    def _get_target_goal_x(self, sprite_data):
+        """Determine target goal X coordinate (right ~2250 or left ~150) from sprite puck path"""
+        if not sprite_data:
+            return 2250
+        for frame in reversed(sprite_data[-10:]):
+            for p in frame.get('onIce', {}).values():
+                if p.get('id') == 1 and 'x' in p:
+                    return 2250 if p['x'] > 1200 else 150
+        return 2250
+    
     def get_sprite_data(self, game_id, event_id):
-        """Fetch sprite data for a specific event"""
+        """Fetch sprite data for a specific event with in-memory caching"""
+        cache_key = f"{game_id}_{event_id}"
+        if cache_key in self._sprite_cache:
+            return self._sprite_cache[cache_key]
         try:
             year = str(game_id)[:4]
             next_year = str(int(year) + 1)
             season = f"{year}{next_year}"
-        except:
+        except Exception:
             try:
                 from season_utils import current_season_string
                 season = current_season_string()
@@ -34,25 +53,27 @@ class SpriteGoalAnalyzer:
                 season = "20262027"
             
         url = f'https://wsr.nhle.com/sprites/{season}/{game_id}/ev{event_id}.json'
-        headers = {
-            'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36',
-            'Referer': 'https://www.nhl.com/',
-        }
         try:
-            response = requests.get(url, headers=headers, timeout=5)
+            response = self.session.get(url, timeout=4)
             if response.status_code == 200:
-                return response.json()
-        except:
+                data = response.json()
+                self._sprite_cache[cache_key] = data
+                return data
+        except Exception:
             pass
+        self._sprite_cache[cache_key] = None
         return None
     
     def get_game_data(self, game_id):
         """Fetch game play-by-play data"""
         url = f'https://api-web.nhle.com/v1/gamecenter/{game_id}/play-by-play'
         try:
-            return requests.get(url, timeout=5).json()
-        except:
-            return None
+            resp = self.session.get(url, timeout=5)
+            if resp.status_code == 200:
+                return resp.json()
+        except Exception:
+            pass
+        return None
     
     def analyze_net_front_presence(self, sprite_data):
         """
@@ -365,7 +386,7 @@ class SpriteGoalAnalyzer:
             
         last_frame = sprite_data[-1]
         puck = None
-        for p in last_frame['onIce'].values():
+        for p in last_frame.get('onIce', {}).values():
             if p.get('id') == 1:
                 puck = p
                 break
@@ -373,16 +394,17 @@ class SpriteGoalAnalyzer:
         if not puck or 'x' not in puck:
             return 0
             
+        target_goal_x = self._get_target_goal_x(sprite_data)
         count = 0
         p_x, p_y = puck['x'], puck['y']
         
-        for p in last_frame['onIce'].values():
+        for p in last_frame.get('onIce', {}).values():
             if p.get('id') == 1: continue
             if 'x' not in p: continue
             
             px, py = p['x'], p['y']
-            if min(p_x, 2250) <= px <= max(p_x, 2250):
-                if abs(py - 500) < 50:
+            if min(p_x, target_goal_x) <= px <= max(p_x, target_goal_x):
+                if abs(py - 500) < 65:
                     count += 1
         
         return max(0, count - 1)
@@ -392,15 +414,16 @@ class SpriteGoalAnalyzer:
         if not sprite_data:
             return "Unknown"
             
+        target_goal_x = self._get_target_goal_x(sprite_data)
         last_frame = sprite_data[-1]
         goalie = None
         min_dist = 1000
         
-        for p in last_frame['onIce'].values():
+        for p in last_frame.get('onIce', {}).values():
             if p.get('id') == 1: continue
             if 'x' not in p: continue
             
-            dist = self.distance(p['x'], p['y'], 2250, 500)
+            dist = self.distance(p['x'], p['y'], target_goal_x, 500)
             if dist < min_dist:
                 min_dist = dist
                 goalie = p
@@ -445,8 +468,6 @@ class SpriteGoalAnalyzer:
         period_sides = {}
         if landing_data and 'summary' in landing_data and 'scoring' in landing_data['summary']:
             for period_info in landing_data['summary']['scoring']:
-                # The period info usually contains a list of goals
-                # We need the period number
                 p_desc = period_info.get('periodDescriptor', {})
                 p_num = p_desc.get('number')
                 
@@ -456,12 +477,6 @@ class SpriteGoalAnalyzer:
                     side = goals_list[0].get('homeTeamDefendingSide')
                     if side:
                         period_sides[p_num] = side
-                        
-        # Fallback sides if not found (standard rotation)
-        # Period 1: usually 'right' or 'left' but switch in 2.
-        # If we didn't find specific API info, let's default to inference inside the function
-        # Or simplistic: 1=right, 2=left, 3=right (often home defends right first? not guaranteed!)
-        # Actually, let's rely on goal heuristic if side is missing (pass None)
         
         goals = [p for p in game_data.get('plays', []) if p.get('typeDescKey') == 'goal']
         
@@ -492,27 +507,6 @@ class SpriteGoalAnalyzer:
             }
         }
         
-        # Fetch PBP data to calculate Net-Front Traffic %
-        pbp_url = f"https://api-web.nhle.com/v1/gamecenter/{game_id}/play-by-play"
-        pbp_response = requests.get(pbp_url)
-        if pbp_response.status_code == 200:
-            pbp_data = pbp_response.json()
-            plays = pbp_data.get('plays', [])
-            
-            # Calculate traffic goals for each team
-            for play in plays:
-                if play.get('typeDescKey') != 'goal':
-                    continue
-                details = play.get('details', {})
-                event_team = details.get('eventOwnerTeamId')
-                
-                if event_team in team_stats:
-                    team_stats[event_team]['total_goals'] += 1
-                    shot_type = details.get('shotType', '').lower()
-                    # Shot types indicating net-front traffic
-                    if shot_type in ['tip-in', 'deflected', 'wrap-around', 'bat']:
-                        team_stats[event_team]['traffic_goals'] += 1
-        
         for goal in goals:
             event_id = goal.get('eventId')
             scoring_team_id = goal.get('details', {}).get('eventOwnerTeamId')
@@ -521,12 +515,16 @@ class SpriteGoalAnalyzer:
             if scoring_team_id not in team_stats:
                 continue
             
+            team_stats[scoring_team_id]['total_goals'] += 1
+            details = goal.get('details', {})
+            shot_type = str(details.get('shotType', '')).lower()
+            
             sprite_data = self.get_sprite_data(game_id, event_id)
             if not sprite_data:
                 # Accurate fallback using official high-fidelity NHL PBP tracking coordinates
-                details = goal.get('details', {})
                 x = details.get('xCoord')
                 y = details.get('yCoord')
+                dist_ft = None
                 if x is not None and y is not None:
                     # In official NHL coordinates (-100 to 100), goal line is at +/-89 ft
                     dist_ft = math.sqrt((89 - abs(x))**2 + y**2)
@@ -536,8 +534,7 @@ class SpriteGoalAnalyzer:
                     team_stats[scoring_team_id]['net_front'].append(2.0 if dist_ft < 15.0 else 1.0)
                     
                 # Check for net-front traffic / screen / deflection
-                shot_type = str(details.get('shotType', '')).lower()
-                is_traffic = (shot_type in ['tip-in', 'deflected', 'tip', 'deflection'] or (dist_ft is not None and dist_ft <= 10.0))
+                is_traffic = (shot_type in ['tip-in', 'deflected', 'tip', 'deflection', 'wrap-around', 'bat'] or (dist_ft is not None and dist_ft <= 12.0))
                 if is_traffic:
                     team_stats[scoring_team_id]['traffic_goals'] += 1
                     
@@ -559,7 +556,8 @@ class SpriteGoalAnalyzer:
             # Net-front presence from raw sprite
             net_front = self.analyze_net_front_presence(sprite_data)
             team_stats[scoring_team_id]['net_front'].append(net_front)
-            if net_front >= 1.0:
+            is_traffic = (net_front >= 1.0 or shot_type in ['tip-in', 'deflected', 'tip', 'deflection', 'wrap-around', 'bat'])
+            if is_traffic:
                 team_stats[scoring_team_id]['traffic_goals'] += 1
             
             # Shot distance in feet from raw sprite
@@ -574,8 +572,8 @@ class SpriteGoalAnalyzer:
                 goal_x_avg = 0
                 c = 0
                 for f in sprite_data[-10:]:
-                    for p in f['onIce'].values():
-                        if p.get('id') == 1:
+                    for p in f.get('onIce', {}).values():
+                        if p.get('id') == 1 and 'x' in p:
                             goal_x_avg += p['x']
                             c += 1
                             break
@@ -598,7 +596,7 @@ class SpriteGoalAnalyzer:
         for team_id, stats in team_stats.items():
             traffic_pct = 0.0
             if stats['total_goals'] > 0:
-                traffic_pct = round((stats['traffic_goals'] / stats['total_goals']) * 100, 1)
+                traffic_pct = min(100.0, round((stats['traffic_goals'] / stats['total_goals']) * 100, 1))
             
             result[team_id] = {
                 'abbrev': stats['abbrev'],
