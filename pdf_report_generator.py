@@ -992,25 +992,6 @@ class PostGameReportGenerator:
             # Create player roster map
             roster_map = self._create_player_roster_map(play_by_play)
             
-            # Initialize counters
-            # Map event IDs to official strength from scoring summary (No Guessing)
-            pp_goal_event_ids = set()
-            try:
-                # Check landing first (most reliable post-game), then boxscore, then play_by_play
-                summary = game_data.get('landing', {}).get('summary', {})
-                if not summary:
-                    summary = game_data.get('boxscore', {}).get('summary', {})
-                if not summary:
-                    summary = game_data.get('play_by_play', {}).get('summary', {})
-                
-                scoring = summary.get('scoring', [])
-                for period_item in scoring:
-                    for goal in period_item.get('goals', []):
-                        if goal.get('strength') == 'pp':
-                            pp_goal_event_ids.add(goal.get('eventId'))
-            except Exception as e:
-                print(f"Warning: Could not build official scoring map: {e}")
-
             stats = {
                 'hits': 0,
                 'penaltyMinutes': 0,
@@ -1026,6 +1007,8 @@ class PostGameReportGenerator:
             }
             
             prev_pp_advantage = 0
+            last_known_pp_advantage = 0
+            pp_goal_event_ids = self._pp_goal_event_ids(game_data)
 
             # Process each play
             for play in play_by_play['plays']:
@@ -1033,57 +1016,50 @@ class PostGameReportGenerator:
                 event_owner_team_id = play_details.get('eventOwnerTeamId')
                 play_type = play.get('typeDescKey', '')
                 
-                # Only count plays for this team
+                # Blocked shots: eventOwner is shooter — credit the blocking team
+                if play_type == 'blocked-shot' and event_owner_team_id is not None and event_owner_team_id != team_id:
+                    stats['blockedShots'] += 1
+
+                # Only count other plays for this team
                 if event_owner_team_id == team_id:
                     if play_type == 'hit':
                         stats['hits'] += 1
-                    elif play_type == 'shot-on-goal':
+                    elif play_type in ('shot-on-goal', 'goal'):
                         stats['shotsOnGoal'] += 1
                     elif play_type == 'missed-shot':
                         stats['missedShots'] += 1
-                    elif play_type == 'blocked-shot':
-                        stats['blockedShots'] += 1
                     elif play_type == 'giveaway':
                         stats['giveaways'] += 1
                     elif play_type == 'takeaway':
                         stats['takeaways'] += 1
                     elif play_type == 'faceoff':
                         stats['faceoffTotal'] += 1
-                        # Check if this team won the faceoff
-                        winning_player_id = play_details.get('winningPlayerId')
-                        if winning_player_id and winning_player_id in roster_map:
-                            if roster_map[winning_player_id]['teamId'] == team_id:
-                                stats['faceoffWins'] += 1
+                        stats['faceoffWins'] += 1  # eventOwner is the winner
                     elif play_type == 'penalty':
-                        duration = play_details.get('duration', 0)
-                        stats['penaltyMinutes'] += duration
-                # Maintain PP state
+                        duration = play_details.get('duration')
+                        if duration is None:
+                            duration = play_details.get('penaltyMinutes', 0) or 0
+                        try:
+                            stats['penaltyMinutes'] += int(duration)
+                        except (TypeError, ValueError):
+                            pass
+
+                # Maintain PP state (carry forward missing sit codes)
                 sit_code = play.get('situationCode', '')
-                current_pp_advantage = 0
-                if len(sit_code) == 4:
-                    try:
-                        away_skaters = int(sit_code[1])
-                        home_skaters = int(sit_code[2])
-                        if team_side == 'away' and away_skaters > home_skaters and home_skaters < 5:
-                            current_pp_advantage = away_skaters - home_skaters
-                        elif team_side == 'home' and home_skaters > away_skaters and away_skaters < 5:
-                            current_pp_advantage = home_skaters - away_skaters
+                if sit_code and len(sit_code) == 4:
+                    current_pp_advantage = self._pp_advantage_from_situation(sit_code, team_side)
+                    last_known_pp_advantage = current_pp_advantage
+                else:
+                    current_pp_advantage = last_known_pp_advantage
                             
-                        if current_pp_advantage > prev_pp_advantage:
-                            stats['powerPlayOpportunities'] += (current_pp_advantage - prev_pp_advantage)
-                    except ValueError:
-                        pass
+                if current_pp_advantage > prev_pp_advantage:
+                    stats['powerPlayOpportunities'] += (current_pp_advantage - prev_pp_advantage)
                 
                 prev_pp_advantage = current_pp_advantage
                 
-                # Check for Power Play Goals natively (No Guessing)
+                # Power play goals
                 if play_type == 'goal' and event_owner_team_id == team_id:
-                    is_ppg = False
-                    if play.get('eventId') in pp_goal_event_ids:
-                        is_ppg = True
-                    elif current_pp_advantage > 0:
-                        is_ppg = True
-                        
+                    is_ppg = (play.get('eventId') in pp_goal_event_ids) or current_pp_advantage > 0
                     if is_ppg:
                         stats['powerPlayGoals'] += 1
                         if stats['powerPlayOpportunities'] < stats['powerPlayGoals']:
@@ -1582,10 +1558,15 @@ class PostGameReportGenerator:
             away_total_ex_en_count = len(away_total_stats.get('exits_to_entries', []))
             away_total_ex_en_eff = (away_total_ex_en_count / away_total_exits * 100) if away_total_exits > 0 else 0
             
-            final_row = ['Final', str(away_total_goals), str(sum(away_period_stats['shots'])), f"{sum(away_period_stats['corsi_pct'])/3:.1f}%",
-                f"{sum(away_period_stats['pp_goals'])}/{sum(away_period_stats['pp_attempts'])}", str(sum(away_period_stats['pim'])), 
-                str(sum(away_period_stats['hits'])), f"{sum(away_period_stats['fo_pct'])/3:.1f}%", str(sum(away_period_stats['bs'])), 
-                str(sum(away_period_stats['gv'])), str(sum(away_period_stats['tk'])), f'{sum(away_gs_periods):.1f}', f'{away_xg_total:.2f}',
+            away_ot_for_final = None
+            if has_ot or has_so:
+                away_ot_for_final = self._calculate_ot_so_stats(game_data, away_team['id'], 'away')
+            away_final = self._final_counting_stats(game_data, 'away', away_period_stats, away_ot_for_final)
+
+            final_row = ['Final', str(away_total_goals), str(away_final['shots']), f"{sum(away_period_stats['corsi_pct'])/3:.1f}%",
+                away_final['pp'], str(away_final['pim']),
+                str(away_final['hits']), f"{away_final['fo_pct']:.1f}%", str(away_final['bs']),
+                str(away_final['gv']), str(away_final['tk']), f'{sum(away_gs_periods):.1f}', f'{away_xg_total:.2f}',
                 f'{sum(away_zone_metrics["nz_turnovers"])}', f'{sum(away_zone_metrics["nz_turnovers_to_shots"])}',
                  f'{sum(away_zone_metrics["oz_originating_shots"])}', f'{sum(away_zone_metrics["nz_originating_shots"])}', f'{sum(away_zone_metrics["dz_originating_shots"])}',
                 f'{sum(away_zone_metrics["fc_cycle_sog"])}', f'{sum(away_zone_metrics["rush_sog"])}', str(away_total_rebounds),
@@ -1667,10 +1648,15 @@ class PostGameReportGenerator:
             home_total_ex_en_count = len(home_total_stats.get('exits_to_entries', []))
             home_total_ex_en_eff = (home_total_ex_en_count / home_total_exits * 100) if home_total_exits > 0 else 0
             
-            stats_data.append(['Final', str(home_total_goals), str(sum(home_period_stats['shots'])), f"{sum(home_period_stats['corsi_pct'])/3:.1f}%",
-                f"{sum(home_period_stats['pp_goals'])}/{sum(home_period_stats['pp_attempts'])}", str(sum(home_period_stats['pim'])), 
-                str(sum(home_period_stats['hits'])), f"{sum(home_period_stats['fo_pct'])/3:.1f}%", str(sum(home_period_stats['bs'])), 
-                str(sum(home_period_stats['gv'])), str(sum(home_period_stats['tk'])), f'{sum(home_gs_periods):.1f}', f'{home_xg_total:.2f}',
+            home_ot_for_final = None
+            if has_ot or has_so:
+                home_ot_for_final = self._calculate_ot_so_stats(game_data, home_team['id'], 'home')
+            home_final = self._final_counting_stats(game_data, 'home', home_period_stats, home_ot_for_final)
+
+            stats_data.append(['Final', str(home_total_goals), str(home_final['shots']), f"{sum(home_period_stats['corsi_pct'])/3:.1f}%",
+                home_final['pp'], str(home_final['pim']),
+                str(home_final['hits']), f"{home_final['fo_pct']:.1f}%", str(home_final['bs']),
+                str(home_final['gv']), str(home_final['tk']), f'{sum(home_gs_periods):.1f}', f'{home_xg_total:.2f}',
                 f'{sum(home_zone_metrics["nz_turnovers"])}', f'{sum(home_zone_metrics["nz_turnovers_to_shots"])}',
                  f'{sum(home_zone_metrics["oz_originating_shots"])}', f'{sum(home_zone_metrics["nz_originating_shots"])}', f'{sum(home_zone_metrics["dz_originating_shots"])}',
                 f'{sum(home_zone_metrics["fc_cycle_sog"])}', f'{sum(home_zone_metrics["rush_sog"])}', str(home_total_rebounds),
@@ -2216,24 +2202,6 @@ class PostGameReportGenerator:
             if not play_by_play or 'plays' not in play_by_play:
                 return self._get_default_ot_so_stats()
             
-            # Map event IDs to official strength from scoring summary (No Guessing)
-            pp_goal_event_ids = set()
-            try:
-                # Check landing first (most reliable post-game), then boxscore, then play_by_play
-                summary = game_data.get('landing', {}).get('summary', {})
-                if not summary:
-                    summary = game_data.get('boxscore', {}).get('summary', {})
-                if not summary:
-                    summary = game_data.get('play_by_play', {}).get('summary', {})
-                
-                scoring = summary.get('scoring', [])
-                for period_item in scoring:
-                    for goal in period_item.get('goals', []):
-                        if goal.get('strength') == 'pp':
-                            pp_goal_event_ids.add(goal.get('eventId'))
-            except Exception as e:
-                print(f"Warning: Could not build official scoring map: {e}")
-
             # Initialize stats
             stats = {
                 'shots': 0, 'corsi_for': 0, 'corsi_against': 0, 'corsi_pct': 50.0,
@@ -2245,6 +2213,8 @@ class PostGameReportGenerator:
             }
             
             prev_pp_advantage = 0
+            last_known_pp_advantage = 0
+            pp_goal_event_ids = self._pp_goal_event_ids(game_data)
             
             for play in play_by_play['plays']:
                 period = play.get('periodDescriptor', {}).get('number', 1)
@@ -2261,11 +2231,24 @@ class PostGameReportGenerator:
                 if period_type and period_type_play != period_type:
                     continue
                 
-                # Only count events for this team
+                # PP state (carry forward missing sit codes)
+                sit_code = play.get('situationCode', '')
+                if sit_code and len(sit_code) == 4:
+                    current_pp_advantage = self._pp_advantage_from_situation(sit_code, team_side)
+                    last_known_pp_advantage = current_pp_advantage
+                else:
+                    current_pp_advantage = last_known_pp_advantage
+                if current_pp_advantage > prev_pp_advantage:
+                    stats['pp_attempts'] += (current_pp_advantage - prev_pp_advantage)
+                prev_pp_advantage = current_pp_advantage
+                
+                # Corsi against / blocks for us when opponent shoots
                 if event_team_id != team_id:
-                    # Count corsi against
                     if event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
                         stats['corsi_against'] += 1
+                    if event_type == 'blocked-shot':
+                        stats['bs'] += 1
+                        stats['gs'] += 0.05
                     continue
                 
                 # Count shots and corsi for
@@ -2274,33 +2257,10 @@ class PostGameReportGenerator:
                     if event_type in ['shot-on-goal', 'goal']:
                         stats['shots'] += 1
                 
-                # Check PP state transitions
-                sit_code = play.get('situationCode', '')
-                current_pp_advantage = 0
-                if len(sit_code) == 4:
-                    try:
-                        away_skaters = int(sit_code[1])
-                        home_skaters = int(sit_code[2])
-                        if team_side == 'away' and away_skaters > home_skaters and home_skaters < 5:
-                            current_pp_advantage = away_skaters - home_skaters
-                        elif team_side == 'home' and home_skaters > away_skaters and away_skaters < 5:
-                            current_pp_advantage = home_skaters - away_skaters
-                            
-                        if current_pp_advantage > prev_pp_advantage:
-                            stats['pp_attempts'] += (current_pp_advantage - prev_pp_advantage)
-                    except ValueError:
-                        pass
-                        
-                prev_pp_advantage = current_pp_advantage
-
                 # Count other stats
                 if event_type == 'goal':
                     stats['gs'] += 0.75
-                    # Check if it's a power play goal using official map (No Guessing)
-                    is_ppg = (play.get('eventId') in pp_goal_event_ids)
-                    if not is_ppg and current_pp_advantage > 0:
-                        is_ppg = True # Fallback
-                        
+                    is_ppg = (play.get('eventId') in pp_goal_event_ids) or current_pp_advantage > 0
                     if is_ppg:
                         stats['pp_goals'] += 1
                         if stats['pp_attempts'] < stats['pp_goals']:
@@ -2308,11 +2268,14 @@ class PostGameReportGenerator:
 
                 elif event_type == 'shot-on-goal':
                     stats['gs'] += 0.075
-                elif event_type == 'blocked-shot':
-                    stats['bs'] += 1
-                    stats['gs'] += 0.05
                 elif event_type == 'penalty':
-                    stats['pim'] += 2  # Assume 2-minute penalty
+                    dur = details.get('duration')
+                    if dur is None:
+                        dur = details.get('penaltyMinutes', 2)
+                    try:
+                        stats['pim'] += int(dur)
+                    except (TypeError, ValueError):
+                        stats['pim'] += 2
                     stats['gs'] -= 0.15
                 elif event_type == 'penalty-drawn':
                     stats['gs'] += 0.15
@@ -2327,18 +2290,12 @@ class PostGameReportGenerator:
                     stats['gs'] += 0.15
                 elif event_type == 'faceoff':
                     stats['fo_total'] += 1
-                    # Assume 50% win rate for simplicity
-                    stats['fo_wins'] += 0.5
+                    stats['fo_wins'] += 1  # eventOwner is the winner
                 
                 # Calculate xG and zone metrics
                 if event_type in ['shot-on-goal', 'goal', 'missed-shot', 'blocked-shot']:
                     xg = self._calculate_shot_xg(details, event_type, play, [])
                     stats['xg'] += xg
-                    
-                    # Determine zone and originating shots using possession logic
-                    x_coord = details.get('xCoord', 0)
-                    y_coord = details.get('yCoord', 0)
-                    zone_code = details.get('zoneCode')
                     
                     origin_zone = self._get_shot_origin_zone(play, play_by_play['plays'], team_id)
                     
@@ -2349,10 +2306,6 @@ class PostGameReportGenerator:
                     elif origin_zone == 'defensive':
                         stats['dz_originating_shots'] += 1
                         
-                    # Rush vs Cycle (simplified: Rush if time from entry < 5s)
-                    # Note: Full logic requires tracking entries, but we'll use a simplified check
-                    # identifying Rush shots as those from NZ or with high velocity (not easy here)
-                    # For consistency with main metrics, we'll mark as FC if in zone
                     if origin_zone == 'offensive':
                         stats['fc_cycle_sog'] += 1
                     else:
@@ -2535,10 +2488,6 @@ class PostGameReportGenerator:
                 event_team = details.get('eventOwnerTeamId')
                 period = play.get('periodDescriptor', {}).get('number', 1)
                 
-                # Only process plays for this team
-                if event_team != team_id:
-                    continue
-                
                 # Skip if period is beyond 3 (overtime, etc.)
                 if period > 3:
                     continue
@@ -2548,6 +2497,20 @@ class PostGameReportGenerator:
                 
                 # Get previous events for context (last 10 events)
                 previous_events = all_plays[max(0, play_index-10):play_index]
+                
+                # Blocked shots: eventOwner is the shooter; GS block credit goes to the blocker
+                if event_type == 'blocked-shot':
+                    if event_team is not None and event_team != team_id:
+                        game_scores[period_index] += 0.05
+                    elif event_team == team_id:
+                        # Our shot was blocked — still counts toward our xG attempt model
+                        xg = self._calculate_shot_xg(details, 'blocked-shot', play, previous_events)
+                        xg_values[period_index] += xg
+                    continue
+                
+                # Only process other events owned by this team
+                if event_team != team_id:
+                    continue
                 
                 # Calculate Game Score components for this play
                 if event_type == 'goal':
@@ -2569,13 +2532,6 @@ class PostGameReportGenerator:
                 elif event_type == 'missed-shot':
                     # Missed shots don't count for Game Score but count for xG
                     xg = self._calculate_shot_xg(details, 'missed-shot', play, previous_events)
-                    xg_values[period_index] += xg
-                    
-                elif event_type == 'blocked-shot':
-                    # Blocked shots: 0.05 points
-                    game_scores[period_index] += 0.05
-                    # Blocked shots also count for xG
-                    xg = self._calculate_shot_xg(details, 'blocked-shot', play, previous_events)
                     xg_values[period_index] += xg
                     
                 elif event_type == 'penalty':
@@ -3030,6 +2986,207 @@ class PostGameReportGenerator:
                 'rush_sog': [0, 0, 0]
             }
     
+    @staticmethod
+    def _pp_advantage_from_situation(sit_code: str, team_side: str) -> int:
+        """Man-advantage magnitude for team_side from NHL situationCode (e.g. '1451')."""
+        if not sit_code or len(sit_code) != 4:
+            return 0
+        try:
+            away_skaters = int(sit_code[1])
+            home_skaters = int(sit_code[2])
+        except ValueError:
+            return 0
+        if team_side == 'away' and away_skaters > home_skaters and home_skaters < 5:
+            return away_skaters - home_skaters
+        if team_side == 'home' and home_skaters > away_skaters and away_skaters < 5:
+            return home_skaters - away_skaters
+        return 0
+
+    def _pp_goal_event_ids(self, game_data) -> set:
+        """Official PPG event IDs from landing/boxscore scoring summary."""
+        pp_goal_event_ids = set()
+        try:
+            summary = game_data.get('landing', {}).get('summary', {})
+            if not summary:
+                summary = game_data.get('boxscore', {}).get('summary', {})
+            if not summary:
+                summary = game_data.get('play_by_play', {}).get('summary', {})
+            for period_item in summary.get('scoring', []) or []:
+                for goal in period_item.get('goals', []) or []:
+                    if str(goal.get('strength', '')).lower() == 'pp':
+                        pp_goal_event_ids.add(goal.get('eventId'))
+        except Exception as e:
+            print(f"Warning: Could not build official scoring map: {e}")
+        return pp_goal_event_ids
+
+    def _official_pp_from_right_rail(self, game_data, team_side: str):
+        """Parse official PP 'goals/opps' from right-rail teamGameStats. Returns (g, a) or None."""
+        rr = game_data.get('right_rail') or {}
+        stats = rr.get('teamGameStats') or []
+        for block in stats:
+            if not isinstance(block, dict) or block.get('category') != 'powerPlay':
+                continue
+            raw = block.get('awayValue' if team_side == 'away' else 'homeValue')
+            if not raw or not isinstance(raw, str) or '/' not in raw:
+                return None
+            try:
+                g_s, a_s = raw.split('/', 1)
+                return int(g_s.strip()), int(a_s.strip())
+            except ValueError:
+                return None
+        return None
+
+    def _right_rail_value(self, game_data, category: str, team_side: str):
+        """Get a raw right-rail teamGameStats value for category/side."""
+        rr = game_data.get('right_rail') or {}
+        key = 'awayValue' if team_side == 'away' else 'homeValue'
+        for block in rr.get('teamGameStats') or []:
+            if isinstance(block, dict) and block.get('category') == category:
+                return block.get(key)
+        return None
+
+    def _weighted_fo_pct(self, period_stats: dict) -> float:
+        wins = sum(period_stats.get('fo_wins') or [0])
+        total = sum(period_stats.get('fo_total') or [0])
+        if total > 0:
+            return (wins / total) * 100.0
+        # Fallback: mean of period pcts if wins/total missing
+        pcts = period_stats.get('fo_pct') or []
+        return (sum(pcts) / len(pcts)) if pcts else 50.0
+
+    def _final_counting_stats(self, game_data, team_side: str, period_stats: dict, ot_stats: dict | None):
+        """Game Final counting stats: regulation + OT, preferring NHL right-rail when present."""
+        ot = ot_stats or {}
+        def add(key):
+            return sum(period_stats.get(key) or [0]) + int(ot.get(key) or 0)
+
+        shots = add('shots')
+        pim = add('pim')
+        hits = add('hits')
+        bs = add('bs')
+        gv = add('gv')
+        tk = add('tk')
+        fo_pct = self._weighted_fo_pct(period_stats)
+        # Blend OT faceoffs into FO% when present
+        ot_w, ot_t = int(ot.get('fo_wins') or 0), int(ot.get('fo_total') or 0)
+        if ot_t:
+            wins = sum(period_stats.get('fo_wins') or [0]) + ot_w
+            total = sum(period_stats.get('fo_total') or [0]) + ot_t
+            if total > 0:
+                fo_pct = (wins / total) * 100.0
+
+        # Prefer official right-rail game totals
+        def as_int(val, default):
+            try:
+                return int(val)
+            except (TypeError, ValueError):
+                return default
+
+        sog_off = self._right_rail_value(game_data, 'sog', team_side)
+        if sog_off is not None:
+            shots = as_int(sog_off, shots)
+        pim_off = self._right_rail_value(game_data, 'pim', team_side)
+        if pim_off is not None:
+            pim = as_int(pim_off, pim)
+        hits_off = self._right_rail_value(game_data, 'hits', team_side)
+        if hits_off is not None:
+            hits = as_int(hits_off, hits)
+        bs_off = self._right_rail_value(game_data, 'blockedShots', team_side)
+        if bs_off is not None:
+            bs = as_int(bs_off, bs)
+        gv_off = self._right_rail_value(game_data, 'giveaways', team_side)
+        if gv_off is not None:
+            gv = as_int(gv_off, gv)
+        tk_off = self._right_rail_value(game_data, 'takeaways', team_side)
+        if tk_off is not None:
+            tk = as_int(tk_off, tk)
+        fo_off = self._right_rail_value(game_data, 'faceoffWinningPctg', team_side)
+        if fo_off is not None:
+            try:
+                fo_pct = float(fo_off) * 100.0 if float(fo_off) <= 1.0 else float(fo_off)
+            except (TypeError, ValueError):
+                pass
+        # faceoffWins string like "30/57" is more precise when present
+        fo_wins_off = self._right_rail_value(game_data, 'faceoffWins', team_side)
+        if isinstance(fo_wins_off, str) and '/' in fo_wins_off:
+            try:
+                w, t = fo_wins_off.split('/', 1)
+                w_i, t_i = int(w.strip()), int(t.strip())
+                if t_i > 0:
+                    fo_pct = (w_i / t_i) * 100.0
+            except ValueError:
+                pass
+
+        pp = self._official_pp_from_right_rail(game_data, team_side)
+        if pp is not None:
+            pp_str = f"{pp[0]}/{pp[1]}"
+        else:
+            pp_str = f"{sum(period_stats.get('pp_goals') or [0]) + int(ot.get('pp_goals') or 0)}/{sum(period_stats.get('pp_attempts') or [0]) + int(ot.get('pp_attempts') or 0)}"
+
+        return {
+            'shots': shots,
+            'pim': pim,
+            'hits': hits,
+            'bs': bs,
+            'gv': gv,
+            'tk': tk,
+            'fo_pct': fo_pct,
+            'pp': pp_str,
+        }
+
+    def _reconcile_pp_with_official(self, pp_goals, pp_attempts, game_data, team_side: str):
+        """Align period PP totals with NHL right-rail when PBP under/over-counts."""
+        official = self._official_pp_from_right_rail(game_data, team_side)
+        if official is None:
+            return pp_goals, pp_attempts
+        off_g, off_a = official
+        calc_g, calc_a = sum(pp_goals), sum(pp_attempts)
+        if calc_g == off_g and calc_a == off_a:
+            return pp_goals, pp_attempts
+        # Sparse PBP (e.g. some preseason feeds): no sit-code PP signal — use official on P1
+        if calc_a == 0 and off_a > 0:
+            pp_attempts = [off_a, 0, 0]
+            pp_goals = [off_g, 0, 0]
+            return pp_goals, pp_attempts
+        # Prefer official goals if landing map missed some
+        if calc_g != off_g and off_g >= 0:
+            # Keep period distribution of goals if counts match; else put delta on busiest PP period
+            if calc_g == 0 and off_g > 0:
+                idx = max(range(3), key=lambda i: pp_attempts[i])
+                pp_goals = [0, 0, 0]
+                pp_goals[idx] = off_g
+            # if we over-counted goals, clamp is rare — trust landing+sit; only fix attempts below
+        # Scale / trim attempts to official total while preserving relative period shape
+        if calc_a > 0 and off_a != calc_a and off_a >= off_g:
+            if calc_a > off_a:
+                # Remove surplus from periods with attempts > goals (period-boundary double counts)
+                surplus = calc_a - off_a
+                for i in range(3):
+                    while surplus > 0 and pp_attempts[i] > pp_goals[i]:
+                        pp_attempts[i] -= 1
+                        surplus -= 1
+                # If still surplus, trim any remaining attempts
+                for i in range(3):
+                    while surplus > 0 and pp_attempts[i] > 0:
+                        if pp_attempts[i] > pp_goals[i]:
+                            pp_attempts[i] -= 1
+                            surplus -= 1
+                        else:
+                            break
+            elif calc_a < off_a:
+                deficit = off_a - calc_a
+                idx = max(range(3), key=lambda i: pp_attempts[i])
+                pp_attempts[idx] += deficit
+        # Final safety: ensure attempts >= goals per period and totals match official attempts when possible
+        for i in range(3):
+            if pp_attempts[i] < pp_goals[i]:
+                pp_attempts[i] = pp_goals[i]
+        if sum(pp_goals) != off_g and off_g > sum(pp_goals):
+            pp_goals[0] += off_g - sum(pp_goals)
+            if pp_attempts[0] < pp_goals[0]:
+                pp_attempts[0] = pp_goals[0]
+        return pp_goals, pp_attempts
+
     def _calculate_real_period_stats(self, game_data, team_id, team_side):
         """Calculate real period-by-period stats from NHL API data"""
         try:
@@ -3048,23 +3205,7 @@ class PostGameReportGenerator:
                     'tk': [0, 0, 0]
                 }
             
-            # Map event IDs to official strength from scoring summary (No Guessing)
-            pp_goal_event_ids = set()
-            try:
-                # Check landing first (most reliable post-game), then boxscore, then play_by_play
-                summary = game_data.get('landing', {}).get('summary', {})
-                if not summary:
-                    summary = game_data.get('boxscore', {}).get('summary', {})
-                if not summary:
-                    summary = game_data.get('play_by_play', {}).get('summary', {})
-                
-                scoring = summary.get('scoring', [])
-                for period_item in scoring:
-                    for goal in period_item.get('goals', []):
-                        if goal.get('strength') == 'pp':
-                            pp_goal_event_ids.add(goal.get('eventId'))
-            except Exception as e:
-                print(f"Warning: Could not build official scoring map: {e}")
+            pp_goal_event_ids = self._pp_goal_event_ids(game_data)
             
             # Initialize period arrays (3 periods)
             shots = [0, 0, 0]
@@ -3081,6 +3222,7 @@ class PostGameReportGenerator:
             tk = [0, 0, 0]
             
             prev_pp_advantage = 0
+            last_known_pp_advantage = 0
             
             # Process each play
             for play in play_by_play['plays']:
@@ -3097,75 +3239,63 @@ class PostGameReportGenerator:
                 event_team = details.get('eventOwnerTeamId')
                 event_id = play.get('eventId')
                 
-                # Reset advantage tracking at start of new period
-                if play.get('timeInPeriod') == '00:00':
-                    prev_pp_advantage = 0
-                
-                # Count shots on goal
-                if event_type == 'shot-on-goal' and event_team == team_id:
+                # Count shots on goal (NHL SOG includes goals)
+                if event_type in ('shot-on-goal', 'goal') and event_team == team_id:
                     shots[period_index] += 1
                 
-                # Count Corsi events (shots, missed shots, blocked shots)
-                if event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot']:
+                # Corsi: SOG + goals + misses + blocks (block credited to shooting team)
+                if event_type in ['shot-on-goal', 'goal', 'missed-shot', 'blocked-shot']:
                     if event_team == team_id:
                         corsi_for[period_index] += 1
                     else:
                         corsi_against[period_index] += 1
                 
-                # Check situation code for PP goals and tracking PP state
+                # PP state: carry forward when situationCode is missing (do NOT
+                # reset at period 00:00 — that double-counts PPs that span periods)
                 sit_code = play.get('situationCode', '')
+                if sit_code and len(sit_code) == 4:
+                    current_pp_advantage = self._pp_advantage_from_situation(sit_code, team_side)
+                    last_known_pp_advantage = current_pp_advantage
+                else:
+                    current_pp_advantage = last_known_pp_advantage
                 
-                current_pp_advantage = 0
-                if len(sit_code) == 4:
-                    try:
-                        away_skaters = int(sit_code[1])
-                        home_skaters = int(sit_code[2])
-                        
-                        if team_side == 'away' and away_skaters > home_skaters and home_skaters < 5:
-                            current_pp_advantage = away_skaters - home_skaters
-                        elif team_side == 'home' and home_skaters > away_skaters and away_skaters < 5:
-                            current_pp_advantage = home_skaters - away_skaters
-                            
-                        # If advantage magnitude increases, we gained a new penalty opportunity
-                        if current_pp_advantage > prev_pp_advantage:
-                            pp_attempts[period_index] += (current_pp_advantage - prev_pp_advantage)
-                            
-                    except ValueError:
-                        pass
+                if current_pp_advantage > prev_pp_advantage:
+                    pp_attempts[period_index] += (current_pp_advantage - prev_pp_advantage)
                 
                 prev_pp_advantage = current_pp_advantage
                 
-                # Check for Power Play Goals using Official Map
+                # Power play goals: official landing map, else situation-code fallback
                 if event_type == 'goal' and event_team == team_id:
-                    is_ppg = (event_id in pp_goal_event_ids)
+                    is_ppg = event_id in pp_goal_event_ids
+                    if not is_ppg and current_pp_advantage > 0:
+                        is_ppg = True
                     if is_ppg:
                         pp_goals[period_index] += 1
-                        # Ensure attempts is at least 1 in this period if we score
-                        if pp_attempts[period_index] == 0:
-                            pp_attempts[period_index] = 1
-                            # Remove from the most recent period to preserve total bounds
-                            for p in range(period_index - 1, -1, -1):
-                                if pp_attempts[p] > pp_goals[p]:
-                                    pp_attempts[p] -= 1
-                                    break
+                        if pp_attempts[period_index] < pp_goals[period_index]:
+                            pp_attempts[period_index] = pp_goals[period_index]
 
-                # Count penalty minutes
+                # PIM: NHL uses `duration` (majors/misconducts); penaltyMinutes is often absent
                 if event_type == 'penalty' and event_team == team_id:
-                    penalty_minutes = details.get('penaltyMinutes', 2)
-                    pim[period_index] += penalty_minutes
+                    penalty_minutes = details.get('duration')
+                    if penalty_minutes is None:
+                        penalty_minutes = details.get('penaltyMinutes', 2)
+                    try:
+                        pim[period_index] += int(penalty_minutes)
+                    except (TypeError, ValueError):
+                        pim[period_index] += 2
                 
                 # Count hits
                 if event_type == 'hit' and event_team == team_id:
                     hits[period_index] += 1
                 
-                # Count faceoffs
+                # Count faceoffs (eventOwner = winner)
                 if event_type == 'faceoff':
                     if event_team == team_id:
                         faceoffs_won[period_index] += 1
                     faceoffs_total[period_index] += 1
                 
-                # Count blocked shots
-                if event_type == 'blocked-shot' and event_team == team_id:
+                # Blocked shots: eventOwnerTeamId is the SHOOTING team; credit the blocker
+                if event_type == 'blocked-shot' and event_team is not None and event_team != team_id:
                     bs[period_index] += 1
                 
                 # Count giveaways
@@ -3175,6 +3305,10 @@ class PostGameReportGenerator:
                 # Count takeaways
                 if event_type == 'takeaway' and event_team == team_id:
                     tk[period_index] += 1
+            
+            pp_goals, pp_attempts = self._reconcile_pp_with_official(
+                pp_goals, pp_attempts, game_data, team_side
+            )
             
             # Calculate percentages
             corsi_pct = []
@@ -3200,6 +3334,8 @@ class PostGameReportGenerator:
                 'pim': pim,
                 'hits': hits,
                 'fo_pct': fo_pct,
+                'fo_wins': faceoffs_won,
+                'fo_total': faceoffs_total,
                 'bs': bs,
                 'gv': gv,
                 'tk': tk
@@ -3219,7 +3355,7 @@ class PostGameReportGenerator:
                 'gv': [0, 0, 0],
                 'tk': [0, 0, 0]
             }
-    
+
     def _is_power_play_goal(self, all_plays, goal_play):
         """Check if a goal was scored on a power play"""
         try:

@@ -134,15 +134,24 @@ class NHLAPIClient:
         url = f"{self.base_url}/gamecenter/{game_id}/play-by-play"
         return self._safe_get(url)
 
+    def get_game_right_rail(self, game_id):
+        """Get right-rail team game stats (official PP, FO%, etc.)."""
+        url = f"{self.base_url}/gamecenter/{game_id}/right-rail"
+        return self._safe_get(url)
+
     def get_comprehensive_game_data(self, game_id):
-        """Get comprehensive game data including boxscore and play-by-play"""
+        """Get comprehensive game data including boxscore, PBP, landing, and right-rail."""
         game_center = self.get_game_center(game_id)
         boxscore = self.get_game_boxscore(game_id)
         play_by_play = self.get_play_by_play(game_id)
+        landing = self.get_game_landing(game_id)
+        right_rail = self.get_game_right_rail(game_id)
         
         print(f"Debug - Game Center data: {game_center is not None}")
         print(f"Debug - Boxscore data: {boxscore is not None}")
         print(f"Debug - Play-by-play data: {play_by_play is not None}")
+        print(f"Debug - Landing data: {landing is not None}")
+        print(f"Debug - Right-rail data: {right_rail is not None}")
         
         # If we have boxscore but no game_center, create a minimal game_center from boxscore
         if boxscore is not None and game_center is None:
@@ -176,7 +185,9 @@ class NHLAPIClient:
         return {
             'game_center': game_center,
             'boxscore': boxscore,
-            'play_by_play': play_by_play
+            'play_by_play': play_by_play,
+            'landing': landing,
+            'right_rail': right_rail,
         }
 
     def get_team_recent_games(self, team_abbr, limit=5):

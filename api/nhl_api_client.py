@@ -90,11 +90,25 @@ except Exception:
         boxscore = self.get_game_boxscore(game_id)
         play_by_play = self.get_play_by_play(game_id)
         landing = self.get_game_landing(game_id)
+        right_rail = None
+        try:
+            right_rail = self._safe_get(f"{self.base_url}/gamecenter/{game_id}/right-rail") if hasattr(self, '_safe_get') else None
+        except Exception:
+            right_rail = None
+        if right_rail is None:
+            try:
+                url = f"{self.base_url}/gamecenter/{game_id}/right-rail"
+                response = self.session.get(url)
+                if response.status_code == 200:
+                    right_rail = response.json()
+            except Exception:
+                pass
         
         print(f"Debug - Game Center data: {game_center is not None}")
         print(f"Debug - Boxscore data: {boxscore is not None}")
         print(f"Debug - Play-by-play data: {play_by_play is not None}")
         print(f"Debug - Landing data: {landing is not None}")
+        print(f"Debug - Right-rail data: {right_rail is not None}")
         
         # If we have boxscore but no game_center, create a minimal game_center from boxscore
         if boxscore is not None and game_center is None:
@@ -128,7 +142,8 @@ except Exception:
             'game_center': game_center,
             'boxscore': boxscore,
             'play_by_play': play_by_play,
-            'landing': landing
+            'landing': landing,
+            'right_rail': right_rail,
         }
 
     def get_team_recent_games(self, team_abbr, limit=5):
