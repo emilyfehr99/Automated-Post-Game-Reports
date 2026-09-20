@@ -86,3 +86,14 @@ def test_weighted_fo_pct_not_mean_of_periods():
     naive_mean = sum(period["fo_pct"]) / 2
     assert abs(naive_mean - 40.0) < 0.01
     assert abs(gen._weighted_fo_pct(period) - naive_mean) > 1.0
+
+
+def test_weighted_corsi_pct_not_mean_of_periods():
+    gen = PostGameReportGenerator.__new__(PostGameReportGenerator)
+    period = {
+        "corsi_for": [40, 5],
+        "corsi_against": [10, 20],
+        "corsi_pct": [80.0, 20.0],
+    }
+    # Weighted: 45/(45+30)=60%; naive mean of pcts = 50%
+    assert abs(gen._weighted_corsi_pct(period) - 60.0) < 0.01

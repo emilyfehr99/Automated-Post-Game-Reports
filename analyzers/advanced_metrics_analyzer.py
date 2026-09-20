@@ -1134,14 +1134,15 @@ class AdvancedMetricsAnalyzer:
                     })
             
             # Count defensive actions
+            # blocked-shot eventOwnerTeamId is the SHOOTER; credit the blocking team
+            if event_type == 'blocked-shot' and event_team is not None and event_team != team_id:
+                defense['blocked_shots'] += 1
+                player_id = details.get('blockingPlayerId')
+                if player_id:
+                    defense['defensive_players'][player_id] += 1
+
             if event_team == team_id:
-                if event_type == 'blocked-shot':
-                    defense['blocked_shots'] += 1
-                    player_id = details.get('blockingPlayerId')
-                    if player_id:
-                        defense['defensive_players'][player_id] += 1
-                        
-                elif event_type == 'takeaway':
+                if event_type == 'takeaway':
                     defense['takeaways'] += 1
                     player_id = details.get('playerId')
                     if player_id:
@@ -1156,7 +1157,7 @@ class AdvancedMetricsAnalyzer:
                 elif event_type == 'giveaway' and zone == 'D':
                     defense['defensive_zone_clears'] += 1
             
-            # Track shots against (opponent shots)
+            # Track shots against (opponent shot attempts; blocked-shot owner = shooter)
             elif event_type in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
                 defense['shot_attempts_against'] += 1
                 

@@ -1563,7 +1563,7 @@ class PostGameReportGenerator:
                 away_ot_for_final = self._calculate_ot_so_stats(game_data, away_team['id'], 'away')
             away_final = self._final_counting_stats(game_data, 'away', away_period_stats, away_ot_for_final)
 
-            final_row = ['Final', str(away_total_goals), str(away_final['shots']), f"{sum(away_period_stats['corsi_pct'])/3:.1f}%",
+            final_row = ['Final', str(away_total_goals), str(away_final['shots']), f"{away_final['cf_pct']:.1f}%",
                 away_final['pp'], str(away_final['pim']),
                 str(away_final['hits']), f"{away_final['fo_pct']:.1f}%", str(away_final['bs']),
                 str(away_final['gv']), str(away_final['tk']), f'{sum(away_gs_periods):.1f}', f'{away_xg_total:.2f}',
@@ -1653,7 +1653,7 @@ class PostGameReportGenerator:
                 home_ot_for_final = self._calculate_ot_so_stats(game_data, home_team['id'], 'home')
             home_final = self._final_counting_stats(game_data, 'home', home_period_stats, home_ot_for_final)
 
-            stats_data.append(['Final', str(home_total_goals), str(home_final['shots']), f"{sum(home_period_stats['corsi_pct'])/3:.1f}%",
+            stats_data.append(['Final', str(home_total_goals), str(home_final['shots']), f"{home_final['cf_pct']:.1f}%",
                 home_final['pp'], str(home_final['pim']),
                 str(home_final['hits']), f"{home_final['fo_pct']:.1f}%", str(home_final['bs']),
                 str(home_final['gv']), str(home_final['tk']), f'{sum(home_gs_periods):.1f}', f'{home_xg_total:.2f}',
@@ -3054,6 +3054,18 @@ class PostGameReportGenerator:
         pcts = period_stats.get('fo_pct') or []
         return (sum(pcts) / len(pcts)) if pcts else 50.0
 
+    def _weighted_corsi_pct(self, period_stats: dict, ot_stats: dict | None = None) -> float:
+        cf = sum(period_stats.get('corsi_for') or [0])
+        ca = sum(period_stats.get('corsi_against') or [0])
+        if ot_stats:
+            cf += int(ot_stats.get('corsi_for') or 0)
+            ca += int(ot_stats.get('corsi_against') or 0)
+        total = cf + ca
+        if total > 0:
+            return (cf / total) * 100.0
+        pcts = period_stats.get('corsi_pct') or []
+        return (sum(pcts) / len(pcts)) if pcts else 50.0
+
     def _final_counting_stats(self, game_data, team_side: str, period_stats: dict, ot_stats: dict | None):
         """Game Final counting stats: regulation + OT, preferring NHL right-rail when present."""
         ot = ot_stats or {}
@@ -3067,6 +3079,7 @@ class PostGameReportGenerator:
         gv = add('gv')
         tk = add('tk')
         fo_pct = self._weighted_fo_pct(period_stats)
+        cf_pct = self._weighted_corsi_pct(period_stats, ot)
         # Blend OT faceoffs into FO% when present
         ot_w, ot_t = int(ot.get('fo_wins') or 0), int(ot.get('fo_total') or 0)
         if ot_t:
@@ -3131,6 +3144,7 @@ class PostGameReportGenerator:
             'gv': gv,
             'tk': tk,
             'fo_pct': fo_pct,
+            'cf_pct': cf_pct,
             'pp': pp_str,
         }
 
@@ -3329,6 +3343,8 @@ class PostGameReportGenerator:
             return {
                 'shots': shots,
                 'corsi_pct': corsi_pct,
+                'corsi_for': corsi_for,
+                'corsi_against': corsi_against,
                 'pp_goals': pp_goals,
                 'pp_attempts': pp_attempts,
                 'pim': pim,
@@ -3346,11 +3362,15 @@ class PostGameReportGenerator:
             return {
                 'shots': [0, 0, 0],
                 'corsi_pct': [50.0, 50.0, 50.0],
+                'corsi_for': [0, 0, 0],
+                'corsi_against': [0, 0, 0],
                 'pp_goals': [0, 0, 0],
                 'pp_attempts': [0, 0, 0],
                 'pim': [0, 0, 0],
                 'hits': [0, 0, 0],
                 'fo_pct': [50.0, 50.0, 50.0],
+                'fo_wins': [0, 0, 0],
+                'fo_total': [0, 0, 0],
                 'bs': [0, 0, 0],
                 'gv': [0, 0, 0],
                 'tk': [0, 0, 0]

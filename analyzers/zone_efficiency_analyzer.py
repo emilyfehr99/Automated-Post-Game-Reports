@@ -152,11 +152,8 @@ class ZoneTransitionEfficiencyAnalyzer:
                         recent_entries[team].pop(0)
             
             # Detect SHOTS following entries
-            # Note: for blocked-shot, the eventOwnerTeamId is the team that BLOCKED the shot.
-            # We want to attribute the shot to the shooter (the other team).
+            # NHL API: blocked-shot eventOwnerTeamId is the SHOOTING team (not the blocker).
             shot_team = team
-            if event == 'blocked-shot':
-                shot_team = home_team_id if team == away_team_id else away_team_id
                 
             if event in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
                 stats[shot_team]['total_shots'] += 1
@@ -280,9 +277,8 @@ class ZoneTransitionEfficiencyAnalyzer:
                                     break
                 
                 # Detect shots following entries
+                # NHL API: blocked-shot eventOwnerTeamId is the SHOOTING team (not the blocker).
                 shot_team = team
-                if event == 'blocked-shot':
-                    shot_team = away_team_id if team == home_team_id else home_team_id
 
                 if event in ['shot-on-goal', 'missed-shot', 'blocked-shot', 'goal']:
                     matched_entry = None
