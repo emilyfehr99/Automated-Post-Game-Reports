@@ -2129,9 +2129,9 @@ class PostGameReportGenerator:
             away_period_stats = self._calculate_real_period_stats(game_data, away_team_id, 'away')
             home_period_stats = self._calculate_real_period_stats(game_data, home_team_id, 'home')
             
-            # Calculate Corsi percentage
-            away_corsi_pct = np.mean(away_period_stats.get('corsi_pct', [50.0])) if away_period_stats.get('corsi_pct') else 50.0
-            home_corsi_pct = np.mean(home_period_stats.get('corsi_pct', [50.0])) if home_period_stats.get('corsi_pct') else 50.0
+            # Calculate Corsi percentage (weighted game CF%, not mean of period %)
+            away_corsi_pct = self._weighted_corsi_pct(away_period_stats)
+            home_corsi_pct = self._weighted_corsi_pct(home_period_stats)
             
             # Power play percentage
             away_pp_goals = sum(away_period_stats.get('pp_goals', [0]))
