@@ -1,0 +1,97 @@
+name: Clarkson Discord Notify
+
+# Posts to the same Discord webhook as daily NHL predictions.
+# Triggered locally when a new Clarkson game is synced.
+
+on:
+  workflow_dispatch:
+    inputs:
+      content:
+        description: "Discord message body (markdown)"
+        required: true
+        type: string
+      postgame_url:
+        description: "Temporary URL for full postgame PNG"
+        required: false
+        type: string
+        default: ""
+      goalie_url:
+        description: "Temporary URL for Clarkson goalie PNG"
+        required: false
+        type: string
+        default: ""
+      match_id:
+        description: "Match id (for logs)"
+        required: false
+        type: string
+        default: ""
+
+jobs:
+  notify:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Post to Discord (NHL predictions webhook)
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          CONTENT: ${{ inputs.content }}
+          POSTGAME_URL: ${{ inputs.postgame_url }}
+          GOALIE_URL: ${{ inputs.goalie_url }}
+          MATCH_ID: ${{ inputs.match_id }}
+        run: |
+          python3 - <<'PY'
+          import json, os, sys, tempfile
+          from pathlib import Path
+          import urllib.request
+
+          webhook = (os.environ.get("DISCORD_WEBHOOK_URL") or "").strip()
+          if not webhook:
+              print("DISCORD_WEBHOOK_URL secret missing", file=sys.stderr)
+              sys.exit(1)
+
+          content = os.environ.get("CONTENT") or "🆕 **New Clarkson game added**"
+          urls = []
+          for key, name in (("POSTGAME_URL", "clarkson_postgame.png"), ("GOALIE_URL", "clarkson_goalie.png")):
+              u = (os.environ.get(key) or "").strip()
+              if u:
+                  urls.append((name, u))
+
+          payload = {
+              "content": content[:1900],
+              "username": "Clarkson Analytics",
+              "avatar_url": "https://upload.wikimedia.org/wikipedia/en/thumb/5/5c/Clarkson_Golden_Knights_logo.svg/200px-Clarkson_Golden_Knights_logo.svg.png",
+          }
+
+          tmp = Path(tempfile.mkdtemp())
+          files_fields = []
+          open_files = []
+          try:
+              if urls:
+                  import requests
+                  for i, (name, url) in enumerate(urls[:8]):
+                      dest = tmp / name
+                      urllib.request.urlretrieve(url, dest)
+                      fh = dest.open("rb")
+                      open_files.append(fh)
+                      files_fields.append((f"files[{i}]", (name, fh, "image/png")))
+                  resp = requests.post(
+                      webhook,
+                      data={"payload_json": json.dumps(payload)},
+                      files=files_fields,
+                      timeout=120,
+                  )
+              else:
+                  import requests
+                  resp = requests.post(webhook, json=payload, timeout=30)
+
+              print(f"match={os.environ.get('MATCH_ID')} status={resp.status_code}")
+              if resp.status_code not in (200, 204):
+                  print(resp.text[:500], file=sys.stderr)
+                  sys.exit(1)
+              print("Discord notify ok")
+          finally:
+              for fh in open_files:
+                  try:
+                      fh.close()
+                  except Exception:
+                      pass
+          PY
