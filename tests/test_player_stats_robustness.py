@@ -252,14 +252,26 @@ def test_sparse_pbp_falls_back_to_boxscore_player_sog():
                             "playerId": 1,
                             "name": {"default": "A. Player"},
                             "goals": 2,
-                            "assists": 0,
+                            "assists": 1,
                             "sog": 4,
                             "hits": 1,
                             "blockedShots": 0,
                             "pim": 0,
                             "sweaterNumber": 7,
                             "position": "C",
-                        }
+                        },
+                        {
+                            "playerId": 2,
+                            "name": {"default": "B. Helper"},
+                            "goals": 0,
+                            "assists": 1,
+                            "sog": 1,
+                            "hits": 0,
+                            "blockedShots": 0,
+                            "pim": 0,
+                            "sweaterNumber": 9,
+                            "position": "C",
+                        },
                     ],
                     "defense": [],
                     "goalies": [],
@@ -267,14 +279,39 @@ def test_sparse_pbp_falls_back_to_boxscore_player_sog():
                 "homeTeam": {"forwards": [], "defense": [], "goalies": []},
             },
         },
+        "landing": {"summary": {"scoring": []}},
         "play_by_play": {
             "rosterSpots": [],
-            # Truncated feed: goals only (mirrors real VGK@LAK sparse feed)
+            # Truncated feed: goals only — but assist1/assist2 are real
             "plays": [
                 {
                     "typeDescKey": "goal",
-                    "details": {"eventOwnerTeamId": 10, "scoringPlayerId": 1},
-                }
+                    "eventId": 101,
+                    "details": {
+                        "eventOwnerTeamId": 10,
+                        "scoringPlayerId": 1,
+                        "assist1PlayerId": 2,
+                        "assist2PlayerId": None,
+                    },
+                },
+                {
+                    "typeDescKey": "goal",
+                    "eventId": 102,
+                    "details": {
+                        "eventOwnerTeamId": 10,
+                        "scoringPlayerId": 1,
+                        "assist1PlayerId": None,
+                        "assist2PlayerId": None,
+                    },
+                },
+                {
+                    "typeDescKey": "faceoff",
+                    "details": {
+                        "eventOwnerTeamId": 10,
+                        "winningPlayerId": 1,
+                        "losingPlayerId": 99,
+                    },
+                },
             ],
         },
     }
@@ -282,3 +319,78 @@ def test_sparse_pbp_falls_back_to_boxscore_player_sog():
     away = gen._calculate_player_stats_from_play_by_play(game_data, "awayTeam")
     assert away[1]["sog"] == 4
     assert away[1]["goals"] == 2
+    # Real A1/A2 from PBP — not all assists treated as primary
+    assert away[2]["primaryAssists"] == 1
+    assert away[2]["secondaryAssists"] == 0
+    assert away[1]["primaryAssists"] == 0
+    # Real FO from the one faceoff event (not invented from FO%)
+    assert away[1]["faceoffWins"] == 1
+    assert away[1]["faceoffTotal"] == 1
+
+
+def test_null_landing_pp_map_does_not_raise():
+    gen = _gen()
+    game_data = {"landing": None, "boxscore": {}, "play_by_play": {}}
+    assert gen._pp_goal_event_ids(game_data) == set()
+
+
+def test_goalie_analyzer_uses_boxscore_sa_and_real_xg():
+    from analyzers.goalie_analytics_analyzer import GoalieAnalyticsAnalyzer
+
+    game_data = {
+        "boxscore": {
+            "playerByGameStats": {
+                "awayTeam": {
+                    "goalies": [
+                        {
+                            "playerId": 100,
+                            "shotsAgainst": 20,
+                            "goalsAgainst": 2,
+                            "saves": 18,
+                            "toi": "60:00",
+                        }
+                    ]
+                },
+                "homeTeam": {"goalies": []},
+            }
+        },
+        "play_by_play": {
+            "plays": [
+                {
+                    "typeDescKey": "shot-on-goal",
+                    "timeInPeriod": "01:00",
+                    "periodDescriptor": {"number": 1},
+                    "situationCode": "1551",
+                    "details": {
+                        "eventOwnerTeamId": 8,
+                        "goalieInNetId": 100,
+                        "xCoord": 75,
+                        "yCoord": 5,
+                        "shotType": "wrist",
+                        "zoneCode": "O",
+                    },
+                },
+                {
+                    "typeDescKey": "goal",
+                    "timeInPeriod": "02:00",
+                    "periodDescriptor": {"number": 1},
+                    "situationCode": "1551",
+                    "details": {
+                        "eventOwnerTeamId": 8,
+                        "goalieInNetId": 100,
+                        "xCoord": 80,
+                        "yCoord": 2,
+                        "shotType": "wrist",
+                        "zoneCode": "O",
+                    },
+                },
+            ]
+        },
+    }
+    analyzer = GoalieAnalyticsAnalyzer(1, game_data=game_data)
+    stats = analyzer.analyze_goalies()
+    assert 100 in stats
+    assert stats[100]["shots"] == 20  # boxscore SA
+    assert stats[100]["goals"] == 2
+    assert isinstance(stats[100]["GSAx"], (int, float))
+

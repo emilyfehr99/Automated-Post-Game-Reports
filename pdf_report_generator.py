@@ -864,7 +864,7 @@ class PostGameReportGenerator:
         goals = []
         try:
             # Check landing first (most reliable source for strength)
-            summary = game_data.get('landing', {}).get('summary', {})
+            summary = (game_data.get('landing') or {}).get('summary') or {}
             if not summary:
                 summary = game_data.get('boxscore', {}).get('summary', {})
             if not summary:
@@ -1185,9 +1185,125 @@ class PostGameReportGenerator:
         # Sparse if PBP shot-like events cover well under half of official SOG volume
         return official > 0 and shot_like < max(8, official * 0.5)
 
+    def _iter_scoring_goals(self, game_data):
+        """Yield goal dicts from landing, then PBP (real NHL sources only)."""
+        landing = game_data.get('landing') or {}
+        for period in ((landing.get('summary') or {}).get('scoring') or []):
+            for goal in period.get('goals') or []:
+                yield ('landing', goal)
+        for play in ((game_data.get('play_by_play') or {}).get('plays') or []):
+            if play.get('typeDescKey') == 'goal':
+                yield ('pbp', play)
+
+    def _apply_real_assist_splits(self, game_data, player_stats: dict, team_id: int):
+        """Replace A1/A2 using real PBP assist1/assist2 and landing assist order."""
+        # Reset assist splits; keep goals/SOG/etc. from boxscore
+        for stats in player_stats.values():
+            stats['primaryAssists'] = 0
+            stats['secondaryAssists'] = 0
+            stats['assists'] = 0
+            stats['points'] = int(stats.get('goals') or 0)
+
+        credited = set()  # (goal_key, assist_slot) avoid double count landing+pbp
+
+        def _credit(pid, slot, goal_key):
+            if not pid or pid not in player_stats:
+                return
+            key = (goal_key, slot, pid)
+            if key in credited:
+                return
+            credited.add(key)
+            if slot == 1:
+                player_stats[pid]['primaryAssists'] += 1
+            else:
+                player_stats[pid]['secondaryAssists'] += 1
+            player_stats[pid]['assists'] = (
+                player_stats[pid]['primaryAssists'] + player_stats[pid]['secondaryAssists']
+            )
+            player_stats[pid]['points'] = (
+                int(player_stats[pid].get('goals') or 0) + player_stats[pid]['assists']
+            )
+
+        # Prefer PBP assist1/assist2 (authoritative IDs)
+        for play in ((game_data.get('play_by_play') or {}).get('plays') or []):
+            if play.get('typeDescKey') != 'goal':
+                continue
+            details = play.get('details') or {}
+            if details.get('eventOwnerTeamId') != team_id:
+                continue
+            event_id = play.get('eventId') or id(play)
+            _credit(details.get('assist1PlayerId'), 1, event_id)
+            _credit(details.get('assist2PlayerId'), 2, event_id)
+
+        # Landing fills any goals missing from sparse PBP (assist list order = A1, A2)
+        for period in (((game_data.get('landing') or {}).get('summary') or {}).get('scoring') or []):
+            for goal in period.get('goals') or []:
+                if goal.get('teamId') is not None and goal.get('teamId') != team_id:
+                    continue
+                # If teamId absent, credit only assist IDs already on this team roster
+                event_id = goal.get('eventId') or id(goal)
+                assists = goal.get('assists') or []
+                for idx, assist in enumerate(assists[:2]):
+                    apid = assist.get('playerId') if isinstance(assist, dict) else assist
+                    if apid in player_stats:
+                        # Skip if PBP already credited this event slot
+                        if (event_id, idx + 1, apid) in credited:
+                            continue
+                        # If any credit exists for this event+slot, skip
+                        if any(c[0] == event_id and c[1] == idx + 1 for c in credited):
+                            continue
+                        _credit(apid, idx + 1, event_id)
+
+    def _apply_real_faceoffs_from_pbp(self, game_data, player_stats: dict, team_id: int):
+        """FO wins/totals only from real faceoff events — never infer from FO%."""
+        for stats in player_stats.values():
+            stats['faceoffWins'] = 0
+            stats['faceoffTotal'] = 0
+
+        plays = ((game_data.get('play_by_play') or {}).get('plays') or [])
+        for play in plays:
+            if play.get('typeDescKey') != 'faceoff':
+                continue
+            details = play.get('details') or {}
+            owner = details.get('eventOwnerTeamId')
+            if owner == team_id:
+                wid = details.get('winningPlayerId')
+                if wid in player_stats:
+                    player_stats[wid]['faceoffWins'] += 1
+                    player_stats[wid]['faceoffTotal'] += 1
+            elif owner is not None:
+                lid = details.get('losingPlayerId')
+                if lid in player_stats:
+                    player_stats[lid]['faceoffTotal'] += 1
+
+    def _apply_real_penalties_from_pbp(self, game_data, player_stats: dict, team_id: int):
+        """Penalties taken/drawn from real PBP only (no PIM→count invention)."""
+        for stats in player_stats.values():
+            stats['penaltiesTaken'] = 0
+            stats['penaltiesDrawn'] = 0
+
+        for play in ((game_data.get('play_by_play') or {}).get('plays') or []):
+            if play.get('typeDescKey') != 'penalty':
+                continue
+            details = play.get('details') or {}
+            owner = details.get('eventOwnerTeamId')
+            if owner == team_id:
+                taker = details.get('committedByPlayerId')
+                if taker in player_stats:
+                    player_stats[taker]['penaltiesTaken'] += 1
+            elif owner is not None:
+                drawer = details.get('drawnByPlayerId')
+                if drawer in player_stats:
+                    player_stats[drawer]['penaltiesDrawn'] += 1
+
     def _calculate_player_stats_from_boxscore(self, game_data, team_side):
-        """Build per-player GS inputs from boxscore when PBP is truncated."""
+        """Build per-player GS inputs from boxscore when PBP is truncated.
+
+        Counting stats (G/SOG/HIT/BLK/PIM) come from boxscore. A1/A2, FO, and
+        PD/PT are overlaid from real PBP/landing only — never invented.
+        """
         boxscore = game_data.get('boxscore') or {}
+        team_id = (boxscore.get(team_side) or {}).get('id')
         pbg = ((boxscore.get('playerByGameStats') or {}).get(team_side)) or {}
         player_stats = {}
         for cat in ('forwards', 'defense', 'goalies'):
@@ -1197,19 +1313,17 @@ class PostGameReportGenerator:
                     continue
                 name = self._localized_name(player.get('name')) or f"Player #{pid}"
                 goals = int(player.get('goals') or 0)
-                assists = int(player.get('assists') or 0)
                 sog = int(player.get('sog') or 0)
                 hits = int(player.get('hits') or 0)
                 blk = int(player.get('blockedShots') or 0)
                 pim = int(player.get('pim') or 0)
-                # Boxscore lacks A1/A2 split — attribute all assists as primary for ranking stability
-                stats = {
+                player_stats[pid] = {
                     'name': name,
                     'position': player.get('position', cat[0].upper()),
                     'sweaterNumber': player.get('sweaterNumber', ''),
                     'goals': goals,
-                    'assists': assists,
-                    'points': int(player.get('points') or (goals + assists)),
+                    'assists': 0,
+                    'points': goals,
                     'plusMinus': int(player.get('plusMinus') or 0),
                     'pim': pim,
                     'sog': sog,
@@ -1219,16 +1333,22 @@ class PostGameReportGenerator:
                     'takeaways': int(player.get('takeaways') or 0),
                     'faceoffWins': 0,
                     'faceoffTotal': 0,
-                    'primaryAssists': assists,
+                    'primaryAssists': 0,
                     'secondaryAssists': 0,
                     'penaltiesDrawn': 0,
-                    'penaltiesTaken': max(0, pim // 2) if pim else 0,
+                    'penaltiesTaken': 0,
                     'goalsFor': 0,
                     'goalsAgainst': 0,
                     'gameScore': 0.0,
                 }
-                stats['gameScore'] = self._calculate_game_score(stats)
-                player_stats[pid] = stats
+
+        if team_id is not None:
+            self._apply_real_assist_splits(game_data, player_stats, team_id)
+            self._apply_real_faceoffs_from_pbp(game_data, player_stats, team_id)
+            self._apply_real_penalties_from_pbp(game_data, player_stats, team_id)
+
+        for stats in player_stats.values():
+            stats['gameScore'] = self._calculate_game_score(stats)
         return player_stats
 
     def _calculate_player_stats_from_play_by_play(self, game_data, team_side):
@@ -1579,7 +1699,12 @@ class PostGameReportGenerator:
             zone_eff_analyzer = ZoneTransitionEfficiencyAnalyzer()
             # Correctly get game_id if not provided
             if game_id is None:
-                game_id = game_data.get('id') or game_data.get('game_center', {}).get('game', {}).get('id') or game_data.get('landing', {}).get('id') or game_data.get('boxscore', {}).get('id')
+                game_id = (
+                    game_data.get('id')
+                    or (game_data.get('game_center') or {}).get('game', {}).get('id')
+                    or (game_data.get('landing') or {}).get('id')
+                    or (game_data.get('boxscore') or {}).get('id')
+                )
             
             # Extract period stats and game-level totals for both teams
             zone_eff_result = zone_eff_analyzer.analyze_by_period(game_id)
@@ -1984,33 +2109,34 @@ class PostGameReportGenerator:
         elements = []
         
         # Add Header
-        elements.append(Paragraph("GOALIE ANALYTICS (GSAx & CONTEXT)", self.custom_styles['SectionHeader']))
+        elements.append(Paragraph("GOALIE ANALYTICS (GSAx & CONTEXT)", self.section_style))
         elements.append(Spacer(1, 10))
         
         # Run Analysis
         try:
-            analyzer = GoalieAnalyticsAnalyzer(game_id)
+            analyzer = GoalieAnalyticsAnalyzer(game_id, game_data=game_data)
             goalie_stats = analyzer.analyze_goalies()
             
             if not goalie_stats:
-                elements.append(Paragraph("No goalie data available.", self.styles['Normal']))
+                elements.append(Paragraph("No goalie data available.", self.normal_style))
                 return elements
                 
-            # Prepare Data Table
-            # Columns: Goalie, Team, Sv/SA, GSAx, RoyalRoad Sv%, Carry Sv%, Pass Sv%
-            
             # Map goalie IDs to Names/Teams
-            roster_map = self._create_player_roster_map(game_data.get('play_by_play', {}), game_data)
+            roster_map = self._create_player_roster_map(game_data.get('play_by_play', {}) or {}, game_data)
             
             data = [['Goalie', 'Sv/SA', 'GSAx', 'RoyalRoad\nSv%', 'Carry Entry\nSv%', 'Pass Entry\nSv%']]
             
-            sorted_ids = sorted(goalie_stats.keys(), key=lambda gid: goalie_stats[gid]['xG'], reverse=True)
+            sorted_ids = sorted(
+                goalie_stats.keys(),
+                key=lambda gid: (goalie_stats[gid].get('xG') or 0),
+                reverse=True,
+            )
             
-            curr_row = 1
             for gid in sorted_ids:
                 s = goalie_stats[gid]
+                if int(s.get('shots') or 0) <= 0:
+                    continue
                 
-                # Retrieve Name (roster stores plain strings; tolerate legacy dict shape)
                 player_info = roster_map.get(gid) or self._resolve_unknown_player(gid)
                 name = (player_info.get('name') or '').strip()
                 if len(name) < 2:
@@ -2020,59 +2146,76 @@ class PostGameReportGenerator:
                 if len(name) < 2:
                     name = f"Goalie {gid}"
                 
-                sv_sa = f"{s['shots']-s['goals']}/{s['shots']}"
-                gsax_val = s['GSAx']
-                gsax_str = f"{gsax_val:+.2f}"
+                shots = int(s.get('shots') or 0)
+                goals = int(s.get('goals') or 0)
+                sv_sa = f"{shots - goals}/{shots}"
+
+                gsax_val = s.get('GSAx')
+                gsax_str = f"{gsax_val:+.2f}" if isinstance(gsax_val, (int, float)) else "N/A"
                 
-                rr_total = s['RoyalRoad_Shots']
+                rr_total = s.get('RoyalRoad_Shots') or 0
                 rr_sv = f"{s['RoyalRoad_SvPct']*100:.1f}% ({rr_total})" if rr_total > 0 else "N/A"
                 
-                carry_total = s['CarryEntry_Shots']
+                carry_total = s.get('CarryEntry_Shots') or 0
                 carry_sv = f"{s['CarryEntry_SvPct']*100:.1f}% ({carry_total})" if carry_total > 0 else "N/A"
                 
-                pass_total = s['PassEntry_Shots']
+                pass_total = s.get('PassEntry_Shots') or 0
                 pass_sv = f"{s['PassEntry_SvPct']*100:.1f}% ({pass_total})" if pass_total > 0 else "N/A"
                 
-                row = [name, sv_sa, gsax_str, rr_sv, carry_sv, pass_sv]
-                data.append(row)
-                curr_row += 1
+                data.append([name, sv_sa, gsax_str, rr_sv, carry_sv, pass_sv])
+
+            if len(data) == 1:
+                elements.append(Paragraph("No goalie shot data available.", self.normal_style))
+                return elements
             
-            # Create Table
             t = Table(data, colWidths=[1.8*72, 0.8*72, 0.8*72, 1.1*72, 1.1*72, 1.1*72])
             
+            header_bg = None
+            if isinstance(getattr(self, 'colors', None), dict):
+                header_bg = self.colors.get('primary')
+            if header_bg is None:
+                header_bg = colors.HexColor('#1a4d6b')
+            
             style = [
-                ('BACKGROUND', (0,0), (-1,0), self.colors['primary']),
+                ('BACKGROUND', (0,0), (-1,0), header_bg),
                 ('TEXTCOLOR', (0,0), (-1,0), colors.white),
                 ('ALIGN', (0,0), (-1,-1), 'CENTER'),
                 ('ALIGN', (0,0), (0,-1), 'LEFT'),
-                ('FONTNAME', (0,0), (-1,0), 'RussoOne'),
+                ('FONTNAME', (0,0), (-1,0), self.font_name),
                 ('FONTSIZE', (0,0), (-1,0), 10),
                 ('BOTTOMPADDING', (0,0), (-1,0), 8),
                 ('GRID', (0,0), (-1,-1), 0.5, colors.grey),
                 ('VALIGN', (0,0), (-1,-1), 'MIDDLE'),
             ]
             
-            # Color GSAx
             for i in range(1, len(data)):
-                gsax_val = float(data[i][2])
-                if gsax_val > 0:
-                    style.append(('TEXTCOLOR', (2,i), (2,i), colors.green))
-                elif gsax_val < 0:
-                    style.append(('TEXTCOLOR', (2,i), (2,i), colors.red))
-                    
+                raw = data[i][2]
+                if raw == 'N/A':
+                    continue
+                try:
+                    gsax_num = float(raw)
+                except (TypeError, ValueError):
+                    continue
+                if gsax_num > 0:
+                    style.append(('TEXTCOLOR', (2, i), (2, i), colors.green))
+                elif gsax_num < 0:
+                    style.append(('TEXTCOLOR', (2, i), (2, i), colors.red))
             t.setStyle(TableStyle(style))
             elements.append(t)
             elements.append(Spacer(1, 10))
             
-            # Add Explainer
-            explainer_text = "<b>GSAx:</b> Goals Saved Above Expected (Positive = Good). <b>Royal Road:</b> Shots crossing center ice. <b>Entry:</b> Shots after Carry vs Pass entry."
-            elements.append(Paragraph(explainer_text, self.styles['Normal']))
+            explainer_text = (
+                "<b>GSAx:</b> Goals Saved Above Expected from located PBP shots "
+                "(Positive = Good). <b>Royal Road:</b> Shots after large east-west OZ movement. "
+                "<b>Entry:</b> Shots after Carry vs Pass-style entries. N/A = no located sample."
+            )
+            elements.append(Paragraph(explainer_text, self.normal_style))
                 
             elements.append(Spacer(1, 20))
             
         except Exception as e:
             self.is_high_fidelity = False
-            elements.append(Paragraph(f"Error generating goalie analytics: {str(e)}", self.styles['Normal']))
+            elements.append(Paragraph(f"Error generating goalie analytics: {str(e)}", self.normal_style))
             
         return elements
 
@@ -3205,15 +3348,17 @@ class PostGameReportGenerator:
         """Official PPG event IDs from landing/boxscore scoring summary."""
         pp_goal_event_ids = set()
         try:
-            summary = game_data.get('landing', {}).get('summary', {})
+            summary = (game_data.get('landing') or {}).get('summary') or {}
             if not summary:
-                summary = game_data.get('boxscore', {}).get('summary', {})
+                summary = (game_data.get('boxscore') or {}).get('summary') or {}
             if not summary:
-                summary = game_data.get('play_by_play', {}).get('summary', {})
+                summary = (game_data.get('play_by_play') or {}).get('summary') or {}
             for period_item in summary.get('scoring', []) or []:
                 for goal in period_item.get('goals', []) or []:
                     if str(goal.get('strength', '')).lower() == 'pp':
-                        pp_goal_event_ids.add(goal.get('eventId'))
+                        eid = goal.get('eventId')
+                        if eid is not None:
+                            pp_goal_event_ids.add(eid)
         except Exception as e:
             print(f"Warning: Could not build official scoring map: {e}")
         return pp_goal_event_ids
@@ -4102,7 +4247,7 @@ class PostGameReportGenerator:
         elif 'game_center' in game_data and 'boxscore' in game_data['game_center']:
             boxscore = game_data['game_center']['boxscore']
         else:
-            boxscore = game_data.get('landing', {})
+            boxscore = game_data.get('landing') or {}
             
         away_team = boxscore.get('awayTeam', {})
         home_team = boxscore.get('homeTeam', {})
