@@ -926,6 +926,54 @@ class PostGameReportGenerator:
             
         return goals
 
+    @staticmethod
+    def _localized_name(value, fallback=''):
+        """NHL APIs return either plain strings or {'default': '...'} name objects."""
+        if isinstance(value, dict):
+            return (value.get('default') or fallback or '').strip()
+        if value is None:
+            return (fallback or '').strip()
+        return str(value).strip()
+
+    def _roster_entry(self, player_id, first_name='', last_name='', name='', sweater='', position='', team_id=None):
+        fn = self._localized_name(first_name)
+        ln = self._localized_name(last_name)
+        full = (name or f"{fn} {ln}").strip() or f"Player #{player_id}"
+        if not fn and full and not full.startswith('Player #'):
+            parts = full.split()
+            fn = parts[0]
+            ln = parts[-1] if len(parts) > 1 else ln
+        return {
+            'name': full,
+            'firstName': fn,
+            'lastName': ln,
+            'sweaterNumber': sweater if sweater is not None else '',
+            'positionCode': position or '',
+            'teamId': team_id,
+        }
+
+    def _resolve_unknown_player(self, player_id, team_id=None):
+        """Resolve callups / brand-new NHL player IDs via the player landing endpoint."""
+        try:
+            client = getattr(self, 'nhl_client', None)
+            if client is None:
+                from utils.nhl_api_client import NHLAPIClient
+                client = NHLAPIClient()
+                self.nhl_client = client
+            landing = client.get_player_landing(player_id)
+            if not landing:
+                return self._roster_entry(player_id, team_id=team_id)
+            return self._roster_entry(
+                player_id,
+                first_name=landing.get('firstName'),
+                last_name=landing.get('lastName'),
+                sweater=landing.get('sweaterNumber', ''),
+                position=landing.get('position') or (landing.get('positionCode') or ''),
+                team_id=team_id or landing.get('currentTeamId'),
+            )
+        except Exception:
+            return self._roster_entry(player_id, team_id=team_id)
+
     def _create_player_roster_map(self, play_by_play, game_data=None):
         """Create a complete mapping of player IDs to player info dynamically from PBP, Boxscore, and Landing data."""
         roster_map = {}
@@ -935,22 +983,22 @@ class PostGameReportGenerator:
             for player in pbp_dict['rosterSpots']:
                 player_id = player.get('playerId')
                 if player_id:
-                    fn = (player.get('firstName') or {}).get('default', '') if isinstance(player.get('firstName'), dict) else str(player.get('firstName', ''))
-                    ln = (player.get('lastName') or {}).get('default', '') if isinstance(player.get('lastName'), dict) else str(player.get('lastName', ''))
-                    name = f"{fn} {ln}".strip() or (player.get('name') or {}).get('default', f"Player #{player_id}")
-                    roster_map[player_id] = {
-                        'name': name,
-                        'firstName': fn,
-                        'lastName': ln,
-                        'sweaterNumber': player.get('sweaterNumber', ''),
-                        'positionCode': player.get('positionCode', ''),
-                        'teamId': player.get('teamId')
-                    }
+                    fn = self._localized_name(player.get('firstName'))
+                    ln = self._localized_name(player.get('lastName'))
+                    fallback = self._localized_name((player.get('name') or {}), f"Player #{player_id}")
+                    roster_map[player_id] = self._roster_entry(
+                        player_id, first_name=fn, last_name=ln, name=f"{fn} {ln}".strip() or fallback,
+                        sweater=player.get('sweaterNumber', ''),
+                        position=player.get('positionCode', ''),
+                        team_id=player.get('teamId'),
+                    )
 
         # 2. From boxscore.playerByGameStats
         boxscore = None
+        landing = None
         if isinstance(game_data, dict):
             boxscore = game_data.get('boxscore')
+            landing = game_data.get('landing')
         elif isinstance(play_by_play, dict) and 'playerByGameStats' in play_by_play:
             boxscore = play_by_play
 
@@ -963,18 +1011,56 @@ class PostGameReportGenerator:
                     for player in side_data.get(cat, []):
                         pid = player.get('playerId')
                         if pid and pid not in roster_map:
-                            raw_name = player.get('name') or {}
-                            p_name = raw_name.get('default') if isinstance(raw_name, dict) else str(raw_name)
-                            fn = p_name.split()[0] if p_name else ''
-                            ln = p_name.split()[-1] if p_name else ''
-                            roster_map[pid] = {
-                                'name': p_name or f"Player #{pid}",
-                                'firstName': fn,
-                                'lastName': ln,
-                                'sweaterNumber': player.get('sweaterNumber', ''),
-                                'positionCode': player.get('position', cat[0].upper()),
-                                'teamId': t_id
-                            }
+                            p_name = self._localized_name(player.get('name'))
+                            roster_map[pid] = self._roster_entry(
+                                pid, name=p_name,
+                                sweater=player.get('sweaterNumber', ''),
+                                position=player.get('position', cat[0].upper()),
+                                team_id=t_id,
+                            )
+
+        # 3. From landing scoring summary (covers emergency callups missing from rosterSpots)
+        if isinstance(landing, dict):
+            for period in (landing.get('summary') or {}).get('scoring') or []:
+                for goal in period.get('goals') or []:
+                    pid = goal.get('playerId')
+                    if pid and pid not in roster_map:
+                        fn = self._localized_name(goal.get('firstName'))
+                        ln = self._localized_name(goal.get('lastName'))
+                        roster_map[pid] = self._roster_entry(
+                            pid, first_name=fn, last_name=ln,
+                            team_id=goal.get('teamId'),
+                        )
+                    for assist in goal.get('assists') or []:
+                        if not isinstance(assist, dict):
+                            continue
+                        apid = assist.get('playerId')
+                        if apid and apid not in roster_map:
+                            fn = self._localized_name(assist.get('firstName'))
+                            ln = self._localized_name(assist.get('lastName'))
+                            roster_map[apid] = self._roster_entry(
+                                apid, first_name=fn, last_name=ln,
+                                team_id=goal.get('teamId'),
+                            )
+
+        # 4. Any PBP-referenced IDs still missing (brand-new player IDs) → NHL player landing
+        id_keys = (
+            'playerId', 'blockingPlayerId', 'shootingPlayerId', 'hittingPlayerId',
+            'winningPlayerId', 'losingPlayerId', 'scoringPlayerId', 'assist1PlayerId',
+            'assist2PlayerId', 'committedByPlayerId', 'drawnByPlayerId', 'goalieInNetId',
+        )
+        for play in pbp_dict.get('plays') or []:
+            details = play.get('details') or {}
+            owner_team = details.get('eventOwnerTeamId')
+            for key in id_keys:
+                pid = details.get(key)
+                if isinstance(pid, int) and pid not in roster_map:
+                    team_guess = owner_team
+                    if key == 'blockingPlayerId':
+                        # Blocker is on the non-shooting team; leave team unknown if needed
+                        team_guess = None
+                    roster_map[pid] = self._resolve_unknown_player(pid, team_id=team_guess)
+
         return roster_map
 
     def _calculate_team_stats_from_play_by_play(self, game_data, team_side):
@@ -990,7 +1076,7 @@ class PostGameReportGenerator:
             team_id = boxscore[team_key]['id']
             
             # Create player roster map
-            roster_map = self._create_player_roster_map(play_by_play)
+            roster_map = self._create_player_roster_map(play_by_play, game_data)
             
             stats = {
                 'hits': 0,
@@ -1072,125 +1158,234 @@ class PostGameReportGenerator:
             # Fallback to player stats
             return self._calculate_team_stats_from_players(game_data['boxscore'], team_side)
     
+    def _pbp_player_feed_is_sparse(self, game_data):
+        """Detect truncated PBP feeds (e.g. goals+penalties only) that undercount player SOG/BLK."""
+        plays = (game_data.get('play_by_play') or {}).get('plays') or []
+        shot_like = sum(
+            1 for p in plays
+            if p.get('typeDescKey') in ('shot-on-goal', 'goal', 'missed-shot', 'blocked-shot')
+        )
+        if shot_like >= 40:
+            return False
+        official = 0
+        for side in ('away', 'home'):
+            v = self._right_rail_value(game_data, 'sog', side)
+            if v is not None:
+                try:
+                    official += int(v)
+                except (TypeError, ValueError):
+                    pass
+        if official == 0:
+            box = game_data.get('boxscore') or {}
+            for key in ('awayTeam', 'homeTeam'):
+                pbg = (box.get('playerByGameStats') or {}).get(key) or {}
+                for cat in ('forwards', 'defense', 'goalies'):
+                    for p in pbg.get(cat, []):
+                        official += int(p.get('sog') or 0)
+        # Sparse if PBP shot-like events cover well under half of official SOG volume
+        return official > 0 and shot_like < max(8, official * 0.5)
+
+    def _calculate_player_stats_from_boxscore(self, game_data, team_side):
+        """Build per-player GS inputs from boxscore when PBP is truncated."""
+        boxscore = game_data.get('boxscore') or {}
+        pbg = ((boxscore.get('playerByGameStats') or {}).get(team_side)) or {}
+        player_stats = {}
+        for cat in ('forwards', 'defense', 'goalies'):
+            for player in pbg.get(cat, []):
+                pid = player.get('playerId')
+                if not pid:
+                    continue
+                name = self._localized_name(player.get('name')) or f"Player #{pid}"
+                goals = int(player.get('goals') or 0)
+                assists = int(player.get('assists') or 0)
+                sog = int(player.get('sog') or 0)
+                hits = int(player.get('hits') or 0)
+                blk = int(player.get('blockedShots') or 0)
+                pim = int(player.get('pim') or 0)
+                # Boxscore lacks A1/A2 split — attribute all assists as primary for ranking stability
+                stats = {
+                    'name': name,
+                    'position': player.get('position', cat[0].upper()),
+                    'sweaterNumber': player.get('sweaterNumber', ''),
+                    'goals': goals,
+                    'assists': assists,
+                    'points': int(player.get('points') or (goals + assists)),
+                    'plusMinus': int(player.get('plusMinus') or 0),
+                    'pim': pim,
+                    'sog': sog,
+                    'hits': hits,
+                    'blockedShots': blk,
+                    'giveaways': int(player.get('giveaways') or 0),
+                    'takeaways': int(player.get('takeaways') or 0),
+                    'faceoffWins': 0,
+                    'faceoffTotal': 0,
+                    'primaryAssists': assists,
+                    'secondaryAssists': 0,
+                    'penaltiesDrawn': 0,
+                    'penaltiesTaken': max(0, pim // 2) if pim else 0,
+                    'goalsFor': 0,
+                    'goalsAgainst': 0,
+                    'gameScore': 0.0,
+                }
+                stats['gameScore'] = self._calculate_game_score(stats)
+                player_stats[pid] = stats
+        return player_stats
+
     def _calculate_player_stats_from_play_by_play(self, game_data, team_side):
         """Calculate individual player statistics from play-by-play data"""
         try:
+            if self._pbp_player_feed_is_sparse(game_data):
+                print(f"Sparse PBP detected — using boxscore player stats for {team_side}")
+                return self._calculate_player_stats_from_boxscore(game_data, team_side)
+
             play_by_play = game_data.get('play_by_play')
             if not play_by_play or 'plays' not in play_by_play:
-                return {}
+                return self._calculate_player_stats_from_boxscore(game_data, team_side)
             
             # Get team ID for filtering
             boxscore = game_data['boxscore']
             team_id = boxscore[team_side]['id']
             
-            # Create player roster map
-            roster_map = self._create_player_roster_map(play_by_play)
+            # Create player roster map (boxscore + landing + API fallback for new IDs)
+            roster_map = self._create_player_roster_map(play_by_play, game_data)
+
+            def _blank_player(player_id, player_info=None):
+                info = player_info or roster_map.get(player_id) or self._roster_entry(player_id, team_id=team_id)
+                return {
+                    'name': (info.get('name') or f"{info.get('firstName', '')} {info.get('lastName', '')}").strip() or f"Player #{player_id}",
+                    'position': info.get('positionCode', ''),
+                    'sweaterNumber': info.get('sweaterNumber', ''),
+                    'goals': 0,
+                    'assists': 0,
+                    'points': 0,
+                    'plusMinus': 0,
+                    'pim': 0,
+                    'sog': 0,
+                    'hits': 0,
+                    'blockedShots': 0,
+                    'giveaways': 0,
+                    'takeaways': 0,
+                    'faceoffWins': 0,
+                    'faceoffTotal': 0,
+                    'primaryAssists': 0,
+                    'secondaryAssists': 0,
+                    'penaltiesDrawn': 0,
+                    'penaltiesTaken': 0,
+                    'goalsFor': 0,
+                    'goalsAgainst': 0,
+                    'gameScore': 0.0,
+                }
+
+            def _ensure_player(player_id, expected_team_id=None):
+                """Credit stats even for brand-new callup IDs missing from rosterSpots."""
+                if not player_id:
+                    return None
+                if player_id not in player_stats:
+                    info = roster_map.get(player_id)
+                    if info is None:
+                        info = self._resolve_unknown_player(player_id, team_id=expected_team_id or team_id)
+                        roster_map[player_id] = info
+                    info_team = info.get('teamId')
+                    if info_team is not None and expected_team_id is not None and info_team != expected_team_id:
+                        return None
+                    if info_team is not None and info_team != team_id and expected_team_id is None:
+                        return None
+                    player_stats[player_id] = _blank_player(player_id, info)
+                return player_stats[player_id]
             
             # Initialize player stats
             player_stats = {}
             for player_id, player_info in roster_map.items():
-                if player_info['teamId'] == team_id:
-                    player_stats[player_id] = {
-                        'name': f"{player_info['firstName']} {player_info['lastName']}",
-                        'position': player_info['positionCode'],
-                        'sweaterNumber': player_info['sweaterNumber'],
-                        'goals': 0,
-                        'assists': 0,
-                        'points': 0,
-                        'plusMinus': 0,
-                        'pim': 0,
-                        'sog': 0,
-                        'hits': 0,
-                        'blockedShots': 0,
-                        'giveaways': 0,
-                        'takeaways': 0,
-                        'faceoffWins': 0,
-                        'faceoffTotal': 0,
-                        'primaryAssists': 0,
-                        'secondaryAssists': 0,
-                        'penaltiesDrawn': 0,
-                        'penaltiesTaken': 0,
-                        'goalsFor': 0,
-                        'goalsAgainst': 0,
-                        'gameScore': 0.0
-                    }
+                if player_info.get('teamId') == team_id:
+                    player_stats[player_id] = _blank_player(player_id, player_info)
             
             # Process each play
             for play in play_by_play['plays']:
                 play_details = play.get('details', {})
                 event_owner_team_id = play_details.get('eventOwnerTeamId')
                 play_type = play.get('typeDescKey', '')
+
+                # Blocked shots: eventOwner is the SHOOTER — credit the blocking team's player
+                if play_type == 'blocked-shot' and event_owner_team_id is not None and event_owner_team_id != team_id:
+                    blocker = _ensure_player(play_details.get('blockingPlayerId'), expected_team_id=team_id)
+                    if blocker is not None:
+                        blocker['blockedShots'] += 1
+
+                # Faceoffs: eventOwner is the WINNER — credit wins/losses for the correct team
+                if play_type == 'faceoff':
+                    if event_owner_team_id == team_id:
+                        winner = _ensure_player(play_details.get('winningPlayerId'), expected_team_id=team_id)
+                        if winner is not None:
+                            winner['faceoffWins'] += 1
+                            winner['faceoffTotal'] += 1
+                    elif event_owner_team_id is not None:
+                        loser = _ensure_player(play_details.get('losingPlayerId'), expected_team_id=team_id)
+                        if loser is not None:
+                            loser['faceoffTotal'] += 1
                 
-                # Only process plays for this team
+                # Only process other plays for this team
                 if event_owner_team_id == team_id:
                     # Get the primary player involved
-                    primary_player_id = None
                     if play_type == 'goal':
                         primary_player_id = play_details.get('scoringPlayerId')
                         assist1_player_id = play_details.get('assist1PlayerId')
                         assist2_player_id = play_details.get('assist2PlayerId')
                         
-                        # Count goal
-                        if primary_player_id and primary_player_id in player_stats:
-                            player_stats[primary_player_id]['goals'] += 1
-                            player_stats[primary_player_id]['points'] += 1
+                        # Count goal (+ SOG: NHL SOG includes goals; Dom GS uses that definition)
+                        scorer = _ensure_player(primary_player_id, expected_team_id=team_id)
+                        if scorer is not None:
+                            scorer['goals'] += 1
+                            scorer['points'] += 1
+                            scorer['sog'] += 1
                         
                         # Count assists (primary and secondary)
-                        if assist1_player_id and assist1_player_id in player_stats:
-                            player_stats[assist1_player_id]['assists'] += 1
-                            player_stats[assist1_player_id]['primaryAssists'] += 1
-                            player_stats[assist1_player_id]['points'] += 1
-                        if assist2_player_id and assist2_player_id in player_stats:
-                            player_stats[assist2_player_id]['assists'] += 1
-                            player_stats[assist2_player_id]['secondaryAssists'] += 1
-                            player_stats[assist2_player_id]['points'] += 1
+                        a1 = _ensure_player(assist1_player_id, expected_team_id=team_id)
+                        if a1 is not None:
+                            a1['assists'] += 1
+                            a1['primaryAssists'] += 1
+                            a1['points'] += 1
+                        a2 = _ensure_player(assist2_player_id, expected_team_id=team_id)
+                        if a2 is not None:
+                            a2['assists'] += 1
+                            a2['secondaryAssists'] += 1
+                            a2['points'] += 1
                     
                     elif play_type == 'shot-on-goal':
-                        primary_player_id = play_details.get('shootingPlayerId')
-                        if primary_player_id and primary_player_id in player_stats:
-                            player_stats[primary_player_id]['sog'] += 1
+                        shooter = _ensure_player(play_details.get('shootingPlayerId'), expected_team_id=team_id)
+                        if shooter is not None:
+                            shooter['sog'] += 1
                     
                     elif play_type == 'hit':
-                        primary_player_id = play_details.get('hittingPlayerId')
-                        if primary_player_id and primary_player_id in player_stats:
-                            player_stats[primary_player_id]['hits'] += 1
-                    
-                    elif play_type == 'blocked-shot':
-                        primary_player_id = play_details.get('blockingPlayerId')
-                        if primary_player_id and primary_player_id in player_stats:
-                            player_stats[primary_player_id]['blockedShots'] += 1
+                        hitter = _ensure_player(play_details.get('hittingPlayerId'), expected_team_id=team_id)
+                        if hitter is not None:
+                            hitter['hits'] += 1
                     
                     elif play_type == 'giveaway':
-                        primary_player_id = play_details.get('playerId')
-                        if primary_player_id and primary_player_id in player_stats:
-                            player_stats[primary_player_id]['giveaways'] += 1
+                        giver = _ensure_player(play_details.get('playerId'), expected_team_id=team_id)
+                        if giver is not None:
+                            giver['giveaways'] += 1
                     
                     elif play_type == 'takeaway':
-                        primary_player_id = play_details.get('playerId')
-                        if primary_player_id and primary_player_id in player_stats:
-                            player_stats[primary_player_id]['takeaways'] += 1
-                    
-                    elif play_type == 'faceoff':
-                        winning_player_id = play_details.get('winningPlayerId')
-                        losing_player_id = play_details.get('losingPlayerId')
-                        
-                        if winning_player_id and winning_player_id in player_stats:
-                            player_stats[winning_player_id]['faceoffWins'] += 1
-                            player_stats[winning_player_id]['faceoffTotal'] += 1
-                        if losing_player_id and losing_player_id in player_stats:
-                            player_stats[losing_player_id]['faceoffTotal'] += 1
+                        taker = _ensure_player(play_details.get('playerId'), expected_team_id=team_id)
+                        if taker is not None:
+                            taker['takeaways'] += 1
                     
                     elif play_type == 'penalty':
-                        primary_player_id = play_details.get('committedByPlayerId')
-                        duration = play_details.get('duration', 0)
-                        if primary_player_id and primary_player_id in player_stats:
-                            player_stats[primary_player_id]['pim'] += duration
-                            player_stats[primary_player_id]['penaltiesTaken'] += 1
-                        
-                        # Check if there's a player who drew the penalty
-                        drawn_by_player_id = play_details.get('drawnByPlayerId')
-                        if drawn_by_player_id and drawn_by_player_id in player_stats:
-                            player_stats[drawn_by_player_id]['penaltiesDrawn'] += 1
+                        duration = play_details.get('duration', 0) or 0
+                        try:
+                            duration = int(duration)
+                        except (TypeError, ValueError):
+                            duration = 0
+                        taker = _ensure_player(play_details.get('committedByPlayerId'), expected_team_id=team_id)
+                        if taker is not None:
+                            taker['pim'] += duration
+                            taker['penaltiesTaken'] += 1
+
+                # Penalties drawn: committedBy is event owner; drawer is usually the other team
+                if play_type == 'penalty' and event_owner_team_id is not None and event_owner_team_id != team_id:
+                    drawer = _ensure_player(play_details.get('drawnByPlayerId'), expected_team_id=team_id)
+                    if drawer is not None:
+                        drawer['penaltiesDrawn'] += 1
             
             # Calculate Game Score for each player
             for player_id, stats in player_stats.items():
@@ -1805,7 +2000,7 @@ class PostGameReportGenerator:
             # Columns: Goalie, Team, Sv/SA, GSAx, RoyalRoad Sv%, Carry Sv%, Pass Sv%
             
             # Map goalie IDs to Names/Teams
-            roster_map = self._create_player_roster_map(game_data.get('play_by_play', {}))
+            roster_map = self._create_player_roster_map(game_data.get('play_by_play', {}), game_data)
             
             data = [['Goalie', 'Sv/SA', 'GSAx', 'RoyalRoad\nSv%', 'Carry Entry\nSv%', 'Pass Entry\nSv%']]
             
@@ -1815,11 +2010,15 @@ class PostGameReportGenerator:
             for gid in sorted_ids:
                 s = goalie_stats[gid]
                 
-                # Retrieve Name and Team
-                player_info = roster_map.get(gid, {})
-                name = f"{player_info.get('firstName', {}).get('default', '')} {player_info.get('lastName', {}).get('default', '')}"
-                if len(name.strip()) < 2:
-                     name = f"Goalie {gid}"
+                # Retrieve Name (roster stores plain strings; tolerate legacy dict shape)
+                player_info = roster_map.get(gid) or self._resolve_unknown_player(gid)
+                name = (player_info.get('name') or '').strip()
+                if len(name) < 2:
+                    fn = self._localized_name(player_info.get('firstName'))
+                    ln = self._localized_name(player_info.get('lastName'))
+                    name = f"{fn} {ln}".strip()
+                if len(name) < 2:
+                    name = f"Goalie {gid}"
                 
                 sv_sa = f"{s['shots']-s['goals']}/{s['shots']}"
                 gsax_val = s['GSAx']
@@ -2514,8 +2713,8 @@ class PostGameReportGenerator:
                 
                 # Calculate Game Score components for this play
                 if event_type == 'goal':
-                    # Goals: 0.75 points
-                    game_scores[period_index] += 0.75
+                    # Goals: 0.75 + 0.075 SOG (NHL SOG includes goals; Dom GS uses that)
+                    game_scores[period_index] += 0.75 + 0.075
                     
                     # Calculate xG for this goal using ImprovedXGModel
                     xg = self._calculate_shot_xg(details, 'goal', play, previous_events)

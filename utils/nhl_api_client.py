@@ -78,6 +78,13 @@ class NHLAPIClient:
         url = f"{self.base_url}/gamecenter/{game_id}/landing"
         return self._safe_get(url)
 
+    def get_player_landing(self, player_id):
+        """Resolve a player ID to NHL landing profile (handles callups / new IDs)."""
+        if not player_id:
+            return None
+        url = f"{self.base_url}/player/{player_id}/landing"
+        return self._safe_get(url)
+
     def get_game_boxscore(self, game_id):
         """Get game boxscore"""
         url = f"{self.base_url}/gamecenter/{game_id}/boxscore"
