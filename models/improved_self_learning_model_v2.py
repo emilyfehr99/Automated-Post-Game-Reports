@@ -114,17 +114,20 @@ class ImprovedSelfLearningModelV2:
         self.backtest_reports = self.model_data.get("backtest_reports", [])
 
     def predict_upset_probability(self, features: List[float]) -> float:
-        """Predict upset probability using stored logistic regression coefficients."""
+        """Predict upset probability using stored logistic regression coefficients.
+        Returns 0.5 (maximum entropy) when no trained upset model is available — this
+        is the only honest answer when we have no data-backed signal.
+        """
         model_params = self.model_data.get("upset_model")
         if not model_params:
-            # fallback heuristic
-            coeffs = [0.5, -0.4, 0.2, 0.8]
-            intercept = -1.0
-        else:
-            coeffs = model_params.get("coef", [0.5, -0.4, 0.2, 0.8])
-            intercept = model_params.get("intercept", -1.0)
+            # No trained upset model — return maximum-entropy prior (no information)
+            return 0.5
+        coeffs = model_params.get("coef")
+        intercept = model_params.get("intercept")
+        if coeffs is None or intercept is None:
+            return 0.5
         coeffs = list(coeffs) + [0.0] * (len(features) - len(coeffs))
-        z = intercept
+        z = float(intercept)
         for w, x in zip(coeffs, features):
             z += float(w) * float(x)
         try:
@@ -809,7 +812,10 @@ class ImprovedSelfLearningModelV2:
         return hist
 
     def _opponent_strength_index(self, opponent_key: str) -> float:
-        """Estimate opponent strength ~ higher is tougher. Uses xg_avg + gs_avg if available."""
+        """Estimate opponent strength ~ higher is tougher. Uses xg_avg + gs_avg if available.
+        Falls back to the dynamic league mean derived from all known teams rather than a
+        hardcoded constant.
+        """
         try:
             opp_key = opponent_key.upper()
             src = None
@@ -821,12 +827,26 @@ class ImprovedSelfLearningModelV2:
             if not src and opp_key in self.team_stats:
                 src = self.team_stats[opp_key]
             if isinstance(src, dict):
-                xg = float(src.get('xg_avg', 2.0))
-                gs = float(src.get('gs_avg', 3.0))
-                return xg + gs  # typical ~5
+                xg = float(src.get('xg_avg', 0.0) or 0.0)
+                gs = float(src.get('gs_avg', 0.0) or 0.0)
+                if xg > 0 or gs > 0:
+                    return xg + gs
         except Exception:
             pass
-        return 5.0
+        # Dynamic league-average fallback: compute mean xg+gs across all known teams
+        try:
+            vals = []
+            for td in self.team_stats.values():
+                if isinstance(td, dict):
+                    xg = float(td.get('xg_avg', 0.0) or 0.0)
+                    gs = float(td.get('gs_avg', 0.0) or 0.0)
+                    if xg > 0 or gs > 0:
+                        vals.append(xg + gs)
+            if vals:
+                return float(np.mean(vals))
+        except Exception:
+            pass
+        return 5.0  # last-resort constant only if team_stats is completely empty
 
     def _predict_starting_goalie(self, team_key: str, game_date: Optional[str], opponent_key: Optional[str] = None) -> Optional[str]:
         """Predict starter using simple rotation and B2B heuristic."""

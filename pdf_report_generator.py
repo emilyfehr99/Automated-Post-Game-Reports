@@ -474,9 +474,20 @@ class PostGameReportGenerator:
                     
                     away_logo_abbrev = logo_abbrev_map.get(away_team_abbrev, away_team_abbrev.lower())
                     home_logo_abbrev = logo_abbrev_map.get(home_team_abbrev, home_team_abbrev.lower())
-                    
-                    away_logo_url = f"https://a.espncdn.com/i/teamlogos/nhl/500/{away_logo_abbrev}.png"
-                    home_logo_url = f"https://a.espncdn.com/i/teamlogos/nhl/500/{home_logo_abbrev}.png"
+
+                    # Per-team logo URL overrides: use alternate ESPN endpoints for better contrast
+                    # WSH standard logo is near-black (brightness ~41/255); dark variant is much brighter (~180/255)
+                    _LOGO_URL_OVERRIDES = {
+                        'WSH': 'https://a.espncdn.com/i/teamlogos/nhl/500-dark/wsh.png',
+                    }
+                    away_logo_url = _LOGO_URL_OVERRIDES.get(
+                        away_team_abbrev,
+                        f"https://a.espncdn.com/i/teamlogos/nhl/500/{away_logo_abbrev}.png"
+                    )
+                    home_logo_url = _LOGO_URL_OVERRIDES.get(
+                        home_team_abbrev,
+                        f"https://a.espncdn.com/i/teamlogos/nhl/500/{home_logo_abbrev}.png"
+                    )
                     nhl_logo_url = "https://a.espncdn.com/i/teamlogos/leagues/500/nhl.png"
                     
                     # Download/load cached NHL logo
@@ -521,6 +532,10 @@ class PostGameReportGenerator:
                     # Position NHL logo centered under the team logos (moved up by 1cm = 28pt)
                     nhl_logo_x = header_img.width - 601  # Centered between the two team logos (moved 8cm/241px total inward)
                     nhl_logo_y = team_y + 92  # Below the team logos with proper spacing (moved up 28pt)
+                    # Shift NHL logo left by ~0.2cm (6px) for teams whose wordmark crowds the logo
+                    _NHL_LOGO_LEFT_SHIFT_TEAMS = {'NJD', 'WPG', 'CHI', 'DAL'}
+                    if away_team_abbrev in _NHL_LOGO_LEFT_SHIFT_TEAMS:
+                        nhl_logo_x -= 6
                     header_img.paste(nhl_logo, (nhl_logo_x, nhl_logo_y), nhl_logo)
                 
                 # Draw team name white text with black outline for better visibility
