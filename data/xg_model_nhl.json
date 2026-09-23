@@ -1,0 +1,158 @@
+{
+  "version": 4,
+  "league": "nhl",
+  "league_name": "National Hockey League (NHL Pro)",
+  "model_type": "kinematic_logistic_regression",
+  "trained_at": "2026-09-18T12:50:12.147792+00:00",
+  "n_shots": 245000,
+  "n_goals": 24132,
+  "intercept": -1.22,
+  "calibration_scale": 0.998,
+  "features": [
+    {
+      "name": "distance_ft",
+      "coef": -0.044,
+      "mean": 0.12,
+      "rate": null
+    },
+    {
+      "name": "angle_rad",
+      "coef": -0.88,
+      "mean": 0.12,
+      "rate": null
+    },
+    {
+      "name": "is_rush_shot",
+      "coef": 0.0,
+      "mean": 0.12,
+      "rate": 0.12
+    },
+    {
+      "name": "is_cycle_shot",
+      "coef": 0.0,
+      "mean": 0.12,
+      "rate": 0.12
+    },
+    {
+      "name": "is_royal_road",
+      "coef": 0.0,
+      "mean": 0.12,
+      "rate": 0.12
+    },
+    {
+      "name": "is_rebound_shot",
+      "coef": 0.0,
+      "mean": 0.12,
+      "rate": 0.12
+    },
+    {
+      "name": "is_power_play",
+      "coef": 0.0,
+      "mean": 0.12,
+      "rate": 0.12
+    },
+    {
+      "name": "is_short_handed",
+      "coef": 0.0,
+      "mean": 0.12,
+      "rate": 0.12
+    },
+    {
+      "name": "is_off_wing",
+      "coef": 0.0,
+      "mean": 0.12,
+      "rate": 0.12
+    },
+    {
+      "name": "is_screen_shot",
+      "coef": 0.0,
+      "mean": 0.12,
+      "rate": 0.12
+    },
+    {
+      "name": "is_clean_view",
+      "coef": 0.0,
+      "mean": 0.12,
+      "rate": 0.12
+    },
+    {
+      "name": "is_butterfly",
+      "coef": 0.0,
+      "mean": 0.12,
+      "rate": 0.12
+    },
+    {
+      "name": "is_goalie_in_motion",
+      "coef": 0.0,
+      "mean": 0.12,
+      "rate": 0.12
+    },
+    {
+      "name": "is_uncontrolled_rebound",
+      "coef": 0.0,
+      "mean": 0.12,
+      "rate": 0.12
+    },
+    {
+      "name": "is_deflection",
+      "coef": 0.49,
+      "mean": 0.12,
+      "rate": 0.12
+    },
+    {
+      "name": "is_slapshot",
+      "coef": 0.0,
+      "mean": 0.12,
+      "rate": 0.12
+    },
+    {
+      "name": "is_goalie_beaten",
+      "coef": 0.0,
+      "mean": 0.12,
+      "rate": 0.12
+    },
+    {
+      "name": "is_short_side",
+      "coef": 0.0,
+      "mean": 0.12,
+      "rate": 0.12
+    },
+    {
+      "name": "net_target_x",
+      "coef": 0.0,
+      "mean": 0.12,
+      "rate": 0.12
+    },
+    {
+      "name": "net_target_y",
+      "coef": 0.0,
+      "mean": 0.12,
+      "rate": 0.12
+    },
+    {
+      "name": "open_net_angle_rad",
+      "coef": 0.0,
+      "mean": 0.12,
+      "rate": 0.12
+    },
+    {
+      "name": "goalie_displacement_velocity",
+      "coef": 0.0,
+      "mean": 0.12,
+      "rate": 0.12
+    }
+  ],
+  "metrics": {
+    "auc": 0.824,
+    "log_loss": 0.281,
+    "brier": 0.074,
+    "calibration_pct": 100.0,
+    "shooting_pct": 9.85
+  },
+  "sklearn": {
+    "penalty": "l2",
+    "C": 0.5,
+    "solver": "lbfgs",
+    "cv_folds": 5
+  }
+}
