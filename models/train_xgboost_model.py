@@ -123,14 +123,20 @@ def load_edge_data():
         return {}
 
 class EloTracker:
-    def __init__(self, k_factor=20, home_advantage=35):
+    def __init__(self, k_factor=20, home_advantage=17):
         self.ratings = {}  # {team: rating}
         self.k = k_factor
+        # Empirically calibrated: 400 * log10(0.5241 / 0.4759) = 16.76 ~ 17 (true +2.41% edge)
         self.ha = home_advantage
         self.base_rating = 1500
 
     def get_rating(self, team):
         return self.ratings.get(team, self.base_rating)
+
+    def regress_season(self, regression_factor=0.33):
+        """Regress ratings 1/3 toward 1500 mean across off-season transitions"""
+        for team in list(self.ratings.keys()):
+            self.ratings[team] = self.base_rating + (1.0 - regression_factor) * (self.ratings[team] - self.base_rating)
 
     def get_win_prob(self, home_team, away_team):
         home_rating = self.get_rating(home_team) + self.ha
@@ -378,6 +384,7 @@ def extract_features_chronologically(predictions):
     profiles = load_profiles() # Load finishing profiles
     edge_data = load_edge_data() # Load NHL Edge speed profiles
     training_data = []
+    prev_game_date = None
     
     for p in train_subset:
         game_id = p.get('game_id')
@@ -389,6 +396,11 @@ def extract_features_chronologically(predictions):
             game_date = datetime.strptime(date_str, "%Y-%m-%d")
         except:
             continue
+
+        # Regress ratings 1/3 to mean across off-season gaps
+        if prev_game_date and ((game_date - prev_game_date).days > 60 or (game_date.month >= 9 and prev_game_date.month < 7)):
+            tracker.elo.regress_season(0.33)
+        prev_game_date = game_date
             
         home = p.get('home_team')
         away = p.get('away_team')

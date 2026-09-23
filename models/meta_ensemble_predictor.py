@@ -84,14 +84,20 @@ except Exception:
     from models.nb_utils import prob_total_over
 
 class EloTracker:
-    def __init__(self, k_factor=20, home_advantage=35):
+    def __init__(self, k_factor=20, home_advantage=17):
         self.ratings = {}  # {team: rating}
         self.k = k_factor
+        # Empirically calibrated: 400 * log10(0.5241 / 0.4759) = 16.76 ~ 17 (true +2.41% edge)
         self.ha = home_advantage
         self.base_rating = 1500
 
     def get_rating(self, team):
         return self.ratings.get(team, self.base_rating)
+
+    def regress_season(self, regression_factor=0.33):
+        """Regress ratings 1/3 toward 1500 mean across off-season transitions"""
+        for team in list(self.ratings.keys()):
+            self.ratings[team] = self.base_rating + (1.0 - regression_factor) * (self.ratings[team] - self.base_rating)
 
     def get_win_prob(self, home_team, away_team):
         home_rating = self.get_rating(home_team) + self.ha
