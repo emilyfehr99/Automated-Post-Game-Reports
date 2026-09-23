@@ -6,8 +6,9 @@ concurrency:
 
 on:
   schedule:
-    # 5:30am Central Time (ensures predictions are ready around 6:00am given GitHub cron delays)
-    - cron: '30 10 * * *'
+    # 5:00am Central Time (10:00 UTC in CDT / 4:00am CST) - ensures all data scraping,
+    # training, guardrails, and predictions are 100% complete well before 7:00am Central Time.
+    - cron: '0 10 * * *'
   workflow_dispatch: {}
 
 permissions:
