@@ -47,10 +47,17 @@ class SpriteGoalAnalyzer:
             season = f"{year}{next_year}"
         except Exception:
             try:
-                from season_utils import current_season_string
+                from utils.season_utils import current_season_string
                 season = current_season_string()
             except Exception:
-                season = "20262027"
+                try:
+                    from season_utils import current_season_string
+                    season = current_season_string()
+                except Exception:
+                    from datetime import datetime
+                    y = datetime.now().year
+                    m = datetime.now().month
+                    season = f"{y}{y+1}" if m >= 7 else f"{y-1}{y}"
             
         url = f'https://wsr.nhle.com/sprites/{season}/{game_id}/ev{event_id}.json'
         try:
