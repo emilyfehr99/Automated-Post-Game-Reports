@@ -55,6 +55,13 @@ TEAM_HASHTAGS = {
     'WPG': '#NHLJets'
 }
 
+from datetime import datetime
+
+def _get_default_season_start() -> str:
+    now = datetime.now()
+    start_year = now.year if now.month >= 7 else now.year - 1
+    return f"{start_year}-10-01"
+
 # NHL Season Start Date (for calculating week/day)
-NHL_SEASON_START = os.getenv('NHL_SEASON_START', '2026-09-29')
+NHL_SEASON_START = os.getenv('NHL_SEASON_START', _get_default_season_start())
 

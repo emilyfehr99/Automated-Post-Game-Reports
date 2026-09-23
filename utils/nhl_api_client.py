@@ -166,7 +166,7 @@ class NHLAPIClient:
             game_center = {
                 'id': game_id,  # Ensure ID is present
                 'game': {
-                    'gameDate': '2024-03-04',  # Default date
+                    'gameDate': boxscore.get('gameDate') or datetime.now().strftime('%Y-%m-%d'),
                     'awayTeamScore': boxscore['awayTeam']['score'],
                     'homeTeamScore': boxscore['homeTeam']['score'],
                     'awayTeamScoreByPeriod': [0, 0, 0, 0],  # Default periods

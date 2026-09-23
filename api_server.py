@@ -357,10 +357,9 @@ def get_team_metrics():
         # Only fetch MoneyPuck if explicitly requested or if critical fields are missing
         skip_moneypuck = request.args.get('skip_moneypuck', '0') == '1'
         
-        if not skip_moneypuck:
-            print("Supplementing with MoneyPuck data for additional fields...")
-        
-        season = request.args.get('season', '2025')
+        now = datetime.now()
+        default_season = str(now.year if now.month >= 9 else now.year - 1)
+        season = request.args.get('season', default_season)
         game_type = request.args.get('type', 'regular')
         situation = request.args.get('situation', 'all')
         
@@ -368,6 +367,11 @@ def get_team_metrics():
         
         try:
             response = requests.get(url, timeout=15)
+            if response.status_code != 200 and season == default_season:
+                # Fallback to previous season if current season not published yet
+                fallback_season = str(int(default_season) - 1)
+                url = f"https://moneypuck.com/moneypuck/playerData/seasonSummary/{fallback_season}/{game_type}/teams.csv"
+                response = requests.get(url, timeout=15)
             
             if response.status_code != 200:
                 raise Exception(f"MoneyPuck API returned status {response.status_code}")
@@ -877,14 +881,21 @@ def send_discord_notification():
 def get_team_lines(team_abbrev):
     """Get lines and pairings from MoneyPuck"""
     try:
-        url = "https://moneypuck.com/moneypuck/playerData/seasonSummary/2025/regular/lines.csv"
-        response = requests.get(url, timeout=10)
-        if response.status_code != 200:
+        now = datetime.now()
+        season_year = now.year if now.month >= 9 else now.year - 1
+        
+        content = None
+        for yr in [season_year, season_year - 1]:
+            url = f"https://moneypuck.com/moneypuck/playerData/seasonSummary/{yr}/regular/lines.csv"
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                content = response.content.decode('utf-8')
+                break
+        
+        if not content:
             return jsonify({'error': 'Failed to fetch lines'}), 500
         
         lines_data = []
-        # Decode content to string
-        content = response.content.decode('utf-8')
         csv_reader = csv.DictReader(io.StringIO(content))
         
         for row in csv_reader:
@@ -923,12 +934,18 @@ def get_team_lines(team_abbrev):
 def get_team_data():
     """Get team-level data from MoneyPuck teams.csv"""
     try:
-        season = request.args.get('season', '2025')
+        now = datetime.now()
+        default_season = str(now.year if now.month >= 9 else now.year - 1)
+        season = request.args.get('season', default_season)
         game_type = request.args.get('type', 'regular')
         situation = request.args.get('situation', '5on5')  # 5on5, all, etc
         
         url = f"https://moneypuck.com/moneypuck/playerData/seasonSummary/{season}/{game_type}/teams.csv"
         response = requests.get(url, timeout=15)
+        if response.status_code != 200 and season == default_season:
+            fallback_season = str(int(default_season) - 1)
+            url = f"https://moneypuck.com/moneypuck/playerData/seasonSummary/{fallback_season}/{game_type}/teams.csv"
+            response = requests.get(url, timeout=15)
         
         if response.status_code != 200:
             return jsonify({'error': 'Failed to fetch team data'}), 500
@@ -997,12 +1014,18 @@ def get_team_data():
 def get_player_stats():
     """Get player stats from MoneyPuck"""
     try:
-        season = request.args.get('season', '2025')
+        now = datetime.now()
+        default_season = str(now.year if now.month >= 9 else now.year - 1)
+        season = request.args.get('season', default_season)
         game_type = request.args.get('type', 'regular')
         situation = request.args.get('situation', 'all')  # all, 5on5, etc
         
         url = f"https://moneypuck.com/moneypuck/playerData/seasonSummary/{season}/{game_type}/skaters.csv"
         response = requests.get(url, timeout=15)
+        if response.status_code != 200 and season == default_season:
+            fallback_season = str(int(default_season) - 1)
+            url = f"https://moneypuck.com/moneypuck/playerData/seasonSummary/{fallback_season}/{game_type}/skaters.csv"
+            response = requests.get(url, timeout=15)
         
         if response.status_code != 200:
             return jsonify({'error': 'Failed to fetch player stats'}), 500

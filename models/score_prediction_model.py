@@ -1819,17 +1819,17 @@ class ScorePredictionModel:
         # Identify specific tactical matchups that the base xG might miss.
         
         # A. D-Zone Giveaways vs Forecheck Pressure
-        # Teams with high turnovers (ANA, CHI) struggle against heavy forecheck (CAR, FLA, TOR, VGK)
+        # Teams with high turnovers struggle against heavy forecheck / high takeaway pressure
         away_giveaways = self._get_team_metric(away, 'dzone_giveaways', 'away')
         home_giveaways = self._get_team_metric(home, 'dzone_giveaways', 'home')
+        away_fc = self._get_team_metric(away, 'fc', 'away') or self._get_team_metric(away, 'takeaways', 'away')
+        home_fc = self._get_team_metric(home, 'fc', 'home') or self._get_team_metric(home, 'takeaways', 'home')
         
-        # Heuristic list of elite forecheck teams for 2026
-        high_pressure_teams = ['CAR', 'FLA', 'TOR', 'VGK', 'COL', 'TBL']
-        
-        if away in high_pressure_teams and home_giveaways > 450: # Threshold based on ANA head data
+        # Data-driven pressure threshold (> 6.0 forecheck recoveries/takeaways per game)
+        if away_fc >= 6.0 and home_giveaways > 450:
              attribution.append(f"{away} Forecheck Advantage vs {home} Turnovers (+0.12)")
              away_expected += 0.12
-        if home in high_pressure_teams and away_giveaways > 450:
+        if home_fc >= 6.0 and away_giveaways > 450:
              attribution.append(f"{home} Forecheck Advantage vs {away} Turnovers (+0.12)")
              home_expected += 0.12
              
