@@ -41,11 +41,15 @@ class TeamReportGenerator(PostGameReportGenerator):
         self._moneypuck_cache = None
         self._moneypuck_cache_date = None
     
-    def fetch_moneypuck_data(self, season_year: int = 2025):
+    def fetch_moneypuck_data(self, season_year: int = None):
         """Fetch MoneyPuck team data for the specified season. Caches data to disk for 24 hours (refreshes once per day)."""
         import json
         import tempfile
         
+        if season_year is None:
+            now = datetime.now()
+            season_year = now.year if now.month >= 9 else now.year - 1
+
         # Use file-based cache so it persists across script runs
         cache_file = os.path.join(tempfile.gettempdir(), f'nhl_moneypuck_cache_{season_year}.json')
         
@@ -77,42 +81,47 @@ class TeamReportGenerator(PostGameReportGenerator):
         if self._moneypuck_cache and self._moneypuck_cache_date == today:
             return self._moneypuck_cache
         
-        # Fetch fresh data
-        try:
-            url = f"https://moneypuck.com/moneypuck/playerData/seasonSummary/{season_year}/regular/teams.csv"
-            headers = {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-                'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8'
-            }
-            response = requests.get(url, headers=headers, timeout=30)
-            response.raise_for_status()
-            
-            # Parse CSV
-            csv_data = []
-            csv_reader = csv.DictReader(StringIO(response.text))
-            for row in csv_reader:
-                csv_data.append(row)
-            
-            # Cache to disk (persists across script runs, refreshes once per day)
+        # Fetch fresh data (with fallback to previous season if new season not uploaded yet)
+        for yr in [season_year, season_year - 1]:
             try:
-                cache_data = {
-                    'date': today.isoformat(),
-                    'data': csv_data
+                url = f"https://moneypuck.com/moneypuck/playerData/seasonSummary/{yr}/regular/teams.csv"
+                headers = {
+                    'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
+                    'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8'
                 }
-                with open(cache_file, 'w') as f:
-                    json.dump(cache_data, f)
-            except Exception:
-                # If disk cache fails, fall back to in-memory cache
-                pass
-            
-            # Also cache in memory
-            self._moneypuck_cache = csv_data
-            self._moneypuck_cache_date = today
-            
-            print(f"Fetched MoneyPuck data: {len(csv_data)} rows")
-            return csv_data
-        except Exception as e:
-            print(f"Error fetching MoneyPuck data: {e}")
+                response = requests.get(url, headers=headers, timeout=30)
+                response.raise_for_status()
+                
+                # Parse CSV
+                csv_data = []
+                csv_reader = csv.DictReader(StringIO(response.text))
+                for row in csv_reader:
+                    csv_data.append(row)
+                
+                if not csv_data:
+                    continue
+
+                # Cache to disk (persists across script runs, refreshes once per day)
+                try:
+                    cache_data = {
+                        'date': today.isoformat(),
+                        'data': csv_data
+                    }
+                    with open(cache_file, 'w') as f:
+                        json.dump(cache_data, f)
+                except Exception:
+                    # If disk cache fails, fall back to in-memory cache
+                    pass
+                
+                # Also cache in memory
+                self._moneypuck_cache = csv_data
+                self._moneypuck_cache_date = today
+                
+                print(f"Fetched MoneyPuck data ({yr}): {len(csv_data)} rows")
+                return csv_data
+            except Exception as e:
+                print(f"Notice: MoneyPuck data for {yr} not yet available ({e}).")
+                continue
             # Try to return cached data if available (even if from previous day)
             if os.path.exists(cache_file):
                 try:

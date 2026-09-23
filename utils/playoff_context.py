@@ -6,7 +6,17 @@ from pathlib import Path
 from typing import Any, Dict, List, Optional, Tuple
 
 
-_DEFAULT_SCHEDULE_PATH = Path("data/season_2025_2026_schedule.json")
+try:
+    from season_utils import get_schedule_path
+except ImportError:
+    from utils.season_utils import get_schedule_path
+
+
+def _get_default_schedule_path() -> Path:
+    try:
+        return get_schedule_path()
+    except Exception:
+        return Path("data/season_2026_2027_schedule.json")
 
 
 def _as_int(x: Any) -> Optional[int]:
@@ -37,19 +47,22 @@ def _load_schedule(path: str) -> List[Dict[str, Any]]:
 
 
 @lru_cache(maxsize=2048)
-def is_playoff_game(game_id: Any, *, schedule_path: Path = _DEFAULT_SCHEDULE_PATH) -> bool:
+def is_playoff_game(game_id: Any, *, schedule_path: Optional[Path] = None) -> bool:
     """
     Best-effort playoff detection.
-    - Prefer schedule gameType == 3 when the game exists in schedule JSON.
-    - Fall back to NHL id prefix 202503* heuristic.
+    - Universal NHL ID convention: 10-digit ID with gameType '03' at index [4:6] (e.g. 2024030111, 2025030111, 2026030111).
+    - Checks schedule gameType == 3 when the game exists in schedule JSON.
     """
     gid = _as_int(game_id)
     if gid is None:
         return False
-    # Fast heuristic: NHL playoff ids in this repo use 202503xxxx
-    if str(gid).startswith("202503"):
+    gid_str = str(gid)
+    # Universal NHL playoff ID format: YYYY03XXXX
+    if len(gid_str) == 10 and gid_str[4:6] == "03":
         return True
-    games = _load_schedule(str(schedule_path))
+    
+    actual_path = schedule_path or _get_default_schedule_path()
+    games = _load_schedule(str(actual_path))
     for g in games:
         try:
             if _as_int(g.get("id")) != gid:
@@ -67,7 +80,7 @@ def series_context_for_game(
     away_team: str,
     home_team: str,
     *,
-    schedule_path: Path = _DEFAULT_SCHEDULE_PATH,
+    schedule_path: Optional[Path] = None,
 ) -> Dict[str, Any]:
     """
     Compute series score context (wins-to-date) using the cached schedule JSON.
@@ -77,7 +90,8 @@ def series_context_for_game(
     if gid is None or not away_team or not home_team:
         return {}
 
-    games = _load_schedule(str(schedule_path))
+    actual_path = schedule_path or _get_default_schedule_path()
+    games = _load_schedule(str(actual_path))
     # Identify series by the unordered pair of teams (robust to venue swaps)
     pair = tuple(sorted([away_team, home_team]))
 

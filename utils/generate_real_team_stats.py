@@ -49,7 +49,7 @@ class RealTeamStatsGenerator(TeamReportGenerator):
             from season_utils import get_team_stats_path
             self.fallback_file = project_root / get_team_stats_path(min_teams=1)
         except Exception:
-            self.fallback_file = project_root / "data" / "season_2025_2026_team_stats.json"
+            self.fallback_file = None
 
     def _fetch_and_calculate_single_game(self, game_info, is_home):
         """Fetch game data and calculate metrics for one game item (thread-safe)"""

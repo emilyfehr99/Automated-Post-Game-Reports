@@ -230,7 +230,17 @@ def main():
         json.dump(model_out, f, indent=2)
 
     # Current-season cup priors from live standings
-    current_season = "20252026"
+    try:
+        from utils.season_utils import current_season_string
+        current_season = current_season_string()
+    except Exception:
+        try:
+            from season_utils import current_season_string
+            current_season = current_season_string()
+        except Exception:
+            _n = datetime.now()
+            _yr = _n.year if _n.month >= 7 else _n.year - 1
+            current_season = f"{_yr}{_yr+1}"
     standings = fetch_standings_by_date("now")
     cur_rows = extract_rows_from_web_standings(standings, current_season)
     cur = pd.DataFrame(cur_rows)

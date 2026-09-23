@@ -85,7 +85,24 @@ def get_file_mtime(filename):
                 return os.path.getmtime(p)
         except OSError:
             continue
-    return None
+def _load_current_team_stats():
+    """Load active season team stats dynamically."""
+    try:
+        from season_utils import get_team_stats_path
+        p = get_team_stats_path()
+        return load_json(str(p))
+    except Exception:
+        import glob
+        matches = sorted(
+            glob.glob(os.path.join(DATA_DIR, "season_*_team_stats.json"))
+            + glob.glob(os.path.join(_PROJECT_ROOT, "data", "season_*_team_stats.json"))
+            + glob.glob("data/season_*_team_stats.json"),
+            reverse=True,
+        )
+        if matches:
+            return load_json(matches[0])
+    return load_json('season_2026_2027_team_stats.json') or load_json('season_2025_2026_team_stats.json')
+
 
 @app.route('/playoffs')
 def playoffs_page():
@@ -110,7 +127,7 @@ def health():
 @app.route('/api/team-stats', methods=['GET'])
 def get_team_stats():
     """Get current season team stats with advanced metrics"""
-    data = load_json('season_2025_2026_team_stats.json')
+    data = _load_current_team_stats()
     
     # Handle both structures: direct team dict or wrapped in 'teams' key
     if 'teams' in data:
@@ -120,7 +137,7 @@ def get_team_stats():
 @app.route('/api/team-stats/<team_abbrev>', methods=['GET'])
 def get_team_stats_by_abbrev(team_abbrev):
     """Get stats for specific team"""
-    data = load_json('season_2025_2026_team_stats.json')
+    data = _load_current_team_stats()
     
     # Handle both structures
     teams = data.get('teams', data)
@@ -135,7 +152,11 @@ def get_team_metrics():
     """
     global _team_metrics_cache, _team_metrics_cache_time, _team_metrics_file_mtime
     
-    filename = 'season_2025_2026_team_stats.json'
+    try:
+        from season_utils import get_team_stats_path
+        filename = str(get_team_stats_path())
+    except Exception:
+        filename = 'season_2026_2027_team_stats.json'
     current_mtime = get_file_mtime(filename)
     current_time = datetime.now()
     
@@ -511,9 +532,8 @@ def get_today_predictions():
         # Load team stats for calculation
         team_stats = {}
         try:
-            with open(os.path.join(DATA_DIR, 'season_2025_2026_team_stats.json'), 'r') as f:
-                data = json.load(f)
-                team_stats = data.get('teams', {})
+            data = _load_current_team_stats()
+            team_stats = data.get('teams', data)
         except Exception as e:
             print(f"Error loading team stats: {e}")
             
@@ -616,9 +636,14 @@ def get_playoff_predictions():
     Methodology: Projected Final Points (Pace + Metrics Adjustment) -> Playoff Odds
     """
     try:
-        data = load_json('season_2025_2026_team_stats.json')
+        data = _load_current_team_stats()
         teams_data = data.get('teams', data)
-        standings_data = load_json('standings_2025_2026.json') # Try to load cached standings if available
+        try:
+            from season_utils import current_season_file_tag
+            standings_file = f"standings_{current_season_file_tag()}.json"
+        except Exception:
+            standings_file = 'standings_2026_2027.json'
+        standings_data = load_json(standings_file) or load_json('standings_2025_2026.json')
         
         # If no standings file, we might lack division info. 
         # For now, assume we can compute relative strength.
@@ -891,14 +916,22 @@ def get_live_game_data(game_id):
 def get_team_lines(team_abbrev):
     """Get lines and pairings from MoneyPuck"""
     try:
-        url = "https://moneypuck.com/moneypuck/playerData/seasonSummary/2025/regular/lines.csv"
-        response = requests.get(url, timeout=10)
-        if response.status_code != 200:
+        now = datetime.now()
+        season_year = now.year if now.month >= 9 else now.year - 1
+        
+        # Try current season, then fall back to previous season if 404
+        content = None
+        for yr in [season_year, season_year - 1]:
+            url = f"https://moneypuck.com/moneypuck/playerData/seasonSummary/{yr}/regular/lines.csv"
+            response = requests.get(url, timeout=10)
+            if response.status_code == 200:
+                content = response.content.decode('utf-8')
+                break
+        
+        if not content:
             return jsonify({'error': 'Failed to fetch lines'}), 500
         
         lines_data = []
-        # Decode content to string
-        content = response.content.decode('utf-8')
         csv_reader = csv.DictReader(io.StringIO(content))
         
         for row in csv_reader:
@@ -937,12 +970,20 @@ def get_team_lines(team_abbrev):
 def get_player_stats():
     """Get player stats from MoneyPuck - Comprehensive Dynamic Parsing"""
     try:
-        season = request.args.get('season', '2025')
+        now = datetime.now()
+        default_season = str(now.year if now.month >= 9 else now.year - 1)
+        season = request.args.get('season', default_season)
         game_type = request.args.get('type', 'regular')
         situation = request.args.get('situation', 'all')  # all, 5on5, etc
         
         url = f"https://moneypuck.com/moneypuck/playerData/seasonSummary/{season}/{game_type}/skaters.csv"
         response = requests.get(url, timeout=15)
+        
+        if response.status_code != 200 and season == default_season:
+            # Fallback to previous season if current not available
+            fallback_season = str(int(default_season) - 1)
+            url = f"https://moneypuck.com/moneypuck/playerData/seasonSummary/{fallback_season}/{game_type}/skaters.csv"
+            response = requests.get(url, timeout=15)
         
         if response.status_code != 200:
             return jsonify({'error': 'Failed to fetch player stats'}), 500

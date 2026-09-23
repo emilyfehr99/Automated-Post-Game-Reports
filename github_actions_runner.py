@@ -1068,7 +1068,9 @@ class GitHubActionsRunner:
                         continue
                     for game in day.get("games", []):
                         game_id = str(game.get("id", ""))
-                        if not game_id.startswith("202503"):
+                        game_type = game.get("gameType")
+                        is_playoff = (game_type == 3) or (len(game_id) == 10 and game_id[4:6] == "03")
+                        if not is_playoff:
                             continue
                         if game.get("gameState") not in ["FINAL", "OFF"]:
                             continue
@@ -1105,7 +1107,8 @@ class GitHubActionsRunner:
 
     def run_x_backfill(self):
         """Post all playoff reports that never made it to X."""
-        start_date = os.environ.get("BACKFILL_START_DATE", "2026-04-23").strip()
+        default_start = (datetime.now() - timedelta(days=7)).strftime("%Y-%m-%d")
+        start_date = os.environ.get("BACKFILL_START_DATE", default_start).strip()
         delay_seconds = int(os.environ.get("X_POST_DELAY_SECONDS", "45"))
 
         games = self.get_playoff_games_missing_x_post(start_date)

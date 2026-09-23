@@ -67,7 +67,7 @@ def get_team_stats_path(min_teams: int = 30) -> Path:
     """
     Locate active team_stats file.
     Prefers current season if populated with at least `min_teams` teams,
-    otherwise falls back to the most recent complete season (e.g. 2025_2026).
+    otherwise falls back to the most recent complete season dynamically discovered on disk.
     """
     tag = current_season_file_tag()
     candidates = [
@@ -78,23 +78,29 @@ def get_team_stats_path(min_teams: int = 30) -> Path:
         if _is_valid_team_stats_file(c, min_teams=min_teams):
             return c
 
-    # Search for any existing season team stats file with at least min_teams
-    matches = sorted(glob.glob("data/season_*_team_stats.json"), reverse=True)
+    # Search for any existing season team stats file with at least min_teams in reverse sorted order
+    matches = sorted(
+        glob.glob("data/season_*_team_stats.json") + glob.glob("season_*_team_stats.json"),
+        reverse=True,
+    )
     for m in matches:
         p = Path(m)
         if _is_valid_team_stats_file(p, min_teams=min_teams):
             return p
 
-    # Default fallback to complete 2025_2026 season stats
-    for fb in [Path("data/season_2025_2026_team_stats.json"), Path("season_2025_2026_team_stats.json")]:
-        if _is_valid_team_stats_file(fb, min_teams=1):
-            return fb
-    return Path("data/season_2025_2026_team_stats.json")
+    # Fallback to any valid season stats file with at least 1 team
+    for m in matches:
+        p = Path(m)
+        if _is_valid_team_stats_file(p, min_teams=1):
+            return p
+
+    return Path(f"data/season_{tag}_team_stats.json")
 
 
 def get_schedule_path() -> Path:
     """
     Locate active schedule file.
+    Prefers current season schedule, otherwise falls back to most recent schedule on disk.
     """
     tag = current_season_file_tag()
     candidates = [
@@ -105,8 +111,11 @@ def get_schedule_path() -> Path:
         if c.exists():
             return c
 
-    matches = sorted(glob.glob("data/season_*_schedule.json") + glob.glob("season_*_schedule.json"), reverse=True)
+    matches = sorted(
+        glob.glob("data/season_*_schedule.json") + glob.glob("season_*_schedule.json"),
+        reverse=True,
+    )
     if matches:
         return Path(matches[0])
 
-    return Path("data/season_2025_2026_schedule.json")
+    return Path(f"data/season_{tag}_schedule.json")
