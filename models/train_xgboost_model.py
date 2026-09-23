@@ -26,9 +26,9 @@ try:
 except Exception:
     from models.feature_contract import assert_no_forbidden_features
 try:
-    from nb_utils import estimate_nb_size_from_mean_var, nb_nll
+    from nb_utils import estimate_nb_size_from_mean_var, estimate_nb_size_mle, nb_nll
 except Exception:
-    from models.nb_utils import estimate_nb_size_from_mean_var, nb_nll
+    from models.nb_utils import estimate_nb_size_from_mean_var, estimate_nb_size_mle, nb_nll
 
 TEAM_COORDINATES = {
     'ANA': (33.80, -117.88), 'BOS': (42.36, -71.06), 'BUF': (42.89, -78.88),
@@ -1102,11 +1102,14 @@ def train_optimized_model():
                 pickle.dump(total_goals_model, f)
             print("✅ Saved home_goals_model.pkl, away_goals_model.pkl, total_goals_model.pkl")
 
-            # Scoreline calibration (dispersion)
+            # Scoreline calibration (dispersion via MLE)
             y_tot_te = test_df["total_goals_final"].astype(float).values if "total_goals_final" in test_df.columns else (test_df["home_goals_final"].astype(float).values + test_df["away_goals_final"].astype(float).values)
             tot_mu = float(np.mean(y_tot_te)) if len(y_tot_te) else 6.0
             tot_var = float(np.var(y_tot_te)) if len(y_tot_te) else 7.0
-            nb_size = estimate_nb_size_from_mean_var(tot_mu, tot_var) or 20.0
+            try:
+                nb_size = estimate_nb_size_mle(y_tot_te, np.full_like(y_tot_te, tot_mu))
+            except Exception:
+                nb_size = estimate_nb_size_from_mean_var(tot_mu, tot_var) or 20.0
             with open("scoreline_calibration.json", "w") as f:
                 json.dump({"total_goals_nb_size": float(nb_size), "league_avg_total": tot_mu}, f, indent=2)
             print("✅ Saved scoreline_calibration.json")

@@ -23,6 +23,36 @@ def estimate_nb_size_from_mean_var(mean: float, var: float, *, min_size: float =
     return float(max(min_size, min(max_size, size)))
 
 
+def estimate_nb_size_mle(y: Iterable[float], mean: Iterable[float], *, min_size: float = 0.5, max_size: float = 200.0) -> float:
+    """
+    Maximum Likelihood Estimation (MLE) of Negative Binomial dispersion parameter r.
+    Minimizes Negative Log-Likelihood via golden section / bounded scalar optimization.
+    """
+    y_arr = np.asarray(list(y), dtype=float)
+    mu_arr = np.asarray(list(mean), dtype=float)
+    if len(y_arr) == 0:
+        return 20.0
+
+    # Initial moment estimate
+    sample_mean = float(np.mean(y_arr))
+    sample_var = float(np.var(y_arr))
+    init_r = estimate_nb_size_from_mean_var(sample_mean, sample_var, min_size=min_size, max_size=max_size) or 20.0
+
+    try:
+        from scipy.optimize import minimize_scalar
+        res = minimize_scalar(
+            lambda r: nb_nll(y_arr, mu_arr, r),
+            bounds=(min_size, max_size),
+            method='bounded',
+            options={'xatol': 1e-4}
+        )
+        if res.success and np.isfinite(res.x):
+            return float(res.x)
+    except Exception:
+        pass
+    return float(init_r)
+
+
 def nb_logpmf(y: np.ndarray, mean: np.ndarray, size: float) -> np.ndarray:
     """
     Log PMF for NB with mean/size (NB2).
