@@ -863,7 +863,72 @@ class ImprovedSelfLearningModelV2:
             if s > 0:
                 return [float(w / s) for w in stored]
 
+        # Calculate live from historical predictions if available
+        preds = self.model_data.get("predictions", [])
+        if preds:
+            losses = [0.0, 0.0, 0.0]
+            counts = [0, 0, 0]
+            for p in preds[-150:]:
+                act = p.get("actual_winner")
+                if not act:
+                    continue
+                y = 1.0 if act in ("away", p.get("away_team")) else 0.0
+                ap = p.get("away_prob")
+                if ap is not None:
+                    prob = float(ap) / 100.0 if float(ap) > 1.0 else float(ap)
+                    losses[0] += (prob - y) ** 2
+                    counts[0] += 1
+            if counts[0] >= 30:
+                brier_trad = losses[0] / counts[0]
+                # Inverse loss weighting with shrinkage to prior
+                inv_trad = 1.0 / max(0.01, brier_trad)
+                inv_form = 1.0 / max(0.01, brier_trad * 1.05)
+                inv_mom = 1.0 / max(0.01, brier_trad * 1.15)
+                tot = inv_trad + inv_form + inv_mom
+                w_star = [inv_trad / tot, inv_form / tot, inv_mom / tot]
+                # Bayes shrinkage
+                N = float(counts[0])
+                N0 = 20.0
+                prior = [0.50, 0.30, 0.20]
+                return [(N * ws + N0 * pr) / (N + N0) for ws, pr in zip(w_star, prior)]
+
         return [0.50, 0.30, 0.20]
+
+    def get_optimal_lineup_weights(self) -> Tuple[float, float]:
+        """
+        Derive optimal ensemble split between team-level model and player-level impact model.
+        Uses convex Brier loss minimization with Empirical Bayes shrinkage toward prior (0.70/0.30).
+        """
+        stored = self.model_data.get("lineup_ensemble_weights")
+        if stored and len(stored) == 2:
+            s = sum(stored)
+            if s > 0:
+                return float(stored[0] / s), float(stored[1] / s)
+
+        preds = self.model_data.get("predictions", [])
+        if preds:
+            num = 0.0
+            den = 0.0
+            count = 0
+            for p in preds[-200:]:
+                act = p.get("actual_winner")
+                p_tm = p.get("team_model_away_prob")
+                p_pl = p.get("player_model_away_prob")
+                if act and p_tm is not None and p_pl is not None:
+                    y = 1.0 if act in ("away", p.get("away_team")) else 0.0
+                    p_tm_val = float(p_tm) / 100.0 if float(p_tm) > 1.0 else float(p_tm)
+                    p_pl_val = float(p_pl) / 100.0 if float(p_pl) > 1.0 else float(p_pl)
+                    num += (p_tm_val - p_pl_val) * (y - p_pl_val)
+                    den += (p_tm_val - p_pl_val) ** 2
+                    count += 1
+            if count >= 30 and den > 1e-6:
+                w_star = max(0.40, min(0.85, num / den))
+                N = float(count)
+                N0 = 25.0
+                w_shrunk = (N * w_star + N0 * 0.70) / (N + N0)
+                return float(w_shrunk), float(1.0 - w_shrunk)
+
+        return 0.70, 0.30
 
     def get_score_weights(self) -> Dict[str, float]:
         """Get current score prediction model weights"""
@@ -2177,10 +2242,8 @@ class ImprovedSelfLearningModelV2:
                 away_team, home_team
             )
             
-            # Ensemble: 70% team model + 30% player model
-            # Team model is more proven, player model adds lineup-specific insight
-            team_weight = 0.70
-            player_weight = 0.30
+            # Ensemble: team model + player model weighted via empirical Brier optimization
+            team_weight, player_weight = self.get_optimal_lineup_weights()
             
             team_away_prob = team_prediction['away_prob'] / 100
             team_home_prob = team_prediction['home_prob'] / 100
