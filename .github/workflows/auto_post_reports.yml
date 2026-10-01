@@ -2,17 +2,26 @@ name: Auto Post NHL Reports
 
 on:
   schedule:
-    # GitHub Actions cron is UTC.
-    # NHL games typically finish between 12:00 PM CT (afternoon games) and 2:30 AM CT (late West Coast/OT games).
-    # In UTC (covers CDT UTC-5 and CST UTC-6 year-round across all 7 days):
-    # - 17:00 - 23:59 UTC (12:00 PM - 6:59 PM CT)
-    - cron: '*/10 17-23 * * *'
-    # - 00:00 - 08:59 UTC (7:00 PM - 3:59 AM CT)
-    - cron: '*/10 0-8 * * *'
+    # 1. Afternoon Game Window Monitor (Daily):
+    # Starts at 12:00 PM CT (17:00 UTC) and monitors live afternoon games.
+    - cron: '0 17 * * *'
+    
+    # 2. Evening Game Window Monitor (Daily):
+    # Starts at 6:30 PM CT (23:30 UTC) and monitors live evening games until all are final.
+    - cron: '30 23 * * *'
+    
+    # 3. Late Night Window Monitor (Daily):
+    # Starts at 12:00 AM CT (05:00 UTC) and monitors late West Coast & multi-OT games.
+    - cron: '0 5 * * *'
+
   repository_dispatch:  # Allow external triggers (instant when game finishes)
-    types: [game-finished]  # Custom event type from game monitor
+    types: [game-finished]
   workflow_dispatch:  # Allow manual triggering from Actions tab
     inputs:
+      monitor_mode:
+        description: "Run live monitor daemon (true) or single-pass check (false)"
+        required: false
+        default: "true"
       force_reprocess_days:
         description: "Replay last N days even if already processed (e.g. 2)"
         required: false
@@ -26,10 +35,14 @@ on:
         required: false
         default: "true"
 
+concurrency:
+  group: nhl-live-monitor
+  cancel-in-progress: false
+
 jobs:
   check-and-post:
     runs-on: ubuntu-latest
-    timeout-minutes: 20
+    timeout-minutes: 360
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       PYTHONPATH: ".:models:analyzers:utils:scrapers:api"
@@ -120,6 +133,8 @@ jobs:
         TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
         TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
         DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+        LIVE_MONITOR_MODE: ${{ github.event.inputs.monitor_mode || 'true' }}
+        MAX_MONITOR_MINUTES: "330"
         FORCE_REPROCESS_DAYS: ${{ github.event.inputs.force_reprocess_days || '0' }}
         ALLOW_TWITTER_FAILURE: ${{ github.event.inputs.allow_twitter_failure || 'false' }}
         REQUIRE_TWITTER_POST: ${{ github.event.inputs.require_twitter_post || 'true' }}

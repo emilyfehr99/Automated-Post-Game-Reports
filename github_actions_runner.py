@@ -1152,10 +1152,153 @@ class GitHubActionsRunner:
             print(f"⏸️  {remaining} game(s) still need posting — re-run tomorrow when X resets daily limits.")
 
 
+    def commit_and_push_state(self, message="Update processed games and stats [skip ci]"):
+        """Safely commit and push tracking files to git during live monitoring"""
+        try:
+            import time
+            subprocess.run(["git", "config", "--local", "user.email", "github-actions[bot]@users.noreply.github.com"], check=False)
+            subprocess.run(["git", "config", "--local", "user.name", "GitHub Actions Bot"], check=False)
+            
+            files_to_add = [
+                "processed_games.json",
+                "posted_tweets.json",
+                "win_probability_predictions_v2.json",
+                "data/goalie_stats.json",
+                "data/team_advanced_metrics.json"
+            ]
+            for f in files_to_add:
+                if Path(f).exists():
+                    subprocess.run(["git", "add", "-f", f], check=False)
+            
+            for stats_file in list(Path('.').glob('season_*_team_stats.json')) + list(Path('data').glob('season_*_team_stats.json')):
+                if stats_file.exists():
+                    subprocess.run(["git", "add", "-f", str(stats_file)], check=False)
+            
+            diff_res = subprocess.run(["git", "diff", "--staged", "--quiet"])
+            if diff_res.returncode != 0:
+                print(f"📝 Committing tracking updates: {message}")
+                subprocess.run(["git", "commit", "-m", message], check=False)
+                for attempt in range(1, 4):
+                    push_res = subprocess.run(["git", "push", "origin", "HEAD:main"])
+                    if push_res.returncode == 0:
+                        print("✅ Successfully pushed state to GitHub")
+                        break
+                    print(f"⚠️ Push failed (attempt {attempt}). Rebasing and retrying...")
+                    subprocess.run(["git", "pull", "--rebase", "--autostash", "origin", "main"], check=False)
+                    time.sleep(2)
+        except Exception as e:
+            print(f"⚠️ Warning during git commit/push: {e}")
+
+    def run_live_monitor(self, max_duration_minutes=300, poll_interval=45):
+        """
+        Continuously monitor live games in GitHub Actions until all games of the day are finished.
+        Posts reports instantly upon game completion and pushes state to Git.
+        """
+        import time
+        central_tz = pytz.timezone("US/Central")
+        start_time = time.time()
+        max_duration_seconds = max_duration_minutes * 60
+
+        print("=" * 60)
+        print("🤖 NHL LIVE GAME MONITOR - GITHUB ACTIONS DAEMON")
+        print("=" * 60)
+        print(f"📅 Start Time (CT): {datetime.now(central_tz).strftime('%Y-%m-%d %I:%M:%S %p')}")
+        print(f"⏱️  Max runtime: {max_duration_minutes} minutes")
+        print(f"⏱️  Active poll interval: {poll_interval} seconds")
+        print(f"📋 Initial processed games: {len(self.processed_games)}")
+        print("=" * 60)
+
+        while True:
+            elapsed = time.time() - start_time
+            if elapsed >= max_duration_seconds:
+                print(f"\n⏰ Max monitoring duration of {max_duration_minutes}m reached. Exiting cleanly.")
+                break
+
+            now_ct = datetime.now(central_tz)
+            today_str = now_ct.strftime("%Y-%m-%d")
+
+            # Check if there are any games scheduled/active
+            games = self.get_todays_games()
+            if not games:
+                print(f"\n⏸️ No games scheduled for today ({today_str}). Exiting monitor.")
+                break
+
+            target_games = [g for g in games if self.games_by_date.get(str(g.get("id"))) == today_str or g.get("gameDate") == today_str]
+            if not target_games:
+                target_games = games
+
+            total_target = len(target_games)
+            completed_and_processed = 0
+            live_or_future_count = 0
+            newly_completed = []
+
+            for game in target_games:
+                game_id = str(game.get("id"))
+                game_state = game.get("gameState", "UNKNOWN")
+                away_team = game.get("awayTeam", {}).get("abbrev", "UNK")
+                home_team = game.get("homeTeam", {}).get("abbrev", "UNK")
+                game_date = self.games_by_date.get(game_id, today_str)
+
+                is_already_processed = game_id in self.processed_games
+                force_reprocess = self._should_force_reprocess(game_date)
+
+                if is_already_processed and not force_reprocess:
+                    completed_and_processed += 1
+                elif game_state in ["FINAL", "OFF"]:
+                    print(f"\n🚨 GAME FINISHED DETECTED: {away_team} @ {home_team} (ID: {game_id})")
+                    newly_completed.append({
+                        "id": game_id,
+                        "away": away_team,
+                        "home": home_team
+                    })
+                elif game_state in ["LIVE", "CRIT", "PRE", "FUT"]:
+                    live_or_future_count += 1
+
+            # Process newly completed games immediately
+            if newly_completed:
+                print(f"\n🚀 Processing {len(newly_completed)} newly completed game(s)...")
+                for g_info in newly_completed:
+                    try:
+                        success = self.generate_and_post_game(g_info["id"], g_info["away"], g_info["home"])
+                        if success:
+                            self.processed_games.add(g_info["id"])
+                            self.save_processed_games()
+                            completed_and_processed += 1
+                            print(f"✅ SUCCESSFULLY POSTED & PROCESSED: {g_info['away']} @ {g_info['home']}")
+                            self.commit_and_push_state(f"Auto-post game report {g_info['away']} vs {g_info['home']} [skip ci]")
+                        else:
+                            print(f"⚠️ Failed to post {g_info['away']} @ {g_info['home']}; will retry on next loop tick.")
+                    except Exception as e:
+                        print(f"❌ Error processing game {g_info['id']}: {e}")
+
+            # Check if all games for the day are finished
+            if total_target > 0 and completed_and_processed >= total_target and live_or_future_count == 0:
+                print(f"\n🎉 ALL {total_target} games for today ({today_str}) are COMPLETED and PROCESSED!")
+                print("🧠 Running final daily model update before terminating...")
+                try:
+                    self.learning_model.run_daily_update()
+                    self.commit_and_push_state("Daily model update and final game state [skip ci]")
+                except Exception as e:
+                    print(f"⚠️ Model update error: {e}")
+                print("👋 Exiting live monitor cleanly.")
+                break
+
+            # Adaptive sleep: 45s if any live games, 120s if all future
+            has_live = any(g.get("gameState") in ["LIVE", "CRIT"] for g in target_games)
+            sleep_duration = poll_interval if has_live else 120
+            remaining_mins = int((max_duration_seconds - elapsed) / 60)
+            print(f"[{datetime.now(central_tz).strftime('%I:%M:%S %p')}] Status: {completed_and_processed}/{total_target} games done | {live_or_future_count} active/upcoming. Next check in {sleep_duration}s ({remaining_mins}m remaining in session)...")
+            time.sleep(sleep_duration)
+
+
 if __name__ == '__main__':
     runner = GitHubActionsRunner()
     if os.environ.get("BACKFILL_X_PLAYOFFS", "false").lower() == "true":
         runner.run_x_backfill()
+    elif os.environ.get("LIVE_MONITOR_MODE", "true").lower() == "true":
+        max_mins = int(os.environ.get("MAX_MONITOR_MINUTES", "300"))
+        runner.run_live_monitor(max_duration_minutes=max_mins)
     else:
         runner.run()
+
 
