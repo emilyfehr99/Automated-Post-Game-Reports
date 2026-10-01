@@ -50,22 +50,64 @@ jobs:
           echo "✅ Dispatch Triggered (${{ github.event_name }})!"
           echo "should_run=true" >> $GITHUB_OUTPUT
         else
-          has_games=$(python3 -c "
+          result=$(python3 -c "
           import urllib.request, json
-          try:
-              req = urllib.request.Request('https://api-web.nhle.com/v1/schedule/now', headers={'User-Agent': 'Mozilla/5.0'})
-              with urllib.request.urlopen(req, timeout=10) as r:
-                  data = json.loads(r.read().decode('utf-8'))
-              has_games = any(bool(day.get('games')) for day in (data.get('gameWeek') or []))
-              print('true' if has_games else 'false')
-          except Exception as e:
-              print('true')
-          " 2>/dev/null || echo "true")
-          if [[ "$has_games" == "true" ]]; then
-            echo "✅ Active games scheduled in current gameWeek!"
+          from datetime import datetime, timezone, timedelta
+
+          def check():
+              try:
+                  req = urllib.request.Request('https://api-web.nhle.com/v1/score/now', headers={'User-Agent': 'Mozilla/5.0'})
+                  with urllib.request.urlopen(req, timeout=10) as r:
+                      data = json.loads(r.read().decode('utf-8'))
+                  games = data.get('games', [])
+                  if not games:
+                      req2 = urllib.request.Request('https://api-web.nhle.com/v1/schedule/now', headers={'User-Agent': 'Mozilla/5.0'})
+                      with urllib.request.urlopen(req2, timeout=10) as r2:
+                          sched = json.loads(r2.read().decode('utf-8'))
+                      games = [g for day in sched.get('gameWeek', []) for g in day.get('games', [])]
+                      if not games:
+                          return False, 'No NHL games scheduled in active schedule window'
+
+                  now_utc = datetime.now(timezone.utc)
+                  
+                  # 1. Any game currently LIVE or in PRE-game
+                  live_games = [g for g in games if g.get('gameState') in ('LIVE', 'CRIT', 'PRE')]
+                  if live_games:
+                      return True, f'{len(live_games)} game(s) currently LIVE/PRE'
+                  
+                  # 2. Any game that is FINAL or OFF (needs post-game report generation check)
+                  final_games = [g for g in games if g.get('gameState') in ('FINAL', 'OFF')]
+                  if final_games:
+                      return True, f'{len(final_games)} completed game(s) to verify/process'
+                  
+                  # 3. Any upcoming game starting within the next 45 minutes
+                  starting_soon = []
+                  for g in games:
+                      start_str = g.get('startTimeUTC')
+                      if start_str:
+                          start_dt = datetime.fromisoformat(start_str.replace('Z', '+00:00'))
+                          if start_dt <= now_utc + timedelta(minutes=45):
+                              starting_soon.append(g)
+                  
+                  if starting_soon:
+                      return True, f'{len(starting_soon)} game(s) starting within 45 minutes'
+                  
+                  return False, 'All games on today slate start in > 45 minutes. Skipping run.'
+              except Exception as e:
+                  return True, f'Error querying schedule ({e}); defaulting to run.'
+
+          should_run, reason = check()
+          print(f'{\"true\" if should_run else \"false\"}|{reason}')
+          " 2>/dev/null || echo "true|Fallback default to run")
+
+          should_run=$(echo "$result" | cut -d'|' -f1)
+          reason=$(echo "$result" | cut -d'|' -f2)
+
+          if [[ "$should_run" == "true" ]]; then
+            echo "✅ $reason"
             echo "should_run=true" >> $GITHUB_OUTPUT
           else
-            echo "⏸️ No games scheduled for active week. Skipping run."
+            echo "⏸️  $reason"
             echo "should_run=false" >> $GITHUB_OUTPUT
           fi
         fi
