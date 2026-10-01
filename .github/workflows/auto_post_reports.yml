@@ -2,17 +2,11 @@ name: Auto Post NHL Reports
 
 on:
   schedule:
-    # 1. Afternoon Game Window Monitor (Daily):
-    # Starts at 12:00 PM CT (17:00 UTC) and monitors live afternoon games.
-    - cron: '0 17 * * *'
-    
-    # 2. Evening Game Window Monitor (Daily):
-    # Starts at 6:30 PM CT (23:30 UTC) and monitors live evening games until all are final.
-    - cron: '30 23 * * *'
-    
-    # 3. Late Night Window Monitor (Daily):
-    # Starts at 12:00 AM CT (05:00 UTC) and monitors late West Coast & multi-OT games.
-    - cron: '0 5 * * *'
+    # 30-minute schedule across all daily NHL game windows (12:00 PM CT to 3:30 AM CT):
+    # - Afternoon Window: 17:00 - 23:59 UTC (12:00 PM - 6:59 PM CT)
+    - cron: '*/30 17-23 * * *'
+    # - Evening & Late Night Window: 00:00 - 08:59 UTC (7:00 PM - 3:59 AM CT)
+    - cron: '*/30 0-8 * * *'
 
   repository_dispatch:  # Allow external triggers (instant when game finishes)
     types: [game-finished]
@@ -42,7 +36,7 @@ concurrency:
 jobs:
   check-and-post:
     runs-on: ubuntu-latest
-    timeout-minutes: 360
+    timeout-minutes: 150
     env:
       FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: true
       PYTHONPATH: ".:models:analyzers:utils:scrapers:api"
@@ -134,7 +128,7 @@ jobs:
         TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
         DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
         LIVE_MONITOR_MODE: ${{ github.event.inputs.monitor_mode || 'true' }}
-        MAX_MONITOR_MINUTES: "330"
+        MAX_MONITOR_MINUTES: "120"
         FORCE_REPROCESS_DAYS: ${{ github.event.inputs.force_reprocess_days || '0' }}
         ALLOW_TWITTER_FAILURE: ${{ github.event.inputs.allow_twitter_failure || 'false' }}
         REQUIRE_TWITTER_POST: ${{ github.event.inputs.require_twitter_post || 'true' }}

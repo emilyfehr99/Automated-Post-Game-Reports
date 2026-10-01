@@ -1189,10 +1189,11 @@ class GitHubActionsRunner:
         except Exception as e:
             print(f"⚠️ Warning during git commit/push: {e}")
 
-    def run_live_monitor(self, max_duration_minutes=300, poll_interval=45):
+    def run_live_monitor(self, max_duration_minutes=120, poll_interval=45):
         """
-        Continuously monitor live games in GitHub Actions until all games of the day are finished.
+        Continuously monitor live games in GitHub Actions while games are active.
         Posts reports instantly upon game completion and pushes state to Git.
+        Exits cleanly when no games are actively in progress to let scheduled triggers rotate.
         """
         import time
         central_tz = pytz.timezone("US/Central")
@@ -1200,7 +1201,7 @@ class GitHubActionsRunner:
         max_duration_seconds = max_duration_minutes * 60
 
         print("=" * 60)
-        print("🤖 NHL LIVE GAME MONITOR - GITHUB ACTIONS DAEMON")
+        print("🤖 NHL LIVE GAME MONITOR - GITHUB ACTIONS")
         print("=" * 60)
         print(f"📅 Start Time (CT): {datetime.now(central_tz).strftime('%Y-%m-%d %I:%M:%S %p')}")
         print(f"⏱️  Max runtime: {max_duration_minutes} minutes")
@@ -1208,28 +1209,25 @@ class GitHubActionsRunner:
         print(f"📋 Initial processed games: {len(self.processed_games)}")
         print("=" * 60)
 
+        consecutive_idle_checks = 0
+
         while True:
             elapsed = time.time() - start_time
             if elapsed >= max_duration_seconds:
-                print(f"\n⏰ Max monitoring duration of {max_duration_minutes}m reached. Exiting cleanly.")
+                print(f"\n⏰ Max monitoring duration of {max_duration_minutes}m reached. Session rotating cleanly.")
                 break
 
-            now_ct = datetime.now(central_tz)
-            today_str = now_ct.strftime("%Y-%m-%d")
-
-            # Check if there are any games scheduled/active
+            # Fetch all games across Central Time window (yesterday + today to handle midnight rollovers)
             games = self.get_todays_games()
             if not games:
-                print(f"\n⏸️ No games scheduled for today ({today_str}). Exiting monitor.")
+                print("\n⏸️ No games found in current schedule window. Exiting cleanly.")
                 break
 
-            target_games = [g for g in games if self.games_by_date.get(str(g.get("id"))) == today_str or g.get("gameDate") == today_str]
-            if not target_games:
-                target_games = games
-
+            target_games = games
             total_target = len(target_games)
             completed_and_processed = 0
-            live_or_future_count = 0
+            live_count = 0
+            future_count = 0
             newly_completed = []
 
             for game in target_games:
@@ -1237,7 +1235,7 @@ class GitHubActionsRunner:
                 game_state = game.get("gameState", "UNKNOWN")
                 away_team = game.get("awayTeam", {}).get("abbrev", "UNK")
                 home_team = game.get("homeTeam", {}).get("abbrev", "UNK")
-                game_date = self.games_by_date.get(game_id, today_str)
+                game_date = self.games_by_date.get(game_id, "")
 
                 is_already_processed = game_id in self.processed_games
                 force_reprocess = self._should_force_reprocess(game_date)
@@ -1251,8 +1249,10 @@ class GitHubActionsRunner:
                         "away": away_team,
                         "home": home_team
                     })
-                elif game_state in ["LIVE", "CRIT", "PRE", "FUT"]:
-                    live_or_future_count += 1
+                elif game_state in ["LIVE", "CRIT"]:
+                    live_count += 1
+                elif game_state in ["PRE", "FUT"]:
+                    future_count += 1
 
             # Process newly completed games immediately
             if newly_completed:
@@ -1267,28 +1267,36 @@ class GitHubActionsRunner:
                             print(f"✅ SUCCESSFULLY POSTED & PROCESSED: {g_info['away']} @ {g_info['home']}")
                             self.commit_and_push_state(f"Auto-post game report {g_info['away']} vs {g_info['home']} [skip ci]")
                         else:
-                            print(f"⚠️ Failed to post {g_info['away']} @ {g_info['home']}; will retry on next loop tick.")
+                            print(f"⚠️ Failed to post {g_info['away']} @ {g_info['home']}; will retry on next check.")
                     except Exception as e:
                         print(f"❌ Error processing game {g_info['id']}: {e}")
 
-            # Check if all games for the day are finished
-            if total_target > 0 and completed_and_processed >= total_target and live_or_future_count == 0:
-                print(f"\n🎉 ALL {total_target} games for today ({today_str}) are COMPLETED and PROCESSED!")
-                print("🧠 Running final daily model update before terminating...")
+            # If ALL games in the window are completed and processed, run daily model update and exit
+            if total_target > 0 and completed_and_processed >= total_target and live_count == 0 and future_count == 0:
+                print(f"\n🎉 ALL {total_target} games in current schedule window are COMPLETED and PROCESSED!")
+                print("🧠 Running final daily model update...")
                 try:
                     self.learning_model.run_daily_update()
                     self.commit_and_push_state("Daily model update and final game state [skip ci]")
                 except Exception as e:
                     print(f"⚠️ Model update error: {e}")
-                print("👋 Exiting live monitor cleanly.")
+                print("👋 Exiting cleanly.")
                 break
 
-            # Adaptive sleep: 45s if any live games, 120s if all future
-            has_live = any(g.get("gameState") in ["LIVE", "CRIT"] for g in target_games)
-            sleep_duration = poll_interval if has_live else 120
+            # If no games are actively on the ice (LIVE/CRIT), don't hang for hours:
+            # Check 2 ticks to ensure no state race condition, then exit cleanly so regular scheduled cron rotates in.
+            if live_count == 0 and len(newly_completed) == 0:
+                consecutive_idle_checks += 1
+                if consecutive_idle_checks >= 2:
+                    print(f"\nℹ️ No games currently LIVE on ice ({future_count} upcoming, {completed_and_processed} done). Exiting cleanly; next schedule run will resume.")
+                    break
+            else:
+                consecutive_idle_checks = 0
+
+            # Active polling sleep (45s while games are live)
             remaining_mins = int((max_duration_seconds - elapsed) / 60)
-            print(f"[{datetime.now(central_tz).strftime('%I:%M:%S %p')}] Status: {completed_and_processed}/{total_target} games done | {live_or_future_count} active/upcoming. Next check in {sleep_duration}s ({remaining_mins}m remaining in session)...")
-            time.sleep(sleep_duration)
+            print(f"[{datetime.now(central_tz).strftime('%I:%M:%S %p')}] Status: {completed_and_processed}/{total_target} games processed | {live_count} LIVE on ice | {future_count} upcoming. Next poll in {poll_interval}s ({remaining_mins}m left in runner session)...")
+            time.sleep(poll_interval)
 
 
 if __name__ == '__main__':
@@ -1296,9 +1304,10 @@ if __name__ == '__main__':
     if os.environ.get("BACKFILL_X_PLAYOFFS", "false").lower() == "true":
         runner.run_x_backfill()
     elif os.environ.get("LIVE_MONITOR_MODE", "true").lower() == "true":
-        max_mins = int(os.environ.get("MAX_MONITOR_MINUTES", "300"))
+        max_mins = int(os.environ.get("MAX_MONITOR_MINUTES", "120"))
         runner.run_live_monitor(max_duration_minutes=max_mins)
     else:
         runner.run()
+
 
 
