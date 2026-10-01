@@ -3,23 +3,12 @@ name: Auto Post NHL Reports
 on:
   schedule:
     # GitHub Actions cron is UTC.
-    #
-    # Desired schedule (CT):
-    # - Weekends: 12:00 PM - 11:59 PM
-    # - Weekdays: keep existing night schedule (8:00 PM - 2:00 AM)
-    #
-    # NOTE: CT is either CST (UTC-6) or CDT (UTC-5). These crons are correct for CDT.
-    # If you want to pin to CST year-round, we can adjust to UTC-6 instead.
-    #
-    # Weekdays (Mon-Fri): 8:00 PM - 2:59 AM CT  ==> 01:00 - 07:59 UTC
-    - cron: '*/10 1-7 * * 1-5'
-    #
-    # Weekends (Sat/Sun): 12:00 PM - 11:59 PM CT ==> 17:00 - 04:59 UTC
-    # Because this window crosses midnight UTC, it requires two crons:
-    # - Sat/Sun 17:00-23:59 UTC covers Sat/Sun afternoon-evening CT
-    - cron: '*/10 17-23 * * 6,0'
-    # - Sun/Mon 00:00-04:59 UTC covers Sat/Sun late evening CT
-    - cron: '*/10 0-4 * * 0,1'
+    # NHL games typically finish between 12:00 PM CT (afternoon games) and 2:30 AM CT (late West Coast/OT games).
+    # In UTC (covers CDT UTC-5 and CST UTC-6 year-round across all 7 days):
+    # - 17:00 - 23:59 UTC (12:00 PM - 6:59 PM CT)
+    - cron: '*/10 17-23 * * *'
+    # - 00:00 - 08:59 UTC (7:00 PM - 3:59 AM CT)
+    - cron: '*/10 0-8 * * *'
   repository_dispatch:  # Allow external triggers (instant when game finishes)
     types: [game-finished]  # Custom event type from game monitor
   workflow_dispatch:  # Allow manual triggering from Actions tab
@@ -50,8 +39,8 @@ jobs:
     steps:
     - name: Check Active Schedule
       run: |
-        if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
-          echo "✅ Manual Dispatch Triggered!"
+        if [[ "${{ github.event_name }}" == "workflow_dispatch" || "${{ github.event_name }}" == "repository_dispatch" ]]; then
+          echo "✅ Dispatch Triggered (${{ github.event_name }})!"
           echo "should_run=true" >> $GITHUB_OUTPUT
         else
           has_games=$(python3 -c "
