@@ -565,36 +565,45 @@ class DailyPredictionNotifier:
         print(f"🏒 SIMULATION MODE: Analyzing games for {today}")
         print(f"🏒 SIMULATION MODE: Prioritizing local schedule for {today}")
         
-        # We use the local schedule analyzer directly, falling back to RotoWire
+        # Multi-Source Starting Goalie Consensus (Daily Faceoff + RotoWire)
+        try:
+            from scrapers.starting_goalies_scraper import StartingGoaliesScraper
+        except ImportError:
+            from starting_goalies_scraper import StartingGoaliesScraper
+        
+        goalie_scraper = StartingGoaliesScraper()
+        consensus_goalies = goalie_scraper.get_consensus_goalies()
+        goalie_map = {f"{cg['away_team']}@{cg['home_team']}": cg for cg in consensus_goalies}
+
         sched_games = self.schedule.games_by_date.get(today, [])
         games = []
         if sched_games:
             for g in sched_games:
+                away_abbr = g.get('awayTeam', {}).get('abbrev')
+                home_abbr = g.get('homeTeam', {}).get('abbrev')
+                key = f"{away_abbr}@{home_abbr}"
+                cg = goalie_map.get(key, {})
                 games.append({
-                    'away_team': g.get('awayTeam', {}).get('abbrev'),
-                    'home_team': g.get('homeTeam', {}).get('abbrev')
+                    'away_team': away_abbr,
+                    'home_team': home_abbr,
+                    'away_goalie': cg.get('away_goalie'),
+                    'home_goalie': cg.get('home_goalie'),
+                    'away_goalie_confirmed': cg.get('away_goalie_confirmed', False),
+                    'home_goalie_confirmed': cg.get('home_goalie_confirmed', False),
+                    'away_source': cg.get('away_source', ''),
+                    'home_source': cg.get('home_source', ''),
+                    'away_lineup': cg.get('away_lineup'),
+                    'home_lineup': cg.get('home_lineup')
                 })
-            print(f"✅ Identified {len(games)} games from local schedule.")
+            print(f"✅ Identified {len(games)} games from local schedule with consensus starting goalies.")
         else:
-            # Fallback: scrape today's games from RotoWire
-            print(f"⚠️  No games in local schedule for {today}. Falling back to RotoWire scraper...")
-            try:
-                roto_data = self.rotowire.scrape_daily_data()
-                roto_games = roto_data.get('games', []) if isinstance(roto_data, dict) else roto_data or []
-                if roto_games:
-                    for rg in roto_games:
-                        games.append({
-                            'away_team': rg.get('away_team'),
-                            'home_team': rg.get('home_team'),
-                            'away_goalie': rg.get('away_goalie'),
-                            'home_goalie': rg.get('home_goalie'),
-                        })
-                    print(f"✅ Identified {len(games)} games from RotoWire fallback.")
-                else:
-                    return f"No games scheduled for {today} (checked local + RotoWire)."
-            except Exception as e:
-                print(f"❌ RotoWire fallback failed: {e}")
-                return f"No games scheduled for {today} in the local system."
+            # Fallback: Use multi-source consensus games directly
+            print(f"⚠️  No games in local schedule for {today}. Using multi-source starting goalie consensus...")
+            if consensus_goalies:
+                games = consensus_goalies
+                print(f"✅ Identified {len(games)} games from multi-source consensus.")
+            else:
+                return f"No games scheduled for {today}."
         
         # Fetch Vegas odds
         from vegas_odds_scraper import scrape_vegas_odds
