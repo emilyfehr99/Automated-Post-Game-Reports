@@ -1,3 +1,14 @@
+import sys
+import os
+_module_dirs = ['models', 'analyzers', 'scrapers', 'utils', 'api']
+_base_dir = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
+if _base_dir not in sys.path:
+    sys.path.insert(0, _base_dir)
+for _d in _module_dirs:
+    _p = os.path.join(_base_dir, _d)
+    if _p not in sys.path:
+        sys.path.insert(0, _p)
+
 import json
 import pandas as pd
 import numpy as np
@@ -15,7 +26,6 @@ import math
 import shutil
 import hashlib
 from datetime import datetime, timedelta
-import os
 try:
     from standings_tracker import StandingsTracker
 except Exception:
@@ -784,11 +794,11 @@ def _build_matrices_and_sidecars(
     except Exception as e:
         print(f"⚠️ Feature health report failed: {e}")
 
-    # Recency weights on train (newest games heavier)
+    # Recency weights on train (gentle decay to preserve sample size while giving recent form slight edge)
     n_train = len(train_df)
     if n_train > 1:
         ages = (n_train - 1) - np.arange(n_train, dtype=float)
-        sample_weights = 0.5 ** (ages / 60.0)
+        sample_weights = np.maximum(0.30, 0.5 ** (ages / 450.0))
     else:
         sample_weights = np.ones(n_train, dtype=float)
 

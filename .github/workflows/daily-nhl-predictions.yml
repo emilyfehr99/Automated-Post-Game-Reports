@@ -2,13 +2,14 @@ name: Daily NHL Predictions with Edge Data
 
 concurrency:
   group: daily-nhl-predictions
-  cancel-in-progress: false
+  cancel-in-progress: true
 
 on:
   schedule:
-    # 5:00am Central Time (10:00 UTC in CDT / 4:00am CST) - ensures all data scraping,
-    # training, guardrails, and predictions are 100% complete well before 7:00am Central Time.
-    - cron: '0 10 * * *'
+    # 3:17am Central / 4:17am Eastern (8:17 UTC) - off-peak minute completely avoids GitHub top-of-hour queue congestion
+    - cron: '17 8 * * *'
+    # 5:23am Central / 6:23am Eastern (10:23 UTC) - morning refresh at minute :23 to ensure predictions are finalized before 6:00am CT
+    - cron: '23 10 * * *'
   workflow_dispatch: {}
 
 permissions:

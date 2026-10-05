@@ -1491,6 +1491,7 @@ class ScorePredictionModel:
                      vegas_odds: Dict = None,
                      use_calibration: bool = True,
                      is_playoff: bool = False,
+                     is_preseason: bool = False,
                      series_status: str = None,
                      away_missing_star: bool = False,
                      home_missing_star: bool = False, away_goalie_shots_30d: float = 0, home_goalie_shots_30d: float = 0,
@@ -1504,8 +1505,15 @@ class ScorePredictionModel:
         away = away_team.upper()
         home = home_team.upper()
         
+        if not is_preseason and game_id:
+            gid_str = str(game_id)
+            if '0100' in gid_str or gid_str.startswith('202501') or gid_str.startswith('202601'):
+                is_preseason = True
+        
         # --- Attribution Tracking ---
         attribution = []
+        if is_preseason:
+            attribution.append("Preseason Split Squad Roster")
         
         # ─── 1. Game Score baseline (r=0.642 with goals) ───
         # Recency-weighted GS average
@@ -2015,6 +2023,11 @@ class ScorePredictionModel:
             away_win_prob_final = float(max(0.0, min(1.0, away_win_total)))
             home_win_prob_final = float(max(0.0, min(1.0, home_win_total)))
 
+        # Preseason shrinkage: account for split squads and prospect testing
+        if is_preseason:
+            away_win_prob_final = float(0.50 + (away_win_prob_final - 0.50) * 0.72)
+            home_win_prob_final = float(1.0 - away_win_prob_final)
+            winner_side = "away" if away_win_prob_final >= 0.50 else "home"
 
         # ─── Deterministic scoreline (MAP under NB) ───
         # Winner accuracy should be driven by `away_win_prob` / `winner_side`,
@@ -2059,17 +2072,48 @@ class ScorePredictionModel:
         }
     
     def _get_goalie_data(self, goalie_name: str) -> Optional[Dict]:
-        """Find goalie data by name."""
+        """Find goalie data by name with support for abbreviations and partials."""
         if not goalie_name or goalie_name == 'TBD' or not self.goalie_stats:
             return None
         
-        # Exact match
+        # 1. Exact match
         if goalie_name in self.goalie_names:
             return self.goalie_stats[self.goalie_names[goalie_name]]
         
-        # Partial match
+        g_clean = goalie_name.strip()
+        g_lower = g_clean.lower()
+        
+        # 2. Case-insensitive direct match
         for name, gid in self.goalie_names.items():
-            if goalie_name.lower() in name.lower() or name.lower() in goalie_name.lower():
+            if name.lower() == g_lower:
+                return self.goalie_stats[gid]
+                
+        # 3. Initial + Last Name match (e.g. 'A. Vasilevskiy' -> 'Andrei Vasilevskiy')
+        import re
+        parts = re.sub(r'[^\w\s]', '', g_lower).split()
+        if len(parts) >= 2:
+            first_init = parts[0][0]
+            last_name = parts[-1]
+            for name, gid in self.goalie_names.items():
+                n_parts = re.sub(r'[^\w\s]', '', name.lower()).split()
+                if len(n_parts) >= 2:
+                    if n_parts[-1] == last_name and n_parts[0][0] == first_init:
+                        return self.goalie_stats[gid]
+                        
+        # 4. Last name unique match
+        if len(parts) >= 1:
+            last_name = parts[-1]
+            candidates = []
+            for name, gid in self.goalie_names.items():
+                n_parts = re.sub(r'[^\w\s]', '', name.lower()).split()
+                if n_parts and n_parts[-1] == last_name:
+                    candidates.append(gid)
+            if len(candidates) == 1:
+                return self.goalie_stats[candidates[0]]
+        
+        # 5. Substring match fallback
+        for name, gid in self.goalie_names.items():
+            if g_lower in name.lower() or name.lower() in g_lower:
                 return self.goalie_stats[gid]
         return None
 
@@ -2094,67 +2138,69 @@ class ScorePredictionModel:
                 if gs.get('games', 0) < 5:
                     backup_penalty = 0.50 # AHL call-up or extreme backup
             
-                # 2. Base GSAX Adjustment
-                if gs.get('games', 0) >= 5:
-                    # Positive GSAX means goalie is saving more than expected -> reduces opponent goals
-                    gsax_pg = gs.get('gsax_per_game', 0.0)
+            # 2. Base GSAX Adjustment
+            gsax_pg = gs.get('gsax_per_game', 0.0) if gs.get('games', 0) >= 3 else 0.0
+            
+            # Phase 45: Goaltender Playoff Wall
+            # Elite goalies "level up" in playoffs. Multiplier for high-GSAx goalies.
+            if gsax_pg > 0.5:
+                # Only apply the level-up in playoffs or high-stakes games
+                # For simplicity, we'll assume higher stakes if it's April/May
+                import datetime
+                current_month = datetime.datetime.now().month
+                if current_month in [4, 5, 6]:
+                    gsax_pg *= 1.5
+            
+            # Venue Adjustment (Home/Away Splits)
+            venue_adj = 0.0
+            home_sv = gs.get('home_sv_pct', 0)
+            away_sv = gs.get('away_sv_pct', 0)
+            if home_sv > 0 and away_sv > 0:
+                diff = home_sv - away_sv
+                if abs(diff) > 0.015: # Significant split (> 1.5% SV%)
+                    # Scale: 0.010 SV% diff ~ 0.25 goals per game adjustment
+                    if venue == 'home':
+                        venue_adj = diff * 25.0 # Positive diff = bonus at home
+                    else:
+                        venue_adj = -diff * 25.0 # Positive diff = penalty away
                     
-                    # Phase 45: Goaltender Playoff Wall
-                    # Elite goalies "level up" in playoffs. Multiplier for high-GSAx goalies.
-                    if gsax_pg > 0.5:
-                        # Only apply the level-up in playoffs or high-stakes games
-                        # We use a localized check for is_playoff (passed down or inferred)
-                        # For simplicity, we'll assume higher stakes if it's April/May
-                        import datetime
-                        current_month = datetime.datetime.now().month
-                        if current_month in [4, 5, 6]:
-                            gsax_pg *= 1.5
-                            # attribution.append(f"{goalie_name} Playoff Wall (+50% GSAx)") # Traceable
-                
-                # Venue Adjustment (Home/Away Splits)
-                venue_adj = 0.0
-                home_sv = gs.get('home_sv_pct', 0)
-                away_sv = gs.get('away_sv_pct', 0)
-                if home_sv > 0 and away_sv > 0:
-                    diff = home_sv - away_sv
-                    if abs(diff) > 0.015: # Significant split (> 1.5% SV%)
-                        # Scale: 0.010 SV% diff ~ 0.25 goals per game adjustment
-                        if venue == 'home':
-                            venue_adj = diff * 25.0 # Positive diff = bonus at home
-                        else:
-                            venue_adj = -diff * 25.0 # Positive diff = penalty away
-                        
-                        # Cap venue adjustment at +/- 0.4 goals
-                        venue_adj = max(-0.4, min(0.4, venue_adj))
-                
-                # Rebound Adjustment (High rebound rate = more goals allowed)
-                reb_adj = 0.0
-                reb_rate = gs.get('rebound_rate', 0.075) # League avg ~7.5%
-                if reb_rate > 0.08:
-                    # Every 1% above 8% adds 0.05 goals
-                    reb_adj = (reb_rate - 0.08) * 5.0
-                    reb_adj = min(0.3, reb_adj) # Max 0.3 goal penalty
-                
-                # Angle Adjustment (Acute angle vulnerability)
-                angle_adj = 0.0
-                acute_sv = gs.get('acute_angle_sv_pct', 0)
-                center_sv = gs.get('center_angle_sv_pct', 0)
-                if acute_sv > 0 and center_sv > 0:
-                    # If much worse on sides than center
-                    if center_sv - acute_sv > 0.015:
-                        angle_adj = (center_sv - acute_sv) * 10.0
-                        angle_adj = min(0.2, angle_adj)
-                
-                # Base GSAX adjustment (0.8 scale) + Modifiers + Backup Penalty
-                # Note: total_adj is added to expected goals, so positive = more goals for the shooting team
-                total_adj = (-gsax_pg * 0.8) - venue_adj + reb_adj + angle_adj + backup_penalty
-                return total_adj
-            else:
-                return backup_penalty
+                    # Cap venue adjustment at +/- 0.4 goals
+                    venue_adj = max(-0.4, min(0.4, venue_adj))
+            
+            # Rebound Adjustment (High rebound rate = more goals allowed)
+            reb_adj = 0.0
+            reb_rate = gs.get('rebound_rate', 0.075) # League avg ~7.5%
+            if reb_rate > 0.08:
+                # Every 1% above 8% adds 0.05 goals
+                reb_adj = (reb_rate - 0.08) * 5.0
+                reb_adj = min(0.3, reb_adj) # Max 0.3 goal penalty
+            
+            # Angle Adjustment (Acute angle vulnerability)
+            angle_adj = 0.0
+            acute_sv = gs.get('acute_angle_sv_pct', 0)
+            center_sv = gs.get('center_angle_sv_pct', 0)
+            if acute_sv > 0 and center_sv > 0:
+                # If much worse on sides than center
+                if center_sv - acute_sv > 0.015:
+                    angle_adj = (center_sv - acute_sv) * 10.0
+                    angle_adj = min(0.2, angle_adj)
+            
+            # Base GSAX adjustment (0.8 scale) + Modifiers + Backup Penalty
+            # Note: total_adj is added to expected goals, so positive = more goals for the shooting team
+            total_adj = (-gsax_pg * 0.8) - venue_adj + reb_adj + angle_adj + backup_penalty
+            return total_adj
         
-        # If we have no data on the goalie (e.g. unconfirmed lineup), assume league-average.
-        # Previously this was +0.50 which inflated both sides by a full goal when
-        # lineups weren't available, causing systemic 5-4 / 4-3 predictions.
+        # If goalie is unconfirmed or TBD, use Bayesian prior from team's primary starter
+        if team and self.goalie_stats:
+            team_goalies = [g for g in self.goalie_stats.values() if g.get('team') == team]
+            if team_goalies:
+                team_goalies.sort(key=lambda x: x.get('games', 0), reverse=True)
+                primary_starter = team_goalies[0]
+                gsax_starter = primary_starter.get('gsax_per_game', 0.0)
+                # Apply 70% Bayesian shrinkage for unconfirmed starter uncertainty
+                return float(-gsax_starter * 0.8 * 0.70)
+        
+        # If no team goalie data exists, default to 0.0 league average
         return 0.0
     
     def _generate_factors(self, away, home, away_exp, home_exp,

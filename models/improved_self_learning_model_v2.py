@@ -3473,8 +3473,8 @@ class ImprovedSelfLearningModelV2:
             away_team = pred.get("away_team")
             home_team = pred.get("home_team")
             actual_side = self._normalize_outcome_side(pred.get("actual_winner"), away_team, home_team)
-            predicted_side = pred.get("predicted_winner")
-            if predicted_side not in ("away", "home"):
+            predicted_side = self._normalize_outcome_side(pred.get("predicted_winner"), away_team, home_team)
+            if not predicted_side:
                 predicted_side = "away" if away_prob >= home_prob else "home"
             
             if actual_side and predicted_side == actual_side:
@@ -3507,8 +3507,8 @@ class ImprovedSelfLearningModelV2:
             away_team = pred.get("away_team")
             home_team = pred.get("home_team")
             actual_side = self._normalize_outcome_side(pred.get("actual_winner"), away_team, home_team)
-            predicted_side = pred.get("predicted_winner")
-            if predicted_side not in ("away", "home"):
+            predicted_side = self._normalize_outcome_side(pred.get("predicted_winner"), away_team, home_team)
+            if not predicted_side:
                 predicted_side = "away" if away_prob >= home_prob else "home"
                 
             if actual_side and predicted_side == actual_side:

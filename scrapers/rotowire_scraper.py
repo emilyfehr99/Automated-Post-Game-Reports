@@ -79,10 +79,16 @@ class RotoWireScraper:
                 game_data['away_goalie'] = away_goalie.text.strip() if away_goalie else 'TBD'
                 game_data['home_goalie'] = home_goalie.text.strip() if home_goalie else 'TBD'
                 
-                # Check if goalies are confirmed
-                confirmed_status = card.find_all('div', class_='is-confirmed')
-                game_data['away_goalie_confirmed'] = len(confirmed_status) > 0
-                game_data['home_goalie_confirmed'] = len(confirmed_status) > 1
+                # Check if goalies are confirmed specifically per team
+                def _is_confirmed(sec):
+                    if not sec: return False
+                    parent = sec.find_parent('div', class_='lineup__player-highlight') or sec.parent
+                    if parent and (parent.find(class_=lambda c: c and 'confirmed' in str(c).lower()) or 'is-confirmed' in parent.get('class', [])):
+                        return True
+                    return False
+                
+                game_data['away_goalie_confirmed'] = _is_confirmed(goalie_sections[0])
+                game_data['home_goalie_confirmed'] = _is_confirmed(goalie_sections[1])
             
             # Extract betting odds (usually in lineup__odds section)
             odds_section = card.find('div', class_='lineup__odds')

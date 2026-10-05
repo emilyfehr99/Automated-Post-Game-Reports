@@ -58,6 +58,16 @@ def build_view() -> Dict[str, Any]:
                     row["predicted_away_win_prob"] = 100.0 * pa / s
         except Exception:
             pass
+
+        # Ensure predicted_winner is populated for accuracy calculations
+        if not row.get("predicted_winner"):
+            ph = row.get("predicted_home_win_prob")
+            pa = row.get("predicted_away_win_prob")
+            if ph is not None and pa is not None and row.get("home_team") and row.get("away_team"):
+                row["predicted_winner"] = row["home_team"] if float(ph) >= float(pa) else row["away_team"]
+            elif row.get("home_win_prob") is not None and row.get("away_win_prob") is not None and row.get("home_team") and row.get("away_team"):
+                row["predicted_winner"] = row["home_team"] if float(row["home_win_prob"]) >= float(row["away_win_prob"]) else row["away_team"]
+
         o = outs.get(gid) or {}
         for k in ["actual_winner", "actual_away_score", "actual_home_score"]:
             if o.get(k) is not None:

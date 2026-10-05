@@ -1,11 +1,50 @@
 {
-  "updated_at_utc": "2026-09-15T01:18:14Z",
+  "updated_at_utc": "2026-10-02T13:31:55Z",
   "champion": "lgbm_full",
   "algo_champion": "lgbm",
   "variants": {
     "lgbm_full": {
-      "test_acc": 0.5833333333333334,
-      "test_logloss": 0.6776496996601963,
+      "test_acc": 0.5181818181818182,
+      "test_logloss": 0.7000750043222174,
+      "best_params": {
+        "learning_rate": 0.04,
+        "max_depth": 2,
+        "n_estimators": 100,
+        "num_leaves": 7,
+        "reg_alpha": 1.0,
+        "reg_lambda": 3.0,
+        "subsample": 0.8
+      }
+    },
+    "xgb_full": {
+      "test_acc": 0.5,
+      "test_logloss": 0.7019497546032148,
+      "best_params": {
+        "colsample_bytree": 0.9,
+        "learning_rate": 0.06,
+        "max_depth": 2,
+        "n_estimators": 150,
+        "reg_alpha": 1.0,
+        "reg_lambda": 3.0,
+        "subsample": 0.75
+      }
+    },
+    "xgb_recent": {
+      "test_acc": 0.5,
+      "test_logloss": 0.7058374422172232,
+      "best_params": {
+        "colsample_bytree": 0.9,
+        "learning_rate": 0.06,
+        "max_depth": 2,
+        "n_estimators": 150,
+        "reg_alpha": 1.0,
+        "reg_lambda": 3.0,
+        "subsample": 0.75
+      }
+    },
+    "lgbm_recent": {
+      "test_acc": 0.4909090909090909,
+      "test_logloss": 0.7080740963525795,
       "best_params": {
         "learning_rate": 0.04,
         "max_depth": 2,
@@ -17,64 +56,25 @@
       }
     },
     "rf_full": {
-      "test_acc": 0.6203703703703703,
-      "test_logloss": 0.6777654891661428,
+      "test_acc": 0.44545454545454544,
+      "test_logloss": 0.7122094577601567,
       "best_params": {
         "max_depth": 8,
         "max_features": "sqrt",
-        "min_samples_leaf": 2,
+        "min_samples_leaf": 5,
         "min_samples_split": 2,
-        "n_estimators": 100
-      }
-    },
-    "xgb_full": {
-      "test_acc": 0.5092592592592593,
-      "test_logloss": 0.6855379145335905,
-      "best_params": {
-        "colsample_bytree": 0.9,
-        "learning_rate": 0.06,
-        "max_depth": 2,
-        "n_estimators": 150,
-        "reg_alpha": 1.0,
-        "reg_lambda": 3.0,
-        "subsample": 0.9
-      }
-    },
-    "xgb_recent": {
-      "test_acc": 0.5370370370370371,
-      "test_logloss": 0.6858696028350721,
-      "best_params": {
-        "colsample_bytree": 0.9,
-        "learning_rate": 0.06,
-        "max_depth": 2,
-        "n_estimators": 150,
-        "reg_alpha": 1.0,
-        "reg_lambda": 3.0,
-        "subsample": 0.9
+        "n_estimators": 200
       }
     },
     "rf_recent": {
-      "test_acc": 0.5462962962962963,
-      "test_logloss": 0.6859275280537658,
+      "test_acc": 0.5,
+      "test_logloss": 0.7209369931949742,
       "best_params": {
         "max_depth": 8,
         "max_features": "sqrt",
-        "min_samples_leaf": 2,
+        "min_samples_leaf": 5,
         "min_samples_split": 2,
-        "n_estimators": 100
-      }
-    },
-    "lgbm_recent": {
-      "test_acc": 0.5370370370370371,
-      "test_logloss": 0.6910696029797675,
-      "best_params": {
-        "learning_rate": 0.04,
-        "max_depth": 2,
-        "n_estimators": 100,
-        "num_leaves": 7,
-        "reg_alpha": 1.0,
-        "reg_lambda": 3.0,
-        "subsample": 0.8
+        "n_estimators": 200
       }
     }
   }

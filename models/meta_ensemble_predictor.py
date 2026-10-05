@@ -5,6 +5,7 @@ Combines all prediction methods for maximum accuracy
 """
 from typing import Dict, List, Optional, Tuple, Any
 import json
+import re
 import numpy as np
 import xgboost as xgb
 import pandas as pd
@@ -134,17 +135,45 @@ class GoalieHistory:
         if shots is not None:
             self.stats[name]['shots'].append(shots)
         
+    def _resolve_name(self, name: str) -> Optional[str]:
+        if not name: return None
+        if name in self.stats: return name
+        
+        n_clean = name.strip().lower()
+        for k in self.stats:
+            if k.lower() == n_clean: return k
+            
+        parts = re.sub(r'[^\w\s]', '', n_clean).split()
+        if len(parts) >= 2:
+            first_init = parts[0][0]
+            last_name = parts[-1]
+            for k in self.stats:
+                k_parts = re.sub(r'[^\w\s]', '', k.lower()).split()
+                if len(k_parts) >= 2 and k_parts[-1] == last_name and k_parts[0][0] == first_init:
+                    return k
+        if len(parts) >= 1:
+            last_name = parts[-1]
+            matches = [k for k in self.stats if re.sub(r'[^\w\s]', '', k.lower()).split() and re.sub(r'[^\w\s]', '', k.lower()).split()[-1] == last_name]
+            if len(matches) == 1:
+                return matches[0]
+        for k in self.stats:
+            if n_clean in k.lower() or k.lower() in n_clean:
+                return k
+        return None
+
     def get_rolling_gsax(self, name, window=5):
-        if not name or name not in self.stats or not self.stats[name]['gsax']:
+        key = self._resolve_name(name)
+        if not key or not self.stats[key]['gsax']:
             return 0.0
-        vals = self.stats[name]['gsax'][-window:]
+        vals = self.stats[key]['gsax'][-window:]
         return np.mean(vals)
         
     def get_shrunk_gsax(self, name, window=5, prior_weight=8):
         """Bayesian shrinkage toward 0.0 baseline to neutralize extreme single-game goalie volatility"""
-        if not name or name not in self.stats or not self.stats[name]['gsax']:
+        key = self._resolve_name(name)
+        if not key or not self.stats[key]['gsax']:
             return 0.0
-        vals = self.stats[name]['gsax']
+        vals = self.stats[key]['gsax']
         n = len(vals)
         rolling_val = float(np.mean(vals[-window:]))
         season_val = float(np.mean(vals))
@@ -152,15 +181,17 @@ class GoalieHistory:
         return 0.7 * rolling_val + 0.3 * shrunk_prior
 
     def get_rolling_hdsv(self, name, window=5):
-        if not name or name not in self.stats or not self.stats[name]['hdsv']:
+        key = self._resolve_name(name)
+        if not key or not self.stats[key]['hdsv']:
             return 0.8
-        vals = self.stats[name]['hdsv'][-window:]
+        vals = self.stats[key]['hdsv'][-window:]
         return np.mean(vals)
 
     def get_rolling_shots_faced(self, name, window=10):
-        if not name or name not in self.stats or not self.stats[name]['shots']:
+        key = self._resolve_name(name)
+        if not key or not self.stats[key]['shots']:
             return 0.0
-        vals = self.stats[name]['shots'][-window:]
+        vals = self.stats[key]['shots'][-window:]
         return np.sum(vals)
 
 class TeamHistory:
@@ -422,108 +453,53 @@ class MetaEnsemblePredictor:
 
     def _load_component_weights(self) -> None:
         """Load dynamic component weights from recent backtests if available."""
-        # Defaults (roughly match existing behavior)
+        # Baseline calibrated weights
         self._component_weights = {
             "xgb": 0.50,
-            "elo": 0.05,
+            "elo": 0.10,
             "specialized": 0.20,
             "player": 0.10,
-            "base": 0.15,
+            "base": 0.05,
             "vegas": 0.15,
         }
         self._model_mode = "ensemble"
         self._shrink_alpha = 1.0
-        
-        # Stacking Parameters
-        self._stacking_temp = 0.12 # Sensitivity for softmax (Adaptive default)
-        self._core_budget = 0.60 # Combined weight for primary predictors
-        
+        self._stacking_temp = 0.12
+
         try:
             p = Path("model_performance.json")
             if not p.exists():
-                print("ℹ️  No model_performance.json found; using default ensemble weights")
                 return
             with open(p, "r") as f:
                 perf = json.load(f)
-            
-            # Phase 48: Advanced Softmax Stacking
-            # We calculate weights for the two primary predictors (XGB and ELO)
-            # based on their recent performance logs.
-            x_ll = perf.get("xgb_recent_logloss") or perf.get("xgb_cal_mean_logloss")
+
+            # Look for evaluated logloss
+            variants = perf.get("variants", {})
+            champ_name = perf.get("champion")
+            champ_info = variants.get(champ_name, {}) if champ_name else {}
+            x_ll = champ_info.get("test_logloss") or perf.get("xgb_recent_logloss") or perf.get("xgb_cal_mean_logloss")
             e_ll = perf.get("elo_recent_logloss") or perf.get("elo_mean_logloss")
-            
+
             if x_ll is not None and e_ll is not None:
-                # Adaptive Temperature: Trust the winner more if the gap is clear.
-                # If gap is small (e.g. 0.01), T increases to 0.18 (more blending).
-                # If gap is large (e.g. 0.10), T decreases to 0.08 (trust the leader).
-                gap = abs(float(x_ll) - float(e_ll))
-                self._stacking_temp = float(max(0.08, min(0.25, 0.20 - (gap * 1.2))))
-                
-                # Weighted blending based on negative logloss
+                gap = float(x_ll) - float(e_ll)
+                self._stacking_temp = float(max(0.08, min(0.25, 0.20 - (abs(gap) * 1.2))))
+
                 w_xgb_raw = math.exp(-float(x_ll) / self._stacking_temp)
                 w_elo_raw = math.exp(-float(e_ll) / self._stacking_temp)
                 total_raw = w_xgb_raw + w_elo_raw
-                
+
                 if total_raw > 0:
-                    self._component_weights["xgb"] = round(self._core_budget * (w_xgb_raw / total_raw), 3)
-                    self._component_weights["elo"] = round(self._core_budget * (w_elo_raw / total_raw), 3)
+                    core_budget = 0.60
+                    self._component_weights["xgb"] = round(core_budget * (w_xgb_raw / total_raw), 3)
+                    self._component_weights["elo"] = round(core_budget * (w_elo_raw / total_raw), 3)
                     self._model_mode = "stacked_ensemble"
-            
-            # Gap detection for champion/challenger status
-            x_ll_val = float(x_ll) if x_ll else 1.0
-            e_ll_val = float(e_ll) if e_ll else 1.0
-            gap = x_ll_val - e_ll_val
-            
-            # Champion/Challenger Audit (Guardrail)
-            # If XGB is significantly worse than Elo (> 0.02 logloss gap), 
-            # we aggressively dampen it further than softmax suggests.
-            if gap > 0.02:
-                print(f"⚠️ XGB Underperformance detected (Gap={gap:+.3f}). Activating Elo-Champion mode.")
-                self._component_weights["xgb"] *= 0.5
-                self._component_weights["elo"] += (self._component_weights["xgb"] * 0.5)
-                self._model_mode = "elo_champion"
-            elif gap < -0.10:
-                # Strong XGB lead
-                self._model_mode = "xgb_champion"
 
-            # Shrinkage factor (secondary smoothing)
-            if gap > 0:
-                self._shrink_alpha = float(max(0.2, min(1.0, 1.0 - (gap * 15.0))))
-            else:
-                self._shrink_alpha = 1.0
-
-            # If XGB is worse than Elo by a meaningful margin, reduce its influence.
-            # This is a guardrail for periods where feature refresh degrades quality.
-            margin = 0.01
-            gap = float(x_ll) - float(e_ll)
-            if gap > margin:
-                # Champion/challenger: if Elo is better on recent windows, treat
-                # Elo as the champion and aggressively suppress XGB.
-                self._model_mode = "elo_champion"
-                self._component_weights["xgb"] = 0.0
-                self._component_weights["elo"] = 0.35
-                # Keep other signals but reduce their influence vs Elo
-                self._component_weights["specialized"] = min(self._component_weights["specialized"], 0.15)
-                self._component_weights["player"] = min(self._component_weights["player"], 0.10)
-                self._component_weights["base"] = min(self._component_weights["base"], 0.05)
-                adjusted = True
-            else:
-                adjusted = False
-
-            # Additional shrinkage toward Elo when XGB underperforms.
-            # Alpha=1 => no shrink. Alpha closer to 0 => mostly Elo.
-            # If Elo is better by 0.03 logloss, alpha ~ 0.4.
-            if gap > 0:
-                self._shrink_alpha = float(max(0.2, min(1.0, 1.0 - (gap * 20.0))))
-            else:
-                self._shrink_alpha = 1.0
-
-            print(
-                "📌 Loaded model_performance.json "
-                f"(xgb_ll={float(x_ll):.4f}, elo_ll={float(e_ll):.4f}, gap={gap:+.4f}, "
-                f"mode={self._model_mode}, shrink_alpha={self._shrink_alpha:.2f}, adjusted={adjusted}) "
-                f"weights={self._component_weights}"
-            )
+                if gap > 0.05:
+                    self._model_mode = "elo_champion"
+                    self._shrink_alpha = float(max(0.4, 1.0 - (gap * 5.0)))
+                elif gap < -0.05:
+                    self._model_mode = "xgb_champion"
+                    self._shrink_alpha = 1.0
         except Exception:
             return
 
@@ -718,41 +694,40 @@ class MetaEnsemblePredictor:
                 
                 variants = perf.get("variants", {})
                 
-                # Phase 48: Stacking Strategy
-                # We load multiple variants and blend them.
                 candidates = []
-                if is_playoff:
-                    candidates = ["playoff", "full", "recent"]
-                else:
-                    # In regular season, prioritize champion and recent window
-                    champ = perf.get("champion", "full")
-                    candidates = [champ, "recent", "full"]
+                champ = perf.get("champion")
+                if champ:
+                    candidates.append(champ)
                 
-                # Deduplicate candidates while preserving order
+                # Sort variants by test logloss
+                if variants:
+                    sorted_vars = sorted(variants.keys(), key=lambda k: float(variants[k].get("test_logloss", 99.0)))
+                    for v in sorted_vars:
+                        if is_playoff and "playoff" in v:
+                            candidates.append(v)
+                        elif not is_playoff:
+                            candidates.append(v)
+                
+                candidates.extend(["full", "recent", "playoff"] if is_playoff else ["full", "recent"])
                 candidates = list(dict.fromkeys(candidates))
                 
                 for var_name in candidates:
                     suffix = f"_{var_name}" if var_name != "calibrated" else ""
-                    # Handle special naming conventions
                     model_path = Path(f"xgb_calibrated_model{suffix}.pkl")
                     if not model_path.exists() and var_name == "full":
-                         model_path = Path("xgb_calibrated_model.pkl")
+                        model_path = Path("xgb_calibrated_model.pkl")
 
                     if model_path.exists():
-                        # Get logloss for weighting
                         v_perf = variants.get(var_name, {})
                         v_ll = v_perf.get("test_logloss") or v_perf.get("recent_eval", {}).get("xgb_recent_logloss")
-                        
-                        # Fallback logloss if missing (neutral)
                         if v_ll is None:
-                            v_ll = 0.693 
+                            v_ll = 0.720
                             
                         try:
                             with open(model_path, "rb") as f:
                                 model = pickle.load(f)
                             
-                            # Features
-                            feats = self.feature_names 
+                            feats = self.feature_names
                             feat_path = Path(f"xgb_features{suffix}.pkl")
                             if not feat_path.exists() and suffix == "":
                                 feat_path = Path("xgb_features.pkl")
@@ -786,13 +761,14 @@ class MetaEnsemblePredictor:
                 try:
                     with open(p_fallback, "rb") as f:
                         model = pickle.load(f)
-                    stack.append({"name": "fallback", "model": model, "feats": self.feature_names, "logloss": 0.693})
+                    stack.append({"name": "fallback", "model": model, "feats": self.feature_names, "logloss": 0.720})
                 except: pass
 
         # Calculate internal stack weights using Softmax (T=0.10)
         if stack:
             ll_list = [s["logloss"] for s in stack]
-            raw_ws = [math.exp(-ll / 0.10) for ll in ll_list]
+            min_ll = min(ll_list)
+            raw_ws = [math.exp(-(ll - min_ll) / 0.10) for ll in ll_list]
             total_w = sum(raw_ws)
             for i, s in enumerate(stack):
                 s["stack_weight"] = raw_ws[i] / total_w
