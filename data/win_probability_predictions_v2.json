@@ -150285,17 +150285,17 @@
       "game_id": 2025020218,
       "home_team": "BOS",
       "away_team": "OTT",
-      "predicted_winner": "BOS",
-      "predicted_home_win_prob": 52.67833695853954,
-      "predicted_away_win_prob": 47.32166304146046,
-      "model_confidence": 0.5267833695853954,
+      "predicted_winner": "OTT",
+      "predicted_home_win_prob": 38.780923949925764,
+      "predicted_away_win_prob": 61.219076050074236,
+      "model_confidence": 0.6121907605007424,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
       },
       "extra_metadata": {
         "predicted_home_goals": 4,
-        "predicted_away_goals": 2,
+        "predicted_away_goals": 5,
         "ensemble_mode": "ensemble",
         "ensemble_weights": {
           "xgb": 0.5,
@@ -150313,24 +150313,24 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-05T13:07:56Z"
+      "recorded_at_utc": "2026-10-05T13:17:07Z"
     },
     {
       "date": "2026-10-05",
       "game_id": 2025020353,
       "home_team": "TBL",
       "away_team": "PHI",
-      "predicted_winner": "TBL",
-      "predicted_home_win_prob": 56.84995332216498,
-      "predicted_away_win_prob": 43.15004667783502,
-      "model_confidence": 0.5684995332216498,
+      "predicted_winner": "PHI",
+      "predicted_home_win_prob": 48.90862006537966,
+      "predicted_away_win_prob": 51.09137993462034,
+      "model_confidence": 0.5109137993462034,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
       },
       "extra_metadata": {
         "predicted_home_goals": 3,
-        "predicted_away_goals": 2,
+        "predicted_away_goals": 4,
         "ensemble_mode": "ensemble",
         "ensemble_weights": {
           "xgb": 0.5,
@@ -150347,7 +150347,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-05T13:07:56Z"
+      "recorded_at_utc": "2026-10-05T13:17:07Z"
     },
     {
       "date": "2026-10-05",
@@ -150355,9 +150355,9 @@
       "home_team": "DAL",
       "away_team": "SJS",
       "predicted_winner": "DAL",
-      "predicted_home_win_prob": 66.92188299358281,
-      "predicted_away_win_prob": 33.07811700641719,
-      "model_confidence": 0.6692188299358282,
+      "predicted_home_win_prob": 66.98004019977583,
+      "predicted_away_win_prob": 33.01995980022417,
+      "model_confidence": 0.6698004019977583,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -150382,7 +150382,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-05T13:07:56Z"
+      "recorded_at_utc": "2026-10-05T13:17:07Z"
     },
     {
       "date": "2026-10-05",
@@ -150390,9 +150390,9 @@
       "home_team": "PIT",
       "away_team": "WPG",
       "predicted_winner": "PIT",
-      "predicted_home_win_prob": 59.72914584604945,
-      "predicted_away_win_prob": 40.27085415395056,
-      "model_confidence": 0.5972914584604945,
+      "predicted_home_win_prob": 59.712827805450665,
+      "predicted_away_win_prob": 40.28717219454933,
+      "model_confidence": 0.5971282780545066,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -150416,7 +150416,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-05T13:07:56Z"
+      "recorded_at_utc": "2026-10-05T13:17:07Z"
     }
   ],
   "calibration_points": [
@@ -150470,7 +150470,7 @@
     ]
   ],
   "calibration_metadata": {
-    "updated_at": "2026-10-05T08:07:56.678213",
+    "updated_at": "2026-10-05T08:17:07.824895",
     "sample_size": 1016,
     "num_bins": 12,
     "bucket_samples": {
@@ -150560,8 +150560,36 @@
     "recent_goals_weight": 0.1,
     "opponent_ga_weight": 1.0
   },
-  "weight_momentum": {},
-  "score_weight_momentum": {},
+  "weight_momentum": {
+    "xg_weight": 0.0,
+    "hdc_weight": 0.0,
+    "corsi_weight": 0.0,
+    "power_play_weight": 0.0,
+    "faceoff_weight": 0.0,
+    "shots_weight": 0.0,
+    "hits_weight": 0.0,
+    "blocked_shots_weight": 0.0,
+    "takeaways_weight": 0.0,
+    "penalty_minutes_weight": 0.0,
+    "recent_form_weight": 0.0,
+    "head_to_head_weight": 0.0,
+    "rest_days_weight": 0.0,
+    "goalie_performance_weight": 0.0,
+    "game_score_weight": 0.0,
+    "sos_weight": 0.0,
+    "rebounds_weight": 0.0,
+    "rush_shots_weight": 0.0,
+    "traffic_weight": 0.0,
+    "zone_entry_weight": 0.0
+  },
+  "score_weight_momentum": {
+    "goals_weight": 0.0,
+    "xg_weight": 0.0,
+    "pdo_weight": 0.0,
+    "pp_weight": 0.0,
+    "recent_goals_weight": 0.0,
+    "opponent_ga_weight": 0.0
+  },
   "model_performance": {
     "total_games": 1016,
     "correct_predictions": 691,
