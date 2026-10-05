@@ -565,13 +565,13 @@ class ScorePredictionModel:
         ot_scale: float,
         k: float,
         tie_gamma: float = 1.0,
+        ot_skill_share: Optional[float] = None,
     ) -> float:
         """
         Regulation win probs from NB, and OT allocation:
         - OT additional scoring uses NB with mean scaled by ot_scale.
         - Sudden-death approximation: after a regulation tie, we allocate the
-          remaining tie mass to the side with higher OT mean, with special
-          casing for zero-goal outcomes.
+          remaining tie mass to the side with higher OT mean and 3v3 skating transition speed.
         """
         import math
 
@@ -597,6 +597,11 @@ class ScorePredictionModel:
 
         total_ot_mu = away_ot_mu + home_ot_mu
         away_share = float(away_ot_mu / total_ot_mu) if total_ot_mu > 0 else 0.5
+        
+        # Blend 3v3 skating speed & transition Edge skill into overtime share
+        if ot_skill_share is not None:
+            away_share = 0.60 * away_share + 0.40 * float(ot_skill_share)
+            
         away_share = max(0.01, min(0.99, away_share))
         # Bias how strongly we allocate OT tie mass by expected OT scoring.
         # tie_gamma=1.0 keeps the original proportional allocation.
@@ -1622,8 +1627,8 @@ class ScorePredictionModel:
         # ─── 12. Goalie adjustment (NEW) ───
         # An opposing goalie's quality affects the shooting team's score.
         # Home goalie (at home) affects Away team; Away goalie (away) affects Home team.
-        away_goalie_adj = self._get_goalie_adjustment(home_goalie, home, 'home')
-        home_goalie_adj = self._get_goalie_adjustment(away_goalie, away, 'away')
+        away_goalie_adj = self._get_goalie_adjustment(home_goalie, home, 'home', is_b2b=home_b2b)
+        home_goalie_adj = self._get_goalie_adjustment(away_goalie, away, 'away', is_b2b=away_b2b)
         
         # Overworked Goalie Penalty (60+ games in regular season)
         # Playoff intensity is higher; overworked goalies fade faster.
@@ -1958,6 +1963,16 @@ class ScorePredictionModel:
             diff = float(away_expected - home_expected)
             total = float(away_expected + home_expected)
             p_cal = self._calibrated_away_win_prob(diff, total)
+            
+            # 3v3 OT Skating & Transition Edge
+            away_speed = float(self._get_team_metric(away, 'max_skating_speed', 'away') or 21.5)
+            home_speed = float(self._get_team_metric(home, 'max_skating_speed', 'home') or 21.5)
+            away_burst = float(self._get_team_metric(away, 'edge_burst_avg', 'away') or 0.5)
+            home_burst = float(self._get_team_metric(home, 'edge_burst_avg', 'home') or 0.5)
+            ot_prowess_away = away_speed * (1.0 + away_burst * 0.5)
+            ot_prowess_home = home_speed * (1.0 + home_burst * 0.5)
+            ot_skill_share = (ot_prowess_away / (ot_prowess_away + ot_prowess_home)) if (ot_prowess_away + ot_prowess_home) > 0 else 0.5
+
             # Blend calibration with an OT-aware Negative Binomial model.
             # This captures systematic OT variance and overdispersion not
             # fully represented by pure expected-goals calibration.
@@ -1967,6 +1982,7 @@ class ScorePredictionModel:
                 float(getattr(self, "_ot_scale", 0.75)),
                 float(self._get_dispersion_k(away, home, away_expected, home_expected)),
                 tie_gamma=float(getattr(self, "_ot_tie_gamma", 1.0)),
+                ot_skill_share=ot_skill_share,
             )
             blend = float(getattr(self, "_ot_blend", 0.85))
             away_win_prob = blend * p_cal + (1.0 - blend) * p_nb_ot
@@ -2117,7 +2133,7 @@ class ScorePredictionModel:
                 return self.goalie_stats[gid]
         return None
 
-    def _get_goalie_adjustment(self, goalie_name: str, team: str, venue: str) -> float:
+    def _get_goalie_adjustment(self, goalie_name: str, team: str, venue: str, is_b2b: bool = False) -> float:
         """Get scoring adjustment based on opposing goalie quality.
         
         A strong opposing goalie reduces expected goals; a weak one increases them.
@@ -2185,9 +2201,12 @@ class ScorePredictionModel:
                     angle_adj = (center_sv - acute_sv) * 10.0
                     angle_adj = min(0.2, angle_adj)
             
-            # Base GSAX adjustment (0.8 scale) + Modifiers + Backup Penalty
+            # Goalie B2B Fatigue (0 days rest reduces SV% by ~0.015)
+            b2b_fatigue = 0.25 if is_b2b else 0.0
+            
+            # Base GSAX adjustment (0.8 scale) + Modifiers + Backup Penalty + B2B Fatigue
             # Note: total_adj is added to expected goals, so positive = more goals for the shooting team
-            total_adj = (-gsax_pg * 0.8) - venue_adj + reb_adj + angle_adj + backup_penalty
+            total_adj = (-gsax_pg * 0.8) - venue_adj + reb_adj + angle_adj + backup_penalty + b2b_fatigue
             return total_adj
         
         # If goalie is unconfirmed or TBD, use Bayesian prior from team's primary starter
