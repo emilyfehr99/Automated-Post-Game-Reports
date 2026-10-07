@@ -149828,9 +149828,9 @@
       "home_team": "ANA",
       "away_team": "EDM",
       "predicted_winner": "ANA",
-      "predicted_home_win_prob": 65.19536660785089,
-      "predicted_away_win_prob": 34.80463339214912,
-      "model_confidence": 0.6519536660785089,
+      "predicted_home_win_prob": 65.22978257547473,
+      "predicted_away_win_prob": 34.77021742452527,
+      "model_confidence": 0.6522978257547473,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0,
@@ -149860,7 +149860,7 @@
         "is_playoff": true
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-07T13:52:22Z",
+      "recorded_at_utc": "2026-10-07T14:11:55Z",
       "actual_winner": "ANA",
       "actual_away_score": 3,
       "actual_home_score": 4
@@ -149871,9 +149871,9 @@
       "home_team": "WPG",
       "away_team": "COL",
       "predicted_winner": "WPG",
-      "predicted_home_win_prob": 67.75790995761405,
-      "predicted_away_win_prob": 32.24209004238595,
-      "model_confidence": 0.6775790995761405,
+      "predicted_home_win_prob": 67.70896933676967,
+      "predicted_away_win_prob": 32.29103066323034,
+      "model_confidence": 0.6770896933676966,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -149896,7 +149896,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-07T13:52:22Z"
+      "recorded_at_utc": "2026-10-07T14:11:55Z"
     },
     {
       "date": "2026-10-07",
@@ -149904,9 +149904,9 @@
       "home_team": "WSH",
       "away_team": "PIT",
       "predicted_winner": "WSH",
-      "predicted_home_win_prob": 71.40519287868688,
-      "predicted_away_win_prob": 28.594807121313124,
-      "model_confidence": 0.7140519287868687,
+      "predicted_home_win_prob": 71.42890126632922,
+      "predicted_away_win_prob": 28.571098733670787,
+      "model_confidence": 0.7142890126632921,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -149931,7 +149931,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-07T13:52:22Z"
+      "recorded_at_utc": "2026-10-07T14:11:55Z"
     }
   ],
   "calibration_points": [
@@ -149985,7 +149985,7 @@
     ]
   ],
   "calibration_metadata": {
-    "updated_at": "2026-10-07T08:52:22.240804",
+    "updated_at": "2026-10-07T09:11:56.001815",
     "sample_size": 1018,
     "num_bins": 12,
     "bucket_samples": {
