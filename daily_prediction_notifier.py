@@ -1124,21 +1124,46 @@ class DailyPredictionNotifier:
             print(f"❌ Error sending email: {e}")
             return False
     
-    def _split_message(self, text, limit=1900):
-        """Split a large message into chunks that fit Discord's character limit"""
-        chunks = []
-        while len(text) > limit:
-            # Find the last newline before the limit to avoid cutting in the middle of a line
-            split_at = text.rfind('\n', 0, limit)
-            if split_at == -1 or split_at < 500: # If no newline or it's too early, just cut at limit
-                split_at = limit
+    def _split_message(self, text, limit=1850):
+        """Split predictions cleanly on game section boundaries without breaking markdown"""
+        if len(text) <= limit:
+            return [text.strip()]
             
-            chunks.append(text[:split_at].strip())
-            text = text[split_at:].strip()
+        chunks = []
+        sections = text.split("\n**Game ")
+        current_chunk = sections[0]
         
-        if text:
-            chunks.append(text)
-        return chunks
+        for section in sections[1:]:
+            section_text = "\n**Game " + section
+            if len(current_chunk) + len(section_text) <= limit:
+                current_chunk += section_text
+            else:
+                if current_chunk.strip():
+                    chunks.append(current_chunk.strip())
+                current_chunk = section_text
+                
+        if current_chunk.strip():
+            chunks.append(current_chunk.strip())
+            
+        # Fallback if any individual chunk is somehow still oversized
+        final_chunks = []
+        for c in chunks:
+            if len(c) <= limit:
+                final_chunks.append(c)
+            else:
+                # Sub-split on newlines
+                lines = c.split("\n")
+                sub = ""
+                for line in lines:
+                    if len(sub) + len(line) + 1 <= limit:
+                        sub += (line + "\n")
+                    else:
+                        if sub.strip(): final_chunks.append(sub.strip())
+                        sub = line + "\n"
+                if sub.strip():
+                    final_chunks.append(sub.strip())
+                    
+        return final_chunks if final_chunks else [text[:limit]]
 
     def send_discord_notification(self, webhook_url):
         """Send predictions via Discord webhook with automatic retry and backoff."""

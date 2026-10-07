@@ -76,195 +76,180 @@ def update_game_outcomes():
 
         # Identify games that need updates (past date, no actual_winner)
         today = datetime.now().strftime('%Y-%m-%d')
-
+        
+        pending_games = []
         for pred in predictions:
-            # Skip if already has an outcome (checking actual_winner explicitly)
             if pred.get('actual_winner'):
                 continue
-            
+            g_date = pred.get('date')
+            g_id = pred.get('game_id')
+            if not g_date or not g_id or g_date > today:
+                continue
+            pending_games.append(pred)
+
+        if not pending_games:
+            logger.info("No pending games needing outcome checks.")
+            print("OUTCOMES_UPDATED=0")
+            return 0
+
+        logger.info(f"Checking {len(pending_games)} pending games across dates...")
+
+        # 1. High-Speed Batch Schedule Lookup (1 call covers entire weeks of games)
+        dates_to_query = sorted(list(set(p.get('date') for p in pending_games if p.get('date'))))
+        schedule_games_map = {}
+        
+        from concurrent.futures import ThreadPoolExecutor
+        
+        def fetch_date_schedule(dt):
+            try:
+                url = f"https://api-web.nhle.com/v1/schedule/{dt}"
+                resp = client.session.get(url, timeout=6)
+                if resp.status_code == 200:
+                    d = resp.json()
+                    return [g for day in d.get('gameWeek', []) for g in day.get('games', [])]
+            except Exception as e:
+                logger.debug(f"Error fetching batch schedule for {dt}: {e}")
+            return []
+
+        with ThreadPoolExecutor(max_workers=min(8, len(dates_to_query) or 1)) as executor:
+            schedule_results = executor.map(fetch_date_schedule, dates_to_query)
+            for g_list in schedule_results:
+                for g in g_list:
+                    if g.get('id'):
+                        schedule_games_map[str(g['id'])] = g
+
+        # 2. Parallel Processing of Completed Games
+        def process_completed_game(pred):
+            game_id = str(pred.get('game_id'))
             game_date = pred.get('date')
-            game_id = pred.get('game_id')
-
-            if not game_date or not game_id:
-                continue
-
-            # Only check if game date is in the past or today
-            if game_date > today:
-                continue
-
-            logger.info(
-                f"Checking status for game {game_id} ({pred.get('away_team')} @ {pred.get('home_team')}) on {game_date}..."
-            )
+            sched_info = schedule_games_map.get(game_id)
+            
+            # Fast check from schedule payload
+            game_state = sched_info.get('gameState', 'Unknown') if sched_info else 'Unknown'
+            away_score = sched_info.get('awayTeam', {}).get('score') if sched_info else None
+            home_score = sched_info.get('homeTeam', {}).get('score') if sched_info else None
+            
+            is_complete = game_state in ['FINAL', 'OFF', 'OFFICIAL'] or (game_date < today and away_score is not None and home_score is not None)
+            
+            if not is_complete:
+                return None
 
             try:
-                # We can use the cached schedule fetching from client if available,
-                # or just fetch the game data directly since we have the ID
-                game_data = client.get_comprehensive_game_data(str(game_id))
-
+                game_data = client.get_comprehensive_game_data(game_id)
                 if not game_data:
-                    logger.warning(f"Could not fetch data for game {game_id}")
-                    continue
+                    return None
+                    
+                boxscore = game_data.get('boxscore', {})
+                if not boxscore:
+                    return None
+                    
+                away_score = boxscore.get('awayTeam', {}).get('score', away_score)
+                home_score = boxscore.get('homeTeam', {}).get('score', home_score)
+                
+                if away_score is None or home_score is None:
+                    return None
 
-                game_state = 'Unknown'
+                actual_winner = pred.get('away_team') if away_score > home_score else (pred.get('home_team') if home_score > away_score else 'TIE')
+                
+                full_metrics = {}
+                try:
+                    home_team_box = boxscore.get('homeTeam', {})
+                    away_team_box = boxscore.get('awayTeam', {})
+                    full_metrics['home_goals'] = home_score
+                    full_metrics['away_goals'] = away_score
+                    full_metrics['home_shots'] = home_team_box.get('sog', 0)
+                    full_metrics['away_shots'] = away_team_box.get('sog', 0)
+                    
+                    if 'play_by_play' in game_data:
+                        from analyzers.advanced_metrics_analyzer import AdvancedMetricsAnalyzer
+                        analyzer = AdvancedMetricsAnalyzer(game_data['play_by_play'])
+                        h_id = home_team_box.get('id')
+                        a_id = away_team_box.get('id')
+                        report = analyzer.generate_comprehensive_report(a_id, h_id)
+                        h_rep = report.get('home_team', {})
+                        a_rep = report.get('away_team', {})
+                        
+                        full_metrics['home_xg'] = h_rep.get('expected_goals', home_score)
+                        full_metrics['away_xg'] = a_rep.get('expected_goals', away_score)
+                        full_metrics['home_corsi_pct'] = h_rep.get('possession', {}).get('corsi_pct', 50.0)
+                        full_metrics['away_corsi_pct'] = a_rep.get('possession', {}).get('corsi_pct', 50.0)
+                        full_metrics['home_hdsv_pct'] = h_rep.get('goaltending', {}).get('high_danger_save_pct', 0.8)
+                        full_metrics['away_hdsv_pct'] = a_rep.get('goaltending', {}).get('high_danger_save_pct', 0.8)
+                        full_metrics['home_pressure'] = h_rep.get('offensive_pressure', {}).get('pressure_score', 2.0)
+                        full_metrics['away_pressure'] = a_rep.get('offensive_pressure', {}).get('pressure_score', 2.0)
+                        
+                        mom = analyzer.calculate_momentum_metrics(a_id, h_id)
+                        full_metrics['p1_xg_home'] = mom.get('p1_xg', {}).get('home', 0.8)
+                        full_metrics['p1_xg_away'] = mom.get('p1_xg', {}).get('away', 0.8)
+                        full_metrics['p2_xg_home'] = mom.get('p2_xg', {}).get('home', 0.8)
+                        full_metrics['p2_xg_away'] = mom.get('p2_xg', {}).get('away', 0.8)
+                        full_metrics['p3_xg_home'] = mom.get('p3_xg', {}).get('home', 0.8)
+                        full_metrics['p3_xg_away'] = mom.get('p3_xg', {}).get('away', 0.8)
+                        full_metrics['lead_after_p2'] = mom.get('lead_after_p2', 0)
+                except Exception as e:
+                    logger.debug(f"Metrics extraction note: {e}")
 
-                # Check game state from various possible locations in response
-                if 'game_center' in game_data and game_data['game_center']:
-                    game_state = game_data['game_center'].get('gameState', 'Unknown')
-                elif 'boxscore' in game_data and game_data['boxscore']:
-                    # Boxscore often doesn't have explicit state, but if it has scores and periods, it might be done
-                    # Usually we rely on game_center for state
+                lead_after_p1 = 0
+                try:
+                    landing_url = f"https://api-web.nhle.com/v1/gamecenter/{game_id}/landing"
+                    landing_resp = client.session.get(landing_url, timeout=6)
+                    if landing_resp.status_code == 200:
+                        landing_data = landing_resp.json()
+                        p1_away = 0
+                        p1_home = 0
+                        away_abbr = pred.get('away_team')
+                        home_abbr = pred.get('home_team')
+                        scoring = landing_data.get('summary', {}).get('scoring', [])
+                        for period_data in scoring:
+                            if period_data.get('periodDescriptor', {}).get('number') == 1:
+                                for goal in period_data.get('goals', []):
+                                    goal_team = goal.get('teamAbbrev', {}).get('default')
+                                    if goal_team == away_abbr: p1_away += 1
+                                    elif goal_team == home_abbr: p1_home += 1
+                        if p1_home > p1_away: lead_after_p1 = 1
+                        elif p1_away > p1_home: lead_after_p1 = -1
+                except Exception:
                     pass
 
-                # If we used the schedule endpoint (not used here directly), we'd have explicit state
-                # Let's try to determine winner from scores if available
-                boxscore = game_data.get('boxscore', {})
-
-                if boxscore:
-                    away_score = boxscore.get('awayTeam', {}).get('score')
-                    home_score = boxscore.get('homeTeam', {}).get('score')
-
-                    # Check if game is final (approximate check if state missing)
-                    is_complete = False
-                    if game_state in ['FINAL', 'OFF', 'OFFICIAL']:
-                        is_complete = True
-                    elif game_date < today and away_score is not None and home_score is not None:
-                        # If it's a past date and we have scores, assume complete
-                        is_complete = True
-
-                    if is_complete and away_score is not None and home_score is not None:
-                        actual_winner = None
-                        if away_score > home_score:
-                            actual_winner = pred.get('away_team')  # Use tracked abbrev to match
-                        elif home_score > away_score:
-                            actual_winner = pred.get('home_team')
-                        else:
-                            actual_winner = 'TIE'  # Rare/Impossible in regular season usually
-
-                        # NEW: Fetch full metrics for training (Phase 21)
-                        full_metrics = {}
-                        try:
-                            home_team_box = boxscore.get('homeTeam', {})
-                            away_team_box = boxscore.get('awayTeam', {})
-                            
-                            # Basic stats
-                            full_metrics['home_goals'] = home_score
-                            full_metrics['away_goals'] = away_score
-                            full_metrics['home_shots'] = home_team_box.get('sog', 0)
-                            full_metrics['away_shots'] = away_team_box.get('sog', 0)
-                            
-                            # Use advanced analyzer if PBP available
-                            if 'play_by_play' in game_data:
-                                from analyzers.advanced_metrics_analyzer import AdvancedMetricsAnalyzer
-                                analyzer = AdvancedMetricsAnalyzer(game_data['play_by_play'])
-                                h_id = home_team_box.get('id')
-                                a_id = away_team_box.get('id')
-                                
-                                report = analyzer.generate_comprehensive_report(a_id, h_id)
-                                h_rep = report.get('home_team', {})
-                                a_rep = report.get('away_team', {})
-                                
-                                # Advanced Phase 18 signals
-                                full_metrics['home_xg'] = h_rep.get('expected_goals', home_score)
-                                full_metrics['away_xg'] = a_rep.get('expected_goals', away_score)
-                                full_metrics['home_corsi_pct'] = h_rep.get('possession', {}).get('corsi_pct', 50.0)
-                                full_metrics['away_corsi_pct'] = a_rep.get('possession', {}).get('corsi_pct', 50.0)
-                                full_metrics['home_hdsv_pct'] = h_rep.get('goaltending', {}).get('high_danger_save_pct', 0.8)
-                                full_metrics['away_hdsv_pct'] = a_rep.get('goaltending', {}).get('high_danger_save_pct', 0.8)
-                                full_metrics['home_pressure'] = h_rep.get('offensive_pressure', {}).get('pressure_score', 2.0)
-                                full_metrics['away_pressure'] = a_rep.get('offensive_pressure', {}).get('pressure_score', 2.0)
-                                
-                                # Phase 18: Tactical High-Signal Metrics
-                                full_metrics['home_royal_road'] = h_rep.get('pre_shot_movement', {}).get('royal_road_proxy', {}).get('attempts', 0)
-                                full_metrics['away_royal_road'] = a_rep.get('pre_shot_movement', {}).get('royal_road_proxy', {}).get('attempts', 0)
-                                full_metrics['home_lateral'] = h_rep.get('pre_shot_movement', {}).get('lateral_movement', {}).get('avg_delta_y', 0)
-                                full_metrics['away_lateral'] = a_rep.get('pre_shot_movement', {}).get('lateral_movement', {}).get('avg_delta_y', 0)
-                                full_metrics['home_nzt_possession'] = h_rep.get('nzt_stats', {}).get('nzt_possession_pct', 50.0)
-                                full_metrics['away_nzt_possession'] = a_rep.get('nzt_stats', {}).get('nzt_possession_pct', 50.0)
-                                full_metrics['home_rush_sv_pct'] = h_rep.get('rush_stats', {}).get('rush_save_pct', 90.0)
-                                full_metrics['away_rush_sv_pct'] = a_rep.get('rush_stats', {}).get('rush_save_pct', 90.0)
-                                full_metrics['home_ca_shots'] = h_rep.get('nzt_stats', {}).get('counter_attack_shots', 0)
-                                full_metrics['away_ca_shots'] = a_rep.get('nzt_stats', {}).get('counter_attack_shots', 0)
-                                
-                                # Phase 15/17: Momentum & Period Splits
-                                mom = analyzer.calculate_momentum_metrics(a_id, h_id)
-                                full_metrics['p1_xg_home'] = mom.get('p1_xg', {}).get('home', 0.8)
-                                full_metrics['p1_xg_away'] = mom.get('p1_xg', {}).get('away', 0.8)
-                                full_metrics['p2_xg_home'] = mom.get('p2_xg', {}).get('home', 0.8)
-                                full_metrics['p2_xg_away'] = mom.get('p2_xg', {}).get('away', 0.8)
-                                full_metrics['p3_xg_home'] = mom.get('p3_xg', {}).get('home', 0.8)
-                                full_metrics['p3_xg_away'] = mom.get('p3_xg', {}).get('away', 0.8)
-                                full_metrics['lead_after_p2'] = mom.get('lead_after_p2', 0)
-                                
-                        except Exception as e:
-                            logger.warning(f"   Could not calculate full metrics for {game_id}: {e}")
-
-                        # NEW: Track Period 1 Leader (Phase 20)
-                        lead_after_p1 = 0  # 0=Tie, 1=Home, -1=Away
-                        try:
-                            # Landing endpoint has period-by-period scoring summary
-                            landing_url = f"https://api-web.nhle.com/v1/gamecenter/{game_id}/landing"
-                            landing_resp = client.session.get(landing_url, timeout=10)
-                            if landing_resp.status_code == 200:
-                                landing_data = landing_resp.json()
-                                p1_away = 0
-                                p1_home = 0
-                                away_abbr = pred.get('away_team')
-                                home_abbr = pred.get('home_team')
-
-                                scoring = landing_data.get('summary', {}).get('scoring', [])
-                                for period_data in scoring:
-                                    if period_data.get('periodDescriptor', {}).get('number') == 1:
-                                        for goal in period_data.get('goals', []):
-                                            goal_team = goal.get('teamAbbrev', {}).get('default')
-                                            if goal_team == away_abbr:
-                                                p1_away += 1
-                                            elif goal_team == home_abbr:
-                                                p1_home += 1
-
-                                if p1_home > p1_away:
-                                    lead_after_p1 = 1
-                                elif p1_away > p1_home:
-                                    lead_after_p1 = -1
-
-                                # Store metrics in pred for training parity
-                                if 'metrics_used' not in pred:
-                                    pred['metrics_used'] = {}
-                                
-                                # Update with both P1 lead and full metrics
-                                pred['metrics_used'].update(full_metrics)
-                                pred['metrics_used']['lead_after_p1'] = lead_after_p1
-                                
-                                logger.info(
-                                    f"   P1 Score: {away_abbr} {p1_away} - {p1_home} {home_abbr} (Lead: {lead_after_p1})"
-                                )
-                        except Exception as e:
-                            logger.warning(f"   Could not determine P1 lead for {game_id}: {e}")
-
-                        updated_count += 1
-                        logger.info(
-                            f"✅ Updated: {pred['away_team']} {away_score}-{home_score} {pred['home_team']} (Winner: {actual_winner})"
-                        )
-
-                        # Append outcome event for deterministic retraining (append-only).
-                        if append_outcome_event is not None:
-                            try:
-                                append_outcome_event(
-                                    game_id=str(game_id),
-                                    date=game_date,
-                                    away_team=pred.get("away_team"),
-                                    home_team=pred.get("home_team"),
-                                    actual_away_score=int(away_score) if away_score is not None else None,
-                                    actual_home_score=int(home_score) if home_score is not None else None,
-                                    actual_winner=actual_winner,
-                                    lead_after_p1=lead_after_p1,
-                                    **full_metrics
-                                )
-                            except Exception as e:
-                                logger.warning(f"Could not append outcome event: {e}")
-
+                return {
+                    'game_id': game_id,
+                    'game_date': game_date,
+                    'away_team': pred.get('away_team'),
+                    'home_team': pred.get('home_team'),
+                    'away_score': away_score,
+                    'home_score': home_score,
+                    'actual_winner': actual_winner,
+                    'lead_after_p1': lead_after_p1,
+                    'full_metrics': full_metrics
+                }
             except Exception as e:
-                logger.error(f"Error checking game {game_id}: {e}")
+                logger.debug(f"Error processing outcome for game {game_id}: {e}")
+                return None
+
+        with ThreadPoolExecutor(max_workers=min(12, len(pending_games) or 1)) as executor:
+            processed_results = list(executor.map(process_completed_game, pending_games))
+
+        for res in processed_results:
+            if not res:
                 continue
+            updated_count += 1
+            logger.info(f"✅ Updated: {res['away_team']} {res['away_score']}-{res['home_score']} {res['home_team']} (Winner: {res['actual_winner']})")
+            
+            if append_outcome_event is not None:
+                try:
+                    append_outcome_event(
+                        game_id=str(res['game_id']),
+                        date=res['game_date'],
+                        away_team=res['away_team'],
+                        home_team=res['home_team'],
+                        actual_away_score=int(res['away_score']) if res['away_score'] is not None else None,
+                        actual_home_score=int(res['home_score']) if res['home_score'] is not None else None,
+                        actual_winner=res['actual_winner'],
+                        lead_after_p1=res['lead_after_p1'],
+                        **res['full_metrics']
+                    )
+                except Exception as e:
+                    logger.warning(f"Could not append outcome event: {e}")
             
         if updated_count > 0:
             # Regenerate derived JSON view for legacy readers/dashboard

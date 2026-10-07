@@ -341,29 +341,57 @@ class RealTeamStatsGenerator(TeamReportGenerator):
                 
         teams_data = existing_data
         
+        # Pre-index all team games once from predictions to avoid 32x redundant file reads
+        from collections import defaultdict
+        all_team_games = defaultdict(list)
+        try:
+            preds_file = Path('data/win_probability_predictions_v2.json')
+            if not preds_file.exists():
+                preds_file = Path('win_probability_predictions_v2.json')
+            if preds_file.exists():
+                with open(preds_file, 'r') as f:
+                    preds_data = json.load(f).get('predictions', [])
+                for pred in preds_data:
+                    actual_winner = (pred.get('actual_winner') or '').upper()
+                    if not actual_winner:
+                        continue
+                    away = pred.get('away_team', '').upper()
+                    home = pred.get('home_team', '').upper()
+                    gid = pred.get('game_id')
+                    if away:
+                        all_team_games[away].append({
+                            'game_id': gid,
+                            'was_home': False,
+                            'opponent': home,
+                            'team_score': pred.get('actual_away_score', 0),
+                            'opp_score': pred.get('actual_home_score', 0),
+                            'won': actual_winner == away or actual_winner == 'AWAY'
+                        })
+                    if home:
+                        all_team_games[home].append({
+                            'game_id': gid,
+                            'was_home': True,
+                            'opponent': away,
+                            'team_score': pred.get('actual_home_score', 0),
+                            'opp_score': pred.get('actual_away_score', 0),
+                            'won': actual_winner == home or actual_winner == 'HOME'
+                        })
+        except Exception as e:
+            print(f"⚠️ Pre-indexing team games warning: {e}")
+
         from concurrent.futures import ThreadPoolExecutor
 
-        for team in standings:
+        def process_team(team):
             abbrev = team['teamAbbrev']['default']
             name = team['teamName']['default']
             
-            print(f"\n{'='*60}")
-            print(f"Processing {name} ({abbrev})...")
-            print(f"{'='*60}")
-            
-            # Get all games for this team using parent class method
-            team_games = self.get_team_games(abbrev)
-            print(f"Found {len(team_games)} total games in history")
-            
+            team_games = all_team_games.get(abbrev) or self.get_team_games(abbrev)
             if not team_games:
-                print(f"  No games found for {abbrev}, skipping...")
-                continue
-            
-            # Separate home and away games
+                return abbrev, 0
+                
             home_games = [g for g in team_games if g['was_home']]
             away_games = [g for g in team_games if not g['was_home']]
             
-            # Initialize team stats structure if not present
             if abbrev not in teams_data:
                 teams_data[abbrev] = {
                     'home': {
@@ -394,25 +422,16 @@ class RealTeamStatsGenerator(TeamReportGenerator):
                     }
                 }
             
-            # INCREMENTAL UPDATE LOGIC
-            # Check how many games we have already processed
             processed_home = len(teams_data[abbrev]['home'].get('gs', []))
             processed_away = len(teams_data[abbrev]['away'].get('gs', []))
             
-            # Identify new games (by skipping the first N games)
             new_home_games = home_games[processed_home:]
             new_away_games = away_games[processed_away:]
             
-            print(f"  Home games: {processed_home} processed, {len(new_home_games)} new")
-            print(f"  Away games: {processed_away} processed, {len(new_away_games)} new")
-            
-            # Process new home games in parallel
             home_stats = teams_data[abbrev]['home']
             if new_home_games:
-                with ThreadPoolExecutor(max_workers=8) as executor:
-                    home_results = list(executor.map(lambda g: self._fetch_and_calculate_single_game(g, is_home=True), new_home_games))
-                
-                for res in home_results:
+                for g in new_home_games:
+                    res = self._fetch_and_calculate_single_game(g, is_home=True)
                     if res:
                         game_id, metrics, opp_team = res
                         for key in home_stats.keys():
@@ -420,17 +439,11 @@ class RealTeamStatsGenerator(TeamReportGenerator):
                                 home_stats[key].append(metrics.get(key, 0))
                         home_stats['games'].append(game_id)
                         home_stats['opponents'].append(opp_team)
-                        print(f"  ✓ Home game {game_id}: GS={metrics.get('gs', 0):.1f}, xG={metrics.get('xg', 0):.2f}")
-                    else:
-                        print(f"  ✗ Failed metrics calculation for home game")
 
-            # Process new away games in parallel
             away_stats = teams_data[abbrev]['away']
             if new_away_games:
-                with ThreadPoolExecutor(max_workers=8) as executor:
-                    away_results = list(executor.map(lambda g: self._fetch_and_calculate_single_game(g, is_home=False), new_away_games))
-                
-                for res in away_results:
+                for g in new_away_games:
+                    res = self._fetch_and_calculate_single_game(g, is_home=False)
                     if res:
                         game_id, metrics, opp_team = res
                         for key in away_stats.keys():
@@ -438,25 +451,20 @@ class RealTeamStatsGenerator(TeamReportGenerator):
                                 away_stats[key].append(metrics.get(key, 0))
                         away_stats['games'].append(game_id)
                         away_stats['opponents'].append(opp_team)
-                        print(f"  ✓ Away game {game_id}: GS={metrics.get('gs', 0):.1f}, xG={metrics.get('xg', 0):.2f}")
-                    else:
-                        print(f"  ✗ Failed metrics calculation for away game")
-            
-            # Incremental Save
-            try:
-                output_dir = os.path.dirname(self.output_file)
-                if output_dir and not os.path.exists(output_dir):
-                    os.makedirs(output_dir)
-                
-                output = {"teams": teams_data}
-                with open(self.output_file, 'w') as f:
-                    json.dump(output, f, indent=2)
-                if len(new_home_games) > 0 or len(new_away_games) > 0:
-                    print(f"  (Saved updates to {self.output_file})")
-            except Exception as e:
-                print(f"  Warning: Failed to save progress: {e}")
+                        
+            return abbrev, len(new_home_games) + len(new_away_games)
+
+        with ThreadPoolExecutor(max_workers=16) as executor:
+            team_results = list(executor.map(process_team, standings))
+
+        total_new = sum(r[1] for r in team_results if r and r[1])
+        print(f"✅ Processed {len(standings)} teams in parallel ({total_new} new game records computed)")
         
-        # Final Save
+        # Single atomic save at the end
+        output_dir = os.path.dirname(self.output_file)
+        if output_dir and not os.path.exists(output_dir):
+            os.makedirs(output_dir)
+        
         output = {"teams": teams_data}
         with open(self.output_file, 'w') as f:
             json.dump(output, f, indent=2)
