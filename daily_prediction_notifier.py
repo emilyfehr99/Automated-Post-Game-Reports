@@ -1141,14 +1141,14 @@ class DailyPredictionNotifier:
         return chunks
 
     def send_discord_notification(self, webhook_url):
-        """Send predictions via Discord webhook"""
+        """Send predictions via Discord webhook with automatic retry and backoff."""
         try:
             import requests
+            import time
             
             predictions_text = self.get_daily_predictions_summary()
             
             # Split message if it exceeds Discord's limit (2000 chars)
-            # Using 1900 to be safe
             chunks = self._split_message(predictions_text, limit=1900)
             
             success = True
@@ -1164,15 +1164,34 @@ class DailyPredictionNotifier:
                 if len(chunks) > 1:
                     payload["username"] = f"NHL Predictions Bot (Part {i+1}/{len(chunks)})"
 
-                response = requests.post(webhook_url, json=payload, timeout=15)
-                
-                if response.status_code not in [200, 204]:
-                    print(f"❌ Discord notification chunk {i+1} failed: {response.status_code}")
-                    print(f"   Response: {response.text}")
+                chunk_sent = False
+                for attempt in range(1, 4):
+                    try:
+                        response = requests.post(webhook_url, json=payload, timeout=20)
+                        if response.status_code in [200, 204]:
+                            chunk_sent = True
+                            break
+                        elif response.status_code == 429:
+                            # Rate limited - extract retry after
+                            try:
+                                retry_after = float(response.json().get('retry_after', 2.0))
+                            except Exception:
+                                retry_after = 2.0
+                            print(f"⚠️ Discord rate limited on chunk {i+1}, waiting {retry_after:.1f}s (attempt {attempt}/3)...")
+                            time.sleep(retry_after + 0.5)
+                        else:
+                            print(f"⚠️ Discord webhook chunk {i+1} returned status {response.status_code} (attempt {attempt}/3)")
+                            time.sleep(2.0 * attempt)
+                    except Exception as req_err:
+                        print(f"⚠️ Network error sending chunk {i+1} to Discord: {req_err} (attempt {attempt}/3)")
+                        time.sleep(2.0 * attempt)
+
+                if not chunk_sent:
+                    print(f"❌ Discord notification chunk {i+1} failed after 3 attempts")
                     success = False
             
             if success:
-                print(f"✅ Discord notification sent successfully ({len(chunks)} parts)")
+                print(f"✅ Discord notification delivered successfully ({len(chunks)} parts)")
             return success
                 
         except Exception as e:
