@@ -6,15 +6,21 @@ concurrency:
 
 on:
   schedule:
-    # 1. Early Morning Baseline: 3:17am CT / 4:17am ET (08:17 UTC) - off-peak minute avoids GitHub queue delays
-    - cron: '17 8 * * *'
-    # 2. Morning Coffee Digest: 6:23am CT / 7:23am ET (11:23 UTC) - early morning delivery before work/commute
-    - cron: '23 11 * * *'
-    # 3. Morning Skate & Goalie Confirmations: 10:37am CT / 11:37am ET (15:37 UTC) - picks up morning skate goalie news
+    # --- MORNING DELIVERY (Guaranteed Before 8:00 AM) ---
+    # 1. Early Morning Baseline: 5:17am CT / 6:17am ET (10:17 UTC) - overnight data crunch
+    - cron: '17 10 * * *'
+    # 2. Morning First Look: 6:13am CT / 7:13am ET (11:13 UTC) - guaranteed published before 8:00am ET / 7:00am CT
+    - cron: '13 11 * * *'
+    # 3. Main Pre-8AM Digest: 7:17am CT / 8:17am ET (12:17 UTC) - delivery for morning commute
+    - cron: '17 12 * * *'
+    # 4. Final 8:00 AM Cutoff Refresh: 7:43am CT / 8:43am ET (12:43 UTC) - locked in before 8:00am CT
+    - cron: '43 12 * * *'
+    # --- AFTERNOON REFRESHES ---
+    # 5. Morning Skate & Goalie Confirmations: 10:37am CT / 11:37am ET (15:37 UTC)
     - cron: '37 15 * * *'
-    # 4. Midday Line Movement Refresh: 1:19pm CT / 2:19pm ET (18:19 UTC) - updates market odds and sharp movement
+    # 6. Midday Line Movement Refresh: 1:19pm CT / 2:19pm ET (18:19 UTC)
     - cron: '19 18 * * *'
-    # 5. Pre-Game Final Lock: 4:41pm CT / 5:41pm ET (21:41 UTC) - final locked predictions before 7:00pm ET puck drops
+    # 7. Pre-Game Final Lock: 4:41pm CT / 5:41pm ET (21:41 UTC)
     - cron: '41 21 * * *'
   workflow_dispatch: {}
 
