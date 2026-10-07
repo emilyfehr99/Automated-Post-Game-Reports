@@ -925,6 +925,8 @@ class DailyPredictionNotifier:
                         'is_plus_ev_home': pred.get('is_plus_ev_home', False),
                         'suggested_units': pred.get('suggested_units', 0.0),
                         'odds_taken': pred.get('odds_taken', 0),
+                        'ot_prob': score_pred.get('ot_prob', p_reg_tie / 100.0 if p_reg_tie else 0.271),
+                        'ot_tier': score_pred.get('ot_tier', 'Moderate OT Risk'),
                         'p1_home_cond': p1_h_cond,
                         'p1_tie_prob': p_tie1 * 100.0,
                         'is_playoff': is_playoff,
@@ -997,6 +999,12 @@ class DailyPredictionNotifier:
                 summary += f"  🕐 1st Period: **Tied / Even** ({p1_tie:.0f}% projected tie)\n"
             
             summary += f"  ⭐ Confidence: {confidence:.1f}% ({pred.get('confidence_tier', 'Standard')})\n"
+            
+            # Overtime / Shootout Risk Indicator
+            ot_prob = pred.get('ot_prob')
+            ot_tier = pred.get('ot_tier')
+            if ot_prob and ot_prob >= 0.35:
+                summary += f"  ⏱️ **Extra-Time Risk**: {ot_tier} ({ot_prob*100.0:.1f}% Projected OT/SO Chance)\n"
             
             # Toss-Up & Parity Structural Analytics (Underdog Pucklines & Double Chance)
             if pred.get('is_tossup') or pred.get('confidence_tier') == "⚠️ Close Game / Toss-Up":
