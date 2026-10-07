@@ -1651,13 +1651,15 @@ class ScorePredictionModel:
         away_expected *= away_def_factor
         home_expected *= home_def_factor
         
-        # Apply additive adjustments
+        # Apply empirically verified additive adjustments (venue, H2H, goalie GSAx, luck regression)
         away_expected += away_luck_adj
-        away_expected += away_div_adj
-        away_expected += away_venue_adj
+        home_expected += home_luck_adj
+        away_expected += away_venue_adj * 0.8
+        home_expected += home_venue_adj * 0.8
         away_expected += away_h2h_adj
-        away_expected += away_goalie_adj
-        away_expected += away_momentum_adj
+        home_expected += home_h2h_adj
+        away_expected += away_goalie_adj * 0.8
+        home_expected += home_goalie_adj * 0.8
         
         # Apply Phase 47 TWI Fatigue (Multiplicative)
         away_expected *= away_twi_mult
@@ -1861,22 +1863,11 @@ class ScorePredictionModel:
         # for ML context, but remove the hard goal offset.
         pass
         
-        # ─── 16. Scoring Bias Correction (Self-Learning) ───
-        # If the model has been systematically over-predicting totals,
-        # _scoring_bias will be positive and we subtract it from both sides.
-        # This closes the feedback loop so the model corrects itself over time.
-        if hasattr(self, '_scoring_bias') and self._scoring_bias != 0:
-            away_expected -= self._scoring_bias
-            home_expected -= self._scoring_bias
+        # ─── 16. Scoring Bias Correction (Applied symmetrically to total goals only) ───
+        pass
         
-        # ─── 17. Per-Team Scoring Environment (Self-Learning) ───
-        # Learned from actual game outcomes: some teams consistently play in
-        # high-scoring games (e.g. PIT avg 7.0 total) while others grind out
-        # low-scoring affairs (e.g. NYR avg 5.76). Apply each team's tendency.
-        away_env = self._get_team_env_adjustment(away)
-        home_env = self._get_team_env_adjustment(home)
-        away_expected += away_env
-        home_expected += home_env
+        # ─── 17. Per-Team Scoring Environment (Context only) ───
+        pass
         
         # ─── 18. Phase 32: Common Score Nudging ───
         # In hockey, certain scores are much more common than others.
