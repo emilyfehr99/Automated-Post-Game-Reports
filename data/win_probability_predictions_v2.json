@@ -149821,6 +149821,117 @@
       },
       "event_type": "prediction",
       "recorded_at_utc": "2026-10-06T16:54:37Z"
+    },
+    {
+      "date": "2026-10-07",
+      "game_id": 2025030184,
+      "home_team": "ANA",
+      "away_team": "EDM",
+      "predicted_winner": "ANA",
+      "predicted_home_win_prob": 65.19536660785089,
+      "predicted_away_win_prob": 34.80463339214912,
+      "model_confidence": 0.6519536660785089,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0,
+        "lead_after_p1": -1
+      },
+      "extra_metadata": {
+        "predicted_home_goals": 4,
+        "predicted_away_goals": 2,
+        "ensemble_mode": "ensemble",
+        "ensemble_weights": {
+          "xgb": 0.5,
+          "elo": 0.1,
+          "specialized": 0.2,
+          "player": 0.1,
+          "base": 0.05,
+          "vegas": 0.15
+        },
+        "attribution": [
+          "Playoff PP Tightening (-15% impact)",
+          "Playoff Tight Checking (-6% Scoring)",
+          "EDM Speed Dominance (+4.9% xG)",
+          "EDM Forecheck Advantage vs ANA Turnovers (+0.12)",
+          "ANA Forecheck Advantage vs EDM Turnovers (+0.12)",
+          "ANA Cycle Dominance vs Low Block Volume (+0.08)",
+          "Series Friction (Game 4) (0.98x goals)"
+        ],
+        "is_playoff": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-07T13:52:22Z",
+      "actual_winner": "ANA",
+      "actual_away_score": 3,
+      "actual_home_score": 4
+    },
+    {
+      "date": "2026-10-07",
+      "game_id": "COL@WPG_2026-10-07",
+      "home_team": "WPG",
+      "away_team": "COL",
+      "predicted_winner": "WPG",
+      "predicted_home_win_prob": 67.75790995761405,
+      "predicted_away_win_prob": 32.24209004238595,
+      "model_confidence": 0.6775790995761405,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "predicted_home_goals": 4,
+        "predicted_away_goals": 3,
+        "ensemble_mode": "ensemble",
+        "ensemble_weights": {
+          "xgb": 0.5,
+          "elo": 0.1,
+          "specialized": 0.2,
+          "player": 0.1,
+          "base": 0.05,
+          "vegas": 0.15
+        },
+        "attribution": [
+          "COL Cycle Dominance vs Low Block Volume (+0.08)"
+        ],
+        "is_playoff": false
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-07T13:52:22Z"
+    },
+    {
+      "date": "2026-10-07",
+      "game_id": "PIT@WSH_2026-10-07",
+      "home_team": "WSH",
+      "away_team": "PIT",
+      "predicted_winner": "WSH",
+      "predicted_home_win_prob": 71.40519287868688,
+      "predicted_away_win_prob": 28.594807121313124,
+      "model_confidence": 0.7140519287868687,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "predicted_home_goals": 3,
+        "predicted_away_goals": 2,
+        "ensemble_mode": "ensemble",
+        "ensemble_weights": {
+          "xgb": 0.5,
+          "elo": 0.1,
+          "specialized": 0.2,
+          "player": 0.1,
+          "base": 0.05,
+          "vegas": 0.15
+        },
+        "attribution": [
+          "PIT Forecheck Advantage vs WSH Turnovers (+0.12)",
+          "WSH Forecheck Advantage vs PIT Turnovers (+0.12)",
+          "PIT Cycle Dominance vs Low Block Volume (+0.08)"
+        ],
+        "is_playoff": false
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-07T13:52:22Z"
     }
   ],
   "calibration_points": [
@@ -149874,11 +149985,11 @@
     ]
   ],
   "calibration_metadata": {
-    "updated_at": "2026-10-06T16:54:37.230385",
-    "sample_size": 1017,
+    "updated_at": "2026-10-07T08:52:22.240804",
+    "sample_size": 1018,
     "num_bins": 12,
     "bucket_samples": {
-      "neutral": 1017
+      "neutral": 1018
     }
   },
   "calibration_by_bucket": {
@@ -149995,10 +150106,10 @@
     "opponent_ga_weight": 0.0
   },
   "model_performance": {
-    "total_games": 1017,
-    "correct_predictions": 691,
-    "accuracy": 0.6794493608652901,
-    "recent_accuracy": 0.36666666666666664
+    "total_games": 1018,
+    "correct_predictions": 692,
+    "accuracy": 0.6797642436149313,
+    "recent_accuracy": 0.4
   },
   "team_stats": {
     "ANA": {
