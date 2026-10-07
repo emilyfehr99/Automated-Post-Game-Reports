@@ -828,21 +828,29 @@ class DailyPredictionNotifier:
                     except Exception:
                         pass
 
-                    # Force displayed scoreline to match blended winner, but clamp to realistic hockey scores.
+                    # Force displayed scoreline to match blended winner with strict zero-tie guarantee.
                     max_goals = 6
                     away_score = int(max(0, min(max_goals, away_score)))
                     home_score = int(max(0, min(max_goals, home_score)))
                     
                     if blended_winner == game['away_team']:
                         if away_score <= home_score:
-                            away_score = min(max_goals, home_score + 1)
-                            if away_score == home_score:
-                                away_score = max(1, home_score)
+                            away_score = home_score + 1
+                            if away_score > max_goals:
+                                away_score = max_goals
+                                home_score = max_goals - 1
                     else:
                         if home_score <= away_score:
-                            home_score = min(max_goals, away_score + 1)
-                            if home_score == away_score:
-                                home_score = max(1, away_score)
+                            home_score = away_score + 1
+                            if home_score > max_goals:
+                                home_score = max_goals
+                                away_score = max_goals - 1
+
+                    if away_score == home_score:
+                        if blended_winner == game['away_team']:
+                            away_score += 1
+                        else:
+                            home_score += 1
 
                     # Calibrated winner confidence & 70%+ High-Conviction Tiers
                     raw_conf = max(blended_away_win_prob, 1.0 - blended_away_win_prob) * 100.0
@@ -957,17 +965,22 @@ class DailyPredictionNotifier:
             # Use precomputed deterministic scoreline.
             away_score = pred.get('away_score')
             home_score = pred.get('home_score')
-            if away_score is None or home_score is None:
+            if away_score is None or home_score is None or away_score == home_score:
                 # Rare fallback: derive realistic scores from xG averages + winner.
                 base_pred = self.predictor.learning_model.predict_game(away, home)
                 away_xg = base_pred.get('away_perf', {}).get('xg_avg', 2.8)
                 home_xg = base_pred.get('home_perf', {}).get('xg_avg', 2.8)
-                away_score = round(away_xg)
-                home_score = round(home_xg)
+                away_score = int(round(away_xg))
+                home_score = int(round(home_xg))
                 if winner == away and away_score <= home_score:
                     away_score = home_score + 1
                 elif winner == home and home_score <= away_score:
                     home_score = away_score + 1
+                elif away_score == home_score:
+                    if winner == away:
+                        away_score += 1
+                    else:
+                        home_score += 1
             
             type_tag = " (🏒 Preseason)" if pred.get('is_preseason') else (" (🏆 Playoffs)" if pred.get('is_playoff') else "")
             summary += f"**Game {i}**: {away} @ {home}{type_tag}\n"

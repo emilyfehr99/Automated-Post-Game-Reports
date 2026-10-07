@@ -2491,22 +2491,37 @@ class ScorePredictionModel:
             else: final_h = max(final_h, final_a + 2)
             
 
-        # Tie-breaker for close games
+        # Tie-breaker for close games & strict zero-tie invariant
         if final_a == final_h:
-            if desired == "away" or away_mu > home_mu:
-                final_a = min(int(max_goals), final_a + 1)
+            if desired == "away" or (desired == "" and away_mu >= home_mu):
+                if final_a < int(max_goals):
+                    final_a += 1
+                else:
+                    final_h = max(0, final_h - 1)
             else:
-                final_h = min(int(max_goals), final_h + 1)
-                
+                if final_h < int(max_goals):
+                    final_h += 1
+                else:
+                    final_a = max(0, final_a - 1)
+
+        # Ensure strict winner alignment if desired winner is specified
+        if desired == "away" and final_a <= final_h:
+            final_a = min(int(max_goals), final_h + 1)
+            if final_a <= final_h:
+                final_h = max(0, final_a - 1)
+        elif desired == "home" and final_h <= final_a:
+            final_h = min(int(max_goals), final_a + 1)
+            if final_h <= final_a:
+                final_a = max(0, final_h - 1)
+
+        # Final absolute tie safeguard (NHL regular season and playoffs never end in ties)
+        if final_a == final_h:
+            if away_mu >= home_mu:
+                final_a += 1
+            else:
+                final_h += 1
+
         return int(final_a), int(final_h)
-
-        # If a specific winner is requested but MAP disagrees, nudge minimally.
-        if desired == "away" and a < h:
-            a = min(int(max_goals), h + 1)
-        elif desired == "home" and h < a:
-            h = min(int(max_goals), a + 1)
-
-        return int(a), int(h)
     
     def _calculate_confidence(self, away: str, home: str,
                               away_exp: float, home_exp: float) -> float:
