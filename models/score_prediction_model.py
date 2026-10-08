@@ -2152,71 +2152,51 @@ class ScorePredictionModel:
                 gs = self.goalie_stats.get(team_cand[0][1])
         
         if gs and gs.get('games', 0) >= 1:
-            # 1. Backup Goalie Penalty (Phase 3 Improvement)
-            # If a goalie has played very few games relative to the season, they are likely a backup/AHL call-up
-            backup_penalty = 0.0
-            team_games = self._get_team_metric(team, 'n_games', 'combined')
+            gp = gs.get('games', 0)
+            raw_gsax = float(gs.get('gsax_per_game', 0.0))
             
-            # If we're deep enough into the season (e.g., > 20 games) and the goalie has played < 25% of games
-            if team_games > 20 and gs.get('games', 0) < (team_games * 0.25):
-                # Apply a severe +0.35 to +0.50 expected goals penalty to the team starting them
-                backup_penalty = 0.40
-                if gs.get('games', 0) < 5:
-                    backup_penalty = 0.50 # AHL call-up or extreme backup
-            
-            # 2. Base GSAX Adjustment
-            gsax_pg = gs.get('gsax_per_game', 0.0) if gs.get('games', 0) >= 3 else 0.0
+            # Empirical Bayes Credibility Weight: Z = GP / (GP + 12)
+            # Regresses small sample sizes smoothly toward replacement level (-0.25 GSAX/gm)
+            z_cred = gp / (gp + 12.0)
+            shrunk_gsax = z_cred * raw_gsax + (1.0 - z_cred) * (-0.25)
             
             # Phase 45: Goaltender Playoff Wall
-            # Elite goalies "level up" in playoffs. Multiplier for high-GSAx goalies.
-            if gsax_pg > 0.5:
-                # Only apply the level-up in playoffs or high-stakes games
-                # For simplicity, we'll assume higher stakes if it's April/May
+            # Multiplier for high-GSAx goalies in late season / playoff hockey
+            if shrunk_gsax > 0.4:
                 import datetime
                 current_month = datetime.datetime.now().month
                 if current_month in [4, 5, 6]:
-                    gsax_pg *= 1.5
+                    shrunk_gsax *= 1.35
             
-            # Venue Adjustment (Home/Away Splits)
+            # Venue Adjustment (Home/Away Splits with sample size scaling)
             venue_adj = 0.0
             home_sv = gs.get('home_sv_pct', 0)
             away_sv = gs.get('away_sv_pct', 0)
-            if home_sv > 0 and away_sv > 0:
+            if home_sv > 0 and away_sv > 0 and gp >= 8:
                 diff = home_sv - away_sv
-                if abs(diff) > 0.015: # Significant split (> 1.5% SV%)
-                    # Scale: 0.010 SV% diff ~ 0.25 goals per game adjustment
-                    if venue == 'home':
-                        venue_adj = diff * 25.0 # Positive diff = bonus at home
-                    else:
-                        venue_adj = -diff * 25.0 # Positive diff = penalty away
-                    
-                    # Cap venue adjustment at +/- 0.4 goals
-                    venue_adj = max(-0.4, min(0.4, venue_adj))
+                if abs(diff) > 0.015:
+                    scale = min(1.0, gp / 20.0)
+                    venue_adj = (diff * 25.0 if venue == 'home' else -diff * 25.0) * scale
+                    venue_adj = max(-0.3, min(0.3, venue_adj))
             
-            # Rebound Adjustment (High rebound rate = more goals allowed)
+            # Rebound Adjustment (High rebound rate = more second-chance goals allowed)
             reb_adj = 0.0
-            reb_rate = gs.get('rebound_rate', 0.075) # League avg ~7.5%
-            if reb_rate > 0.08:
-                # Every 1% above 8% adds 0.05 goals
-                reb_adj = (reb_rate - 0.08) * 5.0
-                reb_adj = min(0.3, reb_adj) # Max 0.3 goal penalty
+            reb_rate = gs.get('rebound_rate', 0.075)
+            if reb_rate > 0.08 and gp >= 5:
+                reb_adj = min(0.2, (reb_rate - 0.08) * 4.0)
             
             # Angle Adjustment (Acute angle vulnerability)
             angle_adj = 0.0
             acute_sv = gs.get('acute_angle_sv_pct', 0)
             center_sv = gs.get('center_angle_sv_pct', 0)
-            if acute_sv > 0 and center_sv > 0:
-                # If much worse on sides than center
-                if center_sv - acute_sv > 0.015:
-                    angle_adj = (center_sv - acute_sv) * 10.0
-                    angle_adj = min(0.2, angle_adj)
+            if acute_sv > 0 and center_sv > 0 and (center_sv - acute_sv) > 0.015 and gp >= 8:
+                angle_adj = min(0.15, (center_sv - acute_sv) * 8.0)
             
             # Goalie B2B Fatigue (0 days rest reduces SV% by ~0.015)
-            b2b_fatigue = 0.25 if is_b2b else 0.0
+            b2b_fatigue = 0.22 if is_b2b else 0.0
             
-            # Base GSAX adjustment (0.8 scale) + Modifiers + Backup Penalty + B2B Fatigue
-            # Note: total_adj is added to expected goals, so positive = more goals for the shooting team
-            total_adj = (-gsax_pg * 0.8) - venue_adj + reb_adj + angle_adj + backup_penalty + b2b_fatigue
+            # Total adjustment added to opponent expected goals
+            total_adj = (-shrunk_gsax * 0.8) - venue_adj + reb_adj + angle_adj + b2b_fatigue
             return total_adj
         
         # If goalie is unconfirmed or TBD, use Bayesian prior from team's primary starter
