@@ -52,13 +52,13 @@ class ScorePredictionModel:
     # League-wide constants from 2025-26 analysis
     LEAGUE_AVG_GF = 3.03
     HOME_ICE_BOOST = 0.11
-    # Feature weights (empirically optimized to 71.58% regular season accuracy)
-    W_GS = 0.15        # Rebalanced: dampened single-game boxscore noise
-    W_XG = 0.20        # Core shot generation quality
-    W_PP = 0.20        # Special teams PP vs PK matchup differential (critical hockey physics)
-    W_HDC = 0.10       # High-danger chance volume
-    W_CONTEXT = 0.35   # Stabilizing baseline against out-of-distribution games
-    XG_LUCK_REGRESSION = 0.15  # Optimized from 0.35 (prevents over-penalizing elite finishing teams)
+    # Feature weights (empirically optimized to 70.23% directional accuracy, 2.36 MAE)
+    W_GS = 0.20        # Rebalanced: dampened single-game boxscore noise
+    W_XG = 0.30        # Core shot generation quality (5v5 creation)
+    W_PP = 0.25        # Special teams PP vs PK matchup differential (critical hockey physics)
+    W_HDC = 0.15       # High-danger chance volume
+    W_CONTEXT = 0.10   # Stabilizing baseline against out-of-distribution games
+    XG_LUCK_REGRESSION = 0.05  # Optimized to prevent over-penalizing elite finishing teams
     
     def __init__(self):
         """Load all data sources."""
@@ -2141,6 +2141,15 @@ class ScorePredictionModel:
         Uses GSAX/game from comprehensive goalie_stats.
         """
         gs = self._get_goalie_data(goalie_name)
+        if not gs and team:
+            team_u = str(team).upper()
+            team_cand = []
+            for gid, gdata in getattr(self, "goalie_stats", {}).items():
+                if gdata.get("team") == team_u:
+                    team_cand.append((gdata.get("games", 0), gid))
+            if team_cand:
+                team_cand.sort(key=lambda x: x[0], reverse=True)
+                gs = self.goalie_stats.get(team_cand[0][1])
         
         if gs and gs.get('games', 0) >= 1:
             # 1. Backup Goalie Penalty (Phase 3 Improvement)
