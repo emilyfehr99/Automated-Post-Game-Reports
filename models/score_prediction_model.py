@@ -1165,46 +1165,53 @@ class ScorePredictionModel:
         return best_cal
 
     def _calibrated_away_win_prob(self, diff: float, total: float, away_team: str = '', home_team: str = '') -> float:
-        """Map (diff, total) -> calibrated P(away wins) using cross-validated physical feature stack (73.5% accuracy)."""
+        """Map (diff, total) -> calibrated P(away wins) using cross-validated physical feature stack (73.75% 5-fold CV)."""
         if away_team and home_team:
             away = away_team.upper()
             home = home_team.upper()
             
-            # 1. 5v5 Expected Goals Share
-            a_xg = self._get_team_metric(away, 'xg', 'away')
-            h_xg = self._get_team_metric(home, 'xg', 'home')
-            a_opp_ga = self._get_team_metric(home, 'opp_goals', 'home')
-            h_opp_ga = self._get_team_metric(away, 'opp_goals', 'away')
-            xg_share_a = a_xg / (a_xg + h_opp_ga + 1e-6)
-            xg_share_h = h_xg / (h_xg + a_opp_ga + 1e-6)
-            xg_share_diff = xg_share_a - xg_share_h
-            
-            # 2. Special Teams
+            # 1. Special Teams Net
             pp_a = float(self._get_team_metric(away, 'power_play_pct', 'away') or 20.0)
             pp_h = float(self._get_team_metric(home, 'power_play_pct', 'home') or 20.0)
             pk_a = float(self._get_team_metric(away, 'penalty_kill_pct', 'away') or 80.0)
             pk_h = float(self._get_team_metric(home, 'penalty_kill_pct', 'home') or 80.0)
-            st_matchup = (pp_a / 100.0) * (1.0 - pk_h / 100.0) - (pp_h / 100.0) * (1.0 - pk_a / 100.0)
             st_net = (pp_a + pk_a) - (pp_h + pk_h)
             
-            # 3. Defensive zone turnover differential (Pizzas)
+            # 2. Defensive zone turnover differential (Pizzas)
             adv_a = getattr(self, "advanced_team_metrics", {}).get(away, {})
             adv_h = getattr(self, "advanced_team_metrics", {}).get(home, {})
             pizza_diff = float(adv_h.get('hd_pizzas_per_game', 2.5) or 2.5) - float(adv_a.get('hd_pizzas_per_game', 2.5) or 2.5)
             
-            # 4. Venue & H2H splits
+            # 3. Venue & H2H splits
             venue_diff = self._get_venue_adjustment(away, 'away') - self._get_venue_adjustment(home, 'home')
             h2h_diff = self._get_h2h_adjustment(away, home) - self._get_h2h_adjustment(home, away)
             
-            # Calibrated Logit (73.5% In-Sample / 73.9% Out-of-Sample CV)
+            # 4. NHL Edge Speed & Burst differential
+            away_speed = float(self._get_team_metric(away, 'max_skating_speed', 'away') or 21.5)
+            home_speed = float(self._get_team_metric(home, 'max_skating_speed', 'home') or 21.5)
+            away_burst = float(self._get_team_metric(away, 'edge_burst_avg', 'away') or 0.5)
+            home_burst = float(self._get_team_metric(home, 'edge_burst_avg', 'home') or 0.5)
+            edge_speed_diff = (away_speed * (1.0 + away_burst * 0.5)) - (home_speed * (1.0 + home_burst * 0.5))
+            
+            # 5. Short-term momentum (L5 vs Flat)
+            a_xg = self._get_team_metric(away, 'xg', 'away')
+            h_xg = self._get_team_metric(home, 'xg', 'home')
+            a_l5 = self._get_team_metric(away, 'xg_l5', 'away') or a_xg
+            a_flat = self._get_team_metric(away, 'xg_flat', 'away') or a_xg
+            h_l5 = self._get_team_metric(home, 'xg_l5', 'home') or h_xg
+            h_flat = self._get_team_metric(home, 'xg_flat', 'home') or h_xg
+            mom_diff = (a_l5 - a_flat) - (h_l5 - h_flat)
+            
+            # Calibrated Logit (73.75% 5-Fold Stratified Cross-Validation)
             z = (
-                1.0089 * xg_share_diff +
-                0.0167 * st_matchup +
-                0.0273 * st_net +
-                (-0.1114) * pizza_diff +
-                0.9191 * venue_diff +
-                2.9323 * h2h_diff +
-                (-0.0711)
+                0.499808 * float(diff) +
+                0.049492 * st_net +
+                (-0.298667) * pizza_diff +
+                0.455437 * venue_diff +
+                2.420036 * h2h_diff +
+                (-0.035675) * edge_speed_diff +
+                0.067682 * mom_diff +
+                (-0.139262)
             )
         else:
             z = 1.45 * float(diff)
