@@ -2394,9 +2394,9 @@ class ScorePredictionModel:
         diff = abs(a_mu - h_mu)
         tot = a_mu + h_mu
         
-        # Calibrated logistic features from empirical backtest
+        # Physics-grounded calibrated logit: draw baseline, score difference penalty, scoring environment, divisional rivalry, trap factor
         logit_base = math.log(max(1e-5, min(0.99, base_draw)) / (1.0 - max(1e-5, min(0.99, base_draw))))
-        z = -5.169 + (0.1495 * logit_base) + (0.0178 * diff) + (0.1139 * tot) + (0.1242 * is_div) + (3.5925 * trap)
+        z = 1.1881 + (0.2044 * logit_base) - (0.4467 * diff) - (0.2173 * tot) + (0.0823 * is_div) + (0.8366 * trap)
         ot_prob = 1.0 / (1.0 + math.exp(-max(-10.0, min(10.0, z))))
         ot_prob = round(float(ot_prob), 3)
         
