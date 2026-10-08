@@ -469,6 +469,8 @@ class MetaEnsemblePredictor:
         try:
             p = Path("model_performance.json")
             if not p.exists():
+                p = Path(__file__).parent / "model_performance.json"
+            if not p.exists():
                 return
             with open(p, "r") as f:
                 perf = json.load(f)
@@ -1226,7 +1228,6 @@ class MetaEnsemblePredictor:
             
             return max(0.88, impact) # Cap impact at 12% reduction
         except Exception:
-            return 1.0
             return 1.0
     
     def predict(self, away_team: str, home_team: str, 
