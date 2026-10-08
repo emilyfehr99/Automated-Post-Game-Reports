@@ -6,9 +6,9 @@ concurrency:
 
 on:
   schedule:
-    # Single Daily Morning Delivery: 6:45am Central / 7:45am Eastern (11:45 UTC)
-    # Delivered once per day consistently before 8:00 AM
-    - cron: '45 11 * * *'
+    # Single Daily Morning Trigger: 7:50am Central (12:50 UTC)
+    # Execution takes ~90 seconds so predictions arrive in Discord directly before 8:00 AM everyday
+    - cron: '50 12 * * *'
   workflow_dispatch:
     inputs:
       force_notify:
