@@ -1165,16 +1165,32 @@ class DailyPredictionNotifier:
                     
         return final_chunks if final_chunks else [text[:limit]]
 
-    def send_discord_notification(self, webhook_url):
-        """Send predictions via Discord webhook with automatic retry and backoff."""
+    def send_discord_notification(self, webhook_url, force=False):
+        """Send predictions via Discord webhook with automatic retry and once-per-day deduplication."""
         try:
             import requests
             import time
+            from datetime import timezone
             
+            # Daily deduplication lock: Prevent sending multiple random alerts on the same day
+            force_send = force or os.getenv('FORCE_DISCORD_NOTIFY', '').lower() in ('true', '1', 'yes')
+            state_file = Path('data/daily_notification_state.json')
+            today_str = datetime.now(pytz.timezone('US/Central')).strftime('%Y-%m-%d')
+            
+            if not force_send and state_file.exists():
+                try:
+                    with open(state_file, 'r') as f:
+                        state = json.load(f)
+                    if state.get('last_discord_date') == today_str:
+                        print(f"ℹ️ Daily predictions already sent to Discord today ({today_str}). Skipping duplicate notification.")
+                        return True
+                except Exception:
+                    pass
+
             predictions_text = self.get_daily_predictions_summary()
             
             # Split message if it exceeds Discord's limit (2000 chars)
-            chunks = self._split_message(predictions_text, limit=1900)
+            chunks = self._split_message(predictions_text, limit=1850)
             
             success = True
             for i, chunk in enumerate(chunks):
@@ -1217,6 +1233,16 @@ class DailyPredictionNotifier:
             
             if success:
                 print(f"✅ Discord notification delivered successfully ({len(chunks)} parts)")
+                try:
+                    os.makedirs('data', exist_ok=True)
+                    state = {
+                        'last_discord_date': today_str,
+                        'sent_at_utc': datetime.now(timezone.utc).isoformat()
+                    }
+                    with open(state_file, 'w') as f:
+                        json.dump(state, f, indent=2)
+                except Exception as e:
+                    print(f"⚠️ Could not write notification state: {e}")
             return success
                 
         except Exception as e:

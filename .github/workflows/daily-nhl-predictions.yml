@@ -6,23 +6,15 @@ concurrency:
 
 on:
   schedule:
-    # --- MORNING DELIVERY (Guaranteed Before 8:00 AM) ---
-    # 1. Early Morning Baseline: 5:17am CT / 6:17am ET (10:17 UTC) - overnight data crunch
-    - cron: '17 10 * * *'
-    # 2. Morning First Look: 6:13am CT / 7:13am ET (11:13 UTC) - guaranteed published before 8:00am ET / 7:00am CT
-    - cron: '13 11 * * *'
-    # 3. Main Pre-8AM Digest: 7:17am CT / 8:17am ET (12:17 UTC) - delivery for morning commute
-    - cron: '17 12 * * *'
-    # 4. Final 8:00 AM Cutoff Refresh: 7:43am CT / 8:43am ET (12:43 UTC) - locked in before 8:00am CT
-    - cron: '43 12 * * *'
-    # --- AFTERNOON REFRESHES ---
-    # 5. Morning Skate & Goalie Confirmations: 10:37am CT / 11:37am ET (15:37 UTC)
-    - cron: '37 15 * * *'
-    # 6. Midday Line Movement Refresh: 1:19pm CT / 2:19pm ET (18:19 UTC)
-    - cron: '19 18 * * *'
-    # 7. Pre-Game Final Lock: 4:41pm CT / 5:41pm ET (21:41 UTC)
-    - cron: '41 21 * * *'
-  workflow_dispatch: {}
+    # Single Daily Morning Delivery: 6:45am Central / 7:45am Eastern (11:45 UTC)
+    # Delivered once per day consistently before 8:00 AM
+    - cron: '45 11 * * *'
+  workflow_dispatch:
+    inputs:
+      force_notify:
+        description: "Force Discord notification even if already sent today (true/false)"
+        required: false
+        default: "true"
 
 permissions:
   contents: write
@@ -287,6 +279,7 @@ jobs:
         if: steps.check_date.outputs.should_run == 'true'
         env:
           DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          FORCE_DISCORD_NOTIFY: ${{ github.event.inputs.force_notify || 'false' }}
         run: |
           echo "🎯 RUNNING DAILY PREDICTIONS WITH META-ENSEMBLE"
           echo "All data collected, now making predictions..."
@@ -444,6 +437,10 @@ jobs:
           if [ -f "data/outcome_events.jsonl" ]; then
             git add --force data/outcome_events.jsonl
             FILES_TO_COMMIT="$FILES_TO_COMMIT data/outcome_events.jsonl"
+          fi
+          if [ -f "data/daily_notification_state.json" ]; then
+            git add --force data/daily_notification_state.json
+            FILES_TO_COMMIT="$FILES_TO_COMMIT data/daily_notification_state.json"
           fi
 
           if [ -f "team_travel_archetypes.json" ]; then
