@@ -2420,95 +2420,59 @@ class ScorePredictionModel:
         game_id: Optional[int] = None,
         attribution: Optional[list] = None
     ) -> Tuple[int, int]:
-        """Return the optimal Maximum A Posteriori (MAP) scoreline under independent NB goals.
-
-        This minimizes score error (cutting MAE from 3.87 to 2.38 goals) and enforces
-        strict winner alignment and zero ties.
+        """Return the optimal realistic scoreline minimizing loss to marginal expectations,
+        total goals, and empty-net dynamics while enforcing strict winner alignment and zero ties.
         """
-        away_u = str(away).upper()
-        home_u = str(home).upper()
-        away_mu = float(max(0.01, away_mu))
-        home_mu = float(max(0.01, home_mu))
-
         desired = (winner_side or "").lower()
-        if desired not in {"away", "home", ""}:
-            desired = ""
-            
-        if attribution is None:
-            attribution = []
-
-        k = float(self._get_dispersion_k(away_u, home_u, away_mu, home_mu))
-        k = float(max(0.25, k))
-
-        # Compute NB pmfs for 0..max_goals and pick joint MAP argmax
-        pmf_a = [self._neg_bin_pmf(g, away_mu, k) for g in range(int(max_goals) + 1)]
-        pmf_h = [self._neg_bin_pmf(g, home_mu, k) for g in range(int(max_goals) + 1)]
-
-        best_p = -1.0
-        best_a = int(round(away_mu))
-        best_h = int(round(home_mu))
-
-        for a in range(int(max_goals) + 1):
-            pa = pmf_a[a]
-            if pa <= 0.0:
-                continue
-            for h in range(int(max_goals) + 1):
-                ph = pmf_h[h]
-                p = pa * ph
-                
-                # Winner alignment prior
-                if desired == "away" and a > h:
-                    p *= 1.25
-                elif desired == "home" and h > a:
-                    p *= 1.25
-                elif a == h:
-                    p *= 0.90
+        a_exp = float(max(0.5, away_mu))
+        h_exp = float(max(0.5, home_mu))
+        tot_exp = a_exp + h_exp
+        diff_exp = a_exp - h_exp
+        
+        best_score = None
+        min_loss = float('inf')
+        
+        for a in range(1, int(max_goals) + 1):
+            for h in range(1, int(max_goals) + 1):
+                if a == h:
+                    continue  # strictly no ties
+                if desired == 'away' and a <= h:
+                    continue
+                if desired == 'home' and h <= a:
+                    continue
                     
-                if p > best_p:
-                    best_p = p
-                    best_a, best_h = a, h
-
-        final_a = int(best_a)
-        final_h = int(best_h)
-
-        # Spread adjustment for blowouts / empty nets
-        expected_diff = abs(away_mu - home_mu)
-        if expected_diff >= 1.75 and abs(final_a - final_h) < 2:
-            if away_mu > home_mu:
-                final_a = min(int(max_goals), max(final_a, final_h + 2))
-            else:
-                final_h = min(int(max_goals), max(final_h, final_a + 2))
-
-        # Tie-breaker for close games & strict zero-tie invariant
-        if final_a == final_h:
-            if desired == "away" or (desired == "" and away_mu >= home_mu):
-                if final_a < int(max_goals):
+                # Loss to marginal expected goals
+                loss = 1.0 * abs(a - a_exp) + 1.0 * abs(h - h_exp)
+                # Loss to total goals expectation
+                loss += 0.5 * abs((a + h) - tot_exp)
+                # Loss to goal differential expectation
+                loss += 0.8 * abs((a - h) - diff_exp)
+                
+                # Empty-net / blowout margin dynamics
+                if abs(diff_exp) >= 0.8:
+                    if abs(a - h) == 1:
+                        loss += 0.35  # discourage 1-goal nailbiters on decisive mismatch
+                    elif abs(a - h) in (2, 3):
+                        loss -= 0.25  # reward realistic empty-net margin
+                elif abs(diff_exp) <= 0.3:
+                    if abs(a - h) == 1:
+                        loss -= 0.20  # reward 1-goal close game on parity
+                        
+                if loss < min_loss:
+                    min_loss = loss
+                    best_score = (a, h)
+                    
+        if best_score:
+            final_a, final_h = best_score
+        else:
+            final_a = int(round(a_exp))
+            final_h = int(round(h_exp))
+            if final_a == final_h:
+                if desired == 'away' or (desired == '' and a_exp >= h_exp):
                     final_a += 1
                 else:
-                    final_h = max(0, final_h - 1)
-            else:
-                if final_h < int(max_goals):
                     final_h += 1
-                else:
-                    final_a = max(0, final_a - 1)
-
-        # Ensure strict winner alignment if desired winner is specified
-        if desired == "away" and final_a <= final_h:
-            final_a = min(int(max_goals), final_h + 1)
-            if final_a <= final_h:
-                final_h = max(0, final_a - 1)
-        elif desired == "home" and final_h <= final_a:
-            final_h = min(int(max_goals), final_a + 1)
-            if final_h <= final_a:
-                final_a = max(0, final_h - 1)
-
-        # Final absolute tie safeguard
-        if final_a == final_h:
-            if away_mu >= home_mu:
-                final_a += 1
-            else:
-                final_h += 1
-
+                    
         return int(final_a), int(final_h)
     
     def _calculate_confidence(self, away: str, home: str,
