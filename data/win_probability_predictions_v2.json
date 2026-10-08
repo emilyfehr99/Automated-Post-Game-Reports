@@ -149836,49 +149836,6 @@
     },
     {
       "date": "2026-10-07",
-      "game_id": 2025030184,
-      "home_team": "ANA",
-      "away_team": "EDM",
-      "predicted_winner": "ANA",
-      "predicted_home_win_prob": 65.4052583338576,
-      "predicted_away_win_prob": 34.59474166614239,
-      "model_confidence": 0.6540525833385761,
-      "metrics_used": {
-        "home_xg": 0,
-        "away_xg": 0,
-        "lead_after_p1": -1
-      },
-      "extra_metadata": {
-        "predicted_home_goals": 3,
-        "predicted_away_goals": 2,
-        "ensemble_mode": "ensemble",
-        "ensemble_weights": {
-          "xgb": 0.5,
-          "elo": 0.1,
-          "specialized": 0.2,
-          "player": 0.1,
-          "base": 0.05,
-          "vegas": 0.15
-        },
-        "attribution": [
-          "Playoff PP Tightening (-15% impact)",
-          "Playoff Tight Checking (-6% Scoring)",
-          "EDM Speed Dominance (+4.9% xG)",
-          "EDM Forecheck Advantage vs ANA Turnovers (+0.12)",
-          "ANA Forecheck Advantage vs EDM Turnovers (+0.12)",
-          "ANA Cycle Dominance vs Low Block Volume (+0.08)",
-          "Series Friction (Game 4) (0.98x goals)"
-        ],
-        "is_playoff": true
-      },
-      "event_type": "prediction",
-      "recorded_at_utc": "2026-10-07T23:09:32Z",
-      "actual_winner": "ANA",
-      "actual_away_score": 3,
-      "actual_home_score": 4
-    },
-    {
-      "date": "2026-10-07",
       "game_id": "COL@WPG_2026-10-07",
       "home_team": "WPG",
       "away_team": "COL",
@@ -149944,6 +149901,117 @@
       },
       "event_type": "prediction",
       "recorded_at_utc": "2026-10-07T23:09:32Z"
+    },
+    {
+      "date": "2026-10-08",
+      "game_id": 2025030184,
+      "home_team": "ANA",
+      "away_team": "EDM",
+      "predicted_winner": "ANA",
+      "predicted_home_win_prob": 65.44482494270689,
+      "predicted_away_win_prob": 34.555175057293106,
+      "model_confidence": 0.6544482494270689,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0,
+        "lead_after_p1": -1
+      },
+      "extra_metadata": {
+        "predicted_home_goals": 3,
+        "predicted_away_goals": 2,
+        "ensemble_mode": "ensemble",
+        "ensemble_weights": {
+          "xgb": 0.5,
+          "elo": 0.1,
+          "specialized": 0.2,
+          "player": 0.1,
+          "base": 0.05,
+          "vegas": 0.15
+        },
+        "attribution": [
+          "Playoff PP Tightening (-15% impact)",
+          "Playoff Tight Checking (-6% Scoring)",
+          "EDM Speed Dominance (+4.9% xG)",
+          "EDM Forecheck Advantage vs ANA Turnovers (+0.12)",
+          "ANA Forecheck Advantage vs EDM Turnovers (+0.12)",
+          "ANA Cycle Dominance vs Low Block Volume (+0.08)",
+          "Series Friction (Game 4) (0.98x goals)"
+        ],
+        "is_playoff": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-08T01:20:27Z",
+      "actual_winner": "ANA",
+      "actual_away_score": 3,
+      "actual_home_score": 4
+    },
+    {
+      "date": "2026-10-08",
+      "game_id": "COL@WPG_2026-10-08",
+      "home_team": "WPG",
+      "away_team": "COL",
+      "predicted_winner": "WPG",
+      "predicted_home_win_prob": 67.81926537939233,
+      "predicted_away_win_prob": 32.18073462060766,
+      "model_confidence": 0.6781926537939234,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "predicted_home_goals": 5,
+        "predicted_away_goals": 4,
+        "ensemble_mode": "ensemble",
+        "ensemble_weights": {
+          "xgb": 0.5,
+          "elo": 0.1,
+          "specialized": 0.2,
+          "player": 0.1,
+          "base": 0.05,
+          "vegas": 0.15
+        },
+        "attribution": [
+          "COL Cycle Dominance vs Low Block Volume (+0.08)"
+        ],
+        "is_playoff": false
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-08T01:20:27Z"
+    },
+    {
+      "date": "2026-10-08",
+      "game_id": "PIT@WSH_2026-10-08",
+      "home_team": "WSH",
+      "away_team": "PIT",
+      "predicted_winner": "WSH",
+      "predicted_home_win_prob": 71.61013500616042,
+      "predicted_away_win_prob": 28.389864993839588,
+      "model_confidence": 0.7161013500616042,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "predicted_home_goals": 3,
+        "predicted_away_goals": 2,
+        "ensemble_mode": "ensemble",
+        "ensemble_weights": {
+          "xgb": 0.5,
+          "elo": 0.1,
+          "specialized": 0.2,
+          "player": 0.1,
+          "base": 0.05,
+          "vegas": 0.15
+        },
+        "attribution": [
+          "PIT Forecheck Advantage vs WSH Turnovers (+0.12)",
+          "WSH Forecheck Advantage vs PIT Turnovers (+0.12)",
+          "PIT Cycle Dominance vs Low Block Volume (+0.08)"
+        ],
+        "is_playoff": false
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-08T01:20:27Z"
     }
   ],
   "calibration_points": [
@@ -149997,7 +150065,7 @@
     ]
   ],
   "calibration_metadata": {
-    "updated_at": "2026-10-07T23:09:32.666208",
+    "updated_at": "2026-10-08T01:20:28.159636",
     "sample_size": 1021,
     "num_bins": 12,
     "bucket_samples": {
