@@ -1202,16 +1202,16 @@ class ScorePredictionModel:
             h_flat = self._get_team_metric(home, 'xg_flat', 'home') or h_xg
             mom_diff = (a_l5 - a_flat) - (h_l5 - h_flat)
             
-            # Calibrated Logit (73.75% 5-Fold Stratified Cross-Validation)
+            # Calibrated Logit (Cross-Validated 5-Fold Ridge/L2 Stack)
             z = (
-                0.499808 * float(diff) +
-                0.049492 * st_net +
-                (-0.298667) * pizza_diff +
-                0.455437 * venue_diff +
-                2.420036 * h2h_diff +
-                (-0.035675) * edge_speed_diff +
-                0.067682 * mom_diff +
-                (-0.139262)
+                0.437050 * float(diff) +
+                0.047482 * st_net +
+                (-0.283197) * pizza_diff +
+                0.466889 * venue_diff +
+                2.553166 * h2h_diff +
+                (-0.034653) * edge_speed_diff +
+                0.075898 * mom_diff +
+                (-0.138889)
             )
         else:
             z = 1.45 * float(diff)
@@ -2447,17 +2447,17 @@ class ScorePredictionModel:
                 log_p = math.log(max(1e-12, pa * ph))
                 
                 # 2. Pace & Goal Differential Calibration
-                log_p -= 0.15 * abs((a + h) - tot_exp)
-                log_p -= 0.55 * abs((a - h) - diff_exp)
+                log_p -= 0.08 * abs((a + h) - tot_exp)
+                log_p -= 0.45 * abs((a - h) - diff_exp)
                 
                 # 3. Empirical NHL Score Frequency Prior
                 prior = nhl_score_priors.get((a, h), 0.70)
-                log_p += 1.20 * math.log(prior)
+                log_p += 1.80 * math.log(prior)
                 
                 # 4. Empty-Net & Matchup Confidence Dynamics
-                if abs(diff_exp) >= 0.70:
+                if abs(diff_exp) >= 0.65:
                     if abs(a - h) >= 2:
-                        log_p += 0.40  # reward multi-goal margin on decisive mismatch / empty-net
+                        log_p += 0.35  # reward multi-goal margin on decisive mismatch / empty-net
                     else:
                         log_p -= 0.35  # penalize 1-goal nailbiter on decisive mismatch
                 elif abs(diff_exp) <= 0.25:
@@ -2466,9 +2466,9 @@ class ScorePredictionModel:
                         
                 # 5. Environment Total Goal Pace Adjustments
                 if tot_exp < 5.6 and (a + h) <= 5:
-                    log_p += 0.25  # reward low-scoring grinder scorelines (e.g. 2-1, 3-1, 3-2)
+                    log_p += 0.30  # reward low-scoring grinder scorelines (e.g. 2-1, 3-1, 3-2)
                 elif tot_exp > 6.6 and (a + h) >= 7:
-                    log_p += 0.25  # reward high-tempo shootout scorelines (e.g. 5-3, 5-4, 6-3)
+                    log_p += 0.30  # reward high-tempo shootout scorelines (e.g. 5-3, 5-4, 6-3)
                     
                 if log_p > max_posterior:
                     max_posterior = log_p
