@@ -148211,9 +148211,9 @@
       "home_team": "BOS",
       "away_team": "PHI",
       "predicted_winner": "BOS",
-      "predicted_home_win_prob": 56.698711641808195,
-      "predicted_away_win_prob": 43.301288358191805,
-      "model_confidence": 0.566987116418082,
+      "predicted_home_win_prob": 51.163956584118075,
+      "predicted_away_win_prob": 48.83604341588192,
+      "model_confidence": 0.5116395658411808,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0,
@@ -148240,7 +148240,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:09:03Z",
+      "recorded_at_utc": "2026-10-10T15:23:30Z",
       "actual_winner": "PHI",
       "actual_away_score": 3,
       "actual_home_score": 2
@@ -148251,9 +148251,77 @@
       "home_team": "VGK",
       "away_team": "LAK",
       "predicted_winner": "VGK",
-      "predicted_home_win_prob": 65.11560915142176,
-      "predicted_away_win_prob": 34.884390848578235,
-      "model_confidence": 0.6511560915142176,
+      "predicted_home_win_prob": 53.4872881202342,
+      "predicted_away_win_prob": 46.512711879765796,
+      "model_confidence": 0.534872881202342,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "predicted_home_goals": 3,
+        "predicted_away_goals": 2,
+        "ensemble_mode": "ensemble",
+        "ensemble_weights": {
+          "xgb": 0.5,
+          "elo": 0.1,
+          "specialized": 0.2,
+          "player": 0.1,
+          "base": 0.05,
+          "vegas": 0.15
+        },
+        "attribution": [
+          "LAK Forecheck Advantage vs VGK Turnovers (+0.12)",
+          "VGK Forecheck Advantage vs LAK Turnovers (+0.12)"
+        ],
+        "is_playoff": false
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-10T15:23:30Z"
+    },
+    {
+      "date": "2026-10-10",
+      "game_id": 2025020041,
+      "home_team": "OTT",
+      "away_team": "NSH",
+      "predicted_winner": "OTT",
+      "predicted_home_win_prob": 70.72504123108793,
+      "predicted_away_win_prob": 29.274958768912075,
+      "model_confidence": 0.7072504123108793,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "predicted_home_goals": 4,
+        "predicted_away_goals": 2,
+        "ensemble_mode": "ensemble",
+        "ensemble_weights": {
+          "xgb": 0.5,
+          "elo": 0.1,
+          "specialized": 0.2,
+          "player": 0.1,
+          "base": 0.05,
+          "vegas": 0.15
+        },
+        "attribution": [
+          "NSH Forecheck Advantage vs OTT Turnovers (+0.12)",
+          "OTT Forecheck Advantage vs NSH Turnovers (+0.12)"
+        ],
+        "is_playoff": false
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-10T15:23:30Z"
+    },
+    {
+      "date": "2026-10-10",
+      "game_id": 2025020203,
+      "home_team": "BUF",
+      "away_team": "UTA",
+      "predicted_winner": "BUF",
+      "predicted_home_win_prob": 53.756157304158705,
+      "predicted_away_win_prob": 46.2438426958413,
+      "model_confidence": 0.537561573041587,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -148271,74 +148339,6 @@
           "vegas": 0.15
         },
         "attribution": [
-          "LAK Forecheck Advantage vs VGK Turnovers (+0.12)",
-          "VGK Forecheck Advantage vs LAK Turnovers (+0.12)"
-        ],
-        "is_playoff": false
-      },
-      "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:09:03Z"
-    },
-    {
-      "date": "2026-10-10",
-      "game_id": 2025020041,
-      "home_team": "OTT",
-      "away_team": "NSH",
-      "predicted_winner": "NSH",
-      "predicted_home_win_prob": 40.67411843372928,
-      "predicted_away_win_prob": 59.32588156627072,
-      "model_confidence": 0.5932588156627072,
-      "metrics_used": {
-        "home_xg": 0,
-        "away_xg": 0
-      },
-      "extra_metadata": {
-        "predicted_home_goals": 3,
-        "predicted_away_goals": 4,
-        "ensemble_mode": "ensemble",
-        "ensemble_weights": {
-          "xgb": 0.5,
-          "elo": 0.1,
-          "specialized": 0.2,
-          "player": 0.1,
-          "base": 0.05,
-          "vegas": 0.15
-        },
-        "attribution": [
-          "NSH Forecheck Advantage vs OTT Turnovers (+0.12)",
-          "OTT Forecheck Advantage vs NSH Turnovers (+0.12)"
-        ],
-        "is_playoff": false
-      },
-      "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:09:03Z"
-    },
-    {
-      "date": "2026-10-10",
-      "game_id": 2025020203,
-      "home_team": "BUF",
-      "away_team": "UTA",
-      "predicted_winner": "UTA",
-      "predicted_home_win_prob": 39.76659075913213,
-      "predicted_away_win_prob": 60.23340924086787,
-      "model_confidence": 0.6023340924086787,
-      "metrics_used": {
-        "home_xg": 0,
-        "away_xg": 0
-      },
-      "extra_metadata": {
-        "predicted_home_goals": 3,
-        "predicted_away_goals": 4,
-        "ensemble_mode": "ensemble",
-        "ensemble_weights": {
-          "xgb": 0.5,
-          "elo": 0.1,
-          "specialized": 0.2,
-          "player": 0.1,
-          "base": 0.05,
-          "vegas": 0.15
-        },
-        "attribution": [
           "Jet Lag Context (-0.20)",
           "UTA Forecheck Advantage vs BUF Turnovers (+0.12)",
           "BUF Forecheck Advantage vs UTA Turnovers (+0.12)"
@@ -148346,7 +148346,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:09:03Z"
+      "recorded_at_utc": "2026-10-10T15:23:30Z"
     },
     {
       "date": "2026-10-10",
@@ -148354,9 +148354,9 @@
       "home_team": "NYI",
       "away_team": "TBL",
       "predicted_winner": "NYI",
-      "predicted_home_win_prob": 71.48358225585574,
-      "predicted_away_win_prob": 28.516417744144267,
-      "model_confidence": 0.7148358225585574,
+      "predicted_home_win_prob": 63.89086697753052,
+      "predicted_away_win_prob": 36.10913302246948,
+      "model_confidence": 0.6389086697753052,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -148380,7 +148380,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:09:03Z"
+      "recorded_at_utc": "2026-10-10T15:23:30Z"
     },
     {
       "date": "2026-10-10",
@@ -148388,9 +148388,9 @@
       "home_team": "CGY",
       "away_team": "ANA",
       "predicted_winner": "CGY",
-      "predicted_home_win_prob": 56.37480261728896,
-      "predicted_away_win_prob": 43.62519738271104,
-      "model_confidence": 0.5637480261728895,
+      "predicted_home_win_prob": 55.068584176565636,
+      "predicted_away_win_prob": 44.93141582343437,
+      "model_confidence": 0.5506858417656564,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -148414,7 +148414,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:09:03Z"
+      "recorded_at_utc": "2026-10-10T15:23:30Z"
     },
     {
       "date": "2026-10-10",
@@ -148422,9 +148422,9 @@
       "home_team": "CHI",
       "away_team": "CAR",
       "predicted_winner": "CAR",
-      "predicted_home_win_prob": 23.45274059009521,
-      "predicted_away_win_prob": 76.54725940990478,
-      "model_confidence": 0.7654725940990478,
+      "predicted_home_win_prob": 23.035475149166405,
+      "predicted_away_win_prob": 76.9645248508336,
+      "model_confidence": 0.7696452485083359,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -148449,7 +148449,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:09:03Z"
+      "recorded_at_utc": "2026-10-10T15:23:30Z"
     },
     {
       "date": "2026-10-10",
@@ -148457,9 +148457,9 @@
       "home_team": "STL",
       "away_team": "CBJ",
       "predicted_winner": "CBJ",
-      "predicted_home_win_prob": 31.14702164987566,
-      "predicted_away_win_prob": 68.85297835012435,
-      "model_confidence": 0.6885297835012435,
+      "predicted_home_win_prob": 32.60826227095943,
+      "predicted_away_win_prob": 67.39173772904057,
+      "model_confidence": 0.6739173772904057,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -148483,7 +148483,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:09:03Z"
+      "recorded_at_utc": "2026-10-10T15:23:30Z"
     },
     {
       "date": "2026-10-10",
@@ -148491,9 +148491,9 @@
       "home_team": "PIT",
       "away_team": "DAL",
       "predicted_winner": "DAL",
-      "predicted_home_win_prob": 23.06359060876727,
-      "predicted_away_win_prob": 76.93640939123273,
-      "model_confidence": 0.7693640939123273,
+      "predicted_home_win_prob": 24.041629644713534,
+      "predicted_away_win_prob": 75.95837035528646,
+      "model_confidence": 0.7595837035528646,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -148517,7 +148517,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:09:03Z"
+      "recorded_at_utc": "2026-10-10T15:23:30Z"
     },
     {
       "date": "2026-10-10",
@@ -148525,9 +148525,9 @@
       "home_team": "MTL",
       "away_team": "DET",
       "predicted_winner": "MTL",
-      "predicted_home_win_prob": 61.95333848816463,
-      "predicted_away_win_prob": 38.04666151183537,
-      "model_confidence": 0.6195333848816463,
+      "predicted_home_win_prob": 59.96542862079406,
+      "predicted_away_win_prob": 40.03457137920595,
+      "model_confidence": 0.5996542862079406,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -148550,7 +148550,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:09:03Z"
+      "recorded_at_utc": "2026-10-10T15:23:30Z"
     },
     {
       "date": "2026-10-10",
@@ -148558,9 +148558,9 @@
       "home_team": "SJS",
       "away_team": "EDM",
       "predicted_winner": "SJS",
-      "predicted_home_win_prob": 59.68119290570453,
-      "predicted_away_win_prob": 40.318807094295465,
-      "model_confidence": 0.5968119290570453,
+      "predicted_home_win_prob": 57.47283298489306,
+      "predicted_away_win_prob": 42.52716701510694,
+      "model_confidence": 0.5747283298489306,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -148585,7 +148585,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:09:03Z"
+      "recorded_at_utc": "2026-10-10T15:23:30Z"
     },
     {
       "date": "2026-10-10",
@@ -148593,9 +148593,9 @@
       "home_team": "FLA",
       "away_team": "MIN",
       "predicted_winner": "FLA",
-      "predicted_home_win_prob": 55.14875062111608,
-      "predicted_away_win_prob": 44.85124937888392,
-      "model_confidence": 0.5514875062111608,
+      "predicted_home_win_prob": 54.66908517480229,
+      "predicted_away_win_prob": 45.330914825197716,
+      "model_confidence": 0.5466908517480229,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -148616,7 +148616,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:09:03Z"
+      "recorded_at_utc": "2026-10-10T15:23:30Z"
     },
     {
       "date": "2026-10-10",
@@ -148624,9 +148624,9 @@
       "home_team": "COL",
       "away_team": "TOR",
       "predicted_winner": "COL",
-      "predicted_home_win_prob": 73.61569181519988,
-      "predicted_away_win_prob": 26.38430818480012,
-      "model_confidence": 0.7361569181519988,
+      "predicted_home_win_prob": 72.24227057854176,
+      "predicted_away_win_prob": 27.757729421458244,
+      "model_confidence": 0.7224227057854177,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -148650,7 +148650,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:09:03Z"
+      "recorded_at_utc": "2026-10-10T15:23:30Z"
     },
     {
       "date": "2026-10-10",
@@ -148658,9 +148658,9 @@
       "home_team": "NJD",
       "away_team": "VAN",
       "predicted_winner": "NJD",
-      "predicted_home_win_prob": 60.9127483550309,
-      "predicted_away_win_prob": 39.0872516449691,
-      "model_confidence": 0.609127483550309,
+      "predicted_home_win_prob": 61.99199716712187,
+      "predicted_away_win_prob": 38.008002832878134,
+      "model_confidence": 0.6199199716712187,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -148685,7 +148685,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:09:03Z"
+      "recorded_at_utc": "2026-10-10T15:23:30Z"
     }
   ]
 }
