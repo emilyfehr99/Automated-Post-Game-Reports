@@ -1777,6 +1777,18 @@ class ScorePredictionModel:
                 attribution.append(f"{home} Speed Dominance (+{s_boost*100:.1f}% xG)")
                 home_expected *= (1.0 + s_boost)
 
+        # ─── 17. Phase 52: Early-Season Continuity & October Stabilization Prior ───
+        # When team sample sizes are small (< 12 games in October/early season), rolling metrics
+        # carry high sample variance. Stabilize expected scores toward baseline talent using credibility weighting.
+        away_gp = self.team_averages.get(away, {}).get('combined', {}).get('n_games', 0)
+        home_gp = self.team_averages.get(home, {}).get('combined', {}).get('n_games', 0)
+        if away_gp < 12:
+            cred_a = away_gp / (away_gp + 10.0)
+            away_expected = cred_a * away_expected + (1.0 - cred_a) * float(self.LEAGUE_AVG_GF)
+        if home_gp < 12:
+            cred_h = home_gp / (home_gp + 10.0)
+            home_expected = cred_h * home_expected + (1.0 - cred_h) * float(self.LEAGUE_AVG_GF)
+
         # ─── 18. Phase 40: Faceoff Geographic Advantage ───
         if is_playoff:
             # OZ Faceoff Advantage (based on deep dive data)
@@ -2201,15 +2213,26 @@ class ScorePredictionModel:
             total_adj = (-shrunk_gsax * 0.8) - venue_adj + reb_adj + angle_adj + b2b_fatigue
             return total_adj
         
-        # If goalie is unconfirmed or TBD, use Bayesian prior from team's primary starter
+        # Phase 51: Goalie Starter Likelihood Model (Pre-8:00 AM Rotation Physics)
+        # If goalie is unconfirmed or TBD, evaluate rotation probability rather than naive starter assumption
         if team and self.goalie_stats:
             team_goalies = [g for g in self.goalie_stats.values() if g.get('team') == team]
             if team_goalies:
                 team_goalies.sort(key=lambda x: x.get('games', 0), reverse=True)
-                primary_starter = team_goalies[0]
-                gsax_starter = primary_starter.get('gsax_per_game', 0.0)
-                # Apply 70% Bayesian shrinkage for unconfirmed starter uncertainty
-                return float(-gsax_starter * 0.8 * 0.70)
+                starter = team_goalies[0]
+                backup = team_goalies[1] if len(team_goalies) > 1 else starter
+                
+                # Back-to-back rest rotation physics (second night of B2B heavily favors backup)
+                if is_b2b:
+                    p_starter, p_backup = 0.15, 0.85
+                else:
+                    p_starter, p_backup = 0.80, 0.20
+                    
+                gsax_s = float(starter.get('gsax_per_game', 0.0))
+                gsax_b = float(backup.get('gsax_per_game', -0.28))
+                expected_gsax = p_starter * gsax_s + p_backup * gsax_b
+                b2b_fatigue = 0.22 if is_b2b else 0.0
+                return float(-expected_gsax * 0.8 * 0.80) + b2b_fatigue
         
         # If no team goalie data exists, default to 0.0 league average
         return 0.0
@@ -2456,11 +2479,13 @@ class ScorePredictionModel:
                 prior = nhl_score_priors.get((a, h), 0.70)
                 log_p += 1.80 * math.log(prior)
                 
-                # 4. Empty-Net & Matchup Confidence Dynamics
+                # 4. Phase 53: Empty-Net & Trailing-State Markov Dynamics
                 if abs(diff_exp) >= 0.65:
-                    if abs(a - h) >= 2:
-                        log_p += 0.35  # reward multi-goal margin on decisive mismatch / empty-net
-                    else:
+                    if abs(a - h) in (2, 3):
+                        log_p += 0.40  # reward empty net realistic margin expansion (e.g. 5-2, 4-1, 5-3, 4-2)
+                    elif abs(a - h) >= 4:
+                        log_p += 0.20  # blowout margin expansion
+                    elif abs(a - h) == 1:
                         log_p -= 0.35  # penalize 1-goal nailbiter on decisive mismatch
                 elif abs(diff_exp) <= 0.25:
                     if abs(a - h) == 1:
