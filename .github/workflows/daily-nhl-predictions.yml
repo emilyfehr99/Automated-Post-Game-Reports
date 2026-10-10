@@ -6,9 +6,17 @@ concurrency:
 
 on:
   schedule:
-    # Single Daily Morning Trigger: 7:50am Central (12:50 UTC)
-    # Execution takes ~90 seconds so predictions arrive in Discord directly before 8:00 AM everyday
-    - cron: '50 12 * * *'
+    # Staggered early morning triggers at odd/off-peak minutes to eliminate GitHub Actions queue delays.
+    # Guarantees execution and Discord delivery before 8:00 AM Central (CDT/CST) every single day.
+    # CDT (UTC-5): 11:13 UTC = 6:13 AM, 11:43 UTC = 6:43 AM, 12:13 UTC = 7:13 AM, 12:37 UTC = 7:37 AM
+    # CST (UTC-6): 12:13 UTC = 6:13 AM, 12:43 UTC = 6:43 AM, 13:13 UTC = 7:13 AM, 13:37 UTC = 7:37 AM
+    # Stateful check: the first runner delivers; subsequent triggers detect completion and exit in <5s.
+    - cron: '13 11 * * *'  # 6:13 AM CDT / 5:13 AM CST
+    - cron: '43 11 * * *'  # 6:43 AM CDT / 5:43 AM CST
+    - cron: '13 12 * * *'  # 7:13 AM CDT / 6:13 AM CST
+    - cron: '37 12 * * *'  # 7:37 AM CDT / 6:37 AM CST
+    - cron: '13 13 * * *'  # 8:13 AM CDT (exits early) / 7:13 AM CST
+    - cron: '37 13 * * *'  # 8:37 AM CDT (exits early) / 7:37 AM CST
   workflow_dispatch:
     inputs:
       force_notify:
@@ -35,6 +43,37 @@ jobs:
             echo "✅ Manual Dispatch Triggered!"
             echo "should_run=true" >> $GITHUB_OUTPUT
           else
+            # Fast check 1: If scheduled, check if already delivered to Discord today
+            already_sent=$(python3 -c "
+            import urllib.request, json
+            from datetime import datetime, timezone, timedelta
+            try:
+                from zoneinfo import ZoneInfo
+                today_ct = datetime.now(ZoneInfo('America/Chicago')).strftime('%Y-%m-%d')
+            except Exception:
+                today_ct = (datetime.now(timezone.utc) - timedelta(hours=5)).strftime('%Y-%m-%d')
+            try:
+                req = urllib.request.Request(
+                    'https://raw.githubusercontent.com/emilyfehr99/Automated-Post-Game-Reports/main/data/daily_notification_state.json',
+                    headers={'Cache-Control': 'no-cache', 'User-Agent': 'Mozilla/5.0'}
+                )
+                with urllib.request.urlopen(req, timeout=10) as r:
+                    data = json.loads(r.read().decode('utf-8'))
+                if data.get('last_discord_date') == today_ct:
+                    print('true')
+                    exit(0)
+            except Exception:
+                pass
+            print('false')
+            " 2>/dev/null || echo "false")
+
+            if [[ "$already_sent" == "true" ]]; then
+              echo "⚡ Daily predictions already delivered to Discord today ($already_sent). Skipping subsequent scheduled run."
+              echo "should_run=false" >> $GITHUB_OUTPUT
+              exit 0
+            fi
+
+            # Check 2: Check if active games are scheduled in current gameWeek
             has_games=$(python3 -c "
             import urllib.request, json
             try:
