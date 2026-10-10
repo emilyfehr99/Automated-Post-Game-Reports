@@ -25,7 +25,7 @@ on:
       force_notify:
         description: "Force Discord notification even if already sent today (true/false)"
         required: false
-        default: "true"
+        default: "false"
 
 permissions:
   contents: write
@@ -514,8 +514,21 @@ jobs:
           git fetch origin main
           AHEAD=$(git rev-list --count origin/main..HEAD || echo 0)
           if [ "$AHEAD" -gt 0 ]; then
-            git pull --rebase --autostash origin main
-            git push origin HEAD:main
+            pushed=false
+            for attempt in 1 2 3 4 5; do
+              echo "Push attempt $attempt/5..."
+              git pull --rebase --autostash origin main || true
+              if git push origin HEAD:main; then
+                echo "✅ Successfully pushed changes and notification state to main"
+                pushed=true
+                break
+              fi
+              sleep 3
+            done
+            if [ "$pushed" != "true" ]; then
+              echo "❌ Failed to push after 5 attempts"
+              exit 1
+            fi
           else
             echo "No edge data changes to push"
           fi
