@@ -148378,9 +148378,9 @@
       "home_team": "WSH",
       "away_team": "SEA",
       "predicted_winner": "WSH",
-      "predicted_home_win_prob": 71.10961348632583,
-      "predicted_away_win_prob": 28.890386513674166,
-      "model_confidence": 0.7110961348632583,
+      "predicted_home_win_prob": 71.03920713957497,
+      "predicted_away_win_prob": 28.960792860425038,
+      "model_confidence": 0.7103920713957497,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -148405,7 +148405,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-11T17:47:19Z"
+      "recorded_at_utc": "2026-10-11T18:07:13Z"
     },
     {
       "date": "2026-10-11",
@@ -148413,9 +148413,9 @@
       "home_team": "PHI",
       "away_team": "CAR",
       "predicted_winner": "CAR",
-      "predicted_home_win_prob": 33.63678372149933,
-      "predicted_away_win_prob": 66.36321627850067,
-      "model_confidence": 0.6636321627850067,
+      "predicted_home_win_prob": 33.613839653645115,
+      "predicted_away_win_prob": 66.38616034635488,
+      "model_confidence": 0.6638616034635488,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -148440,7 +148440,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-11T17:47:19Z"
+      "recorded_at_utc": "2026-10-11T18:07:13Z"
     },
     {
       "date": "2026-10-11",
@@ -148448,9 +148448,9 @@
       "home_team": "NYR",
       "away_team": "VAN",
       "predicted_winner": "NYR",
-      "predicted_home_win_prob": 52.38411311344593,
-      "predicted_away_win_prob": 47.61588688655407,
-      "model_confidence": 0.5238411311344593,
+      "predicted_home_win_prob": 52.3733801833903,
+      "predicted_away_win_prob": 47.6266198166097,
+      "model_confidence": 0.5237338018339031,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -148473,7 +148473,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-11T17:47:19Z"
+      "recorded_at_utc": "2026-10-11T18:07:13Z"
     }
   ]
 }
