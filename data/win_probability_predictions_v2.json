@@ -147864,9 +147864,9 @@
       "home_team": "BUF",
       "away_team": "FLA",
       "predicted_winner": "BUF",
-      "predicted_home_win_prob": 66.47210652266783,
-      "predicted_away_win_prob": 33.52789347733217,
-      "model_confidence": 0.6647210652266783,
+      "predicted_home_win_prob": 66.4950929371394,
+      "predicted_away_win_prob": 33.5049070628606,
+      "model_confidence": 0.664950929371394,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -147889,7 +147889,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-12T21:24:41Z"
+      "recorded_at_utc": "2026-10-12T21:46:07Z"
     },
     {
       "date": "2026-10-12",
@@ -147897,9 +147897,9 @@
       "home_team": "MIN",
       "away_team": "VGK",
       "predicted_winner": "MIN",
-      "predicted_home_win_prob": 59.09545416670605,
-      "predicted_away_win_prob": 40.904545833293945,
-      "model_confidence": 0.5909545416670605,
+      "predicted_home_win_prob": 59.01594906952175,
+      "predicted_away_win_prob": 40.98405093047825,
+      "model_confidence": 0.5901594906952176,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -147923,7 +147923,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-12T21:24:41Z"
+      "recorded_at_utc": "2026-10-12T21:46:07Z"
     },
     {
       "date": "2026-10-12",
@@ -147931,9 +147931,9 @@
       "home_team": "NJD",
       "away_team": "OTT",
       "predicted_winner": "NJD",
-      "predicted_home_win_prob": 62.11572178621439,
-      "predicted_away_win_prob": 37.88427821378561,
-      "model_confidence": 0.6211572178621438,
+      "predicted_home_win_prob": 62.14882024111669,
+      "predicted_away_win_prob": 37.85117975888331,
+      "model_confidence": 0.6214882024111669,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -147957,7 +147957,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-12T21:24:41Z"
+      "recorded_at_utc": "2026-10-12T21:46:07Z"
     }
   ]
 }
