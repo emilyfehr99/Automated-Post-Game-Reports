@@ -147864,9 +147864,9 @@
       "home_team": "BUF",
       "away_team": "FLA",
       "predicted_winner": "BUF",
-      "predicted_home_win_prob": 66.42928324449616,
-      "predicted_away_win_prob": 33.57071675550384,
-      "model_confidence": 0.6642928324449616,
+      "predicted_home_win_prob": 66.48212900113522,
+      "predicted_away_win_prob": 33.517870998864794,
+      "model_confidence": 0.6648212900113522,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -147889,7 +147889,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-12T20:02:26Z"
+      "recorded_at_utc": "2026-10-12T20:19:10Z"
     },
     {
       "date": "2026-10-12",
@@ -147897,9 +147897,9 @@
       "home_team": "MIN",
       "away_team": "VGK",
       "predicted_winner": "MIN",
-      "predicted_home_win_prob": 58.12998008658925,
-      "predicted_away_win_prob": 41.87001991341076,
-      "model_confidence": 0.5812998008658925,
+      "predicted_home_win_prob": 58.130290762563185,
+      "predicted_away_win_prob": 41.869709237436815,
+      "model_confidence": 0.5813029076256319,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -147923,7 +147923,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-12T20:02:26Z"
+      "recorded_at_utc": "2026-10-12T20:19:10Z"
     },
     {
       "date": "2026-10-12",
@@ -147931,9 +147931,9 @@
       "home_team": "NJD",
       "away_team": "OTT",
       "predicted_winner": "NJD",
-      "predicted_home_win_prob": 62.239311457946464,
-      "predicted_away_win_prob": 37.760688542053536,
-      "model_confidence": 0.6223931145794647,
+      "predicted_home_win_prob": 62.19372106740517,
+      "predicted_away_win_prob": 37.80627893259483,
+      "model_confidence": 0.6219372106740517,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
@@ -147957,7 +147957,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-12T20:02:26Z"
+      "recorded_at_utc": "2026-10-12T20:19:10Z"
     }
   ]
 }
