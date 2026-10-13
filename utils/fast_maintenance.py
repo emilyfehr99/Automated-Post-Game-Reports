@@ -55,6 +55,15 @@ def main() -> int:
     t1 = time.time()
     stats_ec = _run_team_stats()
     print(f"⏱️ Team stats wall: {time.time()-t1:.1f}s (ec={stats_ec})")
+
+    t2 = time.time()
+    try:
+        from utils.backfill_all_outcomes import backfill_all_outcomes
+        stats = backfill_all_outcomes()
+        print(f"⏱️ Full outcome backfill: {time.time()-t2:.1f}s past_missing={stats.get('still_past_missing')}")
+    except Exception as e:
+        print(f"⚠️ Backfill warning: {e}")
+
     print(f"✅ Maintenance complete in {time.time()-t0:.1f}s")
     return 0 if stats_ec == 0 else stats_ec
 

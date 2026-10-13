@@ -450,12 +450,30 @@ class DailyPredictionNotifier:
                 raise
 
         new_count = 0
+        # Resolve any missing/synthetic game IDs to official NHL ids before logging.
+        try:
+            from utils.game_id_resolve import resolve_game_id, prefetch_schedules, is_valid_nhl_game_id
+        except Exception:
+            from game_id_resolve import resolve_game_id, prefetch_schedules, is_valid_nhl_game_id
+        _sched_cache = prefetch_schedules(
+            [p.get("date") or datetime.now(pytz.timezone("US/Central")).strftime("%Y-%m-%d") for p in predictions]
+        )
         for pred in predictions:
-            # We want to track all games, even if we don't have a numeric ID (fallback games)
             g_id = pred.get("game_id")
-            if not g_id:
-                # Generate a deterministic string ID for tracking
-                g_id = f"{pred['away_team']}@{pred['home_team']}_{pred.get('date', datetime.now().strftime('%Y-%m-%d'))}"
+            if not is_valid_nhl_game_id(g_id):
+                resolved = resolve_game_id(
+                    game_id=g_id,
+                    away_team=pred.get("away_team"),
+                    home_team=pred.get("home_team"),
+                    date=pred.get("date") or datetime.now(pytz.timezone("US/Central")).strftime("%Y-%m-%d"),
+                    schedule_cache=_sched_cache,
+                )
+                if resolved:
+                    g_id = int(resolved) if str(resolved).isdigit() else resolved
+                    pred["game_id"] = g_id
+                else:
+                    # Last resort tracking key — backfill job will resolve later.
+                    g_id = f"{pred['away_team']}@{pred['home_team']}_{pred.get('date', datetime.now().strftime('%Y-%m-%d'))}"
             
             # Prefer blended away prob when present (0..1).
             if "blended_away_prob" in pred and pred["blended_away_prob"] is not None:

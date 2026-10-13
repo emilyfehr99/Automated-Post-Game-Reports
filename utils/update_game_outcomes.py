@@ -68,10 +68,12 @@ def _lead_after_p1_from_landing(landing, away_abbr, home_abbr) -> int:
     return 0
 
 
-def _valid_nhl_game_id(game_id) -> bool:
-    """Reject matchup keys like 'UTA@COL' and non-numeric junk."""
-    s = str(game_id or "")
-    return s.isdigit() and len(s) >= 8
+try:
+    from utils.game_id_resolve import is_valid_nhl_game_id as _valid_nhl_game_id
+    from utils.game_id_resolve import resolve_game_id, prefetch_schedules
+except Exception:
+    from game_id_resolve import is_valid_nhl_game_id as _valid_nhl_game_id
+    from game_id_resolve import resolve_game_id, prefetch_schedules
 
 
 def _sync_outcomes_from_prediction_records(preds_by_gid, outs_by_gid) -> int:
@@ -162,6 +164,10 @@ def update_game_outcomes():
             except Exception:
                 skip_ids = set()
 
+        # Resolve synthetic matchup keys → official NHL ids before fetching.
+        sched_cache = prefetch_schedules(
+            [p.get("date") for p in predictions if p.get("date") and not p.get("actual_winner")]
+        )
         pending_games = []
         for pred in predictions:
             if pred.get("actual_winner"):
@@ -170,17 +176,22 @@ def update_game_outcomes():
             g_id = pred.get("game_id")
             if not g_date or not g_id or g_date > today:
                 continue
+            if str(g_id) in skip_ids and _valid_nhl_game_id(g_id):
+                continue
             if not _valid_nhl_game_id(g_id):
-                skip_ids.add(str(g_id))
-                continue
-            if str(g_id) in skip_ids:
-                continue
-            # Preseason IDs (…01xxxx) are low-value for model training; skip if old.
-            gid_s = str(g_id)
-            if len(gid_s) >= 6 and gid_s[4:6] == "01" and g_date < today:
-                # Keep today's preseason if any; abandon historical preseason.
-                skip_ids.add(gid_s)
-                continue
+                resolved = resolve_game_id(
+                    game_id=g_id,
+                    away_team=pred.get("away_team"),
+                    home_team=pred.get("home_team"),
+                    date=g_date,
+                    schedule_cache=sched_cache,
+                    session=client.session,
+                )
+                if not resolved:
+                    continue
+                pred = dict(pred)
+                pred["game_id"] = resolved
+                g_id = resolved
             pending_games.append(pred)
 
         if not pending_games:
@@ -226,12 +237,12 @@ def update_game_outcomes():
             if is_complete:
                 completed_pending.append(pred)
                 continue
-            # Old games missing from schedule / never finalized → stop retrying daily.
-            if game_date and game_date < today and (sched_info is None or game_state in ("FUT", "PRE", "Unknown")):
+            # Only abandon IDs that are invalid forever (not found on that date's slate).
+            if game_date and game_date < today and sched_info is None:
                 skip_ids.add(game_id)
                 abandoned += 1
         if abandoned:
-            logger.info("⚡ Abandoned %s stale unresolved game IDs (won't re-query)", abandoned)
+            logger.info("⚡ Abandoned %s IDs with no schedule row on their date", abandoned)
 
         # Persist skip list for permanently unresolvable / abandoned IDs.
         if skip_ids:

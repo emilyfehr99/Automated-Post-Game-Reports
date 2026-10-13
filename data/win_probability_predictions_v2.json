@@ -143443,6 +143443,29 @@
     },
     {
       "date": "2026-09-19",
+      "game_id": 2026010002,
+      "home_team": "LAK",
+      "away_team": "VGK",
+      "predicted_winner": "VGK",
+      "predicted_home_win_prob": 28.81446734501898,
+      "predicted_away_win_prob": 71.18553265498102,
+      "model_confidence": 0.6762625602223196,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "VGK@LAK_2026-09-19",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "VGK",
+      "actual_away_score": 4,
+      "actual_home_score": 2
+    },
+    {
+      "date": "2026-09-19",
       "game_id": "VGK@LAK_2026-09-19",
       "home_team": "LAK",
       "away_team": "VGK",
@@ -143472,7 +143495,10 @@
       },
       "event_type": "prediction",
       "recorded_at_utc": "2026-09-19T13:58:24Z",
-      "predicted_winner": "VGK"
+      "predicted_winner": "VGK",
+      "actual_winner": "VGK",
+      "actual_away_score": 4,
+      "actual_home_score": 2
     },
     {
       "date": "2026-09-20",
@@ -144483,6 +144509,29 @@
     },
     {
       "date": "2026-10-02",
+      "game_id": 2026020019,
+      "home_team": "WPG",
+      "away_team": "BOS",
+      "predicted_winner": "BOS",
+      "predicted_home_win_prob": 38.153756851387485,
+      "predicted_away_win_prob": 61.846243148612515,
+      "model_confidence": 0.5875393099118189,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "BOS@WPG_2026-10-02",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "BOS",
+      "actual_away_score": 4,
+      "actual_home_score": 3
+    },
+    {
+      "date": "2026-10-02",
       "game_id": "BOS@WPG_2026-10-02",
       "home_team": "WPG",
       "away_team": "BOS",
@@ -144514,7 +144563,10 @@
       },
       "event_type": "prediction",
       "recorded_at_utc": "2026-10-02T16:08:03Z",
-      "predicted_winner": "BOS"
+      "predicted_winner": "BOS",
+      "actual_winner": "BOS",
+      "actual_away_score": 4,
+      "actual_home_score": 3
     },
     {
       "date": "2026-10-03",
@@ -144784,6 +144836,75 @@
     },
     {
       "date": "2026-10-03",
+      "game_id": 2026020026,
+      "home_team": "PIT",
+      "away_team": "MTL",
+      "predicted_winner": "MTL",
+      "predicted_home_win_prob": 43.94973871157821,
+      "predicted_away_win_prob": 56.05026128842179,
+      "model_confidence": 0.5324774822400069,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "MTL@PIT_2026-10-03",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "PIT",
+      "actual_away_score": 5,
+      "actual_home_score": 6
+    },
+    {
+      "date": "2026-10-03",
+      "game_id": 2026020031,
+      "home_team": "MIN",
+      "away_team": "BOS",
+      "predicted_winner": "MIN",
+      "predicted_home_win_prob": 53.763720271900596,
+      "predicted_away_win_prob": 46.236279728099404,
+      "model_confidence": 0.5107553425830557,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "BOS@MIN_2026-10-03",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "MIN",
+      "actual_away_score": 1,
+      "actual_home_score": 4
+    },
+    {
+      "date": "2026-10-03",
+      "game_id": 2026020032,
+      "home_team": "COL",
+      "away_team": "STL",
+      "predicted_winner": "COL",
+      "predicted_home_win_prob": 61.37121563233124,
+      "predicted_away_win_prob": 38.62878436766876,
+      "model_confidence": 0.5830265485071469,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "STL@COL_2026-10-03",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "COL",
+      "actual_away_score": 1,
+      "actual_home_score": 6
+    },
+    {
+      "date": "2026-10-03",
       "game_id": "BOS@MIN_2026-10-03",
       "home_team": "MIN",
       "away_team": "BOS",
@@ -144814,7 +144935,10 @@
       },
       "event_type": "prediction",
       "recorded_at_utc": "2026-10-03T14:36:21Z",
-      "predicted_winner": "MIN"
+      "predicted_winner": "MIN",
+      "actual_winner": "MIN",
+      "actual_away_score": 1,
+      "actual_home_score": 4
     },
     {
       "date": "2026-10-03",
@@ -144848,7 +144972,10 @@
       },
       "event_type": "prediction",
       "recorded_at_utc": "2026-10-03T14:36:21Z",
-      "predicted_winner": "MTL"
+      "predicted_winner": "MTL",
+      "actual_winner": "PIT",
+      "actual_away_score": 5,
+      "actual_home_score": 6
     },
     {
       "date": "2026-10-03",
@@ -144881,7 +145008,56 @@
       },
       "event_type": "prediction",
       "recorded_at_utc": "2026-10-03T14:36:21Z",
-      "predicted_winner": "COL"
+      "predicted_winner": "COL",
+      "actual_winner": "COL",
+      "actual_away_score": 1,
+      "actual_home_score": 6
+    },
+    {
+      "date": "2026-10-04",
+      "game_id": 2026020035,
+      "home_team": "DET",
+      "away_team": "WPG",
+      "predicted_winner": "DET",
+      "predicted_home_win_prob": 51.766304630948355,
+      "predicted_away_win_prob": 48.233695369051645,
+      "model_confidence": 0.49177989399400934,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "WPG@DET_2026-10-04",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "WPG",
+      "actual_away_score": 3,
+      "actual_home_score": 2
+    },
+    {
+      "date": "2026-10-04",
+      "game_id": 2026020036,
+      "home_team": "NYR",
+      "away_team": "UTA",
+      "predicted_winner": "UTA",
+      "predicted_home_win_prob": 49.958885944869294,
+      "predicted_away_win_prob": 50.041114055130706,
+      "model_confidence": 0.4753905835237417,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "UTA@NYR_2026-10-04",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "NYR",
+      "actual_away_score": 2,
+      "actual_home_score": 4
     },
     {
       "date": "2026-10-04",
@@ -144915,7 +145091,10 @@
       },
       "event_type": "prediction",
       "recorded_at_utc": "2026-10-04T15:10:53Z",
-      "predicted_winner": "UTA"
+      "predicted_winner": "UTA",
+      "actual_winner": "NYR",
+      "actual_away_score": 2,
+      "actual_home_score": 4
     },
     {
       "date": "2026-10-04",
@@ -144948,7 +145127,10 @@
       },
       "event_type": "prediction",
       "recorded_at_utc": "2026-10-04T15:10:53Z",
-      "predicted_winner": "DET"
+      "predicted_winner": "DET",
+      "actual_winner": "WPG",
+      "actual_away_score": 3,
+      "actual_home_score": 2
     },
     {
       "date": "2026-10-05",
@@ -145029,6 +145211,52 @@
     },
     {
       "date": "2026-10-05",
+      "game_id": 2026020042,
+      "home_team": "PIT",
+      "away_team": "WPG",
+      "predicted_winner": "PIT",
+      "predicted_home_win_prob": 59.712827805450665,
+      "predicted_away_win_prob": 40.28717219454933,
+      "model_confidence": 0.5971282780545066,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "WPG@PIT_2026-10-05",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "WPG",
+      "actual_away_score": 3,
+      "actual_home_score": 2
+    },
+    {
+      "date": "2026-10-05",
+      "game_id": 2026020043,
+      "home_team": "DAL",
+      "away_team": "SJS",
+      "predicted_winner": "DAL",
+      "predicted_home_win_prob": 66.98004019977583,
+      "predicted_away_win_prob": 33.01995980022417,
+      "model_confidence": 0.6698004019977583,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "SJS@DAL_2026-10-05",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "DAL",
+      "actual_away_score": 0,
+      "actual_home_score": 5
+    },
+    {
+      "date": "2026-10-05",
       "game_id": "SJS@DAL_2026-10-05",
       "home_team": "DAL",
       "away_team": "SJS",
@@ -145060,7 +145288,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-05T13:17:07Z"
+      "recorded_at_utc": "2026-10-05T13:17:07Z",
+      "actual_winner": "DAL",
+      "actual_away_score": 0,
+      "actual_home_score": 5
     },
     {
       "date": "2026-10-05",
@@ -145094,7 +145325,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-05T13:17:07Z"
+      "recorded_at_utc": "2026-10-05T13:17:07Z",
+      "actual_winner": "WPG",
+      "actual_away_score": 3,
+      "actual_home_score": 2
     },
     {
       "date": "2026-10-06",
@@ -145289,6 +145523,98 @@
     },
     {
       "date": "2026-10-06",
+      "game_id": 2026020045,
+      "home_team": "MTL",
+      "away_team": "CAR",
+      "predicted_winner": "CAR",
+      "predicted_home_win_prob": 46.34867961495729,
+      "predicted_away_win_prob": 53.65132038504271,
+      "model_confidence": 0.5365132038504271,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "CAR@MTL_2026-10-06",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "CAR",
+      "actual_away_score": 6,
+      "actual_home_score": 4
+    },
+    {
+      "date": "2026-10-06",
+      "game_id": 2026020046,
+      "home_team": "DET",
+      "away_team": "OTT",
+      "predicted_winner": "OTT",
+      "predicted_home_win_prob": 36.28036049883986,
+      "predicted_away_win_prob": 63.71963950116014,
+      "model_confidence": 0.6371963950116014,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "OTT@DET_2026-10-06",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "DET",
+      "actual_away_score": 3,
+      "actual_home_score": 5
+    },
+    {
+      "date": "2026-10-06",
+      "game_id": 2026020047,
+      "home_team": "NJD",
+      "away_team": "UTA",
+      "predicted_winner": "UTA",
+      "predicted_home_win_prob": 48.97014188710119,
+      "predicted_away_win_prob": 51.02985811289881,
+      "model_confidence": 0.5102985811289881,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "UTA@NJD_2026-10-06",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "UTA",
+      "actual_away_score": 5,
+      "actual_home_score": 3
+    },
+    {
+      "date": "2026-10-06",
+      "game_id": 2026020049,
+      "home_team": "BUF",
+      "away_team": "MIN",
+      "predicted_winner": "MIN",
+      "predicted_home_win_prob": 41.8206300850566,
+      "predicted_away_win_prob": 58.1793699149434,
+      "model_confidence": 0.581793699149434,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "MIN@BUF_2026-10-06",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "BUF",
+      "actual_away_score": 2,
+      "actual_home_score": 3
+    },
+    {
+      "date": "2026-10-06",
       "game_id": "CAR@MTL_2026-10-06",
       "home_team": "MTL",
       "away_team": "CAR",
@@ -145319,7 +145645,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-06T16:54:37Z"
+      "recorded_at_utc": "2026-10-06T16:54:37Z",
+      "actual_winner": "CAR",
+      "actual_away_score": 6,
+      "actual_home_score": 4
     },
     {
       "date": "2026-10-06",
@@ -145352,7 +145681,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-06T16:54:37Z"
+      "recorded_at_utc": "2026-10-06T16:54:37Z",
+      "actual_winner": "BUF",
+      "actual_away_score": 2,
+      "actual_home_score": 3
     },
     {
       "date": "2026-10-06",
@@ -145385,7 +145717,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-06T16:54:37Z"
+      "recorded_at_utc": "2026-10-06T16:54:37Z",
+      "actual_winner": "DET",
+      "actual_away_score": 3,
+      "actual_home_score": 5
     },
     {
       "date": "2026-10-06",
@@ -145421,7 +145756,56 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-06T16:54:37Z"
+      "recorded_at_utc": "2026-10-06T16:54:37Z",
+      "actual_winner": "UTA",
+      "actual_away_score": 5,
+      "actual_home_score": 3
+    },
+    {
+      "date": "2026-10-07",
+      "game_id": 2026020053,
+      "home_team": "WSH",
+      "away_team": "PIT",
+      "predicted_winner": "WSH",
+      "predicted_home_win_prob": 71.76004530466487,
+      "predicted_away_win_prob": 28.239954695335136,
+      "model_confidence": 0.7176004530466487,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "PIT@WSH_2026-10-07",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "WSH",
+      "actual_away_score": 3,
+      "actual_home_score": 5
+    },
+    {
+      "date": "2026-10-07",
+      "game_id": 2026020054,
+      "home_team": "WPG",
+      "away_team": "COL",
+      "predicted_winner": "WPG",
+      "predicted_home_win_prob": 67.80606042421455,
+      "predicted_away_win_prob": 32.19393957578544,
+      "model_confidence": 0.6780606042421455,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "COL@WPG_2026-10-07",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "WPG",
+      "actual_away_score": 2,
+      "actual_home_score": 3
     },
     {
       "date": "2026-10-07",
@@ -145454,7 +145838,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-07T23:09:32Z"
+      "recorded_at_utc": "2026-10-07T23:09:32Z",
+      "actual_winner": "WPG",
+      "actual_away_score": 2,
+      "actual_home_score": 3
     },
     {
       "date": "2026-10-07",
@@ -145489,7 +145876,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-07T23:09:32Z"
+      "recorded_at_utc": "2026-10-07T23:09:32Z",
+      "actual_winner": "WSH",
+      "actual_away_score": 3,
+      "actual_home_score": 5
     },
     {
       "date": "2026-10-08",
@@ -145523,7 +145913,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-08T19:05:16Z"
+      "recorded_at_utc": "2026-10-08T19:05:16Z",
+      "actual_winner": "NSH",
+      "actual_away_score": 5,
+      "actual_home_score": 2
     },
     {
       "date": "2026-10-08",
@@ -145558,7 +145951,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-08T19:05:16Z"
+      "recorded_at_utc": "2026-10-08T19:05:16Z",
+      "actual_winner": "OTT",
+      "actual_away_score": 1,
+      "actual_home_score": 2
     },
     {
       "date": "2026-10-08",
@@ -145593,7 +145989,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-08T19:05:16Z"
+      "recorded_at_utc": "2026-10-08T19:05:16Z",
+      "actual_winner": "CAR",
+      "actual_away_score": 2,
+      "actual_home_score": 7
     },
     {
       "date": "2026-10-08",
@@ -145640,6 +146039,236 @@
     },
     {
       "date": "2026-10-08",
+      "game_id": 2026020056,
+      "home_team": "BOS",
+      "away_team": "UTA",
+      "predicted_winner": "BOS",
+      "predicted_home_win_prob": 56.79916416003032,
+      "predicted_away_win_prob": 43.200835839969685,
+      "model_confidence": 0.5679916416003032,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "UTA@BOS_2026-10-08",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "BOS",
+      "actual_away_score": 1,
+      "actual_home_score": 6
+    },
+    {
+      "date": "2026-10-08",
+      "game_id": 2026020057,
+      "home_team": "BUF",
+      "away_team": "DAL",
+      "predicted_winner": "DAL",
+      "predicted_home_win_prob": 47.527248611795535,
+      "predicted_away_win_prob": 52.472751388204465,
+      "model_confidence": 0.5247275138820446,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "DAL@BUF_2026-10-08",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "DAL",
+      "actual_away_score": 4,
+      "actual_home_score": 0
+    },
+    {
+      "date": "2026-10-08",
+      "game_id": 2026020058,
+      "home_team": "MTL",
+      "away_team": "NSH",
+      "predicted_winner": "MTL",
+      "predicted_home_win_prob": 60.518555692848196,
+      "predicted_away_win_prob": 39.481444307151804,
+      "model_confidence": 0.605185556928482,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "2025020062",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:52Z",
+      "actual_winner": "NSH",
+      "actual_away_score": 5,
+      "actual_home_score": 2
+    },
+    {
+      "date": "2026-10-08",
+      "game_id": 2026020059,
+      "home_team": "OTT",
+      "away_team": "PHI",
+      "predicted_winner": "OTT",
+      "predicted_home_win_prob": 68.66821010216574,
+      "predicted_away_win_prob": 31.331789897834245,
+      "model_confidence": 0.6866821010216575,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "2025020112",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:52Z",
+      "actual_winner": "OTT",
+      "actual_away_score": 1,
+      "actual_home_score": 2
+    },
+    {
+      "date": "2026-10-08",
+      "game_id": 2026020060,
+      "home_team": "TBL",
+      "away_team": "MIN",
+      "predicted_winner": "MIN",
+      "predicted_home_win_prob": 47.31745550508719,
+      "predicted_away_win_prob": 52.68254449491281,
+      "model_confidence": 0.5268254449491281,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "MIN@TBL_2026-10-08",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "TBL",
+      "actual_away_score": 2,
+      "actual_home_score": 3
+    },
+    {
+      "date": "2026-10-08",
+      "game_id": 2026020061,
+      "home_team": "CAR",
+      "away_team": "VAN",
+      "predicted_winner": "CAR",
+      "predicted_home_win_prob": 74.23716057157797,
+      "predicted_away_win_prob": 25.762839428422023,
+      "model_confidence": 0.7423716057157798,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "2025020279",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:52Z",
+      "actual_winner": "CAR",
+      "actual_away_score": 2,
+      "actual_home_score": 7
+    },
+    {
+      "date": "2026-10-08",
+      "game_id": 2026020062,
+      "home_team": "NYI",
+      "away_team": "CHI",
+      "predicted_winner": "NYI",
+      "predicted_home_win_prob": 66.6652854030372,
+      "predicted_away_win_prob": 33.3347145969628,
+      "model_confidence": 0.666652854030372,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "CHI@NYI_2026-10-08",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "NYI",
+      "actual_away_score": 1,
+      "actual_home_score": 4
+    },
+    {
+      "date": "2026-10-08",
+      "game_id": 2026020063,
+      "home_team": "STL",
+      "away_team": "SJS",
+      "predicted_winner": "STL",
+      "predicted_home_win_prob": 56.04281143095592,
+      "predicted_away_win_prob": 43.95718856904408,
+      "model_confidence": 0.5604281143095592,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "SJS@STL_2026-10-08",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "SJS",
+      "actual_away_score": 3,
+      "actual_home_score": 2
+    },
+    {
+      "date": "2026-10-08",
+      "game_id": 2026020064,
+      "home_team": "CGY",
+      "away_team": "COL",
+      "predicted_winner": "COL",
+      "predicted_home_win_prob": 14.812373129065726,
+      "predicted_away_win_prob": 85.18762687093428,
+      "model_confidence": 0.8518762687093429,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "COL@CGY_2026-10-08",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "COL",
+      "actual_away_score": 7,
+      "actual_home_score": 3
+    },
+    {
+      "date": "2026-10-08",
+      "game_id": 2026020065,
+      "home_team": "VGK",
+      "away_team": "TOR",
+      "predicted_winner": "VGK",
+      "predicted_home_win_prob": 55.00455313978968,
+      "predicted_away_win_prob": 44.99544686021032,
+      "model_confidence": 0.5500455313978968,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "TOR@VGK_2026-10-08",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "VGK",
+      "actual_away_score": 3,
+      "actual_home_score": 4
+    },
+    {
+      "date": "2026-10-08",
       "game_id": "CHI@NYI_2026-10-08",
       "home_team": "NYI",
       "away_team": "CHI",
@@ -145671,7 +146300,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-08T19:05:16Z"
+      "recorded_at_utc": "2026-10-08T19:05:16Z",
+      "actual_winner": "NYI",
+      "actual_away_score": 1,
+      "actual_home_score": 4
     },
     {
       "date": "2026-10-08",
@@ -145704,7 +146336,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-08T19:05:16Z"
+      "recorded_at_utc": "2026-10-08T19:05:16Z",
+      "actual_winner": "COL",
+      "actual_away_score": 7,
+      "actual_home_score": 3
     },
     {
       "date": "2026-10-08",
@@ -145737,7 +146372,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-08T01:20:27Z"
+      "recorded_at_utc": "2026-10-08T01:20:27Z",
+      "actual_winner": "WPG",
+      "actual_away_score": 2,
+      "actual_home_score": 3
     },
     {
       "date": "2026-10-08",
@@ -145771,7 +146409,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-08T19:05:16Z"
+      "recorded_at_utc": "2026-10-08T19:05:16Z",
+      "actual_winner": "DAL",
+      "actual_away_score": 4,
+      "actual_home_score": 0
     },
     {
       "date": "2026-10-08",
@@ -145802,7 +146443,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-08T19:05:16Z"
+      "recorded_at_utc": "2026-10-08T19:05:16Z",
+      "actual_winner": "TBL",
+      "actual_away_score": 2,
+      "actual_home_score": 3
     },
     {
       "date": "2026-10-08",
@@ -145837,7 +146481,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-08T01:20:27Z"
+      "recorded_at_utc": "2026-10-08T01:20:27Z",
+      "actual_winner": "WSH",
+      "actual_away_score": 3,
+      "actual_home_score": 5
     },
     {
       "date": "2026-10-08",
@@ -145872,7 +146519,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-08T19:05:16Z"
+      "recorded_at_utc": "2026-10-08T19:05:16Z",
+      "actual_winner": "SJS",
+      "actual_away_score": 3,
+      "actual_home_score": 2
     },
     {
       "date": "2026-10-08",
@@ -145908,7 +146558,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-08T19:05:16Z"
+      "recorded_at_utc": "2026-10-08T19:05:16Z",
+      "actual_winner": "VGK",
+      "actual_away_score": 3,
+      "actual_home_score": 4
     },
     {
       "date": "2026-10-08",
@@ -145943,7 +146596,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-08T19:05:16Z"
+      "recorded_at_utc": "2026-10-08T19:05:16Z",
+      "actual_winner": "BOS",
+      "actual_away_score": 1,
+      "actual_home_score": 6
     },
     {
       "date": "2026-10-09",
@@ -145977,7 +146633,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-09T18:34:08Z"
+      "recorded_at_utc": "2026-10-09T18:34:08Z",
+      "actual_winner": "SEA",
+      "actual_away_score": 6,
+      "actual_home_score": 3
     },
     {
       "date": "2026-10-09",
@@ -146019,6 +146678,75 @@
     },
     {
       "date": "2026-10-09",
+      "game_id": 2026020066,
+      "home_team": "DET",
+      "away_team": "SEA",
+      "predicted_winner": "DET",
+      "predicted_home_win_prob": 73.52020164491137,
+      "predicted_away_win_prob": 26.479798355088636,
+      "model_confidence": 0.7352020164491136,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "2025020308",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:52Z",
+      "actual_winner": "SEA",
+      "actual_away_score": 6,
+      "actual_home_score": 3
+    },
+    {
+      "date": "2026-10-09",
+      "game_id": 2026020067,
+      "home_team": "WSH",
+      "away_team": "NYR",
+      "predicted_winner": "NYR",
+      "predicted_home_win_prob": 26.618419882653665,
+      "predicted_away_win_prob": 73.38158011734633,
+      "model_confidence": 0.7338158011734633,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "NYR@WSH_2026-10-09",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "WSH",
+      "actual_away_score": 1,
+      "actual_home_score": 3
+    },
+    {
+      "date": "2026-10-09",
+      "game_id": 2026020069,
+      "home_team": "WPG",
+      "away_team": "ANA",
+      "predicted_winner": "ANA",
+      "predicted_home_win_prob": 25.324875932557788,
+      "predicted_away_win_prob": 74.67512406744221,
+      "model_confidence": 0.7467512406744221,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "ANA@WPG_2026-10-09",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "ANA",
+      "actual_away_score": 5,
+      "actual_home_score": 1
+    },
+    {
+      "date": "2026-10-09",
       "game_id": "ANA@WPG_2026-10-09",
       "home_team": "WPG",
       "away_team": "ANA",
@@ -146050,7 +146778,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-09T18:34:08Z"
+      "recorded_at_utc": "2026-10-09T18:34:08Z",
+      "actual_winner": "ANA",
+      "actual_away_score": 5,
+      "actual_home_score": 1
     },
     {
       "date": "2026-10-09",
@@ -146083,7 +146814,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-09T18:34:08Z"
+      "recorded_at_utc": "2026-10-09T18:34:08Z",
+      "actual_winner": "WSH",
+      "actual_away_score": 1,
+      "actual_home_score": 3
     },
     {
       "date": "2026-10-10",
@@ -146157,7 +146891,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:49:36Z"
+      "recorded_at_utc": "2026-10-10T15:49:36Z",
+      "actual_winner": "VGK",
+      "actual_away_score": 1,
+      "actual_home_score": 2
     },
     {
       "date": "2026-10-10",
@@ -146191,7 +146928,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:49:36Z"
+      "recorded_at_utc": "2026-10-10T15:49:36Z",
+      "actual_winner": "OTT",
+      "actual_away_score": 2,
+      "actual_home_score": 3
     },
     {
       "date": "2026-10-10",
@@ -146226,7 +146966,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:49:36Z"
+      "recorded_at_utc": "2026-10-10T15:49:36Z",
+      "actual_winner": "UTA",
+      "actual_away_score": 4,
+      "actual_home_score": 1
     },
     {
       "date": "2026-10-10",
@@ -146260,7 +147003,309 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:49:36Z"
+      "recorded_at_utc": "2026-10-10T15:49:36Z",
+      "actual_winner": "TBL",
+      "actual_away_score": 5,
+      "actual_home_score": 3
+    },
+    {
+      "date": "2026-10-10",
+      "game_id": 2026020071,
+      "home_team": "NJD",
+      "away_team": "VAN",
+      "predicted_winner": "NJD",
+      "predicted_home_win_prob": 62.04063873396621,
+      "predicted_away_win_prob": 37.95936126603379,
+      "model_confidence": 0.6204063873396621,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "VAN@NJD_2026-10-10",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "NJD",
+      "actual_away_score": 1,
+      "actual_home_score": 4
+    },
+    {
+      "date": "2026-10-10",
+      "game_id": 2026020072,
+      "home_team": "SJS",
+      "away_team": "EDM",
+      "predicted_winner": "SJS",
+      "predicted_home_win_prob": 57.52848367198058,
+      "predicted_away_win_prob": 42.471516328019426,
+      "model_confidence": 0.5752848367198058,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "EDM@SJS_2026-10-10",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "EDM",
+      "actual_away_score": 3,
+      "actual_home_score": 1
+    },
+    {
+      "date": "2026-10-10",
+      "game_id": 2026020073,
+      "home_team": "FLA",
+      "away_team": "MIN",
+      "predicted_winner": "FLA",
+      "predicted_home_win_prob": 54.707386183772314,
+      "predicted_away_win_prob": 45.292613816227686,
+      "model_confidence": 0.5470738618377231,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "MIN@FLA_2026-10-10",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "MIN",
+      "actual_away_score": 4,
+      "actual_home_score": 1
+    },
+    {
+      "date": "2026-10-10",
+      "game_id": 2026020074,
+      "home_team": "BUF",
+      "away_team": "UTA",
+      "predicted_winner": "BUF",
+      "predicted_home_win_prob": 53.71485542659698,
+      "predicted_away_win_prob": 46.28514457340302,
+      "model_confidence": 0.5371485542659699,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "2025020203",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:52Z",
+      "actual_winner": "UTA",
+      "actual_away_score": 4,
+      "actual_home_score": 1
+    },
+    {
+      "date": "2026-10-10",
+      "game_id": 2026020075,
+      "home_team": "MTL",
+      "away_team": "DET",
+      "predicted_winner": "MTL",
+      "predicted_home_win_prob": 59.99842256325785,
+      "predicted_away_win_prob": 40.00157743674216,
+      "model_confidence": 0.5999842256325785,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "DET@MTL_2026-10-10",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "MTL",
+      "actual_away_score": 0,
+      "actual_home_score": 1
+    },
+    {
+      "date": "2026-10-10",
+      "game_id": 2026020076,
+      "home_team": "OTT",
+      "away_team": "NSH",
+      "predicted_winner": "OTT",
+      "predicted_home_win_prob": 70.74108630779985,
+      "predicted_away_win_prob": 29.25891369220015,
+      "model_confidence": 0.7074108630779985,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "2025020041",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:52Z",
+      "actual_winner": "OTT",
+      "actual_away_score": 2,
+      "actual_home_score": 3
+    },
+    {
+      "date": "2026-10-10",
+      "game_id": 2026020077,
+      "home_team": "PIT",
+      "away_team": "DAL",
+      "predicted_winner": "DAL",
+      "predicted_home_win_prob": 24.032548165218504,
+      "predicted_away_win_prob": 75.9674518347815,
+      "model_confidence": 0.759674518347815,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "DAL@PIT_2026-10-10",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "PIT",
+      "actual_away_score": 1,
+      "actual_home_score": 2
+    },
+    {
+      "date": "2026-10-10",
+      "game_id": 2026020078,
+      "home_team": "CHI",
+      "away_team": "CAR",
+      "predicted_winner": "CAR",
+      "predicted_home_win_prob": 23.086736946774632,
+      "predicted_away_win_prob": 76.91326305322536,
+      "model_confidence": 0.7691326305322537,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "CAR@CHI_2026-10-10",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "CAR",
+      "actual_away_score": 5,
+      "actual_home_score": 2
+    },
+    {
+      "date": "2026-10-10",
+      "game_id": 2026020079,
+      "home_team": "STL",
+      "away_team": "CBJ",
+      "predicted_winner": "CBJ",
+      "predicted_home_win_prob": 32.03579359160249,
+      "predicted_away_win_prob": 67.96420640839752,
+      "model_confidence": 0.6796420640839752,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "CBJ@STL_2026-10-10",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "STL",
+      "actual_away_score": 3,
+      "actual_home_score": 5
+    },
+    {
+      "date": "2026-10-10",
+      "game_id": 2026020080,
+      "home_team": "COL",
+      "away_team": "TOR",
+      "predicted_winner": "COL",
+      "predicted_home_win_prob": 73.15577361875616,
+      "predicted_away_win_prob": 26.844226381243846,
+      "model_confidence": 0.7315577361875616,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "TOR@COL_2026-10-10",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "TOR",
+      "actual_away_score": 6,
+      "actual_home_score": 3
+    },
+    {
+      "date": "2026-10-10",
+      "game_id": 2026020081,
+      "home_team": "NYI",
+      "away_team": "TBL",
+      "predicted_winner": "NYI",
+      "predicted_home_win_prob": 63.84377274409226,
+      "predicted_away_win_prob": 36.15622725590774,
+      "model_confidence": 0.6384377274409226,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "2025020414",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:52Z",
+      "actual_winner": "TBL",
+      "actual_away_score": 5,
+      "actual_home_score": 3
+    },
+    {
+      "date": "2026-10-10",
+      "game_id": 2026020082,
+      "home_team": "CGY",
+      "away_team": "ANA",
+      "predicted_winner": "CGY",
+      "predicted_home_win_prob": 55.12083321870869,
+      "predicted_away_win_prob": 44.87916678129131,
+      "model_confidence": 0.5512083321870869,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "ANA@CGY_2026-10-10",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "ANA",
+      "actual_away_score": 4,
+      "actual_home_score": 2
+    },
+    {
+      "date": "2026-10-10",
+      "game_id": 2026020083,
+      "home_team": "VGK",
+      "away_team": "LAK",
+      "predicted_winner": "VGK",
+      "predicted_home_win_prob": 53.520323773636804,
+      "predicted_away_win_prob": 46.479676226363196,
+      "model_confidence": 0.535203237736368,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "2025020007",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:52Z",
+      "actual_winner": "VGK",
+      "actual_away_score": 1,
+      "actual_home_score": 2
     },
     {
       "date": "2026-10-10",
@@ -146294,7 +147339,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:49:36Z"
+      "recorded_at_utc": "2026-10-10T15:49:36Z",
+      "actual_winner": "ANA",
+      "actual_away_score": 4,
+      "actual_home_score": 2
     },
     {
       "date": "2026-10-10",
@@ -146329,7 +147377,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:49:36Z"
+      "recorded_at_utc": "2026-10-10T15:49:36Z",
+      "actual_winner": "CAR",
+      "actual_away_score": 5,
+      "actual_home_score": 2
     },
     {
       "date": "2026-10-10",
@@ -146363,7 +147414,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:49:36Z"
+      "recorded_at_utc": "2026-10-10T15:49:36Z",
+      "actual_winner": "STL",
+      "actual_away_score": 3,
+      "actual_home_score": 5
     },
     {
       "date": "2026-10-10",
@@ -146397,7 +147451,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:49:36Z"
+      "recorded_at_utc": "2026-10-10T15:49:36Z",
+      "actual_winner": "PIT",
+      "actual_away_score": 1,
+      "actual_home_score": 2
     },
     {
       "date": "2026-10-10",
@@ -146430,7 +147487,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:49:36Z"
+      "recorded_at_utc": "2026-10-10T15:49:36Z",
+      "actual_winner": "MTL",
+      "actual_away_score": 0,
+      "actual_home_score": 1
     },
     {
       "date": "2026-10-10",
@@ -146465,7 +147525,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:49:36Z"
+      "recorded_at_utc": "2026-10-10T15:49:36Z",
+      "actual_winner": "EDM",
+      "actual_away_score": 3,
+      "actual_home_score": 1
     },
     {
       "date": "2026-10-10",
@@ -146496,7 +147559,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:49:36Z"
+      "recorded_at_utc": "2026-10-10T15:49:36Z",
+      "actual_winner": "MIN",
+      "actual_away_score": 4,
+      "actual_home_score": 1
     },
     {
       "date": "2026-10-10",
@@ -146530,7 +147596,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:49:36Z"
+      "recorded_at_utc": "2026-10-10T15:49:36Z",
+      "actual_winner": "TOR",
+      "actual_away_score": 6,
+      "actual_home_score": 3
     },
     {
       "date": "2026-10-10",
@@ -146565,7 +147634,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-10T15:49:36Z"
+      "recorded_at_utc": "2026-10-10T15:49:36Z",
+      "actual_winner": "NJD",
+      "actual_away_score": 1,
+      "actual_home_score": 4
     },
     {
       "date": "2026-10-11",
@@ -146600,7 +147672,79 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-11T18:25:42Z"
+      "recorded_at_utc": "2026-10-11T18:25:42Z",
+      "actual_winner": "SEA",
+      "actual_away_score": 5,
+      "actual_home_score": 3
+    },
+    {
+      "date": "2026-10-11",
+      "game_id": 2026020084,
+      "home_team": "WSH",
+      "away_team": "SEA",
+      "predicted_winner": "WSH",
+      "predicted_home_win_prob": 71.10434575495562,
+      "predicted_away_win_prob": 28.89565424504439,
+      "model_confidence": 0.7110434575495561,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "2025020102",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:52Z",
+      "actual_winner": "SEA",
+      "actual_away_score": 5,
+      "actual_home_score": 3
+    },
+    {
+      "date": "2026-10-11",
+      "game_id": 2026020085,
+      "home_team": "NYR",
+      "away_team": "VAN",
+      "predicted_winner": "NYR",
+      "predicted_home_win_prob": 52.38528141567822,
+      "predicted_away_win_prob": 47.614718584321785,
+      "model_confidence": 0.5238528141567822,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "VAN@NYR_2026-10-11",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "NYR",
+      "actual_away_score": 2,
+      "actual_home_score": 6
+    },
+    {
+      "date": "2026-10-11",
+      "game_id": 2026020086,
+      "home_team": "PHI",
+      "away_team": "CAR",
+      "predicted_winner": "CAR",
+      "predicted_home_win_prob": 33.54811750189506,
+      "predicted_away_win_prob": 66.45188249810494,
+      "model_confidence": 0.6645188249810494,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "CAR@PHI_2026-10-11",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "CAR",
+      "actual_away_score": 4,
+      "actual_home_score": 1
     },
     {
       "date": "2026-10-11",
@@ -146635,7 +147779,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-11T18:25:42Z"
+      "recorded_at_utc": "2026-10-11T18:25:42Z",
+      "actual_winner": "CAR",
+      "actual_away_score": 4,
+      "actual_home_score": 1
     },
     {
       "date": "2026-10-11",
@@ -146668,7 +147815,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-11T18:25:42Z"
+      "recorded_at_utc": "2026-10-11T18:25:42Z",
+      "actual_winner": "NYR",
+      "actual_away_score": 2,
+      "actual_home_score": 6
     },
     {
       "date": "2026-10-12",
@@ -146701,7 +147851,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-12T21:52:04Z"
+      "recorded_at_utc": "2026-10-12T21:52:04Z",
+      "actual_winner": "BUF",
+      "actual_away_score": 3,
+      "actual_home_score": 5
     },
     {
       "date": "2026-10-12",
@@ -146735,7 +147888,79 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-12T21:52:04Z"
+      "recorded_at_utc": "2026-10-12T21:52:04Z",
+      "actual_winner": "MIN",
+      "actual_away_score": 2,
+      "actual_home_score": 4
+    },
+    {
+      "date": "2026-10-12",
+      "game_id": 2026020087,
+      "home_team": "BUF",
+      "away_team": "FLA",
+      "predicted_winner": "BUF",
+      "predicted_home_win_prob": 66.47386399698343,
+      "predicted_away_win_prob": 33.52613600301657,
+      "model_confidence": 0.6647386399698343,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "2025020076",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:52Z",
+      "actual_winner": "BUF",
+      "actual_away_score": 3,
+      "actual_home_score": 5
+    },
+    {
+      "date": "2026-10-12",
+      "game_id": 2026020088,
+      "home_team": "NJD",
+      "away_team": "OTT",
+      "predicted_winner": "NJD",
+      "predicted_home_win_prob": 62.19979814365229,
+      "predicted_away_win_prob": 37.80020185634771,
+      "model_confidence": 0.6219979814365229,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "OTT@NJD_2026-10-12",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z",
+      "actual_winner": "OTT",
+      "actual_away_score": 4,
+      "actual_home_score": 1
+    },
+    {
+      "date": "2026-10-12",
+      "game_id": 2026020089,
+      "home_team": "MIN",
+      "away_team": "VGK",
+      "predicted_winner": "MIN",
+      "predicted_home_win_prob": 59.06657022769552,
+      "predicted_away_win_prob": 40.93342977230447,
+      "model_confidence": 0.5906657022769553,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "2025020298",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:52Z",
+      "actual_winner": "MIN",
+      "actual_away_score": 2,
+      "actual_home_score": 4
     },
     {
       "date": "2026-10-12",
@@ -146769,7 +147994,10 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-12T21:52:04Z"
+      "recorded_at_utc": "2026-10-12T21:52:04Z",
+      "actual_winner": "OTT",
+      "actual_away_score": 4,
+      "actual_home_score": 1
     },
     {
       "date": "2026-10-13",
@@ -147018,6 +148246,266 @@
       "actual_winner": "TBL",
       "actual_away_score": 4,
       "actual_home_score": 1
+    },
+    {
+      "date": "2026-10-13",
+      "game_id": 2026020090,
+      "home_team": "DET",
+      "away_team": "NJD",
+      "predicted_winner": "NJD",
+      "predicted_home_win_prob": 41.59792467585115,
+      "predicted_away_win_prob": 58.40207532414885,
+      "model_confidence": 0.5840207532414885,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "NJD@DET_2026-10-13",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z"
+    },
+    {
+      "date": "2026-10-13",
+      "game_id": 2026020091,
+      "home_team": "CBJ",
+      "away_team": "FLA",
+      "predicted_winner": "CBJ",
+      "predicted_home_win_prob": 66.36830409715387,
+      "predicted_away_win_prob": 33.63169590284614,
+      "model_confidence": 0.6636830409715386,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "FLA@CBJ_2026-10-13",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z"
+    },
+    {
+      "date": "2026-10-13",
+      "game_id": 2026020094,
+      "home_team": "PHI",
+      "away_team": "SEA",
+      "predicted_winner": "PHI",
+      "predicted_home_win_prob": 59.90641806616406,
+      "predicted_away_win_prob": 40.09358193383595,
+      "model_confidence": 0.5990641806616406,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "2025020094",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:52Z"
+    },
+    {
+      "date": "2026-10-13",
+      "game_id": 2026020096,
+      "home_team": "OTT",
+      "away_team": "STL",
+      "predicted_winner": "STL",
+      "predicted_home_win_prob": 26.183756518636493,
+      "predicted_away_win_prob": 73.81624348136351,
+      "model_confidence": 0.7381624348136352,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "STL@OTT_2026-10-13",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z"
+    },
+    {
+      "date": "2026-10-13",
+      "game_id": 2026020097,
+      "home_team": "NYI",
+      "away_team": "VAN",
+      "predicted_winner": "NYI",
+      "predicted_home_win_prob": 56.36556139130704,
+      "predicted_away_win_prob": 43.63443860869297,
+      "model_confidence": 0.5636556139130704,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "VAN@NYI_2026-10-13",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z"
+    },
+    {
+      "date": "2026-10-13",
+      "game_id": 2026020098,
+      "home_team": "CHI",
+      "away_team": "PIT",
+      "predicted_winner": "PIT",
+      "predicted_home_win_prob": 32.87668893938063,
+      "predicted_away_win_prob": 67.12331106061937,
+      "model_confidence": 0.6712331106061937,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "PIT@CHI_2026-10-13",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z"
+    },
+    {
+      "date": "2026-10-13",
+      "game_id": 2026020099,
+      "home_team": "WPG",
+      "away_team": "MIN",
+      "predicted_winner": "MIN",
+      "predicted_home_win_prob": 36.80480784242337,
+      "predicted_away_win_prob": 63.19519215757663,
+      "model_confidence": 0.6319519215757663,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "2025020348",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:52Z"
+    },
+    {
+      "date": "2026-10-13",
+      "game_id": 2026020100,
+      "home_team": "DAL",
+      "away_team": "COL",
+      "predicted_winner": "DAL",
+      "predicted_home_win_prob": 53.31427930002679,
+      "predicted_away_win_prob": 46.68572069997321,
+      "model_confidence": 0.5331427930002679,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "2025010092",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:52Z"
+    },
+    {
+      "date": "2026-10-13",
+      "game_id": 2026020101,
+      "home_team": "NSH",
+      "away_team": "VGK",
+      "predicted_winner": "NSH",
+      "predicted_home_win_prob": 54.989188921486544,
+      "predicted_away_win_prob": 45.01081107851345,
+      "model_confidence": 0.5498918892148654,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "VGK@NSH_2026-10-13",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z"
+    },
+    {
+      "date": "2026-10-13",
+      "game_id": 2026020102,
+      "home_team": "UTA",
+      "away_team": "TOR",
+      "predicted_winner": "UTA",
+      "predicted_home_win_prob": 58.545336644398006,
+      "predicted_away_win_prob": 41.454663355601994,
+      "model_confidence": 0.58545336644398,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "TOR@UTA_2026-10-13",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z"
+    },
+    {
+      "date": "2026-10-13",
+      "game_id": 2026020103,
+      "home_team": "ANA",
+      "away_team": "CGY",
+      "predicted_winner": "ANA",
+      "predicted_home_win_prob": 62.71960832999963,
+      "predicted_away_win_prob": 37.28039167000038,
+      "model_confidence": 0.6271960832999963,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "CGY@ANA_2026-10-13",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z"
+    },
+    {
+      "date": "2026-10-13",
+      "game_id": 2026020104,
+      "home_team": "LAK",
+      "away_team": "EDM",
+      "predicted_winner": "EDM",
+      "predicted_home_win_prob": 47.09780267431819,
+      "predicted_away_win_prob": 52.90219732568181,
+      "model_confidence": 0.5290219732568181,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "EDM@LAK_2026-10-13",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:15Z"
+    },
+    {
+      "date": "2026-10-13",
+      "game_id": 2026020105,
+      "home_team": "SJS",
+      "away_team": "BOS",
+      "predicted_winner": "SJS",
+      "predicted_home_win_prob": 68.92334699273201,
+      "predicted_away_win_prob": 31.076653007267996,
+      "model_confidence": 0.68923346992732,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "2025020351",
+        "backfill": true
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-10-13T13:36:52Z"
     },
     {
       "date": "2026-10-13",
