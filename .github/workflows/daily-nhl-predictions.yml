@@ -8,22 +8,12 @@ concurrency:
 
 on:
   schedule:
-    # GitHub routinely delays schedule triggers by 5–10h on this repo (observed:
-    # 10:13 UTC crons starting ~15:00–20:00 UTC). Start overnight so even a long
-    # delay still lands Discord before 8:00 AM Central.
-    # Target window: delivery by 13:00 UTC (8 AM CDT) / 14:00 UTC (8 AM CST).
-    # CDT (UTC-5): 01:17→8:17 PM prev … 10:17→5:17 AM, 11:17→6:17 AM, 12:47→7:47 AM
-    # With a ~10h GHA delay, 01:17 UTC still lands ~7:17 AM CDT (before 8 AM).
-    # CST (UTC-6): each slot is one hour earlier local time.
-    # First successful Discord write wins; later slots exit in seconds via state check.
-    - cron: '17 1 * * *'   # overnight buffer (absorbs multi-hour GHA delay)
-    - cron: '17 3 * * *'
-    - cron: '17 5 * * *'
-    - cron: '17 7 * * *'
-    - cron: '17 9 * * *'
-    - cron: '17 10 * * *'  # 5:17 AM CDT nominal
-    - cron: '17 11 * * *'  # 6:17 AM CDT nominal
-    - cron: '47 12 * * *'  # 7:47 AM CDT last pre-8am attempt
+    # HARD REQUIREMENT: Discord must land before 8:00 AM America/Chicago.
+    # Sparse morning crons were delayed 6–10h into the afternoon. Match the
+    # reliable every-30-min cadence used by Auto Post NHL Reports instead.
+    # UTC 04:07–12:37 ≈ 11:07 PM–7:37 AM CDT (10:07 PM–6:37 AM CST).
+    # CT delivery-window gate below skips evening firings; first success wins.
+    - cron: '7,37 4-12 * * *'
   workflow_dispatch:
     inputs:
       force_notify:
@@ -49,56 +39,80 @@ jobs:
           if [[ "${{ github.event_name }}" == "workflow_dispatch" ]]; then
             echo "✅ Manual Dispatch Triggered!"
             echo "should_run=true" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          # CT clock + Discord dedupe (no checkout needed)
+          eval "$(python3 - <<'PY'
+          import urllib.request, json
+          from datetime import datetime, timezone, timedelta
+          try:
+              from zoneinfo import ZoneInfo
+              now = datetime.now(ZoneInfo("America/Chicago"))
+          except Exception:
+              now = datetime.now(timezone.utc) - timedelta(hours=5)
+          today = now.strftime("%Y-%m-%d")
+          hour = now.hour
+          already = False
+          try:
+              req = urllib.request.Request(
+                  "https://raw.githubusercontent.com/emilyfehr99/Automated-Post-Game-Reports/main/data/daily_notification_state.json",
+                  headers={"Cache-Control": "no-cache", "User-Agent": "Mozilla/5.0"},
+              )
+              with urllib.request.urlopen(req, timeout=10) as r:
+                  data = json.loads(r.read().decode("utf-8"))
+              already = data.get("last_discord_date") == today
+          except Exception:
+              already = False
+          # Primary window: 12:00 AM–7:59 AM CT. Late fallback until 4:59 PM CT.
+          # Evening (5 PM+) waits for the next overnight cadence.
+          if 0 <= hour < 8:
+              window = "primary"
+          elif 8 <= hour < 17:
+              window = "late"
+          else:
+              window = "closed"
+          print(f"echo \"Now CT: {now.strftime('%Y-%m-%d %H:%M %Z')} window={window} already_sent={str(already).lower()}\"")
+          print(f"already_sent={'true' if already else 'false'}")
+          print(f"window={window}")
+          PY
+          )"
+
+          if [[ "$already_sent" == "true" ]]; then
+            echo "⚡ Discord already delivered today. Skipping."
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          if [[ "$window" == "closed" ]]; then
+            echo "⏸️ Outside delivery window (need 12:00 AM–4:59 PM CT). Skipping evening slot."
+            echo "should_run=false" >> $GITHUB_OUTPUT
+            exit 0
+          fi
+
+          if [[ "$window" == "late" ]]; then
+            echo "⚠️ Past 8 AM CT and Discord not sent yet — running late fallback."
           else
-            # Fast check 1: If scheduled, check if already delivered to Discord today
-            already_sent=$(python3 -c "
-            import urllib.request, json
-            from datetime import datetime, timezone, timedelta
-            try:
-                from zoneinfo import ZoneInfo
-                today_ct = datetime.now(ZoneInfo('America/Chicago')).strftime('%Y-%m-%d')
-            except Exception:
-                today_ct = (datetime.now(timezone.utc) - timedelta(hours=5)).strftime('%Y-%m-%d')
-            try:
-                req = urllib.request.Request(
-                    'https://raw.githubusercontent.com/emilyfehr99/Automated-Post-Game-Reports/main/data/daily_notification_state.json',
-                    headers={'Cache-Control': 'no-cache', 'User-Agent': 'Mozilla/5.0'}
-                )
-                with urllib.request.urlopen(req, timeout=10) as r:
-                    data = json.loads(r.read().decode('utf-8'))
-                if data.get('last_discord_date') == today_ct:
-                    print('true')
-                    exit(0)
-            except Exception:
-                pass
-            print('false')
-            " 2>/dev/null || echo "false")
+            echo "✅ Inside primary pre-8 AM CT delivery window."
+          fi
 
-            if [[ "$already_sent" == "true" ]]; then
-              echo "⚡ Daily predictions already delivered to Discord today ($already_sent). Skipping subsequent scheduled run."
-              echo "should_run=false" >> $GITHUB_OUTPUT
-              exit 0
-            fi
-
-            # Check 2: Check if active games are scheduled in current gameWeek
-            has_games=$(python3 -c "
-            import urllib.request, json
-            try:
-                req = urllib.request.Request('https://api-web.nhle.com/v1/schedule/now', headers={'User-Agent': 'Mozilla/5.0'})
-                with urllib.request.urlopen(req, timeout=10) as r:
-                    data = json.loads(r.read().decode('utf-8'))
-                has_games = any(bool(day.get('games')) for day in (data.get('gameWeek') or []))
-                print('true' if has_games else 'false')
-            except Exception as e:
-                print('true')
-            " 2>/dev/null || echo "true")
-            if [[ "$has_games" == "true" ]]; then
-              echo "✅ Active games scheduled in current gameWeek!"
-              echo "should_run=true" >> $GITHUB_OUTPUT
-            else
-              echo "⏸️ No games scheduled for active week. Skipping run."
-              echo "should_run=false" >> $GITHUB_OUTPUT
-            fi
+          has_games=$(python3 -c "
+          import urllib.request, json
+          try:
+              req = urllib.request.Request('https://api-web.nhle.com/v1/schedule/now', headers={'User-Agent': 'Mozilla/5.0'})
+              with urllib.request.urlopen(req, timeout=10) as r:
+                  data = json.loads(r.read().decode('utf-8'))
+              has_games = any(bool(day.get('games')) for day in (data.get('gameWeek') or []))
+              print('true' if has_games else 'false')
+          except Exception:
+              print('true')
+          " 2>/dev/null || echo "true")
+          if [[ "$has_games" == "true" ]]; then
+            echo "✅ Active games scheduled in current gameWeek!"
+            echo "should_run=true" >> $GITHUB_OUTPUT
+          else
+            echo "⏸️ No games scheduled for active week. Skipping run."
+            echo "should_run=false" >> $GITHUB_OUTPUT
           fi
         id: check_date
 
@@ -142,8 +156,48 @@ jobs:
           ct = pytz.timezone('US/Central')
           now_ct = datetime.now(ct)
           print('Now (CT):', now_ct.strftime('%Y-%m-%d %H:%M:%S %Z'))
-          print('Running daily predictions workflow...')
+          print('Discord-first path: notify before scrape/retrain maintenance.')
           "
+
+      # DISCORD FIRST — do not wait on edge scrape / outcomes / retrain.
+      # Cached models + schedule are enough for the morning alert.
+      - name: Run daily predictions
+        if: steps.check_date.outputs.should_run == 'true'
+        env:
+          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
+          FORCE_DISCORD_NOTIFY: ${{ github.event.inputs.force_notify || 'false' }}
+        run: |
+          echo "🎯 RUNNING DAILY PREDICTIONS WITH META-ENSEMBLE (Discord-first)"
+          if [ ! -f "xgb_calibrated_model.pkl" ] && [ -n "${GITHUB_TOKEN}" ]; then
+            python3 scripts/download_latest_model_artifact.py || true
+          fi
+          PYTHONPATH=".:models:analyzers:utils:scrapers" python3 daily_prediction_notifier.py
+
+      - name: Persist Discord delivery state
+        if: steps.check_date.outputs.should_run == 'true'
+        run: |
+          if [ ! -f "data/daily_notification_state.json" ]; then
+            echo "ℹ️ No notification state file yet (Discord may have been skipped)."
+            exit 0
+          fi
+          git config user.email "action@github.com"
+          git config user.name "github-actions[bot]"
+          git add --force data/daily_notification_state.json
+          if git diff --staged --quiet; then
+            echo "ℹ️ Notification state already up to date"
+            exit 0
+          fi
+          git commit -m "Record Discord delivery state - $(date -u +'%Y-%m-%d')"
+          git fetch origin main
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase --autostash origin main || true
+            if git push origin HEAD:main; then
+              echo "✅ Discord delivery state pushed (attempt $attempt)"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "⚠️ Could not push Discord state yet; final push step will retry."
 
       - name: Scrape Edge data
         if: steps.check_date.outputs.should_run == 'true'
@@ -328,48 +382,6 @@ jobs:
           else:
               print("Calibration guardrail OK")
           PY
-
-      - name: Run daily predictions
-        if: steps.check_date.outputs.should_run == 'true'
-        env:
-          DISCORD_WEBHOOK_URL: ${{ secrets.DISCORD_WEBHOOK_URL }}
-          FORCE_DISCORD_NOTIFY: ${{ github.event.inputs.force_notify || 'false' }}
-        run: |
-          echo "🎯 RUNNING DAILY PREDICTIONS WITH META-ENSEMBLE"
-          echo "All data collected, now making predictions..."
-          # Ensure model artifacts exist even on non-retrain days.
-          if [ ! -f "xgb_calibrated_model.pkl" ] && [ -n "${GITHUB_TOKEN}" ]; then
-            python3 scripts/download_latest_model_artifact.py || true
-          fi
-          PYTHONPATH=".:models:analyzers:utils:scrapers" python3 daily_prediction_notifier.py
-
-      # Push Discord dedupe state immediately so later scheduled slots exit fast,
-      # even if smoke tests / large commits are still running.
-      - name: Persist Discord delivery state
-        if: steps.check_date.outputs.should_run == 'true'
-        run: |
-          if [ ! -f "data/daily_notification_state.json" ]; then
-            echo "ℹ️ No notification state file yet (Discord may have been skipped)."
-            exit 0
-          fi
-          git config user.email "action@github.com"
-          git config user.name "github-actions[bot]"
-          git add --force data/daily_notification_state.json
-          if git diff --staged --quiet; then
-            echo "ℹ️ Notification state already up to date"
-            exit 0
-          fi
-          git commit -m "Record Discord delivery state - $(date -u +'%Y-%m-%d')"
-          git fetch origin main
-          for attempt in 1 2 3 4 5; do
-            git pull --rebase --autostash origin main || true
-            if git push origin HEAD:main; then
-              echo "✅ Discord delivery state pushed (attempt $attempt)"
-              exit 0
-            fi
-            sleep 2
-          done
-          echo "⚠️ Could not push Discord state yet; final push step will retry."
 
       - name: Ensure model feature snapshot exists (CI)
         if: steps.check_date.outputs.should_run == 'true'
