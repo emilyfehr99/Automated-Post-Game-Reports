@@ -472,17 +472,28 @@ class RealTeamStatsGenerator(TeamReportGenerator):
         print(f"\n{'='*60}")
         print(f"✓ Stats generation complete. {self.output_file}")
         
-        # Also refresh advanced goalie and team metrics
+        # Skip expensive advanced refreshes when nothing new was computed.
+        force_advanced = os.environ.get("FORCE_ADVANCED_REFRESH", "").lower() in ("1", "true", "yes")
+        if total_new == 0 and not force_advanced:
+            print("⚡ No new game records — skipping advanced goalie/team metric refresh")
+            print(f"{'='*60}")
+            return
+
         print(f"\n{'='*60}")
         print("🔄 Refreshing advanced goalie and team metrics...")
         try:
-            # Refresh Goalie Stats
-            gb = GoalieStatsBuilder()
-            gb.run_refresher() 
-            
-            # Refresh Team Advanced Metrics
-            tb = TeamAdvancedMetricsBuilder()
-            tb.run_refresher()
+            from concurrent.futures import ThreadPoolExecutor
+
+            def _refresh_goalies():
+                GoalieStatsBuilder().run_refresher()
+
+            def _refresh_teams():
+                TeamAdvancedMetricsBuilder().run_refresher()
+
+            with ThreadPoolExecutor(max_workers=2) as ex:
+                futs = [ex.submit(_refresh_goalies), ex.submit(_refresh_teams)]
+                for fut in futs:
+                    fut.result()
             print("✅ Advanced metrics summaries refreshed successfully")
         except Exception as e:
             print(f"⚠️ Failed to refresh advanced metrics: {e}")

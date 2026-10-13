@@ -42,9 +42,12 @@ class DailyEdgeDataScraper:
             except Exception:
                 edge_data = []
 
-            # Fallback to BeautifulSoup if pandas parse missed
+            # Fallback to BeautifulSoup if pandas parse missed (lxml if available)
             if not edge_data:
-                soup = BeautifulSoup(response.text, 'html.parser')
+                try:
+                    soup = BeautifulSoup(response.text, 'lxml')
+                except Exception:
+                    soup = BeautifulSoup(response.text, 'html.parser')
                 table = soup.find('table', id='table-report-edge')
                 
                 if not table:

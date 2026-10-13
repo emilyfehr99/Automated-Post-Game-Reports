@@ -999,8 +999,36 @@ def train_calibrate_evaluate_variant(
         },
     }
 
-def train_optimized_model():
+def _load_cached_best_params(algo: str) -> Optional[Dict]:
+    """Reuse last champion params so daily CI can skip GridSearchCV."""
+    for path in (Path("model_performance.json"), Path("data/model_performance.json")):
+        if not path.exists():
+            continue
+        try:
+            perf = json.loads(path.read_text())
+            variants = perf.get("variants") or {}
+            for key in (f"{algo}_full", f"{algo}_recent", algo):
+                params = (variants.get(key) or {}).get("best_params")
+                if isinstance(params, dict) and params:
+                    return dict(params)
+            # Fall back to whatever champion params we stored last.
+            champ = perf.get("champion")
+            if champ and champ in variants:
+                params = (variants[champ] or {}).get("best_params")
+                if isinstance(params, dict) and params and str(champ).startswith(algo):
+                    return dict(params)
+        except Exception:
+            continue
+    return None
+
+
+def train_optimized_model(fast: Optional[bool] = None):
+    if fast is None:
+        fast = os.environ.get("FAST_CI", "").lower() in ("1", "true", "yes") or "--fast" in sys.argv
+
+    mode = "FAST CI (no grid search)" if fast else "FULL (grid search)"
     print("🚀 STARTING ADVANCED DATA SCIENCE OPTIMIZATION (PHASE 7)")
+    print(f"⚙️  Mode: {mode}")
     print("=" * 60)
     
     raw_preds = load_data()
@@ -1024,9 +1052,27 @@ def train_optimized_model():
 
     # Evaluate multiple algorithms
     results = []
-    algos = ["xgb", "lgbm", "rf"]
+    if fast:
+        # Daily CI: retrain only the prior champion family + xgb safety net,
+        # using cached hyperparams (skip the multi-thousand-fit grid).
+        prior_algo = "xgb"
+        try:
+            perf = json.loads(Path("model_performance.json").read_text())
+            prior_algo = str(perf.get("algo_champion") or prior_algo)
+        except Exception:
+            pass
+        algos = []
+        for a in (prior_algo, "xgb"):
+            if a in ("xgb", "lgbm", "rf") and a not in algos:
+                algos.append(a)
+        do_grid = False
+        print(f"⚡ Fast algos={algos} (cached params, no GridSearchCV)")
+    else:
+        algos = ["xgb", "lgbm", "rf"]
+        do_grid = True
     
     for algo in algos:
+        cached = _load_cached_best_params(algo) if not do_grid else None
         # Full variant
         res_full = train_calibrate_evaluate_variant(
             name=f"{algo}_full",
@@ -1034,7 +1080,8 @@ def train_optimized_model():
             train_df=train_df_full,
             cal_df=cal_df,
             test_df=test_df,
-            do_grid_search=True,
+            do_grid_search=do_grid,
+            fixed_params=cached,
         )
         results.append(res_full)
         
@@ -1046,7 +1093,7 @@ def train_optimized_model():
             cal_df=cal_df,
             test_df=test_df,
             do_grid_search=False,
-            fixed_params=res_full.get("best_params"),
+            fixed_params=res_full.get("best_params") or cached,
         )
         results.append(res_recent)
 
@@ -2308,4 +2355,4 @@ def confidence_bucket_report(y_true, p_home, min_conf_levels=None) -> Dict[str, 
 
 
 if __name__ == "__main__":
-    train_optimized_model()
+    train_optimized_model(fast=("--fast" in sys.argv) or None)

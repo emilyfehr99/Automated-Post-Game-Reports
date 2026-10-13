@@ -20,6 +20,11 @@ on:
         description: "Force Discord notification even if already sent today (true/false)"
         required: false
         default: "false"
+      full_retrain:
+        description: "Run full GridSearchCV retrain (slow). Default fast CI retrain."
+        required: false
+        default: "false"
+        type: boolean
 
 permissions:
   contents: write
@@ -144,8 +149,13 @@ jobs:
       - name: Install dependencies
         if: steps.check_date.outputs.should_run == 'true'
         run: |
-          python -m pip install --upgrade pip
-          pip install pytz requests pandas numpy beautifulsoup4 python-dateutil reportlab pillow matplotlib scikit-learn seaborn xgboost lightgbm pytest
+          # Skip pip self-upgrade (saves ~5–15s). Prefer binary wheels.
+          pip install --only-binary=:all: \
+            pytz requests pandas numpy beautifulsoup4 python-dateutil \
+            reportlab pillow matplotlib scikit-learn seaborn xgboost lightgbm pytest \
+            || pip install \
+            pytz requests pandas numpy beautifulsoup4 python-dateutil \
+            reportlab pillow matplotlib scikit-learn seaborn xgboost lightgbm pytest
 
       - name: Check time window
         if: steps.check_date.outputs.should_run == 'true'
@@ -199,21 +209,37 @@ jobs:
           done
           echo "⚠️ Could not push Discord state yet; final push step will retry."
 
-      - name: Scrape Edge data
+      # Edge scrape ∥ outcomes (independent). Team stats after outcomes.
+      - name: Parallel scrape (Edge + outcomes)
         if: steps.check_date.outputs.should_run == 'true'
         continue-on-error: true
+        id: outcomes
         run: |
-          echo "🏒 SCRAPING NHL EDGE DATA"
-          PYTHONPATH=".:models:analyzers:utils:scrapers" python3 scrapers/daily_edge_data_scraper.py || echo "⚠️ Edge scraper warning, using fallback."
-
-      - name: Validate edge data exists
-        if: steps.check_date.outputs.should_run == 'true'
-        run: |
+          set +e
+          echo "🚀 Parallel maintenance: Edge scrape ∥ game outcomes"
+          PYTHONPATH=".:models:analyzers:utils:scrapers" python3 scrapers/daily_edge_data_scraper.py > /tmp/edge.log 2>&1 &
+          EDGE_PID=$!
+          PYTHONPATH=".:models:analyzers:utils:scrapers" python3 utils/update_game_outcomes.py > /tmp/outcomes.log 2>&1 &
+          OUT_PID=$!
+          wait $EDGE_PID; EDGE_EC=$?
+          wait $OUT_PID; OUT_EC=$?
+          echo "----- Edge scrape -----"
+          cat /tmp/edge.log || true
+          echo "----- Outcomes -----"
+          cat /tmp/outcomes.log || true
+          if [ "$EDGE_EC" -ne 0 ]; then
+            echo "⚠️ Edge scraper exit=$EDGE_EC (using cache if present)"
+          fi
           if [ -f "data/nhl_edge_data.json" ]; then
-            echo "✅ Edge data file ready in data/"
-            ls -l data/nhl_edge_data.json
+            echo "✅ Edge data ready: data/nhl_edge_data.json"
           else
             echo "⚠️ Edge data file not present, using default baseline team stats."
+          fi
+          updated="$(python3 -c "import re; from pathlib import Path; m=re.search(r'OUTCOMES_UPDATED=(\\d+)', Path('/tmp/outcomes.log').read_text() if Path('/tmp/outcomes.log').exists() else ''); print(int(m.group(1)) if m else 0)" 2>/dev/null || echo 0)"
+          echo "outcomes_updated=${updated}" >> "$GITHUB_OUTPUT"
+          echo "OUTCOMES_UPDATED=${updated}"
+          if [ "$OUT_EC" -ne 0 ]; then
+            echo "⚠️ Outcomes updater exit=$OUT_EC"
           fi
 
       - name: Generate real team stats
@@ -222,24 +248,12 @@ jobs:
         run: |
           echo "📊 GENERATING REAL TEAM STATS"
           PYTHONPATH=".:models:analyzers:utils:scrapers" python3 utils/generate_real_team_stats.py || echo "⚠️ Stats generator warning, using cached stats."
-          
-          # Check if file was created (normalized location)
           STATS_FILE=$(python3 -c "from utils.season_utils import get_team_stats_path; print(get_team_stats_path())" 2>/dev/null || python3 -c "from season_utils import get_team_stats_path; print(get_team_stats_path())" 2>/dev/null || echo "data/season_2026_2027_team_stats.json")
           if [ -n "$STATS_FILE" ] && [ -f "$STATS_FILE" ]; then
             echo "✅ Team stats file verified: $STATS_FILE"
           else
             echo "ℹ️ Using existing cached team stats."
           fi
-
-      - name: Update game outcomes
-        if: steps.check_date.outputs.should_run == 'true'
-        continue-on-error: true
-        id: outcomes
-        run: |
-          echo "📝 UPDATING PAST GAME OUTCOMES"
-          PYTHONPATH=".:models:analyzers:utils:scrapers" python3 utils/update_game_outcomes.py | tee /tmp/outcomes.log || true
-          updated="$(python3 -c "import re; from pathlib import Path; m=re.search(r'OUTCOMES_UPDATED=(\\d+)', Path('/tmp/outcomes.log').read_text() if Path('/tmp/outcomes.log').exists() else ''); print(int(m.group(1)) if m else 0)" 2>/dev/null || echo 0)"
-          echo "outcomes_updated=${updated}" >> "$GITHUB_OUTPUT"
 
       - name: One-time backfill events logs (if missing)
         if: steps.check_date.outputs.should_run == 'true'
@@ -251,20 +265,28 @@ jobs:
           fi
 
       - name: Compact events logs
-        if: steps.check_date.outputs.should_run == 'true'
+        if: steps.check_date.outputs.should_run == 'true' && steps.outcomes.outputs.outcomes_updated != '0'
         run: |
           PYTHONPATH=".:models:analyzers:utils:scrapers" python3 utils/compact_event_logs.py
 
-      - name: Retrain XGBoost Model
+      - name: Retrain model
         if: steps.check_date.outputs.should_run == 'true' && steps.outcomes.outputs.outcomes_updated != '0'
+        env:
+          FULL_RETRAIN: ${{ github.event_name == 'workflow_dispatch' && inputs.full_retrain || false }}
         run: |
-          echo "🧠 RETRAINING MODEL WITH LATEST RESULTS"
-          # Capture baseline metrics (from repo checkout) for regression guardrails.
           if [ -f "model_metrics.json" ]; then
             cp model_metrics.json /tmp/model_metrics_baseline.json
           fi
-          PYTHONPATH=".:models:analyzers:utils:scrapers" python3 models/train_xgboost_model.py
-          if [ -f "xgb_nhl_model.json" ]; then
+          if [ "$FULL_RETRAIN" = "true" ]; then
+            echo "🧠 FULL RETRAIN (GridSearchCV across xgb/lgbm/rf)"
+            export FAST_CI=0
+            PYTHONPATH=".:models:analyzers:utils:scrapers" python3 models/train_xgboost_model.py
+          else
+            echo "🧠 FAST RETRAIN (cached hyperparams, no GridSearchCV)"
+            export FAST_CI=1
+            PYTHONPATH=".:models:analyzers:utils:scrapers" python3 models/train_xgboost_model.py --fast
+          fi
+          if [ -f "xgb_nhl_model.json" ] || [ -f "xgb_calibrated_model.pkl" ]; then
              echo "✅ Model retrained successfully"
           else
              echo "⚠️ Model training failed or didn't save (accuracy threshold not met?)"
