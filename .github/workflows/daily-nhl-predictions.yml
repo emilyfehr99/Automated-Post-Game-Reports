@@ -2,24 +2,28 @@ name: Daily NHL Predictions with Edge Data
 
 concurrency:
   group: daily-nhl-predictions
-  cancel-in-progress: true
+  # Never cancel a run that may already be sending Discord — duplicates are
+  # prevented by data/daily_notification_state.json instead.
+  cancel-in-progress: false
 
 on:
   schedule:
-    # Staggered early morning triggers at odd/off-peak minutes to eliminate GitHub Actions queue delays.
-    # Starting at 10:13 UTC (5:13 AM CDT) ensures runner picks up instantly with zero queue backlog.
-    # Guarantees execution and Discord delivery before 8:00 AM Central (CDT/CST) every single day.
-    # CDT (UTC-5): 10:13 UTC = 5:13 AM, 10:43 UTC = 5:43 AM, 11:13 UTC = 6:13 AM, 11:43 UTC = 6:43 AM, 12:13 UTC = 7:13 AM, 12:37 UTC = 7:37 AM
-    # CST (UTC-6): 11:13 UTC = 5:13 AM, 11:43 UTC = 5:43 AM, 12:13 UTC = 6:13 AM, 12:37 UTC = 6:37 AM, 13:13 UTC = 7:13 AM, 13:37 UTC = 7:37 AM
-    # Stateful check: the first runner delivers; subsequent triggers detect completion and exit in <5s.
-    - cron: '13 10 * * *'  # 5:13 AM CDT / 4:13 AM CST
-    - cron: '43 10 * * *'  # 5:43 AM CDT / 4:43 AM CST
-    - cron: '13 11 * * *'  # 6:13 AM CDT / 5:13 AM CST
-    - cron: '43 11 * * *'  # 6:43 AM CDT / 5:43 AM CST
-    - cron: '13 12 * * *'  # 7:13 AM CDT / 6:13 AM CST
-    - cron: '37 12 * * *'  # 7:37 AM CDT / 6:37 AM CST
-    - cron: '13 13 * * *'  # 8:13 AM CDT (exits early) / 7:13 AM CST
-    - cron: '37 13 * * *'  # 8:37 AM CDT (exits early) / 7:37 AM CST
+    # GitHub routinely delays schedule triggers by 5–10h on this repo (observed:
+    # 10:13 UTC crons starting ~15:00–20:00 UTC). Start overnight so even a long
+    # delay still lands Discord before 8:00 AM Central.
+    # Target window: delivery by 13:00 UTC (8 AM CDT) / 14:00 UTC (8 AM CST).
+    # CDT (UTC-5): 01:17→8:17 PM prev … 10:17→5:17 AM, 11:17→6:17 AM, 12:47→7:47 AM
+    # With a ~10h GHA delay, 01:17 UTC still lands ~7:17 AM CDT (before 8 AM).
+    # CST (UTC-6): each slot is one hour earlier local time.
+    # First successful Discord write wins; later slots exit in seconds via state check.
+    - cron: '17 1 * * *'   # overnight buffer (absorbs multi-hour GHA delay)
+    - cron: '17 3 * * *'
+    - cron: '17 5 * * *'
+    - cron: '17 7 * * *'
+    - cron: '17 9 * * *'
+    - cron: '17 10 * * *'  # 5:17 AM CDT nominal
+    - cron: '17 11 * * *'  # 6:17 AM CDT nominal
+    - cron: '47 12 * * *'  # 7:47 AM CDT last pre-8am attempt
   workflow_dispatch:
     inputs:
       force_notify:
@@ -338,6 +342,34 @@ jobs:
             python3 scripts/download_latest_model_artifact.py || true
           fi
           PYTHONPATH=".:models:analyzers:utils:scrapers" python3 daily_prediction_notifier.py
+
+      # Push Discord dedupe state immediately so later scheduled slots exit fast,
+      # even if smoke tests / large commits are still running.
+      - name: Persist Discord delivery state
+        if: steps.check_date.outputs.should_run == 'true'
+        run: |
+          if [ ! -f "data/daily_notification_state.json" ]; then
+            echo "ℹ️ No notification state file yet (Discord may have been skipped)."
+            exit 0
+          fi
+          git config user.email "action@github.com"
+          git config user.name "github-actions[bot]"
+          git add --force data/daily_notification_state.json
+          if git diff --staged --quiet; then
+            echo "ℹ️ Notification state already up to date"
+            exit 0
+          fi
+          git commit -m "Record Discord delivery state - $(date -u +'%Y-%m-%d')"
+          git fetch origin main
+          for attempt in 1 2 3 4 5; do
+            git pull --rebase --autostash origin main || true
+            if git push origin HEAD:main; then
+              echo "✅ Discord delivery state pushed (attempt $attempt)"
+              exit 0
+            fi
+            sleep 2
+          done
+          echo "⚠️ Could not push Discord state yet; final push step will retry."
 
       - name: Ensure model feature snapshot exists (CI)
         if: steps.check_date.outputs.should_run == 'true'
