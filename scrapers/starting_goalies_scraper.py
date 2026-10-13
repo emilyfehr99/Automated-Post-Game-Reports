@@ -7,11 +7,18 @@ Aggregates starting goalie announcements from:
 3. NHL Official Web API (GameCenter roster confirmation)
 """
 from typing import Dict, List, Optional, Any
+import os
 import requests
 from bs4 import BeautifulSoup
 import json
 import re
+from concurrent.futures import ThreadPoolExecutor
 from datetime import datetime
+from pathlib import Path
+try:
+    from zoneinfo import ZoneInfo
+except Exception:  # pragma: no cover
+    ZoneInfo = None
 
 TEAM_NAME_TO_ABBR = {
     'Anaheim Ducks': 'ANA', 'Arizona Coyotes': 'ARI', 'Boston Bruins': 'BOS',
@@ -49,17 +56,66 @@ class StartingGoaliesScraper:
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36'
         })
+        self.cache_path = Path(os.environ.get(
+            "GOALIE_CONSENSUS_CACHE",
+            "data/starting_goalies_consensus_cache.json",
+        ))
+        self.cache_max_minutes = float(os.environ.get("GOALIE_CACHE_MAX_MINUTES", "45"))
+
+    def _today_ct(self) -> str:
+        if ZoneInfo is not None:
+            return datetime.now(ZoneInfo("America/Chicago")).strftime("%Y-%m-%d")
+        return datetime.now().strftime("%Y-%m-%d")
+
+    def _read_cache(self) -> Optional[List[Dict[str, Any]]]:
+        if os.environ.get("FORCE_GOALIE_REFRESH", "").lower() in ("1", "true", "yes"):
+            return None
+        if not self.cache_path.exists():
+            return None
+        try:
+            payload = json.loads(self.cache_path.read_text())
+            if payload.get("date") != self._today_ct():
+                return None
+            scraped_at = payload.get("scraped_at")
+            if scraped_at:
+                ts = datetime.fromisoformat(scraped_at)
+                age_min = (datetime.now(ts.tzinfo) - ts).total_seconds() / 60.0 if ts.tzinfo else 999
+                if age_min > self.cache_max_minutes:
+                    return None
+            games = payload.get("games") or []
+            if games:
+                print(f"⚡ Starting-goalie cache hit ({len(games)} games)")
+                return games
+        except Exception:
+            return None
+        return None
+
+    def _write_cache(self, games: List[Dict[str, Any]]) -> None:
+        try:
+            self.cache_path.parent.mkdir(parents=True, exist_ok=True)
+            from datetime import timezone
+            payload = {
+                "date": self._today_ct(),
+                "scraped_at": datetime.now(timezone.utc).isoformat(),
+                "games": games,
+            }
+            self.cache_path.write_text(json.dumps(payload, separators=(",", ":")))
+        except Exception:
+            pass
 
     def scrape_daily_faceoff(self) -> Dict[str, Dict[str, Any]]:
         """Scrape Daily Faceoff starting goalies via Next.js structured data."""
         results = {}
         try:
             url = 'https://www.dailyfaceoff.com/starting-goalies'
-            resp = self.session.get(url, timeout=10)
+            resp = self.session.get(url, timeout=8)
             if resp.status_code != 200:
                 return results
 
-            soup = BeautifulSoup(resp.text, 'html.parser')
+            try:
+                soup = BeautifulSoup(resp.text, 'lxml')
+            except Exception:
+                soup = BeautifulSoup(resp.text, 'html.parser')
             next_data = soup.find('script', id='__NEXT_DATA__')
             if not next_data:
                 return results
@@ -137,8 +193,16 @@ class StartingGoaliesScraper:
         """
         Merge Daily Faceoff + RotoWire into a unified, highest-confidence consensus.
         """
-        dfo_data = self.scrape_daily_faceoff()
-        rw_data = self.scrape_rotowire()
+        cached = self._read_cache()
+        if cached is not None:
+            return cached
+
+        # DFO and RotoWire are independent — scrape in parallel.
+        with ThreadPoolExecutor(max_workers=2) as ex:
+            f_dfo = ex.submit(self.scrape_daily_faceoff)
+            f_rw = ex.submit(self.scrape_rotowire)
+            dfo_data = f_dfo.result()
+            rw_data = f_rw.result()
 
         all_keys = list(dict.fromkeys(list(dfo_data.keys()) + list(rw_data.keys())))
         consensus_games = []
@@ -182,6 +246,8 @@ class StartingGoaliesScraper:
             }
             consensus_games.append(game_obj)
 
+        if consensus_games:
+            self._write_cache(consensus_games)
         return consensus_games
 
 if __name__ == '__main__':

@@ -68,6 +68,50 @@ def _lead_after_p1_from_landing(landing, away_abbr, home_abbr) -> int:
     return 0
 
 
+def _valid_nhl_game_id(game_id) -> bool:
+    """Reject matchup keys like 'UTA@COL' and non-numeric junk."""
+    s = str(game_id or "")
+    return s.isdigit() and len(s) >= 8
+
+
+def _sync_outcomes_from_prediction_records(preds_by_gid, outs_by_gid) -> int:
+    """Backfill outcome events when prediction rows already have winners.
+
+    Historically ~900+ games had actual_winner on the prediction record but
+    never landed in outcome_events.jsonl, forcing daily re-scans.
+    """
+    if append_outcome_event is None:
+        return 0
+    synced = 0
+    for gid, p in preds_by_gid.items():
+        if outs_by_gid.get(gid, {}).get("actual_winner"):
+            continue
+        winner = p.get("actual_winner")
+        if not winner:
+            continue
+        if not _valid_nhl_game_id(gid):
+            continue
+        try:
+            append_outcome_event(
+                game_id=str(gid),
+                date=p.get("date"),
+                away_team=p.get("away_team"),
+                home_team=p.get("home_team"),
+                actual_away_score=p.get("actual_away_score"),
+                actual_home_score=p.get("actual_home_score"),
+                actual_winner=winner,
+                lead_after_p1=p.get("lead_after_p1"),
+                synced_from_prediction=True,
+            )
+            outs_by_gid[str(gid)] = {"actual_winner": winner}
+            synced += 1
+        except Exception as e:
+            logger.debug("Could not sync outcome for %s: %s", gid, e)
+    if synced:
+        logger.info("⚡ Synced %s outcome events from prediction records (no API)", synced)
+    return synced
+
+
 def update_game_outcomes():
     """Update valid predictions with actual game outcomes"""
     with timed("update_game_outcomes total"):
@@ -79,16 +123,20 @@ def update_game_outcomes():
             OUTCOME_EVENTS_PATH = None
 
         predictions = []
+        synced_count = 0
         if load_latest_by_game_id is not None and PREDICTION_EVENTS_PATH is not None:
             preds_by_gid = load_latest_by_game_id(PREDICTION_EVENTS_PATH)
             outs_by_gid = (
                 load_latest_by_game_id(OUTCOME_EVENTS_PATH) if OUTCOME_EVENTS_PATH is not None else {}
             )
+            synced_count = _sync_outcomes_from_prediction_records(preds_by_gid, outs_by_gid)
             for gid, p in preds_by_gid.items():
                 if outs_by_gid.get(gid, {}).get("actual_winner"):
                     continue
+                if p.get("actual_winner"):
+                    continue
                 predictions.append(p)
-            logger.info("Checking for game updates via events log (%s pending games)...", len(predictions))
+            logger.info("Checking for game updates via events log (%s truly pending)...", len(predictions))
         else:
             predictions_file = Path("data/win_probability_predictions_v2.json")
             if not predictions_file.exists():
@@ -102,9 +150,17 @@ def update_game_outcomes():
                 data = json.load(f)
             predictions = data.get("predictions", [])
 
-        updated_count = 0
+        # synced_count is local backfill only — must NOT trigger model retrain in CI.
+        api_updated_count = 0
         client = NHLAPIClient(timeout=8, pool_size=32)
         today = _today_ct()
+        skip_path = Path("data/outcome_skip_game_ids.json")
+        skip_ids = set()
+        if skip_path.exists():
+            try:
+                skip_ids = set(json.loads(skip_path.read_text()).get("game_ids") or [])
+            except Exception:
+                skip_ids = set()
 
         pending_games = []
         for pred in predictions:
@@ -113,6 +169,17 @@ def update_game_outcomes():
             g_date = pred.get("date")
             g_id = pred.get("game_id")
             if not g_date or not g_id or g_date > today:
+                continue
+            if not _valid_nhl_game_id(g_id):
+                skip_ids.add(str(g_id))
+                continue
+            if str(g_id) in skip_ids:
+                continue
+            # Preseason IDs (…01xxxx) are low-value for model training; skip if old.
+            gid_s = str(g_id)
+            if len(gid_s) >= 6 and gid_s[4:6] == "01" and g_date < today:
+                # Keep today's preseason if any; abandon historical preseason.
+                skip_ids.add(gid_s)
                 continue
             pending_games.append(pred)
 
@@ -145,6 +212,7 @@ def update_game_outcomes():
 
         # Only spend API budget on games the schedule says are done.
         completed_pending = []
+        abandoned = 0
         for pred in pending_games:
             game_id = str(pred.get("game_id"))
             game_date = pred.get("date")
@@ -157,11 +225,40 @@ def update_game_outcomes():
             )
             if is_complete:
                 completed_pending.append(pred)
+                continue
+            # Old games missing from schedule / never finalized → stop retrying daily.
+            if game_date and game_date < today and (sched_info is None or game_state in ("FUT", "PRE", "Unknown")):
+                skip_ids.add(game_id)
+                abandoned += 1
+        if abandoned:
+            logger.info("⚡ Abandoned %s stale unresolved game IDs (won't re-query)", abandoned)
+
+        # Persist skip list for permanently unresolvable / abandoned IDs.
+        if skip_ids:
+            try:
+                skip_path.parent.mkdir(parents=True, exist_ok=True)
+                skip_path.write_text(json.dumps({"game_ids": sorted(skip_ids)}, indent=2))
+            except Exception:
+                pass
 
         if not completed_pending:
-            logger.info("No completed games found needing updates.")
-            print("OUTCOMES_UPDATED=0")
-            return 0
+            if synced_count > 0:
+                with timed("rebuild predictions JSON view after sync"):
+                    try:
+                        from utils.build_predictions_history_view import write_view
+                        write_view()
+                    except Exception:
+                        try:
+                            from build_predictions_history_view import write_view
+                            write_view()
+                        except Exception as e:
+                            logger.warning("Could not regenerate JSON history view: %s", e)
+            else:
+                logger.info("No completed games found needing updates.")
+            # Retrain trigger uses API updates only.
+            print(f"OUTCOMES_SYNCED={synced_count}")
+            print(f"OUTCOMES_UPDATED={api_updated_count}")
+            return int(api_updated_count)
 
         logger.info("Fetching details for %s completed games...", len(completed_pending))
         # Warm shared disk/memory cache in one parallel wave.
@@ -263,7 +360,7 @@ def update_game_outcomes():
         for res in processed_results:
             if not res:
                 continue
-            updated_count += 1
+            api_updated_count += 1
             logger.info(
                 "✅ Updated: %s %s-%s %s (Winner: %s)",
                 res["away_team"],
@@ -288,7 +385,7 @@ def update_game_outcomes():
                 except Exception as e:
                     logger.warning("Could not append outcome event: %s", e)
 
-        if updated_count > 0:
+        if api_updated_count > 0 or synced_count > 0:
             with timed("rebuild predictions JSON view"):
                 try:
                     from utils.build_predictions_history_view import write_view
@@ -304,8 +401,9 @@ def update_game_outcomes():
         else:
             logger.info("No completed games found needing updates.")
 
-        print(f"OUTCOMES_UPDATED={updated_count}")
-        return int(updated_count)
+        print(f"OUTCOMES_SYNCED={synced_count}")
+        print(f"OUTCOMES_UPDATED={api_updated_count}")
+        return int(api_updated_count)
 
 
 if __name__ == "__main__":

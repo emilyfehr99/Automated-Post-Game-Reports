@@ -95,3 +95,11 @@ outputs/
 
 # Local NHL API game cache (CI/maintenance)
 .cache/
+
+!data/outcome_skip_game_ids.json
+!data/starting_goalies_consensus_cache.json
+
+!data/outcome_events.jsonl
+!data/prediction_events.jsonl
+!data/outcome_skip_game_ids.json
+!data/starting_goalies_consensus_cache.json
