@@ -102,7 +102,22 @@ def resolve_game_id(
             h = ((g.get("homeTeam") or {}).get("abbrev") or "").upper()
             if a == away and h == home:
                 return str(game_id)
-        # Wrong id for this matchup — fall through to matchup lookup.
+        # Numeric id present but doesn't match stored matchup/date.
+        # Prefer correcting teams/date from boxscore later — do NOT remap to a
+        # different NHL game (playoff↔regular-season collisions).
+        # Exception: clearly wrong-season regular-season ids (202502… for Oct 2026)
+        # may be remapped via matchup lookup below when season prefix mismatches date.
+        try:
+            season_prefix = int(str(game_id)[:4])
+            year = int(day[:4])
+            month = int(day[5:7])
+            # NHL season Y maps to games from Oct Y through July Y+1
+            expected_season = year if month >= 8 else year - 1
+            if season_prefix == expected_season or str(game_id)[4:6] in ("03", "04"):
+                # Same season, or playoff/all-star id — keep original id.
+                return str(game_id)
+        except Exception:
+            return str(game_id)
 
     if not (away and home and day):
         return str(game_id) if is_valid_nhl_game_id(game_id) else None
@@ -112,7 +127,8 @@ def resolve_game_id(
         return found
 
     # Phantom date rows: search nearby days for the same matchup.
-    if nearby_days > 0:
+    # Only for synthetic keys — never remap an existing numeric id this way.
+    if nearby_days > 0 and not is_valid_nhl_game_id(game_id):
         from datetime import datetime, timedelta
 
         try:
@@ -127,7 +143,7 @@ def resolve_game_id(
                 found = _lookup_matchup(away, home, candidate, cache, session=session)
                 if found:
                     return found
-    return None
+    return str(game_id) if is_valid_nhl_game_id(game_id) else None
 
 
 def prefetch_schedules(dates: Iterable[str], max_workers: int = 12) -> Dict[str, list]:

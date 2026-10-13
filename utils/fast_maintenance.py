@@ -64,6 +64,19 @@ def main() -> int:
     except Exception as e:
         print(f"⚠️ Backfill warning: {e}")
 
+    t3 = time.time()
+    try:
+        from utils.repair_outcomes_integrity import repair_outcomes_integrity
+        repair = repair_outcomes_integrity()
+        print(
+            f"⏱️ Integrity repair: {time.time()-t3:.1f}s "
+            f"refreshed={repair.get('outcomes_refreshed')} "
+            f"past_missing={repair.get('still_past_missing')} "
+            f"bad_winners={repair.get('bad_winner_remaining')}"
+        )
+    except Exception as e:
+        print(f"⚠️ Integrity repair warning: {e}")
+
     print(f"✅ Maintenance complete in {time.time()-t0:.1f}s")
     return 0 if stats_ec == 0 else stats_ec
 

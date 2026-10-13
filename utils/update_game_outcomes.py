@@ -94,6 +94,20 @@ def _sync_outcomes_from_prediction_records(preds_by_gid, outs_by_gid) -> int:
         if not _valid_nhl_game_id(gid):
             continue
         try:
+            # Normalize legacy "home"/"away" labels to team abbrevs.
+            w = str(winner).strip()
+            away = (p.get("away_team") or "").upper()
+            home = (p.get("home_team") or "").upper()
+            if w.lower() == "home" and home:
+                w = home
+            elif w.lower() == "away" and away:
+                w = away
+            elif away and home and p.get("actual_away_score") is not None and p.get("actual_home_score") is not None:
+                try:
+                    a, h = int(p["actual_away_score"]), int(p["actual_home_score"])
+                    w = away if a > h else (home if h > a else "TIE")
+                except Exception:
+                    pass
             append_outcome_event(
                 game_id=str(gid),
                 date=p.get("date"),
@@ -101,11 +115,11 @@ def _sync_outcomes_from_prediction_records(preds_by_gid, outs_by_gid) -> int:
                 home_team=p.get("home_team"),
                 actual_away_score=p.get("actual_away_score"),
                 actual_home_score=p.get("actual_home_score"),
-                actual_winner=winner,
+                actual_winner=w,
                 lead_after_p1=p.get("lead_after_p1"),
                 synced_from_prediction=True,
             )
-            outs_by_gid[str(gid)] = {"actual_winner": winner}
+            outs_by_gid[str(gid)] = {"actual_winner": w}
             synced += 1
         except Exception as e:
             logger.debug("Could not sync outcome for %s: %s", gid, e)
