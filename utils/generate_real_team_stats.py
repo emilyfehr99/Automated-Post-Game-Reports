@@ -57,12 +57,12 @@ class RealTeamStatsGenerator(TeamReportGenerator):
         if not game_id:
             return None
         try:
-            # Check in-memory cache to prevent duplicate network calls across home/away team processing
+            # Prefer prefetched / disk-cached payloads from NHLAPIClient.
             str_id = str(game_id)
             if str_id in self._game_cache:
                 game_data = self._game_cache[str_id]
             else:
-                game_data = self.api.get_comprehensive_game_data(str_id)
+                game_data = self.api.get_comprehensive_game_data(str_id, use_cache=True)
                 if game_data:
                     self._game_cache[str_id] = game_data
             
@@ -381,33 +381,20 @@ class RealTeamStatsGenerator(TeamReportGenerator):
 
         from concurrent.futures import ThreadPoolExecutor
 
-        def process_team(team):
+        # 1) Collect new game IDs first (no network).
+        pending_by_team = {}
+        prefetch_ids = set()
+        for team in standings:
             abbrev = team['teamAbbrev']['default']
-            name = team['teamName']['default']
-            
             team_games = all_team_games.get(abbrev) or self.get_team_games(abbrev)
             if not team_games:
-                return abbrev, 0
-                
+                pending_by_team[abbrev] = ([], [])
+                continue
             home_games = [g for g in team_games if g['was_home']]
             away_games = [g for g in team_games if not g['was_home']]
-            
             if abbrev not in teams_data:
-                teams_data[abbrev] = {
-                    'home': {
-                        'gs': [], 'xg': [], 'corsi_pct': [], 'fenwick_pct': [], 'pdo': [],
-                        'ozs': [], 'nzs': [], 'dzs': [], 'goals': [], 'opp_goals': [], 'shots': [],
-                        'hits': [], 'blocked_shots': [], 'giveaways': [], 'takeaways': [],
-                        'penalty_minutes': [], 'power_play_pct': [], 'penalty_kill_pct': [],
-                        'faceoff_pct': [], 'nzt': [], 'nztsa': [], 'fc': [], 'rush': [],
-                        'lat': [], 'long_movement': [], 'hdc': [], 'hdca': [], 'opp_xg': [], 'period_dzs': [],
-                        'rebounds': [], 'rush_shots': [], 'cycle_shots': [], 'forecheck_turnovers': [],
-                        'net_front_traffic_pct': [], 'passes_per_goal': [], 'avg_goal_distance': [],
-                        'east_west_play': [], 'north_south_play': [],
-                        'zone_entry_carry_pct': [], 'zone_entry_pass_pct': [],
-                        'games': [], 'opponents': []
-                    },
-                    'away': {
+                def _empty_side():
+                    return {
                         'gs': [], 'xg': [], 'corsi_pct': [], 'fenwick_pct': [], 'pdo': [],
                         'ozs': [], 'nzs': [], 'dzs': [], 'goals': [], 'opp_goals': [], 'shots': [],
                         'hits': [], 'blocked_shots': [], 'giveaways': [], 'takeaways': [],
@@ -420,16 +407,36 @@ class RealTeamStatsGenerator(TeamReportGenerator):
                         'zone_entry_carry_pct': [], 'zone_entry_pass_pct': [],
                         'games': [], 'opponents': []
                     }
-                }
-            
+                teams_data[abbrev] = {'home': _empty_side(), 'away': _empty_side()}
             processed_home = len(teams_data[abbrev]['home'].get('gs', []))
             processed_away = len(teams_data[abbrev]['away'].get('gs', []))
-            
-            new_home_games = home_games[processed_home:]
-            new_away_games = away_games[processed_away:]
-            
-            home_stats = teams_data[abbrev]['home']
-            if new_home_games:
+            new_home = home_games[processed_home:]
+            new_away = away_games[processed_away:]
+            pending_by_team[abbrev] = (new_home, new_away)
+            for g in new_home + new_away:
+                if g.get('game_id'):
+                    prefetch_ids.add(str(g['game_id']))
+
+        if not prefetch_ids:
+            print("⚡ No new team-stat games to process")
+            total_new = 0
+            team_results = [(abbr, 0) for abbr in pending_by_team]
+        else:
+            print(f"🚀 Prefetching {len(prefetch_ids)} unique game payloads in parallel...")
+            try:
+                # Prefer shared cache-aware client method when available.
+                self.api.prefetch_games(prefetch_ids, max_workers=16)
+            except Exception:
+                with ThreadPoolExecutor(max_workers=16) as ex:
+                    list(ex.map(lambda gid: self.api.get_comprehensive_game_data(str(gid)), prefetch_ids))
+
+            def process_team(team):
+                abbrev = team['teamAbbrev']['default']
+                new_home_games, new_away_games = pending_by_team.get(abbrev, ([], []))
+                if not new_home_games and not new_away_games:
+                    return abbrev, 0
+
+                home_stats = teams_data[abbrev]['home']
                 for g in new_home_games:
                     res = self._fetch_and_calculate_single_game(g, is_home=True)
                     if res:
@@ -440,8 +447,7 @@ class RealTeamStatsGenerator(TeamReportGenerator):
                         home_stats['games'].append(game_id)
                         home_stats['opponents'].append(opp_team)
 
-            away_stats = teams_data[abbrev]['away']
-            if new_away_games:
+                away_stats = teams_data[abbrev]['away']
                 for g in new_away_games:
                     res = self._fetch_and_calculate_single_game(g, is_home=False)
                     if res:
@@ -451,11 +457,11 @@ class RealTeamStatsGenerator(TeamReportGenerator):
                                 away_stats[key].append(metrics.get(key, 0))
                         away_stats['games'].append(game_id)
                         away_stats['opponents'].append(opp_team)
-                        
-            return abbrev, len(new_home_games) + len(new_away_games)
 
-        with ThreadPoolExecutor(max_workers=16) as executor:
-            team_results = list(executor.map(process_team, standings))
+                return abbrev, len(new_home_games) + len(new_away_games)
+
+            with ThreadPoolExecutor(max_workers=16) as executor:
+                team_results = list(executor.map(process_team, standings))
 
         total_new = sum(r[1] for r in team_results if r and r[1])
         print(f"✅ Processed {len(standings)} teams in parallel ({total_new} new game records computed)")
@@ -467,7 +473,7 @@ class RealTeamStatsGenerator(TeamReportGenerator):
         
         output = {"teams": teams_data}
         with open(self.output_file, 'w') as f:
-            json.dump(output, f, indent=2)
+            json.dump(output, f, separators=(',', ':'))
         
         print(f"\n{'='*60}")
         print(f"✓ Stats generation complete. {self.output_file}")

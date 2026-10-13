@@ -92,3 +92,6 @@ src/
 scratch/
 outputs/
 *.txt
+
+# Local NHL API game cache (CI/maintenance)
+.cache/

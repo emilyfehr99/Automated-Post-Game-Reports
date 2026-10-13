@@ -209,50 +209,30 @@ jobs:
           done
           echo "⚠️ Could not push Discord state yet; final push step will retry."
 
-      # Edge scrape ∥ outcomes (independent). Team stats after outcomes.
-      - name: Parallel scrape (Edge + outcomes)
+      # Shared disk cache + Edge∥outcomes → team stats (one orchestrator).
+      - name: Fast maintenance (Edge ∥ outcomes → team stats)
         if: steps.check_date.outputs.should_run == 'true'
         continue-on-error: true
         id: outcomes
+        env:
+          FAST_CI: "1"
+          NHL_GAME_CACHE_DIR: ${{ github.workspace }}/.cache/nhl_games
+          EDGE_CACHE_MAX_HOURS: "6"
         run: |
           set +e
-          echo "🚀 Parallel maintenance: Edge scrape ∥ game outcomes"
-          PYTHONPATH=".:models:analyzers:utils:scrapers" python3 scrapers/daily_edge_data_scraper.py > /tmp/edge.log 2>&1 &
-          EDGE_PID=$!
-          PYTHONPATH=".:models:analyzers:utils:scrapers" python3 utils/update_game_outcomes.py > /tmp/outcomes.log 2>&1 &
-          OUT_PID=$!
-          wait $EDGE_PID; EDGE_EC=$?
-          wait $OUT_PID; OUT_EC=$?
-          echo "----- Edge scrape -----"
-          cat /tmp/edge.log || true
-          echo "----- Outcomes -----"
-          cat /tmp/outcomes.log || true
-          if [ "$EDGE_EC" -ne 0 ]; then
-            echo "⚠️ Edge scraper exit=$EDGE_EC (using cache if present)"
-          fi
+          mkdir -p "$NHL_GAME_CACHE_DIR"
+          PYTHONPATH=".:models:analyzers:utils:scrapers" python3 utils/fast_maintenance.py | tee /tmp/maintenance.log
+          MAINT_EC=${PIPESTATUS[0]}
           if [ -f "data/nhl_edge_data.json" ]; then
             echo "✅ Edge data ready: data/nhl_edge_data.json"
           else
             echo "⚠️ Edge data file not present, using default baseline team stats."
           fi
-          updated="$(python3 -c "import re; from pathlib import Path; m=re.search(r'OUTCOMES_UPDATED=(\\d+)', Path('/tmp/outcomes.log').read_text() if Path('/tmp/outcomes.log').exists() else ''); print(int(m.group(1)) if m else 0)" 2>/dev/null || echo 0)"
+          updated="$(python3 -c "import re; from pathlib import Path; m=re.search(r'OUTCOMES_UPDATED=(\\d+)', Path('/tmp/maintenance.log').read_text() if Path('/tmp/maintenance.log').exists() else ''); print(int(m.group(1)) if m else 0)" 2>/dev/null || echo 0)"
           echo "outcomes_updated=${updated}" >> "$GITHUB_OUTPUT"
           echo "OUTCOMES_UPDATED=${updated}"
-          if [ "$OUT_EC" -ne 0 ]; then
-            echo "⚠️ Outcomes updater exit=$OUT_EC"
-          fi
-
-      - name: Generate real team stats
-        if: steps.check_date.outputs.should_run == 'true'
-        continue-on-error: true
-        run: |
-          echo "📊 GENERATING REAL TEAM STATS"
-          PYTHONPATH=".:models:analyzers:utils:scrapers" python3 utils/generate_real_team_stats.py || echo "⚠️ Stats generator warning, using cached stats."
-          STATS_FILE=$(python3 -c "from utils.season_utils import get_team_stats_path; print(get_team_stats_path())" 2>/dev/null || python3 -c "from season_utils import get_team_stats_path; print(get_team_stats_path())" 2>/dev/null || echo "data/season_2026_2027_team_stats.json")
-          if [ -n "$STATS_FILE" ] && [ -f "$STATS_FILE" ]; then
-            echo "✅ Team stats file verified: $STATS_FILE"
-          else
-            echo "ℹ️ Using existing cached team stats."
+          if [ "$MAINT_EC" -ne 0 ]; then
+            echo "⚠️ Maintenance exit=$MAINT_EC (continuing with cached artifacts)"
           fi
 
       - name: One-time backfill events logs (if missing)

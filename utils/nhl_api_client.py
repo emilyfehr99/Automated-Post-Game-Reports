@@ -1,20 +1,46 @@
+import os
 import requests
 import json
 from datetime import datetime, timedelta
+from concurrent.futures import ThreadPoolExecutor, as_completed
+from pathlib import Path
+from typing import Dict, Iterable, List, Optional
+from requests.adapters import HTTPAdapter
+try:
+    from urllib3.util.retry import Retry
+except Exception:  # pragma: no cover
+    Retry = None
 import pandas as pd
 
 class NHLAPIClient:
-    def __init__(self, timeout: int = 10):
+    def __init__(self, timeout: int = 8, pool_size: int = 24):
         self.base_url = "https://api-web.nhle.com/v1"
         self.timeout = timeout
+        self.verbose = os.environ.get("NHL_API_DEBUG", "").lower() in ("1", "true", "yes")
+        self.cache_dir = Path(os.environ.get("NHL_GAME_CACHE_DIR", ".cache/nhl_games"))
+        self._mem_cache: Dict[str, dict] = {}
         self.session = requests.Session()
         self.session.headers.update({
             'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/120.0.0.0 Safari/537.36',
-            'Accept': 'text/html,application/xhtml+xml,application/xml;q=0.9,image/avif,image/webp,image/apng,*/*;q=0.8',
+            'Accept': 'application/json,text/html,application/xhtml+xml,application/xml;q=0.9,*/*;q=0.8',
             'Accept-Language': 'en-US,en;q=0.9',
             'Accept-Encoding': 'gzip, deflate, br',
             'Connection': 'keep-alive'
         })
+        # Reuse TCP connections across the many parallel game fetches in CI.
+        retry = None
+        if Retry is not None:
+            retry = Retry(
+                total=2,
+                connect=2,
+                read=2,
+                backoff_factor=0.2,
+                status_forcelist=(429, 500, 502, 503, 504),
+                allowed_methods=frozenset(["GET"]),
+            )
+        adapter = HTTPAdapter(pool_connections=pool_size, pool_maxsize=pool_size, max_retries=retry or 0)
+        self.session.mount("https://", adapter)
+        self.session.mount("http://", adapter)
     
     def _safe_get(self, url: str, timeout: int = None):
         """Helper to perform session.get with timeout and error handling"""
@@ -23,9 +49,50 @@ class NHLAPIClient:
             resp = self.session.get(url, timeout=t)
             if resp.status_code == 200:
                 return resp.json()
-        except Exception as e:
+        except Exception:
             pass
         return None
+
+    def _log(self, msg: str) -> None:
+        if self.verbose:
+            print(msg)
+
+    def _cache_path(self, game_id) -> Path:
+        return self.cache_dir / f"{game_id}.json"
+
+    def _read_cache(self, game_id) -> Optional[dict]:
+        key = str(game_id)
+        if key in self._mem_cache:
+            return self._mem_cache[key]
+        path = self._cache_path(key)
+        if not path.exists():
+            return None
+        try:
+            data = json.loads(path.read_text())
+            self._mem_cache[key] = data
+            return data
+        except Exception:
+            return None
+
+    def _write_cache(self, game_id, payload: dict) -> None:
+        key = str(game_id)
+        self._mem_cache[key] = payload
+        try:
+            self.cache_dir.mkdir(parents=True, exist_ok=True)
+            path = self._cache_path(key)
+            path.write_text(json.dumps(payload, separators=(",", ":")))
+        except Exception:
+            pass
+
+    def prefetch_games(self, game_ids: Iterable, max_workers: int = 16) -> Dict[str, dict]:
+        """Warm disk/memory cache for many games in parallel."""
+        ids = [str(g) for g in game_ids if g]
+        missing = [gid for gid in ids if self._read_cache(gid) is None]
+        if missing:
+            workers = min(max_workers, max(1, len(missing)))
+            with ThreadPoolExecutor(max_workers=workers) as ex:
+                list(ex.map(lambda gid: self.get_comprehensive_game_data(gid, use_cache=True), missing))
+        return {gid: self._read_cache(gid) for gid in ids if self._read_cache(gid) is not None}
 
     def get_team_info(self, team_id):
         """Get team information by team ID"""
@@ -72,11 +139,6 @@ class NHLAPIClient:
             }
             return combined_data
         return None
-    
-    def get_game_landing(self, game_id):
-        """Get game landing summary"""
-        url = f"{self.base_url}/gamecenter/{game_id}/landing"
-        return self._safe_get(url)
 
     def get_player_landing(self, player_id):
         """Resolve a player ID to NHL landing profile (handles callups / new IDs)."""
@@ -87,6 +149,9 @@ class NHLAPIClient:
 
     def get_game_boxscore(self, game_id):
         """Get game boxscore"""
+        cached = self._read_cache(game_id)
+        if cached and cached.get("boxscore") is not None:
+            return cached["boxscore"]
         url = f"{self.base_url}/gamecenter/{game_id}/boxscore"
         return self._safe_get(url)
     
@@ -138,64 +203,111 @@ class NHLAPIClient:
     
     def get_play_by_play(self, game_id):
         """Get play-by-play data for a game"""
+        cached = self._read_cache(game_id)
+        if cached and cached.get("play_by_play") is not None:
+            return cached["play_by_play"]
         url = f"{self.base_url}/gamecenter/{game_id}/play-by-play"
         return self._safe_get(url)
 
     def get_game_right_rail(self, game_id):
         """Get right-rail team game stats (official PP, FO%, etc.)."""
+        cached = self._read_cache(game_id)
+        if cached and cached.get("right_rail") is not None:
+            return cached["right_rail"]
         url = f"{self.base_url}/gamecenter/{game_id}/right-rail"
         return self._safe_get(url)
 
-    def get_comprehensive_game_data(self, game_id):
-        """Get comprehensive game data including boxscore, PBP, landing, and right-rail."""
-        game_center = self.get_game_center(game_id)
-        boxscore = self.get_game_boxscore(game_id)
-        play_by_play = self.get_play_by_play(game_id)
-        landing = self.get_game_landing(game_id)
-        right_rail = self.get_game_right_rail(game_id)
-        
-        print(f"Debug - Game Center data: {game_center is not None}")
-        print(f"Debug - Boxscore data: {boxscore is not None}")
-        print(f"Debug - Play-by-play data: {play_by_play is not None}")
-        print(f"Debug - Landing data: {landing is not None}")
-        print(f"Debug - Right-rail data: {right_rail is not None}")
-        
-        # If we have boxscore but no game_center, create a minimal game_center from boxscore
-        if boxscore is not None and game_center is None:
-            print("Creating minimal game_center from boxscore data...")
-            game_center = {
-                'id': game_id,  # Ensure ID is present
-                'game': {
-                    'gameDate': boxscore.get('gameDate') or datetime.now().strftime('%Y-%m-%d'),
-                    'awayTeamScore': boxscore['awayTeam']['score'],
-                    'homeTeamScore': boxscore['homeTeam']['score'],
-                    'awayTeamScoreByPeriod': [0, 0, 0, 0],  # Default periods
-                    'homeTeamScoreByPeriod': [0, 0, 0, 0]
-                },
-                'awayTeam': {
-                    'abbrev': boxscore['awayTeam']['abbrev'],
-                    'name': boxscore['awayTeam'].get('name', 'Away Team')
-                },
-                'homeTeam': {
-                    'abbrev': boxscore['homeTeam']['abbrev'],
-                    'name': boxscore['homeTeam'].get('name', 'Home Team')
-                },
-                'venue': {
-                    'default': 'Unknown Arena'
-                }
-            }
-        
-        if game_center is None or boxscore is None:
-            print("Warning: Missing game data, returning None")
-            return None
-        
-        return {
-            'game_center': game_center,
-            'boxscore': boxscore,
-            'play_by_play': play_by_play,
-            'landing': landing,
-            'right_rail': right_rail,
+    def get_game_landing(self, game_id):
+        """Get game landing summary"""
+        cached = self._read_cache(game_id)
+        if cached and cached.get("landing") is not None:
+            return cached["landing"]
+        url = f"{self.base_url}/gamecenter/{game_id}/landing"
+        return self._safe_get(url)
+
+    def get_comprehensive_game_data(
+        self,
+        game_id,
+        *,
+        include_right_rail: bool = True,
+        use_cache: bool = True,
+    ):
+        """Fetch boxscore/PBP/landing in parallel (no duplicate endpoints).
+
+        Previously this issued 5 sequential calls and re-fetched boxscore/PBP
+        via get_game_center. Cache finalized games on disk for reuse across
+        outcomes / team-stats / goalie builders in the same CI run.
+        """
+        game_id = str(game_id)
+        if use_cache:
+            cached = self._read_cache(game_id)
+            if cached is not None:
+                return cached
+
+        urls = {
+            "boxscore": f"{self.base_url}/gamecenter/{game_id}/boxscore",
+            "play_by_play": f"{self.base_url}/gamecenter/{game_id}/play-by-play",
+            "landing": f"{self.base_url}/gamecenter/{game_id}/landing",
         }
+        if include_right_rail:
+            urls["right_rail"] = f"{self.base_url}/gamecenter/{game_id}/right-rail"
+
+        results: Dict[str, Optional[dict]] = {}
+        with ThreadPoolExecutor(max_workers=len(urls)) as ex:
+            futs = {ex.submit(self._safe_get, url): key for key, url in urls.items()}
+            for fut in as_completed(futs):
+                results[futs[fut]] = fut.result()
+
+        boxscore = results.get("boxscore")
+        play_by_play = results.get("play_by_play")
+        landing = results.get("landing")
+        right_rail = results.get("right_rail") if include_right_rail else None
+
+        self._log(
+            f"game {game_id}: box={boxscore is not None} pbp={play_by_play is not None} "
+            f"landing={landing is not None} rail={right_rail is not None}"
+        )
+
+        if boxscore is None:
+            self._log(f"Warning: Missing boxscore for {game_id}")
+            return None
+
+        # Derive a minimal game_center from boxscore — avoids a 4th/5th HTTP hop.
+        game_center = {
+            "id": game_id,
+            "gameState": boxscore.get("gameState"),
+            "game": {
+                "gameDate": boxscore.get("gameDate") or datetime.now().strftime("%Y-%m-%d"),
+                "awayTeamScore": (boxscore.get("awayTeam") or {}).get("score"),
+                "homeTeamScore": (boxscore.get("homeTeam") or {}).get("score"),
+                "awayTeamScoreByPeriod": [0, 0, 0, 0],
+                "homeTeamScoreByPeriod": [0, 0, 0, 0],
+            },
+            "awayTeam": {
+                "abbrev": (boxscore.get("awayTeam") or {}).get("abbrev"),
+                "name": (boxscore.get("awayTeam") or {}).get("name", "Away Team"),
+            },
+            "homeTeam": {
+                "abbrev": (boxscore.get("homeTeam") or {}).get("abbrev"),
+                "name": (boxscore.get("homeTeam") or {}).get("name", "Home Team"),
+            },
+            "venue": {"default": "Unknown Arena"},
+        }
+
+        payload = {
+            "game_center": game_center,
+            "boxscore": boxscore,
+            "play_by_play": play_by_play,
+            "landing": landing,
+            "right_rail": right_rail,
+        }
+
+        state = str(boxscore.get("gameState") or game_center.get("gameState") or "").upper()
+        if use_cache and state in {"OFF", "FINAL", "OFFICIAL"}:
+            self._write_cache(game_id, payload)
+        else:
+            self._mem_cache[game_id] = payload
+        return payload
 
     def get_team_recent_games(self, team_abbr, limit=5):
         """Get recent game IDs for a team"""

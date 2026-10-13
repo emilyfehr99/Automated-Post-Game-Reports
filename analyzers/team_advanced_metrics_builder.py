@@ -420,7 +420,19 @@ class TeamAdvancedMetricsBuilder:
     def run_backfill(self, game_ids: List[str], batch_size: int = 50):
         new_games = [gid for gid in game_ids if str(gid) not in self.processed_games]
         print(f"🏒 Backfilling Team & Goalie ADV Stats: {len(new_games)} games")
-        
+        if not new_games:
+            return
+
+        try:
+            if hasattr(self.api, "prefetch_games"):
+                self.api.prefetch_games(new_games, max_workers=16)
+            else:
+                from concurrent.futures import ThreadPoolExecutor
+                with ThreadPoolExecutor(max_workers=16) as ex:
+                    list(ex.map(lambda gid: self.api.get_play_by_play(str(gid)), new_games))
+        except Exception as e:
+            print(f"⚠️ ADV prefetch warning: {e}")
+
         for i, gid in enumerate(new_games):
             try:
                 self.process_game(gid)
@@ -432,21 +444,29 @@ class TeamAdvancedMetricsBuilder:
                 
     def rebuild_season(self, count=923):
         """Full high-fidelity re-audit of the season history"""
-        # Scrape or load game IDs from the prediction history
         p = Path('data/win_probability_predictions_v2.json')
         if p.exists():
             with open(p) as f:
                 data = json.load(f)
-            # Take the most recent 'count' games that have an actual winner (completed)
             game_ids = [str(pr.get('game_id')) for pr in data.get('predictions', []) 
-                       if pr.get('actual_winner')]
-            # Sort by game ID to ensure consistent backfill
+                       if pr.get('actual_winner') and pr.get('game_id')]
             self.run_backfill(sorted(game_ids)[-count:])
         else:
             print("❌ No prediction history found for rebuild")
 
-    def run_refresher(self):
-        self.rebuild_season(100) # Quick refresh of last 100 games
+    def run_refresher(self, lookback: int = 60):
+        """Incremental refresh — only truly new games in the recent lookback window."""
+        p = Path('data/win_probability_predictions_v2.json')
+        if not p.exists():
+            print("❌ No prediction history found for refresh")
+            return
+        with open(p) as f:
+            data = json.load(f)
+        game_ids = [str(pr.get('game_id')) for pr in data.get('predictions', [])
+                    if pr.get('actual_winner') and pr.get('game_id')]
+        game_ids = list(dict.fromkeys(reversed(game_ids)))[:lookback]
+        print(f"📋 ADV refresh lookback={lookback}: {len(game_ids)} candidate games")
+        self.run_backfill(game_ids)
 
 if __name__ == "__main__":
     # Force a full clean rebuild if requested or if logic changed

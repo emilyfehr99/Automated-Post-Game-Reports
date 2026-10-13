@@ -16,6 +16,7 @@ structured goalie stats to goalie_stats.json.
 """
 
 import json
+import os
 import time
 import math
 import numpy as np
@@ -577,13 +578,28 @@ class GoalieStatsBuilder:
         
         print(f"💾 Saved {len(output['goalies'])} goalies to data/goalie_stats.json")
     
-    def run_backfill(self, game_ids: List[str], batch_size: int = 10):
-        """Process a batch of games with rate limiting."""
+    def run_backfill(self, game_ids: List[str], batch_size: int = 25):
+        """Process a batch of games. Prefetch PBP in parallel, then process sequentially."""
         total = len(game_ids)
         new_games = [gid for gid in game_ids if str(gid) not in self.processed_games]
         print(f"\n🏒 Backfilling goalie stats: {len(new_games)} new games "
               f"(of {total} total, {len(self.processed_games)} already done)")
-        
+        if not new_games:
+            self._print_summary()
+            return
+
+        # Prefetch unique PBP payloads (shared session / disk cache).
+        try:
+            if hasattr(self.api, "prefetch_games"):
+                self.api.prefetch_games(new_games, max_workers=16)
+            else:
+                from concurrent.futures import ThreadPoolExecutor
+                with ThreadPoolExecutor(max_workers=16) as ex:
+                    list(ex.map(lambda gid: self.api.get_play_by_play(str(gid)), new_games))
+        except Exception as e:
+            print(f"⚠️ Goalie prefetch warning: {e}")
+
+        fast = os.environ.get("FAST_CI", "").lower() in ("1", "true", "yes")
         for i, gid in enumerate(new_games):
             try:
                 self.process_game(gid)
@@ -592,14 +608,13 @@ class GoalieStatsBuilder:
                     pct = (i + 1) / len(new_games) * 100
                     print(f"  ✅ {i+1}/{len(new_games)} ({pct:.0f}%) — "
                           f"{len(self.goalie_stats)} goalies tracked")
-                    time.sleep(0.5)  # Rate limit
+                    if not fast:
+                        time.sleep(0.15)
             except Exception as e:
                 print(f"  ⚠️  Error on game {gid}: {e}")
                 continue
         
         self.save()
-        
-        # Print summary
         self._print_summary()
     def _print_summary(self):
         """Print top goalies summary."""
@@ -630,18 +645,18 @@ class GoalieStatsBuilder:
             print(f"{gs['name']:<22} {gs['games']:>3} {sv_pct:>6.3f} {gaa:>5.2f} "
                   f"{gsax:>+6.1f} {hd_sv:>6.3f} {glv_sv:>7.3f} {blk_sv:>7.3f} {reb:>5.3f}")
 
-    def run_refresher(self):
-        """Main entry point to refresh goalie stats from prediction history."""
-        # Load game IDs from prediction history
+    def run_refresher(self, lookback: int = 80):
+        """Refresh goalie stats from recent completed predictions only."""
         for p in [Path('data/win_probability_predictions_v2.json'),
                   Path('win_probability_predictions_v2.json')]:
             if p.exists():
                 with open(p) as f:
                     pred_data = json.load(f)
                 game_ids = [str(pr.get('game_id')) for pr in pred_data.get('predictions', [])
-                           if pr.get('actual_winner')]
-                
-                print(f"📋 Found {len(game_ids)} completed games to process")
+                           if pr.get('actual_winner') and pr.get('game_id')]
+                # Newest games first; builders skip already-processed IDs.
+                game_ids = list(dict.fromkeys(reversed(game_ids)))[:lookback]
+                print(f"📋 Goalie refresh lookback={lookback}: {len(game_ids)} candidate games")
                 self.run_backfill(game_ids)
                 return
         
