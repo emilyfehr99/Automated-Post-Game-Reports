@@ -15648,37 +15648,6 @@
     },
     {
       "date": "2025-10-11",
-      "game_id": 2025020034,
-      "away_team": "DAL",
-      "home_team": "COL",
-      "predicted_winner": "COL",
-      "predicted_home_win_prob": 59.31795436769214,
-      "predicted_away_win_prob": 40.68204563230786,
-      "model_confidence": 0.5931795436769214,
-      "metrics_used": {
-        "home_xg": 0,
-        "away_xg": 0,
-        "lead_after_p1": -1,
-        "home_goalie": "8475809",
-        "away_goalie": "8479979"
-      },
-      "extra_metadata": {
-        "integrity_repair": true,
-        "corrected_matchup_from": "DAL@COL_2026-10-14"
-      },
-      "event_type": "prediction",
-      "recorded_at_utc": "2026-10-14T09:30:06Z",
-      "actual_winner": "DAL",
-      "actual_away_score": 5,
-      "actual_home_score": 4,
-      "home_goalie": "8475809",
-      "away_goalie": "8479979",
-      "home_shots": 39,
-      "away_shots": 22,
-      "prediction_accuracy": 0.0
-    },
-    {
-      "date": "2025-10-11",
       "game_id": 2025020036,
       "away_team": "ANA",
       "home_team": "SJS",
@@ -154543,17 +154512,17 @@
       "game_id": 2026020106,
       "home_team": "WSH",
       "away_team": "MTL",
-      "predicted_winner": "MTL",
-      "predicted_home_win_prob": 47.225996301544924,
-      "predicted_away_win_prob": 52.774003698455076,
-      "model_confidence": 0.5277400369845507,
+      "predicted_winner": "WSH",
+      "predicted_home_win_prob": 58.56314738124361,
+      "predicted_away_win_prob": 41.43685261875639,
+      "model_confidence": 0.5856314738124361,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
       },
       "extra_metadata": {
-        "predicted_home_goals": 3,
-        "predicted_away_goals": 4,
+        "predicted_home_goals": 4,
+        "predicted_away_goals": 3,
         "ensemble_mode": "ensemble",
         "ensemble_weights": {
           "xgb": 0.5,
@@ -154569,7 +154538,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-10-14T09:29:35Z",
+      "recorded_at_utc": "2026-10-14T13:33:43Z",
       "actual_winner": null
     },
     {
