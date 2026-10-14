@@ -303,7 +303,11 @@ class TeamHistory:
         return int(count + 1) # Current game counts as 1
         
     def get_rolling_stats(self, team, window=5, venue=None, alpha=None):
-        """Calculate averages for specified window with optional venue filter and exponential decay (alpha)"""
+        """Calculate averages for specified window with optional venue filter and exponential decay (alpha).
+        
+        Applies Bayesian shrinkage prior toward league baselines when sample size n < window,
+        preventing single-game October outliers from destabilizing the rolling features.
+        """
         if team not in self.history:
             return {}
             
@@ -318,7 +322,24 @@ class TeamHistory:
         if not stats_list:
             return {}
             
+        n = len(stats_list)
         keys = stats_list[0].keys()
+        
+        prior_baselines = {
+            'goal_diff': 0.0,
+            'xg_diff': 0.0,
+            'goals_for': 3.0,
+            'goals_against': 3.0,
+            'xg_for': 2.5,
+            'xg_against': 2.5,
+            'shots': 30.0,
+            'corsi_pct': 50.0,
+            'pdo': 100.0,
+            'pp_pct': 20.0,
+            'pk_pct': 80.0,
+            'pim': 8.0,
+        }
+        
         for k in keys:
             vals = [g[k] for g in stats_list if g.get(k) is not None]
             if vals:
@@ -326,11 +347,19 @@ class TeamHistory:
                     # Exponential Weighted Mean
                     weights = [alpha * (1 - alpha) ** i for i in range(len(vals))]
                     weights = weights[::-1]
-                    aggregated[k] = np.average(vals, weights=weights)
+                    raw_val = float(np.average(vals, weights=weights))
                 else:
-                    aggregated[k] = np.mean(vals)
+                    raw_val = float(np.mean(vals))
+                
+                # Bayesian shrinkage: shrink toward prior baseline when n < window
+                if n < window and window > 0:
+                    prior = prior_baselines.get(k, 0.0)
+                    k_prior = float(window - n)
+                    aggregated[k] = (n * raw_val + k_prior * prior) / float(window)
+                else:
+                    aggregated[k] = raw_val
             else:
-                aggregated[k] = 0.0
+                aggregated[k] = prior_baselines.get(k, 0.0)
         return aggregated
 
     def get_rolling_std(self, team, window=5, key='goal_diff'):
@@ -443,6 +472,19 @@ class MetaEnsemblePredictor:
         self.team_encodings = {}
         self.rotowire = RotoWireScraper()
         self.standings = StandingsTracker()
+        self.goalie_stats = {}
+        for gp_path in [Path("data/team_advanced_metrics.json"), Path("data/goalie_stats.json")]:
+            if not gp_path.exists():
+                gp_path = Path(__file__).resolve().parent.parent / str(gp_path)
+            if gp_path.exists():
+                try:
+                    with open(gp_path, "r", encoding="utf-8") as f:
+                        g_data = json.load(f)
+                        if "goalies" in g_data:
+                            self.goalie_stats = g_data["goalies"]
+                            break
+                except Exception:
+                    pass
         
         # Dual-Model State
         self.calibrated_model_reg = None
@@ -843,7 +885,29 @@ class MetaEnsemblePredictor:
             
         return stack
 
-    def _predict_xgboost(self, away_team, home_team, game_date_str=None, away_goalie=None, home_goalie=None, is_playoff=False, series_status=None) -> Optional[Dict]:
+    def _get_team_expected_gsax(self, team: str, is_b2b: bool = False, goalie_name: Optional[str] = None) -> float:
+        """Compute expected goalie GSAx based on B2B rotation physics (85% backup probability on B2B)."""
+        if not team or not getattr(self, "goalie_stats", None):
+            return 0.0
+        team_u = str(team).upper()
+        team_goalies = [g for g in self.goalie_stats.values() if str(g.get("team")).upper() == team_u]
+        if not team_goalies:
+            return 0.0
+        team_goalies.sort(key=lambda x: x.get("games", 0), reverse=True)
+        starter = team_goalies[0]
+        backup = team_goalies[1] if len(team_goalies) > 1 else starter
+        
+        # If goalie_name is already known to be backup, use backup
+        if goalie_name and backup and (goalie_name == backup.get("name") or goalie_name in backup.get("name", "")):
+            return float(backup.get("gsax_per_game", -0.28)) * (0.85 if is_b2b else 1.0)
+            
+        p_starter, p_backup = (0.15, 0.85) if is_b2b else (0.80, 0.20)
+        gsax_s = float(starter.get("gsax_per_game", 0.0))
+        gsax_b = float(backup.get("gsax_per_game", -0.28))
+        expected_gsax = p_starter * gsax_s + p_backup * gsax_b
+        return expected_gsax * (0.85 if is_b2b else 1.0)
+
+    def _predict_xgboost(self, away_team, home_team, game_date_str=None, away_goalie=None, home_goalie=None, is_playoff=False, series_status=None, away_goalie_confirmed=False, home_goalie_confirmed=False) -> Optional[Dict]:
         """Make prediction using XGBoost model with dynamic features"""
         if not self.xgb_model or not self.feature_names:
             return None
@@ -875,13 +939,27 @@ class MetaEnsemblePredictor:
         h_home_l5 = tracker.get_rolling_stats(home_team, 5, venue='home', alpha=0.3)
         a_away_l5 = tracker.get_rolling_stats(away_team, 5, venue='away', alpha=0.3)
         
-        # Goalie Features (with B2B fatigue penalty)
-        h_gsax_roll = tracker.goalies.get_rolling_gsax(home_goalie)
-        a_gsax_roll = tracker.goalies.get_rolling_gsax(away_goalie)
+        # Goalie Features (with B2B rotation & fatigue prior)
+        is_h_b2b = (home_rest == 1)
+        is_a_b2b = (away_rest == 1)
         
-        # Phase 2: Apply 15% penalty to goalies on back-to-backs (rest == 1)
-        if home_rest == 1: h_gsax_roll *= 0.85
-        if away_rest == 1: a_gsax_roll *= 0.85
+        # Home Goalie
+        if is_h_b2b and not home_goalie_confirmed:
+            h_gsax_roll = self._get_team_expected_gsax(home_team, is_b2b=True, goalie_name=home_goalie)
+        elif not home_goalie or home_goalie == 'TBD':
+            h_gsax_roll = self._get_team_expected_gsax(home_team, is_b2b=is_h_b2b, goalie_name=home_goalie)
+        else:
+            h_gsax_roll = tracker.goalies.get_rolling_gsax(home_goalie)
+            if is_h_b2b: h_gsax_roll *= 0.85
+
+        # Away Goalie
+        if is_a_b2b and not away_goalie_confirmed:
+            a_gsax_roll = self._get_team_expected_gsax(away_team, is_b2b=True, goalie_name=away_goalie)
+        elif not away_goalie or away_goalie == 'TBD':
+            a_gsax_roll = self._get_team_expected_gsax(away_team, is_b2b=is_a_b2b, goalie_name=away_goalie)
+        else:
+            a_gsax_roll = tracker.goalies.get_rolling_gsax(away_goalie)
+            if is_a_b2b: a_gsax_roll *= 0.85
         
         h_hdsv_roll = tracker.goalies.get_rolling_hdsv(home_goalie)
         a_hdsv_roll = tracker.goalies.get_rolling_hdsv(away_goalie)
@@ -1302,7 +1380,8 @@ class MetaEnsemblePredictor:
                 away_goalie: str = None, home_goalie: str = None,
                 away_injuries: list = None, home_injuries: list = None,
                 vegas_odds: Dict = None, is_playoff: bool = False,
-                series_status: str = None) -> Dict:
+                series_status: str = None,
+                away_goalie_confirmed: bool = False, home_goalie_confirmed: bool = False) -> Dict:
         """Meta-ensemble prediction combining all methods"""
         predictions = []
         weights = []
@@ -1323,7 +1402,12 @@ class MetaEnsemblePredictor:
                 xgb_weight = 0.35
                 spec_weight = 0.45
             
-        xgb_pred = self._predict_xgboost(away_team, home_team, game_date, away_goalie, home_goalie, is_playoff=is_playoff, series_status=series_status)
+        xgb_pred = self._predict_xgboost(
+            away_team, home_team, game_date, away_goalie, home_goalie,
+            is_playoff=is_playoff, series_status=series_status,
+            away_goalie_confirmed=away_goalie_confirmed,
+            home_goalie_confirmed=home_goalie_confirmed,
+        )
         xgb_margin = 0.0
         if xgb_pred:
             predictions.append(xgb_pred)

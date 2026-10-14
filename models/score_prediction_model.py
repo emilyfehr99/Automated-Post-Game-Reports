@@ -1510,6 +1510,7 @@ class ScorePredictionModel:
                      series_status: str = None,
                      away_missing_star: bool = False,
                      home_missing_star: bool = False, away_goalie_shots_30d: float = 0, home_goalie_shots_30d: float = 0,
+                     away_goalie_confirmed: bool = False, home_goalie_confirmed: bool = False,
                      game_id: Optional[int] = None) -> Dict:
         """
         Predict realistic game score.
@@ -1637,8 +1638,8 @@ class ScorePredictionModel:
         # ─── 12. Goalie adjustment (NEW) ───
         # An opposing goalie's quality affects the shooting team's score.
         # Home goalie (at home) affects Away team; Away goalie (away) affects Home team.
-        away_goalie_adj = self._get_goalie_adjustment(home_goalie, home, 'home', is_b2b=home_b2b)
-        home_goalie_adj = self._get_goalie_adjustment(away_goalie, away, 'away', is_b2b=away_b2b)
+        away_goalie_adj = self._get_goalie_adjustment(home_goalie, home, 'home', is_b2b=home_b2b, is_confirmed=home_goalie_confirmed)
+        home_goalie_adj = self._get_goalie_adjustment(away_goalie, away, 'away', is_b2b=away_b2b, is_confirmed=away_goalie_confirmed)
         
         # Overworked Goalie Penalty (60+ games in regular season)
         # Playoff intensity is higher; overworked goalies fade faster.
@@ -2151,22 +2152,51 @@ class ScorePredictionModel:
                 return self.goalie_stats[gid]
         return None
 
-    def _get_goalie_adjustment(self, goalie_name: str, team: str, venue: str, is_b2b: bool = False) -> float:
+    def _get_goalie_adjustment(self, goalie_name: str, team: str, venue: str, is_b2b: bool = False, is_confirmed: bool = False) -> float:
         """Get scoring adjustment based on opposing goalie quality.
         
         A strong opposing goalie reduces expected goals; a weak one increases them.
         Uses GSAX/game from comprehensive goalie_stats.
         """
+        # Pre-8:00 AM Goalie Starter Likelihood Model (Phase 51)
+        # If team is on back-to-back and starter is unconfirmed, or goalie is TBD/empty:
+        # evaluate rotation probability (85% backup on B2B)
+        team_u = str(team).upper() if team else None
+        team_goalies = []
+        if team_u and getattr(self, "goalie_stats", None):
+            team_goalies = [g for g in self.goalie_stats.values() if str(g.get('team')).upper() == team_u]
+            if team_goalies:
+                team_goalies.sort(key=lambda x: x.get('games', 0), reverse=True)
+
+        starter = team_goalies[0] if team_goalies else None
+        backup = team_goalies[1] if len(team_goalies) > 1 else starter
+
+        # Check if goalie_name is recognized as the backup
+        is_already_backup = False
+        if goalie_name and backup and (goalie_name == backup.get('name') or goalie_name in backup.get('name', '')):
+            is_already_backup = True
+
+        # If team is on back-to-back and goalie is not confirmed (and not already confirmed backup):
+        if is_b2b and not is_confirmed and not is_already_backup and starter and backup:
+            p_starter, p_backup = 0.15, 0.85
+            gsax_s = float(starter.get('gsax_per_game', 0.0))
+            gsax_b = float(backup.get('gsax_per_game', -0.28))
+            expected_gsax = p_starter * gsax_s + p_backup * gsax_b
+            b2b_fatigue = 0.22
+            return float(-expected_gsax * 0.8 * 0.80) + b2b_fatigue
+
+        # If goalie_name is missing or TBD:
+        if (not goalie_name or goalie_name == 'TBD') and starter and backup:
+            p_starter, p_backup = (0.15, 0.85) if is_b2b else (0.80, 0.20)
+            gsax_s = float(starter.get('gsax_per_game', 0.0))
+            gsax_b = float(backup.get('gsax_per_game', -0.28))
+            expected_gsax = p_starter * gsax_s + p_backup * gsax_b
+            b2b_fatigue = 0.22 if is_b2b else 0.0
+            return float(-expected_gsax * 0.8 * 0.80) + b2b_fatigue
+
         gs = self._get_goalie_data(goalie_name)
-        if not gs and team:
-            team_u = str(team).upper()
-            team_cand = []
-            for gid, gdata in getattr(self, "goalie_stats", {}).items():
-                if gdata.get("team") == team_u:
-                    team_cand.append((gdata.get("games", 0), gid))
-            if team_cand:
-                team_cand.sort(key=lambda x: x[0], reverse=True)
-                gs = self.goalie_stats.get(team_cand[0][1])
+        if not gs and starter:
+            gs = starter
         
         if gs and gs.get('games', 0) >= 1:
             gp = gs.get('games', 0)
@@ -2215,27 +2245,6 @@ class ScorePredictionModel:
             # Total adjustment added to opponent expected goals
             total_adj = (-shrunk_gsax * 0.8) - venue_adj + reb_adj + angle_adj + b2b_fatigue
             return total_adj
-        
-        # Phase 51: Goalie Starter Likelihood Model (Pre-8:00 AM Rotation Physics)
-        # If goalie is unconfirmed or TBD, evaluate rotation probability rather than naive starter assumption
-        if team and self.goalie_stats:
-            team_goalies = [g for g in self.goalie_stats.values() if g.get('team') == team]
-            if team_goalies:
-                team_goalies.sort(key=lambda x: x.get('games', 0), reverse=True)
-                starter = team_goalies[0]
-                backup = team_goalies[1] if len(team_goalies) > 1 else starter
-                
-                # Back-to-back rest rotation physics (second night of B2B heavily favors backup)
-                if is_b2b:
-                    p_starter, p_backup = 0.15, 0.85
-                else:
-                    p_starter, p_backup = 0.80, 0.20
-                    
-                gsax_s = float(starter.get('gsax_per_game', 0.0))
-                gsax_b = float(backup.get('gsax_per_game', -0.28))
-                expected_gsax = p_starter * gsax_s + p_backup * gsax_b
-                b2b_fatigue = 0.22 if is_b2b else 0.0
-                return float(-expected_gsax * 0.8 * 0.80) + b2b_fatigue
         
         # If no team goalie data exists, default to 0.0 league average
         return 0.0

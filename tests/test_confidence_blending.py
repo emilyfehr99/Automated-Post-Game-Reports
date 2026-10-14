@@ -16,6 +16,8 @@ def test_confidence_blending(window: int = 60):
     corr_model = CorrelationModel()
     
     predictions_file = Path("win_probability_predictions_v2.json")
+    if not predictions_file.exists():
+        predictions_file = Path("data/win_probability_predictions_v2.json")
     with open(predictions_file, 'r') as f:
         data = json.load(f)
     

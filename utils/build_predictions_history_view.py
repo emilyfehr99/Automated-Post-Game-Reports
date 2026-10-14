@@ -201,13 +201,19 @@ def build_view() -> Dict[str, Any]:
                     else row["away_team"]
                 )
 
+        # Outcome resolution: by game_id, by source_game_id, or by matchup key
         gid = str(row.get("game_id"))
         o = outs.get(gid) or {}
-        # Fall back to outcome under original source id if mirrored there
         if not o.get("actual_winner"):
             src = (row.get("extra_metadata") or {}).get("source_game_id")
             if src:
                 o = outs.get(str(src)) or o
+        if not o.get("actual_winner"):
+            mkey = _matchup_key(row)
+            for out_r in outs.values():
+                if _matchup_key(out_r) == mkey and out_r.get("actual_winner"):
+                    o = out_r
+                    break
 
         for k in (
             "actual_winner",
@@ -248,6 +254,58 @@ def build_view() -> Dict[str, Any]:
             row["prediction_accuracy"] = (
                 1.0 if str(row["actual_winner"]).upper() == str(row["predicted_winner"]).upper() else 0.0
             )
+
+        # First-class scoreline promotion and projected scoreline
+        meta = row.get("extra_metadata") or {}
+        if not isinstance(meta, dict):
+            meta = {}
+
+        phg = row.get("predicted_home_goals")
+        if phg is None:
+            phg = meta.get("predicted_home_goals")
+        if phg is None:
+            phg = row.get("home_score")
+
+        pag = row.get("predicted_away_goals")
+        if pag is None:
+            pag = meta.get("predicted_away_goals")
+        if pag is None:
+            pag = row.get("away_score")
+
+        if phg is not None and pag is not None:
+            try:
+                row["predicted_home_goals"] = int(round(float(phg)))
+                row["predicted_away_goals"] = int(round(float(pag)))
+                row["predicted_total_goals"] = row["predicted_home_goals"] + row["predicted_away_goals"]
+                row["projected_score"] = (
+                    f"{row.get('away_team')} {row['predicted_away_goals']} - {row.get('home_team')} {row['predicted_home_goals']}"
+                )
+            except Exception:
+                pass
+
+        # Error tracking metrics when actual score is available
+        aas = row.get("actual_away_score")
+        ahs = row.get("actual_home_score")
+        if aas is not None and ahs is not None:
+            try:
+                aas_int = int(round(float(aas)))
+                ahs_int = int(round(float(ahs)))
+                row["actual_away_score"] = aas_int
+                row["actual_home_score"] = ahs_int
+                row["actual_score"] = f"{row.get('away_team')} {aas_int} - {row.get('home_team')} {ahs_int}"
+
+                if row.get("predicted_home_goals") is not None and row.get("predicted_away_goals") is not None:
+                    row["exact_score_match"] = bool(
+                        row["predicted_away_goals"] == aas_int and row["predicted_home_goals"] == ahs_int
+                    )
+                    pred_margin = row["predicted_home_goals"] - row["predicted_away_goals"]
+                    act_margin = ahs_int - aas_int
+                    row["score_margin_error"] = abs(pred_margin - act_margin)
+                    pred_total = row["predicted_home_goals"] + row["predicted_away_goals"]
+                    act_total = ahs_int + aas_int
+                    row["total_goals_error"] = abs(pred_total - act_total)
+            except Exception:
+                pass
 
         rows.append(row)
 

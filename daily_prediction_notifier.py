@@ -541,6 +541,13 @@ class DailyPredictionNotifier:
                     "predicted_home_win_prob": home_p * 100.0,
                     "predicted_away_win_prob": away_p * 100.0,
                     "model_confidence": pred.get("confidence", 0.0) / 100.0,
+                    "predicted_home_goals": pred.get("home_score"),
+                    "predicted_away_goals": pred.get("away_score"),
+                    "predicted_total_goals": (
+                        (int(pred.get("home_score")) + int(pred.get("away_score")))
+                        if pred.get("home_score") is not None and pred.get("away_score") is not None
+                        else None
+                    ),
                     "metrics_used": {"home_xg": 0, "away_xg": 0},
                     "extra_metadata": {
                         "predicted_home_goals": pred.get("home_score"),
@@ -714,7 +721,9 @@ class DailyPredictionNotifier:
                     home_goalie=game.get('home_goalie'),
                     vegas_odds=vegas_odds,
                     is_playoff=is_playoff,
-                    series_status=str(series_status_obj) if series_status_obj else None
+                    series_status=str(series_status_obj) if series_status_obj else None,
+                    away_goalie_confirmed=game.get('away_goalie_confirmed', False),
+                    home_goalie_confirmed=game.get('home_goalie_confirmed', False)
                 )
                 
                 # Phase 3: Playoff Series Simulation
@@ -759,6 +768,8 @@ class DailyPredictionNotifier:
                         game['home_team'],
                         away_goalie=game.get('away_goalie'),
                         home_goalie=game.get('home_goalie'),
+                        away_goalie_confirmed=game.get('away_goalie_confirmed', False),
+                        home_goalie_confirmed=game.get('home_goalie_confirmed', False),
                         away_b2b=pred.get('away_back_to_back', False),
                         home_b2b=pred.get('home_back_to_back', False),
                         away_3_in_4=pred.get('away_3_in_4', False),
