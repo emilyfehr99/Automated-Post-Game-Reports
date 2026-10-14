@@ -264,6 +264,16 @@ class TeamHistory:
             return 4  # Default to fresh rest
             
         last_date = self.history[team]['dates'][-1]
+        if isinstance(current_date, str):
+            try:
+                current_date = datetime.strptime(current_date[:10], "%Y-%m-%d")
+            except Exception:
+                current_date = datetime.now()
+        if isinstance(last_date, str):
+            try:
+                last_date = datetime.strptime(last_date[:10], "%Y-%m-%d")
+            except Exception:
+                last_date = current_date
         delta = (current_date - last_date).days
         return max(1, delta)
 
@@ -417,6 +427,7 @@ class MetaEnsemblePredictor:
         self.home_goals_model = None
         self.away_goals_model = None
         self.history_tracker = TeamHistory()
+        self._seed_history_tracker()
         self.feature_names = []
         self._feature_snapshot = None
         self._scoreline_calibration = None
@@ -450,6 +461,61 @@ class MetaEnsemblePredictor:
             self._load_dual_regime_components()
         except Exception as e:
             print(f"⚠️ Failed to load dual regime components: {e}")
+
+    def _seed_history_tracker(self, cutoff_date: Optional[str] = None) -> None:
+        """Seed Elo ratings and game logs from outcome_events.jsonl.
+        
+        Applies Bayesian mean regression (1/3 toward 1500) across off-season
+        transitions so elite contenders (FLA, EDM, BOS, DAL, COL, CAR) retain
+        appropriate baseline ratings rather than collapsing to flat 1500 in October.
+        """
+        try:
+            p = Path("data/outcome_events.jsonl")
+            if not p.exists():
+                p = Path(__file__).resolve().parent.parent / "data" / "outcome_events.jsonl"
+            if not p.exists():
+                return
+                
+            with open(p, "r", encoding="utf-8") as f:
+                events = [json.loads(line) for line in f if line.strip()]
+                
+            seen = set()
+            unique_events = []
+            for e in sorted(events, key=lambda x: (str(x.get("date") or ""), str(x.get("game_id") or ""))):
+                k = (e.get("date"), e.get("away_team"), e.get("home_team"))
+                if k not in seen:
+                    seen.add(k)
+                    unique_events.append(e)
+                    
+            current_season = None
+            seeded_games = 0
+            for e in unique_events:
+                d = str(e.get("date") or "")
+                if cutoff_date and d >= cutoff_date:
+                    break
+                season = "2025-2026" if d < "2026-09-01" else "2026-2027"
+                if current_season is not None and season != current_season:
+                    self.history_tracker.elo.regress_season(0.33)
+                current_season = season
+                
+                ht = e.get("home_team")
+                at = e.get("away_team")
+                hs = e.get("actual_home_score")
+                as_ = e.get("actual_away_score")
+                if ht and at and hs is not None and as_ is not None:
+                    hs_f = float(hs)
+                    as_f = float(as_)
+                    self.history_tracker.elo.update(ht, at, hs_f, as_f)
+                    dt = datetime.strptime(d[:10], "%Y-%m-%d") if len(d) >= 10 else datetime.now()
+                    gstats_h = {"goals_for": hs_f, "goals_against": as_f, "xg_diff": hs_f - as_f, "goal_diff": hs_f - as_f}
+                    gstats_a = {"goals_for": as_f, "goals_against": hs_f, "xg_diff": as_f - hs_f, "goal_diff": as_f - hs_f}
+                    self.history_tracker.update(ht, dt, gstats_h, venue="home", opponent_elo=self.history_tracker.elo.get_rating(at))
+                    self.history_tracker.update(at, dt, gstats_a, venue="away", opponent_elo=self.history_tracker.elo.get_rating(ht))
+                    seeded_games += 1
+            if seeded_games > 0:
+                print(f"✅ Seeded history tracker with {seeded_games} outcomes across seasons")
+        except Exception as e:
+            print(f"⚠️ Could not seed history tracker: {e}")
 
     def _load_component_weights(self) -> None:
         """Load dynamic component weights from recent backtests if available."""

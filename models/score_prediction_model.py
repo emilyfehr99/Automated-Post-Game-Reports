@@ -1202,13 +1202,16 @@ class ScorePredictionModel:
             h_flat = self._get_team_metric(home, 'xg_flat', 'home') or h_xg
             mom_diff = (a_l5 - a_flat) - (h_l5 - h_flat)
             
-            # Calibrated Logit (Cross-Validated 5-Fold Ridge/L2 Stack)
+            # Calibrated Logit (Cross-Validated 5-Fold Ridge/L2 Stack with Regularized Context)
+            # Regularize H2H and venue noise so small-sample artifacts do not overpower expected goal differential
+            h2h_reg = max(-0.15, min(0.15, float(h2h_diff)))
+            venue_reg = max(-0.25, min(0.25, float(venue_diff)))
             z = (
-                0.437050 * float(diff) +
+                1.15 * float(diff) +
                 0.047482 * st_net +
                 (-0.283197) * pizza_diff +
-                0.466889 * venue_diff +
-                2.553166 * h2h_diff +
+                0.35 * venue_reg +
+                0.85 * h2h_reg +
                 (-0.034653) * edge_speed_diff +
                 0.075898 * mom_diff +
                 (-0.138889)
