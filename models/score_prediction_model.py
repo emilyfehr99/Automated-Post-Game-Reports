@@ -51,7 +51,7 @@ class ScorePredictionModel:
     
     # League-wide constants from 2025-26 analysis
     LEAGUE_AVG_GF = 3.03
-    HOME_ICE_BOOST = 0.11
+    HOME_ICE_BOOST = 0.03
     # Feature weights (empirically optimized to 70.23% directional accuracy, 2.36 MAE)
     W_GS = 0.20        # Rebalanced: dampened single-game boxscore noise
     W_XG = 0.30        # Core shot generation quality (5v5 creation)
@@ -1593,16 +1593,11 @@ class ScorePredictionModel:
         home_luck_adj = -home_luck * self.XG_LUCK_REGRESSION
         
         # ─── 7. Home/Away venue adjustment (Self-Learning) ───
-        # Instead of a flat HOME_ICE_BOOST for all teams, use per-team venue
-        # splits learned from actual outcomes. BOS (23-7 at home) gets a big
-        # boost, VAN (8-25 at home) gets penalized.
+        # Per-team venue splits learned from actual outcomes are zero-centered deviations.
+        # Preserve baseline HOME_ICE_BOOST as league-wide home advantage floor.
         away_venue_adj = self._get_venue_adjustment(away, 'away')
         home_venue_adj = self._get_venue_adjustment(home, 'home')
-        # Fallback: if no learned data, use the flat league-wide home boost
-        if away_venue_adj == 0.0 and home_venue_adj == 0.0:
-            home_boost = self.HOME_ICE_BOOST
-        else:
-            home_boost = 0.0  # Per-team adjustments replace the flat boost
+        home_boost = self.HOME_ICE_BOOST
         
         # ─── 8. Division strength ───
         div_strength = {'Central': 0.10, 'Atlantic': 0.00, 'Metropolitan': 0.00, 'Pacific': -0.10}
@@ -1708,7 +1703,7 @@ class ScorePredictionModel:
         away_expected += away_luck_adj
         home_expected += home_luck_adj
         away_expected += away_venue_adj * 0.8
-        home_expected += home_venue_adj * 0.8
+        home_expected += home_venue_adj * 0.8 + self.HOME_ICE_BOOST
         away_expected += away_h2h_adj
         home_expected += home_h2h_adj
         away_expected += away_goalie_adj * 0.8
