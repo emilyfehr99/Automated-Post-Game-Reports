@@ -25,7 +25,7 @@ TEAM_HASHTAGS = {
     'BOS': '#NHLBruins',
     'BUF': '#SabreHood',
     'CGY': '#Flames',
-    'CAR': '#CauseChaos',
+    'CAR': '#CarolinaCulture',
     'CHI': '#Blackhawks',
     'COL': '#GoAvsGo',
     'CBJ': '#CBJ',
@@ -43,16 +43,16 @@ TEAM_HASHTAGS = {
     'OTT': '#GoSensGo',
     'PHI': '#LetsGoFlyers',
     'PIT': '#LetsGoPens',
-    'SJS': '#TheFutureIsTeal',
+    'SJS': '#TurnItAllTeal',
     'SEA': '#SeaKraken',
     'STL': '#STLBlues',
     'TBL': '#GoBolts',
     'TOR': '#LeafsForever',
-    'UTA': '#UtahHC',
+    'UTA': '#TusksUp',
     'VAN': '#Canucks',
     'VGK': '#VegasBorn',
     'WSH': '#ALLCAPS',
-    'WPG': '#NHLJets'
+    'WPG': '#GoJetsGo'
 }
 
 from datetime import datetime

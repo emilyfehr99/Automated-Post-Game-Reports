@@ -103,7 +103,7 @@ Automatically generates and posts beautiful NHL post-game reports to Twitter:
 
 ### Twitter Posts
 - Automatic posting immediately after game completion
-- Team hashtags (e.g., `#GoKingsGo vs #NHLJets`)
+- Team hashtags (e.g., `#GoKingsGo vs #GoJetsGo`)
 - High-quality PNG images
 - Individual posts for maximum engagement
 

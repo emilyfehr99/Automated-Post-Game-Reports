@@ -34,7 +34,7 @@ Each game is posted as a **standalone tweet** for maximum visibility and engagem
 
 Example Timeline:
 ```
-Tweet 1: #GoKingsGo vs #GoJetsGo #NHLJets [image]
+Tweet 1: #GoKingsGo vs #GoJetsGo [image]
 Tweet 2: #STLBlues vs #Flames [image]
 Tweet 3: #SabreHood vs #NHLBruins [image]
 ... (each game as separate post)
@@ -47,7 +47,7 @@ Each game tweet contains:
 - Home team hashtag
 - Report image attached
 
-Example: `#GoKingsGo vs #GoJetsGo #NHLJets`
+Example: `#GoKingsGo vs #GoJetsGo`
 
 ### Why Individual Posts?
 - ✅ **Higher reach**: Each post appears in main feeds, not buried in replies
@@ -66,7 +66,7 @@ All 32 NHL team hashtags are configured in `twitter_config.py`:
 | BOS | #NHLBruins |
 | BUF | #SabreHood |
 | CGY | #Flames |
-| CAR | #CarolinaCultre |
+| CAR | #CarolinaCulture |
 | CHI | #Blackhawks |
 | COL | #GoAvsGo |
 | CBJ | #CBJ |
@@ -84,7 +84,7 @@ All 32 NHL team hashtags are configured in `twitter_config.py`:
 | OTT | #GoSensGo |
 | PHI | #LetsGoFlyers |
 | PIT | #LetsGoPens |
-| SJS | #TheFutureIsTeal |
+| SJS | #TurnItAllTeal |
 | SEA | #SeaKraken |
 | STL | #STLBlues |
 | TBL | #GoBolts |
@@ -93,7 +93,7 @@ All 32 NHL team hashtags are configured in `twitter_config.py`:
 | VAN | #Canucks |
 | VGK | #VegasBorn |
 | WSH | #ALLCAPS |
-| WPG | #GoJetsGo #NHLJets |
+| WPG | #GoJetsGo |
 
 ## Configuration
 
