@@ -19566,36 +19566,341 @@
       "actual_score": "SEA 4 - MTL 5"
     },
     {
-      "date": "2025-10-14",
       "game_id": 2025020051,
+      "date": "2025-10-14",
       "away_team": "EDM",
       "home_team": "NYR",
-      "predicted_winner": "NYR",
-      "predicted_home_win_prob": 48.55920559327186,
       "predicted_away_win_prob": 51.44079440672814,
-      "model_confidence": 0.5144079440672814,
+      "predicted_home_win_prob": 48.55920559327186,
       "metrics_used": {
+        "away_rest": 0.02,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.55,
+        "away_venue_win_pct": 0.5,
+        "home_venue_win_pct": 0.0,
+        "recent_form_diff": 0.5,
+        "context_bucket": "neutral",
+        "away_back_to_back": false,
+        "home_back_to_back": false,
+        "away_nzt": 4.0,
+        "away_nztsa": 3.0,
+        "away_ozs": 19.0,
+        "away_nzs": 2,
+        "away_dzs": 3,
+        "away_fc": 21,
+        "away_rush": 1.0,
+        "home_nzt": 2.0,
+        "home_nztsa": 5.0,
+        "home_ozs": 23.0,
+        "home_nzs": 0,
+        "home_dzs": 18,
+        "home_fc": 29,
+        "home_rush": 3.0,
+        "away_lateral": 22.4,
+        "away_longitudinal": 24.0,
+        "home_lateral": 24.916666666666668,
+        "home_longitudinal": 24.666666666666668,
+        "away_pp_goals": 0,
+        "away_pp_attempts": 0,
+        "home_pp_goals": 0,
+        "home_pp_attempts": 3,
+        "away_faceoff_wins": 0,
+        "away_faceoff_total": 0,
+        "home_faceoff_wins": 0,
+        "home_faceoff_total": 0,
+        "away_period_shots": [
+          8,
+          2,
+          10
+        ],
+        "away_period_corsi_pct": [
+          52.77777777777778,
+          24.242424242424242,
+          34.69387755102041
+        ],
+        "away_period_pp_goals": [
+          0,
+          0,
+          0
+        ],
+        "away_period_pp_attempts": [
+          0,
+          0,
+          0
+        ],
+        "away_period_pim": [
+          0,
+          4,
+          2
+        ],
+        "away_period_hits": [
+          6,
+          4,
+          2
+        ],
+        "away_period_fo_pct": [
+          70.0,
+          47.05882352941176,
+          50.0
+        ],
+        "away_period_blocks": [
+          7,
+          2,
+          4
+        ],
+        "away_period_giveaways": [
+          8,
+          5,
+          5
+        ],
+        "away_period_takeaways": [
+          0,
+          4,
+          2
+        ],
+        "home_period_shots": [
+          6,
+          11,
+          13
+        ],
+        "home_period_corsi_pct": [
+          47.22222222222222,
+          75.75757575757575,
+          65.3061224489796
+        ],
+        "home_period_pp_goals": [
+          0,
+          0,
+          0
+        ],
+        "home_period_pp_attempts": [
+          0,
+          2,
+          1
+        ],
+        "home_period_pim": [
+          0,
+          0,
+          0
+        ],
+        "home_period_hits": [
+          7,
+          8,
+          3
+        ],
+        "home_period_fo_pct": [
+          30.0,
+          52.94117647058824,
+          50.0
+        ],
+        "home_period_blocks": [
+          6,
+          8,
+          11
+        ],
+        "home_period_giveaways": [
+          3,
+          5,
+          5
+        ],
+        "home_period_takeaways": [
+          1,
+          1,
+          0
+        ],
+        "away_period_gs": [
+          0.6499999999999999,
+          1.15,
+          1.4
+        ],
+        "away_period_xg": [
+          0.7386830668019999,
+          0.268468270125,
+          0.872637044575
+        ],
+        "home_period_gs": [
+          1.5,
+          1.8249999999999997,
+          1.2249999999999999
+        ],
+        "home_period_xg": [
+          0.8953600709999999,
+          1.6211341423749994,
+          1.3630442236875
+        ],
+        "away_period_nzt": [
+          1,
+          0,
+          3
+        ],
+        "away_period_nztsa": [
+          0,
+          0,
+          0
+        ],
+        "away_period_ozs": [
+          8,
+          0,
+          9
+        ],
+        "away_period_nzs": [
+          0,
+          0,
+          2
+        ],
+        "away_period_dzs": [
+          0,
+          3,
+          0
+        ],
+        "away_period_fc": [
+          8,
+          3,
+          10
+        ],
+        "away_period_rush": [
+          0,
+          0,
+          1
+        ],
+        "home_period_nzt": [
+          0,
+          1,
+          1
+        ],
+        "home_period_nztsa": [
+          0,
+          0,
+          2
+        ],
+        "home_period_ozs": [
+          0,
+          11,
+          1
+        ],
+        "home_period_nzs": [
+          0,
+          0,
+          0
+        ],
+        "home_period_dzs": [
+          6,
+          0,
+          12
+        ],
+        "home_period_fc": [
+          6,
+          10,
+          13
+        ],
+        "home_period_rush": [
+          0,
+          1,
+          0
+        ],
+        "away_third_period_goals": 1,
+        "home_third_period_goals": 0,
+        "away_one_goal_game": false,
+        "home_one_goal_game": false,
+        "away_scored_first": true,
+        "home_scored_first": false,
+        "away_opponent_scored_first": false,
+        "home_opponent_scored_first": true,
+        "lead_after_p1": 0,
         "home_xg": 0,
         "away_xg": 0,
-        "lead_after_p1": 0,
+        "home_corsi_pct": 62.76,
+        "away_corsi_pct": 37.24,
+        "home_pdo": 90.91,
+        "home_power_play_pct": 0.0,
+        "home_penalty_kill_pct": 80.0,
+        "home_hdc": 6.0,
+        "home_rebounds": 6.0,
+        "away_pdo": 109.09,
+        "away_power_play_pct": 0.0,
+        "away_penalty_kill_pct": 80.0,
+        "away_hdc": 8.0,
+        "away_rebounds": 2.0,
+        "home_gsax": -0.12,
+        "away_gsax": 3.88,
         "home_goalie": "8478048",
         "away_goalie": "8479973"
       },
+      "actual_winner": "EDM",
+      "actual_winner_side": "away",
+      "actual_winner_team": "EDM",
+      "actual_away_score": 2,
+      "actual_home_score": 0,
+      "prediction_accuracy": 0.0,
+      "timestamp": "2025-11-19T08:13:36.060784",
+      "predicted_winner": "NYR",
+      "predicted_winner_team": "NYR",
+      "prediction_confidence": 0.5550684931506848,
+      "prediction_margin": 0.11013698630136975,
+      "raw_away_prob": 0.4449315068493151,
+      "raw_home_prob": 0.5550684931506848,
+      "calibrated_away_prob": 0.4449315068493151,
+      "calibrated_home_prob": 0.5550684931506848,
+      "correlation_away_prob": null,
+      "correlation_home_prob": null,
+      "ensemble_away_prob": null,
+      "ensemble_home_prob": null,
+      "corr_disagreement": 0.0,
+      "monte_carlo_flip_rate": 1.0,
+      "upset_probability": 0.5083690813047009,
+      "context_bucket": "neutral",
+      "away_back_to_back": false,
+      "home_back_to_back": false,
+      "away_rest_value": 0.02,
+      "home_rest_value": 0.0,
+      "was_upset": true,
+      "away_win_prob": 0.5009874285714286,
+      "home_win_prob": 0.49901257142857136,
+      "model_confidence": 0.5144079440672814,
+      "backfilled": true,
+      "calibration_version": "Phase5.2_Final_Truth",
+      "away_3_in_4": false,
+      "home_3_in_4": true,
+      "backfilled_hq": true,
+      "truth_sync": true,
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-11-01T11:15:53Z",
+      "predicted_home_goals": 3,
+      "predicted_away_goals": 2,
+      "predicted_total_goals": 5,
       "extra_metadata": {
+        "predicted_home_goals": 3,
+        "predicted_away_goals": 2,
+        "ensemble_mode": "ensemble",
+        "ensemble_weights": {
+          "xgb": 0.15,
+          "elo": 0.6,
+          "specialized": 0.05,
+          "player": 0.05,
+          "base": 0.05,
+          "vegas": 0.1
+        },
+        "attribution": [
+          "Jet Lag Context (-0.20)",
+          "EDM Forecheck Advantage vs NYR Turnovers (+0.12)",
+          "NYR Forecheck Advantage vs EDM Turnovers (+0.12)"
+        ],
+        "is_playoff": false,
         "integrity_repair": true,
         "corrected_matchup_from": "EDM@NYR_2026-11-01"
       },
-      "event_type": "prediction",
-      "recorded_at_utc": "2026-11-01T11:15:53Z",
-      "actual_winner": "EDM",
-      "actual_away_score": 2,
-      "actual_home_score": 0,
       "home_goalie": "8478048",
       "away_goalie": "8479973",
       "home_shots": 30,
       "away_shots": 22,
-      "prediction_accuracy": 0.0,
-      "actual_score": "EDM 2 - NYR 0"
+      "projected_score": "EDM 2 - NYR 3",
+      "actual_score": "EDM 2 - NYR 0",
+      "exact_score_match": false,
+      "score_margin_error": 3,
+      "total_goals_error": 3
     },
     {
       "game_id": 2025020052,
@@ -25264,36 +25569,340 @@
       "actual_score": "TBL 1 - DET 2"
     },
     {
-      "date": "2025-10-17",
       "game_id": 2025020073,
+      "date": "2025-10-17",
       "away_team": "MIN",
       "home_team": "WSH",
-      "predicted_winner": "WSH",
-      "predicted_home_win_prob": 63.92525135044663,
       "predicted_away_win_prob": 36.07474864955337,
-      "model_confidence": 0.6392525135044663,
+      "predicted_home_win_prob": 63.92525135044663,
       "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5,
+        "away_venue_win_pct": 0.5,
+        "home_venue_win_pct": 0.5,
+        "recent_form_diff": 0.0,
+        "context_bucket": "neutral",
+        "away_back_to_back": false,
+        "home_back_to_back": false,
+        "away_nzt": 3.0,
+        "away_nztsa": 1.0,
+        "away_ozs": 8.0,
+        "away_nzs": 0,
+        "away_dzs": 3,
+        "away_fc": 12,
+        "away_rush": 2.0,
+        "home_nzt": 2.0,
+        "home_nztsa": 0.0,
+        "home_ozs": 40.0,
+        "home_nzs": 2,
+        "home_dzs": 33,
+        "home_fc": 44,
+        "home_rush": 5.0,
+        "away_lateral": 12.571428571428571,
+        "away_longitudinal": 22.428571428571427,
+        "home_lateral": 14.647058823529411,
+        "home_longitudinal": 33.11764705882353,
+        "away_pp_goals": 0,
+        "away_pp_attempts": 2,
+        "home_pp_goals": 2,
+        "home_pp_attempts": 4,
+        "away_faceoff_wins": 0,
+        "away_faceoff_total": 0,
+        "home_faceoff_wins": 0,
+        "home_faceoff_total": 0,
+        "away_period_shots": [
+          3,
+          3,
+          7
+        ],
+        "away_period_corsi_pct": [
+          39.39393939393939,
+          32.432432432432435,
+          38.095238095238095
+        ],
+        "away_period_pp_goals": [
+          0,
+          0,
+          0
+        ],
+        "away_period_pp_attempts": [
+          1,
+          0,
+          1
+        ],
+        "away_period_pim": [
+          0,
+          4,
+          4
+        ],
+        "away_period_hits": [
+          9,
+          5,
+          4
+        ],
+        "away_period_fo_pct": [
+          52.38095238095239,
+          50.0,
+          47.61904761904761
+        ],
+        "away_period_blocks": [
+          7,
+          4,
+          3
+        ],
+        "away_period_giveaways": [
+          4,
+          1,
+          9
+        ],
+        "away_period_takeaways": [
+          0,
+          1,
+          0
+        ],
+        "home_period_shots": [
+          12,
+          10,
+          18
+        ],
+        "home_period_corsi_pct": [
+          60.60606060606061,
+          67.56756756756756,
+          61.904761904761905
+        ],
+        "home_period_pp_goals": [
+          0,
+          0,
+          2
+        ],
+        "home_period_pp_attempts": [
+          0,
+          2,
+          2
+        ],
+        "home_period_pim": [
+          2,
+          0,
+          2
+        ],
+        "home_period_hits": [
+          9,
+          6,
+          8
+        ],
+        "home_period_fo_pct": [
+          47.61904761904761,
+          50.0,
+          52.38095238095239
+        ],
+        "home_period_blocks": [
+          5,
+          10,
+          5
+        ],
+        "home_period_giveaways": [
+          8,
+          6,
+          6
+        ],
+        "home_period_takeaways": [
+          3,
+          0,
+          3
+        ],
+        "away_period_gs": [
+          1.325,
+          1.6249999999999998,
+          -0.3749999999999999
+        ],
+        "away_period_xg": [
+          0.40362949656749997,
+          0.8517750003375,
+          0.5974122044624999
+        ],
+        "home_period_gs": [
+          2.35,
+          2.0000000000000004,
+          4.45
+        ],
+        "home_period_xg": [
+          1.9370441252375001,
+          1.4989302482249998,
+          1.83451568905
+        ],
+        "away_period_nzt": [
+          1,
+          0,
+          2
+        ],
+        "away_period_nztsa": [
+          0,
+          0,
+          1
+        ],
+        "away_period_ozs": [
+          3,
+          1,
+          7
+        ],
+        "away_period_nzs": [
+          0,
+          0,
+          0
+        ],
+        "away_period_dzs": [
+          0,
+          3,
+          0
+        ],
+        "away_period_fc": [
+          2,
+          4,
+          6
+        ],
+        "away_period_rush": [
+          1,
+          0,
+          1
+        ],
+        "home_period_nzt": [
+          0,
+          0,
+          2
+        ],
+        "home_period_nztsa": [
+          0,
+          0,
+          0
+        ],
+        "home_period_ozs": [
+          0,
+          10,
+          0
+        ],
+        "home_period_nzs": [
+          0,
+          1,
+          1
+        ],
+        "home_period_dzs": [
+          13,
+          0,
+          20
+        ],
+        "home_period_fc": [
+          13,
+          11,
+          20
+        ],
+        "home_period_rush": [
+          0,
+          0,
+          1
+        ],
+        "away_third_period_goals": 0,
+        "home_third_period_goals": 3,
+        "away_one_goal_game": false,
+        "home_one_goal_game": false,
+        "away_scored_first": false,
+        "home_scored_first": true,
+        "away_opponent_scored_first": true,
+        "home_opponent_scored_first": false,
+        "lead_after_p1": 1,
         "home_xg": 0,
         "away_xg": 0,
-        "lead_after_p1": 1,
+        "home_corsi_pct": 63.36,
+        "away_corsi_pct": 36.64,
+        "home_pdo": 103.97,
+        "home_power_play_pct": 50.0,
+        "home_penalty_kill_pct": 50.0,
+        "home_hdc": 4.0,
+        "home_rebounds": 10.0,
+        "away_pdo": 96.03,
+        "away_power_play_pct": 0.0,
+        "away_penalty_kill_pct": 80.0,
+        "away_hdc": 5.0,
+        "away_rebounds": 4.0,
+        "home_gsax": 0.85,
+        "away_gsax": 0.24,
         "home_goalie": "8480313",
         "away_goalie": "8479406"
       },
+      "actual_winner": "WSH",
+      "actual_winner_side": "home",
+      "actual_winner_team": "WSH",
+      "actual_away_score": 1,
+      "actual_home_score": 5,
+      "prediction_accuracy": 1.0,
+      "timestamp": "2025-11-19T08:13:35.760980",
+      "predicted_winner": "WSH",
+      "predicted_winner_team": "WSH",
+      "prediction_confidence": 0.5871559633027523,
+      "prediction_margin": 0.17431192660550465,
+      "raw_away_prob": 0.4128440366972477,
+      "raw_home_prob": 0.5871559633027523,
+      "calibrated_away_prob": 0.4128440366972477,
+      "calibrated_home_prob": 0.5871559633027523,
+      "correlation_away_prob": null,
+      "correlation_home_prob": null,
+      "ensemble_away_prob": null,
+      "ensemble_home_prob": null,
+      "corr_disagreement": 0.0,
+      "monte_carlo_flip_rate": 0.0,
+      "upset_probability": 0.3151509348123786,
+      "context_bucket": "neutral",
+      "away_back_to_back": false,
+      "home_back_to_back": false,
+      "away_rest_value": 0.0,
+      "home_rest_value": 0.0,
+      "was_upset": false,
+      "away_win_prob": 0.7028571428571428,
+      "home_win_prob": 0.29714285714285715,
+      "model_confidence": 0.6392525135044663,
+      "backfilled": true,
+      "calibration_version": "Phase5.2_Final_Truth",
+      "away_3_in_4": false,
+      "home_3_in_4": false,
+      "backfilled_hq": true,
+      "truth_sync": true,
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-11-01T11:15:53Z",
+      "predicted_home_goals": 3,
+      "predicted_away_goals": 2,
+      "predicted_total_goals": 5,
       "extra_metadata": {
+        "predicted_home_goals": 3,
+        "predicted_away_goals": 2,
+        "ensemble_mode": "ensemble",
+        "ensemble_weights": {
+          "xgb": 0.15,
+          "elo": 0.6,
+          "specialized": 0.05,
+          "player": 0.05,
+          "base": 0.05,
+          "vegas": 0.1
+        },
+        "attribution": [
+          "MIN Forecheck Advantage vs WSH Turnovers (+0.12)",
+          "WSH Forecheck Advantage vs MIN Turnovers (+0.12)"
+        ],
+        "is_playoff": false,
         "integrity_repair": true,
         "corrected_matchup_from": "MIN@WSH_2026-11-01"
       },
-      "event_type": "prediction",
-      "recorded_at_utc": "2026-11-01T11:15:53Z",
-      "actual_winner": "WSH",
-      "actual_away_score": 1,
-      "actual_home_score": 5,
       "home_goalie": "8480313",
       "away_goalie": "8479406",
       "home_shots": 45,
       "away_shots": 14,
-      "prediction_accuracy": 1.0,
-      "actual_score": "MIN 1 - WSH 5"
+      "projected_score": "MIN 2 - WSH 3",
+      "actual_score": "MIN 1 - WSH 5",
+      "exact_score_match": false,
+      "score_margin_error": 3,
+      "total_goals_error": 1
     },
     {
       "game_id": 2025020074,
@@ -96327,36 +96936,126 @@
       "actual_score": "DAL 4 - VAN 2"
     },
     {
-      "date": "2025-11-20",
       "game_id": 2025020329,
+      "date": "2025-11-20",
       "away_team": "OTT",
       "home_team": "ANA",
-      "predicted_winner": "ANA",
-      "predicted_home_win_prob": 47.992122538293216,
       "predicted_away_win_prob": 52.007877461706784,
-      "model_confidence": 0.5200787746170679,
+      "predicted_home_win_prob": 47.992122538293216,
       "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5,
+        "away_venue_win_pct": 0.4,
+        "home_venue_win_pct": 0.8571428571428571,
+        "corr_disagreement": 0.003952109583517938,
+        "monte_carlo_flip_rate": 0.25,
         "home_xg": 0,
         "away_xg": 0,
+        "home_corsi_pct": 47.02,
+        "away_corsi_pct": 52.98,
+        "home_pdo": 96.0,
+        "home_power_play_pct": 50.0,
+        "home_penalty_kill_pct": 50.0,
+        "home_nzt": 2.0,
+        "home_ozs": 16.0,
+        "home_rush": 2.0,
+        "home_hdc": 3.0,
+        "home_nztsa": 2.0,
+        "home_rebounds": 3.0,
+        "away_pdo": 104.0,
+        "away_power_play_pct": 66.67,
+        "away_penalty_kill_pct": 33.33,
+        "away_nzt": 3.0,
+        "away_ozs": 19.0,
+        "away_rush": 4.0,
+        "away_hdc": 8.0,
+        "away_nztsa": 0.0,
+        "away_rebounds": 6.0,
+        "home_gsax": 0.79,
+        "away_gsax": 0.05,
         "lead_after_p1": -1,
         "home_goalie": "8475852",
         "away_goalie": "8476999"
       },
+      "actual_winner": "OTT",
+      "actual_winner_side": "away",
+      "actual_winner_team": "OTT",
+      "actual_away_score": 3,
+      "actual_home_score": 2,
+      "prediction_accuracy": 0.0,
+      "timestamp": "2025-11-20T13:44:17.093024",
+      "predicted_winner": "ANA",
+      "predicted_winner_team": "OTT",
+      "prediction_confidence": 0.5099171472696755,
+      "prediction_margin": 0.01983429453935104,
+      "raw_away_prob": 0.301914385511998,
+      "raw_home_prob": 0.698085614488002,
+      "calibrated_away_prob": 0.5099171472696755,
+      "calibrated_home_prob": 0.4900828527303245,
+      "correlation_away_prob": 0.3031000183870534,
+      "correlation_home_prob": 0.6968999816129466,
+      "ensemble_away_prob": 0.2991479088035355,
+      "ensemble_home_prob": 0.7008520911964645,
+      "corr_disagreement": 0.3937999632258932,
+      "monte_carlo_flip_rate": 0.25,
+      "upset_probability": 0.3836190602372932,
+      "context_bucket": "neutral",
+      "away_back_to_back": false,
+      "home_back_to_back": false,
+      "away_rest_value": 0.0,
+      "home_rest_value": 0.0,
+      "correlation_predicted_winner": null,
+      "correlation_correct": null,
+      "was_upset": false,
+      "result_updated_at": "2025-11-24T15:00:47.556500",
+      "away_win_prob": 0.7465965714285715,
+      "home_win_prob": 0.2534034285714285,
+      "model_confidence": 0.5200787746170679,
+      "backfilled": true,
+      "calibration_version": "Phase5.2_Final_Truth",
+      "away_3_in_4": false,
+      "home_3_in_4": true,
+      "backfilled_hq": true,
+      "truth_sync": true,
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-11-01T11:15:53Z",
+      "predicted_home_goals": 4,
+      "predicted_away_goals": 3,
+      "predicted_total_goals": 7,
       "extra_metadata": {
+        "predicted_home_goals": 4,
+        "predicted_away_goals": 3,
+        "ensemble_mode": "ensemble",
+        "ensemble_weights": {
+          "xgb": 0.15,
+          "elo": 0.6,
+          "specialized": 0.05,
+          "player": 0.05,
+          "base": 0.05,
+          "vegas": 0.1
+        },
+        "attribution": [
+          "Jet Lag Context (+0.15)",
+          "OTT Forecheck Advantage vs ANA Turnovers (+0.12)",
+          "ANA Forecheck Advantage vs OTT Turnovers (+0.12)"
+        ],
+        "is_playoff": false,
         "integrity_repair": true,
         "corrected_matchup_from": "OTT@ANA_2026-11-01"
       },
-      "event_type": "prediction",
-      "recorded_at_utc": "2026-11-01T11:15:53Z",
-      "actual_winner": "OTT",
-      "actual_away_score": 3,
-      "actual_home_score": 2,
       "home_goalie": "8475852",
       "away_goalie": "8476999",
       "home_shots": 25,
       "away_shots": 25,
-      "prediction_accuracy": 0.0,
-      "actual_score": "OTT 3 - ANA 2"
+      "projected_score": "OTT 3 - ANA 4",
+      "actual_score": "OTT 3 - ANA 2",
+      "exact_score_match": false,
+      "score_margin_error": 2,
+      "total_goals_error": 2
     },
     {
       "date": "2025-11-20",
@@ -97978,97 +98677,35 @@
       "actual_score": "SEA 0 - NYI 1"
     },
     {
-      "game_id": 2025020350,
       "date": "2025-11-23",
+      "game_id": 2025020350,
       "away_team": "COL",
       "home_team": "CHI",
-      "predicted_away_win_prob": 58.06451612903226,
-      "predicted_home_win_prob": 41.93548387096774,
+      "predicted_winner": "COL",
+      "predicted_home_win_prob": 16.932229895391814,
+      "predicted_away_win_prob": 83.06777010460819,
+      "model_confidence": 0.8306777010460819,
       "metrics_used": {
-        "away_rest": -0.025,
-        "home_rest": 0.0,
-        "away_goalie_perf": 0.5,
-        "home_goalie_perf": 0.5,
-        "away_sos": 0.5,
-        "home_sos": 0.5,
-        "away_venue_win_pct": 0.5,
-        "home_venue_win_pct": 0.45454545454545453,
-        "corr_disagreement": 0.22252054457544423,
-        "monte_carlo_flip_rate": 0.15,
-        "home_xg": 2.21,
-        "away_xg": 2.73,
-        "home_corsi_pct": 49.58,
-        "away_corsi_pct": 50.42,
-        "home_pdo": 96.15,
-        "home_power_play_pct": 0.0,
-        "home_penalty_kill_pct": 80.0,
-        "home_nzt": 4.0,
-        "home_ozs": 16.0,
-        "home_rush": 3.0,
-        "home_hdc": 0.0,
-        "home_nztsa": 1.0,
-        "home_rebounds": 5.0,
-        "away_pdo": 103.85,
-        "away_power_play_pct": 0.0,
-        "away_penalty_kill_pct": 80.0,
-        "away_nzt": 6.0,
-        "away_ozs": 18.0,
-        "away_rush": 3.0,
-        "away_hdc": 3.0,
-        "away_nztsa": 2.0,
-        "away_rebounds": 4.0,
-        "home_gsax": 1.73,
-        "away_gsax": 2.21,
+        "home_xg": 0,
+        "away_xg": 0,
         "lead_after_p1": 0,
         "home_goalie": "8481519",
         "away_goalie": "8475809"
       },
+      "extra_metadata": {
+        "integrity_repair": true,
+        "corrected_matchup_from": "COL@CHI_2026-11-02"
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-11-02T12:18:10Z",
       "actual_winner": "COL",
-      "actual_winner_side": "away",
-      "actual_winner_team": "COL",
       "actual_away_score": 1,
       "actual_home_score": 0,
-      "prediction_accuracy": 1.0,
-      "timestamp": "2025-11-23T12:47:24.057566",
-      "predicted_winner": "COL",
-      "predicted_winner_team": "COL",
-      "prediction_confidence": 0.5806451612903226,
-      "prediction_margin": 0.16129032258064524,
-      "raw_away_prob": 0.39231274311478426,
-      "raw_home_prob": 0.6076872568852157,
-      "calibrated_away_prob": 0.5806451612903226,
-      "calibrated_home_prob": 0.4193548387096774,
-      "correlation_away_prob": 0.325556579742151,
-      "correlation_home_prob": 0.674443420257849,
-      "ensemble_away_prob": 0.5480771243175953,
-      "ensemble_home_prob": 0.4519228756824048,
-      "corr_disagreement": 0.34888684051569796,
-      "monte_carlo_flip_rate": 0.15,
-      "upset_probability": 0.3579170649434544,
-      "context_bucket": "neutral",
-      "away_back_to_back": false,
-      "home_back_to_back": false,
-      "away_rest_value": -0.025,
-      "home_rest_value": 0.0,
-      "correlation_predicted_winner": null,
-      "correlation_correct": null,
-      "was_upset": false,
-      "result_updated_at": "2025-11-24T15:00:38.133850",
-      "away_win_prob": 0.625,
-      "home_win_prob": 0.375,
-      "model_confidence": 0.625,
-      "backfilled": true,
-      "calibration_version": "Phase5.2_Final_Truth",
-      "away_3_in_4": true,
-      "home_3_in_4": true,
-      "backfilled_hq": true,
-      "truth_sync": true,
-      "event_type": "prediction",
-      "recorded_at_utc": "2026-04-24T13:42:49Z",
       "home_goalie": "8481519",
       "away_goalie": "8475809",
       "home_shots": 22,
       "away_shots": 26,
+      "prediction_accuracy": 1.0,
       "actual_score": "COL 1 - CHI 0"
     },
     {
@@ -101160,36 +101797,126 @@
       "actual_score": "TOR 2 - WSH 4"
     },
     {
-      "date": "2025-11-28",
       "game_id": 2025020387,
+      "date": "2025-11-28",
       "away_team": "WPG",
       "home_team": "CAR",
-      "predicted_winner": "CAR",
-      "predicted_home_win_prob": 85.41006483706096,
       "predicted_away_win_prob": 14.589935162939039,
-      "model_confidence": 0.8541006483706096,
+      "predicted_home_win_prob": 85.41006483706096,
       "metrics_used": {
+        "away_rest": 0.0,
+        "home_rest": 0.0,
+        "away_goalie_perf": 0.5,
+        "home_goalie_perf": 0.5,
+        "away_sos": 0.5,
+        "home_sos": 0.5,
+        "away_venue_win_pct": 0.5833333333333334,
+        "home_venue_win_pct": 0.6,
+        "corr_disagreement": 0.5195087384432316,
+        "monte_carlo_flip_rate": 0.0,
         "home_xg": 0,
         "away_xg": 0,
+        "home_corsi_pct": 62.86,
+        "away_corsi_pct": 37.14,
+        "home_pdo": 106.59,
+        "home_power_play_pct": 0.0,
+        "home_penalty_kill_pct": 80.0,
+        "home_nzt": 0.0,
+        "home_ozs": 26.0,
+        "home_rush": 8.0,
+        "home_hdc": 1.0,
+        "home_nztsa": 0.0,
+        "home_rebounds": 4.0,
+        "away_pdo": 93.41,
+        "away_power_play_pct": 0.0,
+        "away_penalty_kill_pct": 80.0,
+        "away_nzt": 0.0,
+        "away_ozs": 8.0,
+        "away_rush": 2.0,
+        "away_hdc": 5.0,
+        "away_nztsa": 0.0,
+        "away_rebounds": 4.0,
+        "home_gsax": 0.9,
+        "away_gsax": -0.88,
         "lead_after_p1": 1,
         "home_goalie": "8483548",
         "away_goalie": "8483114"
       },
+      "actual_winner": "CAR",
+      "actual_winner_side": "home",
+      "actual_winner_team": "CAR",
+      "actual_away_score": 1,
+      "actual_home_score": 5,
+      "prediction_accuracy": 1.0,
+      "timestamp": "2025-11-28T12:54:45.843593",
+      "predicted_winner": "CAR",
+      "predicted_winner_team": "WPG",
+      "prediction_confidence": 0.7272727272727273,
+      "prediction_margin": 0.4545454545454546,
+      "raw_away_prob": 0.8224895555984613,
+      "raw_home_prob": 0.17751044440153874,
+      "calibrated_away_prob": 0.7272727272727273,
+      "calibrated_home_prob": 0.2727272727272727,
+      "correlation_away_prob": 0.9783421771314308,
+      "correlation_home_prob": 0.02165782286856921,
+      "ensemble_away_prob": 0.45883343868819915,
+      "ensemble_home_prob": 0.5411665613118009,
+      "corr_disagreement": 0.9566843542628616,
+      "monte_carlo_flip_rate": 0.55,
+      "upset_probability": 0.4534241852143933,
+      "context_bucket": "neutral",
+      "away_back_to_back": false,
+      "home_back_to_back": false,
+      "away_rest_value": 0.0,
+      "home_rest_value": 0.0,
+      "correlation_predicted_winner": null,
+      "correlation_correct": null,
+      "was_upset": false,
+      "result_updated_at": "2025-11-29T12:51:22.621624",
+      "away_win_prob": 0.36,
+      "home_win_prob": 0.64,
+      "model_confidence": 0.8541006483706096,
+      "backfilled": true,
+      "calibration_version": "Phase5.2_Final_Truth",
+      "away_3_in_4": false,
+      "home_3_in_4": false,
+      "backfilled_hq": true,
+      "truth_sync": true,
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-11-01T11:15:53Z",
+      "predicted_home_goals": 4,
+      "predicted_away_goals": 2,
+      "predicted_total_goals": 6,
       "extra_metadata": {
+        "predicted_home_goals": 4,
+        "predicted_away_goals": 2,
+        "ensemble_mode": "ensemble",
+        "ensemble_weights": {
+          "xgb": 0.15,
+          "elo": 0.6,
+          "specialized": 0.05,
+          "player": 0.05,
+          "base": 0.05,
+          "vegas": 0.1
+        },
+        "attribution": [
+          "WPG Workload Fatigue (TWI=+0.01)",
+          "WPG Forecheck Advantage vs CAR Turnovers (+0.12)",
+          "CAR Forecheck Advantage vs WPG Turnovers (+0.12)"
+        ],
+        "is_playoff": false,
         "integrity_repair": true,
         "corrected_matchup_from": "WPG@CAR_2026-11-01"
       },
-      "event_type": "prediction",
-      "recorded_at_utc": "2026-11-01T11:15:53Z",
-      "actual_winner": "CAR",
-      "actual_away_score": 1,
-      "actual_home_score": 5,
       "home_goalie": "8483548",
       "away_goalie": "8483114",
       "home_shots": 35,
       "away_shots": 13,
-      "prediction_accuracy": 1.0,
-      "actual_score": "WPG 1 - CAR 5"
+      "projected_score": "WPG 2 - CAR 4",
+      "actual_score": "WPG 1 - CAR 5",
+      "exact_score_match": false,
+      "score_margin_error": 2,
+      "total_goals_error": 0
     },
     {
       "date": "2025-11-28",
@@ -163063,6 +163790,8 @@
       "away_goalie": "8482821",
       "home_shots": 32,
       "away_shots": 41,
+      "home_xg": 5,
+      "away_xg": 4,
       "prediction_accuracy": 1.0,
       "projected_score": "CHI 2 - BOS 4",
       "actual_score": "CHI 4 - BOS 5",
@@ -163102,6 +163831,8 @@
       "away_goalie": "8480981",
       "home_shots": 28,
       "away_shots": 15,
+      "home_xg": 4,
+      "away_xg": 5,
       "prediction_accuracy": 0.0,
       "projected_score": "STL 3 - DET 4",
       "actual_score": "STL 5 - DET 4",
@@ -163141,6 +163872,8 @@
       "away_goalie": "8476883",
       "home_shots": 33,
       "away_shots": 26,
+      "home_xg": 5,
+      "away_xg": 4,
       "prediction_accuracy": 0.0,
       "projected_score": "TBL 4 - NSH 3",
       "actual_score": "TBL 4 - NSH 5",
@@ -163180,6 +163913,8 @@
       "away_goalie": "8477465",
       "home_shots": 18,
       "away_shots": 24,
+      "home_xg": 0,
+      "away_xg": 4,
       "prediction_accuracy": 0.0,
       "projected_score": "EDM 3 - NYI 4",
       "actual_score": "EDM 4 - NYI 0",
@@ -163234,6 +163969,8 @@
       "away_goalie": "8480045",
       "home_shots": 29,
       "away_shots": 31,
+      "home_xg": 2,
+      "away_xg": 3,
       "prediction_accuracy": 1.0,
       "projected_score": "BUF 4 - LAK 3",
       "actual_score": "BUF 3 - LAK 2",
@@ -163273,6 +164010,8 @@
       "away_goalie": "8481035",
       "home_shots": 23,
       "away_shots": 35,
+      "home_xg": 1,
+      "away_xg": 5,
       "prediction_accuracy": 1.0,
       "projected_score": "OTT 4 - SJS 3",
       "actual_score": "OTT 5 - SJS 1",
@@ -163309,6 +164048,8 @@
       "away_goalie": "8483703",
       "home_shots": 27,
       "away_shots": 29,
+      "home_xg": 5,
+      "away_xg": 4,
       "prediction_accuracy": 1.0,
       "actual_score": "PIT 4 - MTL 5"
     },
@@ -163360,6 +164101,8 @@
       "away_goalie": "8476932",
       "home_shots": 28,
       "away_shots": 28,
+      "home_xg": 2,
+      "away_xg": 4,
       "prediction_accuracy": 1.0,
       "projected_score": "TOR 4 - VAN 3",
       "actual_score": "TOR 4 - VAN 2",
@@ -163399,6 +164142,8 @@
       "away_goalie": "8482982",
       "home_shots": 17,
       "away_shots": 25,
+      "home_xg": 3,
+      "away_xg": 1,
       "prediction_accuracy": 1.0,
       "projected_score": "CBJ 2 - DAL 3",
       "actual_score": "CBJ 1 - DAL 3",
@@ -163452,6 +164197,8 @@
       "away_goalie": "8482949",
       "home_shots": 33,
       "away_shots": 27,
+      "home_xg": 5,
+      "away_xg": 2,
       "prediction_accuracy": 1.0,
       "projected_score": "CGY 2 - COL 5",
       "actual_score": "CGY 2 - COL 5",
@@ -163470,7 +164217,10 @@
       "model_confidence": 0.8541006483706096,
       "metrics_used": {
         "home_xg": 0,
-        "away_xg": 0
+        "away_xg": 0,
+        "lead_after_p1": 1,
+        "home_goalie": "8481611",
+        "away_goalie": "8483532"
       },
       "extra_metadata": {
         "rewritten_from_game_id": "2025020387",
@@ -163481,8 +164231,19 @@
       "predicted_total_goals": 6,
       "event_type": "prediction",
       "recorded_at_utc": "2026-11-01T11:15:52Z",
-      "actual_winner": null,
-      "projected_score": "WPG 2 - CAR 4"
+      "actual_winner": "CAR",
+      "actual_away_score": 0,
+      "actual_home_score": 7,
+      "home_goalie": "8481611",
+      "away_goalie": "8483532",
+      "home_shots": 32,
+      "away_shots": 26,
+      "prediction_accuracy": 1.0,
+      "projected_score": "WPG 2 - CAR 4",
+      "actual_score": "WPG 0 - CAR 7",
+      "exact_score_match": false,
+      "score_margin_error": 5,
+      "total_goals_error": 1
     },
     {
       "date": "2026-11-01",
@@ -163495,7 +164256,10 @@
       "model_confidence": 0.6392525135044663,
       "metrics_used": {
         "home_xg": 0,
-        "away_xg": 0
+        "away_xg": 0,
+        "lead_after_p1": -1,
+        "home_goalie": "8480313",
+        "away_goalie": "8482661"
       },
       "extra_metadata": {
         "rewritten_from_game_id": "2025020073",
@@ -163506,8 +164270,19 @@
       "predicted_total_goals": 5,
       "event_type": "prediction",
       "recorded_at_utc": "2026-11-01T11:15:52Z",
-      "actual_winner": null,
-      "projected_score": "MIN 2 - WSH 3"
+      "actual_winner": "MIN",
+      "actual_away_score": 5,
+      "actual_home_score": 1,
+      "home_goalie": "8480313",
+      "away_goalie": "8482661",
+      "home_shots": 27,
+      "away_shots": 29,
+      "prediction_accuracy": 0.0,
+      "projected_score": "MIN 2 - WSH 3",
+      "actual_score": "MIN 5 - WSH 1",
+      "exact_score_match": false,
+      "score_margin_error": 5,
+      "total_goals_error": 1
     },
     {
       "date": "2026-11-01",
@@ -163523,7 +164298,10 @@
       "predicted_total_goals": 6,
       "metrics_used": {
         "home_xg": 0,
-        "away_xg": 0
+        "away_xg": 0,
+        "lead_after_p1": 0,
+        "home_goalie": "8478435",
+        "away_goalie": "8478872"
       },
       "extra_metadata": {
         "predicted_home_goals": 2,
@@ -163546,8 +164324,19 @@
       },
       "event_type": "prediction",
       "recorded_at_utc": "2026-11-01T11:15:31Z",
-      "actual_winner": null,
-      "projected_score": "UTA 4 - PHI 2"
+      "actual_winner": "PHI",
+      "actual_away_score": 3,
+      "actual_home_score": 6,
+      "home_goalie": "8478435",
+      "away_goalie": "8478872",
+      "home_shots": 21,
+      "away_shots": 22,
+      "prediction_accuracy": 0.0,
+      "projected_score": "UTA 4 - PHI 2",
+      "actual_score": "UTA 3 - PHI 6",
+      "exact_score_match": false,
+      "score_margin_error": 5,
+      "total_goals_error": 3
     },
     {
       "date": "2026-11-01",
@@ -163560,7 +164349,10 @@
       "model_confidence": 0.5144079440672814,
       "metrics_used": {
         "home_xg": 0,
-        "away_xg": 0
+        "away_xg": 0,
+        "lead_after_p1": -1,
+        "home_goalie": "8482193",
+        "away_goalie": "8477035"
       },
       "extra_metadata": {
         "rewritten_from_game_id": "2025020051",
@@ -163571,8 +164363,19 @@
       "predicted_total_goals": 5,
       "event_type": "prediction",
       "recorded_at_utc": "2026-11-01T11:15:52Z",
-      "actual_winner": null,
-      "projected_score": "EDM 2 - NYR 3"
+      "actual_winner": "EDM",
+      "actual_away_score": 4,
+      "actual_home_score": 1,
+      "home_goalie": "8482193",
+      "away_goalie": "8477035",
+      "home_shots": 28,
+      "away_shots": 25,
+      "prediction_accuracy": 0.0,
+      "projected_score": "EDM 2 - NYR 3",
+      "actual_score": "EDM 4 - NYR 1",
+      "exact_score_match": false,
+      "score_margin_error": 4,
+      "total_goals_error": 0
     },
     {
       "date": "2026-11-01",
@@ -163585,7 +164388,10 @@
       "model_confidence": 0.5200787746170679,
       "metrics_used": {
         "home_xg": 0,
-        "away_xg": 0
+        "away_xg": 0,
+        "lead_after_p1": -1,
+        "home_goalie": "8476316",
+        "away_goalie": "8477992"
       },
       "extra_metadata": {
         "rewritten_from_game_id": "2025020329",
@@ -163596,8 +164402,163 @@
       "predicted_total_goals": 7,
       "event_type": "prediction",
       "recorded_at_utc": "2026-11-01T11:15:52Z",
+      "actual_winner": "ANA",
+      "actual_away_score": 3,
+      "actual_home_score": 6,
+      "home_goalie": "8476316",
+      "away_goalie": "8477992",
+      "home_shots": 33,
+      "away_shots": 22,
+      "prediction_accuracy": 1.0,
+      "projected_score": "OTT 3 - ANA 4",
+      "actual_score": "OTT 3 - ANA 6",
+      "exact_score_match": false,
+      "score_margin_error": 2,
+      "total_goals_error": 2
+    },
+    {
+      "date": "2026-11-02",
+      "game_id": 2026020232,
+      "home_team": "BOS",
+      "away_team": "VGK",
+      "predicted_winner": "BOS",
+      "predicted_home_win_prob": 62.68923170285468,
+      "predicted_away_win_prob": 37.310768297145316,
+      "model_confidence": 0.6268923170285468,
+      "predicted_home_goals": 4,
+      "predicted_away_goals": 3,
+      "predicted_total_goals": 7,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "predicted_home_goals": 4,
+        "predicted_away_goals": 3,
+        "ensemble_mode": "ensemble",
+        "ensemble_weights": {
+          "xgb": 0.15,
+          "elo": 0.6,
+          "specialized": 0.05,
+          "player": 0.05,
+          "base": 0.05,
+          "vegas": 0.1
+        },
+        "attribution": [
+          "Jet Lag Context (-0.30)",
+          "VGK Forecheck Advantage vs BOS Turnovers (+0.12)",
+          "BOS Forecheck Advantage vs VGK Turnovers (+0.12)"
+        ],
+        "is_playoff": false
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-11-02T12:17:53Z",
       "actual_winner": null,
-      "projected_score": "OTT 3 - ANA 4"
+      "projected_score": "VGK 3 - BOS 4"
+    },
+    {
+      "date": "2026-11-02",
+      "game_id": 2026020233,
+      "home_team": "FLA",
+      "away_team": "DET",
+      "predicted_winner": "FLA",
+      "predicted_home_win_prob": 68.21345237325467,
+      "predicted_away_win_prob": 31.78654762674533,
+      "model_confidence": 0.6821345237325467,
+      "predicted_home_goals": 4,
+      "predicted_away_goals": 2,
+      "predicted_total_goals": 6,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "predicted_home_goals": 4,
+        "predicted_away_goals": 2,
+        "ensemble_mode": "ensemble",
+        "ensemble_weights": {
+          "xgb": 0.15,
+          "elo": 0.6,
+          "specialized": 0.05,
+          "player": 0.05,
+          "base": 0.05,
+          "vegas": 0.1
+        },
+        "attribution": [
+          "DET Forecheck Advantage vs FLA Turnovers (+0.12)",
+          "FLA Forecheck Advantage vs DET Turnovers (+0.12)"
+        ],
+        "is_playoff": false
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-11-02T12:17:53Z",
+      "actual_winner": null,
+      "projected_score": "DET 2 - FLA 4"
+    },
+    {
+      "date": "2026-11-02",
+      "game_id": 2026020234,
+      "home_team": "CHI",
+      "away_team": "COL",
+      "predicted_winner": "COL",
+      "predicted_home_win_prob": 16.932229895391814,
+      "predicted_away_win_prob": 83.06777010460819,
+      "model_confidence": 0.8306777010460819,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "rewritten_from_game_id": "2025020350",
+        "integrity_repair": true
+      },
+      "predicted_home_goals": 1,
+      "predicted_away_goals": 3,
+      "predicted_total_goals": 4,
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-11-02T12:18:09Z",
+      "actual_winner": null,
+      "projected_score": "COL 3 - CHI 1"
+    },
+    {
+      "date": "2026-11-02",
+      "game_id": 2026020235,
+      "home_team": "SJS",
+      "away_team": "CGY",
+      "predicted_winner": "SJS",
+      "predicted_home_win_prob": 52.0,
+      "predicted_away_win_prob": 48.0,
+      "model_confidence": 0.52,
+      "predicted_home_goals": 5,
+      "predicted_away_goals": 4,
+      "predicted_total_goals": 9,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "predicted_home_goals": 5,
+        "predicted_away_goals": 4,
+        "ensemble_mode": "ensemble",
+        "ensemble_weights": {
+          "xgb": 0.15,
+          "elo": 0.6,
+          "specialized": 0.05,
+          "player": 0.05,
+          "base": 0.05,
+          "vegas": 0.1
+        },
+        "attribution": [
+          "CGY Workload Fatigue (TWI=+0.00)",
+          "CGY Forecheck Advantage vs SJS Turnovers (+0.12)",
+          "SJS Forecheck Advantage vs CGY Turnovers (+0.12)"
+        ],
+        "is_playoff": false
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-11-02T12:17:53Z",
+      "actual_winner": null,
+      "projected_score": "CGY 4 - SJS 5"
     }
   ]
 }
