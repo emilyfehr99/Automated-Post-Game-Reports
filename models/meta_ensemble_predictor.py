@@ -460,8 +460,8 @@ class MetaEnsemblePredictor:
         }
 
     def __init__(self):
-        self.specialized_ensemble = EnsemblePredictor()
         self.base_model = ImprovedSelfLearningModelV2()
+        self.specialized_ensemble = EnsemblePredictor(base_model=self.base_model)
         
         # Load XGBoost Components
         self.xgb_model = None

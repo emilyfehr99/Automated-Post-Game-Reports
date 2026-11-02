@@ -103,3 +103,4 @@ outputs/
 !data/prediction_events.jsonl
 !data/outcome_skip_game_ids.json
 !data/starting_goalies_consensus_cache.json
+!data/score_model_tuning.json

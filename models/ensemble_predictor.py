@@ -30,18 +30,27 @@ except Exception:
     from models.improved_self_learning_model_v2 import ImprovedSelfLearningModelV2
 
 class EnsemblePredictor:
-    def __init__(self):
-        self.detector = ContextDetector()
+    def __init__(self, base_model=None):
+        self.detector = ContextDetector(model=base_model)
         
-        # Initialize all specialized models
-        self.models = {
-            'standard': ImprovedSelfLearningModelV2(),
-            'high_scoring': HighScoringGameModel(),
-            'defensive': DefensiveMatchupModel(),
-            'playoff_race': PlayoffRaceModel(),
-            'rivalry': RivalryGameModel(),
-            'playoff_series': PlayoffSeriesModel()
+        # Initialize specialized models lazily to avoid 6x redundant data/font/schedule loading
+        self._model_classes = {
+            'standard': ImprovedSelfLearningModelV2,
+            'high_scoring': HighScoringGameModel,
+            'defensive': DefensiveMatchupModel,
+            'playoff_race': PlayoffRaceModel,
+            'rivalry': RivalryGameModel,
+            'playoff_series': PlayoffSeriesModel
         }
+        self.models = {}
+        if base_model is not None:
+            self.models['standard'] = base_model
+
+    def _get_model(self, context_type: str):
+        if context_type not in self.models:
+            cls = self._model_classes.get(context_type, self._model_classes['standard'])
+            self.models[context_type] = cls()
+        return self.models[context_type]
     
     def predict(self, away_team: str, home_team: str, game_id: str = None, game_date: str = None, is_playoff: bool = False, series_status: str = None) -> Dict:
         """Make ensemble prediction using specialized models
@@ -57,7 +66,7 @@ class EnsemblePredictor:
         weights = []
         
         for context_type, confidence in contexts:
-            model = self.models.get(context_type, self.models['standard'])
+            model = self._get_model(context_type)
             
             # Pass playoff flags if the model supports them
             try:
@@ -77,7 +86,7 @@ class EnsemblePredictor:
         total_weight = sum(weights)
         if total_weight == 0:
             # Fallback to standard model
-            return self.models['standard'].predict_game(away_team, home_team, game_id=game_id, game_date=game_date)
+            return self._get_model('standard').predict_game(away_team, home_team, game_id=game_id, game_date=game_date)
         
         ensemble_away = sum(p['away_prob'] * w for p, w in zip(predictions, weights)) / total_weight
         ensemble_home = sum(p['home_prob'] * w for p, w in zip(predictions, weights)) / total_weight

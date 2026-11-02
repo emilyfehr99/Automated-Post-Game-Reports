@@ -14,8 +14,8 @@ except Exception:
     from models.standings_tracker import StandingsTracker
 
 class ContextDetector:
-    def __init__(self):
-        self.model = ImprovedSelfLearningModelV2()
+    def __init__(self, model=None):
+        self.model = model if model is not None else ImprovedSelfLearningModelV2()
         self.standings = StandingsTracker()
     
     def predict_total_goals(self, away_team: str, home_team: str) -> float:

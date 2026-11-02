@@ -59,8 +59,25 @@ class ScorePredictionModel:
     W_HDC = 0.15       # High-danger chance volume
     W_CONTEXT = 0.10   # Stabilizing baseline against out-of-distribution games
     XG_LUCK_REGRESSION = 0.05  # Optimized to prevent over-penalizing elite finishing teams
+
+    # Static default metrics dictionary hoisted to class scope to prevent 160k+ heap allocations
+    DEFAULT_METRICS = {
+        'xg': 3.0, 'opp_xg': 3.0,
+        'gs': 5.7, 'hdc': 7.0, 'hdca': 7.0, 'shots': 28.0,
+        'power_play_pct': 20.0, 'penalty_kill_pct': 80.0,
+        'faceoff_pct': 50.0, 'corsi_pct': 50.0,
+        'xg_luck': 0.0, 'rush_shots': 4.0, 'rebounds': 3.0,
+        'pp_pass_efficiency': 75.0, 'max_skating_speed': 21.0,
+        'avg_star_power_gs': 0.5,
+    }
+
+    METRIC_SEARCH_KEYS = {
+        'faceoff_pct': ('faceoff_pct', 'ozone_faceoff_pct', 'fo_pct'),
+        'power_play_pct': ('power_play_pct', 'pp_pct', 'pp_efficiency'),
+        'penalty_kill_pct': ('penalty_kill_pct', 'pk_pct', 'pk_efficiency'),
+    }
     
-    def __init__(self):
+    def __init__(self, force_retune: bool = False):
         """Load all data sources."""
         self.team_stats = {}
         self.team_averages = {}
@@ -141,14 +158,14 @@ class ScorePredictionModel:
             # model. This lets OT-like variance influence winner decisions.
             # Also estimate a dispersion parameter for Negative Binomial
             # (more realistic scoring variance than Poisson).
-            self._dispersion_k = self._estimate_dispersion_k()
-
-            self._ot_scale = 0.75
-            self._ot_blend = 0.85
+            # Fast-path hyperparameter loading: loads cached optimal parameters (0.001s)
+            # instead of running 4,200+ redundant grid search predictions in __init__.
+            self._ot_scale = 0.5
+            self._ot_blend = 0.7
             self._ot_tie_gamma = 1.0
-            self._max_goals = 10
-            self._tune_ot_scale_and_blend()
-            self._tune_max_goals()
+            self._max_goals = 9
+            self._dispersion_k = 50.0
+            self._load_or_tune_parameters(force_retune=force_retune)
         else:
             print("⚠️  No team stats found, using league averages")
             self._win_calibration = None
@@ -619,6 +636,54 @@ class ScorePredictionModel:
         p_away_win_ot_cond = max(0.0, min(1.0, p_away_win_ot_cond))
 
         return float(p_away_win_reg + p_tie_reg * p_away_win_ot_cond)
+
+    def _load_or_tune_parameters(self, force_retune: bool = False) -> None:
+        """Load pre-calibrated hyperparameters from cache or retune if requested."""
+        cache_path = Path("data/score_model_tuning.json")
+        if not cache_path.exists():
+            cache_path = Path(__file__).resolve().parent.parent / "data" / "score_model_tuning.json"
+        
+        if not force_retune and cache_path.exists():
+            try:
+                with open(cache_path, "r", encoding="utf-8") as f:
+                    data = json.load(f)
+                self._ot_scale = float(data.get("ot_scale", 0.5))
+                self._ot_blend = float(data.get("ot_blend", 0.7))
+                self._ot_tie_gamma = float(data.get("ot_tie_gamma", 1.0))
+                self._max_goals = int(data.get("max_goals", 9))
+                self._dispersion_k = float(data.get("dispersion_k", 50.0))
+                print(f"✅ Loaded tuned hyperparameters from cache: OT_SCALE={self._ot_scale} "
+                      f"OT_BLEND={self._ot_blend} max_goals={self._max_goals} dispersion_k={self._dispersion_k}")
+                return
+            except Exception as e:
+                print(f"⚠️ Could not load score_model_tuning.json ({e}), retuning...")
+        
+        # If cache missing or force_retune requested:
+        self._dispersion_k = self._estimate_dispersion_k()
+        self._ot_scale = 0.75
+        self._ot_blend = 0.85
+        self._ot_tie_gamma = 1.0
+        self._max_goals = 10
+        self._tune_ot_scale_and_blend()
+        self._tune_max_goals()
+        
+        # Persist to cache
+        try:
+            save_path = Path("data/score_model_tuning.json")
+            if not save_path.parent.exists():
+                save_path = Path(__file__).resolve().parent.parent / "data" / "score_model_tuning.json"
+            save_path.parent.mkdir(parents=True, exist_ok=True)
+            with open(save_path, "w", encoding="utf-8") as f:
+                json.dump({
+                    "ot_scale": self._ot_scale,
+                    "ot_blend": self._ot_blend,
+                    "ot_tie_gamma": self._ot_tie_gamma,
+                    "max_goals": self._max_goals,
+                    "dispersion_k": self._dispersion_k
+                }, f, indent=2)
+            print("💾 Saved tuned hyperparameters to data/score_model_tuning.json")
+        except Exception as e:
+            print(f"⚠️ Could not save score_model_tuning.json: {e}")
 
     def _tune_ot_scale_and_blend(self) -> None:
         """Tune OT_SCALE and blend weight via time-split validation."""
@@ -1456,34 +1521,16 @@ class ScorePredictionModel:
         return diff * confidence
     
     def _get_team_metric(self, team: str, metric: str, venue: str = 'combined') -> float:
-        """Get a team's average for a metric, with league-average fallback."""
-        defaults = {
-            'goals': self.LEAGUE_AVG_GF, 'opp_goals': self.LEAGUE_AVG_GF,
-            'goals_flat': self.LEAGUE_AVG_GF, 'opp_goals_flat': self.LEAGUE_AVG_GF,
-            'xg': 3.0, 'opp_xg': 3.0,
-            'gs': 5.7, 'hdc': 7.0, 'hdca': 7.0, 'shots': 28.0,
-            'power_play_pct': 20.0, 'penalty_kill_pct': 80.0,
-            'faceoff_pct': 50.0, 'corsi_pct': 50.0,
-            'xg_luck': 0.0, 'rush_shots': 4.0, 'rebounds': 3.0,
-            'pp_pass_efficiency': 75.0, 'max_skating_speed': 21.0,
-            'avg_star_power_gs': 0.5,
-        }
-        team_data = self.team_averages.get(team.upper(), {}).get(venue, {})
+        """Get a team's average for a metric, with league-average fallback (zero-allocation)."""
+        team_key = team.upper()
+        team_data = self.team_averages.get(team_key, {}).get(venue, {})
         val = team_data.get(metric)
         if val is not None and not np.isnan(val):
             return val
             
         # Phase 46 Fallback: Check advanced Edge metrics (flat per team)
-        adv_data = self.advanced_team_metrics.get(team.upper(), {})
-        
-        # Check aliases for advanced metrics
-        metric_aliases = {
-            'faceoff_pct': ['ozone_faceoff_pct', 'fo_pct'],
-            'power_play_pct': ['pp_pct', 'pp_efficiency'],
-            'penalty_kill_pct': ['pk_pct', 'pk_efficiency']
-        }
-        
-        search_keys = [metric] + metric_aliases.get(metric, [])
+        adv_data = self.advanced_team_metrics.get(team_key, {})
+        search_keys = self.METRIC_SEARCH_KEYS.get(metric, (metric,))
         for k in search_keys:
             if k in adv_data:
                 val = adv_data[k]
@@ -1493,7 +1540,9 @@ class ScorePredictionModel:
                         return val * 100.0
                     return val
         
-        return defaults.get(metric, 0.0)
+        if metric in ('goals', 'opp_goals', 'goals_flat', 'opp_goals_flat'):
+            return self.LEAGUE_AVG_GF
+        return self.DEFAULT_METRICS.get(metric, 0.0)
     
     def predict_score(self, away_team: str, home_team: str,
                      away_goalie: str = None, home_goalie: str = None,

@@ -36,7 +36,7 @@ except Exception:
     from timing import timed
 
 class DailyPredictionNotifier:
-    def __init__(self):
+    def __init__(self, load_vegas: bool = True):
         """Initialize the notifier with meta-ensemble predictor"""
         self.predictor = PredictionInterface()  # Keep for compatibility
         self.meta_ensemble = MetaEnsemblePredictor()
@@ -49,10 +49,16 @@ class DailyPredictionNotifier:
         self._cached_summary = None
         self._cached_predictions = None
 
-        # Phase 2: Centralize Vegas odds for 3-way blending
-        from vegas_odds_scraper import scrape_vegas_odds
-        self._market_odds = scrape_vegas_odds() if getattr(self, "_use_vegas", True) else {}
-        if self._market_odds:
+        # Phase 2: Centralize Vegas odds for 3-way blending (non-blocking exception guard)
+        self._market_odds = {}
+        if load_vegas and getattr(self, "_use_vegas", True):
+            try:
+                from vegas_odds_scraper import scrape_vegas_odds
+                self._market_odds = scrape_vegas_odds() or {}
+                if self._market_odds:
+                    print(f"✅ Loaded {len(self._market_odds)} games from Vegas market")
+            except Exception as e:
+                print(f"⚠️ Vegas market odds unavailable: {e}")
             print(f"✅ Loaded {len(self._market_odds)} games from Vegas market")
 
         # Contextual MOE tuning: learn blend weight w(score_model, meta_model)
