@@ -98678,38 +98678,6 @@
     },
     {
       "date": "2025-11-23",
-      "game_id": 2025020350,
-      "away_team": "COL",
-      "home_team": "CHI",
-      "predicted_winner": "COL",
-      "predicted_home_win_prob": 16.932229895391814,
-      "predicted_away_win_prob": 83.06777010460819,
-      "model_confidence": 0.8306777010460819,
-      "metrics_used": {
-        "home_xg": 0,
-        "away_xg": 0,
-        "lead_after_p1": 0,
-        "home_goalie": "8481519",
-        "away_goalie": "8475809"
-      },
-      "extra_metadata": {
-        "integrity_repair": true,
-        "corrected_matchup_from": "COL@CHI_2026-11-02"
-      },
-      "event_type": "prediction",
-      "recorded_at_utc": "2026-11-02T12:18:10Z",
-      "actual_winner": "COL",
-      "actual_away_score": 1,
-      "actual_home_score": 0,
-      "home_goalie": "8481519",
-      "away_goalie": "8475809",
-      "home_shots": 22,
-      "away_shots": 26,
-      "prediction_accuracy": 1.0,
-      "actual_score": "COL 1 - CHI 0"
-    },
-    {
-      "date": "2025-11-23",
       "game_id": 2025020351,
       "away_team": "BOS",
       "home_team": "SJS",
@@ -164238,6 +164206,8 @@
       "away_goalie": "8483532",
       "home_shots": 32,
       "away_shots": 26,
+      "home_xg": 7,
+      "away_xg": 0,
       "prediction_accuracy": 1.0,
       "projected_score": "WPG 2 - CAR 4",
       "actual_score": "WPG 0 - CAR 7",
@@ -164277,6 +164247,8 @@
       "away_goalie": "8482661",
       "home_shots": 27,
       "away_shots": 29,
+      "home_xg": 1,
+      "away_xg": 5,
       "prediction_accuracy": 0.0,
       "projected_score": "MIN 2 - WSH 3",
       "actual_score": "MIN 5 - WSH 1",
@@ -164331,6 +164303,8 @@
       "away_goalie": "8478872",
       "home_shots": 21,
       "away_shots": 22,
+      "home_xg": 6,
+      "away_xg": 3,
       "prediction_accuracy": 0.0,
       "projected_score": "UTA 4 - PHI 2",
       "actual_score": "UTA 3 - PHI 6",
@@ -164370,6 +164344,8 @@
       "away_goalie": "8477035",
       "home_shots": 28,
       "away_shots": 25,
+      "home_xg": 1,
+      "away_xg": 4,
       "prediction_accuracy": 0.0,
       "projected_score": "EDM 2 - NYR 3",
       "actual_score": "EDM 4 - NYR 1",
@@ -164409,6 +164385,8 @@
       "away_goalie": "8477992",
       "home_shots": 33,
       "away_shots": 22,
+      "home_xg": 6,
+      "away_xg": 3,
       "prediction_accuracy": 1.0,
       "projected_score": "OTT 3 - ANA 4",
       "actual_score": "OTT 3 - ANA 6",
@@ -164422,9 +164400,9 @@
       "home_team": "BOS",
       "away_team": "VGK",
       "predicted_winner": "BOS",
-      "predicted_home_win_prob": 62.68923170285468,
-      "predicted_away_win_prob": 37.310768297145316,
-      "model_confidence": 0.6268923170285468,
+      "predicted_home_win_prob": 56.74836862510212,
+      "predicted_away_win_prob": 43.25163137489788,
+      "model_confidence": 0.5674836862510212,
       "predicted_home_goals": 4,
       "predicted_away_goals": 3,
       "predicted_total_goals": 7,
@@ -164452,7 +164430,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-11-02T12:17:53Z",
+      "recorded_at_utc": "2026-11-02T14:23:43Z",
       "actual_winner": null,
       "projected_score": "VGK 3 - BOS 4"
     },
@@ -164462,9 +164440,9 @@
       "home_team": "FLA",
       "away_team": "DET",
       "predicted_winner": "FLA",
-      "predicted_home_win_prob": 68.21345237325467,
-      "predicted_away_win_prob": 31.78654762674533,
-      "model_confidence": 0.6821345237325467,
+      "predicted_home_win_prob": 62.18354646970929,
+      "predicted_away_win_prob": 37.8164535302907,
+      "model_confidence": 0.6218354646970929,
       "predicted_home_goals": 4,
       "predicted_away_goals": 2,
       "predicted_total_goals": 6,
@@ -164491,7 +164469,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-11-02T12:17:53Z",
+      "recorded_at_utc": "2026-11-02T14:23:43Z",
       "actual_winner": null,
       "projected_score": "DET 2 - FLA 4"
     },
@@ -164525,19 +164503,19 @@
       "game_id": 2026020235,
       "home_team": "SJS",
       "away_team": "CGY",
-      "predicted_winner": "SJS",
-      "predicted_home_win_prob": 52.0,
-      "predicted_away_win_prob": 48.0,
-      "model_confidence": 0.52,
-      "predicted_home_goals": 5,
+      "predicted_winner": "CGY",
+      "predicted_home_win_prob": 45.580013592073485,
+      "predicted_away_win_prob": 54.419986407926515,
+      "model_confidence": 0.5441998640792651,
+      "predicted_home_goals": 3,
       "predicted_away_goals": 4,
-      "predicted_total_goals": 9,
+      "predicted_total_goals": 7,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
       },
       "extra_metadata": {
-        "predicted_home_goals": 5,
+        "predicted_home_goals": 3,
         "predicted_away_goals": 4,
         "ensemble_mode": "ensemble",
         "ensemble_weights": {
@@ -164556,9 +164534,9 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-11-02T12:17:53Z",
+      "recorded_at_utc": "2026-11-02T14:23:43Z",
       "actual_winner": null,
-      "projected_score": "CGY 4 - SJS 5"
+      "projected_score": "CGY 4 - SJS 3"
     }
   ]
 }

@@ -1274,10 +1274,10 @@ class ScorePredictionModel:
             z = (
                 1.15 * float(diff) +
                 0.047482 * st_net +
-                (-0.283197) * pizza_diff +
+                0.283197 * pizza_diff +
                 0.35 * venue_reg +
                 0.85 * h2h_reg +
-                (-0.034653) * edge_speed_diff +
+                0.034653 * edge_speed_diff +
                 0.075898 * mom_diff +
                 (-0.138889)
             )
