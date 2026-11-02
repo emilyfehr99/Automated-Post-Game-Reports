@@ -164400,9 +164400,9 @@
       "home_team": "BOS",
       "away_team": "VGK",
       "predicted_winner": "BOS",
-      "predicted_home_win_prob": 56.74836862510212,
-      "predicted_away_win_prob": 43.25163137489788,
-      "model_confidence": 0.5674836862510212,
+      "predicted_home_win_prob": 56.70901653544781,
+      "predicted_away_win_prob": 43.29098346455219,
+      "model_confidence": 0.5670901653544781,
       "predicted_home_goals": 4,
       "predicted_away_goals": 3,
       "predicted_total_goals": 7,
@@ -164430,7 +164430,7 @@
         "is_playoff": false
       },
       "event_type": "prediction",
-      "recorded_at_utc": "2026-11-02T14:23:43Z",
+      "recorded_at_utc": "2026-11-02T14:33:11Z",
       "actual_winner": null,
       "projected_score": "VGK 3 - BOS 4"
     },
@@ -164537,6 +164537,125 @@
       "recorded_at_utc": "2026-11-02T14:23:43Z",
       "actual_winner": null,
       "projected_score": "CGY 4 - SJS 3"
+    },
+    {
+      "date": "2026-11-02",
+      "game_id": 2026020302,
+      "home_team": "FLA",
+      "away_team": "DET",
+      "predicted_winner": "FLA",
+      "predicted_home_win_prob": 62.18225893152294,
+      "predicted_away_win_prob": 37.817741068477055,
+      "model_confidence": 0.6218225893152294,
+      "predicted_home_goals": 4,
+      "predicted_away_goals": 2,
+      "predicted_total_goals": 6,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "predicted_home_goals": 4,
+        "predicted_away_goals": 2,
+        "ensemble_mode": "ensemble",
+        "ensemble_weights": {
+          "xgb": 0.15,
+          "elo": 0.6,
+          "specialized": 0.05,
+          "player": 0.05,
+          "base": 0.05,
+          "vegas": 0.1
+        },
+        "attribution": [
+          "DET Forecheck Advantage vs FLA Turnovers (+0.12)",
+          "FLA Forecheck Advantage vs DET Turnovers (+0.12)"
+        ],
+        "is_playoff": false
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-11-02T14:33:11Z",
+      "actual_winner": null,
+      "projected_score": "DET 2 - FLA 4"
+    },
+    {
+      "date": "2026-11-02",
+      "game_id": 2026020343,
+      "home_team": "SJS",
+      "away_team": "CGY",
+      "predicted_winner": "CGY",
+      "predicted_home_win_prob": 45.56340799204508,
+      "predicted_away_win_prob": 54.43659200795492,
+      "model_confidence": 0.5443659200795492,
+      "predicted_home_goals": 3,
+      "predicted_away_goals": 4,
+      "predicted_total_goals": 7,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "predicted_home_goals": 3,
+        "predicted_away_goals": 4,
+        "ensemble_mode": "ensemble",
+        "ensemble_weights": {
+          "xgb": 0.15,
+          "elo": 0.6,
+          "specialized": 0.05,
+          "player": 0.05,
+          "base": 0.05,
+          "vegas": 0.1
+        },
+        "attribution": [
+          "CGY Workload Fatigue (TWI=+0.00)",
+          "CGY Forecheck Advantage vs SJS Turnovers (+0.12)",
+          "SJS Forecheck Advantage vs CGY Turnovers (+0.12)"
+        ],
+        "is_playoff": false
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-11-02T14:33:11Z",
+      "actual_winner": null,
+      "projected_score": "CGY 4 - SJS 3"
+    },
+    {
+      "date": "2026-11-02",
+      "game_id": 2026021033,
+      "home_team": "CHI",
+      "away_team": "COL",
+      "predicted_winner": "COL",
+      "predicted_home_win_prob": 23.868209815619057,
+      "predicted_away_win_prob": 76.13179018438095,
+      "model_confidence": 0.7613179018438094,
+      "predicted_home_goals": 2,
+      "predicted_away_goals": 4,
+      "predicted_total_goals": 6,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "predicted_home_goals": 2,
+        "predicted_away_goals": 4,
+        "ensemble_mode": "ensemble",
+        "ensemble_weights": {
+          "xgb": 0.15,
+          "elo": 0.6,
+          "specialized": 0.05,
+          "player": 0.05,
+          "base": 0.05,
+          "vegas": 0.1
+        },
+        "attribution": [
+          "COL Forecheck Advantage vs CHI Turnovers (+0.12)",
+          "CHI Forecheck Advantage vs COL Turnovers (+0.12)",
+          "COL Cycle Dominance vs Low Block Volume (+0.08)"
+        ],
+        "is_playoff": false
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-11-02T14:33:11Z",
+      "actual_winner": null,
+      "projected_score": "COL 4 - CHI 2"
     }
   ]
 }

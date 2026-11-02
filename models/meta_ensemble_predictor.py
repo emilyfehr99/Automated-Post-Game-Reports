@@ -1591,11 +1591,11 @@ class MetaEnsemblePredictor:
                 st_lev * 0.05443 +
                 st_net * 0.14842 +
                 b2b_val * 0.05965 +
-                rest_diff * (-0.08504) +
+                rest_diff * 0.08504 +
                 gsax_diff * 0.01665 +
-                pizza_diff * (-0.00611) +
-                goals_for_diff * (-0.02317) +
-                nzt_diff * (-0.09034) +
+                pizza_diff * 0.00611 +
+                goals_for_diff * 0.02317 +
+                nzt_diff * 0.09034 +
                 finish_xg * 0.12120 +
                 speed_finish * 0.19680 +
                 corsi_diff * 0.01163 +
