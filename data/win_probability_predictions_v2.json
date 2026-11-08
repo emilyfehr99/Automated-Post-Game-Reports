@@ -165663,6 +165663,8 @@
       "away_goalie": "8482982",
       "home_shots": 37,
       "away_shots": 26,
+      "home_xg": 5,
+      "away_xg": 2,
       "prediction_accuracy": 1.0,
       "projected_score": "CBJ 2 - BUF 4",
       "actual_score": "CBJ 2 - BUF 5",
@@ -165717,6 +165719,8 @@
       "away_goalie": "8482137",
       "home_shots": 29,
       "away_shots": 24,
+      "home_xg": 4,
+      "away_xg": 1,
       "prediction_accuracy": 1.0,
       "projected_score": "SJS 3 - MIN 4",
       "actual_score": "SJS 1 - MIN 4",
@@ -165770,6 +165774,8 @@
       "away_goalie": "8478024",
       "home_shots": 21,
       "away_shots": 29,
+      "home_xg": 3,
+      "away_xg": 5,
       "prediction_accuracy": 0.0,
       "projected_score": "ANA 3 - CGY 4",
       "actual_score": "ANA 5 - CGY 3",
@@ -165791,7 +165797,10 @@
       "predicted_total_goals": 7,
       "metrics_used": {
         "home_xg": 0,
-        "away_xg": 0
+        "away_xg": 0,
+        "lead_after_p1": 0,
+        "home_goalie": "8477424",
+        "away_goalie": "8480981"
       },
       "extra_metadata": {
         "predicted_home_goals": 4,
@@ -165813,8 +165822,19 @@
       },
       "event_type": "prediction",
       "recorded_at_utc": "2026-11-07T11:02:24Z",
-      "actual_winner": null,
-      "projected_score": "STL 3 - NSH 4"
+      "actual_winner": "NSH",
+      "actual_away_score": 1,
+      "actual_home_score": 3,
+      "home_goalie": "8477424",
+      "away_goalie": "8480981",
+      "home_shots": 29,
+      "away_shots": 26,
+      "prediction_accuracy": 1.0,
+      "projected_score": "STL 3 - NSH 4",
+      "actual_score": "STL 1 - NSH 3",
+      "exact_score_match": false,
+      "score_margin_error": 1,
+      "total_goals_error": 3
     },
     {
       "date": "2026-11-07",
@@ -165830,7 +165850,10 @@
       "predicted_total_goals": 6,
       "metrics_used": {
         "home_xg": 0,
-        "away_xg": 0
+        "away_xg": 0,
+        "lead_after_p1": -1,
+        "home_goalie": "8475831",
+        "away_goalie": "8476914"
       },
       "extra_metadata": {
         "predicted_home_goals": 2,
@@ -165853,8 +165876,19 @@
       },
       "event_type": "prediction",
       "recorded_at_utc": "2026-11-07T11:02:24Z",
-      "actual_winner": null,
-      "projected_score": "NYR 4 - SEA 2"
+      "actual_winner": "NYR",
+      "actual_away_score": 4,
+      "actual_home_score": 3,
+      "home_goalie": "8475831",
+      "away_goalie": "8476914",
+      "home_shots": 28,
+      "away_shots": 26,
+      "prediction_accuracy": 1.0,
+      "projected_score": "NYR 4 - SEA 2",
+      "actual_score": "NYR 4 - SEA 3",
+      "exact_score_match": false,
+      "score_margin_error": 1,
+      "total_goals_error": 1
     },
     {
       "date": "2026-11-07",
@@ -165870,7 +165904,10 @@
       "predicted_total_goals": 6,
       "metrics_used": {
         "home_xg": 0,
-        "away_xg": 0
+        "away_xg": 0,
+        "lead_after_p1": -1,
+        "home_goalie": "8475683",
+        "away_goalie": "8484170"
       },
       "extra_metadata": {
         "predicted_home_goals": 2,
@@ -165893,8 +165930,19 @@
       },
       "event_type": "prediction",
       "recorded_at_utc": "2026-11-07T11:02:24Z",
-      "actual_winner": null,
-      "projected_score": "MTL 4 - TOR 2"
+      "actual_winner": "MTL",
+      "actual_away_score": 4,
+      "actual_home_score": 2,
+      "home_goalie": "8475683",
+      "away_goalie": "8484170",
+      "home_shots": 28,
+      "away_shots": 28,
+      "prediction_accuracy": 1.0,
+      "projected_score": "MTL 4 - TOR 2",
+      "actual_score": "MTL 4 - TOR 2",
+      "exact_score_match": true,
+      "score_margin_error": 0,
+      "total_goals_error": 0
     },
     {
       "date": "2026-11-07",
@@ -165910,7 +165958,10 @@
       "predicted_total_goals": 7,
       "metrics_used": {
         "home_xg": 0,
-        "away_xg": 0
+        "away_xg": 0,
+        "lead_after_p1": 0,
+        "home_goalie": "8481035",
+        "away_goalie": "8478872"
       },
       "extra_metadata": {
         "predicted_home_goals": 4,
@@ -165934,8 +165985,19 @@
       },
       "event_type": "prediction",
       "recorded_at_utc": "2026-11-07T11:02:24Z",
-      "actual_winner": null,
-      "projected_score": "UTA 3 - OTT 4"
+      "actual_winner": "OTT",
+      "actual_away_score": 2,
+      "actual_home_score": 4,
+      "home_goalie": "8481035",
+      "away_goalie": "8478872",
+      "home_shots": 21,
+      "away_shots": 32,
+      "prediction_accuracy": 1.0,
+      "projected_score": "UTA 3 - OTT 4",
+      "actual_score": "UTA 2 - OTT 4",
+      "exact_score_match": false,
+      "score_margin_error": 1,
+      "total_goals_error": 1
     },
     {
       "date": "2026-11-07",
@@ -165951,7 +166013,10 @@
       "predicted_total_goals": 7,
       "metrics_used": {
         "home_xg": 0,
-        "away_xg": 0
+        "away_xg": 0,
+        "lead_after_p1": 1,
+        "home_goalie": "8478009",
+        "away_goalie": "8474596"
       },
       "extra_metadata": {
         "predicted_home_goals": 4,
@@ -165973,8 +166038,19 @@
       },
       "event_type": "prediction",
       "recorded_at_utc": "2026-11-07T11:02:24Z",
-      "actual_winner": null,
-      "projected_score": "NJD 3 - NYI 4"
+      "actual_winner": "NJD",
+      "actual_away_score": 5,
+      "actual_home_score": 4,
+      "home_goalie": "8478009",
+      "away_goalie": "8474596",
+      "home_shots": 23,
+      "away_shots": 50,
+      "prediction_accuracy": 0.0,
+      "projected_score": "NJD 3 - NYI 4",
+      "actual_score": "NJD 5 - NYI 4",
+      "exact_score_match": false,
+      "score_margin_error": 2,
+      "total_goals_error": 2
     },
     {
       "date": "2026-11-07",
@@ -165990,7 +166066,10 @@
       "predicted_total_goals": 7,
       "metrics_used": {
         "home_xg": 0,
-        "away_xg": 0
+        "away_xg": 0,
+        "lead_after_p1": 1,
+        "home_goalie": "8481611",
+        "away_goalie": "8481519"
       },
       "extra_metadata": {
         "predicted_home_goals": 5,
@@ -166014,8 +166093,19 @@
       },
       "event_type": "prediction",
       "recorded_at_utc": "2026-11-07T11:02:24Z",
-      "actual_winner": null,
-      "projected_score": "CHI 2 - CAR 5"
+      "actual_winner": "CAR",
+      "actual_away_score": 2,
+      "actual_home_score": 9,
+      "home_goalie": "8481611",
+      "away_goalie": "8481519",
+      "home_shots": 33,
+      "away_shots": 20,
+      "prediction_accuracy": 1.0,
+      "projected_score": "CHI 2 - CAR 5",
+      "actual_score": "CHI 2 - CAR 9",
+      "exact_score_match": false,
+      "score_margin_error": 4,
+      "total_goals_error": 4
     },
     {
       "date": "2026-11-07",
@@ -166031,7 +166121,10 @@
       "predicted_total_goals": 6,
       "metrics_used": {
         "home_xg": 0,
-        "away_xg": 0
+        "away_xg": 0,
+        "lead_after_p1": 1,
+        "home_goalie": "8479979",
+        "away_goalie": "8477968"
       },
       "extra_metadata": {
         "predicted_home_goals": 4,
@@ -166054,8 +166147,19 @@
       },
       "event_type": "prediction",
       "recorded_at_utc": "2026-11-07T11:02:24Z",
-      "actual_winner": null,
-      "projected_score": "SJS 2 - DAL 4"
+      "actual_winner": "DAL",
+      "actual_away_score": 3,
+      "actual_home_score": 4,
+      "home_goalie": "8479979",
+      "away_goalie": "8477968",
+      "home_shots": 30,
+      "away_shots": 23,
+      "prediction_accuracy": 1.0,
+      "projected_score": "SJS 2 - DAL 4",
+      "actual_score": "SJS 3 - DAL 4",
+      "exact_score_match": false,
+      "score_margin_error": 1,
+      "total_goals_error": 1
     },
     {
       "date": "2026-11-07",
@@ -166071,7 +166175,10 @@
       "predicted_total_goals": 7,
       "metrics_used": {
         "home_xg": 0,
-        "away_xg": 0
+        "away_xg": 0,
+        "lead_after_p1": 1,
+        "home_goalie": "8475717",
+        "away_goalie": "8483710"
       },
       "extra_metadata": {
         "predicted_home_goals": 4,
@@ -166093,8 +166200,19 @@
       },
       "event_type": "prediction",
       "recorded_at_utc": "2026-11-07T11:02:24Z",
-      "actual_winner": null,
-      "projected_score": "TBL 3 - MIN 4"
+      "actual_winner": "TBL",
+      "actual_away_score": 4,
+      "actual_home_score": 3,
+      "home_goalie": "8475717",
+      "away_goalie": "8483710",
+      "home_shots": 22,
+      "away_shots": 34,
+      "prediction_accuracy": 0.0,
+      "projected_score": "TBL 3 - MIN 4",
+      "actual_score": "TBL 4 - MIN 3",
+      "exact_score_match": false,
+      "score_margin_error": 2,
+      "total_goals_error": 0
     },
     {
       "date": "2026-11-07",
@@ -166110,7 +166228,10 @@
       "predicted_total_goals": 6,
       "metrics_used": {
         "home_xg": 0,
-        "away_xg": 0
+        "away_xg": 0,
+        "lead_after_p1": 0,
+        "home_goalie": "8478406",
+        "away_goalie": "8480193"
       },
       "extra_metadata": {
         "predicted_home_goals": 4,
@@ -166132,8 +166253,19 @@
       },
       "event_type": "prediction",
       "recorded_at_utc": "2026-11-07T11:02:24Z",
-      "actual_winner": null,
-      "projected_score": "DET 2 - COL 4"
+      "actual_winner": "COL",
+      "actual_away_score": 0,
+      "actual_home_score": 4,
+      "home_goalie": "8478406",
+      "away_goalie": "8480193",
+      "home_shots": 29,
+      "away_shots": 27,
+      "prediction_accuracy": 1.0,
+      "projected_score": "DET 2 - COL 4",
+      "actual_score": "DET 0 - COL 4",
+      "exact_score_match": false,
+      "score_margin_error": 2,
+      "total_goals_error": 2
     },
     {
       "date": "2026-11-07",
@@ -166149,7 +166281,10 @@
       "predicted_total_goals": 5,
       "metrics_used": {
         "home_xg": 0,
-        "away_xg": 0
+        "away_xg": 0,
+        "lead_after_p1": -1,
+        "home_goalie": "8475311",
+        "away_goalie": "8483703"
       },
       "extra_metadata": {
         "predicted_home_goals": 2,
@@ -166172,8 +166307,19 @@
       },
       "event_type": "prediction",
       "recorded_at_utc": "2026-11-07T11:02:24Z",
-      "actual_winner": null,
-      "projected_score": "PIT 3 - LAK 2"
+      "actual_winner": "PIT",
+      "actual_away_score": 5,
+      "actual_home_score": 2,
+      "home_goalie": "8475311",
+      "away_goalie": "8483703",
+      "home_shots": 28,
+      "away_shots": 19,
+      "prediction_accuracy": 1.0,
+      "projected_score": "PIT 3 - LAK 2",
+      "actual_score": "PIT 5 - LAK 2",
+      "exact_score_match": false,
+      "score_margin_error": 2,
+      "total_goals_error": 2
     },
     {
       "date": "2026-11-07",
@@ -166189,7 +166335,10 @@
       "predicted_total_goals": 8,
       "metrics_used": {
         "home_xg": 0,
-        "away_xg": 0
+        "away_xg": 0,
+        "lead_after_p1": 0,
+        "home_goalie": "8482221",
+        "away_goalie": "8482447"
       },
       "extra_metadata": {
         "predicted_home_goals": 5,
@@ -166211,8 +166360,218 @@
       },
       "event_type": "prediction",
       "recorded_at_utc": "2026-11-07T11:02:24Z",
+      "actual_winner": "EDM",
+      "actual_away_score": 2,
+      "actual_home_score": 4,
+      "home_goalie": "8482221",
+      "away_goalie": "8482447",
+      "home_shots": 30,
+      "away_shots": 22,
+      "prediction_accuracy": 1.0,
+      "projected_score": "VAN 3 - EDM 5",
+      "actual_score": "VAN 2 - EDM 4",
+      "exact_score_match": false,
+      "score_margin_error": 0,
+      "total_goals_error": 2
+    },
+    {
+      "date": "2026-11-08",
+      "game_id": 2026020278,
+      "home_team": "BUF",
+      "away_team": "VGK",
+      "predicted_winner": "BUF",
+      "predicted_home_win_prob": 59.16939789607123,
+      "predicted_away_win_prob": 40.830602103928776,
+      "model_confidence": 0.5916939789607123,
+      "predicted_home_goals": 3,
+      "predicted_away_goals": 2,
+      "predicted_total_goals": 5,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "predicted_home_goals": 3,
+        "predicted_away_goals": 2,
+        "ensemble_mode": "ensemble",
+        "ensemble_weights": {
+          "xgb": 0.15,
+          "elo": 0.6,
+          "specialized": 0.05,
+          "player": 0.05,
+          "base": 0.05,
+          "vegas": 0.1
+        },
+        "attribution": [
+          "VGK Workload Fatigue (TWI=+0.01)",
+          "Jet Lag Context (-0.30)",
+          "VGK Forecheck Advantage vs BUF Turnovers (+0.12)",
+          "BUF Forecheck Advantage vs VGK Turnovers (+0.12)"
+        ],
+        "is_playoff": false
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-11-08T11:15:40Z",
       "actual_winner": null,
-      "projected_score": "VAN 3 - EDM 5"
+      "projected_score": "VGK 2 - BUF 3"
+    },
+    {
+      "date": "2026-11-08",
+      "game_id": 2026020279,
+      "home_team": "TOR",
+      "away_team": "NJD",
+      "predicted_winner": "NJD",
+      "predicted_home_win_prob": 39.15641671459258,
+      "predicted_away_win_prob": 60.84358328540742,
+      "model_confidence": 0.6084358328540742,
+      "predicted_home_goals": 3,
+      "predicted_away_goals": 4,
+      "predicted_total_goals": 7,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "predicted_home_goals": 3,
+        "predicted_away_goals": 4,
+        "ensemble_mode": "ensemble",
+        "ensemble_weights": {
+          "xgb": 0.15,
+          "elo": 0.6,
+          "specialized": 0.05,
+          "player": 0.05,
+          "base": 0.05,
+          "vegas": 0.1
+        },
+        "attribution": [
+          "NJD Forecheck Advantage vs TOR Turnovers (+0.12)",
+          "TOR Forecheck Advantage vs NJD Turnovers (+0.12)",
+          "NJD Cycle Dominance vs Low Block Volume (+0.08)"
+        ],
+        "is_playoff": false
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-11-08T11:15:40Z",
+      "actual_winner": null,
+      "projected_score": "NJD 4 - TOR 3"
+    },
+    {
+      "date": "2026-11-08",
+      "game_id": 2026020280,
+      "home_team": "WPG",
+      "away_team": "TBL",
+      "predicted_winner": "TBL",
+      "predicted_home_win_prob": 39.94308938324571,
+      "predicted_away_win_prob": 60.05691061675429,
+      "model_confidence": 0.6005691061675429,
+      "predicted_home_goals": 3,
+      "predicted_away_goals": 4,
+      "predicted_total_goals": 7,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "predicted_home_goals": 3,
+        "predicted_away_goals": 4,
+        "ensemble_mode": "ensemble",
+        "ensemble_weights": {
+          "xgb": 0.15,
+          "elo": 0.6,
+          "specialized": 0.05,
+          "player": 0.05,
+          "base": 0.05,
+          "vegas": 0.1
+        },
+        "attribution": [
+          "TBL Forecheck Advantage vs WPG Turnovers (+0.12)",
+          "WPG Forecheck Advantage vs TBL Turnovers (+0.12)"
+        ],
+        "is_playoff": false
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-11-08T11:15:40Z",
+      "actual_winner": null,
+      "projected_score": "TBL 4 - WPG 3"
+    },
+    {
+      "date": "2026-11-08",
+      "game_id": 2026020281,
+      "home_team": "CGY",
+      "away_team": "PHI",
+      "predicted_winner": "CGY",
+      "predicted_home_win_prob": 51.5,
+      "predicted_away_win_prob": 48.5,
+      "model_confidence": 0.515,
+      "predicted_home_goals": 4,
+      "predicted_away_goals": 3,
+      "predicted_total_goals": 7,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "predicted_home_goals": 4,
+        "predicted_away_goals": 3,
+        "ensemble_mode": "ensemble",
+        "ensemble_weights": {
+          "xgb": 0.15,
+          "elo": 0.6,
+          "specialized": 0.05,
+          "player": 0.05,
+          "base": 0.05,
+          "vegas": 0.1
+        },
+        "attribution": [
+          "PHI Forecheck Advantage vs CGY Turnovers (+0.12)",
+          "CGY Forecheck Advantage vs PHI Turnovers (+0.12)"
+        ],
+        "is_playoff": false
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-11-08T11:15:40Z",
+      "actual_winner": null,
+      "projected_score": "PHI 3 - CGY 4"
+    },
+    {
+      "date": "2026-11-08",
+      "game_id": 2026020282,
+      "home_team": "ANA",
+      "away_team": "PIT",
+      "predicted_winner": "ANA",
+      "predicted_home_win_prob": 55.368424277098995,
+      "predicted_away_win_prob": 44.631575722901005,
+      "model_confidence": 0.5536842427709899,
+      "predicted_home_goals": 4,
+      "predicted_away_goals": 3,
+      "predicted_total_goals": 7,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "predicted_home_goals": 4,
+        "predicted_away_goals": 3,
+        "ensemble_mode": "ensemble",
+        "ensemble_weights": {
+          "xgb": 0.15,
+          "elo": 0.6,
+          "specialized": 0.05,
+          "player": 0.05,
+          "base": 0.05,
+          "vegas": 0.1
+        },
+        "attribution": [
+          "Jet Lag Context (+0.15)",
+          "PIT Forecheck Advantage vs ANA Turnovers (+0.12)",
+          "ANA Forecheck Advantage vs PIT Turnovers (+0.12)"
+        ],
+        "is_playoff": false
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-11-08T11:15:40Z",
+      "actual_winner": null,
+      "projected_score": "PIT 3 - ANA 4"
     },
     {
       "date": "2026-11-12",
@@ -166341,23 +166700,43 @@
     {
       "date": "2026-11-27",
       "game_id": 2026020406,
-      "away_team": "FLA",
       "home_team": "WSH",
+      "away_team": "FLA",
       "predicted_winner": "WSH",
       "predicted_home_win_prob": 66.67678674342487,
       "predicted_away_win_prob": 33.32321325657514,
       "model_confidence": 0.6667678674342487,
+      "predicted_home_goals": 4,
+      "predicted_away_goals": 2,
+      "predicted_total_goals": 6,
       "metrics_used": {
         "home_xg": 0,
         "away_xg": 0
       },
       "extra_metadata": {
+        "predicted_home_goals": 4,
+        "predicted_away_goals": 2,
+        "ensemble_mode": "ensemble",
+        "ensemble_weights": {
+          "xgb": 0.15,
+          "elo": 0.6,
+          "specialized": 0.05,
+          "player": 0.05,
+          "base": 0.05,
+          "vegas": 0.1
+        },
+        "attribution": [
+          "FLA Forecheck Advantage vs WSH Turnovers (+0.12)",
+          "WSH Forecheck Advantage vs FLA Turnovers (+0.12)"
+        ],
+        "is_playoff": false,
         "integrity_repair": true,
         "corrected_matchup_from": "FLA@WSH_2026-11-07"
       },
       "event_type": "prediction",
       "recorded_at_utc": "2026-11-07T11:02:42Z",
-      "actual_winner": null
+      "actual_winner": null,
+      "projected_score": "FLA 2 - WSH 4"
     },
     {
       "date": "2026-12-09",
@@ -166399,6 +166778,27 @@
       "recorded_at_utc": "2026-11-04T12:03:35Z",
       "actual_winner": null,
       "projected_score": "SJS 4 - LAK 3"
+    },
+    {
+      "date": "2026-12-15",
+      "game_id": 2026020536,
+      "away_team": "FLA",
+      "home_team": "BOS",
+      "predicted_winner": "BOS",
+      "predicted_home_win_prob": 59.03180390298498,
+      "predicted_away_win_prob": 40.96819609701502,
+      "model_confidence": 0.5903180390298498,
+      "metrics_used": {
+        "home_xg": 0,
+        "away_xg": 0
+      },
+      "extra_metadata": {
+        "integrity_repair": true,
+        "corrected_matchup_from": "FLA@BOS_2026-11-08"
+      },
+      "event_type": "prediction",
+      "recorded_at_utc": "2026-11-08T11:16:05Z",
+      "actual_winner": null
     },
     {
       "date": "2026-12-20",
