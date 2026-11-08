@@ -1178,14 +1178,17 @@ class GitHubActionsRunner:
             if diff_res.returncode != 0:
                 print(f"📝 Committing tracking updates: {message}")
                 subprocess.run(["git", "commit", "-m", message], check=False)
-                for attempt in range(1, 4):
+                for attempt in range(1, 6):
                     push_res = subprocess.run(["git", "push", "origin", "HEAD:main"])
                     if push_res.returncode == 0:
                         print("✅ Successfully pushed state to GitHub")
                         break
                     print(f"⚠️ Push failed (attempt {attempt}). Rebasing and retrying...")
-                    subprocess.run(["git", "pull", "--rebase", "--autostash", "origin", "main"], check=False)
-                    time.sleep(2)
+                    rebase_res = subprocess.run(["git", "pull", "--rebase", "-X", "theirs", "--autostash", "origin", "main"], check=False)
+                    if rebase_res.returncode != 0:
+                        subprocess.run(["git", "rebase", "--abort"], check=False)
+                        subprocess.run(["git", "pull", "origin", "main"], check=False)
+                    time.sleep(2 * attempt)
         except Exception as e:
             print(f"⚠️ Warning during git commit/push: {e}")
 

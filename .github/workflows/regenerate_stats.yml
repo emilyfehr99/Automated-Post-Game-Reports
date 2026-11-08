@@ -83,9 +83,26 @@ jobs:
             git add data/season_*_team_stats.json 2>/dev/null || true
             git add data/goalie_stats.json 2>/dev/null || true
             git add data/team_advanced_metrics.json 2>/dev/null || true
-            git commit -m "data: automated stats regeneration [skip ci]"
-            git push
-            echo "✅ Successfully updated stats"
+            if ! git diff --staged --quiet; then
+              git commit -m "data: automated stats regeneration [skip ci]"
+              pushed=false
+              for i in {1..5}; do
+                git pull --rebase -X theirs --autostash origin main || (git rebase --abort 2>/dev/null || true; git pull origin main || true)
+                if git push origin HEAD:main; then
+                  echo "✅ Successfully updated stats"
+                  pushed=true
+                  break
+                fi
+                echo "⚠️ Push failed (attempt $i). Rebasing and retrying..."
+                sleep 2
+              done
+              if [ "$pushed" = false ]; then
+                echo "❌ Failed to push after 5 attempts"
+                exit 1
+              fi
+            else
+              echo "No staged changes to commit"
+            fi
           else
             echo "No changes detected"
           fi
