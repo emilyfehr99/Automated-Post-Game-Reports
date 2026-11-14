@@ -77,6 +77,43 @@ def main() -> int:
     except Exception as e:
         print(f"⚠️ Integrity repair warning: {e}")
 
+    t4 = time.time()
+    try:
+        warehouse = Path(os.environ.get(
+            "METRICS_WAREHOUSE_ROOT",
+            str(ROOT.parent / "metrics-warehouse"),
+        ))
+        # Also support vendored copy inside this repo (CI)
+        if not (warehouse / "pipelines" / "daily_refresh.py").exists():
+            alt = ROOT / "metrics-warehouse"
+            if (alt / "pipelines" / "daily_refresh.py").exists():
+                warehouse = alt
+        daily = warehouse / "pipelines" / "daily_refresh.py"
+        if daily.exists():
+            import subprocess
+
+            env = os.environ.copy()
+            env.setdefault("WAREHOUSE_SKATER_LOOKBACK", "80")
+            # Season-to-date so each new final RS game is included (not a thin lookback).
+            env.setdefault("WAREHOUSE_SEASON_BACKFILL", "1")
+            env.pop("WAREHOUSE_INCREMENTAL", None)
+            # InStat runs when auth secrets/cache exist — daily_refresh decides.
+            # Do not force-skip just because CI=true.
+            env.pop("INSTAT_SKIP_LIVE", None)
+            print("📦 Refreshing personal metrics warehouse season-to-date (new finals auto-included)…")
+            subprocess.run(
+                [sys.executable, str(daily)],
+                cwd=str(warehouse),
+                env=env,
+                check=False,
+                timeout=int(env.get("WAREHOUSE_TIMEOUT_SEC", "1200")),
+            )
+            print(f"⏱️ Warehouse wall: {time.time()-t4:.1f}s")
+        else:
+            print(f"ℹ️ Metrics warehouse not found at {warehouse} — skip (scheduled job lives on nhl-goalie-hub)")
+    except Exception as e:
+        print(f"⚠️ Metrics warehouse warning: {e}")
+
     print(f"✅ Maintenance complete in {time.time()-t0:.1f}s")
     return 0 if stats_ec == 0 else stats_ec
 
