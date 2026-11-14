@@ -15,6 +15,7 @@ ROOT = Path(__file__).resolve().parents[1]
 sys.path.insert(0, str(ROOT / "pipelines"))
 
 os.environ["WAREHOUSE_SEASON_BACKFILL"] = "1"
+os.environ["WAREHOUSE_FULL_REBUILD"] = "1"  # explicit full recompute
 
 
 def main() -> int:

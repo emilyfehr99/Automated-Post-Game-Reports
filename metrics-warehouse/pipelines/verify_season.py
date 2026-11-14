@@ -69,14 +69,16 @@ def main() -> int:
     )
     if sk.get("season") and sk.get("season") != SEASON:
         errors.append(f"skater season field {sk.get('season')} != {SEASON}")
-    # Daily path must stay on season_backfill so new finals keep landing in curated.
+    # Season-scoped modes: full rebuild or append-since-last-run.
     require_season = os.getenv("WAREHOUSE_SEASON_BACKFILL", "1").strip().lower() in (
         "1",
         "true",
         "yes",
     )
-    if require_season and sk.get("mode") != "season_backfill":
-        errors.append(f"skater mode={sk.get('mode')} — need season_backfill for auto new-game inclusion")
+    if require_season and sk.get("mode") not in {"season_backfill", "season_append"}:
+        errors.append(
+            f"skater mode={sk.get('mode')} — need season_backfill|season_append"
+        )
     if bad_season:
         errors.append(f"{len(bad_season)} non-current-RS game ids in skater store")
     # Tight gap: schedule runs 2x/day; >5 missing means finals aren't being picked up.

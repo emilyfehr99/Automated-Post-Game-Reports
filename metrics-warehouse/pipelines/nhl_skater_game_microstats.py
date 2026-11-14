@@ -13,7 +13,7 @@ import sys
 import urllib.request
 from collections import defaultdict
 from pathlib import Path
-from typing import Any, Dict, List, Optional
+from typing import Any, Dict, List, Optional, Tuple
 
 ROOT = Path(__file__).resolve().parents[1]
 PIPE = ROOT / "pipelines"
@@ -548,13 +548,18 @@ def _empty_team_row() -> Dict[str, Any]:
     return _empty_team()
 
 
-def aggregate_games(game_ids: List[str], *, workers: int = 12) -> Dict[str, Any]:
+def _accumulate_games(
+    game_ids: List[str], *, workers: int = 12
+) -> Tuple[Dict[int, Dict[str, Any]], Dict[str, Dict[str, Any]], List[str]]:
+    """Fetch PBPs and sum raw totals only (no rates)."""
     from concurrent.futures import ThreadPoolExecutor, as_completed
 
     season: Dict[int, Dict[str, Any]] = {}
     teams: Dict[str, Dict[str, Any]] = {}
-    processed = []
+    processed: List[str] = []
     workers = max(1, int(os.getenv("WAREHOUSE_PBP_WORKERS", str(workers))))
+    if not game_ids:
+        return season, teams, processed
 
     def _one(gid: str):
         pbp = fetch_pbp(gid)
@@ -613,10 +618,19 @@ def aggregate_games(game_ids: List[str], *, workers: int = 12) -> Dict[str, Any]
                         t[k] = float(t.get(k, 0) or 0) + float(v)
                     elif isinstance(v, int):
                         t[k] = int(t.get(k, 0) or 0) + int(v)
+    return season, teams, processed
 
-    # rates
+
+def _finalize_rates(
+    season: Dict[Any, Dict[str, Any]],
+    teams: Dict[str, Dict[str, Any]],
+    processed: List[str],
+) -> Dict[str, Any]:
+    """Attach rates to summed totals."""
     out_players = {}
     for pid, s in season.items():
+        # Drop nested rate blobs if re-finalizing a curated row
+        s = {k: v for k, v in s.items() if k != "rates"}
         g = max(1, int(s.get("games") or 0))
         entries = int(s.get("entries") or 0)
         dumps = int(s.get("dump_ins") or 0)
@@ -626,10 +640,10 @@ def aggregate_games(game_ids: List[str], *, workers: int = 12) -> Dict[str, Any]
         exits = int(s.get("exits") or 0)
         rates = {
             "schema_version": SCHEMA_VERSION,
-            "forecheck_recoveries_per_game": round(s["forecheck_recoveries"] / g, 2),
-            "sc_per_game": round(s["scoring_chances"] / g, 2),
-            "sc_off_rush_per_game": round(s["sc_off_rush"] / g, 2),
-            "sc_off_entry_per_game": round(s["sc_off_entry"] / g, 2),
+            "forecheck_recoveries_per_game": round(int(s.get("forecheck_recoveries") or 0) / g, 2),
+            "sc_per_game": round(int(s.get("scoring_chances") or 0) / g, 2),
+            "sc_off_rush_per_game": round(int(s.get("sc_off_rush") or 0) / g, 2),
+            "sc_off_entry_per_game": round(int(s.get("sc_off_entry") or 0) / g, 2),
             "sc_off_dump_per_game": round(int(s.get("sc_off_dump") or 0) / g, 2),
             "sc_off_carry_per_game": round(int(s.get("sc_off_carry") or 0) / g, 2),
             "dump_ins_per_game": round(dumps / g, 2),
@@ -638,9 +652,11 @@ def aggregate_games(game_ids: List[str], *, workers: int = 12) -> Dict[str, Any]
                 if dump_follow
                 else None
             ),
-            "controlled_entry_pct": round(100.0 * s["controlled_entries"] / entries, 1)
-            if entries
-            else None,
+            "controlled_entry_pct": (
+                round(100.0 * int(s.get("controlled_entries") or 0) / entries, 1)
+                if entries
+                else None
+            ),
             "slot_drives_per_game": round(slot_n / g, 2),
             "slot_drive_to_shot_pct": (
                 round(100.0 * int(s.get("slot_drives_to_shot") or 0) / slot_n, 1) if slot_n else None
@@ -649,7 +665,7 @@ def aggregate_games(game_ids: List[str], *, workers: int = 12) -> Dict[str, Any]
                 round(100.0 * int(s.get("slot_drives_to_sc") or 0) / slot_n, 1) if slot_n else None
             ),
             "dz_recovery_to_exit_pct": (
-                round(100.0 * s["dz_recovery_to_exit"] / dz_rec, 1) if dz_rec else None
+                round(100.0 * int(s.get("dz_recovery_to_exit") or 0) / dz_rec, 1) if dz_rec else None
             ),
             "dz_retrieval_to_controlled_exit_pct": (
                 round(100.0 * int(s.get("dz_recovery_to_controlled_exit") or 0) / dz_rec, 1)
@@ -682,7 +698,7 @@ def aggregate_games(game_ids: List[str], *, workers: int = 12) -> Dict[str, Any]
                 "controlled": int(s.get("failed_exits_controlled") or 0),
                 "other": int(s.get("failed_exits_other") or 0),
             },
-            "giveaways_dz_per_game": round(s["giveaways_dz"] / g, 2),
+            "giveaways_dz_per_game": round(int(s.get("giveaways_dz") or 0) / g, 2),
             "zone_to_shot_against_pct_dz": (
                 round(
                     100.0
@@ -694,7 +710,6 @@ def aggregate_games(game_ids: List[str], *, workers: int = 12) -> Dict[str, Any]
                 else None
             ),
         }
-        # score-state mini blocks
         score_state = {}
         for ss in ("tied", "leading", "trailing"):
             se = int(s.get(f"ss_{ss}_entries") or 0)
@@ -721,16 +736,31 @@ def aggregate_games(game_ids: List[str], *, workers: int = 12) -> Dict[str, Any]
 
     out_teams = {}
     for abbr, t in teams.items():
+        t = {k: v for k, v in t.items() if k != "rates"}
         g = max(1, int(t.get("games") or 0))
         out_teams[abbr] = {**t, "rates": rates_from_totals(t, g)}
 
+    # stable unique order
+    seen = set()
+    ordered = []
+    for g in processed:
+        sg = str(g)
+        if sg not in seen:
+            seen.add(sg)
+            ordered.append(sg)
+
     return {
-        "processed_games": processed,
+        "processed_games": ordered,
         "skaters": out_players,
         "skater_count": len(out_players),
         "teams": out_teams,
         "team_count": len(out_teams),
     }
+
+
+def aggregate_games(game_ids: List[str], *, workers: int = 12) -> Dict[str, Any]:
+    season, teams, processed = _accumulate_games(game_ids, workers=workers)
+    return _finalize_rates(season, teams, processed)
 
 
 def _apgr_history_path() -> Path:
@@ -813,38 +843,22 @@ def season_completed_game_ids(
     return ids
 
 
-def main(lookback: int = 60, *, season_backfill: bool = False) -> Path:
-    ensure_dirs()
-    season = _current_season_compact()
-    if season_backfill or os.getenv("WAREHOUSE_SEASON_BACKFILL", "").strip() in ("1", "true", "yes"):
-        # Current season RS only — never bleed prior seasons from APGR history.
-        ids = season_completed_game_ids(season=season)
-        print(f"🏒 Skater SEASON BACKFILL ({season} RS only): {len(ids)} games")
-    else:
-        ids = recent_final_game_ids(lookback)
-        print(f"🏒 Skater microstats: {len(ids)} games")
-    payload = aggregate_games(ids)
-    payload["mode"] = (
-        "season_backfill"
-        if (season_backfill or os.getenv("WAREHOUSE_SEASON_BACKFILL"))
-        else "incremental"
-    )
+def _write_payload(payload: Dict[str, Any], *, season: str, mode: str) -> Path:
+    payload = dict(payload)
+    payload["mode"] = mode
     payload["season"] = season
-    payload["game_type"] = "2"  # regular season
+    payload["game_type"] = "2"
+    payload["schema_version"] = SCHEMA_VERSION
     payload["game_count"] = len(payload.get("processed_games") or [])
     out = CURATED / "skaters" / "nhl_pbp_microstats.json"
-    # skaters_season is skater-only view; team PBP written separately
-    skater_view = {
-        k: v
-        for k, v in payload.items()
-        if k not in {"teams", "team_count"}
-    }
+    skater_view = {k: v for k, v in payload.items() if k not in {"teams", "team_count"}}
     out.write_text(json.dumps(skater_view, indent=2))
     (CURATED / "skaters_season.json").write_text(json.dumps(skater_view, indent=2))
     team_out = {
         "updated_at": __import__("time").strftime("%Y-%m-%dT%H:%M:%S"),
         "season": season,
-        "mode": payload["mode"],
+        "mode": mode,
+        "schema_version": SCHEMA_VERSION,
         "game_count": payload["game_count"],
         "processed_games": payload.get("processed_games"),
         "team_count": payload.get("team_count"),
@@ -853,13 +867,110 @@ def main(lookback: int = 60, *, season_backfill: bool = False) -> Path:
     (CURATED / "teams" / "nhl_pbp_microstats.json").write_text(json.dumps(team_out, indent=2))
     print(
         f"💾 {payload['skater_count']} skaters + {payload.get('team_count', 0)} teams "
-        f"from {payload['game_count']} games → {out}"
+        f"from {payload['game_count']} games ({mode}) → {out}"
     )
-    # On-ice (shift charts) + combined InStat/TOI join + top5
+    return out
+
+
+def main(lookback: int = 60, *, season_backfill: bool = False) -> Path:
+    ensure_dirs()
+    season = _current_season_compact()
+    season_scope = season_backfill or os.getenv("WAREHOUSE_SEASON_BACKFILL", "").strip().lower() in (
+        "1",
+        "true",
+        "yes",
+    )
+
+    if season_scope:
+        all_ids = season_completed_game_ids(season=season)
+        from incremental_store import (
+            decide_skater_plan,
+            merge_count_rows,
+            write_incremental_status,
+        )
+
+        plan = decide_skater_plan(all_ids, schema_version=SCHEMA_VERSION)
+        action = plan["action"]
+        print(
+            f"🏒 Skater plan={action} ({plan['reason']}) "
+            f"prior={plan['prior_count']} season_rs={len(all_ids)} fetch={len(plan['ids'])}"
+        )
+
+        if action == "noop":
+            sk, tm = plan["sk"], plan["tm"]
+            payload = {
+                "processed_games": list(sk.get("processed_games") or sorted(plan["prior_games"])),
+                "skaters": sk.get("skaters") or {},
+                "skater_count": sk.get("skater_count") or len(sk.get("skaters") or {}),
+                "teams": tm.get("teams") or {},
+                "team_count": tm.get("team_count") or len(tm.get("teams") or {}),
+            }
+            mode = "season_append"
+            out = _write_payload(payload, season=season, mode=mode)
+            write_incremental_status(
+                mode=mode,
+                prior_count=plan["prior_count"],
+                new_ids=[],
+                after_count=len(payload["processed_games"]),
+                full_rebuild=False,
+            )
+            print("⏭️  no new RS finals — skipped historical PBP refetch")
+            new_ids_for_on_ice: List[str] = []
+        elif action == "append":
+            new_season, new_teams, new_processed = _accumulate_games(plan["ids"])
+            base_skaters: Dict[Any, Dict[str, Any]] = {}
+            for pid, row in (plan["sk"].get("skaters") or {}).items():
+                key = int(pid) if str(pid).isdigit() else pid
+                base_skaters[key] = {k: v for k, v in row.items() if k != "rates"}
+            base_teams: Dict[str, Dict[str, Any]] = {}
+            for abbr, row in (plan["tm"].get("teams") or {}).items():
+                base_teams[abbr] = {k: v for k, v in row.items() if k != "rates"}
+            merge_count_rows(base_skaters, new_season, id_key="player_id")
+            merge_count_rows(base_teams, new_teams, id_key="team")
+            merged_games = list(plan["sk"].get("processed_games") or sorted(plan["prior_games"]))
+            merged_games.extend(new_processed)
+            payload = _finalize_rates(base_skaters, base_teams, merged_games)
+            mode = "season_append"
+            out = _write_payload(payload, season=season, mode=mode)
+            write_incremental_status(
+                mode=mode,
+                prior_count=plan["prior_count"],
+                new_ids=list(new_processed),
+                after_count=len(payload["processed_games"]),
+                full_rebuild=False,
+            )
+            print(f"✅ appended {len(new_processed)} new game(s); total={len(payload['processed_games'])}")
+            new_ids_for_on_ice = list(new_processed)
+        else:
+            payload = aggregate_games(plan["ids"])
+            mode = "season_backfill"
+            out = _write_payload(payload, season=season, mode=mode)
+            write_incremental_status(
+                mode=mode,
+                prior_count=plan["prior_count"],
+                new_ids=list(payload.get("processed_games") or []),
+                after_count=len(payload.get("processed_games") or []),
+                full_rebuild=True,
+            )
+            new_ids_for_on_ice = list(payload.get("processed_games") or [])
+    else:
+        ids = recent_final_game_ids(lookback)
+        print(f"🏒 Skater microstats lookback: {len(ids)} games")
+        payload = aggregate_games(ids)
+        mode = "incremental"
+        out = _write_payload(payload, season=season, mode=mode)
+        new_ids_for_on_ice = list(payload.get("processed_games") or [])
+
+    # On-ice: only new games when appending; full list on rebuild
     try:
         from on_ice_microstats import aggregate as on_ice_aggregate
 
-        on_ice_aggregate(list(payload.get("processed_games") or []))
+        if season_scope and mode == "season_append" and not new_ids_for_on_ice:
+            print("⏭️  on-ice: nothing new")
+        elif season_scope and mode == "season_append":
+            on_ice_aggregate(new_ids_for_on_ice, merge_existing=True)
+        else:
+            on_ice_aggregate(list(payload.get("processed_games") or []), merge_existing=False)
     except Exception as e:
         print(f"⚠️ on-ice skipped: {e}")
     try:

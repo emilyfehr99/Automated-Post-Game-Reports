@@ -262,14 +262,43 @@ def _goalie_ids() -> Set[int]:
     return out
 
 
-def aggregate(game_ids: List[str], *, workers: int = 12) -> Path:
+def aggregate(
+    game_ids: List[str], *, workers: int = 12, merge_existing: bool = False
+) -> Path:
     ensure_dirs()
     workers = max(1, int(os.getenv("WAREHOUSE_PBP_WORKERS", str(workers))))
     teams: Dict[str, Dict[str, Any]] = {}
     skaters: Dict[int, Dict[str, Any]] = {}
     lines: Dict[str, Dict[str, Any]] = {}
     ok: List[str] = []
+    prior_games: List[str] = []
     goalie_ids = _goalie_ids()
+    out_path = CURATED / "sequence_extensions.json"
+
+    if merge_existing and out_path.exists():
+        try:
+            prior = json.loads(out_path.read_text())
+            prior_games = [str(g) for g in (prior.get("processed_games") or [])]
+            already = set(prior_games)
+            game_ids = [str(g) for g in game_ids if str(g) not in already]
+            for abbr, t in (prior.get("teams") or {}).items():
+                teams[abbr] = {k: v for k, v in t.items() if k != "rates"}
+            for pid, s in (prior.get("skaters") or {}).items():
+                key = int(pid) if str(pid).isdigit() else pid
+                skaters[key] = {k: v for k, v in s.items() if k != "rates"}
+            for lid, ln in (prior.get("lines") or {}).items():
+                lines[lid] = {k: v for k, v in ln.items() if k != "rates"}
+            print(
+                f"🔗 sequence merge: prior={len(prior_games)} fetch_new={len(game_ids)}"
+            )
+        except Exception as e:
+            print(f"⚠️ sequence prior load failed ({e}); full pass")
+            teams, skaters, lines, prior_games = {}, {}, {}, []
+            merge_existing = False
+
+    if merge_existing and not game_ids:
+        print("⏭️  sequence: no new games — keeping curated")
+        return out_path
 
     with ThreadPoolExecutor(max_workers=workers) as ex:
         futs = {ex.submit(process_game, gid): gid for gid in game_ids}
@@ -281,7 +310,7 @@ def aggregate(game_ids: List[str], *, workers: int = 12) -> Path:
                 row = {}
             if not row:
                 continue
-            ok.append(gid)
+            ok.append(str(gid))
             for abbr, t in (row.get("teams") or {}).items():
                 if abbr not in teams:
                     teams[abbr] = {**t, "games": 0}
@@ -374,11 +403,14 @@ def aggregate(game_ids: List[str], *, workers: int = 12) -> Path:
             },
         }
 
+    processed = list(dict.fromkeys([*prior_games, *ok])) if merge_existing else list(ok)
     payload = {
         "updated_at": __import__("time").strftime("%Y-%m-%dT%H:%M:%S"),
         "real_data_only": True,
-        "game_count": len(ok),
-        "processed_games": ok,
+        "game_count": len(processed),
+        "processed_games": processed,
+        "new_games_this_run": ok,
+        "merge_existing": merge_existing,
         "teams": team_out,
         "team_count": len(team_out),
         "skaters": skater_out,
@@ -387,8 +419,7 @@ def aggregate(game_ids: List[str], *, workers: int = 12) -> Path:
         "line_count": len(line_out),
         "note": "5-man on-ice units (not pure FFF lines); rush chain = events in ≤8s after poss change to rush SC",
     }
-    out = CURATED / "sequence_extensions.json"
-    out.write_text(json.dumps(payload, indent=2))
+    out_path.write_text(json.dumps(payload, indent=2))
     (CURATED / "lines" / "on_ice_units.json").parent.mkdir(parents=True, exist_ok=True)
     (CURATED / "lines" / "on_ice_units.json").write_text(
         json.dumps(
@@ -404,9 +435,10 @@ def aggregate(game_ids: List[str], *, workers: int = 12) -> Path:
     )
     print(
         f"🔗 sequence: {payload['team_count']} teams, {payload['skater_count']} skaters, "
-        f"{payload['line_count']} lines ← {payload['game_count']} games → {out}"
+        f"{payload['line_count']} lines ← {payload['game_count']} games "
+        f"(+{len(ok)} new) → {out_path}"
     )
-    return out
+    return out_path
 
 
 if __name__ == "__main__":

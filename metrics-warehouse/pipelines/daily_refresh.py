@@ -1,8 +1,10 @@
 #!/usr/bin/env python3
 """Daily entrypoint for personal metric warehouse (CI / scheduled).
 
+Default: append-only since last curated run (no historical PBP refetch).
+Full season rebuild only when WAREHOUSE_FULL_REBUILD=1.
+
 Runs InStat live when auth secrets or header cache are available.
-Does not skip InStat merely because CI=true.
 """
 
 from __future__ import annotations
@@ -16,6 +18,7 @@ sys.path.insert(0, str(ROOT / "pipelines"))
 
 from auth_env import prepare_instat_auth  # noqa: E402
 from build_warehouse import build  # noqa: E402
+from incremental_store import env_flag, want_full_rebuild  # noqa: E402
 
 
 def _prior_game_count() -> int:
@@ -38,33 +41,28 @@ def _prior_game_count() -> int:
 
 def main() -> int:
     lookback = int(os.getenv("WAREHOUSE_SKATER_LOOKBACK", "60"))
-    skip_instat = os.getenv("WAREHOUSE_SKIP_INSTAT", "").strip().lower() in ("1", "true", "yes")
-    # Default = season-to-date so every newly final RS game is pulled on each run.
-    # Opt into thin incremental only with WAREHOUSE_INCREMENTAL=1.
-    incremental = os.getenv("WAREHOUSE_INCREMENTAL", "").strip().lower() in ("1", "true", "yes")
-    season_bf = os.getenv("WAREHOUSE_SEASON_BACKFILL", "1" if not incremental else "0").strip().lower() in (
-        "1",
-        "true",
-        "yes",
-    )
-    prior = _prior_game_count()
-    if season_bf:
-        os.environ["WAREHOUSE_SEASON_BACKFILL"] = "1"
-        os.environ.pop("WAREHOUSE_INCREMENTAL", None)
-        print("🧱 season-to-date PBP rebuild (all completed RS games — new finals auto-included)")
+    skip_instat = env_flag("WAREHOUSE_SKIP_INSTAT", False)
+    full_rebuild = want_full_rebuild()
+    # Season-scoped game discovery stays on (current RS finals only).
+    # Append is the default; full rebuild is explicit.
+    os.environ["WAREHOUSE_SEASON_BACKFILL"] = "1"
+    if full_rebuild:
+        os.environ["WAREHOUSE_FULL_REBUILD"] = "1"
+        print("🧱 FULL rebuild — all completed RS games (explicit)")
         lookback = max(lookback, 9999)
     else:
-        print(f"⚡ incremental lookback={lookback} (WAREHOUSE_INCREMENTAL=1)")
+        os.environ.pop("WAREHOUSE_FULL_REBUILD", None)
+        print("⚡ APPEND mode — only games since last curated run")
+
+    prior = _prior_game_count()
     if prior:
         print(f"📊 prior curated game_count={prior}")
 
-    live = False
     if not skip_instat:
         live = prepare_instat_auth()
         if live:
             os.environ.pop("INSTAT_SKIP_LIVE", None)
         else:
-            # Mirror-only path (still ingest LLD instat-aggs)
             os.environ["INSTAT_SKIP_LIVE"] = "1"
 
     build(
@@ -79,21 +77,29 @@ def main() -> int:
     except Exception as e:
         print(f"⚠️ instat_action_pbp status skipped: {e}")
 
-    # Rush chains / lines / slot-against + role-safe boards (v5)
+    # Sequence + boards: append new games only unless full rebuild
     try:
+        import json
+        from paths import CURATED
         from nhl_skater_game_microstats import season_completed_game_ids
         from sequence_extensions import aggregate as seq_aggregate
         from boards_v5 import run as boards_v5_run
+        from incremental_store import load_json, new_game_ids, processed_game_set
 
-        if season_bf:
-            ids = season_completed_game_ids()
-            print(f"🔗 sequence extensions over {len(ids)} RS games")
-            seq_aggregate(ids)
+        all_ids = season_completed_game_ids()
+        seq_prior = load_json(CURATED / "sequence_extensions.json")
+        if full_rebuild:
+            print(f"🔗 sequence FULL over {len(all_ids)} RS games")
+            seq_aggregate(all_ids, merge_existing=False)
+        else:
+            already = processed_game_set(seq_prior)
+            fresh = new_game_ids(all_ids, already)
+            print(f"🔗 sequence APPEND prior={len(already)} new={len(fresh)}")
+            seq_aggregate(fresh if fresh else [], merge_existing=True)
         boards_v5_run()
     except Exception as e:
         print(f"⚠️ boards_v5 / sequence skipped: {e}")
 
-    # Confirm growth / parity after rebuild (season path must keep pace with NHL finals).
     try:
         import json
         from paths import CURATED
@@ -101,17 +107,24 @@ def main() -> int:
         sk = json.loads((CURATED / "skaters_season.json").read_text())
         after = int(sk.get("game_count") or len(sk.get("processed_games") or []) or 0)
         mode = sk.get("mode")
-        print(f"📊 after curated game_count={after} mode={mode} (Δ={after - prior:+d})")
-        if season_bf and mode != "season_backfill":
-            print("⚠️ expected mode=season_backfill for auto new-game inclusion")
-        if season_bf and prior and after < prior:
-            print(f"⚠️ game_count shrank {prior}→{after} — check season filter / API")
-        elif season_bf and after > prior:
+        inc = json.loads((CURATED / "status" / "incremental.json").read_text()) if (
+            CURATED / "status" / "incremental.json"
+        ).exists() else {}
+        print(
+            f"📊 after curated game_count={after} mode={mode} "
+            f"(Δ={after - prior:+d}) new_this_run={inc.get('new_game_count')}"
+        )
+        if mode not in {"season_append", "season_backfill"}:
+            print(f"⚠️ unexpected mode={mode}")
+        if prior and after < prior:
+            print(f"⚠️ game_count shrank {prior}→{after}")
+        elif after > prior:
             print(f"✅ {after - prior} new completed RS game(s) folded into warehouse")
+        elif inc.get("skipped_historical_refetch"):
+            print("✅ caught up — no historical refetch")
     except Exception as e:
         print(f"⚠️ post-build game_count check skipped: {e}")
 
-    # Publish thin copies into APGR data for model / Discord consumers
     try:
         from paths import APGR, CURATED
         import shutil

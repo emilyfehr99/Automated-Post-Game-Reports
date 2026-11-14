@@ -94,13 +94,12 @@ def main() -> int:
 
             env = os.environ.copy()
             env.setdefault("WAREHOUSE_SKATER_LOOKBACK", "80")
-            # Season-to-date so each new final RS game is included (not a thin lookback).
+            # Season-scoped + append-only (new finals since last run). Full rebuild opt-in.
             env.setdefault("WAREHOUSE_SEASON_BACKFILL", "1")
-            env.pop("WAREHOUSE_INCREMENTAL", None)
+            env.pop("WAREHOUSE_FULL_REBUILD", None)
             # InStat runs when auth secrets/cache exist — daily_refresh decides.
-            # Do not force-skip just because CI=true.
             env.pop("INSTAT_SKIP_LIVE", None)
-            print("📦 Refreshing personal metrics warehouse season-to-date (new finals auto-included)…")
+            print("📦 Refreshing metrics warehouse (append new RS finals only)…")
             subprocess.run(
                 [sys.executable, str(daily)],
                 cwd=str(warehouse),

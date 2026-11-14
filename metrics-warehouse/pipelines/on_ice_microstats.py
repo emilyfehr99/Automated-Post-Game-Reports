@@ -155,33 +155,56 @@ def process_game(game_id: str) -> Dict[int, Dict[str, Any]]:
     return dict(players)
 
 
-def aggregate(game_ids: List[str], *, workers: int = 8) -> Dict[str, Any]:
+def aggregate(
+    game_ids: List[str], *, workers: int = 8, merge_existing: bool = False
+) -> Dict[str, Any]:
     season: Dict[int, Dict[str, Any]] = {}
-    ok = []
+    ok: List[str] = []
     workers = max(1, int(os.getenv("WAREHOUSE_PBP_WORKERS", str(workers))))
+    path = CURATED / "skaters" / "on_ice_microstats.json"
 
-    with ThreadPoolExecutor(max_workers=workers) as ex:
-        futs = {ex.submit(process_game, gid): gid for gid in game_ids}
-        for i, fut in enumerate(as_completed(futs), 1):
-            gid = futs[fut]
-            try:
-                rows = fut.result()
-            except Exception:
-                rows = {}
-            if rows:
-                ok.append(gid)
-                for pid, gstats in rows.items():
-                    if pid not in season:
-                        season[pid] = dict(gstats)
-                        season[pid]["games"] = 0
-                    agg = season[pid]
-                    for k, v in gstats.items():
-                        if k in {"player_id"}:
-                            continue
-                        if isinstance(v, (int, float)):
-                            agg[k] = int(agg.get(k, 0) or 0) + int(v)
-            if i % 20 == 0 or i == len(game_ids):
-                print(f"  on-ice … {i}/{len(game_ids)} ({len(ok)} ok)", flush=True)
+    prior_games: List[str] = []
+    if merge_existing and path.exists():
+        try:
+            prior = json.loads(path.read_text())
+            prior_games = [str(g) for g in (prior.get("processed_games") or [])]
+            for pid, row in (prior.get("skaters") or {}).items():
+                key = int(pid) if str(pid).isdigit() else pid
+                season[key] = {k: v for k, v in row.items() if k != "rates"}
+            print(f"🧊 on-ice merge: prior={len(prior_games)} + new={len(game_ids)}")
+        except Exception:
+            season = {}
+            prior_games = []
+            merge_existing = False
+
+    if not game_ids and merge_existing and season:
+        # nothing new — keep file
+        print("⏭️  on-ice: no new games")
+        return json.loads(path.read_text()) if path.exists() else {}
+
+    if game_ids:
+        with ThreadPoolExecutor(max_workers=workers) as ex:
+            futs = {ex.submit(process_game, gid): gid for gid in game_ids}
+            for i, fut in enumerate(as_completed(futs), 1):
+                gid = futs[fut]
+                try:
+                    rows = fut.result()
+                except Exception:
+                    rows = {}
+                if rows:
+                    ok.append(str(gid))
+                    for pid, gstats in rows.items():
+                        if pid not in season:
+                            season[pid] = dict(gstats)
+                            season[pid]["games"] = 0
+                        agg = season[pid]
+                        for k, v in gstats.items():
+                            if k in {"player_id"}:
+                                continue
+                            if isinstance(v, (int, float)):
+                                agg[k] = int(agg.get(k, 0) or 0) + int(v)
+                if i % 20 == 0 or i == len(game_ids):
+                    print(f"  on-ice … {i}/{len(game_ids)} ({len(ok)} ok)", flush=True)
 
     out = {}
     for pid, s in season.items():
@@ -200,15 +223,16 @@ def aggregate(game_ids: List[str], *, workers: int = 8) -> Dict[str, Any]:
         }
         out[str(pid)] = {**s, "rates": rates}
 
+    processed = list(dict.fromkeys([*prior_games, *[str(g) for g in ok]])) if merge_existing else [str(g) for g in ok]
     payload = {
-        "processed_games": ok,
-        "game_count": len(ok),
+        "processed_games": processed,
+        "game_count": len(processed),
         "skaters": out,
         "skater_count": len(out),
         "note": "on-ice SC/shots/goals only; entries-on-ice not claimed",
+        "merge_existing": merge_existing,
     }
     ensure_dirs()
-    path = CURATED / "skaters" / "on_ice_microstats.json"
     path.write_text(json.dumps(payload, indent=2))
     print(f"🧊 on-ice: {payload['skater_count']} skaters from {payload['game_count']} games → {path}")
     return payload
