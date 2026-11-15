@@ -1,0 +1,79 @@
+name: Post Goalie Cards Backfill
+
+on:
+  workflow_dispatch:
+    inputs:
+      game_id:
+        description: "Specific Game ID to post (leave blank for all unposted from yesterday)"
+        required: false
+        default: ""
+      days:
+        description: "Days lookback (default: 1)"
+        required: false
+        default: "1"
+      max_posts:
+        description: "Max games to post (default: 5)"
+        required: false
+        default: "5"
+      dry_run:
+        description: "Dry run (true/false)"
+        required: false
+        default: "false"
+
+concurrency:
+  group: nhl-goalie-card-poster
+  cancel-in-progress: false
+
+jobs:
+  post-cards:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    permissions:
+      contents: write
+    steps:
+      - name: Checkout Automated-Post-Game-Reports
+        uses: actions/checkout@v4
+
+      - name: Checkout NHL Goalie Hub
+        uses: actions/checkout@v4
+        with:
+          repository: emilyfehr99/nhl-goalie-hub
+          path: nhl-goalie-hub
+          fetch-depth: 1
+
+      - name: Setup Node.js 24
+        uses: actions/setup-node@v4
+        with:
+          node-version: 24
+
+      - name: Setup Python 3.12
+        uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip
+          pip install -r nhl-goalie-hub/requirements-ci.txt
+          npx playwright install chromium
+
+      - name: Run Goalie Card Auto-Poster
+        env:
+          X_AUTH_TOKEN: ${{ secrets.X_AUTH_TOKEN }}
+          X_CT0: ${{ secrets.X_CT0 }}
+          TWITTER_API_KEY: ${{ secrets.TWITTER_API_KEY }}
+          TWITTER_API_SECRET: ${{ secrets.TWITTER_API_SECRET }}
+          TWITTER_ACCESS_TOKEN: ${{ secrets.TWITTER_ACCESS_TOKEN }}
+          TWITTER_ACCESS_TOKEN_SECRET: ${{ secrets.TWITTER_ACCESS_TOKEN_SECRET }}
+        run: |
+          DRY_FLAG=""
+          if [ "${{ github.event.inputs.dry_run }}" == "true" ]; then
+            DRY_FLAG="--dry-run"
+          fi
+          GAME_FLAG=""
+          if [ -n "${{ github.event.inputs.game_id }}" ]; then
+            GAME_FLAG="--game ${{ github.event.inputs.game_id }}"
+          else
+            GAME_FLAG="--days ${{ github.event.inputs.days || '1' }} --max-posts ${{ github.event.inputs.max_posts || '5' }}"
+          fi
+          python3 nhl-goalie-hub/tools/auto_post_instat_goalie_cards.py $GAME_FLAG $DRY_FLAG
