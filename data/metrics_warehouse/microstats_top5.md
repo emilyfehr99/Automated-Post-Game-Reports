@@ -1,6 +1,6 @@
 # Microstats boards v5 (role-safe + residuals + deltas)
 
-Generated 2026-11-14T11:43:37 · real_data_only · 838 skaters · 32 teams
+Generated 2026-11-14T12:23:30 · real_data_only · 838 skaters · 32 teams
 
 Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed, n≥25).
 
@@ -91,8 +91,8 @@ Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed
 ## Controlled entry % (secondary, regressed n≥25) (`controlled_entry_pct_secondary`)
 1. **Brandon Hagel** — 79.9  (TBL, F, n=47, raw=89.4)
 2. **Viktor Arvidsson** — 77.4  (DET, F, n=30, raw=90.0)
-3. **Roman Josi** — 76.0  (NSH, D, n=27, raw=88.9)
-4. **William Nylander** — 76.0  (TOR, F, n=31, raw=87.1)
+3. **William Nylander** — 76.0  (TOR, F, n=31, raw=87.1)
+4. **Roman Josi** — 76.0  (NSH, D, n=27, raw=88.9)
 5. **JJ Peterka** — 75.9  (BOS, F, n=35, raw=85.7)
 
 ## Team · Ctrl entry% lead−trail (`score_ctrl_delta`)
@@ -111,8 +111,8 @@ Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed
 
 ## Team · P3−P1 SC / game (`p3_minus_p1_sc`)
 1. **OTT** — 1.7  (20 gp)
-2. **EDM** — 1.3  (20 gp)
-3. **CHI** — 0.79  (19 gp)
+2. **EDM** — 0.9  (20 gp)
+3. **CHI** — 0.74  (19 gp)
 4. **NJD** — 0.65  (20 gp)
 5. **BOS** — 0.53  (19 gp)
 
@@ -153,8 +153,8 @@ Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed
 
 ## Goalie · best rebound diet × slot (lower=better) (`goalie_rebound_diet_best`)
 1. **Justus Annunen** — 1.158  (NSH, 5 gp, rebCtrl=0.9568)
-2. **Jacob Markstrom** — 1.245  (FLA, 10 gp, rebCtrl=0.9417)
-3. **Joel Hofer** — 1.308  (STL, 13 gp, rebCtrl=0.9418)
-4. **Connor Hellebuyck** — 1.343  (NJD, 5 gp, rebCtrl=0.9304)
-5. **Casey DeSmith** — 1.35  (DAL, 4 gp, rebCtrl=0.9364)
+2. **Jacob Markstrom** — 1.218  (FLA, 10 gp, rebCtrl=0.9417)
+3. **Casey DeSmith** — 1.314  (DAL, 5 gp, rebCtrl=0.9381)
+4. **Joel Hofer** — 1.326  (STL, 14 gp, rebCtrl=0.941)
+5. **Connor Hellebuyck** — 1.349  (NJD, 6 gp, rebCtrl=0.9301)
 

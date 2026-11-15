@@ -1229,7 +1229,8 @@ class ScorePredictionModel:
         best_cal["threshold"] = 0.5
         return best_cal
 
-    def _calibrated_away_win_prob(self, diff: float, total: float, away_team: str = '', home_team: str = '') -> float:
+    def _calibrated_away_win_prob(self, diff: float, total: float, away_team: str = '', home_team: str = '',
+                                  away_goalie: str = None, home_goalie: str = None) -> float:
         """Map (diff, total) -> calibrated P(away wins) using cross-validated physical feature stack (73.75% 5-fold CV)."""
         if away_team and home_team:
             away = away_team.upper()
@@ -1266,6 +1267,32 @@ class ScorePredictionModel:
             h_l5 = self._get_team_metric(home, 'xg_l5', 'home') or h_xg
             h_flat = self._get_team_metric(home, 'xg_flat', 'home') or h_xg
             mom_diff = (a_l5 - a_flat) - (h_l5 - h_flat)
+
+            # 6. Starting Goalie GSAx Differential (Phase 55 High-Fidelity Goalie Delta)
+            g_data_a = self._get_goalie_data(away_goalie) if away_goalie else None
+            if not g_data_a and getattr(self, "goalie_stats", None):
+                a_gs = [g for g in self.goalie_stats.values() if str(g.get('team')).upper() == away]
+                if a_gs:
+                    a_gs.sort(key=lambda x: x.get('games', 0), reverse=True)
+                    g_data_a = a_gs[0]
+
+            g_data_h = self._get_goalie_data(home_goalie) if home_goalie else None
+            if not g_data_h and getattr(self, "goalie_stats", None):
+                h_gs = [g for g in self.goalie_stats.values() if str(g.get('team')).upper() == home]
+                if h_gs:
+                    h_gs.sort(key=lambda x: x.get('games', 0), reverse=True)
+                    g_data_h = h_gs[0]
+
+            gsax_a = float(g_data_a.get('gsax_per_game', 0.0) if g_data_a else 0.0)
+            gsax_h = float(g_data_h.get('gsax_per_game', 0.0) if g_data_h else 0.0)
+            gsax_diff = max(-0.8, min(0.8, gsax_a - gsax_h))
+
+            # 7. Transition Microstats: Rush Scoring Chances & Controlled Entries (Phase 55)
+            ms_a = adv_a.get('microstats', {})
+            ms_h = adv_h.get('microstats', {})
+            rush_a = float(ms_a.get('sc_off_rush_per_game') or 1.0)
+            rush_h = float(ms_h.get('sc_off_rush_per_game') or 1.0)
+            rush_diff = max(-1.5, min(1.5, rush_a - rush_h))
             
             # Calibrated Logit (Cross-Validated 5-Fold Ridge/L2 Stack with Regularized Context)
             # Regularize H2H and venue noise so small-sample artifacts do not overpower expected goal differential
@@ -1279,6 +1306,8 @@ class ScorePredictionModel:
                 0.85 * h2h_reg +
                 0.034653 * edge_speed_diff +
                 0.075898 * mom_diff +
+                0.45 * gsax_diff +
+                0.12 * rush_diff +
                 (-0.138889)
             )
         else:
@@ -1931,6 +1960,23 @@ class ScorePredictionModel:
             attribution.append(f"{home} Cycle Dominance vs Low Block Volume (+0.08)")
             home_expected += 0.08
 
+        # C. Microstats Transition Dynamics (Phase 55)
+        adv_a = getattr(self, "advanced_team_metrics", {}).get(away, {})
+        adv_h = getattr(self, "advanced_team_metrics", {}).get(home, {})
+        ms_a = adv_a.get('microstats', {})
+        ms_h = adv_h.get('microstats', {})
+        rush_a = float(ms_a.get('sc_off_rush_per_game') or 1.0)
+        rush_h = float(ms_h.get('sc_off_rush_per_game') or 1.0)
+        rush_mismatch = rush_a - rush_h
+        if abs(rush_mismatch) >= 0.35:
+            rush_adj = max(-0.12, min(0.12, rush_mismatch * 0.15))
+            away_expected += rush_adj
+            home_expected -= rush_adj
+            if rush_adj > 0:
+                attribution.append(f"{away} Rush SC Advantage ({rush_mismatch:+.2f}/gm)")
+            else:
+                attribution.append(f"{home} Rush SC Advantage ({-rush_mismatch:+.2f}/gm)")
+
         # ─── 23. Phase 48: Series Friction (Scoring Decay) ───
         # As teams get familiar in a series, scoring tends to tighten.
         if is_playoff and series_status:
@@ -2022,7 +2068,7 @@ class ScorePredictionModel:
         if use_calibration and getattr(self, "_win_calibration", None):
             diff = float(away_expected - home_expected)
             total = float(away_expected + home_expected)
-            p_cal = self._calibrated_away_win_prob(diff, total, away_team=away, home_team=home)
+            p_cal = self._calibrated_away_win_prob(diff, total, away_team=away, home_team=home, away_goalie=away_goalie, home_goalie=home_goalie)
             
             # 3v3 OT Skating & Transition Edge
             away_speed = float(self._get_team_metric(away, 'max_skating_speed', 'away') or 21.5)

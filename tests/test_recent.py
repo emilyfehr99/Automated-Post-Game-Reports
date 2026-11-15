@@ -6,7 +6,7 @@ with open("data/win_probability_predictions_v2.json", "r") as f:
 predictions = data.get("predictions", [])
 completed = [p for p in predictions if p.get("actual_winner") and p.get("actual_winner") not in ("", None)]
 
-recent_games = [p for p in completed if abs(p.get("predicted_away_win_prob", 0) - p.get("predicted_home_win_prob", 0)) >= 0.01]
+recent_games = [p for p in completed if abs((p.get("predicted_away_win_prob") or 0) - (p.get("predicted_home_win_prob") or 0)) >= 0.01]
 recent = recent_games[-30:] if len(recent_games) > 30 else recent_games
 
 correct = 0

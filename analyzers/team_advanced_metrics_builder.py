@@ -29,6 +29,19 @@ try:
 except ImportError:
     from improved_xg_model import ImprovedXGModel
 
+try:
+    from analyzers.nhl_pbp_microstats import (
+        NHL_DAILY_MICROSTATS_CATALOG,
+        compute_game_microstats,
+        rates_from_totals,
+    )
+except ImportError:
+    from nhl_pbp_microstats import (
+        NHL_DAILY_MICROSTATS_CATALOG,
+        compute_game_microstats,
+        rates_from_totals,
+    )
+
 # ─── Ice Geometry Constants ───
 SLOT_X_THRESHOLD = 69     # Inside ~20ft of goal line
 SLOT_Y_THRESHOLD = 22     # Within ~22ft of center (slot width)
@@ -38,6 +51,69 @@ CREASE_DIST = 10          # Within 10ft = crease area
 REBOUND_WINDOW_SEC = 3.0  # Consecutive shots within 3s = rebound
 RUSH_WINDOW_SEC = 6.0     # Shot within 6s of possession change = rush chance
 
+# Bump when microstat definitions change so refresher re-backfills history.
+MICROSTATS_SCHEMA_VERSION = 2
+
+# Counters filled by nhl_pbp_microstats.compute_game_microstats
+_MICRO_COUNTER_KEYS = (
+    "giveaways_oz", "giveaways_nz", "giveaways_dz",
+    "takeaways_oz", "takeaways_nz", "takeaways_dz",
+    "positive_touches_oz", "positive_touches_nz", "positive_touches_dz",
+    "failed_touches_oz", "failed_touches_nz", "failed_touches_dz",
+    "forecheck_recoveries",
+    "entries_total", "controlled_entries", "dump_ins", "shot_first_entries",
+    "exits_total", "controlled_exits", "dump_outs",
+    "dump_landing_strong_corner", "dump_landing_weak_corner",
+    "dump_landing_strong_rim", "dump_landing_weak_rim",
+    "dump_landing_deep_slot", "dump_landing_short_nz",
+    "scoring_chances", "sc_off_rush", "sc_off_entry",
+    "rush_shots", "rush_goals", "entry_shots",
+    "slot_drives", "slot_drives_via_carry", "slot_drives_via_pass",
+    "dz_recoveries", "dz_recovery_to_exit",
+)
+
+
+def _default_team_stats() -> dict:
+    base = {
+        'team': '',
+        'games': 0,
+
+        # Rebounds Generated (Offense)
+        'rebound_shots_generated': 0,
+        'rapid_rebound_shots': 0,      # < 2.0s
+        'rebound_goals_generated': 0,
+        'total_offensive_shots': 0,
+
+        # Rush & Transition (Offense)
+        'rush_shots_for': 0,
+        'rush_goals_for': 0,
+        'ex_to_en_times': [],         # List of transition speeds (D-Exit -> O-Entry)
+        'en_to_s_times': [],          # List of persistence times (O-Entry -> Shot)
+
+        # Tactical Sequence Buckets
+        'quick_strike_shots': 0,      # < 10s possession
+        'mid_range_buildup_shots': 0, # 10-30s possession
+        'extended_buildup_shots': 0,  # > 30s possession
+
+        # Turnovers (Defense/Puck Management)
+        'dzone_giveaways': 0,
+        'hd_giveaways': 0,      # Giveaways in high-danger slot
+        'total_giveaways': 0,
+
+        # Shot Blocking (Defense)
+        'shots_blocked_in_slot': 0,
+        'total_blocks': 0,
+
+        # Faceoffs (Tactical Core)
+        'ozone_faceoff_wins': 0,
+        'ozone_faceoff_total': 0,
+
+        'game_log': [],
+    }
+    for key in _MICRO_COUNTER_KEYS:
+        base[key] = 0
+    return base
+
 
 class TeamAdvancedMetricsBuilder:
     """Extracts and aggregates custom advanced team metrics from PBP data."""
@@ -45,42 +121,7 @@ class TeamAdvancedMetricsBuilder:
     def __init__(self):
         self.api = NHLAPIClient()
         self.xg_model = ImprovedXGModel()
-        self.team_stats = defaultdict(lambda: {
-            'team': '',
-            'games': 0,
-            
-            # Rebounds Generated (Offense)
-            'rebound_shots_generated': 0,
-            'rapid_rebound_shots': 0,      # < 2.0s
-            'rebound_goals_generated': 0,
-            'total_offensive_shots': 0,
-            
-            # Rush & Transition (Offense)
-            'rush_shots_for': 0,
-            'rush_goals_for': 0,
-            'ex_to_en_times': [],         # List of transition speeds (D-Exit -> O-Entry)
-            'en_to_s_times': [],          # List of persistence times (O-Entry -> Shot)
-            
-            # Tactical Sequence Buckets
-            'quick_strike_shots': 0,      # < 10s possession
-            'mid_range_buildup_shots': 0, # 10-30s possession
-            'extended_buildup_shots': 0,  # > 30s possession
-            
-            # Turnovers (Defense/Puck Management)
-            'dzone_giveaways': 0,
-            'hd_giveaways': 0,      # Giveaways in high-danger slot
-            'total_giveaways': 0,
-            
-            # Shot Blocking (Defense)
-            'shots_blocked_in_slot': 0,
-            'total_blocks': 0,
-            
-            # Faceoffs (Tactical Core)
-            'ozone_faceoff_wins': 0,
-            'ozone_faceoff_total': 0,
-            
-            'game_log': [],
-        })
+        self.team_stats = defaultdict(_default_team_stats)
         
         # Track Goalie-Specific GSAX (xG - Total Goals)
         self.goalie_stats = defaultdict(lambda: {
@@ -94,6 +135,7 @@ class TeamAdvancedMetricsBuilder:
         
         self.processed_games = set()
         self.output_path = Path('data/team_advanced_metrics.json')
+        self._schema_rebuild_needed = False
         self._load_existing()
     
     def set_output_path(self, path: str):
@@ -109,11 +151,27 @@ class TeamAdvancedMetricsBuilder:
             try:
                 with open(self.output_path) as f:
                     data = json.load(f)
+
+                saved_schema = int(data.get('microstats_schema_version') or 0)
+                if saved_schema < MICROSTATS_SCHEMA_VERSION:
+                    print(
+                        f"🔄 Microstats schema {saved_schema}→{MICROSTATS_SCHEMA_VERSION}: "
+                        "full re-backfill required"
+                    )
+                    self.processed_games = set()
+                    self.team_stats.clear()
+                    self.goalie_stats.clear()
+                    self._schema_rebuild_needed = True
+                    return
                 
                 self.processed_games = set(data.get('processed_games', []))
                 for abbrev, stats in data.get('teams', {}).items():
                     base = self.team_stats[abbrev]
-                    base.update(stats)
+                    # Drop derived blobs before merge
+                    clean = {k: v for k, v in stats.items() if k not in ('microstats',)}
+                    base.update(clean)
+                    for key in _MICRO_COUNTER_KEYS:
+                        base.setdefault(key, 0)
                     self.team_stats[abbrev] = base
                 
                 # Load goalie stats if they exist (schema-merge for backward compatibility)
@@ -337,10 +395,18 @@ class TeamAdvancedMetricsBuilder:
         for gid in game_goalies:
             self.goalie_stats[gid]['games'] += 1
 
+        # Microstats layer (entries/dumps/SC off rush|entry/slot drives/etc.)
+        micro_by_team = {}
+        try:
+            micro_by_team = compute_game_microstats(pbp) or {}
+        except Exception as e:
+            print(f"  ⚠️ microstats error on {game_id}: {e}")
+
         # Aggregate Team Data
         for abbrev in [away_abbrev, home_abbrev]:
             ts = self.team_stats[abbrev]
             gd = game_data[abbrev]
+            micro = micro_by_team.get(abbrev) or {}
             ts['games'] += 1
             ts['rebound_shots_generated'] += gd['reb_gen']
             ts['rapid_rebound_shots'] += gd['rapid_reb']
@@ -358,12 +424,23 @@ class TeamAdvancedMetricsBuilder:
             ts['ozone_faceoff_total'] += gd['oz_fo_tot']
             ts['ex_to_en_times'].extend(gd['ex_to_en'])
             ts['en_to_s_times'].extend(gd['en_to_s'])
+
+            for key in _MICRO_COUNTER_KEYS:
+                ts[key] = int(ts.get(key, 0) or 0) + int(micro.get(key, 0) or 0)
+            # Keep legacy rush fields in sync with microstats rush counts
+            ts['rush_shots_for'] = int(ts.get('rush_shots_for', 0) or 0) + int(micro.get('rush_shots', 0) or 0)
+            ts['rush_goals_for'] = int(ts.get('rush_goals_for', 0) or 0) + int(micro.get('rush_goals', 0) or 0)
             
             ts['game_log'].append({
                 'game_id': game_id,
                 'rapid_rebonds': gd['rapid_reb'],
                 'quick_strikes': gd['quick'],
                 'dzone_giveaways': gd['dz_give'],
+                'dump_ins': int(micro.get('dump_ins', 0) or 0),
+                'controlled_entries': int(micro.get('controlled_entries', 0) or 0),
+                'sc_off_rush': int(micro.get('sc_off_rush', 0) or 0),
+                'sc_off_entry': int(micro.get('sc_off_entry', 0) or 0),
+                'forecheck_recoveries': int(micro.get('forecheck_recoveries', 0) or 0),
             })
             
         self.processed_games.add(game_id)
@@ -390,6 +467,9 @@ class TeamAdvancedMetricsBuilder:
             summary['hd_pizzas_per_game'] = round(stats['hd_giveaways'] / games, 2)
             summary['slot_block_rate'] = round(stats['shots_blocked_in_slot'] / stats['total_blocks'], 3) if stats['total_blocks'] > 0 else 0
             summary['ozone_faceoff_pct'] = round(stats['ozone_faceoff_wins'] / stats['ozone_faceoff_total'], 3) if stats['ozone_faceoff_total'] > 0 else 0.5
+
+            micro_rates = rates_from_totals(stats, games)
+            summary['microstats'] = micro_rates
             
             del summary['ex_to_en_times']
             del summary['en_to_s_times']
@@ -407,9 +487,11 @@ class TeamAdvancedMetricsBuilder:
 
         output = {
             'updated_at': time.strftime("%Y-%m-%dT%H:%M:%S"),
+            'microstats_schema_version': MICROSTATS_SCHEMA_VERSION,
             'processed_games': list(self.processed_games),
             'teams': team_summaries,
-            'goalies': goalie_summaries
+            'goalies': goalie_summaries,
+            'microstats_catalog': NHL_DAILY_MICROSTATS_CATALOG,
         }
         
         Path('data').mkdir(exist_ok=True)
@@ -464,9 +546,12 @@ class TeamAdvancedMetricsBuilder:
             data = json.load(f)
         game_ids = [str(pr.get('game_id')) for pr in data.get('predictions', [])
                     if pr.get('actual_winner') and pr.get('game_id')]
-        game_ids = list(dict.fromkeys(reversed(game_ids)))[:lookback]
-        print(f"📋 ADV refresh lookback={lookback}: {len(game_ids)} candidate games")
+        # Schema bumps need season-scale history, not the thin incremental window.
+        effective = 900 if self._schema_rebuild_needed else lookback
+        game_ids = list(dict.fromkeys(reversed(game_ids)))[:effective]
+        print(f"📋 ADV refresh lookback={effective}: {len(game_ids)} candidate games")
         self.run_backfill(game_ids)
+        self._schema_rebuild_needed = False
 
 if __name__ == "__main__":
     # Force a full clean rebuild if requested or if logic changed

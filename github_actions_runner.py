@@ -565,7 +565,43 @@ class GitHubActionsRunner:
                 return False
             print("⚠️  Twitter post did not succeed; proceeding anyway (ALLOW_TWITTER_FAILURE=true).")
 
+        # Trigger Goalie Cards posting for this completed game
+        self.trigger_goalie_cards(game_id)
+
         return True
+
+    def trigger_goalie_cards(self, game_id):
+        """Triggers goalie card generation and posting for this completed game."""
+        try:
+            hub_dir = Path(__file__).resolve().parent.parent / "nhl-goalie-hub"
+            tool_script = hub_dir / "tools" / "auto_post_instat_goalie_cards.py"
+            if tool_script.exists():
+                print(f"🛡️ Triggering Goalie Cards for Game {game_id} via local hub...")
+                subprocess.Popen([sys.executable, str(tool_script), "--game", str(game_id)], cwd=str(hub_dir))
+                return
+        except Exception as e:
+            print(f"⚠️ Local goalie card trigger note: {e}")
+
+        # If running in GitHub Actions and local hub script is not directly alongside:
+        try:
+            token = os.getenv("GOALIE_HUB_SYNC_TOKEN") or os.getenv("GH_PAT") or os.getenv("GITHUB_TOKEN")
+            if token and os.getenv("GITHUB_ACTIONS") == "true":
+                print(f"📡 Dispatching game-finished event to nhl-goalie-hub for Game {game_id}...")
+                import urllib.request, json
+                req = urllib.request.Request(
+                    "https://api.github.com/repos/emilyfehr99/nhl-goalie-hub/dispatches",
+                    data=json.dumps({"event_type": "game-finished", "client_payload": {"game_id": str(game_id)}}).encode("utf-8"),
+                    headers={
+                        "Accept": "application/vnd.github+json",
+                        "Authorization": f"Bearer {token}",
+                        "X-GitHub-Api-Version": "2022-11-28",
+                        "User-Agent": "automated-post-game-reports"
+                    }
+                )
+                with urllib.request.urlopen(req, timeout=10) as resp:
+                    print(f"✓ Goalie Hub dispatch status: {resp.status}")
+        except Exception as e:
+            print(f"⚠️ Remote goalie card dispatch note: {e}")
             
     def _x_cookie_credentials_configured(self) -> bool:
         return bool(os.getenv("X_AUTH_TOKEN", "").strip() and os.getenv("X_CT0", "").strip())
