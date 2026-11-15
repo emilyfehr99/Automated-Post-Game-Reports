@@ -573,14 +573,18 @@ class GitHubActionsRunner:
     def trigger_goalie_cards(self, game_id):
         """Triggers goalie card generation and posting for this completed game."""
         try:
-            hub_dir = Path(__file__).resolve().parent.parent / "nhl-goalie-hub"
-            tool_script = hub_dir / "tools" / "auto_post_instat_goalie_cards.py"
-            if tool_script.exists():
-                print(f"🛡️ Triggering Goalie Cards for Game {game_id} via local hub...")
-                subprocess.Popen([sys.executable, str(tool_script), "--game", str(game_id)], cwd=str(hub_dir))
-                return
+            for candidate in [
+                Path(__file__).resolve().parent / "nhl-goalie-hub",
+                Path(__file__).resolve().parent.parent / "nhl-goalie-hub",
+                Path("nhl-goalie-hub")
+            ]:
+                tool_script = candidate / "tools" / "auto_post_instat_goalie_cards.py"
+                if tool_script.exists():
+                    print(f"🛡️ Triggering Goalie Cards for Game {game_id} via {candidate.name}...")
+                    subprocess.run([sys.executable, str(tool_script), "--game", str(game_id)], cwd=str(candidate), check=False)
+                    return
         except Exception as e:
-            print(f"⚠️ Local goalie card trigger note: {e}")
+            print(f"⚠️ Goalie card trigger note: {e}")
 
         # If running in GitHub Actions and local hub script is not directly alongside:
         try:
