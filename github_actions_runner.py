@@ -1192,7 +1192,7 @@ class GitHubActionsRunner:
         except Exception as e:
             print(f"⚠️ Warning during git commit/push: {e}")
 
-    def run_live_monitor(self, max_duration_minutes=120, poll_interval=45):
+    def run_live_monitor(self, max_duration_minutes=330, poll_interval=45):
         """
         Continuously monitor live games in GitHub Actions while games are active.
         Posts reports instantly upon game completion and pushes state to Git.
@@ -1286,20 +1286,41 @@ class GitHubActionsRunner:
                 print("👋 Exiting cleanly.")
                 break
 
-            # If no games are actively on the ice (LIVE/CRIT), don't hang for hours:
-            # Check 2 ticks to ensure no state race condition, then exit cleanly so regular scheduled cron rotates in.
+            # If no games are actively on the ice (LIVE/CRIT), check if upcoming games start soon:
+            effective_poll_interval = poll_interval
             if live_count == 0 and len(newly_completed) == 0:
-                consecutive_idle_checks += 1
-                if consecutive_idle_checks >= 2:
-                    print(f"\nℹ️ No games currently LIVE on ice ({future_count} upcoming, {completed_and_processed} done). Exiting cleanly; next schedule run will resume.")
-                    break
+                # Find earliest upcoming game start time
+                min_wait_seconds = None
+                now_utc = datetime.now(pytz.utc)
+                for g in target_games:
+                    g_state = g.get("gameState", "UNKNOWN")
+                    if g_state in ["PRE", "FUT"]:
+                        s_str = g.get("startTimeUTC")
+                        if s_str:
+                            try:
+                                s_dt = datetime.fromisoformat(s_str.replace("Z", "+00:00"))
+                                wait_sec = (s_dt - now_utc).total_seconds()
+                                if min_wait_seconds is None or wait_sec < min_wait_seconds:
+                                    min_wait_seconds = wait_sec
+                            except Exception:
+                                pass
+
+                # If an upcoming game starts within 45 minutes, keep the runner alive!
+                if min_wait_seconds is not None and min_wait_seconds <= 2700:
+                    consecutive_idle_checks = 0
+                    effective_poll_interval = 60
+                else:
+                    consecutive_idle_checks += 1
+                    if consecutive_idle_checks >= 2:
+                        print(f"\nℹ️ No games currently LIVE and no games starting in <= 45m ({future_count} upcoming, {completed_and_processed} done). Exiting cleanly; next schedule run will resume.")
+                        break
             else:
                 consecutive_idle_checks = 0
 
-            # Active polling sleep (45s while games are live)
+            # Active polling sleep
             remaining_mins = int((max_duration_seconds - elapsed) / 60)
-            print(f"[{datetime.now(central_tz).strftime('%I:%M:%S %p')}] Status: {completed_and_processed}/{total_target} games processed | {live_count} LIVE on ice | {future_count} upcoming. Next poll in {poll_interval}s ({remaining_mins}m left in runner session)...")
-            time.sleep(poll_interval)
+            print(f"[{datetime.now(central_tz).strftime('%I:%M:%S %p')}] Status: {completed_and_processed}/{total_target} games processed | {live_count} LIVE on ice | {future_count} upcoming. Next poll in {effective_poll_interval}s ({remaining_mins}m left in runner session)...")
+            time.sleep(effective_poll_interval)
 
 
 if __name__ == '__main__':
@@ -1307,7 +1328,7 @@ if __name__ == '__main__':
     if os.environ.get("BACKFILL_X_PLAYOFFS", "false").lower() == "true":
         runner.run_x_backfill()
     elif os.environ.get("LIVE_MONITOR_MODE", "true").lower() == "true":
-        max_mins = int(os.environ.get("MAX_MONITOR_MINUTES", "120"))
+        max_mins = int(os.environ.get("MAX_MONITOR_MINUTES", "330"))
         runner.run_live_monitor(max_duration_minutes=max_mins)
     else:
         runner.run()

@@ -59,10 +59,19 @@ class XCookiePoster:
                 else "Failed to post tweet"
             )
 
-        result = response["data"]["create_tweet"]["tweet_results"]["result"]
+        create_tweet_data = response.get("data", {}).get("create_tweet", {})
+        if "errors" in create_tweet_data:
+            errors = create_tweet_data.get("errors") or []
+            msg = errors[0].get("message", "Failed to post tweet") if errors else "Failed to post tweet"
+            raise RuntimeError(f"X GraphQL error: {msg}")
+
+        tweet_results = create_tweet_data.get("tweet_results", {})
+        result = tweet_results.get("result", {})
         tweet_id = result.get("rest_id") or (result.get("legacy") or {}).get("id_str")
         if not tweet_id:
-            raise RuntimeError(f"Could not parse tweet id from X response: {result}")
+            tweet_id = tweet_results.get("rest_id") or create_tweet_data.get("rest_id")
+        if not tweet_id:
+            raise RuntimeError(f"Could not parse tweet id from X response: {response}")
         return str(tweet_id)
 
     def post_with_media(self, text: str, image_path: Path) -> str:
