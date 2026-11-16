@@ -120,7 +120,7 @@ jobs:
       if: steps.check_date.outputs.should_run == 'true'
       uses: actions/checkout@v4
       with:
-        fetch-depth: 0  # Fetch all history to ensure we have the latest commits
+        fetch-depth: 10
 
     - name: Checkout NHL Goalie Hub
       if: steps.check_date.outputs.should_run == 'true'
@@ -144,6 +144,15 @@ jobs:
       run: |
         sudo apt-get update
         sudo apt-get install -y poppler-utils
+
+    - name: Cache Playwright Chromium
+      if: steps.check_date.outputs.should_run == 'true'
+      uses: actions/cache@v4
+      with:
+        path: ~/.cache/ms-playwright
+        key: ${{ runner.os }}-playwright-chromium-${{ hashFiles('nhl-goalie-hub/requirements-ci.txt') }}
+        restore-keys: |
+          ${{ runner.os }}-playwright-chromium-
     
     - name: Install dependencies
       if: steps.check_date.outputs.should_run == 'true'
@@ -259,6 +268,35 @@ jobs:
           echo "✅ processed_games.json is tracked in git"
         else
           echo "⚠️  WARNING: processed_games.json is not tracked in git!"
+        fi
+
+    - name: Commit & Push Goalie Card States (NHL Goalie Hub)
+      if: steps.check_date.outputs.should_run == 'true'
+      run: |
+        if [ -d "nhl-goalie-hub/.git" ]; then
+          cd nhl-goalie-hub
+          git config --local user.email "github-actions[bot]@users.noreply.github.com"
+          git config --local user.name "GitHub Actions Bot"
+
+          if [ -f "data/posted_goalie_cards.json" ]; then
+            git add -f data/posted_goalie_cards.json
+          fi
+
+          if ! git diff --staged --quiet; then
+            echo "📝 Committing updated Goalie Hub cards state..."
+            git commit -m "Update posted goalie cards state [skip ci]"
+            for i in {1..5}; do
+              if git push origin HEAD:main; then
+                echo "✅ Successfully pushed updates to NHL Goalie Hub"
+                break
+              fi
+              echo "⚠️ Push failed (attempt $i). Rebasing and retrying..."
+              git pull --rebase -X theirs --autostash origin main || (git rebase --abort 2>/dev/null || true; git pull origin main || true)
+              sleep 2
+            done
+          else
+            echo "ℹ️ No changes to commit in NHL Goalie Hub"
+          fi
         fi
 
     - name: Trigger NHL Goalie Hub update
