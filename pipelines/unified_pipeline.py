@@ -198,6 +198,10 @@ class UnifiedHockeyEngine:
                 PipelineLogger.success("Prospects dataset updated")
                 self.summary["prospects_status"] = "success"
                 self.summary["stages_executed"].append("stage_5_prospects")
+            else:
+                PipelineLogger.warn("Prospect generator finished (strict validator requires local raw junior PBP cache)")
+                self.summary["prospects_status"] = "partial"
+                self.summary["stages_executed"].append("stage_5_prospects")
         else:
             PipelineLogger.warn(f"Prospects script not found at {prospect_script}")
 
