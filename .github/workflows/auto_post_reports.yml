@@ -1,14 +1,12 @@
 name: Auto Post NHL Reports
 
 on:
-  schedule:
-    # 10-minute schedule across all daily NHL game windows:
-    # - Afternoon Window: 17:00 - 23:59 UTC (12:00 PM - 6:59 PM CT)
-    - cron: '*/10 17-23 * * *'
-    # - Evening & Late Night Window: 00:00 - 08:59 UTC (7:00 PM - 3:59 AM CT)
-    - cron: '*/10 0-8 * * *'
-    # - Off-peak Hourly Guard (morning European games / off-schedule finals):
-    - cron: '0 9-16 * * *'
+  # Note: Scheduled cron runs are consolidated into unified-hockey-engine.yml.
+  # auto_post_reports.yml is kept for repository_dispatch and manual workflow_dispatch triggers.
+  # schedule:
+  #   - cron: '*/10 17-23 * * *'
+  #   - cron: '*/10 0-8 * * *'
+  #   - cron: '0 9-16 * * *'
 
   repository_dispatch:  # Allow external triggers (instant when game finishes)
     types: [game-finished]
@@ -73,10 +71,10 @@ jobs:
 
                   now_utc = datetime.now(timezone.utc)
                   
-                  # 1. Any game currently LIVE or in PRE-game
-                  live_games = [g for g in games if g.get('gameState') in ('LIVE', 'CRIT', 'PRE')]
+                  # 1. Any game currently LIVE, in PRE-game, or OVER (pending finalization)
+                  live_games = [g for g in games if g.get('gameState') in ('LIVE', 'CRIT', 'PRE', 'OVER')]
                   if live_games:
-                      return True, f'{len(live_games)} game(s) currently LIVE/PRE'
+                      return True, f'{len(live_games)} game(s) currently LIVE/PRE/OVER'
                   
                   # 2. Any game that is FINAL or OFF (needs post-game report generation check)
                   final_games = [g for g in games if g.get('gameState') in ('FINAL', 'OFF')]

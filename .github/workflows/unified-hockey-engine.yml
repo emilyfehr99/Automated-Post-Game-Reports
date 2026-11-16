@@ -36,7 +36,7 @@ on:
         default: ""
 
 concurrency:
-  group: unified-hockey-engine
+  group: nhl-live-monitor
   cancel-in-progress: false
 
 jobs:

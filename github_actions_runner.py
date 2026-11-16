@@ -1309,10 +1309,14 @@ class GitHubActionsRunner:
                         "away": away_team,
                         "home": home_team
                     })
-                elif game_state in ["LIVE", "CRIT"]:
+                elif game_state in ["LIVE", "CRIT", "OVER"]:
                     live_count += 1
                 elif game_state in ["PRE", "FUT"]:
                     future_count += 1
+                else:
+                    # Unrecognized state (e.g. intermission / delay) for an unprocessed game:
+                    # treat as active to prevent premature monitor shutdown.
+                    live_count += 1
 
             # Process newly completed games immediately
             if newly_completed:
@@ -1343,34 +1347,55 @@ class GitHubActionsRunner:
                 print("👋 Exiting cleanly.")
                 break
 
-            # If no games are actively on the ice (LIVE/CRIT), check if upcoming games start soon:
+            # If no games are actively on the ice (LIVE/CRIT/OVER), check if upcoming games start soon:
             effective_poll_interval = poll_interval
             if live_count == 0 and len(newly_completed) == 0:
-                # Find earliest upcoming game start time
-                min_wait_seconds = None
+                # Check if there are any unprocessed games that have already started in the last 5 hours
+                unprocessed_started = []
                 now_utc = datetime.now(pytz.utc)
                 for g in target_games:
-                    g_state = g.get("gameState", "UNKNOWN")
-                    if g_state in ["PRE", "FUT"]:
+                    gid = str(g.get("id"))
+                    if gid not in self.processed_games:
                         s_str = g.get("startTimeUTC")
                         if s_str:
                             try:
                                 s_dt = datetime.fromisoformat(s_str.replace("Z", "+00:00"))
-                                wait_sec = (s_dt - now_utc).total_seconds()
-                                if min_wait_seconds is None or wait_sec < min_wait_seconds:
-                                    min_wait_seconds = wait_sec
+                                elapsed_sec = (now_utc - s_dt).total_seconds()
+                                if 0 <= elapsed_sec <= 18000:
+                                    unprocessed_started.append(gid)
                             except Exception:
                                 pass
 
-                # If an upcoming game starts within 45 minutes, keep the runner alive!
-                if min_wait_seconds is not None and min_wait_seconds <= 2700:
+                if unprocessed_started:
+                    # An active game started recently but is not yet processed (e.g. pending official score certification)
+                    # Keep runner alive!
                     consecutive_idle_checks = 0
-                    effective_poll_interval = 60
+                    effective_poll_interval = 45
                 else:
-                    consecutive_idle_checks += 1
-                    if consecutive_idle_checks >= 2:
-                        print(f"\nℹ️ No games currently LIVE and no games starting in <= 45m ({future_count} upcoming, {completed_and_processed} done). Exiting cleanly; next schedule run will resume.")
-                        break
+                    # Find earliest upcoming game start time
+                    min_wait_seconds = None
+                    for g in target_games:
+                        g_state = g.get("gameState", "UNKNOWN")
+                        if g_state in ["PRE", "FUT"]:
+                            s_str = g.get("startTimeUTC")
+                            if s_str:
+                                try:
+                                    s_dt = datetime.fromisoformat(s_str.replace("Z", "+00:00"))
+                                    wait_sec = (s_dt - now_utc).total_seconds()
+                                    if min_wait_seconds is None or wait_sec < min_wait_seconds:
+                                        min_wait_seconds = wait_sec
+                                except Exception:
+                                    pass
+
+                    # If an upcoming game starts within 45 minutes, keep the runner alive!
+                    if min_wait_seconds is not None and min_wait_seconds <= 2700:
+                        consecutive_idle_checks = 0
+                        effective_poll_interval = 60
+                    else:
+                        consecutive_idle_checks += 1
+                        if consecutive_idle_checks >= 4:
+                            print(f"\nℹ️ No games currently LIVE and no games starting in <= 45m ({future_count} upcoming, {completed_and_processed} done). Exiting cleanly; next schedule run will resume.")
+                            break
             else:
                 consecutive_idle_checks = 0
 
