@@ -70,15 +70,21 @@ class GitHubActionsRunner:
         return set()
     
     def save_processed_games(self):
-        """Save processed game IDs"""
+        """Save processed game IDs deterministically"""
         try:
             file_path = str(self.processed_games_file.absolute())
+            if self.processed_games_file.exists():
+                try:
+                    with open(self.processed_games_file, 'r') as f:
+                        disk_games = set(json.load(f).get('games', []))
+                        self.processed_games.update(disk_games)
+                except Exception:
+                    pass
             with open(self.processed_games_file, 'w') as f:
-                json.dump({'games': list(self.processed_games)}, f, indent=2)
+                json.dump({'games': sorted(list(self.processed_games))}, f, indent=2)
             print(f"💾 Saved {len(self.processed_games)} processed games to {file_path}")
         except Exception as e:
             print(f"⚠️  Could not save processed games: {e}")
-            import traceback
             import traceback
             traceback.print_exc()
     
@@ -523,16 +529,21 @@ class GitHubActionsRunner:
             traceback.print_exc()
             return False
         
-        # Post to X
-        away_hashtag = TEAM_HASHTAGS.get(away_team, f'#{away_team}')
-        home_hashtag = TEAM_HASHTAGS.get(home_team, f'#{home_team}')
-        tweet_text = f"{away_hashtag} vs {home_hashtag}"
-        twitter_success, tweet_id = self.post_to_x(
-            tweet_text=tweet_text,
-            image_path=image_path,
-            game_id=game_id,
-            description=f"{away_team} vs {home_team}",
-        )
+        # Post to X (with strict duplicate protection)
+        if self._has_tweet_id_for_game(str(game_id)):
+            print(f"ℹ️  X already posted for game {game_id}; skipping X to avoid duplicates.")
+            twitter_success = True
+            tweet_id = None
+        else:
+            away_hashtag = TEAM_HASHTAGS.get(away_team, f'#{away_team}')
+            home_hashtag = TEAM_HASHTAGS.get(home_team, f'#{home_team}')
+            tweet_text = f"{away_hashtag} vs {home_hashtag}"
+            twitter_success, tweet_id = self.post_to_x(
+                tweet_text=tweet_text,
+                image_path=image_path,
+                game_id=game_id,
+                description=f"{away_team} vs {home_team}",
+            )
         
         # Post to Discord (also non-fatal)
         try:
@@ -581,8 +592,10 @@ class GitHubActionsRunner:
                 tool_script = candidate / "tools" / "auto_post_instat_goalie_cards.py"
                 if tool_script.exists():
                     print(f"🛡️ Triggering Goalie Cards for Game {game_id} via {candidate.name}...")
-                    subprocess.run([sys.executable, str(tool_script), "--game", str(game_id)], cwd=str(candidate), check=False)
+                    subprocess.run([sys.executable, str(tool_script), "--game", str(game_id)], cwd=str(candidate), check=False, timeout=180)
                     return
+        except subprocess.TimeoutExpired:
+            print(f"⚠️ Goalie card trigger timed out (180s) for game {game_id}")
         except Exception as e:
             print(f"⚠️ Goalie card trigger note: {e}")
 
@@ -624,6 +637,10 @@ class GitHubActionsRunner:
         Post report image to X. Uses free cookie auth by default; falls back to official API.
         Returns (success: bool, tweet_id: str|None).
         """
+        if self._has_tweet_id_for_game(str(game_id)):
+            print(f"ℹ️  X already has recorded tweet for game {game_id}; skipping duplicate post.")
+            return True, None
+
         print(f"\n🐦 Posting to X: {description}")
         use_cookies = self._prefer_x_cookie_posting()
 
