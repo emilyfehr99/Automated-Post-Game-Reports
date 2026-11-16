@@ -1,12 +1,14 @@
 name: Auto Post NHL Reports
 
 on:
-  # Note: Scheduled cron runs are consolidated into unified-hockey-engine.yml.
-  # auto_post_reports.yml is kept for repository_dispatch and manual workflow_dispatch triggers.
-  # schedule:
-  #   - cron: '*/10 17-23 * * *'
-  #   - cron: '*/10 0-8 * * *'
-  #   - cron: '0 9-16 * * *'
+  schedule:
+    # 10-minute schedule across all daily NHL game windows:
+    # - Afternoon Window: 17:00 - 23:59 UTC (12:00 PM - 6:59 PM CT)
+    - cron: '*/10 17-23 * * *'
+    # - Evening & Late Night Window: 00:00 - 08:59 UTC (7:00 PM - 3:59 AM CT)
+    - cron: '*/10 0-8 * * *'
+    # - Off-peak Hourly Guard (morning European games / off-schedule finals):
+    - cron: '0 9-16 * * *'
 
   repository_dispatch:  # Allow external triggers (instant when game finishes)
     types: [game-finished]

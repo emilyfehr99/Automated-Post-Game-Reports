@@ -2,12 +2,7 @@ name: Unified Hockey Data & Analytics Engine
 
 on:
   schedule:
-    # 15-minute schedule during active NHL/PWHL game windows:
-    # - Evening & Late Night Window: 00:00 - 09:00 UTC (7:00 PM - 4:00 AM CT)
-    - cron: '*/15 0-9 * * *'
-    # - Weekend Afternoon Window: 17:00 - 23:59 UTC (12:00 PM - 6:59 PM CT)
-    - cron: '*/15 17-23 * * *'
-    # - Daily morning warehouse consolidation & prospect sweep: 11:30 UTC (6:30 AM CT)
+    # Daily morning analytics consolidation & warehouse sweep: 11:30 UTC (5:30 AM CT / 6:30 AM ET)
     - cron: '30 11 * * *'
 
   workflow_dispatch:
@@ -36,7 +31,7 @@ on:
         default: ""
 
 concurrency:
-  group: nhl-live-monitor
+  group: unified-hockey-engine
   cancel-in-progress: false
 
 jobs:
