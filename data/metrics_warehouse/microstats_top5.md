@@ -1,22 +1,22 @@
 # Microstats boards v5 (role-safe + residuals + deltas)
 
-Generated 2026-11-17T00:19:22 · real_data_only · 847 skaters · 32 teams
+Generated 2026-11-17T13:29:51 · real_data_only · 847 skaters · 32 teams
 
 Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed, n≥25).
 
 ## Entries / 60 (all) (`entries_per_60`)
 1. **Samuel Helenius** — 11.85  (LAK, F, n=18, 11 gp)
-2. **Michael Carcone** — 11.54  (UTA, F, n=28, 11 gp)
-3. **Michael McCarron** — 11.12  (MIN, F, n=54, 21 gp)
+2. **Michael McCarron** — 11.12  (MIN, F, n=54, 21 gp)
+3. **Michael Carcone** — 10.93  (UTA, F, n=29, 12 gp)
 4. **Yakov Trenin** — 10.62  (MIN, F, n=51, 22 gp)
 5. **Trent Frederic** — 10.36  (EDM, F, n=31, 19 gp)
 
 ## Dump-ins / 60 (all) (`dump_ins_per_60`)
 1. **Samuel Helenius** — 9.88  (LAK, F, n=18, 11 gp)
-2. **Michael Carcone** — 7.01  (UTA, F, n=28, 11 gp)
-3. **Trent Frederic** — 6.68  (EDM, F, n=31, 19 gp)
-4. **Marcus Foligno** — 6.54  (MIN, F, n=12, 8 gp)
-5. **Paul Cotter** — 6.26  (VAN, F, n=39, 21 gp)
+2. **Trent Frederic** — 6.68  (EDM, F, n=31, 19 gp)
+3. **Marcus Foligno** — 6.54  (MIN, F, n=12, 8 gp)
+4. **Michael Carcone** — 6.41  (UTA, F, n=29, 12 gp)
+5. **Paul Cotter** — 5.97  (VAN, F, n=42, 22 gp)
 
 ## Controlled entries / 60 (all) (`controlled_entries_per_60`)
 1. **Brandon Hagel** — 6.14  (TBL, F, n=49, 20 gp)
@@ -27,17 +27,17 @@ Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed
 
 ## F · Entries / 60 (`f_entries_per_60`)
 1. **Samuel Helenius** — 11.85  (LAK, F, n=18, 11 gp)
-2. **Michael Carcone** — 11.54  (UTA, F, n=28, 11 gp)
-3. **Michael McCarron** — 11.12  (MIN, F, n=54, 21 gp)
+2. **Michael McCarron** — 11.12  (MIN, F, n=54, 21 gp)
+3. **Michael Carcone** — 10.93  (UTA, F, n=29, 12 gp)
 4. **Yakov Trenin** — 10.62  (MIN, F, n=51, 22 gp)
 5. **Trent Frederic** — 10.36  (EDM, F, n=31, 19 gp)
 
 ## F · Dump-ins / 60 (`f_dump_ins_per_60`)
 1. **Samuel Helenius** — 9.88  (LAK, F, n=18, 11 gp)
-2. **Michael Carcone** — 7.01  (UTA, F, n=28, 11 gp)
-3. **Trent Frederic** — 6.68  (EDM, F, n=31, 19 gp)
-4. **Marcus Foligno** — 6.54  (MIN, F, n=12, 8 gp)
-5. **Paul Cotter** — 6.26  (VAN, F, n=39, 21 gp)
+2. **Trent Frederic** — 6.68  (EDM, F, n=31, 19 gp)
+3. **Marcus Foligno** — 6.54  (MIN, F, n=12, 8 gp)
+4. **Michael Carcone** — 6.41  (UTA, F, n=29, 12 gp)
+5. **Paul Cotter** — 5.97  (VAN, F, n=42, 22 gp)
 
 ## F · Ctrl entry % rank (`f_controlled_entry_pct_rank`)
 1. **Brandon Hagel** — 77.7  (TBL, F, n=49, 20 gp)
@@ -48,7 +48,7 @@ Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed
 
 ## F · Ctrl entry residual (`f_controlled_entry_pct_residual`)
 1. **Ryan Donato** — 33.9  (CHI, F, n=16, 20 gp)
-2. **Egor Chinakhov** — 32.4  (PIT, F, n=22, 16 gp)
+2. **Egor Chinakhov** — 32.3  (PIT, F, n=22, 16 gp)
 3. **Noah Ostlund** — 32.2  (BUF, F, n=22, 19 gp)
 4. **Viktor Arvidsson** — 26.4  (DET, F, n=31, 21 gp)
 5. **Brandon Hagel** — 26.0  (TBL, F, n=49, 20 gp)
@@ -76,24 +76,24 @@ Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed
 
 ## D · DZ→ctrl exit % rank (`d_dz_retrieval_to_controlled_exit_pct_rank`)
 1. **K'Andre Miller** — 28.9  (CAR, D, n=11, 21 gp)
-2. **Matthew Schaefer** — 26.3  (NYI, D, n=13, 19 gp)
+2. **Matthew Schaefer** — 26.4  (NYI, D, n=13, 19 gp)
 3. **Seth Jones** — 22.6  (FLA, D, n=8, 22 gp)
 4. **Jackson LaCombe** — 17.0  (ANA, D, n=8, 21 gp)
-5. **Luke Hughes** — 16.2  (NJD, D, n=15, 21 gp)
+5. **Luke Hughes** — 16.3  (NJD, D, n=15, 21 gp)
 
 ## D · Ctrl entry residual (`d_controlled_entry_pct_residual`)
-1. **Victor Hedman** — 26.1  (TBL, D, n=15, 17 gp)
-2. **Jamie Drysdale** — 25.7  (PHI, D, n=15, 23 gp)
-3. **Ben Chiarot** — 19.1  (DET, D, n=15, 21 gp)
-4. **Mason Lohrei** — 18.8  (BOS, D, n=15, 19 gp)
-5. **Roman Josi** — 15.4  (NSH, D, n=29, 21 gp)
+1. **Victor Hedman** — 26.2  (TBL, D, n=15, 17 gp)
+2. **Jamie Drysdale** — 25.8  (PHI, D, n=15, 23 gp)
+3. **Ben Chiarot** — 19.2  (DET, D, n=15, 21 gp)
+4. **Mason Lohrei** — 18.9  (BOS, D, n=15, 19 gp)
+5. **Niko Mikkola** — 15.6  (FLA, D, n=16, 21 gp)
 
 ## Controlled entry % (secondary, regressed n≥25) (`controlled_entry_pct_secondary`)
 1. **Brandon Hagel** — 77.7  (TBL, F, n=49, raw=85.7)
 2. **JJ Peterka** — 77.4  (BOS, F, n=39, raw=87.2)
 3. **Roman Josi** — 76.9  (NSH, D, n=29, raw=89.7)
 4. **Viktor Arvidsson** — 75.9  (DET, F, n=31, raw=87.1)
-5. **William Nylander** — 75.0  (TOR, F, n=33, raw=84.8)
+5. **Colton Parayko** — 75.1  (STL, D, n=25, raw=88.0)
 
 ## Team · Ctrl entry% lead−trail (`score_ctrl_delta`)
 1. **MIN** — 15.3  (22 gp)
@@ -119,7 +119,7 @@ Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed
 ## Team · P3−P1 entries / game (`p3_minus_p1_entries`)
 1. **COL** — 1.09  (21 gp)
 2. **WPG** — 1.0  (21 gp)
-3. **UTA** — 0.29  (21 gp)
+3. **UTA** — 0.46  (22 gp)
 4. **SEA** — 0.17  (18 gp)
 5. **NJD** — 0.1  (21 gp)
 
@@ -133,16 +133,16 @@ Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed
 ## Team · Rush chains / game (`rush_chains_pg`)
 1. **CAR** — 2.62  (21 gp)
 2. **NJD** — 2.57  (21 gp)
-3. **UTA** — 2.48  (21 gp)
+3. **UTA** — 2.36  (22 gp)
 4. **CBJ** — 2.28  (18 gp)
 5. **NYI** — 2.26  (19 gp)
 
 ## Line units · on-ice SC diff / game (`line_sc_diff`)
 1. **NYR: Miller-Bjorkstrand-Fox-Kartye-Cuylle** — 6.4  (NYR, n=34, 5 gp)
 2. **FLA: Verhaeghe-Jones-Reinhart-Tkachuk-Tkachuk** — 6.07  (FLA, n=89, 14 gp)
-3. **MTL: Suzuki-Caufield-Bolduc-Hutson-Slafkovský** — 5.5  (MTL, n=37, 6 gp)
-4. **SJS: Orlov-Wennberg-Smith-Celebrini-Stenberg** — 5.4  (SJS, n=29, 5 gp)
-5. **WPG: Scheifele-Morrissey-Connor-Vilardi-Perfetti** — 5.14  (WPG, n=40, 7 gp)
+3. **SJS: Orlov-Wennberg-Smith-Celebrini-Stenberg** — 5.4  (SJS, n=29, 5 gp)
+4. **WPG: Scheifele-Morrissey-Connor-Vilardi-Perfetti** — 5.14  (WPG, n=40, 7 gp)
+5. **DAL: Rantanen-Hintz-Robertson-Heiskanen-Johnston** — 5.0  (DAL, n=64, 10 gp)
 
 ## Goalie · rebound-diet × opp slot pressure (higher=worse) (`goalie_rebound_diet_x_slot`)
 1. **Alex Nedeljkovic** — 3.483  (SJS, 8 gp, rebCtrl=0.8854)
@@ -152,9 +152,9 @@ Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed
 5. **Jordan Binnington** — 3.028  (STL, 5 gp, rebCtrl=0.8633)
 
 ## Goalie · best rebound diet × slot (lower=better) (`goalie_rebound_diet_best`)
-1. **Justus Annunen** — 1.14  (NSH, 5 gp, rebCtrl=0.9568)
-2. **Casey DeSmith** — 1.201  (DAL, 6 gp, rebCtrl=0.9424)
-3. **Joel Hofer** — 1.325  (STL, 15 gp, rebCtrl=0.9402)
-4. **Nico Daws** — 1.353  (WPG, 8 gp, rebCtrl=0.9461)
-5. **Connor Hellebuyck** — 1.365  (NJD, 7 gp, rebCtrl=0.9316)
+1. **Joonas Korpisalo** — 0.845  (NYR, 3 gp, rebCtrl=0.9639)
+2. **Justus Annunen** — 1.14  (NSH, 5 gp, rebCtrl=0.9568)
+3. **Casey DeSmith** — 1.201  (DAL, 6 gp, rebCtrl=0.9424)
+4. **Joel Hofer** — 1.325  (STL, 15 gp, rebCtrl=0.9402)
+5. **Nico Daws** — 1.353  (WPG, 8 gp, rebCtrl=0.9461)
 
