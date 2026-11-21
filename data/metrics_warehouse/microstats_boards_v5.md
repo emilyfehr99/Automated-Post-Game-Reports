@@ -1,6 +1,6 @@
 # Microstats boards v5 (role-safe + residuals + deltas)
 
-Generated 2026-11-21T12:42:12 · real_data_only · 855 skaters · 32 teams
+Generated 2026-11-21T21:44:56 · real_data_only · 855 skaters · 32 teams
 
 Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed, n≥25).
 
@@ -16,14 +16,14 @@ Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed
 2. **Marcus Foligno** — 7.31  (MIN, F, n=16, 10 gp)
 3. **Scott Sabourin** — 6.49  (TBL, F, n=13, 8 gp)
 4. **Marc Gatcomb** — 6.3  (VGK, F, n=31, 22 gp)
-5. **Paul Cotter** — 6.23  (VAN, F, n=45, 23 gp)
+5. **Trent Frederic** — 6.26  (EDM, F, n=32, 22 gp)
 
 ## Controlled entries / 60 (all) (`controlled_entries_per_60`)
 1. **Ryan Leonard** — 6.31  (WSH, F, n=42, 20 gp)
 2. **Brandon Hagel** — 6.14  (TBL, F, n=49, 20 gp)
 3. **Jeff Malott** — 5.73  (ANA, F, n=40, 22 gp)
 4. **Nick Suzuki** — 5.59  (MTL, F, n=44, 16 gp)
-5. **Adam Gaudette** — 5.58  (SJS, F, n=11, 9 gp)
+5. **Andrei Svechnikov** — 5.59  (CAR, F, n=57, 23 gp)
 
 ## F · Entries / 60 (`f_entries_per_60`)
 1. **Samuel Helenius** — 11.48  (LAK, F, n=19, 12 gp)
@@ -37,7 +37,7 @@ Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed
 2. **Marcus Foligno** — 7.31  (MIN, F, n=16, 10 gp)
 3. **Scott Sabourin** — 6.49  (TBL, F, n=13, 8 gp)
 4. **Marc Gatcomb** — 6.3  (VGK, F, n=31, 22 gp)
-5. **Paul Cotter** — 6.23  (VAN, F, n=45, 23 gp)
+5. **Trent Frederic** — 6.26  (EDM, F, n=32, 22 gp)
 
 ## F · Ctrl entry % rank (`f_controlled_entry_pct_rank`)
 1. **Brandon Hagel** — 77.7  (TBL, F, n=49, 20 gp)
@@ -71,11 +71,11 @@ Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed
 1. **Luke Hughes** — 1.8  (NJD, D, n=16, 22 gp)
 2. **Sam Dickinson** — 1.43  (SJS, D, n=10, 22 gp)
 3. **Matthew Schaefer** — 1.39  (NYI, D, n=13, 21 gp)
-4. **K'Andre Miller** — 1.36  (CAR, D, n=11, 22 gp)
-5. **Jalen Chatfield** — 1.34  (CAR, D, n=10, 21 gp)
+4. **K'Andre Miller** — 1.36  (CAR, D, n=11, 23 gp)
+5. **Jalen Chatfield** — 1.34  (CAR, D, n=10, 22 gp)
 
 ## D · DZ→ctrl exit % rank (`d_dz_retrieval_to_controlled_exit_pct_rank`)
-1. **K'Andre Miller** — 28.8  (CAR, D, n=11, 22 gp)
+1. **K'Andre Miller** — 28.8  (CAR, D, n=11, 23 gp)
 2. **Dylan Samberg** — 28.0  (WPG, D, n=8, 23 gp)
 3. **Matthew Schaefer** — 26.3  (NYI, D, n=13, 21 gp)
 4. **Seth Jones** — 20.2  (FLA, D, n=10, 23 gp)
@@ -83,8 +83,8 @@ Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed
 
 ## D · Ctrl entry residual (`d_controlled_entry_pct_residual`)
 1. **Victor Hedman** — 26.4  (TBL, D, n=17, 19 gp)
-2. **Jamie Drysdale** — 26.1  (PHI, D, n=16, 25 gp)
-3. **Ben Chiarot** — 20.4  (DET, D, n=17, 22 gp)
+2. **Jamie Drysdale** — 26.0  (PHI, D, n=16, 25 gp)
+3. **Ben Chiarot** — 20.3  (DET, D, n=17, 22 gp)
 4. **Tony DeAngelo** — 19.9  (NYI, D, n=15, 20 gp)
 5. **Denton Mateychuk** — 16.2  (CBJ, D, n=19, 20 gp)
 
@@ -107,14 +107,14 @@ Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed
 2. **PIT** — 14.5  (21 gp)
 3. **TOR** — 6.7  (24 gp)
 4. **LAK** — 6.3  (20 gp)
-5. **CAR** — 6.1  (22 gp)
+5. **CAR** — 5.4  (23 gp)
 
 ## Team · P3−P1 SC / game (`p3_minus_p1_sc`)
 1. **OTT** — 1.26  (23 gp)
 2. **STL** — 0.86  (22 gp)
 3. **BOS** — 0.82  (22 gp)
 4. **COL** — 0.74  (23 gp)
-5. **EDM** — 0.58  (24 gp)
+5. **EDM** — 0.64  (25 gp)
 
 ## Team · P3−P1 entries / game (`p3_minus_p1_entries`)
 1. **COL** — 1.04  (23 gp)
@@ -126,13 +126,13 @@ Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed
 ## Team · Rush chain avg length (`rush_chain_len`)
 1. **NSH** — 1.49  (22 gp)
 2. **DAL** — 1.46  (22 gp)
-3. **CAR** — 1.41  (22 gp)
+3. **CAR** — 1.41  (23 gp)
 4. **TOR** — 1.4  (24 gp)
 5. **STL** — 1.39  (22 gp)
 
 ## Team · Rush chains / game (`rush_chains_pg`)
-1. **CAR** — 2.64  (22 gp)
-2. **NJD** — 2.59  (22 gp)
+1. **NJD** — 2.59  (22 gp)
+2. **CAR** — 2.57  (23 gp)
 3. **UTA** — 2.35  (23 gp)
 4. **NYI** — 2.29  (21 gp)
 5. **CBJ** — 2.25  (20 gp)
