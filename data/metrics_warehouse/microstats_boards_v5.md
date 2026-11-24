@@ -1,6 +1,6 @@
 # Microstats boards v5 (role-safe + residuals + deltas)
 
-Generated 2026-11-23T14:45:40 · real_data_only · 858 skaters · 32 teams
+Generated 2026-11-24T02:59:41 · real_data_only · 859 skaters · 32 teams
 
 Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed, n≥25).
 
@@ -47,7 +47,7 @@ Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed
 5. **Viktor Arvidsson** — 75.9  (DET, F, n=31, 23 gp)
 
 ## F · Ctrl entry residual (`f_controlled_entry_pct_residual`)
-1. **Egor Chinakhov** — 29.8  (PIT, F, n=27, 19 gp)
+1. **Egor Chinakhov** — 29.9  (PIT, F, n=27, 19 gp)
 2. **Corey Perry** — 29.8  (LAK, F, n=15, 17 gp)
 3. **Noah Ostlund** — 29.1  (BUF, F, n=25, 22 gp)
 4. **Yegor Sharangovich** — 28.8  (CGY, F, n=33, 24 gp)
@@ -68,7 +68,7 @@ Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed
 5. **Jake Middleton** — 2.24  (CGY, D, n=17, 24 gp)
 
 ## D · DZ recoveries / 60 (`d_dz_recoveries_per_60`)
-1. **Luke Hughes** — 1.83  (NJD, D, n=17, 23 gp)
+1. **Luke Hughes** — 1.83  (NJD, D, n=17, 24 gp)
 2. **Matthew Schaefer** — 1.53  (NYI, D, n=15, 22 gp)
 3. **K'Andre Miller** — 1.38  (CAR, D, n=12, 24 gp)
 4. **Sam Dickinson** — 1.37  (SJS, D, n=10, 23 gp)
@@ -86,7 +86,7 @@ Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed
 2. **Victor Hedman** — 20.6  (TBL, D, n=18, 20 gp)
 3. **Ben Chiarot** — 20.5  (DET, D, n=19, 23 gp)
 4. **Tony DeAngelo** — 20.0  (NYI, D, n=16, 21 gp)
-5. **Niko Mikkola** — 18.6  (FLA, D, n=17, 23 gp)
+5. **Niko Mikkola** — 18.7  (FLA, D, n=17, 23 gp)
 
 ## Controlled entry % (secondary, regressed n≥25) (`controlled_entry_pct_secondary`)
 1. **Brandon Hagel** — 77.7  (TBL, F, n=49, raw=85.7)
@@ -119,7 +119,7 @@ Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed
 ## Team · P3−P1 entries / game (`p3_minus_p1_entries`)
 1. **COL** — 1.04  (23 gp)
 2. **UTA** — 0.58  (24 gp)
-3. **NJD** — 0.18  (23 gp)
+3. **NJD** — 0.34  (24 gp)
 4. **SEA** — 0.1  (20 gp)
 5. **WPG** — 0.08  (24 gp)
 
@@ -131,11 +131,11 @@ Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed
 5. **TOR** — 1.4  (25 gp)
 
 ## Team · Rush chains / game (`rush_chains_pg`)
-1. **NJD** — 2.57  (23 gp)
+1. **NJD** — 2.46  (24 gp)
 2. **CAR** — 2.46  (24 gp)
-3. **CBJ** — 2.33  (21 gp)
-4. **UTA** — 2.29  (24 gp)
-5. **NYI** — 2.27  (22 gp)
+3. **UTA** — 2.29  (24 gp)
+4. **NYI** — 2.27  (22 gp)
+5. **CBJ** — 2.27  (22 gp)
 
 ## Line units · on-ice SC diff / game (`line_sc_diff`)
 1. **NYR: Miller-Bjorkstrand-Fox-Kartye-Cuylle** — 6.4  (NYR, n=34, 5 gp)
@@ -154,7 +154,7 @@ Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed
 ## Goalie · best rebound diet × slot (lower=better) (`goalie_rebound_diet_best`)
 1. **Joonas Korpisalo** — 0.848  (NYR, 3 gp, rebCtrl=0.9639)
 2. **Justus Annunen** — 1.144  (NSH, 7 gp, rebCtrl=0.9565)
-3. **Casey DeSmith** — 1.255  (DAL, 6 gp, rebCtrl=0.9424)
-4. **Connor Hellebuyck** — 1.266  (NJD, 9 gp, rebCtrl=0.9375)
+3. **Connor Hellebuyck** — 1.248  (NJD, 9 gp, rebCtrl=0.9375)
+4. **Casey DeSmith** — 1.255  (DAL, 6 gp, rebCtrl=0.9424)
 5. **Dennis Hildeby** — 1.279  (TBL, 6 gp, rebCtrl=0.9423)
 
