@@ -1,6 +1,6 @@
 # Microstats boards v5 (role-safe + residuals + deltas)
 
-Generated 2026-11-25T00:47:49 · real_data_only · 860 skaters · 32 teams
+Generated 2026-11-25T14:28:52 · real_data_only · 860 skaters · 32 teams
 
 Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed, n≥25).
 
@@ -82,11 +82,11 @@ Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed
 5. **Seth Jones** — 19.5  (FLA, D, n=11, 24 gp)
 
 ## D · Ctrl entry residual (`d_controlled_entry_pct_residual`)
-1. **Jamie Drysdale** — 25.0  (PHI, D, n=16, 26 gp)
+1. **Jamie Drysdale** — 24.9  (PHI, D, n=16, 26 gp)
 2. **Victor Hedman** — 20.4  (TBL, D, n=18, 20 gp)
 3. **Ben Chiarot** — 20.3  (DET, D, n=19, 23 gp)
 4. **Tony DeAngelo** — 19.8  (NYI, D, n=16, 22 gp)
-5. **Niko Mikkola** — 18.5  (FLA, D, n=17, 23 gp)
+5. **Niko Mikkola** — 18.4  (FLA, D, n=17, 23 gp)
 
 ## Controlled entry % (secondary, regressed n≥25) (`controlled_entry_pct_secondary`)
 1. **Brandon Hagel** — 77.7  (TBL, F, n=49, raw=85.7)
@@ -100,7 +100,7 @@ Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed
 2. **SJS** — 13.3  (26 gp)
 3. **VAN** — 12.5  (26 gp)
 4. **SEA** — 12.5  (21 gp)
-5. **VGK** — 11.0  (25 gp)
+5. **BUF** — 10.8  (24 gp)
 
 ## Team · Dump recovery% lead−trail (`score_dump_delta`)
 1. **WPG** — 13.3  (25 gp)
@@ -112,9 +112,9 @@ Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed
 ## Team · P3−P1 SC / game (`p3_minus_p1_sc`)
 1. **STL** — 0.96  (24 gp)
 2. **OTT** — 0.96  (25 gp)
-3. **COL** — 0.74  (23 gp)
-4. **BOS** — 0.74  (23 gp)
-5. **EDM** — 0.65  (26 gp)
+3. **EDM** — 0.81  (27 gp)
+4. **COL** — 0.74  (23 gp)
+5. **BOS** — 0.74  (23 gp)
 
 ## Team · P3−P1 entries / game (`p3_minus_p1_entries`)
 1. **COL** — 1.04  (23 gp)
@@ -138,11 +138,11 @@ Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed
 5. **NYI** — 2.17  (23 gp)
 
 ## Line units · on-ice SC diff / game (`line_sc_diff`)
-1. **NYR: Miller-Bjorkstrand-Fox-Kartye-Cuylle** — 6.4  (NYR, n=34, 5 gp)
-2. **FLA: Verhaeghe-Jones-Reinhart-Tkachuk-Tkachuk** — 5.94  (FLA, n=99, 16 gp)
-3. **WPG: Scheifele-Morrissey-Connor-Vilardi-Perfetti** — 4.8  (WPG, n=52, 10 gp)
-4. **TBL: Carlson-Kucherov-Guentzel-Point-Hagel** — 4.75  (TBL, n=44, 8 gp)
-5. **DAL: Rantanen-Hintz-Robertson-Heiskanen-Johnston** — 4.69  (DAL, n=75, 13 gp)
+1. **EDM: Nugent-Hopkins-Draisaitl-Kapanen-McDavid-Bouchard** — 6.6  (EDM, n=43, 5 gp)
+2. **NYR: Miller-Bjorkstrand-Fox-Kartye-Cuylle** — 6.4  (NYR, n=34, 5 gp)
+3. **FLA: Verhaeghe-Jones-Reinhart-Tkachuk-Tkachuk** — 5.94  (FLA, n=99, 16 gp)
+4. **WPG: Scheifele-Morrissey-Connor-Vilardi-Perfetti** — 4.8  (WPG, n=52, 10 gp)
+5. **TBL: Carlson-Kucherov-Guentzel-Point-Hagel** — 4.75  (TBL, n=44, 8 gp)
 
 ## Goalie · rebound-diet × opp slot pressure (higher=worse) (`goalie_rebound_diet_x_slot`)
 1. **Alex Nedeljkovic** — 3.444  (SJS, 9 gp, rebCtrl=0.8834)
