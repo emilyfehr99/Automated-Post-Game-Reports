@@ -1,6 +1,6 @@
 # Microstats boards v5 (role-safe + residuals + deltas)
 
-Generated 2026-11-24T14:57:57 · real_data_only · 860 skaters · 32 teams
+Generated 2026-11-25T00:47:49 · real_data_only · 860 skaters · 32 teams
 
 Primary entry board = **/60 volume**. Controlled-entry % is secondary (regressed, n≥25).
 
